@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState, useEffect, type CSSProperties } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
+import '../styles/tickets.css';
 import { useLocation, useParams } from 'react-router-dom';
 import TicketDetailDrawer from '../components/tickets/TicketDetailDrawer';
 import TicketFiltersComponent from '../components/tickets/TicketFilters';
@@ -6,6 +7,7 @@ import TicketFormModal from '../components/tickets/TicketFormModal';
 import TicketTable from '../components/tickets/TicketTable';
 import { useTicketRealtime } from '../hooks/useTicketRealtime';
 import { useTickets } from '../hooks/useTickets';
+import { useTicketFilters } from '../hooks/useTicketFilters';
 import { useAuth } from '../context/AuthContext';
 import type {
   CreateTicketInput,
@@ -113,7 +115,7 @@ function TicketsPage(): JSX.Element {
   const canEdit = role === 'admin' || role === 'tech';
   const isViewer = role === 'viewer';
 
-  const [filters, setFilters] = useState<TicketFilters>({});
+  const { filters, filteredTickets, clientOptions, assigneeOptions, handleFiltersChange, handleFiltersReset } = useTicketFilters(tickets);
   const [formOpen, setFormOpen] = useState<boolean>(false);
   const [formMode, setFormMode] = useState<FormMode>('create');
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
@@ -127,47 +129,11 @@ function TicketsPage(): JSX.Element {
 
   useTicketRealtime({ onRefetch: handleRealtimeRefresh });
 
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket: TicketListItem) => matchesFilters(ticket, filters));
-  }, [tickets, filters]);
+  
+  // filters, filteredTickets, clientOptions, assigneeOptions,
+  // handleFiltersChange and handleFiltersReset are provided by
+  // useTicketFilters to keep TicketsPage lean.
 
-  const clientOptions = useMemo<SelectOption[]>(() => {
-    const uniqueClients = Array.from(
-      new Set(
-        tickets
-          .map((ticket) => ticket.client)
-          .filter((value): value is string => value.trim().length > 0)
-      )
-    ).sort((a, b) => a.localeCompare(b));
-
-    return uniqueClients.map((client) => ({
-      value: client,
-      label: client,
-    }));
-  }, [tickets]);
-
-  const assigneeOptions = useMemo<SelectOption[]>(() => {
-    const uniqueAssignees = Array.from(
-      new Set(
-        tickets
-          .map((ticket) => getTicketDisplayAssignee(ticket))
-          .filter((value): value is string => Boolean(value && value.trim().length > 0))
-      )
-    ).sort((a, b) => a.localeCompare(b));
-
-    return uniqueAssignees.map((assignee) => ({
-      value: assignee,
-      label: assignee,
-    }));
-  }, [tickets]);
-
-  const handleFiltersChange = useCallback((next: TicketFilters): void => {
-    setFilters(next);
-  }, []);
-
-  const handleFiltersReset = useCallback((): void => {
-    setFilters({});
-  }, []);
 
   const handleOpenCreate = useCallback((): void => {
     if (!canEdit) {
@@ -360,18 +326,18 @@ function TicketsPage(): JSX.Element {
   }, [isViewer]);
 
   return (
-    <section style={pageStyle}>
-      <div style={headerStyle}>
+    <section className="tickets-page">
+      <div className="tickets-header">
         <div>
-          <h1 style={titleStyle}>Tickets</h1>
-          <p style={subtitleStyle}>{pageSubtitle}</p>
+          <h1 className="tickets-title">Tickets</h1>
+          <p className="tickets-subtitle">{pageSubtitle}</p>
         </div>
 
-        <div style={headerActionsStyle}>
+        <div className="tickets-header-actions">
           <button
             type="button"
             onClick={() => void refetch()}
-            style={secondaryButtonStyle}
+            className="btn--secondary-tickets"
           >
             Refresh
           </button>
@@ -380,17 +346,14 @@ function TicketsPage(): JSX.Element {
             type="button"
             onClick={handleOpenCreate}
             disabled={!canEdit}
-            style={{
-              ...primaryButtonStyle,
-              ...(!canEdit ? disabledButtonStyle : {}),
-            }}
+            className={"btn--primary-tickets" + (!canEdit ? ' btn--disabled' : '')}
           >
             New ticket
           </button>
         </div>
       </div>
 
-      <div style={panelStyle}>
+      <div className="tickets-panel">
         <TicketFiltersComponent
           filters={filters}
           onChange={handleFiltersChange}
@@ -400,7 +363,7 @@ function TicketsPage(): JSX.Element {
         />
       </div>
 
-      <div style={panelStyle}>
+  <div className="tickets-panel">
         <TicketTable
           tickets={filteredTickets}
           loading={loading}
@@ -440,72 +403,3 @@ function TicketsPage(): JSX.Element {
 }
 
 export default TicketsPage;
-
-const pageStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '20px',
-};
-
-const headerStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '16px',
-  flexWrap: 'wrap',
-};
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: '1.75rem',
-  fontWeight: 700,
-  color: '#111827',
-};
-
-const subtitleStyle: CSSProperties = {
-  margin: '8px 0 0',
-  fontSize: '0.95rem',
-  color: '#6B7280',
-};
-
-const headerActionsStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  flexWrap: 'wrap',
-};
-
-const panelStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-};
-
-const primaryButtonStyle: CSSProperties = {
-  minHeight: '40px',
-  padding: '10px 14px',
-  border: '1px solid #2563EB',
-  borderRadius: '8px',
-  backgroundColor: '#2563EB',
-  color: '#FFFFFF',
-  fontSize: '0.95rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  minHeight: '40px',
-  padding: '10px 14px',
-  border: '1px solid #D1D5DB',
-  borderRadius: '8px',
-  backgroundColor: '#FFFFFF',
-  color: '#111827',
-  fontSize: '0.95rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
-const disabledButtonStyle: CSSProperties = {
-  opacity: 0.6,
-  cursor: 'not-allowed',
-};

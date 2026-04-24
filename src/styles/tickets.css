@@ -1,0 +1,72 @@
+:root {
+  --tickets-panel-gap: 12px;
+}
+
+.tickets-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tickets-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tickets-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--panel);
+}
+
+.tickets-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.tickets-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tickets-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tickets-panel-gap);
+}
+
+.btn--primary-tickets {
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid var(--primary-hover);
+  border-radius: 8px;
+  background-color: var(--primary);
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn--secondary-tickets {
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--panel);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
