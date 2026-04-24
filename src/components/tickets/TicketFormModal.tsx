@@ -26,7 +26,6 @@ type TicketFormValues = {
   requester: string;
   end_user: string;
   client: string;
-  client_id: string;
   priority: TicketPriority;
   assigned_to: string;
   os: string;
@@ -40,7 +39,7 @@ type TicketFormInitialValues = Partial<
   TicketDetail &
     CreateTicketInput &
     UpdateTicketInput & {
-      client_id?: string | null;
+  // no client_id here; unify client as single field
     }
 >;
 
@@ -68,7 +67,6 @@ function getEmptyValues(): TicketFormValues {
     requester: '',
     end_user: '',
     client: '',
-    client_id: '',
     priority: 'med',
     assigned_to: '',
     os: '',
@@ -88,9 +86,7 @@ function mapInitialValues(initialValues?: TicketFormInitialValues): TicketFormVa
     serial: initialValues?.serial ?? '',
     requester: initialValues?.requester ?? '',
     end_user: initialValues?.end_user ?? '',
-    client: initialValues?.client ?? '',
-    client_id:
-      typeof initialValues?.client_id === 'string' ? initialValues.client_id : '',
+  client: initialValues?.client ?? '',
     priority: initialValues?.priority ?? 'med',
     assigned_to: initialValues?.assigned_to ?? '',
     os: initialValues?.os ?? '',
@@ -106,9 +102,8 @@ function validateValues(values: TicketFormValues): TicketFormErrors {
     errors.requester = 'Requester obbligatorio.';
   }
 
-  if (!normalizeString(values.client) && !normalizeString(values.client_id)) {
+  if (!normalizeString(values.client)) {
     errors.client = 'Cliente obbligatorio.';
-    errors.client_id = 'Cliente obbligatorio.';
   }
 
   return errors;
@@ -130,6 +125,7 @@ export function TicketFormModal({
 }: TicketFormModalProps): JSX.Element | null {
   const [values, setValues] = useState<TicketFormValues>(getEmptyValues());
   const [errors, setErrors] = useState<TicketFormErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   const title = mode === 'create' ? 'Nuovo ticket' : 'Modifica ticket';
   const submitLabel = mode === 'create' ? 'Crea ticket' : 'Salva modifiche';
@@ -137,16 +133,23 @@ export function TicketFormModal({
   const resolvedClientOptions = useMemo(() => clientOptions, [clientOptions]);
   const resolvedAssigneeOptions = useMemo(() => assigneeOptions, [assigneeOptions]);
 
+  const [clientMode, setClientMode] = useState<'select' | 'other'>('select');
+
   useEffect(() => {
     if (open) {
-      setValues(mapInitialValues(initialValues));
+      const mapped = mapInitialValues(initialValues);
+      setValues(mapped);
+      // decide if clientMode should be 'other' when initial client is not in options
+      const hasClientInOptions = resolvedClientOptions.some((o) => o.value === mapped.client);
+      setClientMode(hasClientInOptions ? 'select' : 'other');
       setErrors({});
       return;
     }
 
     setValues(getEmptyValues());
+    setClientMode('select');
     setErrors({});
-  }, [open, initialValues]);
+  }, [open, initialValues, resolvedClientOptions]);
 
   useEffect(() => {
     if (!open) {
@@ -170,6 +173,7 @@ export function TicketFormModal({
     return null;
   }
 
+
   const handleFieldChange =
     (field: keyof TicketFormValues) =>
     (
@@ -183,17 +187,7 @@ export function TicketFormModal({
           [field]: nextValue,
         };
 
-        if (field === 'client_id') {
-          const selectedClient = resolvedClientOptions.find(
-            (option) => option.value === nextValue
-          );
-
-          if (selectedClient && !normalizeString(current.client)) {
-            next.client = selectedClient.label;
-          }
-        }
-
-        return next;
+  return next;
       });
 
       setErrors((current) => {
@@ -228,15 +222,24 @@ export function TicketFormModal({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    setFormError(null);
 
     const nextErrors = validateValues(values);
     setErrors(nextErrors);
+
+    // Additional validation: when using select, ensure selected value exists in options
+    if (clientMode === 'select') {
+      const valid = resolvedClientOptions.some((o) => o.value === values.client);
+      if (!valid) {
+        setErrors((e) => ({ ...e, client: 'Seleziona un cliente valido o scegli Altro.' }));
+        return;
+      }
+    }
 
     if (hasErrors(nextErrors)) {
       return;
     }
 
-    const normalizedClientId = normalizeString(values.client_id);
     const normalizedClient = normalizeString(values.client);
 
     const payloadBase = {
@@ -251,22 +254,28 @@ export function TicketFormModal({
       notes: normalizeString(values.notes) ?? null,
     };
 
-    if (mode === 'create') {
-      const createPayload: CreateTicketInput = {
+    try {
+      if (mode === 'create') {
+        const createPayload: CreateTicketInput = {
+          ...payloadBase,
+          client: normalizedClient ?? '',
+        };
+
+        await onSubmit(createPayload);
+        return;
+      }
+
+      const updatePayload: UpdateTicketInput = {
         ...payloadBase,
-        client: normalizedClient ?? normalizedClientId ?? '',
+        client: normalizedClient ?? undefined,
       };
 
-      await onSubmit(createPayload);
+      await onSubmit(updatePayload);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Errore durante il salvataggio.';
+      setFormError(message);
       return;
     }
-
-    const updatePayload: UpdateTicketInput = {
-      ...payloadBase,
-      client: normalizedClient ?? normalizedClientId ?? undefined,
-    };
-
-    await onSubmit(updatePayload);
   };
 
   return (
@@ -374,16 +383,25 @@ export function TicketFormModal({
               </div>
 
               <div style={fieldStyle}>
-                <label htmlFor="ticket-client-id" style={labelStyle}>
+                <label htmlFor="ticket-client-select" style={labelStyle}>
                   Cliente
                 </label>
                 <select
-                  id="ticket-client-id"
-                  name="client_id"
-                  value={values.client_id}
-                  onChange={handleFieldChange('client_id')}
-                  aria-invalid={Boolean(errors.client_id || errors.client)}
-                  style={getFieldStyle(Boolean(errors.client_id || errors.client))}
+                  id="ticket-client-select"
+                  name="client"
+                  value={clientMode === 'select' ? values.client : '__other__'}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '__other__') {
+                      setClientMode('other');
+                      setValues((cur) => ({ ...cur, client: '' }));
+                    } else {
+                      setClientMode('select');
+                      setValues((cur) => ({ ...cur, client: v }));
+                    }
+                  }}
+                  aria-invalid={Boolean(errors.client)}
+                  style={getFieldStyle(Boolean(errors.client))}
                 >
                   <option value="">Seleziona cliente</option>
                   {resolvedClientOptions.map((option) => (
@@ -391,28 +409,28 @@ export function TicketFormModal({
                       {option.label}
                     </option>
                   ))}
+                  <option value="__other__">Altro (testo libero)</option>
                 </select>
-              </div>
 
-              <div style={fieldStyle}>
-                <label htmlFor="ticket-client" style={labelStyle}>
-                  Client fallback
-                </label>
-                <input
-                  id="ticket-client"
-                  name="client"
-                  type="text"
-                  value={values.client}
-                  onChange={handleFieldChange('client')}
-                  aria-invalid={Boolean(errors.client)}
-                  aria-describedby={errors.client ? 'ticket-client-error' : undefined}
-                  placeholder="Usa solo se non gestisci client_id"
-                  style={getFieldStyle(Boolean(errors.client))}
-                />
-                {errors.client ? (
-                  <span id="ticket-client-error" style={errorTextStyle}>
-                    {errors.client}
-                  </span>
+                {clientMode === 'other' ? (
+                  <>
+                    <input
+                      id="ticket-client"
+                      name="client"
+                      type="text"
+                      value={values.client}
+                      onChange={handleFieldChange('client')}
+                      aria-invalid={Boolean(errors.client)}
+                      aria-describedby={errors.client ? 'ticket-client-error' : undefined}
+                      placeholder="Inserisci nome cliente"
+                      style={getFieldStyle(Boolean(errors.client))}
+                    />
+                    {errors.client ? (
+                      <span id="ticket-client-error" style={errorTextStyle}>
+                        {errors.client}
+                      </span>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
 

@@ -8,6 +8,7 @@ import TicketTable from '../components/tickets/TicketTable';
 import { useTicketRealtime } from '../hooks/useTicketRealtime';
 import { useTickets } from '../hooks/useTickets';
 import { useTicketFilters } from '../hooks/useTicketFilters';
+import { useClientsAndAssignees } from '../hooks/useClients';
 import { useAuth } from '../context/AuthContext';
 import type {
   CreateTicketInput,
@@ -115,7 +116,8 @@ function TicketsPage(): JSX.Element {
   const canEdit = role === 'admin' || role === 'tech';
   const isViewer = role === 'viewer';
 
-  const { filters, filteredTickets, clientOptions, assigneeOptions, handleFiltersChange, handleFiltersReset } = useTicketFilters(tickets);
+  const { filters, filteredTickets, clientOptions: derivedClientOptions, assigneeOptions: derivedAssigneeOptions, handleFiltersChange, handleFiltersReset } = useTicketFilters(tickets);
+  const { clientOptions: dbClientOptions, assigneeOptions: dbAssigneeOptions } = useClientsAndAssignees();
   const [formOpen, setFormOpen] = useState<boolean>(false);
   const [formMode, setFormMode] = useState<FormMode>('create');
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
@@ -127,7 +129,7 @@ function TicketsPage(): JSX.Element {
     void refetch();
   }, [refetch]);
 
-  useTicketRealtime({ onRefetch: handleRealtimeRefresh });
+  useTicketRealtime({ onRefetch: handleRealtimeRefresh, debounceMs: 300 });
 
   
   // filters, filteredTickets, clientOptions, assigneeOptions,
@@ -357,8 +359,8 @@ function TicketsPage(): JSX.Element {
         <TicketFiltersComponent
           filters={filters}
           onChange={handleFiltersChange}
-          clientOptions={clientOptions}
-          assigneeOptions={assigneeOptions}
+          clientOptions={dbClientOptions.length ? dbClientOptions : derivedClientOptions}
+          assigneeOptions={dbAssigneeOptions.length ? dbAssigneeOptions : derivedAssigneeOptions}
           onReset={handleFiltersReset}
         />
       </div>
@@ -383,8 +385,8 @@ function TicketsPage(): JSX.Element {
         submitting={formSubmitting}
         onClose={handleCloseForm}
         onSubmit={(values) => void handleFormSubmit(values)}
-        assigneeOptions={assigneeOptions}
-        clientOptions={clientOptions}
+  assigneeOptions={dbAssigneeOptions.length ? dbAssigneeOptions : derivedAssigneeOptions}
+  clientOptions={dbClientOptions.length ? dbClientOptions : derivedClientOptions}
       />
 
       <TicketDetailDrawer

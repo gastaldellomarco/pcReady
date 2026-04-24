@@ -10,15 +10,19 @@ type UseTicketRealtimeOptions = {
   onChange?: (payload: RealtimePostgresChangesPayload<TicketRealtimeRow>) => void;
   onRefetch?: () => void | Promise<void>;
   enabled?: boolean;
+  debounceMs?: number;
 };
 
 export function useTicketRealtime({
   onChange,
   onRefetch,
   enabled = true,
+  debounceMs = 300,
 }: UseTicketRealtimeOptions): void {
-  const onChangeRef = useRef<typeof onChange>(onChange);
-  const onRefetchRef = useRef<typeof onRefetch>(onRefetch);
+  const onChangeRef = useRef(onChange);
+  const onRefetchRef = useRef(onRefetch);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -29,35 +33,48 @@ export function useTicketRealtime({
   }, [onRefetch]);
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
+    if (!enabled) return;
 
     const channel = supabase
       .channel('tickets-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tickets',
-        },
-        async (payload: RealtimePostgresChangesPayload<TicketRealtimeRow>) => {
+        { event: '*', schema: 'public', table: 'tickets' },
+        (payload: RealtimePostgresChangesPayload<TicketRealtimeRow>) => {
           const eventType = payload.eventType as TicketRealtimeEvent;
 
           if (eventType === 'INSERT' || eventType === 'UPDATE' || eventType === 'DELETE') {
             onChangeRef.current?.(payload);
-            await onRefetchRef.current?.();
+
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = setTimeout(() => {
+              void onRefetchRef.current?.();
+            }, debounceMs);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Handle channel status changes for basic reconnect logic
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('[Realtime] Channel error, scheduling reconnect...');
+          setTimeout(() => {
+            try {
+              void channel.subscribe();
+            } catch (e) {
+              // swallow
+            }
+          }, 5000);
+        }
+      });
+
+    channelRef.current = channel;
 
     return () => {
-      // ✅ FIX #1: Unsubscribe PRIMA di removeChannel
-      // Questo previene il memory leak
-      void channel.unsubscribe();
-      void supabase.removeChannel(channel);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (channelRef.current) {
+        void channelRef.current.unsubscribe();
+        void supabase.removeChannel(channelRef.current);
+      }
     };
-  }, [enabled]);
+  }, [enabled, debounceMs]);
 }
