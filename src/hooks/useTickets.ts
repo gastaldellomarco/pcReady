@@ -10,11 +10,6 @@ import type {
 
 type UserRole = 'admin' | 'tech' | 'viewer';
 
-type ProfileRow = {
-  id: string;
-  role: UserRole;
-  isactive: boolean;
-};
 
 type TicketRow = {
   ticketref: string;
@@ -145,48 +140,11 @@ function mapUpdateInputToPatch(input: UpdateTicketInput) {
   return patch;
 }
 
-async function getCurrentProfile(): Promise<ProfileRow | null> {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) {
-    throw new Error(authError.message);
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, role, isactive')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  return data as ProfileRow;
-}
-
-async function ensureWriteAccess(): Promise<void> {
-  const profile = await getCurrentProfile();
-
-  if (!profile || !profile.isactive) {
-    throw new Error('Utente non autorizzato.');
-  }
-
-  if (profile.role === 'viewer') {
-    throw new Error('Permessi insufficienti: accesso in sola lettura.');
-  }
-}
+// Authorization is enforced at the application UI level (AuthContext)
+// and at the DB level via Row Level Security (RLS). Previous
+// helper functions that performed an additional supabase query for
+// every write operation have been removed to avoid extra latency,
+// state inconsistencies and duplicate sources of truth.
 
 async function getTicketRowByTicketRef(ticketRef: string): Promise<TicketRow> {
   const { data, error } = await supabase
@@ -281,7 +239,7 @@ export function useTickets(selectedTicketId?: string): UseTicketsReturn {
     setError(null);
 
     try {
-      await ensureWriteAccess();
+  // Authorization enforced by UI (AuthContext) and DB RLS
 
       const payload = mapCreateInputToInsert(input);
 
@@ -317,7 +275,7 @@ export function useTickets(selectedTicketId?: string): UseTicketsReturn {
       setError(null);
 
       try {
-        await ensureWriteAccess();
+  // Authorization enforced by UI (AuthContext) and DB RLS
 
         const patch = mapUpdateInputToPatch(input);
 
@@ -378,7 +336,7 @@ export function useTickets(selectedTicketId?: string): UseTicketsReturn {
       setError(null);
 
       try {
-        await ensureWriteAccess();
+  // Authorization enforced by UI (AuthContext) and DB RLS
 
         const { error: deleteError } = await supabase.from('tickets').delete().eq('ticketref', id);
 

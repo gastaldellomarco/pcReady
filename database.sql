@@ -577,19 +577,26 @@ CREATE POLICY "tickets_select_all"
 CREATE POLICY "tickets_insert_admin_tech"
   ON tickets FOR INSERT
   TO authenticated
-  WITH CHECK (current_user_role() IN ('admin', 'tech'));
+  WITH CHECK (
+    current_user_is_active() = TRUE
+    AND current_user_role() IN ('admin', 'tech')
+  );
 
 -- Admin aggiorna tutto; tech aggiorna solo i ticket assegnati a lui
 CREATE POLICY "tickets_update_admin"
   ON tickets FOR UPDATE
   TO authenticated
-  USING (current_user_role() = 'admin');
+  USING (
+    current_user_is_active() = TRUE
+    AND current_user_role() = 'admin'
+  );
 
 CREATE POLICY "tickets_update_tech_assigned"
   ON tickets FOR UPDATE
   TO authenticated
   USING (
-    current_user_role() = 'tech'
+    current_user_is_active() = TRUE
+    AND current_user_role() = 'tech'
     AND assigned_to = auth.uid()
   );
 
@@ -597,7 +604,25 @@ CREATE POLICY "tickets_update_tech_assigned"
 CREATE POLICY "tickets_delete_admin"
   ON tickets FOR DELETE
   TO authenticated
-  USING (current_user_role() = 'admin');
+  USING (
+    current_user_is_active() = TRUE
+    AND current_user_role() = 'admin'
+  );
+
+-- Additional explicit policy mirroring proposal: guard INSERT/UPDATE/DELETE
+-- in case other tooling references this policy name directly.
+CREATE POLICY "only_tech_admin_can_write"
+  ON tickets
+  FOR ALL
+  TO authenticated
+  USING (
+    current_user_is_active() = TRUE
+    AND current_user_role() IN ('admin', 'tech')
+  )
+  WITH CHECK (
+    current_user_is_active() = TRUE
+    AND current_user_role() IN ('admin', 'tech')
+  );
 
 -- ── COMMENTS ──────────────────────────────────────────────
 
