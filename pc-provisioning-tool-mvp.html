@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCReady — Gestione Preparazione PC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:         #F2F0EB;
+  --bg2:        #E8E5DE;
+  --surface:    #FAFAF8;
+  --surface2:   #F2F0EB;
+  --surface3:   #E8E5DE;
+  --border:     rgba(0,0,0,0.08);
+  --border2:    rgba(0,0,0,0.14);
+  --text:       #12110E;
+  --text2:      #4A4840;
+  --text3:      #8A8780;
+  --accent:     #1B4FD8;
+  --accent2:    #EEF2FC;
+  --accent3:    #C7D5F8;
+  --success:    #166534;
+  --success-bg: #DCFCE7;
+  --warn:       #854D0E;
+  --warn-bg:    #FEF9C3;
+  --danger:     #991B1B;
+  --danger-bg:  #FEE2E2;
+  --purple:     #5B21B6;
+  --purple-bg:  #EDE9FE;
+  --rad:        12px;
+  --rad-sm:     7px;
+  --rad-xs:     5px;
+  --sidebar:    240px;
+  --font-head:  'Syne', sans-serif;
+  --font-body:  'Instrument Sans', sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
+  --shadow:     0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.06);
+  --tr: 0.18s ease;
+}
+
+[data-theme="dark"] {
+  --bg:         #111110;
+  --bg2:        #1A1918;
+  --surface:    #1F1E1C;
+  --surface2:   #272624;
+  --surface3:   #302F2C;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.13);
+  --text:       #F0EDE8;
+  --text2:      #A8A5A0;
+  --text3:      #6A6760;
+  --accent:     #4F7FFF;
+  --accent2:    #1A2640;
+  --accent3:    #2A3F70;
+  --success:    #4ADE80;
+  --success-bg: #052E16;
+  --warn:       #FCD34D;
+  --warn-bg:    #2D1F06;
+  --danger:     #F87171;
+  --danger-bg:  #2D0A0A;
+  --purple:     #A78BFA;
+  --purple-bg:  #1E1040;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.3);
+  --shadow:     0 2px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.5), 0 3px 8px rgba(0,0,0,0.3);
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.55;transition:background var(--tr),color var(--tr)}
+
+/* LAYOUT */
+.shell{display:flex;min-height:100vh}
+
+.sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  transition:background var(--tr),border-color var(--tr);
+}
+
+.logo-area{
+  padding:22px 18px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.logo-box{
+  width:32px;height:32px;background:var(--text);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.logo-box svg{width:16px;height:16px;color:var(--bg)}
+.logo-text{font-family:var(--font-head);font-size:16px;font-weight:700;letter-spacing:-0.4px}
+.logo-ver{font-size:10px;color:var(--text3);margin-top:1px;font-family:var(--font-mono)}
+
+.nav-area{padding:14px 10px;flex:1;overflow-y:auto}
+.nav-section{margin-bottom:22px}
+.nav-lbl{
+  font-size:9.5px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text3);
+  padding:0 8px;margin-bottom:5px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 9px;border-radius:var(--rad-sm);
+  cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;
+  transition:all var(--tr);user-select:none;position:relative;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent2);color:var(--accent);font-weight:600}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+.nav-item.active svg{opacity:1}
+.n-badge{
+  margin-left:auto;background:var(--accent);color:#fff;
+  font-size:9.5px;font-weight:700;padding:1px 6px;
+  border-radius:20px;min-width:18px;text-align:center;
+  font-family:var(--font-mono);
+}
+
+.sidebar-foot{
+  padding:13px 14px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;
+}
+.user-row{display:flex;align-items:center;gap:9px;justify-content:space-between;}
+.ava{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;font-family:var(--font-head);
+}
+.ava-mt{background:#DDD6FE;color:#4C1D95}
+.u-name{font-size:12px;font-weight:600;color:var(--text)}
+.u-role{font-size:10px;color:var(--text3)}
+.logout-btn{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:4px 8px;border-radius:var(--rad-xs);transition:all var(--tr);}
+.logout-btn:hover{background:var(--surface2);color:var(--text);}
+
+/* dark toggle */
+.dark-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--rad-sm);padding:6px 10px;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--text2);
+  transition:all var(--tr);
+}
+.dark-btn:hover{border-color:var(--border2);background:var(--surface3)}
+.toggle-pill{
+  width:30px;height:16px;background:var(--border2);border-radius:20px;
+  position:relative;transition:background var(--tr);
+}
+.toggle-pill::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;background:#fff;
+  transition:transform var(--tr),background var(--tr);
+  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] .toggle-pill{background:var(--accent)}
+[data-theme="dark"] .toggle-pill::after{transform:translateX(14px)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 28px;height:56px;
+  display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:100;
+  transition:background var(--tr),border-color var(--tr);
+}
+.page-title{font-family:var(--font-head);font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+
+.search-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--rad-sm);padding:6px 12px;
+  transition:all var(--tr);
+}
+.search-wrap:focus-within{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px rgba(75,127,255,.12)}
+.search-wrap svg{width:13px;height:13px;color:var(--text3);flex-shrink:0}
+.search-wrap input{border:none;outline:none;font-family:var(--font-body);font-size:13px;background:transparent;color:var(--text);width:180px}
+.search-wrap input::placeholder{color:var(--text3)}
+
+.content{padding:26px 28px;flex:1}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:var(--rad-sm);
+  font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);
+  border:1px solid transparent;transition:all var(--tr);white-space:nowrap;
+}
+.btn svg{width:13px;height:13px;flex-shrink:0}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn-primary:hover{opacity:.88}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{opacity:.9}
+.btn-ghost{background:transparent;color:var(--text2);border-color:var(--border2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:var(--danger)}
+.btn-success{background:var(--success-bg);color:var(--success);border-color:var(--success)}
+.btn-sm{padding:4px 10px;font-size:11.5px;border-radius:var(--rad-xs)}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:4px}
+.btn-icon{padding:6px;border-radius:var(--rad-xs);background:transparent;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all var(--tr)}
+.btn-icon:hover{background:var(--surface2);color:var(--text)}
+.btn-icon svg{width:14px;height:14px}
+
+/* CARDS */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rad);box-shadow:var(--shadow-sm);
+  transition:background var(--tr),border-color var(--tr);
+}
+.card-hd{
+  padding:15px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.card-title{font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:-0.2px}
+.card-body{padding:18px 20px}
+.card-foot{padding:12px 20px;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 var(--rad) var(--rad)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rad);padding:18px 20px;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+  transition:all var(--tr);cursor:default;
+}
+.stat:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-accent{border-left:3px solid var(--accent)}
+.stat-success{border-left:3px solid var(--success)}
+.stat-warn{border-left:3px solid var(--warn)}
+.stat-purple{border-left:3px solid var(--purple)}
+.stat-lbl{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.stat-val{font-family:var(--font-head);font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-delta{
+  display:inline-flex;align-items:center;gap:2px;
+  padding:1px 6px;border-radius:20px;font-size:10px;font-weight:700;
+}
+.delta-up{background:var(--success-bg);color:var(--success)}
+.delta-dn{background:var(--danger-bg);color:var(--danger)}
+.stat-icon{
+  position:absolute;right:16px;top:16px;
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:.15;
+}
+.stat-icon svg{width:20px;height:20px}
+
+/* BADGES */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
+  white-space:nowrap;
+}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-pending{background:var(--warn-bg);color:var(--warn)}.b-pending::before{background:var(--warn)}
+.b-inprog{background:var(--accent2);color:var(--accent)}.b-inprog::before{background:var(--accent)}
+.b-testing{background:var(--purple-bg);color:var(--purple)}.b-testing::before{background:var(--purple)}
+.b-ready{background:var(--success-bg);color:var(--success)}.b-ready::before{background:var(--success)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{
+  text-align:left;padding:9px 14px;
+  font-size:10.5px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.6px;
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background var(--tr);cursor:pointer}
+tbody tr:hover{background:var(--surface2)}
+tbody tr:last-child{border-bottom:none}
+td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.mono{font-family:var(--font-mono);font-size:11.5px;color:var(--text3)}
+
+/* PRIORITY */
+.pri-high{color:var(--danger);font-weight:700;font-size:11.5px}
+.pri-med{color:var(--warn);font-weight:700;font-size:11.5px}
+.pri-low{color:var(--success);font-weight:700;font-size:11.5px}
+
+/* CHIPS */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--text2);
+}
+.chip-ava{
+  width:17px;height:17px;border-radius:50%;font-size:8px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;padding:18px 22px;overflow-x:auto;gap:0}
+.pip-step{display:flex;align-items:center;gap:0;flex-shrink:0}
+.pip-node{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:78px;text-align:center}
+.pip-ring{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;font-family:var(--font-mono);
+  border:2px solid var(--border2);background:var(--surface);color:var(--text3);
+  transition:all .3s;
+}
+.pip-ring.done{background:var(--success-bg);border-color:var(--success);color:var(--success)}
+.pip-ring.active{background:var(--accent2);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px rgba(75,127,255,.15)}
+.pip-lbl{font-size:10.5px;color:var(--text3);font-weight:600}
+.pip-lbl.done{color:var(--success)}.pip-lbl.active{color:var(--accent)}
+.pip-line{flex:1;height:2px;background:var(--border2);min-width:24px;max-width:52px;transition:background .3s}
+.pip-line.done{background:var(--success)}
+
+/* KANBAN */
+.kanban-col-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 2px}
+.kanban-count{
+  margin-left:auto;background:var(--surface3);border:1px solid var(--border);
+  border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;
+  color:var(--text3);font-family:var(--font-mono);
+}
+.kan-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rad-sm);padding:12px 14px;
+  cursor:pointer;transition:all var(--tr);
+}
+.kan-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);border-color:var(--border2)}
+.kan-empty{
+  border:1.5px dashed var(--border2);border-radius:var(--rad-sm);
+  padding:28px;text-align:center;font-size:12px;color:var(--text3);
+}
+
+/* CHECKLIST */
+.chk-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--rad-sm);
+  background:var(--surface2);border:1px solid var(--border);
+  cursor:pointer;transition:all var(--tr);font-size:13px;
+}
+.chk-item:hover{border-color:var(--border2)}
+.chk-item.done{color:var(--text3);text-decoration:line-through}
+.chk-box{
+  width:17px;height:17px;flex-shrink:0;border-radius:4px;
+  border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;
+  transition:all var(--tr);
+}
+.chk-item.done .chk-box{background:var(--success);border-color:var(--success)}
+.chk-check{width:9px;height:9px;display:none}
+.chk-item.done .chk-check{display:block}
+
+/* PROGRESS */
+.prog-track{height:6px;background:var(--surface3);border-radius:20px;overflow:hidden}
+.prog-bar{height:100%;border-radius:20px;transition:width .4s ease,background .4s}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px}
+.tab{
+  padding:9px 15px;font-size:13px;font-weight:600;
+  color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all var(--tr);
+}
+.tab:hover{color:var(--text2)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* AUTOMATIONS */
+.rule-card{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px;border-radius:var(--rad-sm);
+  border:1px solid var(--border);background:var(--surface2);
+  transition:all var(--tr);
+}
+.rule-card:hover{border-color:var(--border2);background:var(--surface)}
+.rule-icon{
+  width:38px;height:38px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border2);
+}
+.rule-icon svg{width:16px;height:16px}
+.rule-body{flex:1;min-width:0}
+.rule-trigger{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:3px}
+.rule-action{font-size:11.5px;color:var(--text3);margin-bottom:6px}
+.rule-meta{display:flex;align-items:center;gap:8px}
+.rule-count{
+  font-family:var(--font-mono);font-size:10px;color:var(--text3);
+  background:var(--surface3);padding:2px 6px;border-radius:4px;
+}
+.rule-controls{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+/* toggle switch */
+.sw{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw-track{
+  width:34px;height:18px;background:var(--border2);border-radius:20px;
+  transition:background var(--tr);position:relative;
+}
+.sw-track::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:12px;height:12px;border-radius:50%;background:#fff;
+  transition:transform var(--tr);box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.sw input:checked~.sw-track{background:var(--accent)}
+.sw input:checked~.sw-track::after{transform:translateX(16px)}
+
+/* LOG */
+.log-list{display:flex;flex-direction:column;gap:7px}
+.log-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:var(--rad-sm);
+  background:var(--surface2);border:1px solid var(--border);
+  font-size:12px;transition:border-color var(--tr);
+}
+.log-row:hover{border-color:var(--border2)}
+.log-ic{
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;
+}
+.log-ic.auto{background:var(--accent2);color:var(--accent)}
+.log-ic.user{background:var(--success-bg);color:var(--success)}
+.log-ic.sys{background:var(--surface3);color:var(--text3);border:1px solid var(--border2)}
+.log-ic svg{width:11px;height:11px}
+.log-txt{flex:1;color:var(--text2);line-height:1.45}
+.log-time{color:var(--text3);font-size:10.5px;font-family:var(--font-mono);white-space:nowrap;padding-top:1px}
+
+/* MODAL */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+  z-index:500;align-items:center;justify-content:center;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rad);box-shadow:var(--shadow-lg);
+  width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;
+  animation:modalIn .2s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}
+.modal-lg{width:680px}
+.modal-hd{
+  padding:18px 22px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--font-head);font-size:15px;font-weight:700}
+.modal-x{
+  width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;
+  background:transparent;display:flex;align-items:center;justify-content:center;
+  color:var(--text3);transition:all var(--tr);
+}
+.modal-x:hover{background:var(--surface2);color:var(--text)}
+.modal-x svg{width:13px;height:13px}
+.modal-bd{padding:20px 22px}
+.modal-ft{
+  padding:14px 22px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:8px;
+  background:var(--surface2);border-radius:0 0 var(--rad) var(--rad);
+}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select,.fg textarea{
+  padding:8px 11px;border:1px solid var(--border2);border-radius:var(--rad-sm);
+  font-size:13px;font-family:var(--font-body);
+  background:var(--surface);color:var(--text);outline:none;
+  transition:all var(--tr);
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(75,127,255,.12);
+}
+.fg textarea{resize:vertical;min-height:72px}
+.fg select{cursor:pointer}
+.form-grid{display:flex;flex-direction:column;gap:14px}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:900;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--text);color:var(--bg);padding:10px 16px;
+  border-radius:var(--rad-sm);font-size:13px;font-weight:500;
+  box-shadow:var(--shadow-lg);pointer-events:all;
+  animation:toastIn .22s ease;max-width:340px;
+  display:flex;align-items:center;gap:8px;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.toast-success{background:var(--success);color:#fff}
+.toast-err{background:var(--danger);color:#fff}
+.toast svg{width:14px;height:14px;flex-shrink:0}
+
+/* PAGES */
+.page{display:none}.page.on{display:block}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.gap-y{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:8px}
+.ml-a{margin-left:auto}
+.mt-3{margin-top:12px}.mt-4{margin-top:18px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:18px}
+.t2{color:var(--text2)}.t3{color:var(--text3)}
+.sm{font-size:12px}.xs{font-size:11px}
+.mono-t{font-family:var(--font-mono)}
+.head{font-family:var(--font-head)}
+.w100{width:100%}
+.ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* chart bar */
+.mini-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:60px}
+.mini-bar{
+  flex:1;border-radius:3px 3px 0 0;min-height:4px;
+  transition:height .4s ease,opacity var(--tr);cursor:pointer;
+}
+.mini-bar:hover{opacity:.75}
+.mini-bar-lbl{display:flex;gap:4px;margin-top:4px}
+.mini-bar-lbl span{flex:1;text-align:center;font-size:9.5px;color:var(--text3);font-family:var(--font-mono)}
+
+/* donut */
+.donut-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.donut-center{position:absolute;text-align:center;pointer-events:none}
+
+/* comment system */
+.comment-section{margin-top:20px}
+.comment-list{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.comment{
+  background:var(--surface2);border-radius:var(--rad-sm);padding:12px;border:1px solid var(--border);
+}
+.comment-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.comment-author{font-weight:600;font-size:12px}
+.comment-time{font-size:10px;color:var(--text3)}
+.comment-body{font-size:12px;color:var(--text2);line-height:1.5}
+.comment-form{display:flex;gap:8px}
+.comment-input{flex:1;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--rad-sm);font-size:12px;resize:none;min-height:40px;outline:none}
+.comment-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(75,127,255,.12)}
+
+/* notification bell */
+.notification-bell{position:relative;cursor:pointer}
+.notification-count{
+  position:absolute;top:-5px;right:-5px;background:var(--danger);color:white;
+  font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* timeline */
+.timeline{position:relative;padding-left:20px;margin:16px 0}
+.timeline::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border);
+}
+.timeline-item{
+  position:relative;margin-bottom:16px;padding-left:20px;
+}
+.timeline-item::before{
+  content:'';position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--surface);
+}
+.timeline-time{font-size:10px;color:var(--text3);margin-bottom:2px}
+.timeline-content{font-size:12px;color:var(--text2)}
+
+/* filter chips */
+.filter-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.filter-chip{
+  padding:4px 10px;border-radius:16px;font-size:11px;cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border);transition:all var(--tr);
+}
+.filter-chip.active{background:var(--accent2);color:var(--accent);border-color:var(--accent)}
+.filter-chip:hover{background:var(--surface3)}
+
+/* tooltips */
+.tooltip{position:relative}
+.tooltip:hover::after{
+  content:attr(data-tooltip);position:absolute;bottom:100%;left:50%;
+  transform:translateX(-50%);padding:4px 8px;border-radius:4px;
+  background:var(--text);color:var(--bg);font-size:11px;white-space:nowrap;
+  z-index:1000;
+}
+
+@media(max-width:960px){
+  :root{--sidebar:56px}
+  .logo-text,.logo-ver,.nav-lbl,.nav-item span,.n-badge,.u-name,.u-role,.dark-btn span{display:none}
+  .nav-item{justify-content:center;padding:9px 0}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col,.form-2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="login-overlay" class="overlay open">
+  <div class="modal" style="width:380px">
+    <div class="modal-hd"><span class="modal-title">Accesso a PCReady</span></div>
+    <div class="modal-bd">
+      <div class="fg mb-3">
+        <label>Ruolo</label>
+        <select id="login-select">
+          <option value="admin">Amministratore</option>
+          <option value="tech">Tecnico</option>
+          <option value="viewer">Visualizzatore</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Password (demo)</label>
+        <input type="password" id="login-pwd" placeholder="qualsiasi" value="demo">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-primary" onclick="login()">Accedi</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell" id="main-app" style="display:none">
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo-area">
+    <div class="logo-box">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><path d="M9 11.5h5M11.5 9v5"/></svg>
+    </div>
+    <div><div class="logo-text">PCReady</div><div class="logo-ver">v3.0</div></div>
+  </div>
+  <div class="nav-area">
+    <div class="nav-section">
+      <div class="nav-lbl">Principale</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)">
+        <i class="fas fa-chart-pie"></i>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="nav('tickets',this)">
+        <i class="fas fa-ticket-alt"></i>
+        <span>Ticket PC</span><span class="n-badge" id="nbadge">3</span>
+      </div>
+      <div class="nav-item" onclick="nav('kanban',this)">
+        <i class="fas fa-columns"></i>
+        <span>Kanban</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-lbl">Configurazione</div>
+      <div class="nav-item" onclick="nav('checklist',this)">
+        <i class="fas fa-tasks"></i>
+        <span>Checklist</span>
+      </div>
+      <div class="nav-item" onclick="nav('automations',this)">
+        <i class="fas fa-cogs"></i>
+        <span>Automazioni</span>
+      </div>
+      <div class="nav-item" onclick="nav('inventory',this)">
+        <i class="fas fa-boxes"></i>
+        <span>Inventario</span>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-foot">
+    <div class="dark-btn" onclick="toggleDark()">
+      <span>Dark mode</span>
+      <div class="toggle-pill" id="dark-pill"></div>
+    </div>
+    <div class="user-row">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="ava ava-mt" id="user-avatar">MT</div>
+        <div><div class="u-name" id="user-name">Mario T.</div><div class="u-role" id="user-role">IT Technician</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="notification-bell" onclick="nav('automations', null)">
+        <i class="fas fa-bell"></i>
+        <span class="notification-count" id="notification-count">3</span>
+      </div>
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Cerca ticket, modello, seriale..." id="search-inp" oninput="searchFilter()">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="exportPDF()">
+        <i class="fas fa-file-pdf"></i>
+        PDF
+      </button>
+      <button class="btn btn-primary" id="create-ticket-btn" onclick="openModal('modal-new')">
+        <i class="fas fa-plus"></i>
+        Nuovo Ticket
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page on" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat stat-accent">
+          <div class="stat-icon" style="background:var(--accent)"><i class="fas fa-ticket-alt"></i></div>
+          <div class="stat-lbl">Ticket totali</div>
+          <div class="stat-val head" id="sv-total">8</div>
+          <div class="stat-sub"><span class="stat-delta delta-up">+2</span> questo mese</div>
+        </div>
+        <div class="stat stat-warn">
+          <div class="stat-icon" style="background:var(--warn)"><i class="fas fa-clock"></i></div>
+          <div class="stat-lbl">In lavorazione</div>
+          <div class="stat-val head" style="color:var(--accent)" id="sv-wip">3</div>
+          <div class="stat-sub t3">Attivi ora</div>
+        </div>
+        <div class="stat stat-success">
+          <div class="stat-icon" style="background:var(--success)"><i class="fas fa-check-circle"></i></div>
+          <div class="stat-lbl">Pronti</div>
+          <div class="stat-val head" style="color:var(--success)" id="sv-ready">2</div>
+          <div class="stat-sub t3">Da consegnare</div>
+        </div>
+        <div class="stat stat-purple">
+          <div class="stat-icon" style="background:var(--purple)"><i class="fas fa-history"></i></div>
+          <div class="stat-lbl">Tempo medio</div>
+          <div class="stat-val head" style="color:var(--purple)">2.4<span style="font-size:14px;font-weight:500;color:var(--text3)"> gg</span></div>
+          <div class="stat-sub t3">Preparazione PC</div>
+        </div>
+      </div>
+
+      <div class="two-col mb-4">
+        <!-- ticket recenti -->
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">Ticket recenti</span>
+            <button class="btn btn-ghost btn-sm" onclick="nav('tickets',null)">Vedi tutti →</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Dispositivo</th><th>Stato</th><th>Assegnatario</th></tr></thead>
+              <tbody id="dash-tbl"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- chart + donut -->
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Distribuzione stati</span></div>
+          <div class="card-body" style="display:flex;align-items:center;gap:24px">
+            <div class="donut-wrap" id="donut-wrap">
+              <svg id="donut-svg" width="110" height="110" viewBox="0 0 110 110"></svg>
+              <div class="donut-center" id="donut-center"></div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px" id="donut-legend"></div>
+          </div>
+          <div class="divider" style="margin:0 20px"></div>
+          <div class="card-body" style="padding-top:12px">
+            <div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Volume settimanale</div>
+            <div class="mini-bar-wrap" id="mini-bars"></div>
+            <div class="mini-bar-lbl" id="mini-lbls"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- pipeline + activity -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Pipeline preparazione</span><span class="xs t3 mono-t">Flusso automatico</span></div>
+          <div class="pipeline">
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring done"><i class="fas fa-check"></i></div><div class="pip-lbl done">Richiesta</div></div></div>
+            <div class="pip-line done"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring done"><i class="fas fa-check"></i></div><div class="pip-lbl done">Assegnaz.</div></div></div>
+            <div class="pip-line done"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring active">3</div><div class="pip-lbl active">Setup OS</div></div></div>
+            <div class="pip-line"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring">4</div><div class="pip-lbl">Software</div></div></div>
+            <div class="pip-line"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring">5</div><div class="pip-lbl">Test</div></div></div>
+            <div class="pip-line"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring">6</div><div class="pip-lbl">QA</div></div></div>
+            <div class="pip-line"></div>
+            <div class="pip-step"><div class="pip-node"><div class="pip-ring">7</div><div class="pip-lbl">Pronto</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Attività recente</span>
+            <button class="btn btn-ghost btn-sm" onclick="nav('automations',null)">Log completo →</button>
+          </div>
+          <div class="card-body"><div class="log-list" id="dash-log"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TICKETS -->
+    <div class="page" id="page-tickets">
+      <div class="filter-chips" id="filter-chips">
+        <div class="filter-chip active" onclick="setFilter('all')">Tutti</div>
+        <div class="filter-chip" onclick="setFilter('pending')">In attesa</div>
+        <div class="filter-chip" onclick="setFilter('in-progress')">In lavorazione</div>
+        <div class="filter-chip" onclick="setFilter('testing')">Testing</div>
+        <div class="filter-chip" onclick="setFilter('ready')">Pronti</div>
+      </div>
+      
+      <div class="row mb-4">
+        <select id="fs" class="btn btn-ghost" style="cursor:pointer" onchange="renderTickets()">
+          <option value="">Tutti gli stati</option>
+          <option value="pending">In attesa</option>
+          <option value="in-progress">In lavorazione</option>
+          <option value="testing">Testing</option>
+          <option value="ready">Pronto</option>
+        </select>
+        <select id="fp" class="btn btn-ghost" style="cursor:pointer" onchange="renderTickets()">
+          <option value="">Tutte le priorità</option>
+          <option value="high">Alta</option>
+          <option value="med">Media</option>
+          <option value="low">Bassa</option>
+        </select>
+        <select id="fa" class="btn btn-ghost" style="cursor:pointer" onchange="renderTickets()">
+          <option value="">Tutti gli assegnatari</option>
+          <option value="MT">Mario T.</option>
+          <option value="SB">Sara B.</option>
+          <option value="LR">Luca R.</option>
+        </select>
+        <select id="fclient" class="btn btn-ghost" style="cursor:pointer" onchange="renderTickets()">
+          <option value="">Tutti i clienti</option>
+          <option value="Azienda Alpha">Azienda Alpha</option>
+          <option value="Beta S.r.l.">Beta S.r.l.</option>
+          <option value="Gamma Consulting">Gamma Consulting</option>
+        </select>
+        <span class="sm t3 ml-a mono-t" id="tc"></span>
+        <button class="btn btn-ghost btn-sm" onclick="exportPDF()">
+          <i class="fas fa-file-pdf"></i>
+          Esporta PDF
+        </button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Ticket</th><th>Dispositivo</th><th>Seriale</th><th>Richiedente</th><th>Cliente</th><th>Priorità</th><th>Stato</th><th>Assegnatario</th><th>Creato</th><th></th></tr></thead>
+            <tbody id="t-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANBAN -->
+    <div class="page" id="page-kanban">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start" id="kanban-board"></div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="page" id="page-checklist">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">Checklist preparazione PC</span>
+            <button class="btn btn-ghost btn-sm" onclick="resetCL()">Reset</button>
+          </div>
+          <div class="card-body">
+            <div class="tabs">
+              <div class="tab on" onclick="clTab('os',this)">OS & Base</div>
+              <div class="tab" onclick="clTab('software',this)">Software</div>
+              <div class="tab" onclick="clTab('security',this)">Sicurezza</div>
+              <div class="tab" onclick="clTab('network',this)">Rete</div>
+            </div>
+            <div class="gap-y" id="cl-items"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Progresso totale</span></div>
+            <div class="card-body">
+              <div class="row mb-3"><span class="sm t2">Completamento</span><span class="ml-a mono-t sm" id="cl-pct" style="font-weight:700">0%</span></div>
+              <div class="prog-track mb-4"><div class="prog-bar" id="cl-bar" style="width:0%;background:var(--accent)"></div></div>
+              <div style="display:flex;flex-direction:column;gap:6px" id="cl-summary"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Note tecniche</span></div>
+            <div class="card-body">
+              <textarea class="w100" style="border:1px solid var(--border2);border-radius:var(--rad-sm);padding:9px;font-family:var(--font-body);font-size:13px;color:var(--text);background:var(--surface2);resize:vertical;height:100px;outline:none;transition:all var(--tr)" id="cl-notes" placeholder="Annotazioni, seriale, OS version, anomalie..."></textarea>
+              <button class="btn btn-ghost btn-sm mt-3" onclick="toast('Note salvate','success')">Salva note</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTOMAZIONI -->
+    <div class="page" id="page-automations">
+      <div class="three-col mb-4">
+        <div class="card" style="border-top:3px solid var(--accent)">
+          <div class="card-body">
+            <div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Esecuzioni oggi</div>
+            <div class="stat-val head" style="color:var(--accent)" id="auto-exec">12</div>
+            <div class="xs t3 mt-3">Trigger automatici</div>
+          </div>
+        </div>
+        <div class="card" style="border-top:3px solid var(--success)">
+          <div class="card-body">
+            <div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Cambi stato auto</div>
+            <div class="stat-val head" style="color:var(--success)" id="auto-changes">7</div>
+            <div class="xs t3 mt-3">Questa settimana</div>
+          </div>
+        </div>
+        <div class="card" style="border-top:3px solid var(--purple)">
+          <div class="card-body">
+            <div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Regole attive</div>
+            <div class="stat-val head" style="color:var(--purple)" id="auto-active-cnt">5</div>
+            <div class="xs t3 mt-3">Di 6 configurate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">Regole automazione</span>
+            <button class="btn btn-primary btn-sm" onclick="toast('Disponibile nel backend Laravel','')">+ Nuova regola</button>
+          </div>
+          <div class="card-body"><div style="display:flex;flex-direction:column;gap:10px" id="auto-rules"></div></div>
+        </div>
+        <div>
+          <div class="card mb-4">
+            <div class="card-hd">
+              <span class="card-title">Log automazioni</span>
+              <div class="row gap-2">
+                <select id="log-filter" class="btn btn-ghost btn-sm" style="cursor:pointer" onchange="renderLog()">
+                  <option value="">Tutti</option>
+                  <option value="auto">Solo auto</option>
+                  <option value="user">Solo manuali</option>
+                  <option value="sys">Solo sistema</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body"><div class="log-list" id="auto-log"></div></div>
+          </div>
+          <!-- timeline grafico automazioni -->
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Attività automazioni (7 gg)</span></div>
+            <div class="card-body">
+              <div class="mini-bar-wrap" id="auto-bars"></div>
+              <div class="mini-bar-lbl" id="auto-bar-lbls"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTARIO (ENHANCED) -->
+    <div class="page" id="page-inventory">
+      <div class="row mb-4">
+        <button class="btn btn-primary" onclick="toast('Aggiungi da backend Laravel','')">+ Nuovo dispositivo</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportInventoryCSV()">Esporta CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportInventoryPDF()">Esporta PDF</button>
+        <span class="sm t3 ml-a mono-t">Totale: <strong id="inv-n">6</strong> dispositivi</span>
+      </div>
+      <div class="row mb-4" style="gap:12px; flex-wrap:wrap">
+        <select id="inv-client" class="btn btn-ghost" onchange="renderInventory()">
+          <option value="">Tutti i clienti</option>
+          <option value="Azienda Alpha">Azienda Alpha</option>
+          <option value="Beta S.r.l.">Beta S.r.l.</option>
+          <option value="Gamma Consulting">Gamma Consulting</option>
+        </select>
+        <select id="inv-status" class="btn btn-ghost" onchange="renderInventory()">
+          <option value="">Tutti gli stati</option>
+          <option value="pending">In attesa</option>
+          <option value="in-progress">In lavorazione</option>
+          <option value="testing">Testing</option>
+          <option value="ready">Pronto</option>
+        </select>
+        <select id="inv-type" class="btn btn-ghost" onchange="renderInventory()">
+          <option value="">Tutti i tipi</option>
+          <option value="Notebook">Notebook</option>
+          <option value="Desktop">Desktop</option>
+        </select>
+        <select id="inv-os" class="btn btn-ghost" onchange="renderInventory()">
+          <option value="">Tutti gli OS</option>
+          <option value="Windows 11 Pro">Windows 11 Pro</option>
+          <option value="Windows 10 Pro">Windows 10 Pro</option>
+        </select>
+        <div class="search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" id="inv-search" placeholder="Cerca..." oninput="renderInventory()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Seriale</th><th>Modello</th><th>Tipo</th><th>OS</th><th>Stato</th><th>Cliente</th><th>Assegnato a</th><th>Aggiornato</th></tr></thead>
+            <tbody id="inv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- MODAL NUOVO TICKET -->
+<div class="overlay" id="modal-new">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">Nuovo ticket preparazione PC</span>
+      <button class="modal-x" onclick="closeModal('modal-new')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <div class="form-grid">
+        <div class="form-2">
+          <div class="fg"><label>Modello PC *</label><input id="fm" placeholder="Dell Latitude 5540"></div>
+          <div class="fg"><label>Seriale</label><input id="fser" placeholder="ABCD1234" style="font-family:var(--font-mono)"></div>
+        </div>
+        <div class="form-2">
+          <div class="fg"><label>Richiedente *</label><input id="freq" placeholder="Nome richiedente"></div>
+          <div class="fg"><label>Utente finale</label><input id="fusr" placeholder="A chi sarà assegnato"></div>
+        </div>
+        <div class="form-2">
+          <div class="fg"><label>Cliente *</label><select id="fclient"><option value="Azienda Alpha">Azienda Alpha</option><option value="Beta S.r.l.">Beta S.r.l.</option><option value="Gamma Consulting">Gamma Consulting</option></select></div>
+          <div class="fg"><label>Priorità</label><select id="fpri"><option value="med">Media</option><option value="high">Alta</option><option value="low">Bassa</option></select></div>
+        </div>
+        <div class="form-2">
+          <div class="fg"><label>Assegna a</label><select id="fass"><option value="MT">Mario T.</option><option value="SB">Sara B.</option><option value="LR">Luca R.</option><option value="">— Non assegnato —</option></select></div>
+          <div class="fg"><label>OS richiesto</label><select id="fos"><option>Windows 11 Pro</option><option>Windows 10 Pro</option><option>Ubuntu 22.04 LTS</option><option>macOS (BYOD)</option></select></div>
+        </div>
+        <div class="fg"><label>Software richiesti</label><textarea id="fsw" placeholder="Microsoft 365, Adobe CC, VS Code..."></textarea></div>
+        <div class="fg"><label>Note</label><textarea id="fnotes" placeholder="Requisiti speciali, configurazioni..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new')">Annulla</button>
+      <button class="btn btn-primary" onclick="createTicket()">Crea ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETTAGLIO -->
+<div class="overlay" id="modal-detail">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <span class="modal-title" id="dtitle"></span>
+      <button class="modal-x" onclick="closeModal('modal-detail')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd" id="dbody"></div>
+    <div class="modal-ft" id="dfoot"></div>
+  </div>
+</div>
+
+<!-- MODAL SCRIPT -->
+<div class="overlay" id="modal-script">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <span class="modal-title">Script di preparazione PC</span>
+      <button class="modal-x" onclick="closeModal('modal-script')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <pre id="script-content" style="background:var(--surface2); padding:12px; border-radius:8px; overflow-x:auto; font-family:monospace; font-size:12px;"></pre>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-primary" onclick="copyScript()">Copia script</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMMENTI -->
+<div class="overlay" id="modal-comments">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <span class="modal-title" id="comments-title"></span>
+      <button class="modal-x" onclick="closeModal('modal-comments')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <div class="comment-list" id="comments-list"></div>
+      <div class="comment-form">
+        <textarea class="comment-input" id="comment-input" placeholder="Aggiungi un commento..."></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addComment()">Invia</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+// DATA
+const STATI = {
+  'pending':     {label:'In attesa',      cls:'b-pending',  next:'in-progress'},
+  'in-progress': {label:'In lavorazione', cls:'b-inprog',   next:'testing'},
+  'testing':     {label:'Testing',        cls:'b-testing',  next:'ready'},
+  'ready':       {label:'Pronto',         cls:'b-ready',    next:null},
+};
+const TEAM = {MT:'Mario T.',SB:'Sara B.',LR:'Luca R.','':'—'};
+const PLAB = {high:'Alta',med:'Media',low:'Bassa'};
+const COLORS = {
+  pending: '#EF9827',
+  'in-progress': '#4F7FFF',
+  testing: '#8B5CF6',
+  ready: '#22C55E'
+};
+const DARK_COLORS = {
+  pending: '#FCD34D',
+  'in-progress': '#818CF8',
+  testing: '#A78BFA',
+  ready: '#4ADE80'
+};
+
+let tickets = [
+  {id:'PCT-001',client:'Azienda Alpha',model:'Dell Latitude 5540',serial:'DL5540-7X2K',requester:'Anna M.',user:'Carlo B.',priority:'high',status:'ready',assignee:'MT',os:'Windows 11 Pro',software:'M365, Teams',notes:'Configurazione doppio monitor',created:'20 Mar', comments: [
+    {author: 'Mario T.', time: '20 Mar 10:30', text: 'PC ricevuto e inventariato'},
+    {author: 'Sara B.', time: '21 Mar 14:15', text: 'Installazione OS completata'}
+  ]},
+  {id:'PCT-002',client:'Beta S.r.l.',model:'HP EliteBook 840 G9',serial:'HP840G9-3NQ1',requester:'Gianni F.',user:'Laura P.',priority:'med',status:'in-progress',assignee:'SB',os:'Windows 11 Pro',software:'Adobe CC, Slack',notes:'',created:'22 Mar', comments: []},
+  {id:'PCT-003',client:'Gamma Consulting',model:'Lenovo ThinkPad L14',serial:'TPL14-8BV5',requester:'Maria R.',user:'Marco S.',priority:'med',status:'testing',assignee:'LR',os:'Windows 11 Pro',software:'M365, VS Code, Docker',notes:'Sviluppatore backend',created:'24 Mar', comments: []},
+  {id:'PCT-004',client:'Azienda Alpha',model:'Dell XPS 15',serial:'XPS15-2PM9',requester:'Direttore IT',user:'CEO',priority:'high',status:'in-progress',assignee:'MT',os:'Windows 11 Pro',software:'M365, Zoom, Teams',notes:'Urgente — nuova assunzione',created:'25 Mar', comments: []},
+  {id:'PCT-005',client:'Beta S.r.l.',model:'HP ProBook 450',serial:'HPP450-1KZ7',requester:'Ufficio HR',user:'Giulia V.',priority:'low',status:'pending',assignee:'',os:'Windows 10 Pro',software:'M365',notes:'',created:'26 Mar', comments: []},
+  {id:'PCT-006',client:'Gamma Consulting',model:'MacBook Pro 14"',serial:'MBPM3-9QX4',requester:'Design Team',user:'Stefano C.',priority:'med',status:'pending',assignee:'SB',os:'macOS (BYOD)',software:'Adobe CC, Figma',notes:'Configurazione MDM',created:'27 Mar', comments: []},
+  {id:'PCT-007',client:'Azienda Alpha',model:'Lenovo IdeaPad 3',serial:'IP3-5HW2',requester:'Contabilità',user:'Rosa M.',priority:'low',status:'ready',assignee:'LR',os:'Windows 11 Pro',software:'M365, Zucchetti',notes:'',created:'28 Mar', comments: []},
+  {id:'PCT-008',client:'Beta S.r.l.',model:'Dell OptiPlex 7090',serial:'OP7090-4JT6',requester:'Admin',user:'Reception',priority:'low',status:'pending',assignee:'',os:'Windows 11 Pro',software:'Chrome, Zoom',notes:'PC fisso reception',created:'29 Mar', comments: []},
+];
+
+const CL = {
+  os:[
+    {id:'os1',text:'Formattazione disco e partizionamento',done:false},
+    {id:'os2',text:'Installazione OS (immagine gold)',done:false},
+    {id:'os3',text:'Attivazione licenza Windows/macOS',done:false},
+    {id:'os4',text:'Driver chipset, display, audio aggiornati',done:false},
+    {id:'os5',text:'Windows Update completati',done:false},
+    {id:'os6',text:'Hostname e dominio configurati',done:false},
+    {id:'os7',text:'Account utente locale e AD creati',done:false},
+  ],
+  software:[
+    {id:'sw1',text:'Microsoft 365 installato e attivato',done:false},
+    {id:'sw2',text:'Browser aziendale configurato',done:false},
+    {id:'sw3',text:'Teams e comunicazione installati',done:false},
+    {id:'sw4',text:'Software specifici richiesti installati',done:false},
+    {id:'sw5',text:'PDF reader aziendale',done:false},
+    {id:'sw6',text:'VPN client configurato',done:false},
+  ],
+  security:[
+    {id:'sec1',text:'Antivirus installato e aggiornato',done:false},
+    {id:'sec2',text:'BitLocker / FileVault abilitato',done:false},
+    {id:'sec3',text:'Policy sicurezza applicate via GPO/MDM',done:false},
+    {id:'sec4',text:'Firewall Windows attivo',done:false},
+    {id:'sec5',text:'2FA configurato per account aziendali',done:false},
+  ],
+  network:[
+    {id:'net1',text:'Connettività LAN verificata',done:false},
+    {id:'net2',text:'WiFi aziendale configurato',done:false},
+    {id:'net3',text:'VPN testata e funzionante',done:false},
+    {id:'net4',text:'Stampanti e drive di rete mappati',done:false},
+    {id:'net5',text:'Email aziendale configurata e testata',done:false},
+  ]
+};
+
+let autoRules = [
+  {id:1,trigger:'Checklist OS completata al 100%',action:'Stato → "In lavorazione"',active:true,count:4},
+  {id:2,trigger:'Checklist Software completata al 100%',action:'Stato → "Testing"',active:true,count:3},
+  {id:3,trigger:'QA approvato dal tecnico',action:'Stato → "Pronto"',active:true,count:7},
+  {id:4,trigger:'Nessuna attività da 48h',action:'Notifica a team lead',active:true,count:2},
+  {id:5,trigger:'Priorità Alta + nessun assegnatario',action:'Notifica immediata al team',active:true,count:1},
+  {id:6,trigger:'Ticket in "Pronto" da 5+ giorni',action:'Promemoria consegna',active:false,count:0},
+];
+
+let actLog = [
+  {type:'auto',text:'PCT-003: stato → "Testing" automaticamente (sw checklist 100%)',time:'Oggi 10:42'},
+  {type:'user',text:'PCT-004: assegnato a Mario T.',time:'Oggi 09:15'},
+  {type:'auto',text:'PCT-001: stato → "Pronto" (QA approvato)',time:'Ieri 17:30'},
+  {type:'sys',text:'PCT-008 creato — priorità bassa, in coda',time:'29 Mar 08:00'},
+  {type:'auto',text:'PCT-002: notifica inviata — 48h senza attività',time:'28 Mar 11:00'},
+  {type:'user',text:'PCT-007: assegnato a Luca R.',time:'27 Mar 14:20'},
+  {type:'sys',text:'Regola #5 attivata: PCT-004 senza assegnatario (alta prio)',time:'25 Mar 09:00'},
+];
+
+let inventory = [
+  {serial:'DL5540-7X2K',model:'Dell Latitude 5540',type:'Notebook',os:'Windows 11 Pro',status:'ready',assignedTo:'Carlo B.',updated:'30 Mar',client:'Azienda Alpha'},
+  {serial:'HP840G9-3NQ1',model:'HP EliteBook 840 G9',type:'Notebook',os:'Windows 11 Pro',status:'in-progress',assignedTo:'—',updated:'28 Mar',client:'Beta S.r.l.'},
+  {serial:'TPL14-8BV5',model:'Lenovo ThinkPad L14',type:'Notebook',os:'Windows 11 Pro',status:'testing',assignedTo:'—',updated:'29 Mar',client:'Gamma Consulting'},
+  {serial:'XPS15-2PM9',model:'Dell XPS 15',type:'Notebook',os:'Windows 11 Pro',status:'in-progress',assignedTo:'—',updated:'30 Mar',client:'Azienda Alpha'},
+  {serial:'HPP450-1KZ7',model:'HP ProBook 450',type:'Notebook',os:'Windows 10 Pro',status:'pending',assignedTo:'—',updated:'26 Mar',client:'Beta S.r.l.'},
+  {serial:'OP7090-4JT6',model:'Dell OptiPlex 7090',type:'Desktop',os:'Windows 11 Pro',status:'pending',assignedTo:'Reception',updated:'29 Mar',client:'Beta S.r.l.'},
+];
+
+let curCLTab = 'os';
+let isDark = false;
+let searchTerm = '';
+let currentTicketId = null;
+let activeFilter = 'all';
+
+// USER ROLE MANAGEMENT
+let currentUser = null;
+const rolePermissions = {
+  admin: { canEdit: true, canViewAll: true, name: 'Amministratore', role: 'admin' },
+  tech: { canEdit: true, canViewAll: true, name: 'Tecnico', role: 'tech' },
+  viewer: { canEdit: false, canViewAll: true, name: 'Visualizzatore', role: 'viewer' }
+};
+
+function login() {
+  const role = document.getElementById('login-select').value;
+  const password = document.getElementById('login-pwd').value;
+  if (!password) {
+    toast('Inserisci una password', 'err');
+    return;
+  }
+  currentUser = rolePermissions[role];
+  document.getElementById('user-name').innerText = currentUser.name;
+  document.getElementById('user-role').innerText = currentUser.role === 'admin' ? 'Amministratore' : (currentUser.role === 'tech' ? 'Tecnico' : 'Visualizzatore');
+  document.getElementById('user-avatar').innerText = currentUser.name.charAt(0);
+  document.getElementById('login-overlay').classList.remove('open');
+  document.getElementById('main-app').style.display = 'flex';
+  initApp();
+  if (!currentUser.canEdit) {
+    document.querySelectorAll('.btn-primary:not(.logout-btn), .btn-ghost[onclick*="advance"], .btn-ghost[onclick*="createTicket"], .btn-ghost[onclick*="resetCL"]').forEach(btn => btn.style.display = 'none');
+    document.getElementById('create-ticket-btn').style.display = 'none';
+    document.getElementById('page-checklist').addEventListener('click', (e) => {
+      if (e.target.closest('.chk-item')) {
+        e.preventDefault();
+        toast('Visualizzatore: non puoi modificare la checklist', 'err');
+      }
+    });
+  }
+  toast('Accesso effettuato come ' + currentUser.name, 'success');
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-overlay').classList.add('open');
+  toast('Logout effettuato');
+}
+
+function canEdit() { return currentUser && currentUser.canEdit; }
+
+// UTILS
+function bHTML(s){const d=STATI[s];return`<span class="badge ${d.cls}">${d.label}</span>`}
+function pHTML(p){return`<span class="pri-${p}">${PLAB[p]}</span>`}
+function chipHTML(c){
+  if(!c)return'<span class="t3 sm">—</span>';
+  const col={MT:'#DDD6FE|#4C1D95',SB:'#FEE2E2|#991B1B',LR:'#D1FAE5|#065F46'}[c]||'#E5E7EB|#374151';
+  const[bg,fg]=col.split('|');
+  return`<span class="chip"><span class="chip-ava" style="background:${bg};color:${fg}">${c}</span>${TEAM[c]}</span>`;
+}
+
+// TOAST
+function toast(msg,type='',dur=3200){
+  const tc=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast${type?' toast-'+type:''}`;
+  const icons={success:'<i class="fas fa-check-circle"></i>',err:'<i class="fas fa-exclamation-circle"></i>'};
+  t.innerHTML=(icons[type]||'')+msg;
+  tc.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(8px)';t.style.transition='.2s';setTimeout(()=>t.remove(),200)},dur);
+}
+
+// DARK MODE
+function toggleDark(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  renderDonut();renderMiniBar();renderAutoBars();
+}
+
+// NAVIGATION
+function nav(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('on');
+  if(el)el.classList.add('active');
+  else{
+    document.querySelectorAll('.nav-item').forEach(n=>{
+      if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');
+    });
+  }
+  const titles={dashboard:'Dashboard',tickets:'Ticket PC',kanban:'Kanban Board',checklist:'Checklist Setup',automations:'Automazioni',inventory:'Inventario'};
+  document.getElementById('page-title').textContent=titles[id]||'';
+  if(id==='kanban')renderKanban();
+  if(id==='checklist')renderCL();
+  if(id==='automations'){renderAutoRules();renderLog();renderAutoBars();}
+  if(id==='inventory')renderInventory();
+}
+
+// MODALS
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// TICKET CRUD
+function renderTickets(){
+  const fs=document.getElementById('fs').value;
+  const fp=document.getElementById('fp').value;
+  const fa=document.getElementById('fa').value;
+  const fc=document.getElementById('fclient').value;
+  let data=tickets.filter(t=>
+    (!fs||t.status===fs)&&
+    (!fp||t.priority===fp)&&
+    (!fa||t.assignee===fa)&&
+    (!fc||t.client===fc)&&
+    (!searchTerm||(t.id+t.model+t.serial+t.requester).toLowerCase().includes(searchTerm))&&
+    (activeFilter === 'all' || t.status === activeFilter)
+  );
+  document.getElementById('tc').textContent=data.length+' risultati';
+  const tb=document.getElementById('t-tbody');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3);font-size:13px">Nessun ticket trovato</td></tr>`;return}
+  tb.innerHTML=data.map(t=>`
+    <tr onclick="openDetail('${t.id}')">
+      <td><span class="mono">${t.id}</span></td>
+      <td style="font-weight:600;max-width:160px" class="ellipsis">${t.model}</td>
+      <td><span class="mono">${t.serial}</span></td>
+      <td>${t.requester}</td>
+      <td class="t3 sm">${t.client}</td>
+      <td>${pHTML(t.priority)}</td>
+      <td>${bHTML(t.status)}</td>
+      <td>${chipHTML(t.assignee)}</td>
+      <td class="t3 sm">${t.created}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        ${STATI[t.status].next && canEdit() ? `<button class="btn btn-ghost btn-xs" onclick="advance('${t.id}')">→ Avanza</button>` : (STATI[t.status].next ? `<span class="xs" style="color:var(--success);font-weight:700">✓ Completo</span>` : `<span class="xs t3">Completato</span>`)}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  renderTickets();
+}
+
+function advance(id){
+  if(!canEdit()){toast('Permesso negato','err');return;}
+  const t=tickets.find(x=>x.id===id);
+  if(!t||!STATI[t.status].next)return;
+  const oldL=STATI[t.status].label;
+  t.status=STATI[t.status].next;
+  const newL=STATI[t.status].label;
+  actLog.unshift({type:'auto',text:`${id}: stato cambiato automaticamente da "${oldL}" → "${newL}"`,time:'Adesso'});
+  toast(`${id} avanzato a "${newL}"`, 'success');
+  renderTickets();renderDashboard();updateBadge();renderKanban();
+}
+
+function createTicket(){
+  if(!canEdit()){toast('Permesso negato','err');return;}
+  const model=document.getElementById('fm').value.trim();
+  const req=document.getElementById('freq').value.trim();
+  const client=document.getElementById('fclient').value;
+  if(!model||!req){toast('Compila i campi obbligatori','err');return;}
+  const id=`PCT-${String(tickets.length+1).padStart(3,'0')}`;
+  tickets.unshift({
+    id,client,model,
+    serial:document.getElementById('fser').value||`SN-${Math.random().toString(36).substr(2,6).toUpperCase()}`,
+    requester:req,user:document.getElementById('fusr').value,
+    priority:document.getElementById('fpri').value,
+    status:'pending',assignee:document.getElementById('fass').value,
+    os:document.getElementById('fos').value,
+    software:document.getElementById('fsw').value,
+    notes:document.getElementById('fnotes').value,
+    created:'Oggi',
+    comments: []
+  });
+  actLog.unshift({type:'user',text:`${id} creato — ${model} per ${client}`,time:'Adesso'});
+  closeModal('modal-new');
+  toast(`Ticket ${id} creato con successo`,'success');
+  renderTickets();renderDashboard();updateBadge();renderKanban();
+  ['fm','fser','freq','fusr','fsw','fnotes'].forEach(f=>document.getElementById(f).value='');
+}
+
+function openDetail(id){
+  const t=tickets.find(x=>x.id===id);if(!t)return;
+  document.getElementById('dtitle').textContent=`${t.id} — ${t.model}`;
+  document.getElementById('dbody').innerHTML=`
+    <div class="form-2 mb-4">
+      <div><div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Stato</div>${bHTML(t.status)}</div>
+      <div><div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Priorità</div>${pHTML(t.priority)}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;margin-bottom:14px">
+      <div><span class="t3">Seriale:</span> <span class="mono">${t.serial}</span></div>
+      <div><span class="t3">OS:</span> ${t.os}</div>
+      <div><span class="t3">Richiedente:</span> ${t.requester}</div>
+      <div><span class="t3">Utente finale:</span> ${t.user||'—'}</div>
+      <div><span class="t3">Cliente:</span> ${t.client}</div>
+      <div><span class="t3">Assegnato a:</span> ${chipHTML(t.assignee)}</div>
+      <div><span class="t3">Creato:</span> ${t.created}</div>
+    </div>
+    ${t.software?`<div class="t3 xs mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Software</div><div style="font-size:13px;margin-bottom:14px">${t.software}</div>`:''}
+    ${t.notes?`<div class="t3 xs mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Note</div><div style="font-size:13px;margin-bottom:14px">${t.notes}</div>`:''}
+    <div class="divider"></div>
+    <div class="xs t3 mb-3" style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">Cambia stato</div>
+    <div class="row" style="flex-wrap:wrap">
+      ${Object.entries(STATI).map(([k,v])=>`<button class="btn btn-ghost btn-sm${t.status===k?' btn-accent':''}" onclick="setStatus('${t.id}','${k}');closeModal('modal-detail')">${v.label}</button>`).join('')}
+    </div>
+    <div class="divider mt-3"></div>
+    <div class="row">
+      <button class="btn btn-accent mt-3" onclick="showScriptModal('${t.id}')"><i class="fas fa-terminal"></i> Script di setup</button>
+      <button class="btn btn-ghost mt-3" onclick="showComments('${t.id}')"><i class="fas fa-comments"></i> Commenti (${t.comments.length})</button>
+    </div>
+  `;
+  document.getElementById('dfoot').innerHTML=`
+    ${STATI[t.status].next && canEdit() ? `<button class="btn btn-primary" onclick="advance('${t.id}');closeModal('modal-detail')">→ Avanza stato</button>` : `<span style="color:var(--success);font-weight:700;font-size:13px">✓ Completato</span>`}
+    <button class="btn btn-ghost" onclick="closeModal('modal-detail')">Chiudi</button>
+  `;
+  openModal('modal-detail');
+}
+
+function showComments(ticketId) {
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+  currentTicketId = ticketId;
+  document.getElementById('comments-title').textContent = `Commenti per ${ticketId}`;
+  const commentsList = document.getElementById('comments-list');
+  if (ticket.comments.length === 0) {
+    commentsList.innerHTML = '<div class="t3" style="text-align:center;padding:20px">Nessun commento ancora</div>';
+  } else {
+    commentsList.innerHTML = ticket.comments.map(comment => `
+      <div class="comment">
+        <div class="comment-header">
+          <span class="comment-author">${comment.author}</span>
+          <span class="comment-time">${comment.time}</span>
+        </div>
+        <div class="comment-body">${comment.text}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('comment-input').value = '';
+  closeModal('modal-detail');
+  openModal('modal-comments');
+}
+
+function addComment() {
+  if (!currentTicketId) return;
+  const commentInput = document.getElementById('comment-input');
+  const commentText = commentInput.value.trim();
+  if (!commentText) {
+    toast('Inserisci un commento', 'err');
+    return;
+  }
+  const ticket = tickets.find(t => t.id === currentTicketId);
+  if (!ticket) return;
+  const now = new Date();
+  const timeString = `${now.getDate()} ${['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][now.getMonth()]} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+  ticket.comments.unshift({
+    author: currentUser.name,
+    time: timeString,
+    text: commentText
+  });
+  actLog.unshift({
+    type: 'user',
+    text: `Commento aggiunto a ${currentTicketId}: "${commentText.substring(0, 30)}${commentText.length > 30 ? '...' : ''}"`,
+    time: 'Adesso'
+  });
+  commentInput.value = '';
+  toast('Commento aggiunto', 'success');
+  showComments(currentTicketId);
+}
+
+function setStatus(id,status){
+  if(!canEdit()){toast('Permesso negato','err');return;}
+  const t=tickets.find(x=>x.id===id);if(!t)return;
+  t.status=status;
+  actLog.unshift({type:'user',text:`${id}: stato impostato manualmente a "${STATI[status].label}"`,time:'Adesso'});
+  toast(`Stato → "${STATI[status].label}"`, 'success');
+  renderTickets();renderDashboard();updateBadge();renderKanban();
+}
+
+function searchFilter(){
+  searchTerm=document.getElementById('search-inp').value.toLowerCase();
+  renderTickets();
+}
+
+// SCRIPT GENERATOR
+function generateSetupScript(ticket) {
+  const isWin = ticket.os.includes('Windows');
+  const packages = ticket.software.toLowerCase();
+  let script = isWin ? '# PowerShell Setup Script (esegui come amministratore)\n' : '#!/bin/bash\n# Script di setup per Linux\n';
+  if (isWin) {
+    script += 'Write-Host "Configurazione PC per ' + ticket.user + '" -ForegroundColor Green\n';
+    script += '# Installazione software con winget\n';
+    if (packages.includes('m365') || packages.includes('office')) script += 'winget install --id Microsoft.Office -e --accept-package-agreements\n';
+    if (packages.includes('teams')) script += 'winget install --id Microsoft.Teams -e\n';
+    if (packages.includes('zoom')) script += 'winget install --id Zoom.Zoom -e\n';
+    if (packages.includes('vs code')) script += 'winget install --id Microsoft.VisualStudioCode -e\n';
+    if (packages.includes('docker')) script += 'winget install --id Docker.DockerDesktop -e\n';
+    if (packages.includes('adobe')) script += '# Adobe CC richiede download manuale\n';
+    script += '# Aggiungi dominio e configurazioni personalizzate...\n';
+  } else if (ticket.os.includes('Ubuntu')) {
+    script += 'echo "Configurazione Ubuntu per ' + ticket.user + '"\n';
+    script += 'sudo apt update\n';
+    if (packages.includes('docker')) script += 'sudo apt install docker.io -y\n';
+    if (packages.includes('code')) script += 'sudo snap install code --classic\n';
+    script += '# Aggiungi altre configurazioni...\n';
+  } else {
+    script += '# Script per macOS o altro sistema\n';
+  }
+  script += `\n# Note: ${ticket.notes}\n`;
+  return script;
+}
+
+function showScriptModal(ticketId) {
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+  const script = generateSetupScript(ticket);
+  document.getElementById('script-content').innerText = script;
+  openModal('modal-script');
+}
+
+function copyScript() {
+  const text = document.getElementById('script-content').innerText;
+  navigator.clipboard.writeText(text);
+  toast('Script copiato negli appunti', 'success');
+}
+
+// KANBAN
+function renderKanban(){
+  document.getElementById('kanban-board').innerHTML=Object.entries(STATI).map(([st,cfg])=>{
+    const cards=tickets.filter(t=>t.status===st);
+    return`<div>
+      <div class="kanban-col-hd">
+        <span class="badge ${cfg.cls}">${cfg.label}</span>
+        <span class="kanban-count">${cards.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${cards.length?cards.map(t=>`
+          <div class="kan-card" onclick="openDetail('${t.id}')">
+            <div class="row mb-3"><span class="mono xs">${t.id}</span>${pHTML(t.priority)}<span class="ml-a t3 xs">${t.client}</span></div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35">${t.model}</div>
+            <div class="xs t3">${t.requester}</div>
+            ${t.assignee?`<div style="margin-top:8px">${chipHTML(t.assignee)}</div>`:''}
+            ${cfg.next && canEdit()?`<button class="btn btn-ghost btn-xs" style="margin-top:10px;width:100%" onclick="event.stopPropagation();advance('${t.id}')">→ Avanza</button>`:''}
+          </div>
+        `).join(''):`<div class="kan-empty">Nessun ticket</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// CHECKLIST
+function renderCL(){
+  const items=CL[curCLTab];
+  document.getElementById('cl-items').innerHTML=items.map(i=>`
+    <div class="chk-item${i.done?' done':''}" onclick="${canEdit() ? `toggleCL('${i.id}')` : ''}" style="${!canEdit() ? 'cursor:default;' : ''}">
+      <div class="chk-box">
+        <svg class="chk-check" viewBox="0 0 9 9" fill="none" stroke="white" stroke-width="2"><path d="M1 4.5l2.5 2.5 4.5-4.5"/></svg>
+      </div>
+      ${i.text}
+    </div>
+  `).join('');
+  updateCLProgress();
+}
+function clTab(tab,el){
+  curCLTab=tab;
+  document.querySelectorAll('#page-checklist .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');renderCL();
+}
+function toggleCL(id){
+  if(!canEdit()){toast('Visualizzatore: non puoi modificare la checklist','err');return;}
+  for(const tab of Object.values(CL)){const i=tab.find(x=>x.id===id);if(i){i.done=!i.done;break;}}
+  renderCL();checkAutoTriggers();
+}
+function checkAutoTriggers(){
+  if(CL.os.every(x=>x.done))toast('⚡ Automazione: Checklist OS completata → stato avanzato automaticamente','success');
+  if(CL.software.every(x=>x.done))toast('⚡ Automazione: Software completato → stato avanzato a "Testing"','success');
+}
+function updateCLProgress(){
+  const all=Object.values(CL).flat();
+  const done=all.filter(x=>x.done).length;
+  const pct=Math.round(done/all.length*100);
+  document.getElementById('cl-pct').textContent=pct+'%';
+  const bar=document.getElementById('cl-bar');
+  bar.style.width=pct+'%';
+  bar.style.background=pct===100?'var(--success)':pct>60?'var(--accent)':'var(--accent)';
+  const lbls={os:'OS & Base',software:'Software',security:'Sicurezza',network:'Rete'};
+  document.getElementById('cl-summary').innerHTML=Object.entries(CL).map(([k,items])=>{
+    const d=items.filter(x=>x.done).length;
+    const ok=d===items.length;
+    return`<div class="row"><span class="sm t2">${lbls[k]}</span><span class="ml-a mono-t xs" style="font-weight:700;color:${ok?'var(--success)':'var(--text3)'}">${d}/${items.length}</span></div>`;
+  }).join('');
+}
+function resetCL(){if(!canEdit()){toast('Permesso negato','err');return;}Object.values(CL).flat().forEach(x=>x.done=false);renderCL();toast('Checklist resettata');}
+
+// AUTOMATIONS
+function renderAutoRules(){
+  const active=autoRules.filter(r=>r.active).length;
+  document.getElementById('auto-active-cnt').textContent=active;
+  document.getElementById('auto-exec').textContent=autoRules.reduce((a,r)=>a+r.count,0);
+  document.getElementById('auto-changes').textContent=autoRules.slice(0,3).reduce((a,r)=>a+r.count,0);
+  document.getElementById('auto-rules').innerHTML=autoRules.map(r=>`
+    <div class="rule-card">
+      <div class="rule-icon" style="background:${r.active?'var(--accent2)':'var(--surface3)'};border-color:${r.active?'var(--accent3)':'var(--border2)'}">
+        <i class="fas fa-cog"></i>
+      </div>
+      <div class="rule-body">
+        <div class="rule-trigger">${r.trigger}</div>
+        <div class="rule-action">${r.action}</div>
+        <div class="rule-meta">
+          <span class="rule-count">${r.count}× eseguita</span>
+          <span class="badge${r.active?' b-ready':' b-pending'}">${r.active?'Attiva':'Inattiva'}</span>
+        </div>
+      </div>
+      <div class="rule-controls">
+        <label class="sw">
+          <input type="checkbox" ${r.active?'checked':''} ${canEdit() ? `onchange="toggleRule(${r.id},this.checked)"` : 'disabled'}>
+          <div class="sw-track"></div>
+        </label>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleRule(id,val){
+  if(!canEdit()){toast('Permesso negato','err');return;}
+  const r=autoRules.find(x=>x.id===id);if(!r)return;
+  r.active=val;
+  actLog.unshift({type:'sys',text:`Regola #${id} "${r.trigger}" ${val?'attivata':'disattivata'}`,time:'Adesso'});
+  renderAutoRules();renderLog();
+  toast(`Regola ${val?'attivata':'disattivata'}`,val?'success':'');
+}
+function renderLog(){
+  const f=document.getElementById('log-filter').value;
+  const data=f?actLog.filter(l=>l.type===f):actLog;
+  document.getElementById('auto-log').innerHTML=data.slice(0,10).map(l=>{
+    const icons={auto:'<i class="fas fa-bolt"></i>',user:'<i class="fas fa-user"></i>',sys:'<i class="fas fa-cog"></i>'};
+    return`<div class="log-row">
+      <div class="log-ic ${l.type}">${icons[l.type]||''}</div>
+      <div class="log-txt">${l.text}</div>
+      <div class="log-time">${l.time}</div>
+    </div>`;
+  }).join('');
+}
+
+// CHARTS
+function renderDonut(){
+  const counts={pending:0,'in-progress':0,testing:0,ready:0};
+  tickets.forEach(t=>counts[t.status]++);
+  const total=tickets.length;
+  const R=42,cx=55,cy=55,strokeW=14;
+  const circ=2*Math.PI*R;
+  const theme=isDark?DARK_COLORS:COLORS;
+  let offset=0;
+  const slices=Object.entries(counts).map(([k,v])=>{
+    const pct=v/total;
+    const dash=pct*circ;
+    const gap=circ-dash;
+    const rotation=offset*360;
+    offset+=pct;
+    return{k,v,dash,gap,rotation,color:theme[k]};
+  }).filter(s=>s.v>0);
+
+  const svg=slices.map(s=>
+    `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${s.color}" stroke-width="${strokeW}"
+     stroke-dasharray="${s.dash.toFixed(2)} ${s.gap.toFixed(2)}"
+     stroke-dashoffset="${(circ/4).toFixed(2)}"
+     transform="rotate(${s.rotation} ${cx} ${cy})"
+     style="transition:all .4s ease"/>`
+  ).join('');
+  document.getElementById('donut-svg').innerHTML=svg+
+    `<circle cx="${cx}" cy="${cy}" r="${R-strokeW/2-2}" fill="var(--surface)"/>`;
+
+  document.getElementById('donut-center').innerHTML=
+    `<div class="head" style="font-size:20px;font-weight:700">${total}</div>
+     <div class="xs t3">ticket</div>`;
+
+  const lbls={pending:'In attesa','in-progress':'In lav.',testing:'Testing',ready:'Pronto'};
+  document.getElementById('donut-legend').innerHTML=Object.entries(counts).map(([k,v])=>
+    v?`<div class="row">
+      <span style="width:8px;height:8px;border-radius:50%;background:${theme[k]};flex-shrink:0"></span>
+      <span class="sm t2">${lbls[k]}</span>
+      <span class="mono-t xs t3 ml-a">${v}</span>
+    </div>`:''
+  ).join('');
+}
+
+function renderMiniBar(){
+  const days=['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+  const vals=[2,4,3,5,2,1,3];
+  const max=Math.max(...vals);
+  const theme=isDark?DARK_COLORS:COLORS;
+  document.getElementById('mini-bars').innerHTML=vals.map((v,i)=>
+    `<div class="mini-bar" title="${v} ticket" style="height:${Math.round(v/max*56)}px;background:${theme['in-progress']}"></div>`
+  ).join('');
+  document.getElementById('mini-lbls').innerHTML=days.map(d=>`<span>${d}</span>`).join('');
+}
+
+function renderAutoBars(){
+  const days=['25M','26M','27M','28G','29V','30S','31D'];
+  const vals=[3,5,2,7,4,1,4];
+  const max=Math.max(...vals);
+  const theme=isDark?DARK_COLORS:COLORS;
+  document.getElementById('auto-bars').innerHTML=vals.map((v,i)=>
+    `<div class="mini-bar" title="${v} automazioni" style="height:${Math.round(v/max*56)}px;background:${theme.testing}"></div>`
+  ).join('');
+  document.getElementById('auto-bar-lbls').innerHTML=days.map(d=>`<span>${d}</span>`).join('');
+}
+
+// DASHBOARD
+function renderDashboard(){
+  document.getElementById('sv-total').textContent=tickets.length;
+  document.getElementById('sv-wip').textContent=tickets.filter(t=>t.status==='in-progress'||t.status==='testing').length;
+  document.getElementById('sv-ready').textContent=tickets.filter(t=>t.status==='ready').length;
+  document.getElementById('dash-tbl').innerHTML=tickets.slice(0,5).map(t=>`
+    <tr onclick="openDetail('${t.id}')">
+      <td><span class="mono">${t.id}</span></td>
+      <td style="font-weight:600;font-size:12px;max-width:120px" class="ellipsis">${t.model}</td>
+      <td>${bHTML(t.status)}</td>
+      <td>${chipHTML(t.assignee)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('dash-log').innerHTML=actLog.slice(0,5).map(l=>{
+    const icons={auto:'⚡',user:'✓',sys:'i'};
+    return`<div class="log-row">
+      <div class="log-ic ${l.type}" style="font-size:10px">${icons[l.type]||'i'}</div>
+      <div class="log-txt">${l.text}</div>
+      <div class="log-time">${l.time}</div>
+    </div>`;
+  }).join('');
+  renderDonut();renderMiniBar();
+}
+
+function updateBadge(){
+  const n=tickets.filter(t=>t.status!=='ready').length;
+  document.getElementById('nbadge').textContent=n;
+  document.getElementById('notification-count').textContent = n > 0 ? n : '';
+}
+
+// INVENTORY
+function renderInventory(){
+  const clientFilter = document.getElementById('inv-client')?.value || '';
+  const statusFilter = document.getElementById('inv-status')?.value || '';
+  const typeFilter = document.getElementById('inv-type')?.value || '';
+  const osFilter = document.getElementById('inv-os')?.value || '';
+  const searchTermInv = document.getElementById('inv-search')?.value.toLowerCase() || '';
+  let filtered = inventory.filter(d => 
+    (!clientFilter || d.client === clientFilter) &&
+    (!statusFilter || d.status === statusFilter) &&
+    (!typeFilter || d.type === typeFilter) &&
+    (!osFilter || d.os.includes(osFilter)) &&
+    (!searchTermInv || (d.serial+d.model+d.client).toLowerCase().includes(searchTermInv))
+  );
+  document.getElementById('inv-n').innerText = filtered.length;
+  const tbody = document.getElementById('inv-tbody');
+  tbody.innerHTML = filtered.map(d => `
+    <tr>
+      <td><span class="mono">${d.serial}</span></td>
+      <td style="font-weight:600">${d.model}</td>
+      <td class="t3 sm">${d.type}</td>
+      <td class="sm">${d.os}</td>
+      <td>${bHTML(d.status)}</td>
+      <td>${d.client}</td>
+      <td>${d.assignedTo}</td>
+      <td class="t3 sm">${d.updated}</td>
+    </tr>
+  `).join('');
+}
+
+function exportInventoryCSV() {
+  let csv = "Seriale,Modello,Tipo,OS,Stato,Cliente,Assegnato a,Ultimo aggiornamento\n";
+  inventory.forEach(d => {
+    csv += `"${d.serial}","${d.model}","${d.type}","${d.os}","${d.status}","${d.client}","${d.assignedTo}","${d.updated}"\n`;
+  });
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'inventario_pc.csv';
+  a.click();
+  toast('CSV esportato', 'success');
+}
+
+function exportInventoryPDF() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  doc.setFontSize(12);
+  doc.text('Inventario Dispositivi', 14, 20);
+  const cols = ['Seriale', 'Modello', 'Tipo', 'OS', 'Stato', 'Cliente', 'Assegnato'];
+  const rows = inventory.map(d => [d.serial, d.model, d.type, d.os, d.status, d.client, d.assignedTo]);
+  let y = 30;
+  doc.setFontSize(8);
+  cols.forEach((col, i) => doc.text(col, 14 + i*40, y));
+  y += 8;
+  rows.forEach(row => {
+    row.forEach((cell, i) => doc.text(String(cell), 14 + i*40, y));
+    y += 6;
+  });
+  doc.save('inventario.pdf');
+  toast('PDF esportato', 'success');
+}
+
+// PDF EXPORT (TICKETS) - COMPLETED
+function exportPDF() {
+  toast('Generazione PDF in corso...', '');
+  setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const dark = isDark;
+      const bgCol = dark ? [17, 17, 16] : [255, 255, 255];
+      const textCol = dark ? [240, 237, 232] : [18, 17, 14];
+      const mutedCol = dark ? [168, 165, 160] : [90, 88, 80];
+      
+      doc.setFontSize(16);
+      doc.setTextColor(textCol[0], textCol[1], textCol[2]);
+      doc.text('PCReady - Lista Ticket', 14, 20);
+      doc.setFontSize(9);
+      doc.setTextColor(mutedCol[0], mutedCol[1], mutedCol[2]);
+      doc.text(`Generato il ${new Date().toLocaleString()}`, 14, 28);
+      
+      // Filtra i ticket attuali (stessi filtri della tabella)
+      const fs = document.getElementById('fs').value;
+      const fp = document.getElementById('fp').value;
+      const fa = document.getElementById('fa').value;
+      const fc = document.getElementById('fclient').value;
+      let data = tickets.filter(t =>
+        (!fs || t.status === fs) &&
+        (!fp || t.priority === fp) &&
+        (!fa || t.assignee === fa) &&
+        (!fc || t.client === fc) &&
+        (!searchTerm || (t.id + t.model + t.serial + t.requester).toLowerCase().includes(searchTerm)) &&
+        (activeFilter === 'all' || t.status === activeFilter)
+      );
+      
+      const headers = ['ID', 'Modello', 'Seriale', 'Richiedente', 'Cliente', 'Priorità', 'Stato', 'Assegnatario', 'Creato'];
+      const rows = data.map(t => [
+        t.id, t.model, t.serial, t.requester, t.client,
+        PLAB[t.priority], STATI[t.status].label, TEAM[t.assignee] || '—', t.created
+      ]);
+      
+      let y = 36;
+      doc.setFontSize(8);
+      doc.setTextColor(textCol[0], textCol[1], textCol[2]);
+      // Intestazioni
+      headers.forEach((h, i) => {
+        doc.text(h, 14 + i * 38, y);
+      });
+      y += 6;
+      // Righe
+      rows.forEach(row => {
+        if (y > 180) {
+          doc.addPage();
+          y = 20;
+          headers.forEach((h, i) => {
+            doc.text(h, 14 + i * 38, y);
+          });
+          y += 6;
+        }
+        row.forEach((cell, i) => {
+          doc.text(String(cell), 14 + i * 38, y);
+        });
+        y += 6;
+      });
+      
+      doc.save('ticket_pcready.pdf');
+      toast('PDF generato con successo', 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Errore durante la generazione del PDF', 'err');
+    }
+  }, 100);
+}
+
+// INITIALIZATION
+function initApp() {
+  renderDashboard();
+  renderTickets();
+  renderKanban();
+  renderCL();
+  renderAutoRules();
+  renderLog();
+  renderAutoBars();
+  renderInventory();
+  updateBadge();
+  // Event listener per i commenti
+  document.getElementById('comment-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      addComment();
+    }
+  });
+}
+
+// Avvia l'applicazione (solo dopo il login)
+</script>
+</body>
+</html>

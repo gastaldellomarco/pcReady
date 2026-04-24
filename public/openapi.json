@@ -1,0 +1,63 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PCReady API",
+    "version": "1.0.0",
+    "description": "Minimal OpenAPI spec for PCReady backend endpoints used by the frontend."
+  },
+  "paths": {
+    "/tickets": {
+      "get": {
+        "summary": "List tickets",
+        "responses": {
+          "200": {
+            "description": "A list of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TicketListItem" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create ticket",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTicketInput" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TicketListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "client": { "type": "string" },
+          "requester": { "type": "string" },
+          "priority": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      },
+      "CreateTicketInput": {
+        "type": "object",
+        "properties": {
+          "client": { "type": "string" },
+          "requester": { "type": "string" },
+          "priority": { "type": "string" }
+        },
+        "required": ["client", "requester", "priority"]
+      }
+    }
+  }
+}
