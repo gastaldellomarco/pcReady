@@ -15,6 +15,7 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+package-lock.json
 
 # Local environment files
 .env
