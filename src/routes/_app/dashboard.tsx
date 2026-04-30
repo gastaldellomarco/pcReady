@@ -64,7 +64,7 @@ function DashboardPage() {
         <div className="pc-card">
           <div className="pc-card-hd">
             <span className="pc-card-title">Ticket recenti</span>
-            <Link to="/tickets" className="pc-btn pc-btn-ghost pc-btn-sm">Vedi tutti <ArrowRight className="w-3 h-3" /></Link>
+            <Link to="/tickets" search={{ export: false }} className="pc-btn pc-btn-ghost pc-btn-sm">Vedi tutti <ArrowRight className="w-3 h-3" /></Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

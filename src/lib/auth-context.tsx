@@ -33,14 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (uid: string) => {
     const [{ data: p }, { data: r }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
+      supabase.rpc("get_user_role", { _user_id: uid }),
     ]);
     if (p) {
       setProfile({
         id: p.id,
         full_name: p.full_name,
         initials: p.initials || p.full_name.slice(0, 2).toUpperCase(),
-        role: (r?.role as AppRole) ?? "viewer",
+        role: (r as AppRole) ?? "viewer",
       });
     } else {
       setProfile(null);

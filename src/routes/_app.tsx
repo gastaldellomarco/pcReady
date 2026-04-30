@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { initTheme, isDark, toggleTheme } from "@/lib/theme";
 import { avatarColors } from "@/lib/pcready";
-import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, FileDown, Plus, Terminal } from "lucide-react";
+import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, FileDown, Plus, Terminal, Users } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
@@ -22,6 +22,7 @@ const NAV_CONFIG = [
   { to: "/automations", label: "Automazioni", icon: Zap },
   { to: "/scripts",     label: "Script",      icon: Terminal },
   { to: "/inventory",   label: "Inventario",  icon: Boxes },
+  { to: "/admin",       label: "Admin / Utenti", icon: Users, adminOnly: true },
 ] as const;
 
 const PAGE_TITLES: Record<string, string> = {
@@ -32,6 +33,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/automations": "Automazioni",
   "/scripts": "Script",
   "/inventory": "Inventario",
+  "/admin": "Admin / Utenti",
 };
 
 function AppLayout() {
@@ -89,7 +91,7 @@ function AppLayout() {
             ))}
           </NavSection>
           <NavSection label="Configurazione">
-            {NAV_CONFIG.map(item => (
+            {NAV_CONFIG.filter(item => !("adminOnly" in item) || profile.role === "admin").map(item => (
               <NavLinkItem key={item.to} {...item} active={route.startsWith(item.to)} />
             ))}
           </NavSection>
