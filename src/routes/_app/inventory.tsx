@@ -3,15 +3,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
-import { Plus, FileDown } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { Plus, FileDown, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
+import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
     meta: [
-      { title: "Inventario — PCReady" },
+      { title: "Inventario - PCReady" },
       {
         name: "description",
         content: "Inventario completo dei dispositivi gestiti, con seriali e stato.",
@@ -52,6 +52,7 @@ function InventoryPage() {
   const [fs, setFs] = useState("");
   const [fos, setFos] = useState("");
   const [q, setQ] = useState("");
+  const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
 
   useEffect(() => {
     let query = supabase
@@ -93,134 +94,45 @@ function InventoryPage() {
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  function exportPdf() {
+  function pdfRows(): DevicePdfRow[] {
+    return data.map((r) => ({
+      id: r.id,
+      serial: r.serial,
+      model: r.model,
+      os: r.os,
+      status: r.status,
+      client: r.client?.name || "-",
+      assigned_to: r.assigned_to,
+      updated_at: r.updated_at,
+    }));
+  }
+
+  async function exportPdf() {
     if (!data.length) return toast.error("Nessun dispositivo da esportare");
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
+    setPdfBusy("download");
+    try {
+      await downloadPdf(
+        <InventoryPdf rows={pdfRows()} />,
+        `pcready-inventario-${new Date().toISOString().slice(0, 10)}.pdf`,
+      );
+      toast.success("PDF inventario esportato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore esportazione PDF"));
+    } finally {
+      setPdfBusy(null);
+    }
+  }
 
-    // ---------- Header ----------
-    doc.setFillColor(27, 79, 216); // accent
-    doc.rect(0, 0, pageW, 70, "F");
-
-    // Logo block
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(40, 20, 30, 30, 4, 4, "F");
-    doc.setFillColor(27, 79, 216);
-    doc.rect(46, 26, 7, 7, "F");
-    doc.rect(57, 26, 7, 7, "F");
-    doc.rect(46, 37, 7, 7, "F");
-    doc.rect(57, 37, 7, 7, "F");
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("PCReady", 82, 38);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text("Inventario dispositivi", 82, 54);
-
-    // Right meta
-    doc.setFontSize(9);
-    const dateStr = new Date().toLocaleString("it-IT", { dateStyle: "long", timeStyle: "short" });
-    doc.text(dateStr, pageW - 40, 38, { align: "right" });
-    doc.text(`${data.length} dispositivi`, pageW - 40, 54, { align: "right" });
-
-    // ---------- Stats strip ----------
-    const counts: Record<string, number> = {
-      available: 0,
-      assigned: 0,
-      maintenance: 0,
-      retired: 0,
-    };
-    data.forEach((r) => {
-      counts[r.status] = (counts[r.status] || 0) + 1;
-    });
-    const stats = [
-      { label: "Disponibili", v: counts.available || 0, c: [22, 163, 74] },
-      { label: "Assegnati", v: counts.assigned || 0, c: [27, 79, 216] },
-      { label: "Manutenzione", v: counts.maintenance || 0, c: [239, 152, 39] },
-      { label: "Dismessi", v: counts.retired || 0, c: [107, 114, 128] },
-    ] as const;
-    const sw = (pageW - 80 - 30) / 4;
-    stats.forEach((s, i) => {
-      const x = 40 + i * (sw + 10);
-      doc.setFillColor(248, 247, 244); // surface2
-      doc.roundedRect(x, 90, sw, 50, 6, 6, "F");
-      doc.setFillColor(s.c[0], s.c[1], s.c[2]);
-      doc.rect(x, 90, 3, 50, "F");
-      doc.setTextColor(120, 116, 110);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(s.label.toUpperCase(), x + 12, 105);
-      doc.setTextColor(s.c[0], s.c[1], s.c[2]);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text(String(s.v), x + 12, 130);
-    });
-
-    // ---------- Table ----------
-    autoTable(doc, {
-      startY: 160,
-      head: [["ID", "Modello", "Seriale", "OS", "Stato", "Cliente", "Utente", "Aggiornato"]],
-      body: data.map((r) => [
-        r.id.slice(0, 8),
-        r.model,
-        r.serial || "—",
-        r.os || "—",
-        DEVICE_STATUS_META[r.status].label,
-        r.client?.name || "—",
-        r.assigned_to || "—",
-        fmtDate(r.updated_at),
-      ]),
-      styles: {
-        font: "helvetica",
-        fontSize: 9,
-        cellPadding: 7,
-        textColor: [40, 38, 35],
-        lineColor: [232, 228, 220],
-        lineWidth: 0.5,
-      },
-      headStyles: {
-        fillColor: [40, 38, 35],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        fontSize: 8,
-        cellPadding: 8,
-      },
-      alternateRowStyles: { fillColor: [250, 249, 246] },
-      columnStyles: {
-        0: { font: "courier", fontSize: 8, textColor: [120, 116, 110], cellWidth: 70 },
-        2: { font: "courier", fontSize: 8, textColor: [120, 116, 110] },
-        4: { fontStyle: "bold" },
-      },
-      didParseCell: (d) => {
-        if (d.section === "body" && d.column.index === 4) {
-          const s = data[d.row.index]?.status;
-          if (s) {
-            const col = DEVICE_STATUS_META[s].color;
-            const r = parseInt(col.slice(1, 3), 16);
-            const g = parseInt(col.slice(3, 5), 16);
-            const b = parseInt(col.slice(5, 7), 16);
-            d.cell.styles.textColor = [r, g, b];
-          }
-        }
-      },
-      margin: { left: 40, right: 40 },
-      didDrawPage: () => {
-        // Footer
-        doc.setFontSize(8);
-        doc.setTextColor(160, 156, 150);
-        doc.setFont("helvetica", "normal");
-        const pageNum = doc.getNumberOfPages();
-        const cur = doc.getCurrentPageInfo().pageNumber;
-        doc.text("PCReady · Inventario dispositivi", 40, pageH - 20);
-        doc.text(`Pagina ${cur} di ${pageNum}`, pageW - 40, pageH - 20, { align: "right" });
-      },
-    });
-
-    doc.save(`pcready-inventario-${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success("PDF inventario esportato");
+  async function openPdfPreview() {
+    if (!data.length) return toast.error("Nessun dispositivo da visualizzare");
+    setPdfBusy("preview");
+    try {
+      await previewPdf(<InventoryPdf rows={pdfRows()} />);
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore anteprima PDF"));
+    } finally {
+      setPdfBusy(null);
+    }
   }
 
   return (
@@ -259,8 +171,16 @@ function InventoryPage() {
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
             : "0 dispositivi"}
         </span>
-        <button onClick={exportPdf} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <FileDown className="w-3 h-3" /> Esporta PDF
+        <button
+          onClick={openPdfPreview}
+          disabled={!!pdfBusy}
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+        >
+          <Eye className="w-3 h-3" /> Anteprima PDF
+        </button>
+        <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
+          <FileDown className="w-3 h-3" />
+          {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}
         </button>
         <button onClick={() => openAddDevice()} className="pc-btn pc-btn-primary pc-btn-sm">
           <Plus className="w-3 h-3" /> Aggiungi dispositivo
@@ -295,15 +215,15 @@ function InventoryPage() {
                     {r.id.slice(0, 8)}
                   </td>
                   <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                    {r.serial || "—"}
+                    {r.serial || "-"}
                   </td>
                   <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
-                  <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "—"}</td>
+                  <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "-"}</td>
                   <td className="px-[14px] py-[10px]">
                     <DeviceStatusBadge status={r.status} />
                   </td>
-                  <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "—"}</td>
-                  <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "—"}</td>
+                  <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
+                  <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
                   <td className="px-[14px] py-[10px] text-[11px] text-text3">
                     {fmtDate(r.updated_at)}
                   </td>
@@ -312,7 +232,7 @@ function InventoryPage() {
               {!data.length && (
                 <tr>
                   <td colSpan={8} className="text-center py-12 text-text3 text-sm">
-                    Nessun dispositivo. Clicca <b>“Aggiungi dispositivo”</b> per iniziare.
+                    Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
                   </td>
                 </tr>
               )}
@@ -350,4 +270,8 @@ function DeviceStatusBadge({ status }: { status: DeviceStatus }) {
       {meta.label}
     </span>
   );
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
