@@ -1,18 +1,27 @@
 export type TicketStatus = "pending" | "in-progress" | "testing" | "ready";
 export type TicketPriority = "high" | "med" | "low";
 
-export const STATUS_META: Record<TicketStatus, { label: string; cls: string; next: TicketStatus | null; color: string }> = {
-  "pending":     { label: "In attesa",      cls: "pc-badge-pending", next: "in-progress", color: "#EF9827" },
-  "in-progress": { label: "In lavorazione", cls: "pc-badge-inprog",  next: "testing",     color: "#1B4FD8" },
-  "testing":     { label: "Testing",        cls: "pc-badge-testing", next: "ready",       color: "#7C3AED" },
-  "ready":       { label: "Pronto",         cls: "pc-badge-ready",   next: null,          color: "#16A34A" },
+export const STATUS_META: Record<
+  TicketStatus,
+  { label: string; cls: string; next: TicketStatus | null; color: string }
+> = {
+  pending: { label: "In attesa", cls: "pc-badge-pending", next: "in-progress", color: "#EF9827" },
+  "in-progress": {
+    label: "In lavorazione",
+    cls: "pc-badge-inprog",
+    next: "testing",
+    color: "#1B4FD8",
+  },
+  testing: { label: "Testing", cls: "pc-badge-testing", next: "ready", color: "#7C3AED" },
+  ready: { label: "Pronto", cls: "pc-badge-ready", next: null, color: "#16A34A" },
 };
 
 export const PRIORITY_LABEL: Record<TicketPriority, string> = {
-  high: "Alta", med: "Media", low: "Bassa",
+  high: "Alta",
+  med: "Media",
+  low: "Bassa",
 };
 
-export const CLIENTS = ["Azienda Alpha", "Beta S.r.l.", "Gamma Consulting", "Delta Tech"];
 export const OS_OPTIONS = ["Windows 11 Pro", "Windows 10 Pro", "Ubuntu 22.04 LTS", "macOS (BYOD)"];
 
 export const CHECKLIST_TEMPLATE = {
@@ -58,27 +67,37 @@ export const CHECKLIST_TABS: { key: ChecklistKey; label: string }[] = [
 ];
 
 // --- Checklist personalizzate (dinamiche) ----------------------------------
-export interface ChecklistItemDef { id: string; text: string }
-export interface ChecklistTabDef { label: string; items: ChecklistItemDef[] }
+export interface ChecklistItemDef {
+  id: string;
+  text: string;
+}
+export interface ChecklistTabDef {
+  label: string;
+  items: ChecklistItemDef[];
+}
 export type ChecklistStructure = Record<string, ChecklistTabDef>;
 
 export const DEFAULT_STRUCTURE: ChecklistStructure = Object.fromEntries(
-  CHECKLIST_TABS.map(t => [t.key, { label: t.label, items: [...CHECKLIST_TEMPLATE[t.key]] as ChecklistItemDef[] }])
+  CHECKLIST_TABS.map((t) => [
+    t.key,
+    { label: t.label, items: [...CHECKLIST_TEMPLATE[t.key]] as ChecklistItemDef[] },
+  ]),
 );
 
 export function structureProgress(state: ChecklistState, struct: ChecklistStructure, key: string) {
   const items = struct[key]?.items ?? [];
-  const done = items.filter(i => state[key]?.[i.id]).length;
+  const done = items.filter((i) => state[key]?.[i.id]).length;
   const total = items.length || 1;
   return { done, total: items.length, pct: Math.round((done / total) * 100) };
 }
 
 export function structureOverallProgress(state: ChecklistState, struct: ChecklistStructure) {
-  let done = 0, total = 0;
+  let done = 0,
+    total = 0;
   for (const k of Object.keys(struct)) {
     const items = struct[k].items;
     total += items.length;
-    done += items.filter(i => state[k]?.[i.id]).length;
+    done += items.filter((i) => state[k]?.[i.id]).length;
   }
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
@@ -107,7 +126,8 @@ export function fmtDateTime(s: string | Date): string {
   const d = typeof s === "string" ? new Date(s) : s;
   const today = new Date();
   const isToday = d.toDateString() === today.toDateString();
-  const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+  const yest = new Date(today);
+  yest.setDate(yest.getDate() - 1);
   const isYest = d.toDateString() === yest.toDateString();
   const time = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
   if (isToday) return `Oggi ${time}`;
@@ -119,13 +139,21 @@ export interface ChecklistState {
   [tab: string]: { [itemId: string]: boolean };
 }
 
-export function checklistProgress(state: ChecklistState, key: ChecklistKey): { done: number; total: number; pct: number } {
+export function checklistProgress(
+  state: ChecklistState,
+  key: ChecklistKey,
+): { done: number; total: number; pct: number } {
   const items = CHECKLIST_TEMPLATE[key];
-  const done = items.filter(i => state[key]?.[i.id]).length;
+  const done = items.filter((i) => state[key]?.[i.id]).length;
   return { done, total: items.length, pct: Math.round((done / items.length) * 100) };
 }
 
-export function generatePrepScript(t: { model: string; serial?: string | null; os?: string | null; software?: string | null }): string {
+export function generatePrepScript(t: {
+  model: string;
+  serial?: string | null;
+  os?: string | null;
+  software?: string | null;
+}): string {
   return `# PCReady — Script preparazione PC
 # Modello: ${t.model}
 # Seriale: ${t.serial || "—"}
@@ -141,11 +169,17 @@ Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
 Get-WindowsUpdate -AcceptAll -Install -AutoReboot
 
 Write-Host "▶ Installazione software richiesti..."
-${(t.software || "")
-  .split(/[,;\n]/)
-  .map(s => s.trim()).filter(Boolean)
-  .map(sw => `winget install --silent --accept-package-agreements --accept-source-agreements "${sw}"`)
-  .join("\n") || "# Nessun software specificato"}
+${
+  (t.software || "")
+    .split(/[,;\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(
+      (sw) =>
+        `winget install --silent --accept-package-agreements --accept-source-agreements "${sw}"`,
+    )
+    .join("\n") || "# Nessun software specificato"
+}
 
 Write-Host "▶ Configurazione policy di sicurezza..."
 Enable-BitLocker -MountPoint "C:" -EncryptionMethod XtsAes256 -UsedSpaceOnly -SkipHardwareTest -ErrorAction SilentlyContinue

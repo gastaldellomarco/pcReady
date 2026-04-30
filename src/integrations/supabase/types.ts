@@ -110,10 +110,15 @@ export type Database = {
         Row: {
           client_id: string;
           created_at: string;
+          department: string | null;
           email: string | null;
           first_name: string;
+          full_name: string | null;
           id: string;
+          is_primary: boolean;
+          job_title: string | null;
           last_name: string | null;
+          notes: string | null;
           phone: string | null;
           role: string | null;
           updated_at: string;
@@ -121,10 +126,15 @@ export type Database = {
         Insert: {
           client_id: string;
           created_at?: string;
+          department?: string | null;
           email?: string | null;
           first_name: string;
+          full_name?: string | null;
           id?: string;
+          is_primary?: boolean;
+          job_title?: string | null;
           last_name?: string | null;
+          notes?: string | null;
           phone?: string | null;
           role?: string | null;
           updated_at?: string;
@@ -132,10 +142,15 @@ export type Database = {
         Update: {
           client_id?: string;
           created_at?: string;
+          department?: string | null;
           email?: string | null;
           first_name?: string;
+          full_name?: string | null;
           id?: string;
+          is_primary?: boolean;
+          job_title?: string | null;
           last_name?: string | null;
+          notes?: string | null;
           phone?: string | null;
           role?: string | null;
           updated_at?: string;
@@ -153,8 +168,10 @@ export type Database = {
       clients: {
         Row: {
           address: string | null;
+          company_name: string | null;
           created_at: string;
           email: string | null;
+          fiscal_code: string | null;
           id: string;
           name: string;
           notes: string | null;
@@ -164,8 +181,10 @@ export type Database = {
         };
         Insert: {
           address?: string | null;
+          company_name?: string | null;
           created_at?: string;
           email?: string | null;
+          fiscal_code?: string | null;
           id?: string;
           name: string;
           notes?: string | null;
@@ -175,8 +194,10 @@ export type Database = {
         };
         Update: {
           address?: string | null;
+          company_name?: string | null;
           created_at?: string;
           email?: string | null;
+          fiscal_code?: string | null;
           id?: string;
           name?: string;
           notes?: string | null;

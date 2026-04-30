@@ -17,6 +17,7 @@ import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
 import { Route as AppKanbanRouteImport } from './routes/_app/kanban'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
 import { Route as AppAutomationsRouteImport } from './routes/_app/automations'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
@@ -60,6 +61,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChecklistRoute = AppChecklistRouteImport.update({
   id: '/checklist',
   path: '/checklist',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/checklist': typeof AppChecklistRoute
+  '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/checklist': typeof AppChecklistRoute
+  '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/checklist': typeof AppChecklistRoute
+  '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/kanban': typeof AppKanbanRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/automations'
     | '/checklist'
+    | '/clients'
     | '/dashboard'
     | '/inventory'
     | '/kanban'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/automations'
     | '/checklist'
+    | '/clients'
     | '/dashboard'
     | '/inventory'
     | '/kanban'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/automations'
     | '/_app/checklist'
+    | '/_app/clients'
     | '/_app/dashboard'
     | '/_app/inventory'
     | '/_app/kanban'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/clients': {
+      id: '/_app/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/checklist': {
       id: '/_app/checklist'
       path: '/checklist'
@@ -246,6 +265,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAutomationsRoute: typeof AppAutomationsRoute
   AppChecklistRoute: typeof AppChecklistRoute
+  AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppKanbanRoute: typeof AppKanbanRoute
@@ -257,6 +277,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAutomationsRoute: AppAutomationsRoute,
   AppChecklistRoute: AppChecklistRoute,
+  AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppKanbanRoute: AppKanbanRoute,

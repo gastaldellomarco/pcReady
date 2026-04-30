@@ -3,7 +3,23 @@ import { useEffect, useState } from "react";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
 import { initTheme, isDark, toggleTheme } from "@/lib/theme";
 import { avatarColors } from "@/lib/pcready";
-import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, Plus, Terminal, Users, Menu } from "lucide-react";
+import {
+  LayoutGrid,
+  Ticket,
+  Trello,
+  ListChecks,
+  Zap,
+  Boxes,
+  Search,
+  LogOut,
+  Moon,
+  Sun,
+  Plus,
+  Terminal,
+  Users,
+  Menu,
+  Building2,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
@@ -18,15 +34,16 @@ export const Route = createFileRoute("/_app")({
 
 const NAV_PRIMARY = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid, badge: false },
-  { to: "/tickets",   label: "Ticket PC", icon: Ticket,     badge: true  },
-  { to: "/kanban",    label: "Kanban",    icon: Trello,     badge: false },
+  { to: "/tickets", label: "Ticket PC", icon: Ticket, badge: true },
+  { to: "/kanban", label: "Kanban", icon: Trello, badge: false },
 ] as const;
 const NAV_CONFIG = [
-  { to: "/checklist",   label: "Checklist",   icon: ListChecks },
+  { to: "/checklist", label: "Checklist", icon: ListChecks },
   { to: "/automations", label: "Automazioni", icon: Zap },
-  { to: "/scripts",     label: "Script",      icon: Terminal },
-  { to: "/inventory",   label: "Inventario",  icon: Boxes },
-  { to: "/admin",       label: "Admin / Utenti", icon: Users, adminOnly: true },
+  { to: "/scripts", label: "Script", icon: Terminal },
+  { to: "/clients", label: "Clienti", icon: Building2 },
+  { to: "/inventory", label: "Inventario", icon: Boxes },
+  { to: "/admin", label: "Admin / Utenti", icon: Users, adminOnly: true },
 ] as const;
 
 type NavPath = (typeof NAV_PRIMARY)[number]["to"] | (typeof NAV_CONFIG)[number]["to"];
@@ -48,33 +65,43 @@ const PAGE_TITLES: Record<string, string> = {
   "/checklist": "Checklist Setup",
   "/automations": "Automazioni",
   "/scripts": "Script",
+  "/clients": "Clienti",
   "/inventory": "Inventario",
   "/admin": "Admin / Utenti",
 };
 
 function AppLayout() {
-  const { session, profile, loading, profileLoading, authError, refreshProfile, signOut } = useAuth();
+  const { session, profile, loading, profileLoading, authError, refreshProfile, signOut } =
+    useAuth();
   const navigate = useNavigate();
   const [dark, setDark] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
-  const route = useRouterState({ select: s => s.location.pathname });
+  const route = useRouterState({ select: (s) => s.location.pathname });
 
-  useEffect(() => { initTheme(); setDark(isDark()); }, []);
+  useEffect(() => {
+    initTheme();
+    setDark(isDark());
+  }, []);
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
   }, [loading, session, navigate]);
 
   if (loading || profileLoading || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-text3 text-sm">Caricamento…</div>
+      <div className="min-h-screen flex items-center justify-center text-text3 text-sm">
+        Caricamento…
+      </div>
     );
   }
 
   if (authError || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg2)" }}>
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "var(--bg2)" }}
+      >
         <div className="pc-card max-w-md w-full p-6 text-center">
           <div className="text-[17px] font-bold mb-2" style={{ fontFamily: "var(--font-head)" }}>
             Profilo non disponibile
@@ -96,9 +123,11 @@ function AppLayout() {
   }
 
   const avc = avatarColors(profile.initials);
-  const title = Object.keys(PAGE_TITLES).find(k => route.startsWith(k));
+  const title = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
   const pageTitle = title ? PAGE_TITLES[title] : "PCReady";
-  const configItems = NAV_CONFIG.filter(item => !("adminOnly" in item) || profile.role === "admin");
+  const configItems = NAV_CONFIG.filter(
+    (item) => !("adminOnly" in item) || profile.role === "admin",
+  );
   const sidebarContent = (
     <SidebarContent
       profile={profile}
@@ -107,7 +136,10 @@ function AppLayout() {
       route={route}
       pendingCount={pendingCount}
       configItems={configItems}
-      onToggleTheme={() => { toggleTheme(); setDark(isDark()); }}
+      onToggleTheme={() => {
+        toggleTheme();
+        setDark(isDark());
+      }}
       onNavigate={() => setMobileNavOpen(false)}
       onSignOut={() => signOut()}
     />
@@ -132,7 +164,11 @@ function AppLayout() {
         <SheetContent
           side="left"
           className="flex flex-col w-[300px] max-w-[86vw] p-0"
-          style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
+          style={{
+            background: "var(--surface)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
         >
           <SheetTitle className="sr-only">Navigazione PCReady</SheetTitle>
           <SheetDescription className="sr-only">Menu principale dell'applicazione</SheetDescription>
@@ -142,14 +178,25 @@ function AppLayout() {
 
       {/* MAIN */}
       <div className="flex-1 flex flex-col" style={{ marginLeft: isMobile ? 0 : 240 }}>
-        <header className="sticky top-0 z-30 h-14 px-4 md:px-7 flex items-center gap-3 border-b"
-          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <header
+          className="sticky top-0 z-30 h-14 px-4 md:px-7 flex items-center gap-3 border-b"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           {isMobile && (
-            <button className="pc-btn-icon" onClick={() => setMobileNavOpen(true)} title="Apri menu">
+            <button
+              className="pc-btn-icon"
+              onClick={() => setMobileNavOpen(true)}
+              title="Apri menu"
+            >
               <Menu className="w-4 h-4" />
             </button>
           )}
-          <h1 className="text-[17px] font-bold tracking-tight" style={{ fontFamily: "var(--font-head)" }}>{pageTitle}</h1>
+          <h1
+            className="text-[17px] font-bold tracking-tight"
+            style={{ fontFamily: "var(--font-head)" }}
+          >
+            {pageTitle}
+          </h1>
           <div className="ml-auto flex items-center gap-2">
             <SearchBox />
             <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
@@ -196,22 +243,43 @@ function SidebarContent({
 }: SidebarContentProps) {
   return (
     <>
-      <div className="px-[18px] py-[18px] border-b flex items-center gap-[10px]" style={{ borderColor: "var(--border)" }}>
-        <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0" style={{ background: "var(--text)" }}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="var(--background)" strokeWidth={1.8} className="w-4 h-4">
-            <rect x="2" y="2" width="5" height="5" rx="1" /><rect x="9" y="2" width="5" height="5" rx="1" />
-            <rect x="2" y="9" width="5" height="5" rx="1" /><path d="M9 11.5h5M11.5 9v5" />
+      <div
+        className="px-[18px] py-[18px] border-b flex items-center gap-[10px]"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div
+          className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0"
+          style={{ background: "var(--text)" }}
+        >
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="var(--background)"
+            strokeWidth={1.8}
+            className="w-4 h-4"
+          >
+            <rect x="2" y="2" width="5" height="5" rx="1" />
+            <rect x="9" y="2" width="5" height="5" rx="1" />
+            <rect x="2" y="9" width="5" height="5" rx="1" />
+            <path d="M9 11.5h5M11.5 9v5" />
           </svg>
         </div>
         <div>
-          <div className="text-[16px] font-bold tracking-tight leading-none" style={{ fontFamily: "var(--font-head)" }}>PCReady</div>
-          <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>v3.0</div>
+          <div
+            className="text-[16px] font-bold tracking-tight leading-none"
+            style={{ fontFamily: "var(--font-head)" }}
+          >
+            PCReady
+          </div>
+          <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
+            v3.0
+          </div>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-[10px] py-[14px]">
         <NavSection label="Principale">
-          {NAV_PRIMARY.map(item => (
+          {NAV_PRIMARY.map((item) => (
             <NavLinkItem
               key={item.to}
               to={item.to}
@@ -224,29 +292,59 @@ function SidebarContent({
           ))}
         </NavSection>
         <NavSection label="Configurazione">
-          {configItems.map(item => (
-            <NavLinkItem key={item.to} {...item} active={route.startsWith(item.to)} onClick={onNavigate} />
+          {configItems.map((item) => (
+            <NavLinkItem
+              key={item.to}
+              {...item}
+              active={route.startsWith(item.to)}
+              onClick={onNavigate}
+            />
           ))}
         </NavSection>
       </nav>
 
-      <div className="px-[14px] py-[13px] border-t flex flex-col gap-[10px]" style={{ borderColor: "var(--border)" }}>
+      <div
+        className="px-[14px] py-[13px] border-t flex flex-col gap-[10px]"
+        style={{ borderColor: "var(--border)" }}
+      >
         <button
           onClick={onToggleTheme}
           className="flex items-center justify-between rounded-[7px] px-[10px] py-[6px] text-[11px] font-semibold cursor-pointer transition-colors"
-          style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text2)" }}
+          style={{
+            background: "var(--surface2)",
+            border: "1px solid var(--border2)",
+            color: "var(--text2)",
+          }}
         >
-          <span className="flex items-center gap-2">{dark ? <Sun className="w-3 h-3"/> : <Moon className="w-3 h-3"/>} Dark mode</span>
-          <span className="relative inline-block w-[30px] h-[16px] rounded-full transition-colors"
-            style={{ background: dark ? "var(--accent)" : "var(--border2)" }}>
-            <span className="absolute top-[2px] w-[12px] h-[12px] rounded-full bg-white transition-transform"
-              style={{ left: "2px", transform: dark ? "translateX(14px)" : "none", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }}/>
+          <span className="flex items-center gap-2">
+            {dark ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />} Dark mode
+          </span>
+          <span
+            className="relative inline-block w-[30px] h-[16px] rounded-full transition-colors"
+            style={{ background: dark ? "var(--accent)" : "var(--border2)" }}
+          >
+            <span
+              className="absolute top-[2px] w-[12px] h-[12px] rounded-full bg-white transition-transform"
+              style={{
+                left: "2px",
+                transform: dark ? "translateX(14px)" : "none",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }}
+            />
           </span>
         </button>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-[9px] min-w-0">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-              style={{ background: avatarColor.bg, color: avatarColor.fg, fontFamily: "var(--font-head)" }}>{profile.initials}</div>
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+              style={{
+                background: avatarColor.bg,
+                color: avatarColor.fg,
+                fontFamily: "var(--font-head)",
+              }}
+            >
+              {profile.initials}
+            </div>
             <div className="min-w-0">
               <div className="text-[12px] font-semibold truncate">{profile.full_name}</div>
               <div className="text-[10px] text-text3 capitalize">{roleLabel(profile.role)}</div>
@@ -264,7 +362,9 @@ function SidebarContent({
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-[22px]">
-      <div className="sb-text text-[9.5px] font-bold tracking-[1px] uppercase text-text3 px-2 mb-[5px]">{label}</div>
+      <div className="sb-text text-[9.5px] font-bold tracking-[1px] uppercase text-text3 px-2 mb-[5px]">
+        {label}
+      </div>
       <div className="flex flex-col gap-0.5">{children}</div>
     </div>
   );
@@ -285,8 +385,12 @@ function NavLinkItem({ to, label, icon: Icon, active, badge, onClick }: NavLinkI
       <Icon className="w-[15px] h-[15px] flex-shrink-0" style={{ opacity: active ? 1 : 0.85 }} />
       <span>{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="ml-auto text-white text-[9.5px] font-bold rounded-full px-[6px] py-0 min-w-[18px] text-center"
-          style={{ background: "var(--accent)", fontFamily: "var(--font-mono)" }}>{badge}</span>
+        <span
+          className="ml-auto text-white text-[9.5px] font-bold rounded-full px-[6px] py-0 min-w-[18px] text-center"
+          style={{ background: "var(--accent)", fontFamily: "var(--font-mono)" }}
+        >
+          {badge}
+        </span>
       )}
     </Link>
   );
@@ -295,12 +399,14 @@ function NavLinkItem({ to, label, icon: Icon, active, badge, onClick }: NavLinkI
 function SearchBox() {
   const { search, setSearch } = useTickets();
   return (
-    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[7px]"
-      style={{ background: "var(--surface2)", border: "1px solid var(--border2)" }}>
+    <div
+      className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[7px]"
+      style={{ background: "var(--surface2)", border: "1px solid var(--border2)" }}
+    >
       <Search className="w-3 h-3 text-text3" />
       <input
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
         placeholder="Cerca ticket, modello, seriale..."
         className="bg-transparent outline-none text-[13px] w-44"
       />

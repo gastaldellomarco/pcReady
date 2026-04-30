@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Modal } from "./Modal";
-import { CLIENTS, OS_OPTIONS } from "@/lib/pcready";
+import { OS_OPTIONS } from "@/lib/pcready";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
@@ -14,6 +14,7 @@ function errorMessage(error: unknown, fallback: string) {
 interface ClientOption {
   id: string;
   name: string;
+  company_name: string | null;
 }
 
 export function AddDeviceModal() {
@@ -24,7 +25,7 @@ export function AddDeviceModal() {
   const [f, setF] = useState({
     model: "",
     serial: "",
-    client_name: CLIENTS[0],
+    client_id: "",
     end_user: "",
     os: OS_OPTIONS[0],
     notes: "",
@@ -34,27 +35,22 @@ export function AddDeviceModal() {
     if (!addDeviceOpen) return;
     supabase
       .from("clients")
-      .select("id, name")
+      .select("id, name, company_name")
       .order("name")
-      .then(({ data }) => setClients((data ?? []) as ClientOption[]));
+      .then(({ data }) => {
+        const arr = (data ?? []) as ClientOption[];
+        setClients(arr);
+        setF((cur) => ({ ...cur, client_id: cur.client_id || arr[0]?.id || "" }));
+      });
   }, [addDeviceOpen]);
 
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
-    if (!f.model || !f.serial || !f.client_name) return toast.error("Compila i campi obbligatori");
+    if (!f.model || !f.serial || !f.client_id) return toast.error("Compila i campi obbligatori");
     setBusy(true);
     try {
-      const clientName = f.client_name.trim();
-      let client = clients.find((c) => c.name.toLowerCase() === clientName.toLowerCase()) ?? null;
-      if (!client) {
-        const { data, error } = await supabase
-          .from("clients")
-          .insert({ name: clientName })
-          .select("id, name")
-          .single();
-        if (error) throw error;
-        client = data as ClientOption;
-      }
+      const client = clients.find((c) => c.id === f.client_id);
+      if (!client) return toast.error("Seleziona un cliente");
 
       const deviceInsert: TablesInsert<"devices"> = {
         client_id: client.id,
@@ -80,7 +76,7 @@ export function AddDeviceModal() {
       setF({
         model: "",
         serial: "",
-        client_name: client.name,
+        client_id: client.id,
         end_user: "",
         os: OS_OPTIONS[0],
         notes: "",
@@ -134,11 +130,14 @@ export function AddDeviceModal() {
           <Field label="Cliente *">
             <select
               className="pc-input"
-              value={f.client_name}
-              onChange={(e) => setF({ ...f, client_name: e.target.value })}
+              value={f.client_id}
+              onChange={(e) => setF({ ...f, client_id: e.target.value })}
             >
-              {[...new Set([...clients.map((c) => c.name), ...CLIENTS])].map((c) => (
-                <option key={c}>{c}</option>
+              {!clients.length && <option value="">Nessun cliente disponibile</option>}
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.company_name || c.name}
+                </option>
               ))}
             </select>
           </Field>

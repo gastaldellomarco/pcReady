@@ -26,6 +26,18 @@ interface TplOpt {
 interface ClientOpt {
   id: string;
   name: string;
+  company_name: string | null;
+}
+interface ContactOpt {
+  id: string;
+  client_id: string;
+  full_name: string | null;
+  first_name: string;
+  last_name: string | null;
+  email: string | null;
+  job_title: string | null;
+  role: string | null;
+  is_primary: boolean;
 }
 interface DeviceOpt {
   id: string;
@@ -46,13 +58,16 @@ export function CreateTicketModal() {
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
   const [clients, setClients] = useState<ClientOpt[]>([]);
+  const [contacts, setContacts] = useState<ContactOpt[]>([]);
   const [devices, setDevices] = useState<DeviceOpt[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     client_id: "",
     device_id: "",
+    requester_contact_id: "",
     requester: "",
+    free_requester: false,
     priority: "med" as TicketPriority,
     assignee_id: "",
     software: "",
@@ -68,7 +83,7 @@ export function CreateTicketModal() {
       .then(({ data }) => setTechs((data ?? []) as Tech[]));
     supabase
       .from("clients")
-      .select("id, name")
+      .select("id, name, company_name")
       .order("name")
       .then(({ data }) => {
         const arr = (data ?? []) as ClientOpt[];
@@ -91,6 +106,7 @@ export function CreateTicketModal() {
   useEffect(() => {
     if (!createOpen || !f.client_id) {
       setDevices([]);
+      setContacts([]);
       return;
     }
     supabase
@@ -106,6 +122,26 @@ export function CreateTicketModal() {
           device_id: arr.some((d) => d.id === cur.device_id) ? cur.device_id : arr[0]?.id || "",
         }));
       });
+    supabase
+      .from("client_contacts")
+      .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
+      .eq("client_id", f.client_id)
+      .order("is_primary", { ascending: false })
+      .order("full_name")
+      .then(({ data }) => {
+        const arr = (data ?? []) as ContactOpt[];
+        setContacts(arr);
+        setF((cur) => {
+          if (cur.free_requester) return { ...cur, requester_contact_id: "" };
+          const current = arr.find((c) => c.id === cur.requester_contact_id);
+          const next = current || arr[0];
+          return {
+            ...cur,
+            requester_contact_id: next?.id || "",
+            requester: next ? contactName(next) : "",
+          };
+        });
+      });
   }, [createOpen, f.client_id]);
 
   async function submit() {
@@ -119,13 +155,17 @@ export function CreateTicketModal() {
       const client = clients.find((c) => c.id === f.client_id);
       const device = devices.find((d) => d.id === f.device_id);
       if (!client || !device) return toast.error("Seleziona cliente e dispositivo");
+      const contact = contacts.find((c) => c.id === f.requester_contact_id);
+      const requester = f.free_requester ? f.requester.trim() : contact ? contactName(contact) : "";
+      if (!requester) return toast.error("Seleziona un richiedente o usa il fallback libero");
       const ticketInsert = {
-        client: client.name,
+        client: client.company_name || client.name,
         client_id: client.id,
         device_id: device.id,
         model: device.model,
         serial: device.serial || null,
-        requester: f.requester,
+        requester,
+        requester_contact_id: f.free_requester ? null : contact?.id || null,
         end_user: device.assigned_to || null,
         priority: f.priority,
         status: "pending",
@@ -155,7 +195,9 @@ export function CreateTicketModal() {
       setF({
         client_id: clients[0]?.id || "",
         device_id: "",
+        requester_contact_id: "",
         requester: "",
+        free_requester: false,
         priority: "med",
         assignee_id: "",
         software: "",
@@ -193,12 +235,20 @@ export function CreateTicketModal() {
             <select
               className="pc-input"
               value={f.client_id}
-              onChange={(e) => setF({ ...f, client_id: e.target.value, device_id: "" })}
+              onChange={(e) =>
+                setF({
+                  ...f,
+                  client_id: e.target.value,
+                  device_id: "",
+                  requester_contact_id: "",
+                  requester: "",
+                })
+              }
             >
               {!clients.length && <option value="">Nessun cliente disponibile</option>}
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.company_name || c.name}
                 </option>
               ))}
             </select>
@@ -221,11 +271,50 @@ export function CreateTicketModal() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Richiedente *">
-            <input
-              className="pc-input"
-              value={f.requester}
-              onChange={(e) => setF({ ...f, requester: e.target.value })}
-            />
+            {f.free_requester ? (
+              <input
+                className="pc-input"
+                value={f.requester}
+                onChange={(e) => setF({ ...f, requester: e.target.value })}
+                placeholder="Nome richiedente non censito"
+              />
+            ) : (
+              <select
+                className="pc-input"
+                value={f.requester_contact_id}
+                onChange={(e) => {
+                  const contact = contacts.find((c) => c.id === e.target.value);
+                  setF({
+                    ...f,
+                    requester_contact_id: e.target.value,
+                    requester: contact ? contactName(contact) : "",
+                  });
+                }}
+              >
+                {!contacts.length && <option value="">Nessun referente per questo cliente</option>}
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {contactName(c)}
+                    {c.job_title || c.role ? ` - ${c.job_title || c.role}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <label className="mt-2 flex items-center gap-2 text-[12px] text-text3">
+              <input
+                type="checkbox"
+                checked={f.free_requester}
+                onChange={(e) =>
+                  setF({
+                    ...f,
+                    free_requester: e.target.checked,
+                    requester_contact_id: "",
+                    requester: "",
+                  })
+                }
+              />
+              Richiedente libero
+            </label>
           </Field>
           <Field label="Priorità">
             <select
@@ -299,4 +388,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function contactName(c: ContactOpt) {
+  return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");
 }
