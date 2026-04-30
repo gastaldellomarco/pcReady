@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { openTicketDetail } from "@/lib/use-detail";
@@ -39,37 +39,57 @@ interface Row {
   assignee?: { full_name: string; initials: string } | null;
 }
 
+const PAGE_SIZE = 50;
+
 function TicketsPage() {
   const { refreshKey, search } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
   const [fp, setFp] = useState("");
   const [fc, setFc] = useState("");
 
   useEffect(() => {
-    supabase
+    let query = supabase
       .from("tickets")
       .select(
         "id, ticket_code, client, model, serial, requester, priority, status, created_at, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        { count: "exact" },
       )
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setRows((data ?? []) as unknown as Row[]));
-  }, [refreshKey]);
+      .order("created_at", { ascending: false });
 
-  const data = useMemo(
-    () =>
-      rows.filter(
-        (t) =>
-          (!fs || t.status === fs) &&
-          (!fp || t.priority === fp) &&
-          (!fc || t.client === fc) &&
-          (!search ||
-            (t.ticket_code + t.model + (t.serial || "") + t.requester)
-              .toLowerCase()
-              .includes(search.toLowerCase())),
-      ),
-    [rows, fs, fp, fc, search],
-  );
+    if (fs) query = query.eq("status", fs);
+    if (fp) query = query.eq("priority", fp);
+    if (fc) query = query.eq("client", fc);
+    const q = search.trim().replace(/[,%]/g, "");
+    if (q) {
+      query = query.or(
+        `ticket_code.ilike.%${q}%,model.ilike.%${q}%,serial.ilike.%${q}%,requester.ilike.%${q}%`,
+      );
+    }
+
+    query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const totalRows = count ?? 0;
+      if (page > 0 && page * PAGE_SIZE >= totalRows) {
+        setPage(0);
+        return;
+      }
+      setRows((data ?? []) as unknown as Row[]);
+      setTotal(totalRows);
+    });
+  }, [refreshKey, fs, fp, fc, search, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [fs, fp, fc, search]);
+
+  const data = rows;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function exportPdf() {
     if (!data.length) return toast.error("Nessun ticket da esportare");
@@ -249,7 +269,11 @@ function TicketsPage() {
             <option key={c}>{c}</option>
           ))}
         </select>
-        <span className="ml-auto text-xs text-text3 font-mono">{data.length} risultati</span>
+        <span className="ml-auto text-xs text-text3 font-mono">
+          {total
+            ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
+            : "0 risultati"}
+        </span>
         <button onClick={exportPdf} className="pc-btn pc-btn-ghost pc-btn-sm">
           Esporta PDF
         </button>
@@ -322,6 +346,25 @@ function TicketsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+        >
+          Precedente
+        </button>
+        <span className="text-xs text-text3 font-mono">
+          Pagina {page + 1} di {pageCount}
+        </span>
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+          disabled={page + 1 >= pageCount}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Successiva
+        </button>
       </div>
     </div>
   );

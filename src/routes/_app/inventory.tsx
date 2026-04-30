@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
-import { STATUS_META, type TicketStatus, fmtDate } from "@/lib/pcready";
+import { OS_OPTIONS, STATUS_META, type TicketStatus, fmtDate } from "@/lib/pcready";
 import { StatusBadge } from "@/components/pcready/StatusBadge";
 import { openTicketDetail } from "@/lib/use-detail";
 import { Plus, FileDown } from "lucide-react";
@@ -11,28 +11,79 @@ import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/inventory")({
-  head: () => ({ meta: [{ title: "Inventario — PCReady" }, { name: "description", content: "Inventario completo dei dispositivi gestiti, con seriali e stato." }] }),
+  head: () => ({
+    meta: [
+      { title: "Inventario — PCReady" },
+      {
+        name: "description",
+        content: "Inventario completo dei dispositivi gestiti, con seriali e stato.",
+      },
+    ],
+  }),
   component: InventoryPage,
 });
 
-interface Row { id: string; serial: string | null; model: string; os: string | null;
-  status: TicketStatus; client: string; updated_at: string; end_user: string | null; ticket_code: string; }
+interface Row {
+  id: string;
+  serial: string | null;
+  model: string;
+  os: string | null;
+  status: TicketStatus;
+  client: string;
+  updated_at: string;
+  end_user: string | null;
+  ticket_code: string;
+}
+
+const PAGE_SIZE = 50;
 
 function InventoryPage() {
   const { refreshKey, openAddDevice } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
-  const [fs, setFs] = useState(""); const [fos, setFos] = useState(""); const [q, setQ] = useState("");
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [fs, setFs] = useState("");
+  const [fos, setFos] = useState("");
+  const [q, setQ] = useState("");
 
   useEffect(() => {
-    supabase.from("tickets").select("id, ticket_code, serial, model, os, status, client, updated_at, end_user")
-      .order("updated_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as Row[]));
-  }, [refreshKey]);
+    let query = supabase
+      .from("tickets")
+      .select("id, ticket_code, serial, model, os, status, client, updated_at, end_user", {
+        count: "exact",
+      })
+      .order("updated_at", { ascending: false });
 
-  const oss = Array.from(new Set(rows.map(r => r.os).filter(Boolean))) as string[];
-  const data = useMemo(() => rows.filter(r =>
-    (!fs || r.status === fs) && (!fos || r.os === fos) &&
-    (!q || ((r.serial || "") + r.model + r.client + (r.end_user || "")).toLowerCase().includes(q.toLowerCase()))
-  ), [rows, fs, fos, q]);
+    if (fs) query = query.eq("status", fs);
+    if (fos) query = query.eq("os", fos);
+    const term = q.trim().replace(/[,%]/g, "");
+    if (term) {
+      query = query.or(
+        `serial.ilike.%${term}%,model.ilike.%${term}%,client.ilike.%${term}%,end_user.ilike.%${term}%`,
+      );
+    }
+
+    query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const totalRows = count ?? 0;
+      if (page > 0 && page * PAGE_SIZE >= totalRows) {
+        setPage(0);
+        return;
+      }
+      setRows((data ?? []) as Row[]);
+      setTotal(totalRows);
+    });
+  }, [refreshKey, fs, fos, q, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [fs, fos, q]);
+
+  const data = rows;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function exportPdf() {
     if (!data.length) return toast.error("Nessun dispositivo da esportare");
@@ -48,8 +99,10 @@ function InventoryPage() {
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(40, 20, 30, 30, 4, 4, "F");
     doc.setFillColor(27, 79, 216);
-    doc.rect(46, 26, 7, 7, "F"); doc.rect(57, 26, 7, 7, "F");
-    doc.rect(46, 37, 7, 7, "F"); doc.rect(57, 37, 7, 7, "F");
+    doc.rect(46, 26, 7, 7, "F");
+    doc.rect(57, 26, 7, 7, "F");
+    doc.rect(46, 37, 7, 7, "F");
+    doc.rect(57, 37, 7, 7, "F");
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
@@ -67,7 +120,9 @@ function InventoryPage() {
 
     // ---------- Stats strip ----------
     const counts: Record<string, number> = { pending: 0, "in-progress": 0, testing: 0, ready: 0 };
-    data.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+    data.forEach((r) => {
+      counts[r.status] = (counts[r.status] || 0) + 1;
+    });
     const stats = [
       { label: "In attesa", v: counts.pending, c: [239, 152, 39] },
       { label: "In lavorazione", v: counts["in-progress"], c: [27, 79, 216] },
@@ -95,7 +150,7 @@ function InventoryPage() {
     autoTable(doc, {
       startY: 160,
       head: [["ID", "Modello", "Seriale", "OS", "Stato", "Cliente", "Utente", "Aggiornato"]],
-      body: data.map(r => [
+      body: data.map((r) => [
         r.ticket_code,
         r.model,
         r.serial || "—",
@@ -106,12 +161,19 @@ function InventoryPage() {
         fmtDate(r.updated_at),
       ]),
       styles: {
-        font: "helvetica", fontSize: 9, cellPadding: 7,
-        textColor: [40, 38, 35], lineColor: [232, 228, 220], lineWidth: 0.5,
+        font: "helvetica",
+        fontSize: 9,
+        cellPadding: 7,
+        textColor: [40, 38, 35],
+        lineColor: [232, 228, 220],
+        lineWidth: 0.5,
       },
       headStyles: {
-        fillColor: [40, 38, 35], textColor: [255, 255, 255],
-        fontStyle: "bold", fontSize: 8, cellPadding: 8,
+        fillColor: [40, 38, 35],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8,
+        cellPadding: 8,
       },
       alternateRowStyles: { fillColor: [250, 249, 246] },
       columnStyles: {
@@ -151,16 +213,39 @@ function InventoryPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2 items-center">
-        <select className="pc-input max-w-[160px]" value={fs} onChange={e => setFs(e.target.value)}>
+        <select
+          className="pc-input max-w-[160px]"
+          value={fs}
+          onChange={(e) => setFs(e.target.value)}
+        >
           <option value="">Tutti gli stati</option>
-          {Object.entries(STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          {Object.entries(STATUS_META).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v.label}
+            </option>
+          ))}
         </select>
-        <select className="pc-input max-w-[200px]" value={fos} onChange={e => setFos(e.target.value)}>
+        <select
+          className="pc-input max-w-[200px]"
+          value={fos}
+          onChange={(e) => setFos(e.target.value)}
+        >
           <option value="">Tutti gli OS</option>
-          {oss.map(o => <option key={o}>{o}</option>)}
+          {OS_OPTIONS.map((o) => (
+            <option key={o}>{o}</option>
+          ))}
         </select>
-        <input className="pc-input max-w-[260px]" placeholder="Cerca seriale, modello, utente..." value={q} onChange={e => setQ(e.target.value)} />
-        <span className="ml-auto self-center text-xs text-text3 font-mono">{data.length} dispositivi</span>
+        <input
+          className="pc-input max-w-[260px]"
+          placeholder="Cerca seriale, modello, utente..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <span className="ml-auto self-center text-xs text-text3 font-mono">
+          {total
+            ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
+            : "0 dispositivi"}
+        </span>
         <button onClick={exportPdf} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" /> Esporta PDF
         </button>
@@ -171,33 +256,76 @@ function InventoryPage() {
       <div className="pc-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead><tr>
-              {["ID", "Seriale", "Modello", "OS", "Stato", "Cliente", "Utente", "Aggiornato"].map(h =>
-                <th key={h} className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                  style={{ background: "var(--surface2)", borderColor: "var(--border)" }}>{h}</th>)}
-            </tr></thead>
+            <thead>
+              <tr>
+                {["ID", "Seriale", "Modello", "OS", "Stato", "Cliente", "Utente", "Aggiornato"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
             <tbody>
-              {data.map(r => (
-                <tr key={r.id} className="border-b cursor-pointer hover:bg-surface2 transition-colors"
-                  style={{ borderColor: "var(--border)" }} onClick={() => openTicketDetail(r.id)}>
-                  <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">{r.ticket_code}</td>
-                  <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">{r.serial || "—"}</td>
+              {data.map((r) => (
+                <tr
+                  key={r.id}
+                  className="border-b cursor-pointer hover:bg-surface2 transition-colors"
+                  style={{ borderColor: "var(--border)" }}
+                  onClick={() => openTicketDetail(r.id)}
+                >
+                  <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                    {r.ticket_code}
+                  </td>
+                  <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                    {r.serial || "—"}
+                  </td>
                   <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
                   <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "—"}</td>
-                  <td className="px-[14px] py-[10px]"><StatusBadge status={r.status} /></td>
+                  <td className="px-[14px] py-[10px]">
+                    <StatusBadge status={r.status} />
+                  </td>
                   <td className="px-[14px] py-[10px] text-[12px]">{r.client}</td>
                   <td className="px-[14px] py-[10px] text-[12px]">{r.end_user || "—"}</td>
-                  <td className="px-[14px] py-[10px] text-[11px] text-text3">{fmtDate(r.updated_at)}</td>
+                  <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                    {fmtDate(r.updated_at)}
+                  </td>
                 </tr>
               ))}
               {!data.length && (
-                <tr><td colSpan={8} className="text-center py-12 text-text3 text-sm">
-                  Nessun dispositivo. Clicca <b>“Aggiungi dispositivo”</b> per iniziare.
-                </td></tr>
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-text3 text-sm">
+                    Nessun dispositivo. Clicca <b>“Aggiungi dispositivo”</b> per iniziare.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+        >
+          Precedente
+        </button>
+        <span className="text-xs text-text3 font-mono">
+          Pagina {page + 1} di {pageCount}
+        </span>
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+          disabled={page + 1 >= pageCount}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Successiva
+        </button>
       </div>
     </div>
   );
