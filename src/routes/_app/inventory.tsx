@@ -19,7 +19,7 @@ interface Row { id: string; serial: string | null; model: string; os: string | n
   status: TicketStatus; client: string; updated_at: string; end_user: string | null; ticket_code: string; }
 
 function InventoryPage() {
-  const { refreshKey, openCreate } = useTickets();
+  const { refreshKey, openAddDevice } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
   const [fs, setFs] = useState(""); const [fos, setFos] = useState(""); const [q, setQ] = useState("");
 
@@ -164,7 +164,7 @@ function InventoryPage() {
         <button onClick={exportPdf} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" /> Esporta PDF
         </button>
-        <button onClick={() => openCreate()} className="pc-btn pc-btn-primary pc-btn-sm">
+        <button onClick={() => openAddDevice()} className="pc-btn pc-btn-primary pc-btn-sm">
           <Plus className="w-3 h-3" /> Aggiungi dispositivo
         </button>
       </div>
