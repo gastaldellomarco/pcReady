@@ -65,7 +65,7 @@ function InventoryPage() {
       )
       .order("updated_at", { ascending: false });
 
-    if (fs) query = query.eq("status", fs);
+    if (fs) query = query.eq("status", fs as DeviceStatus);
     if (fos) query = query.eq("os", fos);
     const term = q.trim().replace(/[,%]/g, "");
     if (term) {

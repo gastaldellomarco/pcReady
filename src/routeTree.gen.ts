@@ -16,6 +16,7 @@ import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
 import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
 import { Route as AppKanbanRouteImport } from './routes/_app/kanban'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
+import { Route as AppDocsRouteImport } from './routes/_app/docs'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
@@ -56,6 +57,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDocsRoute = AppDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/checklist': typeof AppChecklistRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
   '/scripts': typeof AppScriptsRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/checklist': typeof AppChecklistRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
   '/scripts': typeof AppScriptsRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_app/checklist': typeof AppChecklistRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/docs': typeof AppDocsRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/kanban': typeof AppKanbanRoute
   '/_app/scripts': typeof AppScriptsRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/checklist'
     | '/clients'
     | '/dashboard'
+    | '/docs'
     | '/inventory'
     | '/kanban'
     | '/scripts'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/checklist'
     | '/clients'
     | '/dashboard'
+    | '/docs'
     | '/inventory'
     | '/kanban'
     | '/scripts'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_app/checklist'
     | '/_app/clients'
     | '/_app/dashboard'
+    | '/_app/docs'
     | '/_app/inventory'
     | '/_app/kanban'
     | '/_app/scripts'
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/docs': {
+      id: '/_app/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof AppDocsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -267,6 +286,7 @@ interface AppRouteChildren {
   AppChecklistRoute: typeof AppChecklistRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDocsRoute: typeof AppDocsRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppKanbanRoute: typeof AppKanbanRoute
   AppScriptsRoute: typeof AppScriptsRoute
@@ -279,6 +299,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppChecklistRoute: AppChecklistRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDocsRoute: AppDocsRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppKanbanRoute: AppKanbanRoute,
   AppScriptsRoute: AppScriptsRoute,

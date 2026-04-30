@@ -38,7 +38,7 @@ interface Row {
   status: TicketStatus;
   created_at: string;
   client_ref?: { name: string } | null;
-  device?: { model: string; serial: string | null } | null;
+  device?: { model: string; serial: string | null; os: string | null } | null;
   assignee?: { full_name: string; initials: string } | null;
 }
 
@@ -72,13 +72,13 @@ function TicketsPage() {
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, client_id, model, serial, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, client_id, model, serial, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
       .order("created_at", { ascending: false });
 
-    if (fs) query = query.eq("status", fs);
-    if (fp) query = query.eq("priority", fp);
+    if (fs) query = query.eq("status", fs as TicketStatus);
+    if (fp) query = query.eq("priority", fp as TicketPriority);
     if (fc) query = query.eq("client_id", fc);
     const q = search.trim().replace(/[,%]/g, "");
     if (q) {
@@ -107,7 +107,7 @@ function TicketsPage() {
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const ticketClient = (t: Row) => t.client_ref?.name || t.client || "-";
-  const ticketModel = (t: Row) => t.device?.model || t.model || "-";
+  const ticketModel = (t: Row) => t.device?.model || t.model || "Nessun asset";
   const ticketSerial = (t: Row) => t.device?.serial || t.serial || null;
 
   function pdfRows(): TicketPdfRow[] {

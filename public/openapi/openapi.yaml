@@ -1,0 +1,410 @@
+openapi: 3.0.3
+info:
+  title: PCReady API
+  version: 1.0.0
+  description: >
+    REST API basata su Supabase PostgREST per ticket, inventario, clienti e referenti.
+    Usa un JWT Supabase nel campo Authorize come Bearer token. Le policy RLS del database
+    determinano le operazioni consentite per admin, tech e viewer.
+servers:
+  - url: https://{projectRef}.supabase.co/rest/v1
+    description: Supabase REST API
+    variables:
+      projectRef:
+        default: your-project
+        description: Project ref Supabase, per esempio abcdefghijklmnop
+security:
+  - bearerAuth: []
+    supabaseAnonKey: []
+tags:
+  - name: Tickets
+    description: Ticket di preparazione PC
+  - name: Devices
+    description: Inventario dispositivi
+  - name: Clients
+    description: Anagrafica clienti
+  - name: Contacts
+    description: Referenti associati ai clienti
+paths:
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: Lista ticket
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - name: status
+          in: query
+          schema:
+            type: string
+            example: eq.pending
+        - name: client_id
+          in: query
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+      responses:
+        "200":
+          description: Elenco ticket
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+    post:
+      tags: [Tickets]
+      summary: Crea ticket
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketInsert"
+      responses:
+        "201":
+          description: Ticket creato
+    patch:
+      tags: [Tickets]
+      summary: Aggiorna ticket
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+          description: Filtro PostgREST sull'id.
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketUpdate"
+      responses:
+        "200":
+          description: Ticket aggiornato
+    delete:
+      tags: [Tickets]
+      summary: Elimina ticket
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+          description: Filtro PostgREST sull'id.
+      responses:
+        "204":
+          description: Ticket eliminato
+  /devices:
+    get:
+      tags: [Devices]
+      summary: Lista dispositivi
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - name: status
+          in: query
+          schema:
+            type: string
+            example: eq.available
+        - name: client_id
+          in: query
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+      responses:
+        "200":
+          description: Elenco dispositivi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+    post:
+      tags: [Devices]
+      summary: Crea dispositivo
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceInsert"
+      responses:
+        "201":
+          description: Dispositivo creato
+    patch:
+      tags: [Devices]
+      summary: Aggiorna dispositivo
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+          description: Filtro PostgREST sull'id.
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceUpdate"
+      responses:
+        "200":
+          description: Dispositivo aggiornato
+  /clients:
+    get:
+      tags: [Clients]
+      summary: Lista clienti
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+      responses:
+        "200":
+          description: Elenco clienti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+    post:
+      tags: [Clients]
+      summary: Crea cliente
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInsert"
+      responses:
+        "201":
+          description: Cliente creato
+    patch:
+      tags: [Clients]
+      summary: Aggiorna cliente
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+          description: Filtro PostgREST sull'id.
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Cliente aggiornato
+  /client_contacts:
+    get:
+      tags: [Contacts]
+      summary: Lista referenti
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - name: client_id
+          in: query
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+      responses:
+        "200":
+          description: Elenco referenti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientContact"
+    post:
+      tags: [Contacts]
+      summary: Crea referente
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientContactInsert"
+      responses:
+        "201":
+          description: Referente creato
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    supabaseAnonKey:
+      type: apiKey
+      in: header
+      name: apikey
+  parameters:
+    select:
+      name: select
+      in: query
+      schema:
+        type: string
+        default: "*"
+      description: Proiezione PostgREST, per esempio id,name,created_at.
+    order:
+      name: order
+      in: query
+      schema:
+        type: string
+        example: created_at.desc
+      description: Ordinamento PostgREST.
+    preferReturn:
+      name: Prefer
+      in: header
+      schema:
+        type: string
+        default: return=representation
+  schemas:
+    Client:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        company_name: { type: string, nullable: true }
+        vat_number: { type: string, nullable: true }
+        fiscal_code: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ClientInsert:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, example: Azienda Alpha }
+        company_name: { type: string, example: Azienda Alpha }
+        vat_number: { type: string, nullable: true }
+        fiscal_code: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+    ClientUpdate:
+      allOf:
+        - $ref: "#/components/schemas/ClientInsert"
+    ClientContact:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        client_id: { type: string, format: uuid }
+        full_name: { type: string, nullable: true }
+        first_name: { type: string }
+        last_name: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        job_title: { type: string, nullable: true }
+        department: { type: string, nullable: true }
+        is_primary: { type: boolean }
+        notes: { type: string, nullable: true }
+    ClientContactInsert:
+      type: object
+      required: [client_id, first_name]
+      properties:
+        client_id: { type: string, format: uuid }
+        full_name: { type: string, example: Mario Rossi }
+        first_name: { type: string, example: Mario }
+        last_name: { type: string, example: Rossi }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        job_title: { type: string, nullable: true }
+        department: { type: string, nullable: true }
+        is_primary: { type: boolean, default: false }
+        notes: { type: string, nullable: true }
+    Device:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        client_id: { type: string, format: uuid }
+        serial: { type: string, nullable: true }
+        model: { type: string }
+        os: { type: string, nullable: true }
+        assigned_to: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [available, assigned, maintenance, retired]
+        notes: { type: string, nullable: true }
+    DeviceInsert:
+      type: object
+      required: [client_id, model]
+      properties:
+        client_id: { type: string, format: uuid }
+        model: { type: string, example: Dell Latitude 5540 }
+        serial: { type: string, nullable: true }
+        os: { type: string, nullable: true }
+        assigned_to: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [available, assigned, maintenance, retired]
+          default: available
+        notes: { type: string, nullable: true }
+    DeviceUpdate:
+      allOf:
+        - $ref: "#/components/schemas/DeviceInsert"
+    Ticket:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        ticket_code: { type: string }
+        client: { type: string }
+        client_id: { type: string, format: uuid, nullable: true }
+        device_id: { type: string, format: uuid, nullable: true }
+        requester: { type: string }
+        requester_contact_id: { type: string, format: uuid, nullable: true }
+        model: { type: string, nullable: true, deprecated: true }
+        serial: { type: string, nullable: true, deprecated: true }
+        priority:
+          type: string
+          enum: [high, med, low]
+        status:
+          type: string
+          enum: [pending, in-progress, testing, ready]
+    TicketInsert:
+      type: object
+      required: [client, requester]
+      properties:
+        ticket_code: { type: string, example: PC-0001 }
+        client: { type: string }
+        client_id: { type: string, format: uuid, nullable: true }
+        device_id: { type: string, format: uuid, nullable: true }
+        requester: { type: string }
+        requester_contact_id: { type: string, format: uuid, nullable: true }
+        model: { type: string, nullable: true, deprecated: true }
+        serial: { type: string, nullable: true, deprecated: true }
+        priority:
+          type: string
+          enum: [high, med, low]
+          default: med
+        status:
+          type: string
+          enum: [pending, in-progress, testing, ready]
+          default: pending
+    TicketUpdate:
+      allOf:
+        - $ref: "#/components/schemas/TicketInsert"

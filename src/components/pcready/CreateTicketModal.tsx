@@ -119,7 +119,7 @@ export function CreateTicketModal() {
         setDevices(arr);
         setF((cur) => ({
           ...cur,
-          device_id: arr.some((d) => d.id === cur.device_id) ? cur.device_id : arr[0]?.id || "",
+          device_id: arr.some((d) => d.id === cur.device_id) ? cur.device_id : "",
         }));
       });
     supabase
@@ -146,31 +146,26 @@ export function CreateTicketModal() {
 
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
-    if (!f.client_id || !f.device_id || !f.requester)
-      return toast.error("Compila i campi obbligatori");
+    if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
     setBusy(true);
     try {
       const tpl = templates.find((t) => t.id === templateId);
       const structure = tpl?.structure || DEFAULT_STRUCTURE;
       const client = clients.find((c) => c.id === f.client_id);
       const device = devices.find((d) => d.id === f.device_id);
-      if (!client || !device) return toast.error("Seleziona cliente e dispositivo");
+      if (!client) return toast.error("Seleziona un cliente");
       const contact = contacts.find((c) => c.id === f.requester_contact_id);
       const requester = f.free_requester ? f.requester.trim() : contact ? contactName(contact) : "";
       if (!requester) return toast.error("Seleziona un richiedente o usa il fallback libero");
       const ticketInsert = {
         client: client.company_name || client.name,
         client_id: client.id,
-        device_id: device.id,
-        model: device.model,
-        serial: device.serial || null,
+        device_id: device?.id || null,
         requester,
         requester_contact_id: f.free_requester ? null : contact?.id || null,
-        end_user: device.assigned_to || null,
         priority: f.priority,
         status: "pending",
         assignee_id: f.assignee_id || null,
-        os: device.os || null,
         software: f.software || null,
         notes: f.notes || null,
         checklist: {},
@@ -253,13 +248,17 @@ export function CreateTicketModal() {
               ))}
             </select>
           </Field>
-          <Field label="Dispositivo *">
+          <Field label="Dispositivo">
             <select
               className="pc-input"
               value={f.device_id}
               onChange={(e) => setF({ ...f, device_id: e.target.value })}
             >
-              {!devices.length && <option value="">Nessun dispositivo per questo cliente</option>}
+              <option value="">
+                {devices.length
+                  ? "Nessun dispositivo associato"
+                  : "Nessun dispositivo per questo cliente"}
+              </option>
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.model}

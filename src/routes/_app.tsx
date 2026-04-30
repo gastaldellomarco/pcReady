@@ -19,6 +19,7 @@ import {
   Users,
   Menu,
   Building2,
+  BookOpenText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
@@ -43,6 +44,7 @@ const NAV_CONFIG = [
   { to: "/scripts", label: "Script", icon: Terminal },
   { to: "/clients", label: "Clienti", icon: Building2 },
   { to: "/inventory", label: "Inventario", icon: Boxes },
+  { to: "/docs", label: "API Docs", icon: BookOpenText, staffOnly: true },
   { to: "/admin", label: "Admin / Utenti", icon: Users, adminOnly: true },
 ] as const;
 
@@ -67,6 +69,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/scripts": "Script",
   "/clients": "Clienti",
   "/inventory": "Inventario",
+  "/docs": "API Docs",
   "/admin": "Admin / Utenti",
 };
 
@@ -126,7 +129,9 @@ function AppLayout() {
   const title = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
   const pageTitle = title ? PAGE_TITLES[title] : "PCReady";
   const configItems = NAV_CONFIG.filter(
-    (item) => !("adminOnly" in item) || profile.role === "admin",
+    (item) =>
+      (!("adminOnly" in item) || profile.role === "admin") &&
+      (!("staffOnly" in item) || profile.role === "admin" || profile.role === "tech"),
   );
   const sidebarContent = (
     <SidebarContent

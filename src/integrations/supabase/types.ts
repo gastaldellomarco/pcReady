@@ -320,6 +320,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      ticket_device_assignments: {
+        Row: {
+          assigned_at: string;
+          assigned_by: string | null;
+          device_id: string;
+          id: string;
+          notes: string | null;
+          ticket_id: string;
+          unassigned_at: string | null;
+        };
+        Insert: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          device_id: string;
+          id?: string;
+          notes?: string | null;
+          ticket_id: string;
+          unassigned_at?: string | null;
+        };
+        Update: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          device_id?: string;
+          id?: string;
+          notes?: string | null;
+          ticket_id?: string;
+          unassigned_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ticket_device_assignments_device_id_fkey";
+            columns: ["device_id"];
+            isOneToOne: false;
+            referencedRelation: "devices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ticket_device_assignments_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tickets: {
         Row: {
           assignee_id: string | null;
@@ -332,7 +377,7 @@ export type Database = {
           device_id: string | null;
           end_user: string | null;
           id: string;
-          model: string;
+          model: string | null;
           notes: string | null;
           os: string | null;
           priority: Database["public"]["Enums"]["ticket_priority"];
@@ -356,7 +401,7 @@ export type Database = {
           device_id?: string | null;
           end_user?: string | null;
           id?: string;
-          model: string;
+          model?: string | null;
           notes?: string | null;
           os?: string | null;
           priority?: Database["public"]["Enums"]["ticket_priority"];
@@ -366,7 +411,7 @@ export type Database = {
           software?: string | null;
           status?: Database["public"]["Enums"]["ticket_status"];
           template_id?: string | null;
-          ticket_code: string;
+          ticket_code?: string;
           updated_at?: string;
         };
         Update: {
@@ -380,7 +425,7 @@ export type Database = {
           device_id?: string | null;
           end_user?: string | null;
           id?: string;
-          model?: string;
+          model?: string | null;
           notes?: string | null;
           os?: string | null;
           priority?: Database["public"]["Enums"]["ticket_priority"];

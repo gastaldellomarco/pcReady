@@ -1,4 +1,5 @@
-import { Page, StyleSheet, Text, View, type Style } from "@react-pdf/renderer";
+import { Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { Style } from "@react-pdf/stylesheet";
 import { pdfFonts, pdfPalette } from "./theme";
 
 export interface PdfStat {
@@ -266,19 +267,15 @@ function PdfCell<T>({ row, column }: { row: T; column: PdfColumn<T> }) {
     );
   }
 
-  return (
-    <Text
-      style={[
-        styles.cellText,
-        column.mono ? styles.mono : undefined,
-        column.color ? { color: column.color(row), fontFamily: pdfFonts.bold } : undefined,
-      ]}
-    >
-      {column.value(row)}
-    </Text>
-  );
+  const textStyle: Style[] = [styles.cellText as Style];
+  if (column.mono) textStyle.push(styles.mono as Style);
+  if (column.color) {
+    textStyle.push({ color: column.color(row), fontFamily: pdfFonts.bold } as Style);
+  }
+
+  return <Text style={textStyle}>{column.value(row)}</Text>;
 }
 
-function widthStyle(width: number | `${number}%`): Style {
+function widthStyle(width: number | `${number}%`) {
   return typeof width === "number" ? { width } : { width };
 }
