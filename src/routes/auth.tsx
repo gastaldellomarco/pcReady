@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Accedi — PCReady" },
+      { title: "Accedi - PCReady" },
       { name: "description", content: "Accedi a PCReady per gestire la preparazione dei tuoi PC." },
     ],
   }),
@@ -18,10 +18,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
-  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { initTheme(); }, []);
@@ -32,23 +30,10 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-        if (error) throw error;
-        toast.success("Bentornato!");
-        navigate({ to: "/dashboard" });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email, password: pwd,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: name || email.split("@")[0] },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account creato! Accedi ora.");
-        setMode("login");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+      if (error) throw error;
+      toast.success("Bentornato!");
+      navigate({ to: "/dashboard" });
     } catch (err: any) {
       toast.error(err.message || "Errore");
     } finally {
@@ -68,41 +53,43 @@ function AuthPage() {
           </div>
           <div>
             <div className="text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-head)" }}>PCReady</div>
-            <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>v3.0 · Cloud</div>
+            <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>v3.0 - Cloud</div>
           </div>
         </div>
 
         <div className="pc-card overflow-hidden">
           <div className="pc-card-hd">
-            <span className="pc-card-title">{mode === "login" ? "Accedi" : "Crea account"}</span>
-            <button
-              type="button"
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
-              className="text-xs font-semibold text-accent hover:underline"
-            >
-              {mode === "login" ? "Registrati" : "Hai già un account?"}
-            </button>
+            <span className="pc-card-title">Accedi</span>
           </div>
           <form onSubmit={submit} className="pc-card-body flex flex-col gap-3">
-            {mode === "signup" && (
-              <div>
-                <label className="pc-label">Nome completo</label>
-                <input className="pc-input" value={name} onChange={e => setName(e.target.value)} placeholder="Mario Rossi" />
-              </div>
-            )}
             <div>
               <label className="pc-label">Email</label>
-              <input className="pc-input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@azienda.it" />
+              <input
+                className="pc-input"
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="tu@azienda.it"
+              />
             </div>
             <div>
               <label className="pc-label">Password</label>
-              <input className="pc-input" type="password" required minLength={6} value={pwd} onChange={e => setPwd(e.target.value)} placeholder="••••••••" />
+              <input
+                className="pc-input"
+                type="password"
+                required
+                minLength={6}
+                value={pwd}
+                onChange={e => setPwd(e.target.value)}
+                placeholder="Password"
+              />
             </div>
             <button type="submit" disabled={busy} className="pc-btn pc-btn-primary justify-center mt-1">
-              {busy ? "Attendere…" : mode === "login" ? "Accedi" : "Crea account"}
+              {busy ? "Attendere..." : "Accedi"}
             </button>
             <p className="text-[11px] text-text3 text-center mt-2">
-              Il primo utente registrato ottiene il ruolo <strong>Amministratore</strong>.
+              Gli account vengono creati solo dagli amministratori.
             </p>
           </form>
         </div>

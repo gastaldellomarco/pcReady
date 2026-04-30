@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Shield, Trash2, UserCog, UserX, UserCheck } from "lucide-react";
+import { MailPlus, Search, Trash2, UserCog, UserX, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import {
   deleteAdminUser,
+  inviteAdminUser,
   listAdminUsers,
   setAdminUserDisabled,
   updateAdminUser,
@@ -31,11 +32,16 @@ function AdminUsersPage() {
   const updateUser = useServerFn(updateAdminUser);
   const setDisabled = useServerFn(setAdminUserDisabled);
   const deleteUser = useServerFn(deleteAdminUser);
+  const inviteUser = useServerFn(inviteAdminUser);
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
   const [loadingRows, setLoadingRows] = useState(true);
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/dashboard", replace: true });
@@ -117,12 +123,70 @@ function AdminUsersPage() {
     }
   }
 
+  async function invite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session?.access_token) return;
+    setInviteBusy(true);
+    try {
+      await inviteUser({
+        data: {
+          accessToken: session.access_token,
+          email: inviteEmail,
+          fullName: inviteName,
+          role: inviteRole,
+          redirectTo: `${window.location.origin}/auth`,
+        },
+      });
+      toast.success("Invito inviato");
+      setInviteEmail("");
+      setInviteName("");
+      setInviteRole("viewer");
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invito non riuscito");
+    } finally {
+      setInviteBusy(false);
+    }
+  }
+
   if (loading || !isAdmin) {
     return <div className="text-text3 text-sm">Verifica permessi...</div>;
   }
 
   return (
     <div className="flex flex-col gap-5">
+      <form className="pc-card p-4 flex flex-wrap items-end gap-3" onSubmit={invite}>
+        <div className="flex-1 min-w-[220px]">
+          <label className="pc-label">Email nuovo utente</label>
+          <input
+            className="pc-input"
+            type="email"
+            required
+            value={inviteEmail}
+            onChange={event => setInviteEmail(event.target.value)}
+            placeholder="utente@azienda.it"
+          />
+        </div>
+        <div className="flex-1 min-w-[180px]">
+          <label className="pc-label">Nome</label>
+          <input
+            className="pc-input"
+            value={inviteName}
+            onChange={event => setInviteName(event.target.value)}
+            placeholder="Mario Rossi"
+          />
+        </div>
+        <div className="min-w-[160px]">
+          <label className="pc-label">Ruolo</label>
+          <select className="pc-input" value={inviteRole} onChange={event => setInviteRole(event.target.value as AppRole)}>
+            {ROLES.map(item => <option key={item} value={item}>{roleLabel(item)}</option>)}
+          </select>
+        </div>
+        <button className="pc-btn pc-btn-primary" disabled={inviteBusy} type="submit">
+          <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? "Invio..." : "Invita"}
+        </button>
+      </form>
+
       <div className="flex flex-wrap items-center gap-2">
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] flex-1 min-w-[220px] max-w-[360px]"

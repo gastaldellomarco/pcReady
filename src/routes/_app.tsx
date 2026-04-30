@@ -37,7 +37,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 function AppLayout() {
-  const { session, profile, loading, signOut } = useAuth();
+  const { session, profile, loading, profileLoading, authError, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const [dark, setDark] = useState(false);
   const { pendingCount, openCreate } = useTickets();
@@ -48,9 +48,32 @@ function AppLayout() {
     if (!loading && !session) navigate({ to: "/auth" });
   }, [loading, session, navigate]);
 
-  if (loading || !session || !profile) {
+  if (loading || profileLoading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center text-text3 text-sm">Caricamento…</div>
+    );
+  }
+
+  if (authError || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg2)" }}>
+        <div className="pc-card max-w-md w-full p-6 text-center">
+          <div className="text-[17px] font-bold mb-2" style={{ fontFamily: "var(--font-head)" }}>
+            Profilo non disponibile
+          </div>
+          <p className="text-[13px] text-text3 mb-5">
+            {authError || "Non e' stato possibile caricare il profilo associato alla sessione."}
+          </p>
+          <div className="flex justify-center gap-2">
+            <button className="pc-btn pc-btn-primary" onClick={() => refreshProfile()}>
+              Riprova
+            </button>
+            <button className="pc-btn pc-btn-ghost" onClick={() => signOut()}>
+              Esci
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 

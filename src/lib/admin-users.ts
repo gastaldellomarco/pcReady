@@ -32,6 +32,13 @@ interface DeleteUserInput extends AuthedInput {
   userId: string;
 }
 
+interface InviteUserInput extends AuthedInput {
+  email: string;
+  fullName?: string;
+  role: AppRole;
+  redirectTo?: string;
+}
+
 const APP_ROLES: AppRole[] = ["admin", "tech", "viewer"];
 
 async function requireAdmin(accessToken: string) {
@@ -142,6 +149,42 @@ export const updateAdminUser = createServerFn({ method: "POST" })
       role: data.role,
     });
     if (insertError) throw new Error(insertError.message);
+
+    return { ok: true };
+  });
+
+export const inviteAdminUser = createServerFn({ method: "POST" })
+  .inputValidator((data: InviteUserInput) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    if (!APP_ROLES.includes(data.role)) throw new Response("Ruolo non valido", { status: 400 });
+
+    const email = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Response("Email non valida", { status: 400 });
+
+    const fullName = data.fullName?.trim() || email.split("@")[0];
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: data.redirectTo,
+      data: { full_name: fullName },
+    });
+    if (inviteError) throw new Error(inviteError.message);
+
+    const invitedUserId = inviteData.user?.id;
+    if (!invitedUserId) throw new Error("Invito creato senza utente associato");
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert({ id: invitedUserId, full_name: fullName, initials: normalizeInitials(fullName) });
+    if (profileError) throw new Error(profileError.message);
+
+    const { error: deleteError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", invitedUserId);
+    if (deleteError) throw new Error(deleteError.message);
+
+    const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
+      user_id: invitedUserId,
+      role: data.role,
+    });
+    if (roleError) throw new Error(roleError.message);
 
     return { ok: true };
   });
