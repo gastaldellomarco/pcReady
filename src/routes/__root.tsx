@@ -11,10 +11,10 @@ function NotFoundComponent() {
         <h1 className="text-7xl font-bold text-foreground" style={{ fontFamily: "var(--font-head)" }}>404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Pagina non trovata</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          La pagina richiesta non esiste o è stata spostata.
+          La pagina richiesta non esiste o e' stata spostata.
         </p>
         <div className="mt-6">
-          <Link to="/" className="pc-btn pc-btn-primary">Torna alla home</Link>
+          <Link to="/dashboard" className="pc-btn pc-btn-primary">Torna alla Dashboard</Link>
         </div>
       </div>
     </div>
@@ -26,9 +26,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PCReady — Gestione preparazione PC" },
+      { title: "PCReady - Gestione preparazione PC" },
       { name: "description", content: "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario." },
-      { property: "og:title", content: "PCReady — Gestione preparazione PC" },
+      { property: "og:title", content: "PCReady - Gestione preparazione PC" },
       { property: "og:description", content: "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
