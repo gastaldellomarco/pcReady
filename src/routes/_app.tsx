@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { initTheme, isDark, toggleTheme } from "@/lib/theme";
 import { avatarColors } from "@/lib/pcready";
 import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, Plus, Terminal, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
@@ -24,6 +25,16 @@ const NAV_CONFIG = [
   { to: "/inventory",   label: "Inventario",  icon: Boxes },
   { to: "/admin",       label: "Admin / Utenti", icon: Users, adminOnly: true },
 ] as const;
+
+type NavPath = (typeof NAV_PRIMARY)[number]["to"] | (typeof NAV_CONFIG)[number]["to"];
+
+interface NavLinkItemProps {
+  to: NavPath;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  badge?: number;
+}
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -185,7 +196,7 @@ function NavSection({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-function NavLinkItem({ to, label, icon: Icon, active, badge }: any) {
+function NavLinkItem({ to, label, icon: Icon, active, badge }: NavLinkItemProps) {
   return (
     <Link
       to={to}

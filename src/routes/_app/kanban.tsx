@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
-import { STATUS_META, type TicketStatus } from "@/lib/pcready";
+import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { openTicketDetail } from "@/lib/use-detail";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/kanban")({
 });
 
 interface Card { id: string; ticket_code: string; client: string; model: string; status: TicketStatus;
-  priority: any; assignee?: { full_name: string; initials: string } | null; }
+  priority: TicketPriority; assignee?: { full_name: string; initials: string } | null; }
 
 function KanbanPage() {
   const { refreshKey, triggerRefresh } = useTickets();
@@ -25,7 +25,7 @@ function KanbanPage() {
 
   useEffect(() => {
     supabase.from("tickets").select("id, ticket_code, client, model, status, priority, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)")
-      .order("created_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as any));
+      .order("created_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as unknown as Card[]));
   }, [refreshKey]);
 
   async function moveTo(id: string, status: TicketStatus) {

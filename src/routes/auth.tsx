@@ -15,6 +15,10 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 function AuthPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -34,8 +38,8 @@ function AuthPage() {
       if (error) throw error;
       toast.success("Bentornato!");
       navigate({ to: "/dashboard" });
-    } catch (err: any) {
-      toast.error(err.message || "Errore");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Errore"));
     } finally {
       setBusy(false);
     }

@@ -25,7 +25,7 @@ function InventoryPage() {
 
   useEffect(() => {
     supabase.from("tickets").select("id, ticket_code, serial, model, os, status, client, updated_at, end_user")
-      .order("updated_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as any));
+      .order("updated_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as Row[]));
   }, [refreshKey]);
 
   const oss = Array.from(new Set(rows.map(r => r.os).filter(Boolean))) as string[];
@@ -137,8 +137,8 @@ function InventoryPage() {
         doc.setFontSize(8);
         doc.setTextColor(160, 156, 150);
         doc.setFont("helvetica", "normal");
-        const pageNum = (doc as any).internal.getNumberOfPages();
-        const cur = (doc as any).internal.getCurrentPageInfo().pageNumber;
+        const pageNum = doc.getNumberOfPages();
+        const cur = doc.getCurrentPageInfo().pageNumber;
         doc.text("PCReady · Inventario dispositivi", 40, pageH - 20);
         doc.text(`Pagina ${cur} di ${pageNum}`, pageW - 40, pageH - 20, { align: "right" });
       },

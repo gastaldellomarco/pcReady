@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
-import { type ChecklistState, STATUS_META, type TicketStatus, generatePrepScript, fmtDate, PRIORITY_LABEL, type ChecklistStructure, DEFAULT_STRUCTURE, structureProgress } from "@/lib/pcready";
+import { type ChecklistState, STATUS_META, type TicketPriority, type TicketStatus, generatePrepScript, fmtDate, PRIORITY_LABEL, type ChecklistStructure, DEFAULT_STRUCTURE, structureProgress } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip } from "./StatusBadge";
 import { Check, Code2, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TicketRow {
   id: string; ticket_code: string; client: string; model: string; serial: string | null;
-  requester: string; end_user: string | null; priority: any; status: TicketStatus;
+  requester: string; end_user: string | null; priority: TicketPriority; status: TicketStatus;
   assignee_id: string | null; os: string | null; software: string | null; notes: string | null;
   checklist: ChecklistState; created_at: string;
   checklist_structure?: ChecklistStructure | null;
@@ -29,7 +30,7 @@ export function TicketDetailModal() {
   useEffect(() => {
     if (!id) { setT(null); return; }
     supabase.from("tickets").select("*, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)")
-      .eq("id", id).maybeSingle().then(({ data }) => setT(data as any));
+      .eq("id", id).maybeSingle().then(({ data }) => setT(data as unknown as TicketRow | null));
   }, [id]);
 
   if (!id || !t) return null;
@@ -40,8 +41,12 @@ export function TicketDetailModal() {
   const tabKeys = Object.keys(struct);
   const currentTab = tab && struct[tab] ? tab : tabKeys[0];
 
-  async function update(patch: Partial<TicketRow>) {
-    const { error } = await supabase.from("tickets").update(patch as any).eq("id", ticket.id);
+  async function update(patch: { checklist?: ChecklistState; status?: TicketStatus }) {
+    const dbPatch: TablesUpdate<"tickets"> = {
+      ...patch,
+      checklist: patch.checklist as unknown as Json | undefined,
+    };
+    const { error } = await supabase.from("tickets").update(dbPatch).eq("id", ticket.id);
     if (error) return toast.error(error.message);
     setT({ ...ticket, ...patch } as TicketRow);
     triggerRefresh();

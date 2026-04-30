@@ -198,7 +198,7 @@ export const setAdminUserDisabled = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       ban_duration: data.disabled ? "876000h" : "none",
-    } as any);
+    });
     if (error) throw new Error(error.message);
 
     return { ok: true };

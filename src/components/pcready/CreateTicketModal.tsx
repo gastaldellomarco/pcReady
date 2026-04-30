@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { CLIENTS, OS_OPTIONS, PRIORITY_LABEL, type TicketPriority, DEFAULT_STRUCTURE, type ChecklistStructure } from "@/lib/pcready";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { toast } from "sonner";
 
 interface Tech { id: string; full_name: string; initials: string; }
 interface TplOpt { id: string; name: string; structure: ChecklistStructure; is_default: boolean; }
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export function CreateTicketModal() {
   const { createOpen, closeCreate, triggerRefresh } = useTickets();
@@ -53,7 +58,7 @@ export function CreateTicketModal() {
         os: f.os, software: f.software || null, notes: f.notes || null,
         checklist: {}, created_by: user!.id,
         template_id: tpl?.id || null,
-        checklist_structure: structure as any,
+        checklist_structure: structure as unknown as Json,
       }).select("id, ticket_code").single();
       if (error) throw error;
       await supabase.from("activity_log").insert({
@@ -65,8 +70,8 @@ export function CreateTicketModal() {
         priority: "med", assignee_id: "", os: OS_OPTIONS[0], software: "", notes: "" });
       closeCreate();
       triggerRefresh();
-    } catch (e: any) {
-      toast.error(e.message || "Errore creazione");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Errore creazione"));
     } finally { setBusy(false); }
   }
 
@@ -98,7 +103,7 @@ export function CreateTicketModal() {
             </select>
           </Field>
           <Field label="Priorità">
-            <select className="pc-input" value={f.priority} onChange={e => setF({ ...f, priority: e.target.value as any })}>
+            <select className="pc-input" value={f.priority} onChange={e => setF({ ...f, priority: e.target.value as TicketPriority })}>
               {Object.entries(PRIORITY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </Field>

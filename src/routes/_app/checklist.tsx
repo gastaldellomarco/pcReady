@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_STRUCTURE, type ChecklistStructure } from "@/lib/pcready";
 import { Plus, Trash2, Star, StarOff, Check, X, Pencil } from "lucide-react";
@@ -43,7 +44,7 @@ function ChecklistPage() {
     const { data, error } = await supabase.from("checklist_templates").insert({
       name: "Nuovo modello",
       description: "",
-      structure: DEFAULT_STRUCTURE as any,
+      structure: DEFAULT_STRUCTURE as unknown as Json,
       created_by: user!.id,
     }).select("id").single();
     if (error) return toast.error(error.message);
@@ -70,7 +71,11 @@ function ChecklistPage() {
   }
 
   async function update(t: Template, patch: Partial<Template>) {
-    const { error } = await supabase.from("checklist_templates").update(patch as any).eq("id", t.id);
+    const dbPatch: TablesUpdate<"checklist_templates"> = {
+      ...patch,
+      structure: patch.structure as unknown as Json | undefined,
+    };
+    const { error } = await supabase.from("checklist_templates").update(dbPatch).eq("id", t.id);
     if (error) return toast.error(error.message);
     setTemplates(ts => ts.map(x => x.id === t.id ? { ...x, ...patch } as Template : x));
   }

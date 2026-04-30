@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
 import { Plus, Search, Copy, Download, Pencil, Trash2, Terminal, Shield, Wrench, Network, Database, Cog, Code2, FileCode } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/scripts")({
@@ -29,7 +30,7 @@ interface ScriptRow {
 const LANGUAGES = ["powershell", "bash", "python", "cmd", "sql", "javascript"] as const;
 const CATEGORIES = ["Generale", "Setup OS", "Software", "Sicurezza", "Rete", "Manutenzione", "Diagnostica"];
 const COLORS = ["#1B4FD8", "#7C3AED", "#16A34A", "#EF9827", "#DC2626", "#0891B2", "#DB2777", "#525252"];
-const ICONS: Record<string, any> = {
+const ICONS: Record<string, LucideIcon> = {
   terminal: Terminal, shield: Shield, wrench: Wrench, network: Network,
   database: Database, cog: Cog, code: Code2, file: FileCode,
 };
@@ -38,6 +39,10 @@ const ICON_KEYS = Object.keys(ICONS);
 const LANG_EXT: Record<string, string> = {
   powershell: "ps1", bash: "sh", python: "py", cmd: "bat", sql: "sql", javascript: "js",
 };
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 function ScriptsPage() {
   const { canEdit, isAdmin } = useAuth();
@@ -297,8 +302,8 @@ function ScriptEditor({ initial, onClose, onSaved }:
         toast.success("Script creato");
       }
       onSaved();
-    } catch (e: any) {
-      toast.error(e.message || "Errore salvataggio");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Errore salvataggio"));
     } finally { setBusy(false); }
   }
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
@@ -28,9 +29,9 @@ function DashboardPage() {
 
   useEffect(() => {
     supabase.from("tickets").select("id, ticket_code, client, model, status, created_at, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)")
-      .order("created_at", { ascending: false }).then(({ data }) => setTickets((data ?? []) as any));
+      .order("created_at", { ascending: false }).then(({ data }) => setTickets((data ?? []) as unknown as T[]));
     supabase.from("activity_log").select("id, type, message, created_at")
-      .order("created_at", { ascending: false }).limit(6).then(({ data }) => setLogs((data ?? []) as any));
+      .order("created_at", { ascending: false }).limit(6).then(({ data }) => setLogs((data ?? []) as Log[]));
   }, [refreshKey]);
 
   const counts = useMemo(() => {
@@ -161,7 +162,16 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent, sub, valueColor, icon }: any) {
+interface StatCardProps {
+  label: string;
+  value: number | string;
+  accent: string;
+  sub: string;
+  valueColor?: string;
+  icon: ReactNode;
+}
+
+function StatCard({ label, value, accent, sub, valueColor, icon }: StatCardProps) {
   return (
     <div className="pc-stat" style={{ borderLeft: `3px solid ${accent}` }}>
       <div className="absolute right-4 top-4 w-8 h-8 rounded-lg flex items-center justify-center opacity-15"

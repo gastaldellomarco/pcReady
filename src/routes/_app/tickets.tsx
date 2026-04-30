@@ -26,7 +26,7 @@ function TicketsPage() {
 
   useEffect(() => {
     supabase.from("tickets").select("id, ticket_code, client, model, serial, requester, priority, status, created_at, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)")
-      .order("created_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as any));
+      .order("created_at", { ascending: false }).then(({ data }) => setRows((data ?? []) as unknown as Row[]));
   }, [refreshKey]);
 
   const data = useMemo(() => rows.filter(t =>

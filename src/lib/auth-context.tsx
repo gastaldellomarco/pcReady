@@ -26,6 +26,10 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -57,10 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initials: p.initials || p.full_name.slice(0, 2).toUpperCase(),
         role: (r as AppRole) ?? "viewer",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestId !== profileRequestId.current) return;
       setProfile(null);
-      setAuthError(err?.message || "Impossibile caricare il profilo utente");
+      setAuthError(errorMessage(err, "Impossibile caricare il profilo utente"));
     } finally {
       if (requestId === profileRequestId.current) setProfileLoading(false);
     }
@@ -96,12 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
         return applySession(s);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (!active) return;
         setSession(null);
         setUser(null);
         setProfile(null);
-        setAuthError(err?.message || "Impossibile verificare la sessione");
+        setAuthError(errorMessage(err, "Impossibile verificare la sessione"));
       })
       .finally(() => {
         if (active) setLoading(false);

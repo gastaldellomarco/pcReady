@@ -24,7 +24,8 @@ function AutomationsPage() {
       supabase.from("automation_rules").select("id, trigger_text, action_text, active, count").order("sort"),
       supabase.from("activity_log").select("id, type, message, created_at").order("created_at", { ascending: false }).limit(30),
     ]);
-    setRules((r.data ?? []) as any); setLogs((l.data ?? []) as any);
+    setRules((r.data ?? []) as Rule[]);
+    setLogs((l.data ?? []) as Log[]);
   }
   useEffect(() => { load(); }, []);
 
