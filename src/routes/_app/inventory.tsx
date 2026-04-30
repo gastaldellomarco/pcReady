@@ -2,9 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
-import { OS_OPTIONS, STATUS_META, type TicketStatus, fmtDate } from "@/lib/pcready";
-import { StatusBadge } from "@/components/pcready/StatusBadge";
-import { openTicketDetail } from "@/lib/use-detail";
+import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import { Plus, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -28,12 +26,21 @@ interface Row {
   serial: string | null;
   model: string;
   os: string | null;
-  status: TicketStatus;
-  client: string;
+  status: DeviceStatus;
+  client_id: string;
+  client?: { name: string } | null;
   updated_at: string;
-  end_user: string | null;
-  ticket_code: string;
+  assigned_to: string | null;
 }
+
+type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
+
+const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }> = {
+  available: { label: "Disponibile", color: "#16A34A" },
+  assigned: { label: "Assegnato", color: "#1B4FD8" },
+  maintenance: { label: "Manutenzione", color: "#EF9827" },
+  retired: { label: "Dismesso", color: "#6B7280" },
+};
 
 const PAGE_SIZE = 50;
 
@@ -48,19 +55,20 @@ function InventoryPage() {
 
   useEffect(() => {
     let query = supabase
-      .from("tickets")
-      .select("id, ticket_code, serial, model, os, status, client, updated_at, end_user", {
-        count: "exact",
-      })
+      .from("devices")
+      .select(
+        "id, serial, model, os, status, client_id, updated_at, assigned_to, client:clients(name)",
+        {
+          count: "exact",
+        },
+      )
       .order("updated_at", { ascending: false });
 
     if (fs) query = query.eq("status", fs);
     if (fos) query = query.eq("os", fos);
     const term = q.trim().replace(/[,%]/g, "");
     if (term) {
-      query = query.or(
-        `serial.ilike.%${term}%,model.ilike.%${term}%,client.ilike.%${term}%,end_user.ilike.%${term}%`,
-      );
+      query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
     }
 
     query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
@@ -119,15 +127,20 @@ function InventoryPage() {
     doc.text(`${data.length} dispositivi`, pageW - 40, 54, { align: "right" });
 
     // ---------- Stats strip ----------
-    const counts: Record<string, number> = { pending: 0, "in-progress": 0, testing: 0, ready: 0 };
+    const counts: Record<string, number> = {
+      available: 0,
+      assigned: 0,
+      maintenance: 0,
+      retired: 0,
+    };
     data.forEach((r) => {
       counts[r.status] = (counts[r.status] || 0) + 1;
     });
     const stats = [
-      { label: "In attesa", v: counts.pending, c: [239, 152, 39] },
-      { label: "In lavorazione", v: counts["in-progress"], c: [27, 79, 216] },
-      { label: "Testing", v: counts.testing, c: [124, 58, 237] },
-      { label: "Pronti", v: counts.ready, c: [22, 163, 74] },
+      { label: "Disponibili", v: counts.available || 0, c: [22, 163, 74] },
+      { label: "Assegnati", v: counts.assigned || 0, c: [27, 79, 216] },
+      { label: "Manutenzione", v: counts.maintenance || 0, c: [239, 152, 39] },
+      { label: "Dismessi", v: counts.retired || 0, c: [107, 114, 128] },
     ] as const;
     const sw = (pageW - 80 - 30) / 4;
     stats.forEach((s, i) => {
@@ -151,13 +164,13 @@ function InventoryPage() {
       startY: 160,
       head: [["ID", "Modello", "Seriale", "OS", "Stato", "Cliente", "Utente", "Aggiornato"]],
       body: data.map((r) => [
-        r.ticket_code,
+        r.id.slice(0, 8),
         r.model,
         r.serial || "—",
         r.os || "—",
-        STATUS_META[r.status].label,
-        r.client,
-        r.end_user || "—",
+        DEVICE_STATUS_META[r.status].label,
+        r.client?.name || "—",
+        r.assigned_to || "—",
         fmtDate(r.updated_at),
       ]),
       styles: {
@@ -185,7 +198,7 @@ function InventoryPage() {
         if (d.section === "body" && d.column.index === 4) {
           const s = data[d.row.index]?.status;
           if (s) {
-            const col = STATUS_META[s].color;
+            const col = DEVICE_STATUS_META[s].color;
             const r = parseInt(col.slice(1, 3), 16);
             const g = parseInt(col.slice(3, 5), 16);
             const b = parseInt(col.slice(5, 7), 16);
@@ -219,7 +232,7 @@ function InventoryPage() {
           onChange={(e) => setFs(e.target.value)}
         >
           <option value="">Tutti gli stati</option>
-          {Object.entries(STATUS_META).map(([k, v]) => (
+          {Object.entries(DEVICE_STATUS_META).map(([k, v]) => (
             <option key={k} value={k}>
               {v.label}
             </option>
@@ -275,12 +288,11 @@ function InventoryPage() {
               {data.map((r) => (
                 <tr
                   key={r.id}
-                  className="border-b cursor-pointer hover:bg-surface2 transition-colors"
+                  className="border-b hover:bg-surface2 transition-colors"
                   style={{ borderColor: "var(--border)" }}
-                  onClick={() => openTicketDetail(r.id)}
                 >
                   <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                    {r.ticket_code}
+                    {r.id.slice(0, 8)}
                   </td>
                   <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
                     {r.serial || "—"}
@@ -288,10 +300,10 @@ function InventoryPage() {
                   <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
                   <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "—"}</td>
                   <td className="px-[14px] py-[10px]">
-                    <StatusBadge status={r.status} />
+                    <DeviceStatusBadge status={r.status} />
                   </td>
-                  <td className="px-[14px] py-[10px] text-[12px]">{r.client}</td>
-                  <td className="px-[14px] py-[10px] text-[12px]">{r.end_user || "—"}</td>
+                  <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "—"}</td>
+                  <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "—"}</td>
                   <td className="px-[14px] py-[10px] text-[11px] text-text3">
                     {fmtDate(r.updated_at)}
                   </td>
@@ -328,5 +340,14 @@ function InventoryPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+function DeviceStatusBadge({ status }: { status: DeviceStatus }) {
+  const meta = DEVICE_STATUS_META[status];
+  return (
+    <span className="pc-badge" style={{ color: meta.color, background: "var(--surface2)" }}>
+      {meta.label}
+    </span>
   );
 }

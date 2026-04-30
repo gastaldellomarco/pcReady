@@ -8,7 +8,6 @@ import {
   type TicketStatus,
   type TicketPriority,
   PRIORITY_LABEL,
-  CLIENTS,
   fmtDate,
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
@@ -29,14 +28,22 @@ export const Route = createFileRoute("/_app/tickets")({
 interface Row {
   id: string;
   ticket_code: string;
-  client: string;
-  model: string;
+  client: string | null;
+  client_id: string | null;
+  model: string | null;
   serial: string | null;
   requester: string;
   priority: TicketPriority;
   status: TicketStatus;
   created_at: string;
+  client_ref?: { name: string } | null;
+  device?: { model: string; serial: string | null } | null;
   assignee?: { full_name: string; initials: string } | null;
+}
+
+interface ClientOpt {
+  id: string;
+  name: string;
 }
 
 const PAGE_SIZE = 50;
@@ -44,6 +51,7 @@ const PAGE_SIZE = 50;
 function TicketsPage() {
   const { refreshKey, search } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
+  const [clients, setClients] = useState<ClientOpt[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
@@ -51,22 +59,28 @@ function TicketsPage() {
   const [fc, setFc] = useState("");
 
   useEffect(() => {
+    supabase
+      .from("clients")
+      .select("id, name")
+      .order("name")
+      .then(({ data }) => setClients((data ?? []) as ClientOpt[]));
+  }, [refreshKey]);
+
+  useEffect(() => {
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, model, serial, requester, priority, status, created_at, assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, client_id, model, serial, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
       .order("created_at", { ascending: false });
 
     if (fs) query = query.eq("status", fs);
     if (fp) query = query.eq("priority", fp);
-    if (fc) query = query.eq("client", fc);
+    if (fc) query = query.eq("client_id", fc);
     const q = search.trim().replace(/[,%]/g, "");
     if (q) {
-      query = query.or(
-        `ticket_code.ilike.%${q}%,model.ilike.%${q}%,serial.ilike.%${q}%,requester.ilike.%${q}%`,
-      );
+      query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
     }
 
     query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
@@ -90,6 +104,9 @@ function TicketsPage() {
 
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const ticketClient = (t: Row) => t.client_ref?.name || t.client || "-";
+  const ticketModel = (t: Row) => t.device?.model || t.model || "-";
+  const ticketSerial = (t: Row) => t.device?.serial || t.serial || null;
 
   function exportPdf() {
     if (!data.length) return toast.error("Nessun ticket da esportare");
@@ -170,9 +187,9 @@ function TicketsPage() {
       ],
       body: data.map((t) => [
         t.ticket_code,
-        t.model,
-        t.serial || "-",
-        t.client,
+        ticketModel(t),
+        ticketSerial(t) || "-",
+        ticketClient(t),
         t.requester,
         PRIORITY_LABEL[t.priority],
         STATUS_META[t.status].label,
@@ -265,8 +282,10 @@ function TicketsPage() {
           onChange={(e) => setFc(e.target.value)}
         >
           <option value="">Tutti i clienti</option>
-          {CLIENTS.map((c) => (
-            <option key={c}>{c}</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
           ))}
         </select>
         <span className="ml-auto text-xs text-text3 font-mono">
@@ -316,11 +335,11 @@ function TicketsPage() {
                   <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
                     {t.ticket_code}
                   </td>
-                  <td className="px-[14px] py-[10px] text-[12.5px]">{t.model}</td>
+                  <td className="px-[14px] py-[10px] text-[12.5px]">{ticketModel(t)}</td>
                   <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                    {t.serial || "-"}
+                    {ticketSerial(t) || "-"}
                   </td>
-                  <td className="px-[14px] py-[10px] text-[12.5px]">{t.client}</td>
+                  <td className="px-[14px] py-[10px] text-[12.5px]">{ticketClient(t)}</td>
                   <td className="px-[14px] py-[10px] text-[12.5px]">{t.requester}</td>
                   <td className="px-[14px] py-[10px]">
                     <PriorityLabel p={t.priority} />

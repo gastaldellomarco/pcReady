@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Modal } from "./Modal";
 import { CLIENTS, OS_OPTIONS } from "@/lib/pcready";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { toast } from "sonner";
@@ -10,59 +11,76 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+interface ClientOption {
+  id: string;
+  name: string;
+}
+
 export function AddDeviceModal() {
   const { addDeviceOpen, closeAddDevice, triggerRefresh } = useTickets();
   const { user, canEdit } = useAuth();
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     model: "",
     serial: "",
-    client: CLIENTS[0],
+    client_name: CLIENTS[0],
     end_user: "",
     os: OS_OPTIONS[0],
     notes: "",
   });
 
+  useEffect(() => {
+    if (!addDeviceOpen) return;
+    supabase
+      .from("clients")
+      .select("id, name")
+      .order("name")
+      .then(({ data }) => setClients((data ?? []) as ClientOption[]));
+  }, [addDeviceOpen]);
+
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
-    if (!f.model || !f.serial || !f.client) return toast.error("Compila i campi obbligatori");
+    if (!f.model || !f.serial || !f.client_name) return toast.error("Compila i campi obbligatori");
     setBusy(true);
     try {
-      const code = `DEV-${String(Math.floor(Date.now() / 1000) % 100000).padStart(5, "0")}`;
+      const clientName = f.client_name.trim();
+      let client = clients.find((c) => c.name.toLowerCase() === clientName.toLowerCase()) ?? null;
+      if (!client) {
+        const { data, error } = await supabase
+          .from("clients")
+          .insert({ name: clientName })
+          .select("id, name")
+          .single();
+        if (error) throw error;
+        client = data as ClientOption;
+      }
+
+      const deviceInsert: TablesInsert<"devices"> = {
+        client_id: client.id,
+        model: f.model,
+        serial: f.serial,
+        assigned_to: f.end_user || null,
+        os: f.os,
+        notes: f.notes || null,
+        created_by: user!.id,
+      };
       const { data, error } = await supabase
-        .from("tickets")
-        .insert({
-          ticket_code: code,
-          client: f.client,
-          model: f.model,
-          serial: f.serial,
-          requester: "Inventario",
-          end_user: f.end_user || null,
-          priority: "low",
-          status: "ready",
-          assignee_id: null,
-          os: f.os,
-          software: null,
-          notes: f.notes || null,
-          checklist: {},
-          created_by: user!.id,
-          template_id: null,
-          checklist_structure: null,
-        })
-        .select("id, ticket_code")
+        .from("devices")
+        .insert(deviceInsert)
+        .select("id, serial")
         .single();
       if (error) throw error;
       await supabase.from("activity_log").insert({
         type: "user",
-        message: `${data.ticket_code} aggiunto all'inventario`,
-        ticket_id: data.id,
+        message: `Dispositivo ${data.serial || f.model} aggiunto all'inventario`,
         actor_id: user!.id,
       });
-      toast.success(`${data.ticket_code} aggiunto all'inventario`);
+      toast.success("Dispositivo aggiunto all'inventario");
       setF({
         model: "",
         serial: "",
-        client: CLIENTS[0],
+        client_name: client.name,
         end_user: "",
         os: OS_OPTIONS[0],
         notes: "",
@@ -116,10 +134,10 @@ export function AddDeviceModal() {
           <Field label="Cliente *">
             <select
               className="pc-input"
-              value={f.client}
-              onChange={(e) => setF({ ...f, client: e.target.value })}
+              value={f.client_name}
+              onChange={(e) => setF({ ...f, client_name: e.target.value })}
             >
-              {CLIENTS.map((c) => (
+              {[...new Set([...clients.map((c) => c.name), ...CLIENTS])].map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>

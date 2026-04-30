@@ -34,9 +34,9 @@ Il codice ticket non viene generato dal client. La migration `supabase/migration
 
 ### Inventario
 
-Il pulsante `Aggiungi dispositivo` apre `AddDeviceModal`, separato dal flusso ticket. Il modal raccoglie solo dati da inventario: modello, seriale, cliente, utente finale, OS e note.
+Il pulsante `Aggiungi dispositivo` apre `AddDeviceModal`, separato dal flusso ticket. Il modal raccoglie solo dati da inventario: modello, seriale, cliente, utente finale, OS e note, e salva il record nella tabella `devices`.
 
-Attualmente i dispositivi sono salvati nella tabella `tickets` come record minimali con stato `ready`, per compatibilita con il modello dati esistente.
+I ticket possono essere associati a un dispositivo esistente tramite `tickets.device_id`, mentre l'inventario legge da `devices`.
 
 ### Liste e Paginazione
 
@@ -87,6 +87,13 @@ Le migration Supabase sono in `supabase/migrations`.
 Prima di usare l'app in un ambiente condiviso, applicare tutte le migration, inclusa quella per la generazione server-side del `ticket_code`.
 
 La tabella `tickets` ha `ticket_code` unico. Il client deve omettere `ticket_code` durante la creazione dei ticket standard: il valore viene assegnato dal trigger database.
+
+Il modello dati separa le responsabilita principali:
+
+- `clients`: anagrafica cliente
+- `client_contacts`: contatti associati al cliente
+- `devices`: asset fisici e inventario
+- `tickets`: workflow operativo e checklist, con FK opzionali verso cliente, dispositivo e contatto richiedente
 
 ## Struttura Del Progetto
 
