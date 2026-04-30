@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { initTheme, isDark, toggleTheme } from "@/lib/theme";
 import { avatarColors } from "@/lib/pcready";
-import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, FileDown, Plus, Terminal, Users } from "lucide-react";
+import { LayoutGrid, Ticket, Trello, ListChecks, Zap, Boxes, Search, LogOut, Moon, Sun, Plus, Terminal, Users } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
@@ -159,7 +159,7 @@ function AppLayout() {
           <div className="ml-auto flex items-center gap-2">
             <SearchBox />
             <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
-              <FileDown className="w-3 h-3" /> Inventario PDF
+              <Boxes className="w-3 h-3" /> Inventario
             </Link>
             <button onClick={() => openCreate()} className="pc-btn pc-btn-primary pc-btn-sm">
               <Plus className="w-3 h-3" /> Nuovo Ticket
