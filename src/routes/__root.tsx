@@ -8,13 +8,20 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground" style={{ fontFamily: "var(--font-head)" }}>404</h1>
+        <h1
+          className="text-7xl font-bold text-foreground"
+          style={{ fontFamily: "var(--font-head)" }}
+        >
+          404
+        </h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Pagina non trovata</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           La pagina richiesta non esiste o e' stata spostata.
         </p>
         <div className="mt-6">
-          <Link to="/dashboard" className="pc-btn pc-btn-primary">Torna alla Dashboard</Link>
+          <Link to="/dashboard" className="pc-btn pc-btn-primary">
+            Torna alla Dashboard
+          </Link>
         </div>
       </div>
     </div>
@@ -27,16 +34,26 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PCReady - Gestione preparazione PC" },
-      { name: "description", content: "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario." },
+      {
+        name: "description",
+        content:
+          "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario.",
+      },
       { property: "og:title", content: "PCReady - Gestione preparazione PC" },
-      { property: "og:description", content: "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali." },
+      {
+        property: "og:description",
+        content: "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
     ],
   }),
