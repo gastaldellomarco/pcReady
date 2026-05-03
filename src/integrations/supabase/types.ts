@@ -47,27 +47,36 @@ export type Database = {
         Row: {
           action_text: string;
           active: boolean;
+          category: string;
           count: number;
           created_at: string;
+          description: string | null;
           id: string;
+          last_run_at: string | null;
           sort: number;
           trigger_text: string;
         };
         Insert: {
           action_text: string;
           active?: boolean;
+          category?: string;
           count?: number;
           created_at?: string;
+          description?: string | null;
           id?: string;
+          last_run_at?: string;
           sort?: number;
           trigger_text: string;
         };
         Update: {
           action_text?: string;
           active?: boolean;
+          category?: string;
           count?: number;
           created_at?: string;
+          description?: string | null;
           id?: string;
+          last_run_at?: string;
           sort?: number;
           trigger_text?: string;
         };
