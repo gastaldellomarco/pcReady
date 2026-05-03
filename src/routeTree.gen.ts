@@ -22,6 +22,7 @@ import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
 import { Route as AppAutomationsRouteImport } from './routes/_app/automations'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppOauthConsentRouteImport } from './routes/_app/oauth.consent'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -87,6 +88,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/kanban': typeof AppKanbanRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/kanban': typeof AppKanbanRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_app/kanban': typeof AppKanbanRoute
   '/_app/scripts': typeof AppScriptsRoute
   '/_app/tickets': typeof AppTicketsRoute
+  '/_app/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/kanban'
     | '/scripts'
     | '/tickets'
+    | '/oauth/consent'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/kanban'
     | '/scripts'
     | '/tickets'
+    | '/oauth/consent'
   id:
     | '__root__'
     | '/'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_app/kanban'
     | '/_app/scripts'
     | '/_app/tickets'
+    | '/_app/oauth/consent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/oauth/consent': {
+      id: '/_app/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof AppOauthConsentRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -291,6 +310,7 @@ interface AppRouteChildren {
   AppKanbanRoute: typeof AppKanbanRoute
   AppScriptsRoute: typeof AppScriptsRoute
   AppTicketsRoute: typeof AppTicketsRoute
+  AppOauthConsentRoute: typeof AppOauthConsentRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -304,6 +324,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppKanbanRoute: AppKanbanRoute,
   AppScriptsRoute: AppScriptsRoute,
   AppTicketsRoute: AppTicketsRoute,
+  AppOauthConsentRoute: AppOauthConsentRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
