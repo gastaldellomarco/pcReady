@@ -12,13 +12,19 @@ import {
   updateAdminUser,
   type AdminUserRow,
 } from "@/lib/admin-users";
-import {
-  listOAuthClients,
-  createOAuthClient,
-  type OAuthClientInfo,
-} from "@/lib/oauth-consent";
+import { listOAuthClients, createOAuthClient, type OAuthClientInfo } from "@/lib/oauth-consent";
 import { OAUTH_SCOPES, getScopeLabel, type OAuthScope } from "@/lib/oauth-scopes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +71,7 @@ function AdminUsersPage() {
   const [newClientDescription, setNewClientDescription] = useState("");
   const [newClientRedirectUris, setNewClientRedirectUris] = useState("");
   const [newClientScopes, setNewClientScopes] = useState<OAuthScope[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUserRow | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/dashboard", replace: true });
@@ -96,12 +103,16 @@ function AdminUsersPage() {
     }
   }
 
-  useEffect(() => { loadClients(); }, [session?.access_token, isAdmin]);
-  useEffect(() => { load(); }, [session?.access_token, isAdmin]);
+  useEffect(() => {
+    loadClients();
+  }, [session?.access_token, isAdmin]);
+  useEffect(() => {
+    load();
+  }, [session?.access_token, isAdmin]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return rows.filter(row => {
+    return rows.filter((row) => {
       const matchesText = !needle || `${row.full_name} ${row.email}`.toLowerCase().includes(needle);
       const matchesRole = !role || row.role === role;
       return matchesText && matchesRole;
@@ -145,18 +156,22 @@ function AdminUsersPage() {
     }
   }
 
-  async function remove(row: AdminUserRow) {
-    if (!session?.access_token) return;
-    if (!confirm(`Rimuovere definitivamente ${row.email || row.full_name}?`)) return;
-    setBusyId(row.id);
+  function remove(row: AdminUserRow) {
+    setDeleteTarget(row);
+  }
+
+  async function confirmRemove() {
+    if (!session?.access_token || !deleteTarget) return;
+    setBusyId(deleteTarget.id);
     try {
-      await deleteUser({ data: { accessToken: session.access_token, userId: row.id } });
+      await deleteUser({ data: { accessToken: session.access_token, userId: deleteTarget.id } });
       toast.success("Utente rimosso");
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Rimozione non riuscita");
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   }
 
@@ -191,7 +206,10 @@ function AdminUsersPage() {
     if (!session?.access_token) return;
     setCreateClientBusy(true);
     try {
-      const redirectUris = newClientRedirectUris.split('\n').map(uri => uri.trim()).filter(Boolean);
+      const redirectUris = newClientRedirectUris
+        .split("\n")
+        .map((uri) => uri.trim())
+        .filter(Boolean);
       await createClient({
         data: {
           accessToken: session.access_token,
@@ -234,7 +252,7 @@ function AdminUsersPage() {
               type="email"
               required
               value={inviteEmail}
-              onChange={event => setInviteEmail(event.target.value)}
+              onChange={(event) => setInviteEmail(event.target.value)}
               placeholder="utente@azienda.it"
             />
           </div>
@@ -243,14 +261,22 @@ function AdminUsersPage() {
             <input
               className="pc-input"
               value={inviteName}
-              onChange={event => setInviteName(event.target.value)}
+              onChange={(event) => setInviteName(event.target.value)}
               placeholder="Mario Rossi"
             />
           </div>
           <div className="min-w-[160px]">
             <label className="pc-label">Ruolo</label>
-            <select className="pc-input" value={inviteRole} onChange={event => setInviteRole(event.target.value as AppRole)}>
-              {ROLES.map(item => <option key={item} value={item}>{roleLabel(item)}</option>)}
+            <select
+              className="pc-input"
+              value={inviteRole}
+              onChange={(event) => setInviteRole(event.target.value as AppRole)}
+            >
+              {ROLES.map((item) => (
+                <option key={item} value={item}>
+                  {roleLabel(item)}
+                </option>
+              ))}
             </select>
           </div>
           <button className="pc-btn pc-btn-primary" disabled={inviteBusy} type="submit">
@@ -266,23 +292,33 @@ function AdminUsersPage() {
             <Search className="w-3 h-3 text-text3" />
             <input
               value={q}
-              onChange={event => setQ(event.target.value)}
+              onChange={(event) => setQ(event.target.value)}
               placeholder="Cerca nome o email..."
               className="bg-transparent outline-none text-[13px] flex-1"
             />
           </div>
-          <select className="pc-input max-w-[180px]" value={role} onChange={event => setRole(event.target.value)}>
+          <select
+            className="pc-input max-w-[180px]"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+          >
             <option value="">Tutti i ruoli</option>
-            {ROLES.map(item => <option key={item} value={item}>{roleLabel(item)}</option>)}
+            {ROLES.map((item) => (
+              <option key={item} value={item}>
+                {roleLabel(item)}
+              </option>
+            ))}
           </select>
-          <span className="ml-auto self-center text-xs text-text3 font-mono">{filtered.length} utenti</span>
+          <span className="ml-auto self-center text-xs text-text3 font-mono">
+            {filtered.length} utenti
+          </span>
         </div>
 
         <div className="pc-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["Nome", "Email", "Ruolo", "Stato", "Azioni"].map(header => (
+                {["Nome", "Email", "Ruolo", "Stato", "Azioni"].map((header) => (
                   <th
                     key={header}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -295,61 +331,106 @@ function AdminUsersPage() {
             </thead>
             <tbody>
               {loadingRows && (
-                <tr><td colSpan={5} className="text-center py-10 text-text3 text-sm">Caricamento utenti...</td></tr>
-              )}
-              {!loadingRows && filtered.map(row => (
-                <tr key={row.id} className="border-b hover:bg-surface2 transition-colors" style={{ borderColor: "var(--border)" }}>
-                  <td className="px-[14px] py-[10px]">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                        style={{ background: "var(--accent2)", color: "var(--accent)", fontFamily: "var(--font-head)" }}
-                      >
-                        {row.initials}
-                      </span>
-                      <span className="font-semibold text-[13px]">{row.full_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">{row.email || "-"}</td>
-                  <td className="px-[14px] py-[10px]">
-                    <UserRoleEditor
-                      role={row.role}
-                      disabled={busyId === row.id}
-                      onChange={nextRole => saveRole(row, nextRole)}
-                    />
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <StatusBadge status={row.status} />
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="pc-btn-icon"
-                        title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
-                        disabled={busyId === row.id || row.id === user?.id}
-                        onClick={() => toggleDisabled(row)}
-                      >
-                        {row.status === "disabled" ? <UserCheck className="w-3.5 h-3.5" /> : <UserX className="w-3.5 h-3.5" />}
-                      </button>
-                      <button
-                        className="pc-btn-icon"
-                        title="Rimuovi utente"
-                        disabled={busyId === row.id || row.id === user?.id}
-                        onClick={() => remove(row)}
-                        style={{ color: "var(--danger, #DC2626)" }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-text3 text-sm">
+                    Caricamento utenti...
                   </td>
                 </tr>
-              ))}
+              )}
+              {!loadingRows &&
+                filtered.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b hover:bg-surface2 transition-colors"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <td className="px-[14px] py-[10px]">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                          style={{
+                            background: "var(--accent2)",
+                            color: "var(--accent)",
+                            fontFamily: "var(--font-head)",
+                          }}
+                        >
+                          {row.initials}
+                        </span>
+                        <span className="font-semibold text-[13px]">{row.full_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                      {row.email || "-"}
+                    </td>
+                    <td className="px-[14px] py-[10px]">
+                      <UserRoleEditor
+                        role={row.role}
+                        disabled={busyId === row.id}
+                        onChange={(nextRole) => saveRole(row, nextRole)}
+                      />
+                    </td>
+                    <td className="px-[14px] py-[10px]">
+                      <StatusBadge status={row.status} />
+                    </td>
+                    <td className="px-[14px] py-[10px]">
+                      <div className="flex items-center gap-1">
+                        <button
+                          className="pc-btn-icon"
+                          title={
+                            row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"
+                          }
+                          disabled={busyId === row.id || row.id === user?.id}
+                          onClick={() => toggleDisabled(row)}
+                        >
+                          {row.status === "disabled" ? (
+                            <UserCheck className="w-3.5 h-3.5" />
+                          ) : (
+                            <UserX className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          className="pc-btn-icon"
+                          title="Rimuovi utente"
+                          disabled={busyId === row.id || row.id === user?.id}
+                          onClick={() => remove(row)}
+                          style={{ color: "var(--danger, #DC2626)" }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               {!loadingRows && !filtered.length && (
-                <tr><td colSpan={5} className="text-center py-10 text-text3 text-sm">Nessun utente trovato</td></tr>
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-text3 text-sm">
+                    Nessun utente trovato
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
+        <AlertDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Rimuovi utente</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler eliminare{" "}
+                <strong>{deleteTarget?.email || deleteTarget?.full_name}</strong>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRemove}>Conferma</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </TabsContent>
 
       <TabsContent value="oauth" className="space-y-5">
@@ -412,7 +493,7 @@ function AdminUsersPage() {
                           if (checked) {
                             setNewClientScopes([...newClientScopes, scope as OAuthScope]);
                           } else {
-                            setNewClientScopes(newClientScopes.filter(s => s !== scope));
+                            setNewClientScopes(newClientScopes.filter((s) => s !== scope));
                           }
                         }}
                       />
@@ -434,9 +515,7 @@ function AdminUsersPage() {
         <Card>
           <CardHeader>
             <CardTitle>Client Registrati</CardTitle>
-            <CardDescription>
-              Applicazioni autorizzate ad accedere ai dati PCReady
-            </CardDescription>
+            <CardDescription>Applicazioni autorizzate ad accedere ai dati PCReady</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingClients ? (
@@ -479,7 +558,15 @@ function AdminUsersPage() {
   );
 }
 
-function UserRoleEditor({ role, disabled, onChange }: { role: AppRole; disabled: boolean; onChange: (role: AppRole) => void }) {
+function UserRoleEditor({
+  role,
+  disabled,
+  onChange,
+}: {
+  role: AppRole;
+  disabled: boolean;
+  onChange: (role: AppRole) => void;
+}) {
   return (
     <div className="inline-flex items-center gap-1.5">
       <UserCog className="w-3.5 h-3.5 text-text3" />
@@ -487,9 +574,13 @@ function UserRoleEditor({ role, disabled, onChange }: { role: AppRole; disabled:
         className="pc-input h-8 min-w-[145px] text-[12px]"
         value={role}
         disabled={disabled}
-        onChange={event => onChange(event.target.value as AppRole)}
+        onChange={(event) => onChange(event.target.value as AppRole)}
       >
-        {ROLES.map(item => <option key={item} value={item}>{roleLabel(item)}</option>)}
+        {ROLES.map((item) => (
+          <option key={item} value={item}>
+            {roleLabel(item)}
+          </option>
+        ))}
       </select>
     </div>
   );
