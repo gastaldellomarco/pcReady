@@ -1,6 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prettier/prettier, react-hooks/exhaustive-deps */
+
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AppSettingsSchema,
+  type AppSettingsInput,
+  AdminUserInviteSchema,
+  type AdminUserInviteInput,
+  OAuthClientSchema,
+  type OAuthClientInput,
+} from "@/lib/schemas";
 import { MailPlus, Search, Trash2, UserCog, UserX, UserCheck, Shield, Plus, Settings, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
@@ -79,13 +92,16 @@ function AdminUsersPage() {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
-  const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientDescription, setNewClientDescription] = useState("");
-  const [newClientRedirectUris, setNewClientRedirectUris] = useState("");
-  const [newClientScopes, setNewClientScopes] = useState<OAuthScope[]>([]);
+  const inviteForm = useForm<AdminUserInviteInput>({
+    resolver: zodResolver(AdminUserInviteSchema),
+    mode: "onChange",
+    defaultValues: { email: "", fullName: "", role: "viewer" },
+  });
+  const oauthForm = useForm<any>({
+    resolver: zodResolver(OAuthClientSchema),
+    mode: "onChange",
+    defaultValues: { name: "", description: null, redirectUrisRaw: "", scopesAllowed: [] },
+  });
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRow | null>(null);
 
   useEffect(() => {
@@ -232,84 +248,72 @@ function AdminUsersPage() {
     }
   }
 
-  async function invite(e: React.FormEvent) {
-    e.preventDefault();
-    if (!session?.access_token) return;
-    setInviteBusy(true);
-    try {
-      await inviteUser({
-        data: {
-          accessToken: session.access_token,
-          email: inviteEmail,
-          fullName: inviteName,
-          role: inviteRole,
-          redirectTo: `${window.location.origin}/auth`,
-        },
-      });
-      toast.success("Invito inviato");
-      setInviteEmail("");
-      setInviteName("");
-      setInviteRole("viewer");
-      await load();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Invito non riuscito");
-    } finally {
-      setInviteBusy(false);
-    }
-  }
-
-  async function createNewClient(e: React.FormEvent) {
-    e.preventDefault();
+ 
+  const createNewClient = oauthForm.handleSubmit(async (vals) => {
     if (!session?.access_token) return;
     setCreateClientBusy(true);
     try {
-      const redirectUris = newClientRedirectUris
-        .split("\n")
-        .map((uri) => uri.trim())
-        .filter(Boolean);
-      await createClient({
+      // vals.redirectUrisRaw is transformed by Zod into string[] by the schema
+      const redirectUris = vals.redirectUrisRaw as unknown as string[];
+      await createOAuthClient({
         data: {
           accessToken: session.access_token,
-          name: newClientName,
-          description: newClientDescription,
+          name: vals.name,
+          description: (vals.description as string) ?? undefined,
           redirectUris,
-          scopesAllowed: newClientScopes,
+          scopesAllowed: vals.scopesAllowed || [],
         },
       });
       toast.success("Client OAuth creato");
-      setNewClientName("");
-      setNewClientDescription("");
-      setNewClientRedirectUris("");
-      setNewClientScopes([]);
+      oauthForm.reset();
       await loadClients();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Creazione client non riuscita");
     } finally {
       setCreateClientBusy(false);
     }
-  }
+  });
 
-  async function handleSaveSettings(formData: FormData) {
-    if (!session?.access_token || !settings) return;
+  const settingsForm = useForm<any>({
+    resolver: zodResolver(AppSettingsSchema),
+    mode: "onChange",
+    defaultValues: {
+      organization_name: settings?.organization_name ?? "",
+      default_timezone: settings?.default_timezone ?? "",
+      max_devices_per_technician: settings?.max_devices_per_technician ?? 1,
+      self_registration_enabled: settings?.self_registration_enabled ?? false,
+      admin_approval_required: settings?.admin_approval_required ?? false,
+      support_email: settings?.support_email ?? null,
+    },
+  });
+
+  useEffect(() => {
+    // reset form when settings load
+    settingsForm.reset({
+      organization_name: settings?.organization_name ?? "",
+      default_timezone: settings?.default_timezone ?? "",
+      max_devices_per_technician: settings?.max_devices_per_technician ?? 1,
+      self_registration_enabled: settings?.self_registration_enabled ?? false,
+      admin_approval_required: settings?.admin_approval_required ?? false,
+      support_email: settings?.support_email ?? null,
+    });
+  }, [settings]);
+
+  async function submitSettings(values: any) {
+    if (!session?.access_token) return;
     setSaveSettingsBusy(true);
     try {
-      const newSettings: AppSettings = {
-        organization_name: formData.get("organization_name") as string,
-        default_timezone: formData.get("default_timezone") as string,
-        max_devices_per_technician: parseInt(formData.get("max_devices_per_technician") as string),
-        self_registration_enabled: formData.get("self_registration_enabled") === "on",
-        admin_approval_required: formData.get("admin_approval_required") === "on",
-        support_email: formData.get("support_email") as string,
+      const payload: AppSettings = {
+        organization_name: values.organization_name,
+        default_timezone: values.default_timezone,
+        max_devices_per_technician: Number(values.max_devices_per_technician),
+        self_registration_enabled: !!values.self_registration_enabled,
+        admin_approval_required: !!values.admin_approval_required,
+        support_email: (values.support_email as string) || "",
       };
 
-      await saveSettings({
-        data: {
-          accessToken: session.access_token,
-          settings: newSettings,
-        },
-      });
-
-      setSettings(newSettings);
+      await saveSettings({ data: { accessToken: session.access_token, settings: payload } });
+      setSettings(payload);
       toast.success("Impostazioni salvate");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Salvataggio non riuscito");
@@ -359,34 +363,53 @@ function AdminUsersPage() {
       </TabsList>
 
       <TabsContent value="users" className="space-y-5">
-        <form className="pc-card p-4 flex flex-wrap items-end gap-3" onSubmit={invite}>
+        <form
+          className="pc-card p-4 flex flex-wrap items-end gap-3"
+          onSubmit={inviteForm.handleSubmit(async (vals) => {
+            if (!session?.access_token) return;
+            setInviteBusy(true);
+            try {
+              await inviteUser({
+                data: {
+                  accessToken: session.access_token,
+                  email: vals.email,
+                  fullName: vals.fullName,
+                  role: vals.role,
+                  redirectTo: `${window.location.origin}/auth`,
+                },
+              });
+              toast.success("Invito inviato");
+              inviteForm.reset();
+              await load();
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Invito non riuscito");
+            } finally {
+              setInviteBusy(false);
+            }
+          })}
+        >
           <div className="flex-1 min-w-[220px]">
             <label className="pc-label">Email nuovo utente</label>
             <input
               className="pc-input"
               type="email"
-              required
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
+              {...inviteForm.register("email")}
               placeholder="utente@azienda.it"
             />
+            {inviteForm.formState.errors.email && (
+              <p className="text-sm text-destructive mt-1">{String(inviteForm.formState.errors.email?.message)}</p>
+            )}
           </div>
           <div className="flex-1 min-w-[180px]">
             <label className="pc-label">Nome</label>
-            <input
-              className="pc-input"
-              value={inviteName}
-              onChange={(event) => setInviteName(event.target.value)}
-              placeholder="Mario Rossi"
-            />
+            <input className="pc-input" {...inviteForm.register("fullName")} placeholder="Mario Rossi" />
+            {inviteForm.formState.errors.fullName && (
+              <p className="text-sm text-destructive mt-1">{String(inviteForm.formState.errors.fullName?.message)}</p>
+            )}
           </div>
           <div className="min-w-[160px]">
             <label className="pc-label">Ruolo</label>
-            <select
-              className="pc-input"
-              value={inviteRole}
-              onChange={(event) => setInviteRole(event.target.value as AppRole)}
-            >
+            <select className="pc-input" {...inviteForm.register("role")}>
               {ROLES.map((item) => (
                 <option key={item} value={item}>
                   {roleLabel(item)}
@@ -394,7 +417,7 @@ function AdminUsersPage() {
               ))}
             </select>
           </div>
-          <button className="pc-btn pc-btn-primary" disabled={inviteBusy} type="submit">
+          <button className="pc-btn pc-btn-primary" disabled={inviteBusy || !inviteForm.formState.isValid} type="submit">
             <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? "Invio..." : "Invita"}
           </button>
         </form>
@@ -564,64 +587,48 @@ function AdminUsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="clientName">Nome Applicazione</Label>
-                  <Input
-                    id="clientName"
-                    value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                    placeholder="My App"
-                    required
-                  />
+                  <Input id="clientName" {...oauthForm.register("name")} placeholder="My App" />
+                  {oauthForm.formState.errors.name && (
+                    <p className="text-sm text-destructive mt-1">{String(oauthForm.formState.errors.name?.message)}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="clientDescription">Descrizione</Label>
-                  <Input
-                    id="clientDescription"
-                    value={newClientDescription}
-                    onChange={(e) => setNewClientDescription(e.target.value)}
-                    placeholder="Breve descrizione dell'app"
-                  />
+                  <Input id="clientDescription" {...oauthForm.register("description")} placeholder="Breve descrizione dell'app" />
                 </div>
               </div>
               <div>
                 <Label htmlFor="redirectUris">URL di Redirect</Label>
-                <Textarea
-                  id="redirectUris"
-                  value={newClientRedirectUris}
-                  onChange={(e) => setNewClientRedirectUris(e.target.value)}
-                  placeholder="https://myapp.com/callback&#10;https://myapp.com/oauth/callback"
-                  rows={3}
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Una URL per riga. Deve corrispondere esattamente nelle richieste OAuth.
-                </p>
+                <Textarea id="redirectUris" {...oauthForm.register("redirectUrisRaw")} placeholder="https://myapp.com/callback&#10;https://myapp.com/oauth/callback" rows={3} />
+                {oauthForm.formState.errors.redirectUrisRaw && (
+                  <p className="text-sm text-destructive mt-1">{String(oauthForm.formState.errors.redirectUrisRaw?.message)}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">Una URL per riga. Deve corrispondere esattamente nelle richieste OAuth.</p>
               </div>
               <div>
                 <Label>Permessi Consentiti</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
-                  {Object.entries(OAUTH_SCOPES).map(([scope, def]) => (
-                    <div key={scope} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={scope}
-                        checked={newClientScopes.includes(scope as OAuthScope)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setNewClientScopes([...newClientScopes, scope as OAuthScope]);
-                          } else {
-                            setNewClientScopes(newClientScopes.filter((s) => s !== scope));
-                          }
-                        }}
-                      />
-                      <Label htmlFor={scope} className="text-sm">
-                        {def.label}
-                      </Label>
-                    </div>
-                  ))}
+                  {Object.entries(OAUTH_SCOPES).map(([scope, def]) => {
+                    const checked: string[] = oauthForm.watch("scopesAllowed") || [];
+                    return (
+                      <div key={scope} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={scope}
+                          checked={checked.includes(scope)}
+                          onCheckedChange={(val) => {
+                            const current = oauthForm.getValues().scopesAllowed || [];
+                            if (val) oauthForm.setValue("scopesAllowed", [...current, scope]);
+                            else oauthForm.setValue("scopesAllowed", current.filter((s: string) => s !== scope));
+                          }}
+                        />
+                        <Label htmlFor={scope} className="text-sm">{def.label}</Label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              <Button type="submit" disabled={createClientBusy}>
-                <Plus className="w-4 h-4 mr-2" />
-                {createClientBusy ? "Creazione..." : "Crea Client"}
+              <Button type="submit" disabled={createClientBusy || !oauthForm.formState.isValid}>
+                <Plus className="w-4 h-4 mr-2" />{createClientBusy ? "Creazione..." : "Crea Client"}
               </Button>
             </form>
           </CardContent>
@@ -698,27 +705,33 @@ function AdminUsersPage() {
             {loadingSettings ? (
               <p className="text-center py-4 text-muted-foreground">Caricamento impostazioni...</p>
             ) : settings ? (
-              <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(new FormData(e.target as HTMLFormElement)); }} className="space-y-6">
+              <form onSubmit={settingsForm.handleSubmit(submitSettings)} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="organization_name">Nome Organizzazione</Label>
                     <Input
                       id="organization_name"
-                      name="organization_name"
-                      defaultValue={settings.organization_name}
+                      {...settingsForm.register("organization_name")}
                       placeholder="PCReady"
-                      required
                     />
+                    {settingsForm.formState.errors.organization_name && (
+                      <p className="text-sm text-destructive mt-1">
+                        {String(settingsForm.formState.errors.organization_name?.message)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="default_timezone">Timezone Predefinito</Label>
                     <Input
                       id="default_timezone"
-                      name="default_timezone"
-                      defaultValue={settings.default_timezone}
+                      {...settingsForm.register("default_timezone")}
                       placeholder="Europe/Rome"
-                      required
                     />
+                    {settingsForm.formState.errors.default_timezone && (
+                      <p className="text-sm text-destructive mt-1">
+                        {String(settingsForm.formState.errors.default_timezone?.message)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -727,51 +740,41 @@ function AdminUsersPage() {
                     <Label htmlFor="max_devices_per_technician">Max Dispositivi per Tecnico</Label>
                     <Input
                       id="max_devices_per_technician"
-                      name="max_devices_per_technician"
                       type="number"
-                      min="1"
-                      max="100"
-                      defaultValue={settings.max_devices_per_technician}
-                      required
+                      min={1}
+                      max={100}
+                      {...settingsForm.register("max_devices_per_technician")}
                     />
+                    {settingsForm.formState.errors.max_devices_per_technician && (
+                      <p className="text-sm text-destructive mt-1">
+                        {String(settingsForm.formState.errors.max_devices_per_technician?.message)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="support_email">Email Supporto</Label>
-                    <Input
-                      id="support_email"
-                      name="support_email"
-                      type="email"
-                      defaultValue={settings.support_email}
-                      placeholder="support@pcready.it"
-                    />
+                    <Input id="support_email" type="email" {...settingsForm.register("support_email")} placeholder="support@pcready.it" />
+                    {settingsForm.formState.errors.support_email && (
+                      <p className="text-sm text-destructive mt-1">
+                        {String(settingsForm.formState.errors.support_email?.message)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="self_registration_enabled"
-                      name="self_registration_enabled"
-                      defaultChecked={settings.self_registration_enabled}
-                    />
-                    <Label htmlFor="self_registration_enabled">
-                      Abilita registrazione autonoma nuovi utenti
-                    </Label>
+                    <Checkbox id="self_registration_enabled" {...settingsForm.register("self_registration_enabled")} />
+                    <Label htmlFor="self_registration_enabled">Abilita registrazione autonoma nuovi utenti</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="admin_approval_required"
-                      name="admin_approval_required"
-                      defaultChecked={settings.admin_approval_required}
-                    />
-                    <Label htmlFor="admin_approval_required">
-                      Richiedi approvazione admin per nuovi account
-                    </Label>
+                    <Checkbox id="admin_approval_required" {...settingsForm.register("admin_approval_required")} />
+                    <Label htmlFor="admin_approval_required">Richiedi approvazione admin per nuovi account</Label>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saveSettingsBusy}>
+                <Button type="submit" disabled={!settingsForm.formState.isValid || saveSettingsBusy}>
                   <Settings className="w-4 h-4 mr-2" />
                   {saveSettingsBusy ? "Salvataggio..." : "Salva Impostazioni"}
                 </Button>

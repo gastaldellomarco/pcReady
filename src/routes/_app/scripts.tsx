@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
@@ -298,25 +301,34 @@ function ScriptEditor({ initial, onClose, onSaved }:
   { initial: ScriptRow | null; onClose: () => void; onSaved: () => void }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({
-    name: initial?.name || "",
-    category: initial?.category || CATEGORIES[0],
-    description: initial?.description || "",
-    language: initial?.language || "powershell",
-    content: initial?.content || "",
-    icon: initial?.icon || "terminal",
-    color: initial?.color || COLORS[0],
-    changeNote: "",
+  const form = useForm<ScriptInput>({
+    resolver: zodResolver(ScriptSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: initial?.name || "",
+      category: initial?.category || CATEGORIES[0],
+      description: initial?.description || null,
+      language: initial?.language || "powershell",
+      content: initial?.content || "",
+      icon: initial?.icon || "terminal",
+      color: initial?.color || COLORS[0],
+      changeNote: null,
+    },
   });
 
-  async function save() {
-    if (!f.name.trim()) return toast.error("Inserisci un nome");
-    if (!f.content.trim()) return toast.error("Lo script è vuoto");
+  const save = form.handleSubmit(async (values) => {
+    if (!values.name.trim()) return toast.error("Inserisci un nome");
+    if (!values.content.trim()) return toast.error("Lo script è vuoto");
     setBusy(true);
     try {
       let newData: any = {
-        name: f.name, category: f.category, description: f.description || null,
-        language: f.language, content: f.content, icon: f.icon, color: f.color,
+        name: values.name,
+        category: values.category,
+        description: values.description || null,
+        language: values.language,
+        content: values.content,
+        icon: values.icon,
+        color: values.color,
       };
 
       let oldData: any = null;
@@ -331,10 +343,11 @@ function ScriptEditor({ initial, onClose, onSaved }:
         if (error) throw error;
         toast.success("Script aggiornato");
       } else {
-        const { data: inserted, error } = await supabase.from("scripts").insert({
-          ...newData,
-          created_by: user!.id,
-        }).select().single();
+        const { data: inserted, error } = await supabase
+          .from("scripts")
+          .insert({ ...newData, created_by: user!.id })
+          .select()
+          .single();
         if (error) throw error;
         newData.id = (inserted as any).id; // For versioning
         toast.success("Script creato");
@@ -343,43 +356,36 @@ function ScriptEditor({ initial, onClose, onSaved }:
       // Create version
       const rawChanged = oldData ? computeChangedFields(oldData, newData) : null;
       const changedFields = rawChanged
-        ? Object.fromEntries(Object.entries(rawChanged).map(([k, v]) => [k, { from: (v as any).old, to: (v as any).new }])) as Record<string, { from: unknown; to: unknown }>
+        ? (Object.fromEntries(Object.entries(rawChanged).map(([k, v]) => [k, { from: (v as any).old, to: (v as any).new }])) as Record<string, { from: unknown; to: unknown }>)
         : undefined;
 
-      await createVersion(
-        "scripts",
-        initial?.id || newData.id,
-        newData,
-        changedFields,
-        f.changeNote || undefined,
-        initial ? "update" : "create"
-      );
+      await createVersion("scripts", initial?.id || newData.id, newData, changedFields, values.changeNote || undefined, initial ? "update" : "create");
 
       onSaved();
     } catch (e: unknown) {
       toast.error(errorMessage(e, "Errore salvataggio"));
-    } finally { setBusy(false); }
-  }
+    } finally {
+      setBusy(false);
+    }
+  });
 
   return (
     <Modal open onClose={onClose} size="lg"
       title={initial ? "Modifica script" : "Nuovo script"}
       footer={<>
         <button className="pc-btn pc-btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="pc-btn pc-btn-primary" disabled={busy} onClick={save}>
+        <button className="pc-btn pc-btn-primary" disabled={busy || !form.formState.isValid} onClick={save}>
           {busy ? "Salvataggio…" : initial ? "Salva modifiche" : "Crea script"}
         </button>
       </>}>
       <div className="flex flex-col gap-[14px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Nome *">
-            <input className="pc-input" value={f.name}
-              onChange={e => setF({ ...f, name: e.target.value })}
-              placeholder="Reset Windows Update" />
+            <input className="pc-input" {...form.register("name")} placeholder="Reset Windows Update" />
+            {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
           </Field>
           <Field label="Categoria">
-            <input className="pc-input" list="cat-list" value={f.category}
-              onChange={e => setF({ ...f, category: e.target.value })} />
+            <input className="pc-input" list="cat-list" {...form.register("category")} />
             <datalist id="cat-list">
               {CATEGORIES.map(c => <option key={c} value={c} />)}
             </datalist>
@@ -387,23 +393,23 @@ function ScriptEditor({ initial, onClose, onSaved }:
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Linguaggio">
-            <select className="pc-input" value={f.language}
-              onChange={e => setF({ ...f, language: e.target.value })}>
+            <select className="pc-input" {...form.register("language")}>
               {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
+            {form.formState.errors.language && <p className="text-sm text-destructive mt-1">{form.formState.errors.language.message}</p>}
           </Field>
           <Field label="Icona">
             <div className="flex flex-wrap gap-1.5">
               {ICON_KEYS.map(k => {
                 const I = ICONS[k];
-                const active = f.icon === k;
+                const active = form.getValues().icon === k;
                 return (
-                  <button key={k} type="button" onClick={() => setF({ ...f, icon: k })}
+                  <button key={k} type="button" onClick={() => form.setValue("icon", k)}
                     className="w-8 h-8 rounded-[8px] flex items-center justify-center transition-all"
                     style={{
-                      background: active ? f.color + "22" : "var(--surface2)",
-                      border: `1px solid ${active ? f.color : "var(--border2)"}`,
-                      color: active ? f.color : "var(--text2)",
+                      background: active ? (form.getValues().color || COLORS[0]) + "22" : "var(--surface2)",
+                      border: `1px solid ${active ? (form.getValues().color || COLORS[0]) : "var(--border2)"}`,
+                      color: active ? (form.getValues().color || COLORS[0]) : "var(--text2)",
                     }}>
                     <I className="w-4 h-4" />
                   </button>
@@ -412,34 +418,28 @@ function ScriptEditor({ initial, onClose, onSaved }:
             </div>
           </Field>
         </div>
-        <Field label="Colore">
+          <Field label="Colore">
           <div className="flex flex-wrap gap-1.5">
             {COLORS.map(c => (
-              <button key={c} type="button" onClick={() => setF({ ...f, color: c })}
+              <button key={c} type="button" onClick={() => form.setValue("color", c)}
                 className="w-7 h-7 rounded-full transition-transform"
                 style={{
                   background: c,
-                  border: f.color === c ? "2px solid var(--text)" : "2px solid transparent",
-                  transform: f.color === c ? "scale(1.1)" : "none",
+                  border: (form.getValues().color || COLORS[0]) === c ? "2px solid var(--text)" : "2px solid transparent",
+                  transform: (form.getValues().color || COLORS[0]) === c ? "scale(1.1)" : "none",
                 }} />
             ))}
           </div>
         </Field>
         <Field label="Descrizione">
-          <textarea className="pc-input min-h-[60px]" value={f.description}
-            onChange={e => setF({ ...f, description: e.target.value })}
-            placeholder="Cosa fa questo script?" />
+          <textarea className="pc-input min-h-[60px]" {...form.register("description")} placeholder="Cosa fa questo script?" />
         </Field>
         <Field label="Contenuto script *">
-          <textarea className="pc-input font-mono text-[12px] min-h-[260px]"
-            value={f.content}
-            onChange={e => setF({ ...f, content: e.target.value })}
-            placeholder="# Il tuo codice qui..." spellCheck={false} />
+          <textarea className="pc-input font-mono text-[12px] min-h-[260px]" {...form.register("content")} placeholder="# Il tuo codice qui..." spellCheck={false} />
+          {form.formState.errors.content && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.message}</p>}
         </Field>
         <Field label="Nota modifica (opzionale)">
-          <textarea className="pc-input min-h-[60px]" value={f.changeNote}
-            onChange={e => setF({ ...f, changeNote: e.target.value })}
-            placeholder="Descrivi le modifiche apportate..." />
+          <textarea className="pc-input min-h-[60px]" {...form.register("changeNote")} placeholder="Descrivi le modifiche apportate..." />
         </Field>
       </div>
     </Modal>

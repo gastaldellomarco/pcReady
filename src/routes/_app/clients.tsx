@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ClientSchema, ContactSchema, type ClientInput, type ContactInput } from "@/lib/schemas/clients";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
@@ -91,8 +94,17 @@ function ClientsPage() {
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [clientForm, setClientForm] = useState<ClientForm>(emptyClient);
-  const [contactForm, setContactForm] = useState<ContactForm>(emptyContact);
+  const clientForm = useForm<ClientInput>({
+    resolver: zodResolver(ClientSchema),
+    mode: "onChange",
+    defaultValues: emptyClient as ClientInput,
+  });
+
+  const contactForm = useForm<ContactInput>({
+    resolver: zodResolver(ContactSchema),
+    mode: "onChange",
+    defaultValues: emptyContact as ContactInput,
+  });
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -103,11 +115,11 @@ function ClientsPage() {
   useEffect(() => {
     if (!selectedId) {
       setContacts([]);
-      setClientForm(emptyClient);
+      clientForm.reset(emptyClient as ClientInput);
       return;
     }
     const client = clients.find((c) => c.id === selectedId);
-    if (client) setClientForm(toClientForm(client));
+    if (client) clientForm.reset(toClientForm(client) as ClientInput);
     loadContacts(selectedId);
   }, [selectedId, clients]);
 
@@ -158,39 +170,38 @@ function ClientsPage() {
 
   function resetContactForm() {
     setEditingContactId(null);
-    setContactForm(emptyContact);
+    contactForm.reset(emptyContact as ContactInput);
   }
 
-  async function saveClient() {
+  const onSaveClient = clientForm.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
-    const companyName = clientForm.company_name.trim();
-    if (!companyName) return toast.error("La ragione sociale e' obbligatoria");
     setBusy(true);
     try {
+      const companyName = values.company_name.trim();
       if (selected) {
         const patch: TablesUpdate<"clients"> = {
           name: companyName,
           company_name: companyName,
-          vat_number: clean(clientForm.vat_number),
-          fiscal_code: clean(clientForm.fiscal_code),
-          email: clean(clientForm.email),
-          phone: clean(clientForm.phone),
-          address: clean(clientForm.address),
-          notes: clean(clientForm.notes),
+          vat_number: clean(values.vat_number || ""),
+          fiscal_code: clean(values.fiscal_code || ""),
+          email: clean(values.email || ""),
+          phone: clean(values.phone || ""),
+          address: clean(values.address || ""),
+          notes: clean(values.notes || ""),
         };
-        const { error } = await supabase.from("clients").update(patch).eq("id", selected.id);
+        const { error } = await supabase.from("clients").update(patch).eq("id", selected!.id);
         if (error) throw error;
         toast.success("Cliente aggiornato");
       } else {
         const insert: TablesInsert<"clients"> = {
           name: companyName,
           company_name: companyName,
-          vat_number: clean(clientForm.vat_number),
-          fiscal_code: clean(clientForm.fiscal_code),
-          email: clean(clientForm.email),
-          phone: clean(clientForm.phone),
-          address: clean(clientForm.address),
-          notes: clean(clientForm.notes),
+          vat_number: clean(values.vat_number || ""),
+          fiscal_code: clean(values.fiscal_code || ""),
+          email: clean(values.email || ""),
+          phone: clean(values.phone || ""),
+          address: clean(values.address || ""),
+          notes: clean(values.notes || ""),
         };
         const { data, error } = await supabase.from("clients").insert(insert).select("id").single();
         if (error) throw error;
@@ -203,7 +214,7 @@ function ClientsPage() {
     } finally {
       setBusy(false);
     }
-  }
+  });
 
   async function deleteClient() {
     if (!selected || !canDelete) return toast.error("Solo admin puo' eliminare clienti");
@@ -215,36 +226,29 @@ function ClientsPage() {
     await loadClients();
   }
 
-  async function saveContact() {
+  const onSaveContact = contactForm.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!selectedId) return toast.error("Salva prima il cliente");
-    const fullName = contactForm.full_name.trim();
-    if (!fullName) return toast.error("Nome e cognome sono obbligatori");
     setBusy(true);
     try {
-      if (contactForm.is_primary) {
-        await supabase
-          .from("client_contacts")
-          .update({ is_primary: false })
-          .eq("client_id", selectedId);
+      const fullName = values.full_name.trim();
+      if (values.is_primary) {
+        await supabase.from("client_contacts").update({ is_primary: false }).eq("client_id", selectedId);
       }
       const base = {
         full_name: fullName,
         first_name: firstName(fullName),
         last_name: lastName(fullName),
-        email: clean(contactForm.email),
-        phone: clean(contactForm.phone),
-        job_title: clean(contactForm.job_title),
-        role: clean(contactForm.job_title),
-        department: clean(contactForm.department),
-        is_primary: contactForm.is_primary,
-        notes: clean(contactForm.notes),
+        email: clean(values.email || ""),
+        phone: clean(values.phone || ""),
+        job_title: clean(values.job_title || ""),
+        role: clean(values.job_title || ""),
+        department: clean(values.department || ""),
+        is_primary: !!values.is_primary,
+        notes: clean(values.notes || ""),
       };
       if (editingContactId) {
-        const { error } = await supabase
-          .from("client_contacts")
-          .update(base as TablesUpdate<"client_contacts">)
-          .eq("id", editingContactId);
+        const { error } = await supabase.from("client_contacts").update(base as TablesUpdate<"client_contacts">).eq("id", editingContactId);
         if (error) throw error;
         toast.success("Referente aggiornato");
       } else {
@@ -260,7 +264,7 @@ function ClientsPage() {
     } finally {
       setBusy(false);
     }
-  }
+  });
 
   async function deleteContact(contact: ContactRow) {
     if (!canDelete) return toast.error("Solo admin puo' eliminare referenti");
@@ -331,66 +335,39 @@ function ClientsPage() {
                   <Trash2 className="w-3 h-3" /> Elimina
                 </button>
               )}
-              <button
-                className="pc-btn pc-btn-primary pc-btn-sm"
-                disabled={busy || !canEdit}
-                onClick={saveClient}
-              >
+              <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !canEdit} onClick={onSaveClient}>
                 <Save className="w-3 h-3" /> Salva cliente
               </button>
             </div>
           </div>
           <div className="pc-card-body grid grid-cols-1 md:grid-cols-2 gap-[14px]">
             <Field label="Ragione sociale *">
-              <input
-                className="pc-input"
-                value={clientForm.company_name}
-                onChange={(e) => setClientForm({ ...clientForm, company_name: e.target.value })}
-              />
+              <input className="pc-input" {...clientForm.register("company_name")} />
+              {clientForm.formState.errors.company_name && (
+                <p className="text-sm text-destructive mt-1">{clientForm.formState.errors.company_name.message}</p>
+              )}
             </Field>
             <Field label="P.IVA">
-              <input
-                className="pc-input"
-                value={clientForm.vat_number}
-                onChange={(e) => setClientForm({ ...clientForm, vat_number: e.target.value })}
-              />
+              <input className="pc-input" {...clientForm.register("vat_number")} />
             </Field>
             <Field label="Codice fiscale">
-              <input
-                className="pc-input"
-                value={clientForm.fiscal_code}
-                onChange={(e) => setClientForm({ ...clientForm, fiscal_code: e.target.value })}
-              />
+              <input className="pc-input" {...clientForm.register("fiscal_code")} />
             </Field>
             <Field label="Email">
-              <input
-                className="pc-input"
-                type="email"
-                value={clientForm.email}
-                onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
-              />
+              <input className="pc-input" type="email" {...clientForm.register("email")} />
+              {clientForm.formState.errors.email && (
+                <p className="text-sm text-destructive mt-1">{clientForm.formState.errors.email.message}</p>
+              )}
             </Field>
             <Field label="Telefono">
-              <input
-                className="pc-input"
-                value={clientForm.phone}
-                onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-              />
+              <input className="pc-input" {...clientForm.register("phone")} />
             </Field>
             <Field label="Indirizzo">
-              <input
-                className="pc-input"
-                value={clientForm.address}
-                onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
-              />
+              <input className="pc-input" {...clientForm.register("address")} />
             </Field>
             <div className="md:col-span-2">
               <Field label="Note">
-                <textarea
-                  className="pc-input min-h-[78px]"
-                  value={clientForm.notes}
-                  onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
-                />
+                <textarea className="pc-input min-h-[78px]" {...clientForm.register("notes")} />
               </Field>
             </div>
           </div>
@@ -442,16 +419,15 @@ function ClientsPage() {
                             className="pc-btn pc-btn-ghost pc-btn-xs"
                             onClick={() => {
                               setEditingContactId(c.id);
-                              setContactForm({
-                                id: c.id,
+                              contactForm.reset({
                                 full_name: contactLabel(c),
-                                email: c.email || "",
-                                phone: c.phone || "",
-                                job_title: c.job_title || "",
-                                department: c.department || "",
+                                email: c.email || null,
+                                phone: c.phone || null,
+                                job_title: c.job_title || null,
+                                department: c.department || null,
                                 is_primary: c.is_primary,
-                                notes: c.notes || "",
-                              });
+                                notes: c.notes || null,
+                              } as ContactInput);
                             }}
                           >
                             Modifica
@@ -493,63 +469,34 @@ function ClientsPage() {
               </div>
               <div className="flex flex-col gap-3">
                 <Field label="Nome e cognome *">
-                  <input
-                    className="pc-input"
-                    value={contactForm.full_name}
-                    onChange={(e) => setContactForm({ ...contactForm, full_name: e.target.value })}
-                  />
+                  <input className="pc-input" {...contactForm.register("full_name")} />
+                  {contactForm.formState.errors.full_name && (
+                    <p className="text-sm text-destructive mt-1">{contactForm.formState.errors.full_name.message}</p>
+                  )}
                 </Field>
                 <Field label="Email">
-                  <input
-                    className="pc-input"
-                    type="email"
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                  />
+                  <input className="pc-input" type="email" {...contactForm.register("email")} />
+                  {contactForm.formState.errors.email && (
+                    <p className="text-sm text-destructive mt-1">{contactForm.formState.errors.email.message}</p>
+                  )}
                 </Field>
                 <Field label="Telefono">
-                  <input
-                    className="pc-input"
-                    value={contactForm.phone}
-                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
-                  />
+                  <input className="pc-input" {...contactForm.register("phone")} />
                 </Field>
                 <Field label="Ruolo aziendale">
-                  <input
-                    className="pc-input"
-                    value={contactForm.job_title}
-                    onChange={(e) => setContactForm({ ...contactForm, job_title: e.target.value })}
-                  />
+                  <input className="pc-input" {...contactForm.register("job_title")} />
                 </Field>
                 <Field label="Reparto">
-                  <input
-                    className="pc-input"
-                    value={contactForm.department}
-                    onChange={(e) => setContactForm({ ...contactForm, department: e.target.value })}
-                  />
+                  <input className="pc-input" {...contactForm.register("department")} />
                 </Field>
                 <label className="flex items-center gap-2 text-[12px] text-text2">
-                  <input
-                    type="checkbox"
-                    checked={contactForm.is_primary}
-                    onChange={(e) =>
-                      setContactForm({ ...contactForm, is_primary: e.target.checked })
-                    }
-                  />
+                  <input type="checkbox" {...contactForm.register("is_primary")} />
                   Referente principale
                 </label>
                 <Field label="Note">
-                  <textarea
-                    className="pc-input min-h-[64px]"
-                    value={contactForm.notes}
-                    onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })}
-                  />
+                  <textarea className="pc-input min-h-[64px]" {...contactForm.register("notes")} />
                 </Field>
-                <button
-                  className="pc-btn pc-btn-primary justify-center"
-                  disabled={busy || !canEdit || !selectedId}
-                  onClick={saveContact}
-                >
+                <button className="pc-btn pc-btn-primary justify-center" disabled={busy || !canEdit || !selectedId} onClick={onSaveContact}>
                   <Save className="w-3 h-3" /> Salva referente
                 </button>
               </div>
