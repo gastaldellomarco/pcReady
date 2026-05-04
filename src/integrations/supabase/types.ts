@@ -82,6 +82,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      automation_flows: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          category: string | null;
+          active: boolean;
+          version: number;
+          flow_definition: Json;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          category?: string | null;
+          active?: boolean;
+          version?: number;
+          flow_definition?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          category?: string | null;
+          active?: boolean;
+          version?: number;
+          flow_definition?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       checklist_templates: {
         Row: {
           created_at: string;
