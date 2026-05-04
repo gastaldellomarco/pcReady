@@ -26,6 +26,7 @@ import { useTickets } from "@/lib/use-tickets";
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
+import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -219,6 +220,7 @@ function AppLayout() {
       <CreateTicketModal />
       <AddDeviceModal />
       <TicketDetailModal />
+      <DeviceDetailModal />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
+import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import { Plus, FileDown, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -55,24 +56,45 @@ function InventoryPage() {
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
 
   useEffect(() => {
-    let query = supabase
-      .from("devices")
-      .select(
-        "id, serial, model, os, status, client_id, updated_at, assigned_to, client:clients(name)",
-        {
-          count: "exact",
-        },
-      )
-      .order("updated_at", { ascending: false });
+    // check for optional URL filter param (e.g. ?filter=without_ticket)
+    const params = new URLSearchParams(window.location.search);
+    const urlFilter = params.get("filter");
 
-    if (fs) query = query.eq("status", fs as DeviceStatus);
-    if (fos) query = query.eq("os", fos);
-    const term = q.trim().replace(/[,%]/g, "");
-    if (term) {
-      query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
-    }
+    async function load() {
+      // if asking for devices without ticket, fetch assigned ids first
+      let assignedIds: string[] = [];
+      if (urlFilter === "without_ticket") {
+        const { data: assigned } = await supabase
+          .from("ticket_device_assignments")
+          .select("device_id")
+          .eq("unassigned_at", null);
+        assignedIds = (assigned ?? []).map((r: any) => r.device_id).filter(Boolean);
+      }
 
-    query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
+      let query = supabase
+        .from("devices")
+        .select(
+          "id, serial, model, os, status, client_id, updated_at, assigned_to, client:clients(name)",
+          {
+            count: "exact",
+          },
+        )
+        .order("updated_at", { ascending: false });
+
+      if (fs) query = query.eq("status", fs as DeviceStatus);
+      if (fos) query = query.eq("os", fos);
+      const term = q.trim().replace(/[,%]/g, "");
+      if (term) {
+        query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
+      }
+
+      if (urlFilter === "without_ticket" && assignedIds.length) {
+        // exclude assigned ids
+        const inList = assignedIds.map((id) => `'${id}'`).join(",");
+        query = query.not("id", "in", `(${assignedIds.join(",")})`);
+      }
+
+      const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       if (error) {
         toast.error(error.message);
         return;
@@ -84,7 +106,9 @@ function InventoryPage() {
       }
       setRows((data ?? []) as Row[]);
       setTotal(totalRows);
-    });
+    }
+
+    void load();
   }, [refreshKey, fs, fos, q, page]);
 
   useEffect(() => {
@@ -208,8 +232,9 @@ function InventoryPage() {
               {data.map((r) => (
                 <tr
                   key={r.id}
-                  className="border-b hover:bg-surface2 transition-colors"
+                  className="border-b hover:bg-surface2 transition-colors cursor-pointer"
                   style={{ borderColor: "var(--border)" }}
+                  onClick={() => openDeviceDetail(r.id)}
                 >
                   <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
                     {r.id.slice(0, 8)}
