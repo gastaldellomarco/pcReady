@@ -3,9 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
-import { Plus, Search, Copy, Download, Pencil, Trash2, Terminal, Shield, Wrench, Network, Database, Cog, Code2, FileCode } from "lucide-react";
+import { Plus, Search, Copy, Download, Pencil, Trash2, Terminal, Shield, Wrench, Network, Database, Cog, Code2, FileCode, History } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
+import { createVersion } from "@/lib/versioning";
+import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
+import { VersionBadge } from "@/components/pcready/VersionBadge";
 
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({ meta: [
@@ -44,6 +47,16 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function computeChangedFields(oldData: any, newData: any) {
+  const changed: Record<string, { old: any; new: any }> = {};
+  for (const key in newData) {
+    if (oldData[key] !== newData[key]) {
+      changed[key] = { old: oldData[key], new: newData[key] };
+    }
+  }
+  return Object.keys(changed).length ? changed : null;
+}
+
 function ScriptsPage() {
   const { canEdit, isAdmin } = useAuth();
   const [rows, setRows] = useState<ScriptRow[]>([]);
@@ -53,6 +66,8 @@ function ScriptsPage() {
   const [editor, setEditor] = useState<ScriptRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from("scripts").select("*")
@@ -135,8 +150,8 @@ function ScriptsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {items.map(s => (
               <ScriptCard key={s.id} s={s}
-                onOpen={() => setViewer(s)}
-                onEdit={canEdit ? () => setEditor(s) : undefined}
+                onOpen={() => { setViewer(s); setSelectedScriptId(s.id); }}
+                onEdit={canEdit ? () => { setEditor(s); setSelectedScriptId(s.id); } : undefined}
                 onDelete={isAdmin ? () => remove(s.id) : undefined}
               />
             ))}
@@ -145,7 +160,7 @@ function ScriptsPage() {
       ))}
 
       {/* MODALI */}
-      {viewer && <ScriptViewer script={viewer} onClose={() => setViewer(null)} />}
+      {viewer && <ScriptViewer script={viewer} onClose={() => setViewer(null)} onOpenVersions={() => setVersionHistoryOpen(true)} />}
       {(editor || createOpen) && (
         <ScriptEditor
           initial={editor}
@@ -153,6 +168,13 @@ function ScriptsPage() {
           onSaved={() => { setEditor(null); setCreateOpen(false); setRefresh(x => x + 1); }}
         />
       )}
+
+      <VersionHistoryDrawer
+        entityType="scripts"
+        entityId={selectedScriptId || ""}
+        open={versionHistoryOpen}
+        onClose={() => setVersionHistoryOpen(false)}
+      />
     </div>
   );
 }
@@ -174,8 +196,11 @@ function ScriptCard({ s, onOpen, onEdit, onDelete }:
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[13.5px] font-bold leading-tight truncate"
-            style={{ fontFamily: "var(--font-head)" }}>{s.name}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-[13.5px] font-bold leading-tight truncate"
+              style={{ fontFamily: "var(--font-head)" }}>{s.name}</div>
+            <VersionBadge entityType="scripts" entityId={s.id} />
+          </div>
           <div className="text-[10.5px] uppercase tracking-wider text-text3 mt-0.5 font-mono">
             {s.language}
           </div>
@@ -206,7 +231,7 @@ function ScriptCard({ s, onOpen, onEdit, onDelete }:
 }
 
 // ------------------------- VIEWER -------------------------
-function ScriptViewer({ script, onClose }: { script: ScriptRow; onClose: () => void }) {
+function ScriptViewer({ script, onClose, onOpenVersions }: { script: ScriptRow; onClose: () => void; onOpenVersions: () => void }) {
   const Icon = ICONS[script.icon || ""] || Terminal;
   const color = script.color || "#1B4FD8";
 
@@ -231,6 +256,9 @@ function ScriptViewer({ script, onClose }: { script: ScriptRow; onClose: () => v
       title=""
       footer={<>
         <button className="pc-btn pc-btn-ghost" onClick={onClose}>Chiudi</button>
+        <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
+          <History className="w-3 h-3" /> Versioni
+        </button>
         <button className="pc-btn pc-btn-ghost" onClick={download}>
           <Download className="w-3 h-3" /> Scarica
         </button>
@@ -278,6 +306,7 @@ function ScriptEditor({ initial, onClose, onSaved }:
     content: initial?.content || "",
     icon: initial?.icon || "terminal",
     color: initial?.color || COLORS[0],
+    changeNote: "",
   });
 
   async function save() {
@@ -285,22 +314,43 @@ function ScriptEditor({ initial, onClose, onSaved }:
     if (!f.content.trim()) return toast.error("Lo script è vuoto");
     setBusy(true);
     try {
+      const newData = {
+        name: f.name, category: f.category, description: f.description || null,
+        language: f.language, content: f.content, icon: f.icon, color: f.color,
+      };
+
+      let oldData: any = null;
       if (initial) {
-        const { error } = await supabase.from("scripts").update({
-          name: f.name, category: f.category, description: f.description || null,
-          language: f.language, content: f.content, icon: f.icon, color: f.color,
-        }).eq("id", initial.id);
+        // Fetch current data for diff
+        const { data } = await supabase.from("scripts").select("*").eq("id", initial.id).single();
+        oldData = data;
+      }
+
+      if (initial) {
+        const { error } = await supabase.from("scripts").update(newData).eq("id", initial.id);
         if (error) throw error;
         toast.success("Script aggiornato");
       } else {
-        const { error } = await supabase.from("scripts").insert({
-          name: f.name, category: f.category, description: f.description || null,
-          language: f.language, content: f.content, icon: f.icon, color: f.color,
+        const { data, error } = await supabase.from("scripts").insert({
+          ...newData,
           created_by: user!.id,
-        });
+        }).select().single();
         if (error) throw error;
+        newData.id = data.id; // For versioning
         toast.success("Script creato");
       }
+
+      // Create version
+      const changedFields = oldData ? computeChangedFields(oldData, newData) : null;
+      await createVersion(
+        "scripts",
+        initial?.id || newData.id,
+        newData,
+        changedFields,
+        f.changeNote || undefined,
+        initial ? "update" : "create"
+      );
+
       onSaved();
     } catch (e: unknown) {
       toast.error(errorMessage(e, "Errore salvataggio"));
@@ -381,6 +431,11 @@ function ScriptEditor({ initial, onClose, onSaved }:
             value={f.content}
             onChange={e => setF({ ...f, content: e.target.value })}
             placeholder="# Il tuo codice qui..." spellCheck={false} />
+        </Field>
+        <Field label="Nota modifica (opzionale)">
+          <textarea className="pc-input min-h-[60px]" value={f.changeNote}
+            onChange={e => setF({ ...f, changeNote: e.target.value })}
+            placeholder="Descrivi le modifiche apportate..." />
         </Field>
       </div>
     </Modal>
