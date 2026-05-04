@@ -54,7 +54,7 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
 
     // Validate client_id exists and redirect_uri is allowed
     const { data: client, error: clientError } = await supabaseAdmin
-      .from('oauth_clients')
+      .from('oauth_clients' as any)
       .select('client_id, name, description, redirect_uris, scopes_allowed')
       .eq('client_id', data.clientId)
       .single();
@@ -64,23 +64,24 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
     }
 
     // Check redirect_uri is in allowed list
-    if (!client.redirect_uris.includes(data.redirectUri)) {
+    const clientAny = client as any;
+    if (!clientAny.redirect_uris || !clientAny.redirect_uris.includes(data.redirectUri)) {
       throw new Response("Invalid redirect_uri", { status: 400 });
     }
 
     // Parse and validate scopes
     const requestedScopes = data.scope.split(' ').filter(Boolean) as OAuthScope[];
-    const invalidScopes = requestedScopes.filter(scope => !client.scopes_allowed.includes(scope));
+    const invalidScopes = requestedScopes.filter(scope => !(clientAny.scopes_allowed || []).includes(scope));
     if (invalidScopes.length > 0) {
       throw new Response(`Invalid scopes: ${invalidScopes.join(', ')}`, { status: 400 });
     }
 
     return {
       client: {
-        clientId: client.client_id,
-        name: client.name,
-        description: client.description,
-        scopesAllowed: client.scopes_allowed
+        clientId: clientAny.client_id,
+        name: clientAny.name,
+        description: clientAny.description,
+        scopesAllowed: clientAny.scopes_allowed || []
       },
       requestedScopes,
       state: data.state
@@ -110,7 +111,7 @@ export const grantConsent = createServerFn({ method: "POST" })
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     
     const { error: insertError } = await supabaseAdmin
-      .from('oauth_authorization_codes')
+      .from('oauth_authorization_codes' as any)
       .insert({
         code: authCode,
         user_id: userId,
@@ -119,7 +120,7 @@ export const grantConsent = createServerFn({ method: "POST" })
         redirect_uri: data.redirectUri,
         state: data.state,
         expires_at: expiresAt
-      });
+      } as any);
 
     if (insertError) {
       throw new Response("Failed to generate authorization code", { status: 500 });
@@ -163,17 +164,18 @@ export const listOAuthClients = createServerFn({ method: "POST" })
     if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
 
     const { data: clients, error: clientsError } = await supabaseAdmin
-      .from('oauth_clients')
+      .from('oauth_clients' as any)
       .select('client_id, name, description, redirect_uris, scopes_allowed')
       .order('created_at', { ascending: false });
 
     if (clientsError) throw new Response("Failed to fetch clients", { status: 500 });
 
-    return clients.map(client => ({
+    const clientsArr = (clients ?? []) as any[];
+    return clientsArr.map((client: any) => ({
       clientId: client.client_id,
       name: client.name,
       description: client.description,
-      scopesAllowed: client.scopes_allowed
+      scopesAllowed: client.scopes_allowed || []
     }));
   });
 
@@ -199,7 +201,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
     const clientSecret = `secret_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
 
     const { data: client, error: clientError } = await supabaseAdmin
-      .from('oauth_clients')
+      .from('oauth_clients' as any)
       .insert({
         client_id: clientId,
         client_secret: clientSecret,
@@ -208,17 +210,18 @@ export const createOAuthClient = createServerFn({ method: "POST" })
         redirect_uris: data.redirectUris,
         scopes_allowed: data.scopesAllowed,
         created_by: authData.user.id
-      })
+      } as any)
       .select('client_id, name, description, redirect_uris, scopes_allowed')
       .single();
 
     if (clientError) throw new Response("Failed to create client", { status: 500 });
 
+    const clientAny = client as any;
     return {
-      clientId: client.client_id,
-      name: client.name,
-      description: client.description,
-      scopesAllowed: client.scopes_allowed
+      clientId: clientAny.client_id,
+      name: clientAny.name,
+      description: clientAny.description,
+      scopesAllowed: clientAny.scopes_allowed || []
     };
   });
 

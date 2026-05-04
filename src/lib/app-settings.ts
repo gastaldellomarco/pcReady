@@ -27,15 +27,22 @@ export const getAppSettings = createServerFn({ method: "GET" })
     await requireAdmin(accessToken);
 
     const { data, error } = await supabaseAdmin
-      .from("app_settings")
+      .from("app_settings" as any)
       .select("key, value");
 
     if (error) throw error;
 
     const settings = { ...DEFAULT_SETTINGS };
-    data.forEach(({ key, value }) => {
+    const rows = (data ?? []) as any[];
+    rows.forEach(({ key, value }) => {
       if (key in settings) {
-        settings[key as keyof AppSettings] = value as any;
+        let parsed: any = value;
+        try {
+          parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        } catch {
+          parsed = value;
+        }
+        (settings as any)[key] = parsed;
       }
     });
 
@@ -64,8 +71,8 @@ export const updateAppSettings = createServerFn({ method: "POST" })
     }));
 
     const { error } = await supabaseAdmin
-      .from("app_settings")
-      .upsert(updates, { onConflict: "key" });
+      .from("app_settings" as any)
+      .upsert(updates as any, { onConflict: "key" });
 
     if (error) throw error;
 

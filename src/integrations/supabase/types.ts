@@ -91,6 +91,9 @@ export type Database = {
           active: boolean;
           version: number;
           flow_definition: Json;
+          trigger_definition: Json | null;
+          summary: string | null;
+          last_run_at: string | null;
           created_at: string;
           updated_at: string;
           created_by: string | null;
@@ -104,6 +107,9 @@ export type Database = {
           active?: boolean;
           version?: number;
           flow_definition?: Json;
+          trigger_definition?: Json | null;
+          summary?: string | null;
+          last_run_at?: string;
           created_at?: string;
           updated_at?: string;
           created_by?: string | null;
@@ -117,6 +123,9 @@ export type Database = {
           active?: boolean;
           version?: number;
           flow_definition?: Json;
+          trigger_definition?: Json | null;
+          summary?: string | null;
+          last_run_at?: string;
           created_at?: string;
           updated_at?: string;
           created_by?: string | null;

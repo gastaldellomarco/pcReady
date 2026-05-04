@@ -314,7 +314,7 @@ function ScriptEditor({ initial, onClose, onSaved }:
     if (!f.content.trim()) return toast.error("Lo script è vuoto");
     setBusy(true);
     try {
-      const newData = {
+      let newData: any = {
         name: f.name, category: f.category, description: f.description || null,
         language: f.language, content: f.content, icon: f.icon, color: f.color,
       };
@@ -323,7 +323,7 @@ function ScriptEditor({ initial, onClose, onSaved }:
       if (initial) {
         // Fetch current data for diff
         const { data } = await supabase.from("scripts").select("*").eq("id", initial.id).single();
-        oldData = data;
+        oldData = data as any;
       }
 
       if (initial) {
@@ -331,17 +331,21 @@ function ScriptEditor({ initial, onClose, onSaved }:
         if (error) throw error;
         toast.success("Script aggiornato");
       } else {
-        const { data, error } = await supabase.from("scripts").insert({
+        const { data: inserted, error } = await supabase.from("scripts").insert({
           ...newData,
           created_by: user!.id,
         }).select().single();
         if (error) throw error;
-        newData.id = data.id; // For versioning
+        newData.id = (inserted as any).id; // For versioning
         toast.success("Script creato");
       }
 
       // Create version
-      const changedFields = oldData ? computeChangedFields(oldData, newData) : null;
+      const rawChanged = oldData ? computeChangedFields(oldData, newData) : null;
+      const changedFields = rawChanged
+        ? Object.fromEntries(Object.entries(rawChanged).map(([k, v]) => [k, { from: (v as any).old, to: (v as any).new }])) as Record<string, { from: unknown; to: unknown }>
+        : undefined;
+
       await createVersion(
         "scripts",
         initial?.id || newData.id,

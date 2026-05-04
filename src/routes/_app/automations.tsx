@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 // AutomationBuilder is dynamically imported to avoid build-time crawling issues
 import { ChevronDown, ChevronUp, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
+import AutomationWizard from "@/components/automations/AutomationWizard";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
@@ -23,6 +24,9 @@ interface Rule {
   active: boolean;
   version: number;
   updated_at: string | null;
+  summary?: string | null;
+  last_run_at?: string | null;
+  flow_definition?: any;
 }
 
 const CATEGORY_OPTIONS = ["Generale", "Notifica", "Stato", "Schedulazione"];
@@ -40,6 +44,7 @@ function RuleCard({
   onExpandToggle,
   onDuplicate,
   onDelete,
+  onArchive,
 }: {
   rule: Rule;
   isAdmin: boolean;
@@ -49,6 +54,7 @@ function RuleCard({
   onExpandToggle: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onArchive: () => void;
 }) {
   return (
     <div className="rounded-2xl border border-input bg-surface2 p-4 shadow-sm">
@@ -78,10 +84,10 @@ function RuleCard({
                   : "bg-slate-100 text-slate-600 border-transparent"
               }
             >
-              {rule.active ? "Attiva" : "Disattiva"}
+              {rule.active ? "Attiva" : "Spenta"}
             </Badge>
             <span className="text-xs text-text3 font-mono">
-              {rule.updated_at ? `Aggiornata ${fmtDateTime(rule.updated_at)}` : `Versione ${rule.version}`}
+              {rule.last_run_at ? `Ultima esecuzione ${fmtDateTime(rule.last_run_at)}` : rule.updated_at ? `Aggiornata ${fmtDateTime(rule.updated_at)}` : `Versione ${rule.version}`}
             </span>
           </div>
 
@@ -115,6 +121,9 @@ function RuleCard({
             <Button variant="destructive" size="sm" onClick={onDelete} disabled={!isAdmin}>
               Elimina
             </Button>
+            <Button variant="ghost" size="sm" onClick={onArchive} disabled={!isAdmin}>
+              Archivia
+            </Button>
           </div>
 
           <label className="flex cursor-pointer items-center gap-2 rounded-full px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-slate-100 disabled:cursor-not-allowed">
@@ -147,22 +156,39 @@ function AutomationsPage() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [loadingRules, setLoadingRules] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [saving, setSaving] = useState(false);
   const [AutomationBuilderComp, setAutomationBuilderComp] = useState<any>(null);
+  const [guidedMode, setGuidedMode] = useState(true);
 
   async function loadRules() {
     setLoadingRules(true);
     try {
       const { data, error } = await supabase
         .from("automation_flows")
-        .select("id, name, description, category, active, version, updated_at")
+        .select("id, name, description, category, active, version, updated_at, flow_definition")
         .order("updated_at", { ascending: false });
 
       if (error) throw new Error(`Regole: ${error.message}`);
-      setRules((data ?? []) as Rule[]);
+      const rows = (data ?? []) as any[];
+      const normalized = rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        category: r.category,
+        active: r.active,
+        version: r.version,
+        updated_at: r.updated_at,
+        flow_definition: r.flow_definition,
+        summary: r.flow_definition?.meta?.summary ?? null,
+        last_run_at: r.flow_definition?.meta?.last_run_at ?? null,
+      }));
+      setRules(normalized as Rule[]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore nel caricamento regole");
     } finally {
@@ -212,6 +238,81 @@ function AutomationsPage() {
 
   // Builder save will be handled by AutomationBuilder component via callback
 
+  async function saveWizardFlow(flow: any) {
+    if (!isAdmin) return toast.error("Solo amministratori");
+    setSaving(true);
+    try {
+      function uid(prefix = "n") {
+        if (typeof crypto !== "undefined" && (crypto as any).randomUUID) return (crypto as any).randomUUID();
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      }
+
+      function buildFlowDefinition(flowObj: any) {
+        // create trigger node with default position so advanced editor (ReactFlow) won't crash
+        const triggerId = `trigger-${uid()}`;
+        const actionNodes = (flowObj.actions_definition || []).map((a: any, idx: number) => ({
+          id: `action-${uid()}`,
+          type: 'action',
+          data: { label: a.type, config: a.config },
+          position: { x: 300, y: idx * 120 },
+        }));
+        const nodes = [
+          { id: triggerId, type: 'trigger', data: { label: flowObj.trigger_definition?.type || 'trigger' }, position: { x: 0, y: 0 } },
+          ...actionNodes,
+        ];
+        const edges = actionNodes.map((an: any) => ({ id: `e-${triggerId}-${an.id}`, source: triggerId, target: an.id }));
+        const meta = {
+          wizard: flowObj,
+          summary: flowObj.summary,
+          migrated_at: new Date().toISOString(),
+        };
+        return { nodes, edges, meta };
+      }
+
+      // attach current user as created_by to satisfy RLS policies that require ownership
+      const { data: currentUserData } = await supabase.auth.getUser();
+      const currentUserId = currentUserData?.user?.id ?? null;
+
+      const payload = {
+        name: flow.name || "Nuova automazione",
+        description: flow.description || null,
+        category: flow.category || null,
+        active: false,
+        version: (editingRule?.version ?? 0) + 1,
+        flow_definition: buildFlowDefinition(flow),
+        created_by: currentUserId,
+        updated_by: currentUserId,
+      } as any;
+
+      if (editingRule) {
+        const { data, error } = await supabase.from("automation_flows").update(payload).eq("id", editingRule.id).select("id");
+        if (error) {
+          console.error("Supabase update error:", error, data);
+          throw error;
+        }
+        toast.success("Automazione aggiornata");
+      } else {
+        const { data, error } = await supabase.from("automation_flows").insert(payload).select("id");
+        if (error) {
+          console.error("Supabase insert error:", error, data);
+          throw error;
+        }
+        toast.success("Automazione creata");
+      }
+      setBuilderOpen(false);
+      void loadRules();
+    } catch (err) {
+      console.error("Save wizard flow failed:", err);
+      const e = err as any;
+      const userMsg = e && typeof e === "object" && (e.message || e.error || e.details)
+        ? (e.message || e.error || e.details)
+        : (err instanceof Error ? err.message : JSON.stringify(err));
+      toast.error(userMsg || "Errore salvataggio");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function duplicateRule(rule: Rule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
@@ -250,6 +351,25 @@ function AutomationsPage() {
     void loadRules();
   }
 
+  async function archiveRule(rule: Rule) {
+    if (!isAdmin) return toast.error("Solo amministratori");
+    try {
+      // fetch current flow_definition
+      const { data: fdata, error: fetchErr } = await supabase.from("automation_flows").select("flow_definition").eq("id", rule.id).single();
+      if (fetchErr) throw fetchErr;
+      const fd: any = fdata?.flow_definition ?? {};
+      const meta: any = fd.meta ?? {};
+      meta.archived = true;
+      fd.meta = meta;
+      const { error } = await supabase.from("automation_flows").update({ active: false, flow_definition: fd }).eq("id", rule.id);
+      if (error) throw error;
+      toast.success("Automazione archiviata");
+      void loadRules();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore archivio");
+    }
+  }
+
   // No export/logs on this page anymore
 
   return (
@@ -266,6 +386,36 @@ function AutomationsPage() {
             <Badge className="bg-slate-100 text-slate-800 border-transparent">
               {rules.filter((r) => r.active).length}/{rules.length} attive
             </Badge>
+            <select
+              className="rounded-md border px-2 py-1 text-sm"
+              value={categoryFilter ?? ""}
+              onChange={(e) => setCategoryFilter(e.target.value || null)}
+            >
+              <option value="">Tutte le categorie</option>
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-md border px-2 py-1 text-sm"
+              value={statusFilter ?? ""}
+              onChange={(e) => setStatusFilter(e.target.value || null)}
+            >
+              <option value="">Tutti gli stati</option>
+              <option value="draft">Draft</option>
+              <option value="validated">Validated</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="archived">Archived</option>
+            </select>
+            <input
+              placeholder="Cerca..."
+              className="rounded-md border px-2 py-1 text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
             <Button variant="secondary" size="sm" onClick={openCreateDialog} disabled={!isAdmin}>
               <Plus className="h-4 w-4" />
               Aggiungi regola
@@ -279,21 +429,39 @@ function AutomationsPage() {
             <div className="text-sm text-text3">Nessuna regola disponibile.</div>
           )}
           {!loadingRules &&
-            rules.map((rule) => (
-              <RuleCard
-                key={rule.id}
-                rule={rule}
-                isAdmin={isAdmin}
-                expanded={expandedRuleId === rule.id}
-                onToggle={() => void toggleRule(rule)}
-                onEdit={() => openEditDialog(rule)}
-                onDuplicate={() => void duplicateRule(rule)}
-                onDelete={() => void deleteRule(rule)}
-                onExpandToggle={() =>
-                  setExpandedRuleId((current) => (current === rule.id ? null : rule.id))
+            rules
+              .filter((rule) => {
+                if (categoryFilter && rule.category !== categoryFilter) return false;
+                // status derivation
+                const status = (() => {
+                  const meta = rule.flow_definition?.meta ?? {};
+                  if (meta.archived) return "archived";
+                  if (meta.paused) return "paused";
+                  if (rule.active) return "active";
+                  if (rule.version && rule.version === 1) return "draft";
+                  return "validated";
+                })();
+                if (statusFilter && status !== statusFilter) return false;
+                if (searchQuery) {
+                  const q = searchQuery.toLowerCase();
+                  if (!((rule.name || "").toLowerCase().includes(q) || (rule.summary || "").toLowerCase().includes(q))) return false;
                 }
-              />
-            ))}
+                return true;
+              })
+              .map((rule) => (
+                <RuleCard
+                  key={rule.id}
+                  rule={rule}
+                  isAdmin={isAdmin}
+                  expanded={expandedRuleId === rule.id}
+                  onToggle={() => void toggleRule(rule)}
+                  onEdit={() => openEditDialog(rule)}
+                  onDuplicate={() => void duplicateRule(rule)}
+                  onDelete={() => void deleteRule(rule)}
+                  onArchive={() => void archiveRule(rule)}
+                  onExpandToggle={() => setExpandedRuleId((current) => (current === rule.id ? null : rule.id))}
+                />
+              ))}
         </div>
       </div>
 
@@ -324,7 +492,24 @@ function AutomationsPage() {
           <DialogHeader>
             <DialogTitle>{editingRule ? "Modifica automazione" : "Nuova automazione"}</DialogTitle>
           </DialogHeader>
-          {AutomationBuilderComp ? (
+          <div className="p-2 flex gap-2 items-center">
+            <label className={`cursor-pointer px-2 py-1 rounded ${guidedMode ? 'bg-slate-100' : ''}`}>
+              <input type="radio" name="builderMode" checked={guidedMode} onChange={() => setGuidedMode(true)} className="sr-only" /> Modalità guidata
+            </label>
+            <label className={`cursor-pointer px-2 py-1 rounded ${!guidedMode ? 'bg-slate-100' : ''}`}>
+              <input type="radio" name="builderMode" checked={!guidedMode} onChange={() => setGuidedMode(false)} className="sr-only" /> Modalità avanzata
+            </label>
+          </div>
+
+          {guidedMode ? (
+            <div className="p-4">
+              <AutomationWizard
+                initial={editingRule ? { ...editingRule, ...(editingRule.flow_definition?.wizard ?? {}) } : undefined}
+                onSave={saveWizardFlow}
+                onCancel={() => setBuilderOpen(false)}
+              />
+            </div>
+          ) : AutomationBuilderComp ? (
             <AutomationBuilderComp
               initialFlow={editingRule ? { id: editingRule.id } : undefined}
               onSave={() => {

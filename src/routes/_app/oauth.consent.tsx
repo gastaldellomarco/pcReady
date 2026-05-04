@@ -49,12 +49,12 @@ function OAuthConsentPage() {
     async function validate() {
       try {
         const result = await validateRequest({
-          accessToken: session.access_token,
+          accessToken: session?.access_token,
           clientId: search.client_id,
           redirectUri: search.redirect_uri,
           scope: search.scope,
           state: search.state,
-        });
+        } as any);
         setValidation(result);
       } catch (error) {
         console.error("Validation error:", error);
@@ -79,7 +79,7 @@ function OAuthConsentPage() {
         redirectUri: search.redirect_uri,
         scopes: validation.requestedScopes,
         state: validation.state,
-      });
+      } as any);
       window.location.href = result.redirectUrl;
     } catch (error) {
       console.error("Grant error:", error);
@@ -96,7 +96,7 @@ function OAuthConsentPage() {
         clientId: search.client_id,
         redirectUri: search.redirect_uri,
         state: search.state,
-      });
+      } as any);
       window.location.href = result.redirectUrl;
     } catch (error) {
       console.error("Deny error:", error);
@@ -168,7 +168,7 @@ function OAuthConsentPage() {
             </Avatar>
             <div>
               <p className="font-medium">{profile.full_name}</p>
-              <p className="text-sm text-muted-foreground">{session.user.email}</p>
+              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
             </div>
           </div>
 

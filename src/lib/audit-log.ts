@@ -59,9 +59,10 @@ export const getAuditLog = createServerFn({ method: "GET" })
 
     if (error) throw error;
 
-    const entries: ActivityLogEntry[] = data.map(row => ({
+    const rows = (data ?? []) as any[];
+    const entries: ActivityLogEntry[] = rows.map((row: any) => ({
       id: row.id,
-      type: row.type,
+      type: row.type as ActivityLogEntry["type"],
       message: row.message,
       ticket_id: row.ticket_id,
       actor_id: row.actor_id,
@@ -118,13 +119,14 @@ export const exportAuditLog = createServerFn({ method: "GET" })
 
     // Generate CSV
     const csvHeader = "Data,Ora,Utente,Tipo,Azione,Ticket\n";
-    const csvRows = data.map(row => {
+    const rows2 = (data ?? []) as any[];
+    const csvRows = rows2.map((row: any) => {
       const date = new Date(row.created_at);
       const dateStr = date.toLocaleDateString("it-IT");
       const timeStr = date.toLocaleTimeString("it-IT");
       const actor = row.profiles?.full_name || "Sistema";
       const type = row.type === "sys" ? "Sistema" : row.type === "auto" ? "Automatico" : "Utente";
-      const message = `"${row.message.replace(/"/g, '""')}"`;
+      const message = `"${(row.message || "").replace(/"/g, '""')}"`;
       const ticket = row.ticket_id || "";
 
       return `${dateStr},${timeStr},${actor},${type},${message},${ticket}`;
