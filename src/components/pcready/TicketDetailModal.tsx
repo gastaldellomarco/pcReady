@@ -58,12 +58,23 @@ interface AssignmentRow {
   device?: { model: string; serial: string | null } | null;
 }
 
+interface HistoryRow {
+  id: string;
+  action: string;
+  occurred_at: string;
+  actor_id: string | null;
+  notes: string | null;
+  device?: { model: string; serial: string | null } | null;
+  changed_fields?: Json | null;
+}
+
 export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
   const { canEdit, isAdmin, user } = useAuth();
   const { triggerRefresh } = useTickets();
   const [t, setT] = useState<TicketRow | null>(null);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const [historyEntries, setHistoryEntries] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<string>("");
   const [showScript, setShowScript] = useState(false);
 
@@ -89,6 +100,15 @@ export function TicketDetailModal() {
       .eq("ticket_id", id)
       .order("assigned_at", { ascending: false })
       .then(({ data }) => setAssignments((data ?? []) as unknown as AssignmentRow[]));
+
+    supabase
+      .from("ticket_device_assignment_history")
+      .select(
+        "id, action, occurred_at, actor_id, notes, changed_fields, device:devices(model, serial)",
+      )
+      .eq("ticket_id", id)
+      .order("occurred_at", { ascending: false })
+      .then(({ data }) => setHistoryEntries((data ?? []) as unknown as HistoryRow[]));
   }, [id]);
 
   if (!id || !t) return null;
@@ -136,6 +156,7 @@ export function TicketDetailModal() {
     });
     toast.success(`Avanzato a ${STATUS_META[next].label}`);
   }
+
 
   async function del() {
     if (!confirm(`Eliminare ${ticket.ticket_code}?`)) return;

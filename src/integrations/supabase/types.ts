@@ -425,6 +425,42 @@ export type Database = {
           },
         ];
       };
+      ticket_device_assignment_history: {
+        Row: {
+          id: string;
+          ticket_id: string | null;
+          device_id: string | null;
+          assignment_id: string | null;
+          action: string;
+          occurred_at: string;
+          actor_id: string | null;
+          changed_fields: Json | null;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          ticket_id?: string | null;
+          device_id?: string | null;
+          assignment_id?: string | null;
+          action: string;
+          occurred_at?: string;
+          actor_id?: string | null;
+          changed_fields?: Json | null;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          ticket_id?: string | null;
+          device_id?: string | null;
+          assignment_id?: string | null;
+          action?: string;
+          occurred_at?: string;
+          actor_id?: string | null;
+          changed_fields?: Json | null;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
       tickets: {
         Row: {
           assignee_id: string | null;
