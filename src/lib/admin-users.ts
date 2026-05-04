@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireAdmin } from "./admin-users.server";
 import type { AppRole } from "@/lib/auth-context";
 
 export interface AdminUserRow {
@@ -41,22 +42,6 @@ interface InviteUserInput extends AuthedInput {
 
 const APP_ROLES: AppRole[] = ["admin", "tech", "viewer"];
 
-async function requireAdmin(accessToken: string) {
-  const token = accessToken?.trim();
-  if (!token) throw new Response("Unauthorized", { status: 401 });
-
-  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
-  const userId = authData.user?.id;
-  if (authError || !userId) throw new Response("Unauthorized", { status: 401 });
-
-  const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (roleError || !isAdmin) throw new Response("Forbidden", { status: 403 });
-
-  return userId;
-}
 
 function normalizeInitials(name: string, initials?: string) {
   const clean = initials?.trim().slice(0, 4).toUpperCase();

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { MailPlus, Search, Trash2, UserCog, UserX, UserCheck, Shield, Plus } from "lucide-react";
+import { MailPlus, Search, Trash2, UserCog, UserX, UserCheck, Shield, Plus, Settings, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import {
@@ -14,6 +14,8 @@ import {
 } from "@/lib/admin-users";
 import { listOAuthClients, createOAuthClient, type OAuthClientInfo } from "@/lib/oauth-consent";
 import { OAUTH_SCOPES, getScopeLabel, type OAuthScope } from "@/lib/oauth-scopes";
+import { getAppSettings, updateAppSettings, type AppSettings } from "@/lib/app-settings";
+import { getAuditLog, exportAuditLog, type ActivityLogEntry, type AuditLogFilters } from "@/lib/audit-log";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -55,13 +57,26 @@ function AdminUsersPage() {
   const inviteUser = useServerFn(inviteAdminUser);
   const listClients = useServerFn(listOAuthClients);
   const createClient = useServerFn(createOAuthClient);
+  const loadSettings = useServerFn(getAppSettings);
+  const saveSettings = useServerFn(updateAppSettings);
+  const loadAuditLog = useServerFn(getAuditLog);
+  const exportAudit = useServerFn(exportAuditLog);
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [clients, setClients] = useState<OAuthClientInfo[]>([]);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [auditEntries, setAuditEntries] = useState<ActivityLogEntry[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditPageSize] = useState(25);
+  const [auditFilters, setAuditFilters] = useState<AuditLogFilters>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [createClientBusy, setCreateClientBusy] = useState(false);
+  const [saveSettingsBusy, setSaveSettingsBusy] = useState(false);
   const [loadingRows, setLoadingRows] = useState(true);
   const [loadingClients, setLoadingClients] = useState(true);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [loadingAudit, setLoadingAudit] = useState(false);
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -103,8 +118,50 @@ function AdminUsersPage() {
     }
   }
 
+  async function loadAppSettings() {
+    if (!session?.access_token || !isAdmin) return;
+    setLoadingSettings(true);
+    try {
+      const data = await loadSettings({ data: { accessToken: session.access_token } });
+      setSettings(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossibile caricare le impostazioni");
+    } finally {
+      setLoadingSettings(false);
+    }
+  }
+
+  async function loadAudit(page = 1, filters: AuditLogFilters = {}) {
+    if (!session?.access_token || !isAdmin) return;
+    setLoadingAudit(true);
+    try {
+      const data = await loadAuditLog({
+        data: {
+          accessToken: session.access_token,
+          page,
+          pageSize: auditPageSize,
+          filters,
+        },
+      });
+      setAuditEntries(data.entries);
+      setAuditTotal(data.total);
+      setAuditPage(page);
+      setAuditFilters(filters);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossibile caricare il log di audit");
+    } finally {
+      setLoadingAudit(false);
+    }
+  }
+
   useEffect(() => {
     loadClients();
+  }, [session?.access_token, isAdmin]);
+  useEffect(() => {
+    loadAppSettings();
+  }, [session?.access_token, isAdmin]);
+  useEffect(() => {
+    loadAudit();
   }, [session?.access_token, isAdmin]);
   useEffect(() => {
     load();
@@ -232,15 +289,73 @@ function AdminUsersPage() {
     }
   }
 
+  async function handleSaveSettings(formData: FormData) {
+    if (!session?.access_token || !settings) return;
+    setSaveSettingsBusy(true);
+    try {
+      const newSettings: AppSettings = {
+        organization_name: formData.get("organization_name") as string,
+        default_timezone: formData.get("default_timezone") as string,
+        max_devices_per_technician: parseInt(formData.get("max_devices_per_technician") as string),
+        self_registration_enabled: formData.get("self_registration_enabled") === "on",
+        admin_approval_required: formData.get("admin_approval_required") === "on",
+        support_email: formData.get("support_email") as string,
+      };
+
+      await saveSettings({
+        data: {
+          accessToken: session.access_token,
+          settings: newSettings,
+        },
+      });
+
+      setSettings(newSettings);
+      toast.success("Impostazioni salvate");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Salvataggio non riuscito");
+    } finally {
+      setSaveSettingsBusy(false);
+    }
+  }
+
+  async function handleExportAudit() {
+    if (!session?.access_token) return;
+    try {
+      const data = await exportAudit({
+        data: {
+          accessToken: session.access_token,
+          filters: auditFilters,
+        },
+      });
+
+      // Create and download CSV file
+      const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", data.filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("File CSV esportato");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Esportazione non riuscita");
+    }
+  }
+
   if (loading || !isAdmin) {
     return <div className="text-text3 text-sm">Verifica permessi...</div>;
   }
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="users">Utenti</TabsTrigger>
+        <TabsTrigger value="settings">Impostazioni App</TabsTrigger>
         <TabsTrigger value="oauth">OAuth / Applicazioni</TabsTrigger>
+        <TabsTrigger value="audit">Audit Log</TabsTrigger>
       </TabsList>
 
       <TabsContent value="users" className="space-y-5">
@@ -518,6 +633,19 @@ function AdminUsersPage() {
             <CardDescription>Applicazioni autorizzate ad accedere ai dati PCReady</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Nota:</strong> Per la gestione del consenso OAuth degli utenti, vedere{" "}
+                <a
+                  href="https://github.com/your-repo/issues/31"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:no-underline"
+                >
+                  issue #31: Admin: Pagina OAuth Consent per autorizzazione membri
+                </a>
+              </p>
+            </div>
             {loadingClients ? (
               <p className="text-center py-4 text-muted-foreground">Caricamento client...</p>
             ) : clients.length === 0 ? (
@@ -551,6 +679,212 @@ function AdminUsersPage() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="settings" className="space-y-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Impostazioni Applicazione
+            </CardTitle>
+            <CardDescription>
+              Configura le impostazioni globali dell'applicazione PCReady
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingSettings ? (
+              <p className="text-center py-4 text-muted-foreground">Caricamento impostazioni...</p>
+            ) : settings ? (
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(new FormData(e.target as HTMLFormElement)); }} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="organization_name">Nome Organizzazione</Label>
+                    <Input
+                      id="organization_name"
+                      name="organization_name"
+                      defaultValue={settings.organization_name}
+                      placeholder="PCReady"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="default_timezone">Timezone Predefinito</Label>
+                    <Input
+                      id="default_timezone"
+                      name="default_timezone"
+                      defaultValue={settings.default_timezone}
+                      placeholder="Europe/Rome"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="max_devices_per_technician">Max Dispositivi per Tecnico</Label>
+                    <Input
+                      id="max_devices_per_technician"
+                      name="max_devices_per_technician"
+                      type="number"
+                      min="1"
+                      max="100"
+                      defaultValue={settings.max_devices_per_technician}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="support_email">Email Supporto</Label>
+                    <Input
+                      id="support_email"
+                      name="support_email"
+                      type="email"
+                      defaultValue={settings.support_email}
+                      placeholder="support@pcready.it"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="self_registration_enabled"
+                      name="self_registration_enabled"
+                      defaultChecked={settings.self_registration_enabled}
+                    />
+                    <Label htmlFor="self_registration_enabled">
+                      Abilita registrazione autonoma nuovi utenti
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin_approval_required"
+                      name="admin_approval_required"
+                      defaultChecked={settings.admin_approval_required}
+                    />
+                    <Label htmlFor="admin_approval_required">
+                      Richiedi approvazione admin per nuovi account
+                    </Label>
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={saveSettingsBusy}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  {saveSettingsBusy ? "Salvataggio..." : "Salva Impostazioni"}
+                </Button>
+              </form>
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">Errore nel caricamento delle impostazioni</p>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="audit" className="space-y-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Log di Audit
+            </CardTitle>
+            <CardDescription>
+              Visualizza le azioni amministrative e di sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  placeholder="Filtra per utente..."
+                  value={auditFilters.user || ""}
+                  onChange={(e) => setAuditFilters({ ...auditFilters, user: e.target.value })}
+                  className="max-w-[200px]"
+                />
+                <select
+                  className="pc-input max-w-[150px]"
+                  value={auditFilters.actionType || ""}
+                  onChange={(e) => setAuditFilters({ ...auditFilters, actionType: e.target.value })}
+                >
+                  <option value="">Tutti i tipi</option>
+                  <option value="sys">Sistema</option>
+                  <option value="auto">Automatico</option>
+                  <option value="user">Utente</option>
+                </select>
+                <Input
+                  type="date"
+                  value={auditFilters.dateFrom || ""}
+                  onChange={(e) => setAuditFilters({ ...auditFilters, dateFrom: e.target.value })}
+                  className="max-w-[150px]"
+                />
+                <Input
+                  type="date"
+                  value={auditFilters.dateTo || ""}
+                  onChange={(e) => setAuditFilters({ ...auditFilters, dateTo: e.target.value })}
+                  className="max-w-[150px]"
+                />
+                <Button onClick={() => loadAudit(1, auditFilters)} variant="outline">
+                  <Search className="w-4 h-4 mr-2" />
+                  Filtra
+                </Button>
+                <Button onClick={handleExportAudit} variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Esporta CSV
+                </Button>
+              </div>
+
+              {loadingAudit ? (
+                <p className="text-center py-4 text-muted-foreground">Caricamento log...</p>
+              ) : auditEntries.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground">Nessuna attività trovata</p>
+              ) : (
+                <div className="space-y-2">
+                  {auditEntries.map((entry) => (
+                    <div key={entry.id} className="border rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm">{entry.message}</p>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span>{entry.actor_name}</span>
+                            <span>{new Date(entry.created_at).toLocaleString("it-IT")}</span>
+                            <Badge variant="outline">
+                              {entry.type === "sys" ? "Sistema" : entry.type === "auto" ? "Automatico" : "Utente"}
+                            </Badge>
+                            {entry.ticket_id && <span>Ticket: {entry.ticket_id}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center justify-between pt-4">
+                    <span className="text-sm text-muted-foreground">
+                      Pagina {auditPage} di {Math.ceil(auditTotal / auditPageSize)} ({auditTotal} totale)
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => loadAudit(auditPage - 1, auditFilters)}
+                        disabled={auditPage <= 1}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Precedente
+                      </Button>
+                      <Button
+                        onClick={() => loadAudit(auditPage + 1, auditFilters)}
+                        disabled={auditPage >= Math.ceil(auditTotal / auditPageSize)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Successivo
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </TabsContent>

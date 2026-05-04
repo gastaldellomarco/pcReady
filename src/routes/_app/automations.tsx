@@ -195,38 +195,48 @@ function AutomationsPage() {
 
   async function loadRules() {
     setLoadingRules(true);
-    const { data, error } = await supabase
-      .from("automation_rules")
-      .select("id, trigger_text, action_text, active, count, description, category, last_run_at")
-      .order("sort");
+    try {
+      const { data, error } = await supabase
+        .from("automation_rules")
+        .select("id, trigger_text, action_text, active, count, description, category, last_run_at")
+        .order("sort");
 
-    setLoadingRules(false);
-    if (error) return toast.error(error.message);
-    setRules((data ?? []) as Rule[]);
+      if (error) throw new Error(`Regole: ${error.message}`);
+      setRules((data ?? []) as Rule[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore nel caricamento regole");
+    } finally {
+      setLoadingRules(false);
+    }
   }
 
   async function loadLogs(filter: LogFilter, page = 0, reset = false) {
     setLoadingLogs(true);
-    const query = supabase
-      .from("activity_log")
-      .select("id, type, message, created_at")
-      .order("created_at", { ascending: false });
+    try {
+      const query = supabase
+        .from("activity_log")
+        .select("id, type, message, created_at")
+        .order("created_at", { ascending: false });
 
-    if (filter !== "all") {
-      query.eq("type", filter);
+      if (filter !== "all") {
+        query.eq("type", filter);
+      }
+
+      const from = page * LOG_PAGE_SIZE;
+      const to = from + LOG_PAGE_SIZE - 1;
+      const { data, error } = await query.range(from, to);
+
+      if (error) throw new Error(`Log: ${error.message}`);
+
+      const items = data ?? [];
+      setLogs((current) => (reset ? items : [...current, ...items]));
+      setLogPage(page);
+      setHasMoreLogs(items.length === LOG_PAGE_SIZE);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore nel caricamento log");
+    } finally {
+      setLoadingLogs(false);
     }
-
-    const from = page * LOG_PAGE_SIZE;
-    const to = from + LOG_PAGE_SIZE - 1;
-    const { data, error } = await query.range(from, to);
-
-    setLoadingLogs(false);
-    if (error) return toast.error(error.message);
-
-    const items = data ?? [];
-    setLogs((current) => (reset ? items : [...current, ...items]));
-    setLogPage(page);
-    setHasMoreLogs(items.length === LOG_PAGE_SIZE);
   }
 
   useEffect(() => {
