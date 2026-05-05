@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, prettier/prettier, react-hooks/exhaustive-deps */
+/* eslint-disable prettier/prettier */
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,19 @@ import {
   OAuthClientSchema,
   type OAuthClientInput,
 } from "@/lib/schemas";
-import { MailPlus, Search, Trash2, UserCog, UserX, UserCheck, Shield, Plus, Settings, FileText, Download } from "lucide-react";
+import {
+  MailPlus,
+  Search,
+  Trash2,
+  UserCog,
+  UserX,
+  UserCheck,
+  Shield,
+  Plus,
+  Settings,
+  FileText,
+  Download,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import {
@@ -28,7 +40,12 @@ import {
 import { listOAuthClients, createOAuthClient, type OAuthClientInfo } from "@/lib/oauth-consent";
 import { OAUTH_SCOPES, getScopeLabel, type OAuthScope } from "@/lib/oauth-scopes";
 import { getAppSettings, updateAppSettings, type AppSettings } from "@/lib/app-settings";
-import { getAuditLog, exportAuditLog, type ActivityLogEntry, type AuditLogFilters } from "@/lib/audit-log";
+import {
+  getAuditLog,
+  exportAuditLog,
+  type ActivityLogEntry,
+  type AuditLogFilters,
+} from "@/lib/audit-log";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -97,7 +114,7 @@ function AdminUsersPage() {
     mode: "onChange",
     defaultValues: { email: "", fullName: "", role: "viewer" },
   });
-  const oauthForm = useForm<any>({
+  const oauthForm = useForm<OAuthClientInput>({
     resolver: zodResolver(OAuthClientSchema),
     mode: "onChange",
     defaultValues: { name: "", description: null, redirectUrisRaw: "", scopesAllowed: [] },
@@ -108,7 +125,7 @@ function AdminUsersPage() {
     if (!loading && !isAdmin) navigate({ to: "/dashboard", replace: true });
   }, [isAdmin, loading, navigate]);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!session?.access_token || !isAdmin) return;
     setLoadingRows(true);
     try {
@@ -119,9 +136,9 @@ function AdminUsersPage() {
     } finally {
       setLoadingRows(false);
     }
-  }
+  }, [session?.access_token, isAdmin, listUsers]);
 
-  async function loadClients() {
+  const loadClients = useCallback(async () => {
     if (!session?.access_token || !isAdmin) return;
     setLoadingClients(true);
     try {
@@ -132,9 +149,9 @@ function AdminUsersPage() {
     } finally {
       setLoadingClients(false);
     }
-  }
+  }, [session?.access_token, isAdmin, listClients]);
 
-  async function loadAppSettings() {
+  const loadAppSettings = useCallback(async () => {
     if (!session?.access_token || !isAdmin) return;
     setLoadingSettings(true);
     try {
@@ -145,43 +162,46 @@ function AdminUsersPage() {
     } finally {
       setLoadingSettings(false);
     }
-  }
+  }, [session?.access_token, isAdmin, loadSettings]);
 
-  async function loadAudit(page = 1, filters: AuditLogFilters = {}) {
-    if (!session?.access_token || !isAdmin) return;
-    setLoadingAudit(true);
-    try {
-      const data = await loadAuditLog({
-        data: {
-          accessToken: session.access_token,
-          page,
-          pageSize: auditPageSize,
-          filters,
-        },
-      });
-      setAuditEntries(data.entries);
-      setAuditTotal(data.total);
-      setAuditPage(page);
-      setAuditFilters(filters);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossibile caricare il log di audit");
-    } finally {
-      setLoadingAudit(false);
-    }
-  }
+  const loadAudit = useCallback(
+    async (page = 1, filters: AuditLogFilters = {}) => {
+      if (!session?.access_token || !isAdmin) return;
+      setLoadingAudit(true);
+      try {
+        const data = await loadAuditLog({
+          data: {
+            accessToken: session.access_token,
+            page,
+            pageSize: auditPageSize,
+            filters,
+          },
+        });
+        setAuditEntries(data.entries);
+        setAuditTotal(data.total);
+        setAuditPage(page);
+        setAuditFilters(filters);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Impossibile caricare il log di audit");
+      } finally {
+        setLoadingAudit(false);
+      }
+    },
+    [session?.access_token, isAdmin, loadAuditLog, auditPageSize]
+  );
 
   useEffect(() => {
     loadClients();
-  }, [session?.access_token, isAdmin]);
+  }, [session?.access_token, isAdmin, loadClients]);
   useEffect(() => {
     loadAppSettings();
-  }, [session?.access_token, isAdmin]);
+  }, [session?.access_token, isAdmin, loadAppSettings]);
   useEffect(() => {
     loadAudit();
-  }, [session?.access_token, isAdmin]);
+  }, [session?.access_token, isAdmin, loadAudit]);
   useEffect(() => {
     load();
-  }, [session?.access_token, isAdmin]);
+  }, [session?.access_token, isAdmin, load]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -253,15 +273,18 @@ function AdminUsersPage() {
     if (!session?.access_token) return;
     setCreateClientBusy(true);
     try {
-      // vals.redirectUrisRaw is transformed by Zod into string[] by the schema
-      const redirectUris = vals.redirectUrisRaw as unknown as string[];
+      // parse textarea (one URL per line) into array
+      const redirectUris = (vals.redirectUrisRaw as string)
+        .split("\n")
+        .map((r) => r.trim())
+        .filter(Boolean);
       await createOAuthClient({
         data: {
           accessToken: session.access_token,
           name: vals.name,
           description: (vals.description as string) ?? undefined,
           redirectUris,
-          scopesAllowed: vals.scopesAllowed || [],
+          scopesAllowed: (vals.scopesAllowed || []) as OAuthScope[],
         },
       });
       toast.success("Client OAuth creato");
@@ -274,7 +297,7 @@ function AdminUsersPage() {
     }
   });
 
-  const settingsForm = useForm<any>({
+  const settingsForm = useForm<z.input<typeof AppSettingsSchema>>({
     resolver: zodResolver(AppSettingsSchema),
     mode: "onChange",
     defaultValues: {
@@ -297,9 +320,9 @@ function AdminUsersPage() {
       admin_approval_required: settings?.admin_approval_required ?? false,
       support_email: settings?.support_email ?? null,
     });
-  }, [settings]);
+  }, [settings, settingsForm]);
 
-  async function submitSettings(values: any) {
+  async function submitSettings(values: z.input<typeof AppSettingsSchema>) {
     if (!session?.access_token) return;
     setSaveSettingsBusy(true);
     try {
