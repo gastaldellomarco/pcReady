@@ -78,6 +78,20 @@ export const Route = createFileRoute("/_app/admin")({
 const ROLES: AppRole[] = ["admin", "tech", "viewer"];
 
 function AdminUsersPage() {
+  function getErrorMessage(error: unknown, fallback: string) {
+    try {
+      if (!error) return fallback;
+      if (error instanceof Error) return error.message;
+      const anyErr = error as any;
+      if (typeof anyErr === "string") return anyErr;
+      if (anyErr?.message) return String(anyErr.message);
+      if (anyErr?.status) return `${anyErr.status} ${anyErr?.statusText ?? ""}`.trim();
+      return String(anyErr);
+    } catch {
+      return fallback;
+    }
+  }
+
   const { isAdmin, loading, session, user } = useAuth();
   const navigate = useNavigate();
   const listUsers = useServerFn(listAdminUsers);
@@ -132,7 +146,7 @@ function AdminUsersPage() {
       const data = await listUsers({ data: { accessToken: session.access_token } });
       setRows(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossibile caricare gli utenti");
+      toast.error(getErrorMessage(error, "Impossibile caricare gli utenti"));
     } finally {
       setLoadingRows(false);
     }
@@ -145,7 +159,7 @@ function AdminUsersPage() {
       const data = await listClients({ data: { accessToken: session.access_token } });
       setClients(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossibile caricare i client OAuth");
+      toast.error(getErrorMessage(error, "Impossibile caricare i client OAuth"));
     } finally {
       setLoadingClients(false);
     }
@@ -158,7 +172,7 @@ function AdminUsersPage() {
       const data = await loadSettings({ data: { accessToken: session.access_token } });
       setSettings(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossibile caricare le impostazioni");
+      toast.error(getErrorMessage(error, "Impossibile caricare le impostazioni"));
     } finally {
       setLoadingSettings(false);
     }
@@ -182,7 +196,7 @@ function AdminUsersPage() {
         setAuditPage(page);
         setAuditFilters(filters);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Impossibile caricare il log di audit");
+        toast.error(getErrorMessage(error, "Impossibile caricare il log di audit"));
       } finally {
         setLoadingAudit(false);
       }
@@ -228,7 +242,7 @@ function AdminUsersPage() {
       toast.success("Ruolo aggiornato");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Aggiornamento non riuscito");
+      toast.error(getErrorMessage(error, "Aggiornamento non riuscito"));
     } finally {
       setBusyId(null);
     }
@@ -243,7 +257,7 @@ function AdminUsersPage() {
       toast.success(disabled ? "Utente disabilitato" : "Utente riabilitato");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Operazione non riuscita");
+      toast.error(getErrorMessage(error, "Operazione non riuscita"));
     } finally {
       setBusyId(null);
     }
@@ -261,7 +275,7 @@ function AdminUsersPage() {
       toast.success("Utente rimosso");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Rimozione non riuscita");
+      toast.error(getErrorMessage(error, "Rimozione non riuscita"));
     } finally {
       setBusyId(null);
       setDeleteTarget(null);
@@ -291,7 +305,7 @@ function AdminUsersPage() {
       oauthForm.reset();
       await loadClients();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Creazione client non riuscita");
+      toast.error(getErrorMessage(error, "Creazione client non riuscita"));
     } finally {
       setCreateClientBusy(false);
     }
@@ -339,7 +353,7 @@ function AdminUsersPage() {
       setSettings(payload);
       toast.success("Impostazioni salvate");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Salvataggio non riuscito");
+      toast.error(getErrorMessage(error, "Salvataggio non riuscito"));
     } finally {
       setSaveSettingsBusy(false);
     }
@@ -368,7 +382,7 @@ function AdminUsersPage() {
 
       toast.success("File CSV esportato");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Esportazione non riuscita");
+      toast.error(getErrorMessage(error, "Esportazione non riuscita"));
     }
   }
 
@@ -405,7 +419,7 @@ function AdminUsersPage() {
               inviteForm.reset();
               await load();
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Invito non riuscito");
+              toast.error(getErrorMessage(error, "Invito non riuscito"));
             } finally {
               setInviteBusy(false);
             }
