@@ -1,39 +1,392 @@
-export interface EmailTemplate {
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireAdmin } from "@/lib/admin-users.server";
+import { getAppSettings } from "@/lib/app-settings";
+import {
+  EMAIL_EVENT_TYPES,
+  EMAIL_TEMPLATE_VARIABLES,
+  type EmailEventType,
+  type EmailTemplate,
+} from "@/types/email";
+
+const EmailEventSchema = z.enum(EMAIL_EVENT_TYPES as [EmailEventType, ...EmailEventType[]]);
+
+const TemplateUpdateSchema = z.object({
+  accessToken: z.string().min(1),
+  eventType: EmailEventSchema,
+  subject: z.string().trim().min(1).max(240),
+  bodyHtml: z.string().trim().min(1),
+  bodyText: z.string().trim().optional().nullable(),
+  isActive: z.boolean(),
+});
+
+const TestEmailSchema = z.object({
+  accessToken: z.string().min(1),
+  eventType: EmailEventSchema,
+  recipientEmail: z.string().email(),
+});
+
+type EmailTemplateRow = {
   id: string;
-  name: string;
+  event_type: EmailEventType;
+  subject: string;
+  body_html: string;
+  body_text: string | null;
+  variables: unknown;
+  is_active: boolean;
+  last_modified_at: string;
+  last_modified_by: string | null;
+  created_at: string;
+};
+
+type LegacyEmailTemplate = {
+  id: string;
   subject: string;
   body: string;
-}
+};
 
-export const EMAIL_TEMPLATES: EmailTemplate[] = [
+const LEGACY_TEMPLATES: LegacyEmailTemplate[] = [
   {
     id: "ticket-assigned",
-    name: "Ticket assegnato",
     subject: "Ticket {{ticket_code}} assegnato",
     body: "Ciao {{assignee_name}}, il ticket {{ticket_code}} per {{client_name}} ti e' stato assegnato.",
   },
-  {
-    id: "device-ready",
-    name: "Dispositivo pronto",
-    subject: "Dispositivo {{serial}} pronto",
-    body: "Il dispositivo {{model}} ({{serial}}) e' pronto per {{client_name}}.",
-  },
 ];
 
-export function getTemplates(): EmailTemplate[] {
-  return EMAIL_TEMPLATES.map((template) => ({ ...template }));
+export function getTemplates() {
+  return LEGACY_TEMPLATES;
 }
 
-export function renderTemplate(template: EmailTemplate, variables: Record<string, unknown>) {
+export const listEmailTemplates = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }) => {
+    await requireAdmin(accessToken);
+    await ensureDefaultTemplates();
+
+    const { data, error } = await supabaseAdmin
+      .from("email_templates" as any)
+      .select("*")
+      .order("event_type");
+    if (error) throw error;
+
+    return hydrateTemplates((data ?? []) as unknown as EmailTemplateRow[]);
+  });
+
+export const getEmailTemplate = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken: string; eventType: EmailEventType }) => data)
+  .handler(async ({ data: { accessToken, eventType } }) => {
+    await requireAdmin(accessToken);
+    const parsedEvent = EmailEventSchema.parse(eventType);
+    await ensureDefaultTemplates();
+
+    const { data, error } = await supabaseAdmin
+      .from("email_templates" as any)
+      .select("*")
+      .eq("event_type", parsedEvent)
+      .single();
+    if (error) throw error;
+
+    return (await hydrateTemplates([data as unknown as EmailTemplateRow]))[0];
+  });
+
+export const updateEmailTemplate = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof TemplateUpdateSchema>) => data)
+  .handler(async ({ data }) => {
+    const actorId = await requireAdmin(data.accessToken);
+    const validated = TemplateUpdateSchema.parse(data);
+    validateTemplateVariables(validated.eventType, [
+      validated.subject,
+      validated.bodyHtml,
+      validated.bodyText ?? "",
+    ]);
+
+    const variables = EMAIL_TEMPLATE_VARIABLES[validated.eventType].map((variable) => variable.token);
+    const { data: saved, error } = await supabaseAdmin
+      .from("email_templates" as any)
+      .upsert(
+        {
+          event_type: validated.eventType,
+          subject: validated.subject,
+          body_html: validated.bodyHtml,
+          body_text: validated.bodyText || null,
+          variables,
+          is_active: validated.isActive,
+          last_modified_at: new Date().toISOString(),
+          last_modified_by: actorId,
+        },
+        { onConflict: "event_type" },
+      )
+      .select("*")
+      .single();
+    if (error) throw error;
+
+    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
+  });
+
+export const sendTestEmail = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof TestEmailSchema>) => data)
+  .handler(async ({ data }) => {
+    const actorId = await requireAdmin(data.accessToken);
+    const validated = TestEmailSchema.parse(data);
+    await ensureDefaultTemplates();
+
+    const { data: template, error } = await supabaseAdmin
+      .from("email_templates" as any)
+      .select("*")
+      .eq("event_type", validated.eventType)
+      .single();
+    if (error) throw error;
+
+    const settings = await getAppSettings({ data: { accessToken: validated.accessToken } });
+    const row = template as unknown as EmailTemplateRow;
+    const sample = buildSampleVariables(settings.organization_name, settings.support_email);
+    const subject = renderTemplate(row.subject, sample);
+    const html = renderTemplate(row.body_html, sample);
+    const text = renderTemplate(row.body_text ?? "", sample);
+
+    // Prefer provider APIs when configured (Resend), otherwise fall back to webhook
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const RESEND_FROM = process.env.RESEND_FROM || process.env.SENDGRID_FROM || "no-reply@example.com";
+
+    let delivered = false;
+    const webhookUrl = process.env.EMAIL_TEST_WEBHOOK_URL || process.env.SMTP_WEBHOOK_URL;
+
+    if (RESEND_API_KEY) {
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({ from: RESEND_FROM, to: validated.recipientEmail, subject, html }),
+      });
+
+      if (!r.ok) {
+        // Try to parse error body for helpful info
+        let errBody: any = null;
+        try {
+          errBody = await r.json();
+        } catch {
+          errBody = await r.text().catch(() => null);
+        }
+
+        const isDomainValidationError =
+          r.status === 403 &&
+          (errBody?.name === "validation_error" || (typeof errBody === "string" && /domain/i.test(errBody)) ||
+            (errBody?.message && /domain/i.test(String(errBody.message))));
+
+        if (isDomainValidationError && webhookUrl) {
+          // Try webhook fallback
+          const response = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
+          });
+          const bodyText = await response.text().catch(() => "");
+          if (!response.ok) {
+            await supabaseAdmin.from("activity_log").insert({
+              type: "sys",
+              actor_id: actorId,
+              message: `Webhook fallback failed after Resend error: ${response.status} ${bodyText}`,
+            });
+            throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
+          }
+          delivered = true;
+          await supabaseAdmin.from("activity_log").insert({
+            type: "sys",
+            actor_id: actorId,
+            message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook dopo errore Resend: ${JSON.stringify(
+              errBody,
+            )}`,
+          });
+        } else {
+          const textErr = typeof errBody === "string" ? errBody : JSON.stringify(errBody);
+          await supabaseAdmin.from("activity_log").insert({
+            type: "sys",
+            actor_id: actorId,
+            message: `Resend API error ${r.status} ${textErr}`,
+          });
+          throw new Error(`Resend API error ${r.status} ${textErr}`);
+        }
+      } else {
+        delivered = true;
+        await supabaseAdmin.from("activity_log").insert({
+          type: "sys",
+          actor_id: actorId,
+          message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via Resend.`,
+        });
+      }
+    } else if (webhookUrl) {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
+      });
+      const bodyText = await response.text().catch(() => "");
+      if (!response.ok) {
+        await supabaseAdmin.from("activity_log").insert({
+          type: "sys",
+          actor_id: actorId,
+          message: `Webhook send failed: ${response.status} ${bodyText}`,
+        });
+        throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
+      }
+      delivered = true;
+      await supabaseAdmin.from("activity_log").insert({
+        type: "sys",
+        actor_id: actorId,
+        message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook.`,
+      });
+    } else {
+      await supabaseAdmin.from("activity_log").insert({
+        type: "sys",
+        actor_id: actorId,
+        message: `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. Configura EMAIL_TEST_WEBHOOK_URL per l'invio SMTP.`,
+      });
+    }
+
+    return { ok: true, delivered, subject };
+  });
+
+async function ensureDefaultTemplates() {
+  const defaults = defaultTemplates();
+  const { error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .upsert(defaults, { onConflict: "event_type", ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+async function hydrateTemplates(rows: EmailTemplateRow[]) {
+  const authorIds = rows
+    .map((row) => row.last_modified_by)
+    .filter((id): id is string => Boolean(id));
+  const { data: profiles } = authorIds.length
+    ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", authorIds)
+    : { data: [] };
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+
+  return rows.map((row) => ({
+    id: row.id,
+    event_type: row.event_type,
+    subject: row.subject,
+    body_html: row.body_html,
+    body_text: row.body_text,
+    variables: Array.isArray(row.variables) ? (row.variables as string[]) : [],
+    is_active: row.is_active,
+    last_modified_at: row.last_modified_at,
+    last_modified_by: row.last_modified_by,
+    last_modified_by_name: row.last_modified_by
+      ? (profileById.get(row.last_modified_by) ?? null)
+      : null,
+    created_at: row.created_at,
+  })) satisfies EmailTemplate[];
+}
+
+function validateTemplateVariables(eventType: EmailEventType, parts: string[]) {
+  const allowed = new Set(EMAIL_TEMPLATE_VARIABLES[eventType].map((variable) => variable.token));
+  const unknown = new Set<string>();
+
+  for (const part of parts) {
+    for (const match of part.matchAll(/\{\{[a-z0-9_]+\}\}/gi)) {
+      if (!allowed.has(match[0])) unknown.add(match[0]);
+    }
+  }
+
+  if (unknown.size) {
+    throw new Response(`Variabili non valide: ${Array.from(unknown).join(", ")}`, { status: 400 });
+  }
+}
+
+export function renderTemplate(template: string, values: Record<string, string>): string;
+export function renderTemplate(
+  template: LegacyEmailTemplate,
+  values: Record<string, string>,
+): { subject: string; body: string };
+export function renderTemplate(
+  template: string | LegacyEmailTemplate,
+  values: Record<string, string>,
+) {
+  if (typeof template === "string") {
+    return replaceVariables(template, values);
+  }
+
   return {
-    subject: renderString(template.subject, variables),
-    body: renderString(template.body, variables),
+    subject: replaceVariables(template.subject, values),
+    body: replaceVariables(template.body, values),
   };
 }
 
-function renderString(input: string, variables: Record<string, unknown>) {
-  return input.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_match, key: string) => {
-    const value = variables[key];
-    return value === null || value === undefined ? "" : String(value);
+function replaceVariables(template: string, values: Record<string, string>) {
+  return template.replace(/\{\{[a-z0-9_]+\}\}/gi, (token) => {
+    const bareToken = token.slice(2, -2);
+    return values[token] ?? values[bareToken] ?? token;
   });
+}
+
+function buildSampleVariables(organizationName: string, supportEmail: string) {
+  return {
+    "{{organization_name}}": organizationName || "PCReady",
+    "{{support_email}}": supportEmail || "support@pcready.it",
+    "{{user_name}}": "Mario Rossi",
+    "{{user_email}}": "mario.rossi@example.com",
+    "{{invite_link}}": "https://app.pcready.it/auth/set-password#access_token=demo&type=invite",
+    "{{reset_link}}": "https://app.pcready.it/auth/set-password#access_token=demo&type=recovery",
+    "{{confirm_link}}": "https://app.pcready.it/auth/callback#access_token=demo&type=signup",
+    "{{ticket_code}}": "PC-2026-0142",
+    "{{ticket_title}}": "Preparazione notebook Lenovo ThinkPad",
+    "{{ticket_link}}": "https://app.pcready.it/tickets?ticket=PC-2026-0142",
+    "{{checklist_name}}": "Setup Windows 11 Pro",
+  };
+}
+
+function defaultTemplates() {
+  return [
+    {
+      event_type: "invite",
+      subject: "[{{organization_name}}] Sei stato invitato",
+      body_html:
+        '<h1>Benvenuto in {{organization_name}}</h1><p>Ciao {{user_name}},</p><p>sei stato invitato ad accedere a PCReady.</p><p><a href="{{invite_link}}">Imposta la password e accedi</a></p><p>Per assistenza: {{support_email}}</p>',
+      body_text:
+        "Ciao {{user_name}}, sei stato invitato ad accedere a {{organization_name}}. Apri {{invite_link}} per impostare la password. Supporto: {{support_email}}",
+    },
+    {
+      event_type: "reset_password",
+      subject: "[{{organization_name}}] Reset password",
+      body_html:
+        '<h1>Reset password</h1><p>Ciao {{user_name}},</p><p>usa questo link per impostare una nuova password:</p><p><a href="{{reset_link}}">Reimposta password</a></p><p>Supporto: {{support_email}}</p>',
+      body_text:
+        "Ciao {{user_name}}, usa questo link per impostare una nuova password: {{reset_link}}. Supporto: {{support_email}}",
+    },
+    {
+      event_type: "confirm_account",
+      subject: "[{{organization_name}}] Conferma account",
+      body_html:
+        '<h1>Conferma account</h1><p>Ciao {{user_name}},</p><p>conferma il tuo account da qui:</p><p><a href="{{confirm_link}}">Conferma account</a></p><p>Supporto: {{support_email}}</p>',
+      body_text:
+        "Ciao {{user_name}}, conferma il tuo account da qui: {{confirm_link}}. Supporto: {{support_email}}",
+    },
+    {
+      event_type: "ticket_assigned",
+      subject: "[{{organization_name}}] Ticket assegnato {{ticket_code}}",
+      body_html:
+        '<h1>Nuovo ticket assegnato</h1><p>Ciao {{user_name}},</p><p>ti e\' stato assegnato il ticket <strong>{{ticket_code}}</strong>: {{ticket_title}}.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
+      body_text:
+        "Ciao {{user_name}}, ti e' stato assegnato il ticket {{ticket_code}}: {{ticket_title}}. Apri: {{ticket_link}}",
+    },
+    {
+      event_type: "checklist_completed",
+      subject: "[{{organization_name}}] Checklist completata",
+      body_html:
+        '<h1>Checklist completata</h1><p>La checklist {{checklist_name}} per il ticket {{ticket_code}} e\' stata completata.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
+      body_text:
+        "La checklist {{checklist_name}} per il ticket {{ticket_code}} e' stata completata. Apri: {{ticket_link}}",
+    },
+  ].map((template) => ({
+    ...template,
+    variables: EMAIL_TEMPLATE_VARIABLES[template.event_type as EmailEventType].map(
+      (variable) => variable.token,
+    ),
+    is_active: true,
+  }));
 }

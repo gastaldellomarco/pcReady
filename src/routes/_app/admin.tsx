@@ -38,6 +38,7 @@ import {
 import { listOAuthClients, createOAuthClient, type OAuthClientInfo } from "@/lib/oauth-consent";
 import { OAUTH_SCOPES, getScopeLabel, type OAuthScope } from "@/lib/oauth-scopes";
 import { getAppSettings, updateAppSettings, type AppSettings } from "@/lib/app-settings";
+import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
 import {
   getAuditLog,
   exportAuditLog,
@@ -783,147 +784,175 @@ function AdminUsersPage() {
       </TabsContent>
 
       <TabsContent value="settings" className="space-y-5">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Impostazioni Applicazione
-            </CardTitle>
-            <CardDescription>
-              Configura le impostazioni globali dell'applicazione PCReady
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingSettings ? (
-              <p className="text-center py-4 text-muted-foreground">Caricamento impostazioni...</p>
-            ) : settings ? (
-              <form onSubmit={settingsForm.handleSubmit(submitSettings)} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="organization_name">Nome Organizzazione</Label>
-                    <Input
-                      id="organization_name"
-                      {...settingsForm.register("organization_name")}
-                      placeholder="PCReady"
-                    />
-                    {settingsForm.formState.errors.organization_name && (
-                      <p className="text-sm text-destructive mt-1">
-                        {String(settingsForm.formState.errors.organization_name?.message)}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="default_timezone">Timezone Predefinito</Label>
-                    <Input
-                      id="default_timezone"
-                      {...settingsForm.register("default_timezone")}
-                      placeholder="Europe/Rome"
-                    />
-                    {settingsForm.formState.errors.default_timezone && (
-                      <p className="text-sm text-destructive mt-1">
-                        {String(settingsForm.formState.errors.default_timezone?.message)}
-                      </p>
-                    )}
-                  </div>
-                </div>
+        <Tabs defaultValue="general" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="general">Generale</TabsTrigger>
+            <TabsTrigger value="email-templates">Template Email</TabsTrigger>
+          </TabsList>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="max_devices_per_technician">Max Dispositivi per Tecnico</Label>
-                    <Input
-                      id="max_devices_per_technician"
-                      type="number"
-                      min={1}
-                      max={100}
-                      {...settingsForm.register("max_devices_per_technician")}
-                    />
-                    {settingsForm.formState.errors.max_devices_per_technician && (
-                      <p className="text-sm text-destructive mt-1">
-                        {String(settingsForm.formState.errors.max_devices_per_technician?.message)}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="support_email">Email Supporto</Label>
-                    <Input
-                      id="support_email"
-                      type="email"
-                      {...settingsForm.register("support_email")}
-                      placeholder="support@pcready.it"
-                    />
-                    {settingsForm.formState.errors.support_email && (
-                      <p className="text-sm text-destructive mt-1">
-                        {String(settingsForm.formState.errors.support_email?.message)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label>Limiti WIP Kanban</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-                      {WIP_LIMIT_FIELDS.map(([status, label]) => (
-                        <div key={status}>
-                          <Label
-                            htmlFor={`wip_${status}`}
-                            className="text-xs text-muted-foreground"
-                          >
-                            {label}
-                          </Label>
-                          <Input
-                            id={`wip_${status}`}
-                            type="number"
-                            min={0}
-                            max={999}
-                            {...settingsForm.register(`wip_limits.${status}`)}
-                          />
-                          {settingsForm.formState.errors.wip_limits?.[status] && (
-                            <p className="text-sm text-destructive mt-1">
-                              {String(settingsForm.formState.errors.wip_limits?.[status]?.message)}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+          <TabsContent value="general">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Impostazioni Applicazione
+                </CardTitle>
+                <CardDescription>
+                  Configura le impostazioni globali dell'applicazione PCReady
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSettings ? (
+                  <p className="text-center py-4 text-muted-foreground">
+                    Caricamento impostazioni...
+                  </p>
+                ) : settings ? (
+                  <form onSubmit={settingsForm.handleSubmit(submitSettings)} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="organization_name">Nome Organizzazione</Label>
+                        <Input
+                          id="organization_name"
+                          {...settingsForm.register("organization_name")}
+                          placeholder="PCReady"
+                        />
+                        {settingsForm.formState.errors.organization_name && (
+                          <p className="text-sm text-destructive mt-1">
+                            {String(settingsForm.formState.errors.organization_name?.message)}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="default_timezone">Timezone Predefinito</Label>
+                        <Input
+                          id="default_timezone"
+                          {...settingsForm.register("default_timezone")}
+                          placeholder="Europe/Rome"
+                        />
+                        {settingsForm.formState.errors.default_timezone && (
+                          <p className="text-sm text-destructive mt-1">
+                            {String(settingsForm.formState.errors.default_timezone?.message)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="self_registration_enabled"
-                      {...settingsForm.register("self_registration_enabled")}
-                    />
-                    <Label htmlFor="self_registration_enabled">
-                      Abilita registrazione autonoma nuovi utenti
-                    </Label>
-                  </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="max_devices_per_technician">
+                          Max Dispositivi per Tecnico
+                        </Label>
+                        <Input
+                          id="max_devices_per_technician"
+                          type="number"
+                          min={1}
+                          max={100}
+                          {...settingsForm.register("max_devices_per_technician")}
+                        />
+                        {settingsForm.formState.errors.max_devices_per_technician && (
+                          <p className="text-sm text-destructive mt-1">
+                            {String(
+                              settingsForm.formState.errors.max_devices_per_technician?.message,
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="support_email">Email Supporto</Label>
+                        <Input
+                          id="support_email"
+                          type="email"
+                          {...settingsForm.register("support_email")}
+                          placeholder="support@pcready.it"
+                        />
+                        {settingsForm.formState.errors.support_email && (
+                          <p className="text-sm text-destructive mt-1">
+                            {String(settingsForm.formState.errors.support_email?.message)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="admin_approval_required"
-                      {...settingsForm.register("admin_approval_required")}
-                    />
-                    <Label htmlFor="admin_approval_required">
-                      Richiedi approvazione admin per nuovi account
-                    </Label>
-                  </div>
-                </div>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Limiti WIP Kanban</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                          {WIP_LIMIT_FIELDS.map(([status, label]) => (
+                            <div key={status}>
+                              <Label
+                                htmlFor={`wip_${status}`}
+                                className="text-xs text-muted-foreground"
+                              >
+                                {label}
+                              </Label>
+                              <Input
+                                id={`wip_${status}`}
+                                type="number"
+                                min={0}
+                                max={999}
+                                {...settingsForm.register(`wip_limits.${status}`)}
+                              />
+                              {settingsForm.formState.errors.wip_limits?.[status] && (
+                                <p className="text-sm text-destructive mt-1">
+                                  {String(
+                                    settingsForm.formState.errors.wip_limits?.[status]?.message,
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                <Button
-                  type="submit"
-                  disabled={!settingsForm.formState.isValid || saveSettingsBusy}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  {saveSettingsBusy ? "Salvataggio..." : "Salva Impostazioni"}
-                </Button>
-              </form>
-            ) : (
-              <p className="text-center py-4 text-muted-foreground">
-                Errore nel caricamento delle impostazioni
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="self_registration_enabled"
+                          {...settingsForm.register("self_registration_enabled")}
+                        />
+                        <Label htmlFor="self_registration_enabled">
+                          Abilita registrazione autonoma nuovi utenti
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="admin_approval_required"
+                          {...settingsForm.register("admin_approval_required")}
+                        />
+                        <Label htmlFor="admin_approval_required">
+                          Richiedi approvazione admin per nuovi account
+                        </Label>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={!settingsForm.formState.isValid || saveSettingsBusy}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      {saveSettingsBusy ? "Salvataggio..." : "Salva Impostazioni"}
+                    </Button>
+                  </form>
+                ) : (
+                  <p className="text-center py-4 text-muted-foreground">
+                    Errore nel caricamento delle impostazioni
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="email-templates">
+            {session?.access_token ? (
+              <EmailTemplateSection
+                accessToken={session.access_token}
+                adminEmail={user?.email ?? ""}
+                organizationName={settings?.organization_name ?? "PCReady"}
+                supportEmail={settings?.support_email ?? ""}
+              />
+            ) : null}
+          </TabsContent>
+        </Tabs>
       </TabsContent>
 
       <TabsContent value="audit" className="space-y-5">
