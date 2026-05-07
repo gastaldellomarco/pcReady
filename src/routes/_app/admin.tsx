@@ -148,7 +148,7 @@ function AdminUsersPage() {
     setLoadingRows(true);
     try {
       const data = await listUsers({ data: { accessToken: session.access_token } });
-      setRows(data);
+      setRows(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(getErrorMessage(error, "Impossibile caricare gli utenti"));
     } finally {
@@ -161,7 +161,7 @@ function AdminUsersPage() {
     setLoadingClients(true);
     try {
       const data = await listClients({ data: { accessToken: session.access_token } });
-      setClients(data);
+      setClients(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(getErrorMessage(error, "Impossibile caricare i client OAuth"));
     } finally {
@@ -518,7 +518,7 @@ function AdminUsersPage() {
             ))}
           </select>
           <span className="ml-auto self-center text-xs text-text3 font-mono">
-            {filtered.length} utenti
+            {(filtered ?? []).length} utenti
           </span>
         </div>
 
@@ -609,7 +609,7 @@ function AdminUsersPage() {
                     </td>
                   </tr>
                 ))}
-              {!loadingRows && !filtered.length && (
+              {!loadingRows && !(filtered ?? []).length && (
                 <tr>
                   <td colSpan={5} className="text-center py-10 text-text3 text-sm">
                     Nessun utente trovato
@@ -978,7 +978,7 @@ function AdminUsersPage() {
 
               {loadingAudit ? (
                 <p className="text-center py-4 text-muted-foreground">Caricamento log...</p>
-              ) : auditEntries.length === 0 ? (
+              ) : (auditEntries ?? []).length === 0 ? (
                 <p className="text-center py-4 text-muted-foreground">Nessuna attività trovata</p>
               ) : (
                 <div className="space-y-2">

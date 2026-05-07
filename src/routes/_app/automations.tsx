@@ -511,7 +511,7 @@ function AutomationsPage() {
       const logs = await loadRunLogs({
         data: { accessToken: session.access_token, automationId: rule.id },
       });
-      setLogsByRule((current) => ({ ...current, [rule.id]: logs as AutomationRunLog[] }));
+      setLogsByRule((current) => ({ ...current, [rule.id]: Array.isArray(logs) ? (logs as AutomationRunLog[]) : [] }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore caricamento storico");
     } finally {
@@ -532,10 +532,10 @@ function AutomationsPage() {
         },
       });
       const runLog = log as AutomationRunLog;
-      setLogsByRule((current) => ({
-        ...current,
-        [rule.id]: [runLog, ...(current[rule.id] ?? [])].slice(0, 20),
-      }));
+      setLogsByRule((current) => {
+        const prev = Array.isArray(current[rule.id]) ? current[rule.id] : [];
+        return { ...current, [rule.id]: [runLog, ...prev].slice(0, 20) };
+      });
       setLogsOpenRuleId(rule.id);
       await loadStats();
       await loadRules();
