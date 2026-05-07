@@ -8,6 +8,8 @@ create table if not exists public.user_profiles (
   notify_ticket_assigned boolean default true,
   notify_ticket_status_changed boolean default true,
   notify_automation_failed boolean default true,
+  notify_device_status_changed boolean default true,
+  notify_checklist_completed boolean default true,
   notify_mentions boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

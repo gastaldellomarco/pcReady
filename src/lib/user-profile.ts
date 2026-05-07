@@ -12,6 +12,8 @@ export interface UserProfile {
   notify_ticket_assigned: boolean;
   notify_ticket_status_changed: boolean;
   notify_automation_failed: boolean;
+  notify_device_status_changed: boolean;
+  notify_checklist_completed: boolean;
   notify_mentions: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -37,6 +39,8 @@ const ProfileUpdateSchema = z.object({
   notify_ticket_assigned: z.boolean().optional(),
   notify_ticket_status_changed: z.boolean().optional(),
   notify_automation_failed: z.boolean().optional(),
+  notify_device_status_changed: z.boolean().optional(),
+  notify_checklist_completed: z.boolean().optional(),
   notify_mentions: z.boolean().optional(),
 });
 
@@ -106,6 +110,8 @@ export const getMyProfile = createServerFn({ method: "GET" })
       notify_ticket_assigned: row.notify_ticket_assigned ?? true,
       notify_ticket_status_changed: row.notify_ticket_status_changed ?? true,
       notify_automation_failed: row.notify_automation_failed ?? true,
+      notify_device_status_changed: row.notify_device_status_changed ?? true,
+      notify_checklist_completed: row.notify_checklist_completed ?? true,
       notify_mentions: row.notify_mentions ?? true,
       created_at: row.created_at ?? null,
       updated_at: row.updated_at ?? null,

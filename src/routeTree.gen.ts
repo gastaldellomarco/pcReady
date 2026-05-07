@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
 import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppKanbanRouteImport } from './routes/_app/kanban'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppDocsRouteImport } from './routes/_app/docs'
@@ -52,6 +53,11 @@ const AppScriptsRoute = AppScriptsRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKanbanRoute = AppKanbanRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
+  '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
+  '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_app/docs': typeof AppDocsRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/kanban': typeof AppKanbanRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/scripts': typeof AppScriptsRoute
   '/_app/tickets': typeof AppTicketsRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/inventory'
     | '/kanban'
+    | '/notifications'
     | '/profile'
     | '/scripts'
     | '/tickets'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/inventory'
     | '/kanban'
+    | '/notifications'
     | '/profile'
     | '/scripts'
     | '/tickets'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/_app/docs'
     | '/_app/inventory'
     | '/_app/kanban'
+    | '/_app/notifications'
     | '/_app/profile'
     | '/_app/scripts'
     | '/_app/tickets'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kanban': {
@@ -327,6 +346,7 @@ interface AppRouteChildren {
   AppDocsRoute: typeof AppDocsRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppKanbanRoute: typeof AppKanbanRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppScriptsRoute: typeof AppScriptsRoute
   AppTicketsRoute: typeof AppTicketsRoute
@@ -342,6 +362,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocsRoute: AppDocsRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppKanbanRoute: AppKanbanRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppScriptsRoute: AppScriptsRoute,
   AppTicketsRoute: AppTicketsRoute,

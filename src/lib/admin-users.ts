@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
 import type { AppRole } from "@/lib/auth-context";
+import { createNotificationForAdmins } from "@/lib/notifications.server";
 
 export interface AdminUserRow {
   id: string;
@@ -170,6 +171,14 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
       role: data.role,
     });
     if (roleError) throw new Error(roleError.message);
+
+    await createNotificationForAdmins({
+      type: "user_invited",
+      title: "Nuovo utente invitato",
+      body: `${email} invitato come ${data.role}`,
+      payload: { user_id: invitedUserId, email, role: data.role },
+      link: "/admin",
+    });
 
     return { ok: true };
   });

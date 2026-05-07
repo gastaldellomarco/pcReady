@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { DEFAULT_WIP_LIMITS, getKanbanAppSettings, type WipLimits } from "@/lib/app-settings";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
+import { createNotification } from "@/lib/notifications";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/kanban")({
@@ -45,6 +46,7 @@ function KanbanPage() {
   const { canEdit, user, profile, session } = useAuth();
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
+  const notify = useServerFn(createNotification);
   const [rows, setRows] = useState<Card[]>([]);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [wipLimits, setWipLimits] = useState<WipLimits>(DEFAULT_WIP_LIMITS);
@@ -91,6 +93,21 @@ function KanbanPage() {
       ticket_id: card.id,
       actor_id: user!.id,
     });
+    if (card.assignee_id && session?.access_token) {
+      await notify({
+        data: {
+          accessToken: session.access_token,
+          notification: {
+            userId: card.assignee_id,
+            type: "ticket_status_changed",
+            title: `${card.ticket_code}: ${STATUS_META[status].label}`,
+            body: `${card.client} - ${card.device?.model || card.model || "Nessun asset"}`,
+            payload: { ticket_id: card.id, status },
+            link: "/kanban",
+          },
+        },
+      });
+    }
     toast.success(`Spostato in ${STATUS_META[status].label}`);
     triggerRefresh();
   }

@@ -44,6 +44,8 @@ const NOTIFICATION_FIELDS = [
   ["notify_ticket_assigned", "Ticket assegnati"],
   ["notify_ticket_status_changed", "Cambio stato ticket"],
   ["notify_automation_failed", "Automazioni fallite"],
+  ["notify_device_status_changed", "Cambio stato dispositivi"],
+  ["notify_checklist_completed", "Checklist completate"],
   ["notify_mentions", "Menzioni"],
 ] as const;
 
@@ -82,6 +84,8 @@ function ProfilePage() {
     notify_ticket_assigned: true,
     notify_ticket_status_changed: true,
     notify_automation_failed: true,
+    notify_device_status_changed: true,
+    notify_checklist_completed: true,
     notify_mentions: true,
   });
   const [password, setPassword] = useState({ next: "", confirm: "" });
@@ -107,6 +111,8 @@ function ProfilePage() {
           notify_ticket_assigned: data.notify_ticket_assigned,
           notify_ticket_status_changed: data.notify_ticket_status_changed,
           notify_automation_failed: data.notify_automation_failed,
+          notify_device_status_changed: data.notify_device_status_changed,
+          notify_checklist_completed: data.notify_checklist_completed,
           notify_mentions: data.notify_mentions,
         });
       })

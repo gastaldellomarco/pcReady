@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -6,10 +7,27 @@ import { fmtDateTime } from "@/lib/pcready";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // AutomationBuilder is dynamically imported to avoid build-time crawling issues
-import { ChevronDown, ChevronUp, Pencil, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, FlaskConical, History, MoreVertical, Pencil, Play, Plus } from "lucide-react";
 import { toast } from "sonner";
 import AutomationWizard from "@/components/automations/AutomationWizard";
+import { RunLogDrawer } from "@/components/automations/RunLogDrawer";
+import { DryRunDialog } from "@/components/automations/DryRunDialog";
+import {
+  getAutomationRunStats,
+  listAutomationRunLogs,
+  runAutomationNow,
+  type AutomationDashboardKpis,
+  type AutomationRunLog,
+  type AutomationRunStats,
+  type HealthStatus,
+} from "@/lib/automation-runs";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
@@ -39,9 +57,17 @@ function RuleCard({
   rule,
   isAdmin,
   expanded,
+  stats,
+  logsOpen,
+  logs,
+  logsLoading,
+  running,
   onToggle,
   onEdit,
   onExpandToggle,
+  onToggleLogs,
+  onRunNow,
+  onDryRun,
   onDuplicate,
   onDelete,
   onArchive,
@@ -49,9 +75,17 @@ function RuleCard({
   rule: Rule;
   isAdmin: boolean;
   expanded: boolean;
+  stats?: AutomationRunStats;
+  logsOpen: boolean;
+  logs: AutomationRunLog[];
+  logsLoading: boolean;
+  running: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onExpandToggle: () => void;
+  onToggleLogs: () => void;
+  onRunNow: () => void;
+  onDryRun: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onArchive: () => void;
@@ -64,6 +98,7 @@ function RuleCard({
             <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
               AUTOMAZIONE
             </Badge>
+            <HealthBadge health={stats?.health ?? "never_run"} />
             <div className="text-sm font-semibold text-foreground">{rule.name}</div>
           </div>
 
@@ -89,6 +124,9 @@ function RuleCard({
             <span className="text-xs text-text3 font-mono">
               {rule.last_run_at ? `Ultima esecuzione ${fmtDateTime(rule.last_run_at)}` : rule.updated_at ? `Aggiornata ${fmtDateTime(rule.updated_at)}` : `Versione ${rule.version}`}
             </span>
+            <span className="text-xs text-text3 font-mono">
+              ok {stats?.success ?? 0} / err {stats?.error ?? 0}
+            </span>
           </div>
 
           <div className="flex flex-wrap gap-2 items-center text-sm text-text3">
@@ -99,6 +137,14 @@ function RuleCard({
             >
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               {expanded ? "Nascondi dettagli" : "Mostra dettagli"}
+            </button>
+            <button
+              type="button"
+              onClick={onToggleLogs}
+              className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900"
+            >
+              <History className="h-4 w-4" />
+              Storico
             </button>
           </div>
 
@@ -115,15 +161,28 @@ function RuleCard({
               <Pencil className="h-4 w-4" />
               Apri editor
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDuplicate} disabled={!isAdmin}>
-              Duplica
+            <Button variant="secondary" size="sm" onClick={onRunNow} disabled={!isAdmin || running}>
+              <Play className="h-4 w-4" />
+              {running ? "Esecuzione..." : "Esegui ora"}
             </Button>
-            <Button variant="destructive" size="sm" onClick={onDelete} disabled={!isAdmin}>
-              Elimina
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onArchive} disabled={!isAdmin}>
-              Archivia
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={!isAdmin}>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onDryRun} disabled={running}>
+                  <FlaskConical className="mr-2 h-4 w-4" />
+                  Dry Run
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDuplicate}>Duplica</DropdownMenuItem>
+                <DropdownMenuItem onClick={onArchive}>Archivia</DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                  Elimina
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <label className="flex cursor-pointer items-center gap-2 rounded-full px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-slate-100 disabled:cursor-not-allowed">
@@ -147,19 +206,30 @@ function RuleCard({
           </label>
         </div>
       </div>
+      {logsOpen && <div className="mt-4"><RunLogDrawer logs={logs} loading={logsLoading} /></div>}
     </div>
   );
 }
 
 function AutomationsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, session } = useAuth();
+  const loadRunLogs = useServerFn(listAutomationRunLogs);
+  const executeRun = useServerFn(runAutomationNow);
+  const loadRunStats = useServerFn(getAutomationRunStats);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [runStats, setRunStats] = useState<Record<string, AutomationRunStats>>({});
+  const [kpis, setKpis] = useState<AutomationDashboardKpis | null>(null);
+  const [logsByRule, setLogsByRule] = useState<Record<string, AutomationRunLog[]>>({});
+  const [logsOpenRuleId, setLogsOpenRuleId] = useState<string | null>(null);
+  const [loadingLogsRuleId, setLoadingLogsRuleId] = useState<string | null>(null);
+  const [dryRunResult, setDryRunResult] = useState<AutomationRunLog | null>(null);
+  const [dryRunDialogOpen, setDryRunDialogOpen] = useState(false);
+  const [runningRuleId, setRunningRuleId] = useState<string | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [loadingRules, setLoadingRules] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [saving, setSaving] = useState(false);
@@ -171,7 +241,7 @@ function AutomationsPage() {
     try {
       const { data, error } = await supabase
         .from("automation_flows")
-        .select("id, name, description, category, active, version, updated_at, flow_definition")
+        .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
         .order("updated_at", { ascending: false });
 
       if (error) throw new Error(`Regole: ${error.message}`);
@@ -185,8 +255,8 @@ function AutomationsPage() {
         version: r.version,
         updated_at: r.updated_at,
         flow_definition: r.flow_definition,
-        summary: r.flow_definition?.meta?.summary ?? null,
-        last_run_at: r.flow_definition?.meta?.last_run_at ?? null,
+        summary: r.summary ?? r.flow_definition?.meta?.summary ?? null,
+        last_run_at: r.last_run_at ?? r.flow_definition?.meta?.last_run_at ?? null,
       }));
       setRules(normalized as Rule[]);
     } catch (err) {
@@ -198,7 +268,19 @@ function AutomationsPage() {
 
   useEffect(() => {
     void loadRules();
+    void loadStats();
   }, []);
+
+  async function loadStats() {
+    if (!session?.access_token) return;
+    try {
+      const data = await loadRunStats({ data: { accessToken: session.access_token } });
+      setRunStats(data.stats);
+      setKpis(data.kpis);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore statistiche run");
+    }
+  }
 
   async function toggleRule(rule: Rule) {
     if (!isAdmin) return toast.error("Solo amministratori");
@@ -290,7 +372,7 @@ function AutomationsPage() {
           console.error("Supabase update error:", error, data);
           throw error;
         }
-        toast.success("Automazione aggiornata");
+      toast.success("Automazione aggiornata");
       } else {
         const { data, error } = await supabase.from("automation_flows").insert(payload).select("id");
         if (error) {
@@ -370,6 +452,54 @@ function AutomationsPage() {
     }
   }
 
+  async function toggleLogs(rule: Rule) {
+    const next = logsOpenRuleId === rule.id ? null : rule.id;
+    setLogsOpenRuleId(next);
+    if (!next || logsByRule[rule.id] || !session?.access_token) return;
+    setLoadingLogsRuleId(rule.id);
+    try {
+      const logs = await loadRunLogs({
+        data: { accessToken: session.access_token, automationId: rule.id },
+      });
+      setLogsByRule((current) => ({ ...current, [rule.id]: logs }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore caricamento storico");
+    } finally {
+      setLoadingLogsRuleId(null);
+    }
+  }
+
+  async function runRule(rule: Rule, isDryRun: boolean) {
+    if (!session?.access_token) return;
+    setRunningRuleId(rule.id);
+    try {
+      const log = await executeRun({
+        data: {
+          accessToken: session.access_token,
+          automationId: rule.id,
+          isDryRun,
+          triggerPayload: { source: isDryRun ? "manual_dry_run" : "manual_run" },
+        },
+      });
+      setLogsByRule((current) => ({
+        ...current,
+        [rule.id]: [log, ...(current[rule.id] ?? [])].slice(0, 20),
+      }));
+      setLogsOpenRuleId(rule.id);
+      await loadStats();
+      await loadRules();
+      if (isDryRun) {
+        setDryRunResult(log);
+        setDryRunDialogOpen(true);
+      }
+      toast.success(isDryRun ? "Dry-run completato" : "Run manuale completata");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Run non riuscita");
+    } finally {
+      setRunningRuleId(null);
+    }
+  }
+
   // No export/logs on this page anymore
 
   return (
@@ -423,6 +553,13 @@ function AutomationsPage() {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-3 px-5 pt-4 md:grid-cols-4">
+          <KpiCard label="Automazioni attive" value={kpis?.activeAutomations ?? rules.filter((r) => r.active).length} />
+          <KpiCard label="Run oggi" value={`${kpis?.runsToday ?? 0} (${kpis?.successToday ?? 0}/${kpis?.errorToday ?? 0})`} />
+          <KpiCard label="Successo 7 giorni" value={`${kpis?.successRate7d ?? 100}%`} />
+          <KpiCard label="Errori recenti" value={kpis?.automationsWithRecentErrors ?? 0} />
+        </div>
+
         <div className="pc-card-body space-y-3">
           {loadingRules && <div className="text-sm text-text3">Caricamento regole...</div>}
           {!loadingRules && rules.length === 0 && (
@@ -454,8 +591,16 @@ function AutomationsPage() {
                   rule={rule}
                   isAdmin={isAdmin}
                   expanded={expandedRuleId === rule.id}
+                  stats={runStats[rule.id]}
+                  logsOpen={logsOpenRuleId === rule.id}
+                  logs={logsByRule[rule.id] ?? []}
+                  logsLoading={loadingLogsRuleId === rule.id}
+                  running={runningRuleId === rule.id}
                   onToggle={() => void toggleRule(rule)}
                   onEdit={() => openEditDialog(rule)}
+                  onToggleLogs={() => void toggleLogs(rule)}
+                  onRunNow={() => void runRule(rule, false)}
+                  onDryRun={() => void runRule(rule, true)}
                   onDuplicate={() => void duplicateRule(rule)}
                   onDelete={() => void deleteRule(rule)}
                   onArchive={() => void archiveRule(rule)}
@@ -523,6 +668,40 @@ function AutomationsPage() {
           )}
         </DialogContent>
       </Dialog>
+      <DryRunDialog
+        open={dryRunDialogOpen}
+        run={dryRunResult}
+        onOpenChange={setDryRunDialogOpen}
+      />
+    </div>
+  );
+}
+
+function HealthBadge({ health }: { health: HealthStatus }) {
+  const cls =
+    health === "healthy"
+      ? "bg-emerald-100 text-emerald-800"
+      : health === "degraded"
+        ? "bg-amber-100 text-amber-800"
+        : health === "failing"
+          ? "bg-red-100 text-red-800"
+          : "bg-slate-100 text-slate-700";
+  const label =
+    health === "healthy"
+      ? "healthy"
+      : health === "degraded"
+        ? "degraded"
+        : health === "failing"
+          ? "failing"
+          : "never run";
+  return <Badge className={`${cls} border-transparent`}>{label}</Badge>;
+}
+
+function KpiCard({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">{label}</div>
+      <div className="mt-1 text-lg font-bold">{value}</div>
     </div>
   );
 }

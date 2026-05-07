@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import {
   PRIORITY_LABEL,
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
+import { createNotification } from "@/lib/notifications";
 import { toast } from "sonner";
 
 interface Tech {
@@ -54,7 +56,8 @@ function errorMessage(error: unknown, fallback: string) {
 
 export function CreateTicketModal() {
   const { createOpen, closeCreate, triggerRefresh } = useTickets();
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, session } = useAuth();
+  const notify = useServerFn(createNotification);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
   const [clients, setClients] = useState<ClientOpt[]>([]);
@@ -186,6 +189,23 @@ export function CreateTicketModal() {
         ticket_id: data.id,
         actor_id: user!.id,
       });
+      if (f.assignee_id && session?.access_token) {
+        const assignee = techs.find((t) => t.id === f.assignee_id);
+        await notify({
+          data: {
+            accessToken: session.access_token,
+            notification: {
+              userId: f.assignee_id,
+              type: "ticket_assigned",
+              title: `${data.ticket_code} assegnato a te`,
+              body: `${client.company_name || client.name} - ${device?.model || "Nessun asset"}`,
+              payload: { ticket_id: data.id, ticket_code: data.ticket_code },
+              link: "/tickets",
+            },
+          },
+        });
+        if (assignee) toast.message(`Notifica inviata a ${assignee.full_name}`);
+      }
       toast.success(`${data.ticket_code} creato`);
       setF({
         client_id: clients[0]?.id || "",

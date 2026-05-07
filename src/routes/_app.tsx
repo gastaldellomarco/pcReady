@@ -29,6 +29,7 @@ import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -73,6 +74,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",
   "/profile": "Profilo",
+  "/notifications": "Notifiche",
 };
 
 function AppLayout() {
@@ -206,6 +208,7 @@ function AppLayout() {
           </h1>
           <div className="ml-auto flex items-center gap-2">
             <SearchBox />
+            <NotificationBell />
             <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
               <Boxes className="w-3 h-3" /> Inventario
             </Link>

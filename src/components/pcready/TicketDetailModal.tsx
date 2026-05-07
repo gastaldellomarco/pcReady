@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
@@ -18,6 +19,7 @@ import {
   structureProgress,
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip } from "./StatusBadge";
+import { createNotification } from "@/lib/notifications";
 import { Check, Code2, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -70,7 +72,8 @@ interface HistoryRow {
 
 export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
-  const { canEdit, isAdmin, user } = useAuth();
+  const { canEdit, isAdmin, user, session } = useAuth();
+  const notify = useServerFn(createNotification);
   const { triggerRefresh } = useTickets();
   const [t, setT] = useState<TicketRow | null>(null);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
@@ -140,6 +143,21 @@ export function TicketDetailModal() {
     await update({ checklist: cur });
     const prog = structureProgress(cur, struct, currentTab);
     if (prog.pct === 100) {
+      if (ticket.assignee_id && session?.access_token) {
+        await notify({
+          data: {
+            accessToken: session.access_token,
+            notification: {
+              userId: ticket.assignee_id,
+              type: "checklist_completed",
+              title: `${ticket.ticket_code}: checklist completata`,
+              body: struct[currentTab]?.label || "Sezione checklist completata",
+              payload: { ticket_id: ticket.id, checklist_key: currentTab },
+              link: "/tickets",
+            },
+          },
+        });
+      }
       if (currentTab === "os" && ticket.status === "pending") await advance("in-progress", true);
       if (currentTab === "software" && ticket.status === "in-progress")
         await advance("testing", true);
@@ -154,6 +172,21 @@ export function TicketDetailModal() {
       ticket_id: ticket.id,
       actor_id: user!.id,
     });
+    if (ticket.assignee_id && session?.access_token) {
+      await notify({
+        data: {
+          accessToken: session.access_token,
+          notification: {
+            userId: ticket.assignee_id,
+            type: "ticket_status_changed",
+            title: `${ticket.ticket_code}: ${STATUS_META[next].label}`,
+            body: auto ? "Stato avanzato automaticamente" : "Stato aggiornato manualmente",
+            payload: { ticket_id: ticket.id, status: next },
+            link: "/tickets",
+          },
+        },
+      });
+    }
     toast.success(`Avanzato a ${STATUS_META[next].label}`);
   }
 
