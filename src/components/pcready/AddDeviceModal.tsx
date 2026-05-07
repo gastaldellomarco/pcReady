@@ -21,7 +21,7 @@ interface ClientOption {
 }
 
 export function AddDeviceModal() {
-  const { addDeviceOpen, closeAddDevice, triggerRefresh } = useTickets();
+  const { addDeviceOpen, addDeviceInitialSerial, closeAddDevice, triggerRefresh } = useTickets();
   const { user, canEdit } = useAuth();
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [busy, setBusy] = useState(false);
@@ -40,6 +40,8 @@ export function AddDeviceModal() {
 
   useEffect(() => {
     if (!addDeviceOpen) return;
+    if (addDeviceInitialSerial)
+      form.setValue("serial", addDeviceInitialSerial, { shouldValidate: true });
     supabase
       .from("clients")
       .select("id, name, company_name")
@@ -49,7 +51,7 @@ export function AddDeviceModal() {
         setClients(arr);
         if (arr[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);
       });
-  }, [addDeviceOpen]);
+  }, [addDeviceOpen, addDeviceInitialSerial, form]);
   const submit = form.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
     setBusy(true);
@@ -66,7 +68,11 @@ export function AddDeviceModal() {
         notes: (values.notes as string) || null,
         created_by: user!.id,
       };
-      const { data, error } = await supabase.from("devices").insert(deviceInsert).select("id, serial").single();
+      const { data, error } = await supabase
+        .from("devices")
+        .insert(deviceInsert)
+        .select("id, serial")
+        .single();
       if (error) throw error;
       await supabase.from("activity_log").insert({
         type: "user",
@@ -74,7 +80,14 @@ export function AddDeviceModal() {
         actor_id: user!.id,
       });
       toast.success("Dispositivo aggiunto all'inventario");
-      form.reset({ model: "", serial: "", client_id: client.id, end_user: null, os: OS_OPTIONS[0], notes: null });
+      form.reset({
+        model: "",
+        serial: "",
+        client_id: client.id,
+        end_user: null,
+        os: OS_OPTIONS[0],
+        notes: null,
+      });
       closeAddDevice();
       triggerRefresh();
     } catch (e: unknown) {
@@ -104,25 +117,43 @@ export function AddDeviceModal() {
       <div className="flex flex-col gap-[14px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Modello *">
-            <input className="pc-input" {...form.register("model")} placeholder="Dell Latitude 5540" />
-            {form.formState.errors.model && <p className="text-sm text-destructive mt-1">{form.formState.errors.model.message}</p>}
+            <input
+              className="pc-input"
+              {...form.register("model")}
+              placeholder="Dell Latitude 5540"
+            />
+            {form.formState.errors.model && (
+              <p className="text-sm text-destructive mt-1">{form.formState.errors.model.message}</p>
+            )}
           </Field>
           <Field label="Seriale *">
-            <input className="pc-input font-mono" {...form.register("serial")} placeholder="ABCD1234" />
-            {form.formState.errors.serial && <p className="text-sm text-destructive mt-1">{form.formState.errors.serial.message}</p>}
+            <input
+              className="pc-input font-mono"
+              {...form.register("serial")}
+              placeholder="ABCD1234"
+            />
+            {form.formState.errors.serial && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.serial.message}
+              </p>
+            )}
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Cliente *">
             <select className="pc-input" {...form.register("client_id")}>
-              {!clients.length && <option value="">Nessun cliente disponibile</option>}
-              {clients.map((c) => (
+              {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
+              {(Array.isArray(clients) ? clients : []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.company_name || c.name}
                 </option>
               ))}
             </select>
-            {form.formState.errors.client_id && <p className="text-sm text-destructive mt-1">{form.formState.errors.client_id.message}</p>}
+            {form.formState.errors.client_id && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.client_id.message}
+              </p>
+            )}
           </Field>
           <Field label="Utente finale">
             <input className="pc-input" {...form.register("end_user")} />
@@ -134,7 +165,9 @@ export function AddDeviceModal() {
               <option key={o}>{o}</option>
             ))}
           </select>
-          {form.formState.errors.os && <p className="text-sm text-destructive mt-1">{form.formState.errors.os.message}</p>}
+          {form.formState.errors.os && (
+            <p className="text-sm text-destructive mt-1">{form.formState.errors.os.message}</p>
+          )}
         </Field>
         <Field label="Note">
           <textarea className="pc-input min-h-[90px]" {...form.register("notes")} />

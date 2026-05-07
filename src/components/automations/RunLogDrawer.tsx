@@ -17,11 +17,11 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
         <div className="text-xs text-text3">Ultime 20 esecuzioni</div>
       </div>
       {loading && <div className="py-6 text-center text-sm text-text3">Caricamento run...</div>}
-      {!loading && !logs.length && (
+      {!loading && !(Array.isArray(logs) ? logs : []).length && (
         <div className="py-6 text-center text-sm text-text3">Nessuna run registrata</div>
       )}
       <div className="space-y-2">
-        {logs.map((log) => (
+        {(Array.isArray(logs) ? logs : []).map((log) => (
           <details key={log.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <summary className="cursor-pointer list-none">
               <div className="flex flex-wrap items-center gap-2">

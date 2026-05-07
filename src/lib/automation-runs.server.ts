@@ -1,6 +1,11 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
-import type { ActionResult, AutomationRunLog, HealthStatus, RunLogStatus } from "@/lib/automation-runs";
+import type {
+  ActionResult,
+  AutomationRunLog,
+  HealthStatus,
+  RunLogStatus,
+} from "@/lib/automation-runs";
 
 export { supabaseAdmin };
 
@@ -8,7 +13,7 @@ interface ExecuteAutomationInput {
   automationId: string;
   triggeredBy: string;
   isDryRun: boolean;
-  triggerPayload?: Record<string, unknown>;
+  triggerPayload?: Record<string, any>;
 }
 
 export async function requireAutomationRunnerUser(accessToken: string) {
@@ -41,14 +46,16 @@ export async function executeAutomationRun({
     .single();
   if (error) throw error;
 
-  const actions = extractActions(flow);
-  const trigger = flow.trigger_definition || flow.flow_definition?.meta?.wizard?.trigger_definition || null;
+  const flowAny = flow as any;
+  const actions = extractActions(flowAny);
+  const trigger =
+    flowAny.trigger_definition || flowAny.flow_definition?.meta?.wizard?.trigger_definition || null;
   let status: RunLogStatus = isDryRun ? "dry_run" : "success";
   let errorMessage: string | null = null;
   let actionsExecuted: ActionResult[] = [];
 
   try {
-    if (!trigger && !flow.flow_definition?.nodes?.length) {
+    if (!trigger && !flowAny.flow_definition?.nodes?.length) {
       throw new Error("Flow senza trigger o nodi validi");
     }
 
@@ -102,9 +109,9 @@ export async function executeAutomationRun({
     .update({
       last_run_at: new Date().toISOString(),
       flow_definition: {
-        ...(flow.flow_definition || {}),
+        ...(flowAny.flow_definition || {}),
         meta: {
-          ...(flow.flow_definition?.meta || {}),
+          ...(flowAny.flow_definition?.meta || {}),
           last_run_at: new Date().toISOString(),
           last_run_status: status,
         },
@@ -115,12 +122,12 @@ export async function executeAutomationRun({
   if (status === "error") {
     await notifyAutomationFailure({
       flowId: automationId,
-      flowName: flow.name,
+      flowName: flowAny.name,
       error: errorMessage || "Errore automazione",
     });
   }
 
-  return log as AutomationRunLog;
+  return log as unknown as AutomationRunLog;
 }
 
 export async function notifyAutomationFailure({
@@ -168,7 +175,9 @@ function extractActions(flow: any) {
 }
 
 function simulateAction(action: any, index: number, isDryRun: boolean): ActionResult {
-  const actionName = String(action.type || action.action || action.data?.label || `Action ${index + 1}`);
+  const actionName = String(
+    action.type || action.action || action.data?.label || `Action ${index + 1}`,
+  );
   if (action.config?.force_error || action.force_error) {
     return {
       action: actionName,

@@ -57,7 +57,7 @@ export async function createNotificationForUser(params: CreateNotificationParams
     return null;
   }
 
-  return data as NotificationRow;
+  return data as unknown as NotificationRow;
 }
 
 export async function createNotificationForAdmins(
@@ -80,6 +80,29 @@ export async function createNotificationForAdmins(
       }),
     ),
   );
+}
+
+export async function markNotificationReadForUser(userId: string, notificationId: string) {
+  const { error } = await supabaseAdmin
+    .from("notifications" as any)
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", userId)
+    .is("read_at", null);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function markAllNotificationsReadForUser(userId: string) {
+  const { error } = await supabaseAdmin
+    .from("notifications" as any)
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("read_at", null);
+
+  if (error) throw error;
+  return { success: true };
 }
 
 export { supabaseAdmin };

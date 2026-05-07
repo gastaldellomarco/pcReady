@@ -20,7 +20,7 @@ export interface NotificationRow {
   type: NotificationType;
   title: string;
   body: string | null;
-  payload: Record<string, unknown> | null;
+  payload: Record<string, any> | null;
   link: string | null;
   read_at: string | null;
   created_at: string;
@@ -31,7 +31,7 @@ export interface CreateNotificationParams {
   type: NotificationType;
   title: string;
   body?: string | null;
-  payload?: Record<string, unknown> | null;
+  payload?: Record<string, any> | null;
   link?: string | null;
 }
 
@@ -40,7 +40,7 @@ export const CreateNotificationSchema = z.object({
   type: z.enum(NOTIFICATION_TYPES),
   title: z.string().min(1).max(160),
   body: z.string().max(1000).nullable().optional(),
-  payload: z.record(z.unknown()).nullable().optional(),
+  payload: z.record(z.any()).nullable().optional(),
   link: z.string().max(500).nullable().optional(),
 });
 
@@ -55,9 +55,8 @@ const ListNotificationsSchema = z.object({
 export const createNotification = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string; notification: CreateNotificationParams }) => data)
   .handler(async ({ data: { accessToken, notification } }) => {
-    const { createNotificationForUser, getAuthedNotificationUser } = await import(
-      "./notifications.server"
-    );
+    const { createNotificationForUser, getAuthedNotificationUser } =
+      await import("./notifications.server");
     await getAuthedNotificationUser(accessToken);
     return createNotificationForUser(notification);
   });
@@ -84,7 +83,7 @@ export const listNotifications = createServerFn({ method: "POST" })
     if (error) throw error;
 
     return {
-      rows: (rows ?? []) as NotificationRow[],
+      rows: (rows ?? []) as unknown as NotificationRow[],
       total: count ?? 0,
     };
   });
@@ -106,30 +105,19 @@ export const getUnreadNotificationCount = createServerFn({ method: "GET" })
 export const markNotificationRead = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string; notificationId: string }) => data)
   .handler(async ({ data: { accessToken, notificationId } }) => {
-    const { getAuthedNotificationUser, supabaseAdmin } = await import("./notifications.server");
+    const { getAuthedNotificationUser, markNotificationReadForUser } =
+      await import("./notifications.server");
     const user = await getAuthedNotificationUser(accessToken);
-    const { error } = await supabaseAdmin
-      .from("notifications" as any)
-      .update({ read_at: new Date().toISOString() })
-      .eq("id", notificationId)
-      .eq("user_id", user.id)
-      .is("read_at", null);
-    if (error) throw error;
-    return { success: true };
+    return markNotificationReadForUser(user.id, notificationId);
   });
 
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string }) => data)
   .handler(async ({ data: { accessToken } }) => {
-    const { getAuthedNotificationUser, supabaseAdmin } = await import("./notifications.server");
+    const { getAuthedNotificationUser, markAllNotificationsReadForUser } =
+      await import("./notifications.server");
     const user = await getAuthedNotificationUser(accessToken);
-    const { error } = await supabaseAdmin
-      .from("notifications" as any)
-      .update({ read_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .is("read_at", null);
-    if (error) throw error;
-    return { success: true };
+    return markAllNotificationsReadForUser(user.id);
   });
 
 export const deleteReadNotifications = createServerFn({ method: "POST" })

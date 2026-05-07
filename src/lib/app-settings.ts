@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   wip_limits: DEFAULT_WIP_LIMITS,
 };
 
+type AppSettingRow = { key: string; value: unknown };
+
 const WipLimitsSchema = z.object({
   pending: z.number().int().min(0).max(999),
   "in-progress": z.number().int().min(0).max(999),
@@ -45,27 +47,11 @@ export const getAppSettings = createServerFn({ method: "GET" })
   .handler(async ({ data: { accessToken } }) => {
     await requireAdmin(accessToken);
 
-    const { data, error } = await supabaseAdmin
-      .from("app_settings" as any)
-      .select("key, value");
+    const { data, error } = await supabaseAdmin.from("app_settings" as any).select("key, value");
 
     if (error) throw error;
 
-    const settings = { ...DEFAULT_SETTINGS };
-    const rows = (data ?? []) as any[];
-    rows.forEach(({ key, value }) => {
-      if (key in settings) {
-        let parsed: any = value;
-        try {
-          parsed = typeof value === 'string' ? JSON.parse(value) : value;
-        } catch {
-          parsed = value;
-        }
-        (settings as any)[key] = parsed;
-      }
-    });
-
-    return settings;
+    return mergeAppSettingsRows((data ?? []) as unknown as AppSettingRow[]);
   });
 
 export const getKanbanAppSettings = createServerFn({ method: "GET" })
@@ -82,7 +68,8 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
 
     if (error) throw error;
 
-    let parsed: unknown = data?.value ?? DEFAULT_WIP_LIMITS;
+    const row = data as unknown as { value?: unknown } | null;
+    let parsed: unknown = row?.value ?? DEFAULT_WIP_LIMITS;
     try {
       parsed = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
     } catch {
@@ -98,19 +85,7 @@ export const updateAppSettings = createServerFn({ method: "POST" })
   .handler(async ({ data: { accessToken, settings } }) => {
     const userId = await requireAdmin(accessToken);
 
-    // Validate settings
-    const validatedSettings = z.object({
-      organization_name: z.string().min(1),
-      default_timezone: z.string().min(1),
-      max_devices_per_technician: z.number().min(1).max(100),
-      self_registration_enabled: z.boolean(),
-      admin_approval_required: z.boolean(),
-      support_email: z.string().max(254).transform(val => val.toLowerCase().trim()).refine(
-        (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-        "Email non valida",
-      ),
-      wip_limits: WipLimitsSchema,
-    }).parse(settings);
+    const validatedSettings = validateAppSettingsInput(settings);
 
     const updates = Object.entries(validatedSettings).map(([key, value]) => ({
       key,
@@ -126,3 +101,38 @@ export const updateAppSettings = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
+  const settings = { ...DEFAULT_SETTINGS };
+  rows.forEach(({ key, value }) => {
+    if (key in settings) {
+      let parsed: unknown = value;
+      try {
+        parsed = typeof value === "string" ? JSON.parse(value) : value;
+      } catch {
+        parsed = value;
+      }
+      (settings as Record<string, unknown>)[key] = parsed;
+    }
+  });
+
+  return settings;
+}
+
+export function validateAppSettingsInput(settings: AppSettings): AppSettings {
+  return z
+    .object({
+      organization_name: z.string().min(1),
+      default_timezone: z.string().min(1),
+      max_devices_per_technician: z.number().min(1).max(100),
+      self_registration_enabled: z.boolean(),
+      admin_approval_required: z.boolean(),
+      support_email: z
+        .string()
+        .max(254)
+        .transform((val) => val.toLowerCase().trim())
+        .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
+      wip_limits: WipLimitsSchema,
+    })
+    .parse(settings);
+}

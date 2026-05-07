@@ -6,4 +6,16 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+export default defineConfig({
+  vite: {
+    test: {
+      environment: "node",
+      globals: true,
+      include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "lcov"],
+      },
+    },
+  } as any,
+});

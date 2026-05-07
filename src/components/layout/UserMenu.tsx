@@ -37,13 +37,23 @@ export function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-52">
         <DropdownMenuItem asChild>
-          <Link to="/profile" onClick={onNavigate} className="cursor-pointer">
+          <Link
+            to="/profile"
+            search={() => ({ tab: undefined }) as any}
+            onClick={onNavigate}
+            className="cursor-pointer"
+          >
             <User className="mr-2 h-4 w-4" />
             Profilo
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/profile" search={{ tab: "settings" }} onClick={onNavigate} className="cursor-pointer">
+          <Link
+            to="/profile"
+            search={() => ({ tab: "security" }) as any}
+            onClick={onNavigate}
+            className="cursor-pointer"
+          >
             <Settings className="mr-2 h-4 w-4" />
             Impostazioni
           </Link>

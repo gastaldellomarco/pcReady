@@ -36,8 +36,10 @@ export function NotificationBell() {
         }),
         loadUnread({ data: { accessToken: session.access_token } }),
       ]);
-      setNotifications(list.rows);
-      setUnread(count.unread);
+      const notificationList = list as { rows: NotificationRow[] };
+      const unreadCount = count as { unread: number };
+      setNotifications(notificationList.rows);
+      setUnread(unreadCount.unread);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossibile caricare notifiche");
     }

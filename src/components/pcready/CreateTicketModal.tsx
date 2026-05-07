@@ -260,8 +260,8 @@ export function CreateTicketModal() {
                 })
               }
             >
-              {!clients.length && <option value="">Nessun cliente disponibile</option>}
-              {clients.map((c) => (
+              {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
+              {(Array.isArray(clients) ? clients : []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.company_name || c.name}
                 </option>

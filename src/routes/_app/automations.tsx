@@ -14,7 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // AutomationBuilder is dynamically imported to avoid build-time crawling issues
-import { ChevronDown, ChevronUp, FlaskConical, History, MoreVertical, Pencil, Play, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  FlaskConical,
+  History,
+  MoreVertical,
+  Pencil,
+  Play,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 import AutomationWizard from "@/components/automations/AutomationWizard";
 import { RunLogDrawer } from "@/components/automations/RunLogDrawer";
@@ -122,7 +131,11 @@ function RuleCard({
               {rule.active ? "Attiva" : "Spenta"}
             </Badge>
             <span className="text-xs text-text3 font-mono">
-              {rule.last_run_at ? `Ultima esecuzione ${fmtDateTime(rule.last_run_at)}` : rule.updated_at ? `Aggiornata ${fmtDateTime(rule.updated_at)}` : `Versione ${rule.version}`}
+              {rule.last_run_at
+                ? `Ultima esecuzione ${fmtDateTime(rule.last_run_at)}`
+                : rule.updated_at
+                  ? `Aggiornata ${fmtDateTime(rule.updated_at)}`
+                  : `Versione ${rule.version}`}
             </span>
             <span className="text-xs text-text3 font-mono">
               ok {stats?.success ?? 0} / err {stats?.error ?? 0}
@@ -206,7 +219,11 @@ function RuleCard({
           </label>
         </div>
       </div>
-      {logsOpen && <div className="mt-4"><RunLogDrawer logs={logs} loading={logsLoading} /></div>}
+      {logsOpen && (
+        <div className="mt-4">
+          <RunLogDrawer logs={logs} loading={logsLoading} />
+        </div>
+      )}
     </div>
   );
 }
@@ -241,7 +258,9 @@ function AutomationsPage() {
     try {
       const { data, error } = await supabase
         .from("automation_flows")
-        .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
+        .select(
+          "id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary",
+        )
         .order("updated_at", { ascending: false });
 
       if (error) throw new Error(`Regole: ${error.message}`);
@@ -275,8 +294,8 @@ function AutomationsPage() {
     if (!session?.access_token) return;
     try {
       const data = await loadRunStats({ data: { accessToken: session.access_token } });
-      setRunStats(data.stats);
-      setKpis(data.kpis);
+      setRunStats(data.stats ?? {});
+      setKpis(data.kpis ?? null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore statistiche run");
     }
@@ -307,15 +326,19 @@ function AutomationsPage() {
   useEffect(() => {
     let mounted = true;
     if (builderOpen && !AutomationBuilderComp) {
-      void import("@/components/pcready/automation/AutomationBuilder").then((mod) => {
-        if (!mounted) return;
-        setAutomationBuilderComp(() => mod.default);
-      }).catch((err) => {
-        console.error("Failed to load AutomationBuilder", err);
-        toast.error("Errore caricamento editor");
-      });
+      void import("@/components/pcready/automation/AutomationBuilder")
+        .then((mod) => {
+          if (!mounted) return;
+          setAutomationBuilderComp(() => mod.default);
+        })
+        .catch((err) => {
+          console.error("Failed to load AutomationBuilder", err);
+          toast.error("Errore caricamento editor");
+        });
     }
-    return () => { mounted = false };
+    return () => {
+      mounted = false;
+    };
   }, [builderOpen, AutomationBuilderComp]);
 
   // Builder save will be handled by AutomationBuilder component via callback
@@ -325,7 +348,8 @@ function AutomationsPage() {
     setSaving(true);
     try {
       function uid(prefix = "n") {
-        if (typeof crypto !== "undefined" && (crypto as any).randomUUID) return (crypto as any).randomUUID();
+        if (typeof crypto !== "undefined" && (crypto as any).randomUUID)
+          return (crypto as any).randomUUID();
         return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
       }
 
@@ -334,15 +358,24 @@ function AutomationsPage() {
         const triggerId = `trigger-${uid()}`;
         const actionNodes = (flowObj.actions_definition || []).map((a: any, idx: number) => ({
           id: `action-${uid()}`,
-          type: 'action',
+          type: "action",
           data: { label: a.type, config: a.config },
           position: { x: 300, y: idx * 120 },
         }));
         const nodes = [
-          { id: triggerId, type: 'trigger', data: { label: flowObj.trigger_definition?.type || 'trigger' }, position: { x: 0, y: 0 } },
+          {
+            id: triggerId,
+            type: "trigger",
+            data: { label: flowObj.trigger_definition?.type || "trigger" },
+            position: { x: 0, y: 0 },
+          },
           ...actionNodes,
         ];
-        const edges = actionNodes.map((an: any) => ({ id: `e-${triggerId}-${an.id}`, source: triggerId, target: an.id }));
+        const edges = actionNodes.map((an: any) => ({
+          id: `e-${triggerId}-${an.id}`,
+          source: triggerId,
+          target: an.id,
+        }));
         const meta = {
           wizard: flowObj,
           summary: flowObj.summary,
@@ -367,14 +400,21 @@ function AutomationsPage() {
       } as any;
 
       if (editingRule) {
-        const { data, error } = await supabase.from("automation_flows").update(payload).eq("id", editingRule.id).select("id");
+        const { data, error } = await supabase
+          .from("automation_flows")
+          .update(payload)
+          .eq("id", editingRule.id)
+          .select("id");
         if (error) {
           console.error("Supabase update error:", error, data);
           throw error;
         }
-      toast.success("Automazione aggiornata");
+        toast.success("Automazione aggiornata");
       } else {
-        const { data, error } = await supabase.from("automation_flows").insert(payload).select("id");
+        const { data, error } = await supabase
+          .from("automation_flows")
+          .insert(payload)
+          .select("id");
         if (error) {
           console.error("Supabase insert error:", error, data);
           throw error;
@@ -386,9 +426,12 @@ function AutomationsPage() {
     } catch (err) {
       console.error("Save wizard flow failed:", err);
       const e = err as any;
-      const userMsg = e && typeof e === "object" && (e.message || e.error || e.details)
-        ? (e.message || e.error || e.details)
-        : (err instanceof Error ? err.message : JSON.stringify(err));
+      const userMsg =
+        e && typeof e === "object" && (e.message || e.error || e.details)
+          ? e.message || e.error || e.details
+          : err instanceof Error
+            ? err.message
+            : JSON.stringify(err);
       toast.error(userMsg || "Errore salvataggio");
     } finally {
       setSaving(false);
@@ -437,13 +480,20 @@ function AutomationsPage() {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
       // fetch current flow_definition
-      const { data: fdata, error: fetchErr } = await supabase.from("automation_flows").select("flow_definition").eq("id", rule.id).single();
+      const { data: fdata, error: fetchErr } = await supabase
+        .from("automation_flows")
+        .select("flow_definition")
+        .eq("id", rule.id)
+        .single();
       if (fetchErr) throw fetchErr;
       const fd: any = fdata?.flow_definition ?? {};
       const meta: any = fd.meta ?? {};
       meta.archived = true;
       fd.meta = meta;
-      const { error } = await supabase.from("automation_flows").update({ active: false, flow_definition: fd }).eq("id", rule.id);
+      const { error } = await supabase
+        .from("automation_flows")
+        .update({ active: false, flow_definition: fd })
+        .eq("id", rule.id);
       if (error) throw error;
       toast.success("Automazione archiviata");
       void loadRules();
@@ -461,7 +511,7 @@ function AutomationsPage() {
       const logs = await loadRunLogs({
         data: { accessToken: session.access_token, automationId: rule.id },
       });
-      setLogsByRule((current) => ({ ...current, [rule.id]: logs }));
+      setLogsByRule((current) => ({ ...current, [rule.id]: logs as AutomationRunLog[] }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore caricamento storico");
     } finally {
@@ -481,15 +531,16 @@ function AutomationsPage() {
           triggerPayload: { source: isDryRun ? "manual_dry_run" : "manual_run" },
         },
       });
+      const runLog = log as AutomationRunLog;
       setLogsByRule((current) => ({
         ...current,
-        [rule.id]: [log, ...(current[rule.id] ?? [])].slice(0, 20),
+        [rule.id]: [runLog, ...(current[rule.id] ?? [])].slice(0, 20),
       }));
       setLogsOpenRuleId(rule.id);
       await loadStats();
       await loadRules();
       if (isDryRun) {
-        setDryRunResult(log);
+        setDryRunResult(runLog);
         setDryRunDialogOpen(true);
       }
       toast.success(isDryRun ? "Dry-run completato" : "Run manuale completata");
@@ -554,8 +605,14 @@ function AutomationsPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 px-5 pt-4 md:grid-cols-4">
-          <KpiCard label="Automazioni attive" value={kpis?.activeAutomations ?? rules.filter((r) => r.active).length} />
-          <KpiCard label="Run oggi" value={`${kpis?.runsToday ?? 0} (${kpis?.successToday ?? 0}/${kpis?.errorToday ?? 0})`} />
+          <KpiCard
+            label="Automazioni attive"
+            value={kpis?.activeAutomations ?? rules.filter((r) => r.active).length}
+          />
+          <KpiCard
+            label="Run oggi"
+            value={`${kpis?.runsToday ?? 0} (${kpis?.successToday ?? 0}/${kpis?.errorToday ?? 0})`}
+          />
           <KpiCard label="Successo 7 giorni" value={`${kpis?.successRate7d ?? 100}%`} />
           <KpiCard label="Errori recenti" value={kpis?.automationsWithRecentErrors ?? 0} />
         </div>
@@ -581,7 +638,13 @@ function AutomationsPage() {
                 if (statusFilter && status !== statusFilter) return false;
                 if (searchQuery) {
                   const q = searchQuery.toLowerCase();
-                  if (!((rule.name || "").toLowerCase().includes(q) || (rule.summary || "").toLowerCase().includes(q))) return false;
+                  if (
+                    !(
+                      (rule.name || "").toLowerCase().includes(q) ||
+                      (rule.summary || "").toLowerCase().includes(q)
+                    )
+                  )
+                    return false;
                 }
                 return true;
               })
@@ -591,7 +654,7 @@ function AutomationsPage() {
                   rule={rule}
                   isAdmin={isAdmin}
                   expanded={expandedRuleId === rule.id}
-                  stats={runStats[rule.id]}
+                  stats={(runStats ?? {})[rule.id]}
                   logsOpen={logsOpenRuleId === rule.id}
                   logs={logsByRule[rule.id] ?? []}
                   logsLoading={loadingLogsRuleId === rule.id}
@@ -604,7 +667,9 @@ function AutomationsPage() {
                   onDuplicate={() => void duplicateRule(rule)}
                   onDelete={() => void deleteRule(rule)}
                   onArchive={() => void archiveRule(rule)}
-                  onExpandToggle={() => setExpandedRuleId((current) => (current === rule.id ? null : rule.id))}
+                  onExpandToggle={() =>
+                    setExpandedRuleId((current) => (current === rule.id ? null : rule.id))
+                  }
                 />
               ))}
         </div>
@@ -620,7 +685,12 @@ function AutomationsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setBuilderOpen(true)} disabled={!isAdmin}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setBuilderOpen(true)}
+              disabled={!isAdmin}
+            >
               <Plus className="h-4 w-4" />
               Apri builder
             </Button>
@@ -628,7 +698,9 @@ function AutomationsPage() {
         </div>
 
         <div className="pc-card-body">
-          <div className="text-sm text-text3">Apri il builder per costruire automazioni a blocchi.</div>
+          <div className="text-sm text-text3">
+            Apri il builder per costruire automazioni a blocchi.
+          </div>
         </div>
       </div>
 
@@ -638,18 +710,40 @@ function AutomationsPage() {
             <DialogTitle>{editingRule ? "Modifica automazione" : "Nuova automazione"}</DialogTitle>
           </DialogHeader>
           <div className="p-2 flex gap-2 items-center">
-            <label className={`cursor-pointer px-2 py-1 rounded ${guidedMode ? 'bg-slate-100' : ''}`}>
-              <input type="radio" name="builderMode" checked={guidedMode} onChange={() => setGuidedMode(true)} className="sr-only" /> Modalità guidata
+            <label
+              className={`cursor-pointer px-2 py-1 rounded ${guidedMode ? "bg-slate-100" : ""}`}
+            >
+              <input
+                type="radio"
+                name="builderMode"
+                checked={guidedMode}
+                onChange={() => setGuidedMode(true)}
+                className="sr-only"
+              />{" "}
+              Modalità guidata
             </label>
-            <label className={`cursor-pointer px-2 py-1 rounded ${!guidedMode ? 'bg-slate-100' : ''}`}>
-              <input type="radio" name="builderMode" checked={!guidedMode} onChange={() => setGuidedMode(false)} className="sr-only" /> Modalità avanzata
+            <label
+              className={`cursor-pointer px-2 py-1 rounded ${!guidedMode ? "bg-slate-100" : ""}`}
+            >
+              <input
+                type="radio"
+                name="builderMode"
+                checked={!guidedMode}
+                onChange={() => setGuidedMode(false)}
+                className="sr-only"
+              />{" "}
+              Modalità avanzata
             </label>
           </div>
 
           {guidedMode ? (
             <div className="p-4">
               <AutomationWizard
-                initial={editingRule ? { ...editingRule, ...(editingRule.flow_definition?.wizard ?? {}) } : undefined}
+                initial={
+                  editingRule
+                    ? { ...editingRule, ...(editingRule.flow_definition?.wizard ?? {}) }
+                    : undefined
+                }
                 onSave={saveWizardFlow}
                 onCancel={() => setBuilderOpen(false)}
               />
@@ -668,11 +762,7 @@ function AutomationsPage() {
           )}
         </DialogContent>
       </Dialog>
-      <DryRunDialog
-        open={dryRunDialogOpen}
-        run={dryRunResult}
-        onOpenChange={setDryRunDialogOpen}
-      />
+      <DryRunDialog open={dryRunDialogOpen} run={dryRunResult} onOpenChange={setDryRunDialogOpen} />
     </div>
   );
 }

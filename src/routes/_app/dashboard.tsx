@@ -68,7 +68,7 @@ function DashboardPage() {
         .select("id, model, serial, created_at, status, client_id, assigned_to")
         .order("created_at", { ascending: false })
         .limit(200),
-      supabase.from("ticket_device_assignments").select("device_id").eq("unassigned_at", null),
+      supabase.from("ticket_device_assignments").select("device_id").is("unassigned_at", null),
     ]).then(([tRes, lRes, dRes, aRes]) => {
       const t = (tRes as any).data ?? [];
       const l = (lRes as any).data ?? [];
@@ -199,9 +199,21 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="text-[22px] font-bold">{devicesWithoutTicket.length}</div>
               <div className="flex-1">
-                <AreaSpark data={computeDailyCounts(devices, "created_at", trendDays, (d) => d.status === "available")} color="#3b82f6" />
+                <AreaSpark
+                  data={computeDailyCounts(
+                    devices,
+                    "created_at",
+                    trendDays,
+                    (d) => d.status === "available",
+                  )}
+                  color="#3b82f6"
+                />
               </div>
-              <Link to="/inventory" search={{ filter: "without_ticket" }} className="pc-btn pc-btn-ghost pc-btn-sm">
+              <Link
+                to="/inventory"
+                search={() => ({ filter: "without_ticket" }) as any}
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+              >
                 Vedi dispositivi
               </Link>
             </div>
@@ -217,9 +229,20 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="text-[22px] font-bold">{ticketsWithoutDeviceCount}</div>
               <div className="flex-1">
-                <AreaSpark data={computeDailyCounts(tickets.filter((tt) => !tt.device && !tt.model), "created_at", trendDays)} color="#f97316" />
+                <AreaSpark
+                  data={computeDailyCounts(
+                    tickets.filter((tt) => !tt.device && !tt.model),
+                    "created_at",
+                    trendDays,
+                  )}
+                  color="#f97316"
+                />
               </div>
-              <Link to="/tickets" search={{ filter: "without_device" }} className="pc-btn pc-btn-ghost pc-btn-sm">
+              <Link
+                to="/tickets"
+                search={() => ({ filter: "without_device" }) as any}
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+              >
                 Vedi ticket
               </Link>
             </div>
@@ -235,15 +258,26 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <AreaSparkMulti
-                  series={[{
-                    data: computeDailyCounts(tickets.filter((tt) => tt.status !== "ready"), "created_at", trendDays),
-                    color: "#ef4444",
-                    label: "Ticket aperti",
-                  }, {
-                    data: computeDailyCounts(devices.filter((d) => d.status === "available"), "created_at", trendDays),
-                    color: "#10b981",
-                    label: "Asset disponibili",
-                  }]}
+                  series={[
+                    {
+                      data: computeDailyCounts(
+                        tickets.filter((tt) => tt.status !== "ready"),
+                        "created_at",
+                        trendDays,
+                      ),
+                      color: "#ef4444",
+                      label: "Ticket aperti",
+                    },
+                    {
+                      data: computeDailyCounts(
+                        devices.filter((d) => d.status === "available"),
+                        "created_at",
+                        trendDays,
+                      ),
+                      color: "#10b981",
+                      label: "Asset disponibili",
+                    },
+                  ]}
                 />
               </div>
             </div>
@@ -257,7 +291,7 @@ function DashboardPage() {
             <span className="pc-card-title">Ticket recenti</span>
             <Link
               to="/tickets"
-              search={{ export: false }}
+              search={() => ({ export: false }) as any}
               className="pc-btn pc-btn-ghost pc-btn-sm"
             >
               Vedi tutti <ArrowRight className="w-3 h-3" />
@@ -393,7 +427,7 @@ function DashboardPage() {
           </div>
           <div className="pc-card-body">
             <div className="flex flex-col gap-[7px]">
-              {logs.map((l) => (
+              {(Array.isArray(logs) ? logs : []).map((l) => (
                 <div
                   key={l.id}
                   className="flex items-start gap-[10px] px-[12px] py-[10px] rounded-[7px] text-[12px]"
@@ -424,7 +458,7 @@ function DashboardPage() {
                   </span>
                 </div>
               ))}
-              {!logs.length && (
+              {!(Array.isArray(logs) ? logs : []).length && (
                 <div className="text-center text-text3 text-sm py-4">Nessuna attivita</div>
               )}
             </div>
@@ -523,7 +557,12 @@ function deviceLabel(ticket: T) {
   return ticket.device?.model || ticket.model || "Nessun asset";
 }
 
-function computeDailyCounts(items: any[], dateKey: string, days = 14, filter?: (it: any) => boolean) {
+function computeDailyCounts(
+  items: any[],
+  dateKey: string,
+  days = 14,
+  filter?: (it: any) => boolean,
+) {
   const res = new Array(days).fill(0);
   const now = new Date();
   for (const it of items) {
@@ -544,7 +583,9 @@ function AreaSpark({ data, color = "#3b82f6" }: { data: number[]; color?: string
   const h = 48;
   const max = Math.max(...data, 1);
   const step = w / Math.max(1, data.length - 1);
-  const path = data.map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`).join(" ");
+  const path = data
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`)
+    .join(" ");
   const area = `${data.map((v, i) => `${i * step} ${h - (v / max) * h}`).join(" L ")}`;
   const [hover, setHover] = useState<number | null>(null);
   function onMove(e: React.MouseEvent<SVGSVGElement>) {
@@ -554,9 +595,23 @@ function AreaSpark({ data, color = "#3b82f6" }: { data: number[]; color?: string
     setHover(Math.max(0, Math.min(data.length - 1, idx)));
   }
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      onMouseMove={onMove}
+      onMouseLeave={() => setHover(null)}
+    >
       <path d={`M0 ${h} L ${area} L ${w} ${h} Z`} fill={color} opacity={0.12} />
-      <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       {hover !== null && (
         <g>
           <circle cx={hover * step} cy={h - (data[hover!] / max) * h} r={3} fill={color} />
@@ -569,7 +624,11 @@ function AreaSpark({ data, color = "#3b82f6" }: { data: number[]; color?: string
   );
 }
 
-function AreaSparkMulti({ series }: { series: { data: number[]; color: string; label?: string }[] }) {
+function AreaSparkMulti({
+  series,
+}: {
+  series: { data: number[]; color: string; label?: string }[];
+}) {
   const w = 260;
   const h = 64;
   const length = series[0]?.data.length || 1;
@@ -584,20 +643,59 @@ function AreaSparkMulti({ series }: { series: { data: number[]; color: string; l
   }
   return (
     <div style={{ position: "relative" }}>
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" onMouseMove={onMove} onMouseLeave={() => setHoverIdx(null)}>
+      <svg
+        width={w}
+        height={h}
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHoverIdx(null)}
+      >
         {series.map((s, si) => {
-          const path = s.data.map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`).join(" ");
-          return <path key={si} d={path} fill="none" stroke={s.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.95} />;
+          const path = s.data
+            .map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`)
+            .join(" ");
+          return (
+            <path
+              key={si}
+              d={path}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.95}
+            />
+          );
         })}
         {hoverIdx !== null && (
-          <line x1={hoverIdx * step} x2={hoverIdx * step} y1={0} y2={h} stroke="#000" strokeOpacity={0.06} />
+          <line
+            x1={hoverIdx * step}
+            x2={hoverIdx * step}
+            y1={0}
+            y2={h}
+            stroke="#000"
+            strokeOpacity={0.06}
+          />
         )}
       </svg>
       {hoverIdx !== null && (
-        <div className="absolute" style={{ right: 6, top: 6, background: "var(--surface2)", border: "1px solid var(--border)", padding: 8, borderRadius: 6 }}>
+        <div
+          className="absolute"
+          style={{
+            right: 6,
+            top: 6,
+            background: "var(--surface2)",
+            border: "1px solid var(--border)",
+            padding: 8,
+            borderRadius: 6,
+          }}
+        >
           {series.map((s, i) => (
             <div key={i} className="flex items-center gap-2 text-[12px]">
-              <span style={{ width: 10, height: 6, background: s.color, display: "inline-block" }} />
+              <span
+                style={{ width: 10, height: 6, background: s.color, display: "inline-block" }}
+              />
               <span className="text-text2">{s.label}</span>
               <span className="font-mono text-text3 ml-2">{s.data[hoverIdx]}</span>
             </div>

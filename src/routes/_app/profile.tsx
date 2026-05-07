@@ -72,7 +72,9 @@ function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<ProfileTab>(searchToTab(search.tab));
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<"personal" | "security" | "notifications" | "avatar" | null>(null);
+  const [saving, setSaving] = useState<"personal" | "security" | "notifications" | "avatar" | null>(
+    null,
+  );
   const [personal, setPersonal] = useState({
     display_name: "",
     avatar_url: "",
@@ -138,7 +140,7 @@ function ProfilePage() {
     setTab(next);
     navigate({
       to: "/profile",
-      search: next === "personal" ? {} : { tab: next },
+      search: () => ({ tab: next === "personal" ? undefined : next }) as any,
       replace: true,
     });
   }
@@ -359,7 +361,7 @@ function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {profile.recent_activity.map((activity) => (
+                {(profile.recent_activity ?? []).map((activity) => (
                   <div key={activity.id} className="border-b pb-3 last:border-0 last:pb-0">
                     <div className="text-sm">{activity.message}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -367,7 +369,7 @@ function ProfilePage() {
                     </div>
                   </div>
                 ))}
-                {!profile.recent_activity.length && (
+                {!(profile.recent_activity ?? []).length && (
                   <div className="text-sm text-muted-foreground">Nessuna attivita recente.</div>
                 )}
               </div>
@@ -383,7 +385,8 @@ function ProfilePage() {
                 Sicurezza
               </CardTitle>
               <CardDescription>
-                Ultimo accesso: {profile.last_sign_in_at ? fmtDateTime(profile.last_sign_in_at) : "-"}
+                Ultimo accesso:{" "}
+                {profile.last_sign_in_at ? fmtDateTime(profile.last_sign_in_at) : "-"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

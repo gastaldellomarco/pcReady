@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const supabaseAny = supabase as any;
 
 export type VersionOperation = "create" | "update" | "restore" | "delete";

@@ -8,7 +8,7 @@ export type HealthStatus = "healthy" | "degraded" | "failing" | "never_run";
 export interface ActionResult {
   action: string;
   status: ActionResultStatus;
-  result?: unknown;
+  result?: any;
   error?: string;
 }
 
@@ -19,7 +19,7 @@ export interface AutomationRunLog {
   triggered_by: string | null;
   status: RunLogStatus;
   duration_ms: number | null;
-  trigger_payload: Record<string, unknown> | null;
+  trigger_payload: Record<string, any> | null;
   actions_executed: ActionResult[] | null;
   error_message: string | null;
   is_dry_run: boolean;
@@ -50,7 +50,7 @@ const AutomationInputSchema = AuthedSchema.extend({
 });
 const RunInputSchema = AutomationInputSchema.extend({
   isDryRun: z.boolean(),
-  triggerPayload: z.record(z.unknown()).optional(),
+  triggerPayload: z.record(z.any()).optional(),
 });
 
 export const listAutomationRunLogs = createServerFn({ method: "POST" })
@@ -67,16 +67,15 @@ export const listAutomationRunLogs = createServerFn({ method: "POST" })
       .order("triggered_at", { ascending: false })
       .limit(20);
     if (error) throw error;
-    return (rows ?? []) as AutomationRunLog[];
+    return (rows ?? []) as unknown as AutomationRunLog[];
   });
 
 export const runAutomationNow = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof RunInputSchema>) => data)
   .handler(async ({ data }) => {
     const input = RunInputSchema.parse(data);
-    const { executeAutomationRun, requireAutomationRunnerUser } = await import(
-      "./automation-runs.server"
-    );
+    const { executeAutomationRun, requireAutomationRunnerUser } =
+      await import("./automation-runs.server");
     const user = await requireAutomationRunnerUser(input.accessToken);
     return executeAutomationRun({
       automationId: input.automationId,
@@ -90,9 +89,8 @@ export const getAutomationRunStats = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof AuthedSchema>) => data)
   .handler(async ({ data }) => {
     const input = AuthedSchema.parse(data);
-    const { computeHealth, requireAutomationRunnerUser, supabaseAdmin } = await import(
-      "./automation-runs.server"
-    );
+    const { computeHealth, requireAutomationRunnerUser, supabaseAdmin } =
+      await import("./automation-runs.server");
     await requireAutomationRunnerUser(input.accessToken);
 
     const { data: flows, error: flowsError } = await supabaseAdmin

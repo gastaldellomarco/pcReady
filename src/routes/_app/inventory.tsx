@@ -4,10 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
-import { Plus, FileDown, Eye } from "lucide-react";
+import { Plus, FileDown, Eye, QrCode, Upload, ScanLine, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
+import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
+import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
@@ -34,6 +38,10 @@ interface Row {
   assigned_to: string | null;
 }
 
+interface AssignmentDeviceRow {
+  device_id: string | null;
+}
+
 type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
 
 const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }> = {
@@ -46,7 +54,7 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
 const PAGE_SIZE = 50;
 
 function InventoryPage() {
-  const { refreshKey, openAddDevice } = useTickets();
+  const { refreshKey, openAddDevice, triggerRefresh } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -54,11 +62,18 @@ function InventoryPage() {
   const [fos, setFos] = useState("");
   const [q, setQ] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [qrDevice, setQrDevice] = useState<QrDevice | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [labelsBusy, setLabelsBusy] = useState(false);
 
   useEffect(() => {
     // check for optional URL filter param (e.g. ?filter=without_ticket)
     const params = new URLSearchParams(window.location.search);
     const urlFilter = params.get("filter");
+    const detailDeviceId = params.get("device");
+    if (detailDeviceId) openDeviceDetail(detailDeviceId);
 
     async function load() {
       // if asking for devices without ticket, fetch assigned ids first
@@ -67,8 +82,10 @@ function InventoryPage() {
         const { data: assigned } = await supabase
           .from("ticket_device_assignments")
           .select("device_id")
-          .eq("unassigned_at", null);
-        assignedIds = (assigned ?? []).map((r: any) => r.device_id).filter(Boolean);
+          .is("unassigned_at", null);
+        assignedIds = ((assigned ?? []) as AssignmentDeviceRow[])
+          .map((r) => r.device_id)
+          .filter((id): id is string => Boolean(id));
       }
 
       let query = supabase
@@ -85,7 +102,9 @@ function InventoryPage() {
       if (fos) query = query.eq("os", fos);
       const term = q.trim().replace(/[,%]/g, "");
       if (term) {
-        query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
+        query = query.or(
+          `serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`,
+        );
       }
 
       if (urlFilter === "without_ticket" && assignedIds.length) {
@@ -94,7 +113,10 @@ function InventoryPage() {
         query = query.not("id", "in", `(${assignedIds.join(",")})`);
       }
 
-      const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      const { data, count, error } = await query.range(
+        page * PAGE_SIZE,
+        (page + 1) * PAGE_SIZE - 1,
+      );
       if (error) {
         toast.error(error.message);
         return;
@@ -117,6 +139,8 @@ function InventoryPage() {
 
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const selectedRows = data.filter((row) => selectedIds.has(row.id));
+  const allPageSelected = data.length > 0 && data.every((row) => selectedIds.has(row.id));
 
   function pdfRows(): DevicePdfRow[] {
     return data.map((r) => ({
@@ -157,6 +181,74 @@ function InventoryPage() {
     } finally {
       setPdfBusy(null);
     }
+  }
+
+  async function printSelectedLabels() {
+    if (!selectedRows.length) return toast.error("Seleziona almeno un dispositivo");
+    setLabelsBusy(true);
+    try {
+      const items = await buildLabelItems(selectedRows.map(toQrDevice));
+      printLabelBatch(items);
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore stampa etichette"));
+    } finally {
+      setLabelsBusy(false);
+    }
+  }
+
+  async function handleDetected(rawCode: string) {
+    setScannerOpen(false);
+    const code = extractDeviceCode(rawCode);
+    const idFromUrl = extractDeviceId(rawCode);
+
+    if (idFromUrl) {
+      openDeviceDetail(idFromUrl);
+      return;
+    }
+
+    const { data: found, error } = await supabase
+      .from("devices")
+      .select("id, serial")
+      .ilike("serial", code)
+      .maybeSingle();
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (found?.id) {
+      openDeviceDetail(found.id);
+      return;
+    }
+
+    setQ(code);
+    toast("Dispositivo non trovato", {
+      description: `Seriale rilevato: ${code}`,
+      action: {
+        label: "Crea",
+        onClick: () => openAddDevice(code),
+      },
+    });
+  }
+
+  function toggleSelected(id: string, checked: boolean) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function togglePageSelected(checked: boolean) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      for (const row of data) {
+        if (checked) next.add(row.id);
+        else next.delete(row.id);
+      }
+      return next;
+    });
   }
 
   return (
@@ -206,6 +298,22 @@ function InventoryPage() {
           <FileDown className="w-3 h-3" />
           {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}
         </button>
+        <button
+          onClick={printSelectedLabels}
+          disabled={labelsBusy || !selectedRows.length}
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+        >
+          <Printer className="w-3 h-3" />
+          {labelsBusy
+            ? "Preparazione..."
+            : `Stampa etichette${selectedRows.length ? ` (${selectedRows.length})` : ""}`}
+        </button>
+        <button onClick={() => setScannerOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
+          <ScanLine className="w-3 h-3" /> Scansiona
+        </button>
+        <button onClick={() => setImportOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
+          <Upload className="w-3 h-3" /> Import CSV
+        </button>
         <button onClick={() => openAddDevice()} className="pc-btn pc-btn-primary pc-btn-sm">
           <Plus className="w-3 h-3" /> Aggiungi dispositivo
         </button>
@@ -215,17 +323,36 @@ function InventoryPage() {
           <table className="w-full">
             <thead>
               <tr>
-                {["ID", "Seriale", "Modello", "OS", "Stato", "Cliente", "Utente", "Aggiornato"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                <th
+                  className="w-10 px-[14px] py-[9px] text-left border-b"
+                  style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                >
+                  <input
+                    type="checkbox"
+                    aria-label="Seleziona pagina"
+                    checked={allPageSelected}
+                    onChange={(event) => togglePageSelected(event.target.checked)}
+                  />
+                </th>
+                {[
+                  "ID",
+                  "Seriale",
+                  "Modello",
+                  "OS",
+                  "Stato",
+                  "Cliente",
+                  "Utente",
+                  "Aggiornato",
+                  "Azioni",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -236,6 +363,14 @@ function InventoryPage() {
                   style={{ borderColor: "var(--border)" }}
                   onClick={() => openDeviceDetail(r.id)}
                 >
+                  <td className="px-[14px] py-[10px]" onClick={(event) => event.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Seleziona ${r.serial || r.id}`}
+                      checked={selectedIds.has(r.id)}
+                      onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                    />
+                  </td>
                   <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
                     {r.id.slice(0, 8)}
                   </td>
@@ -252,11 +387,21 @@ function InventoryPage() {
                   <td className="px-[14px] py-[10px] text-[11px] text-text3">
                     {fmtDate(r.updated_at)}
                   </td>
+                  <td className="px-[14px] py-[10px]" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      className="pc-btn-icon"
+                      title="QR dispositivo"
+                      aria-label={`QR ${r.serial || r.id}`}
+                      onClick={() => setQrDevice(toQrDevice(r))}
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!data.length && (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-text3 text-sm">
+                  <td colSpan={10} className="text-center py-12 text-text3 text-sm">
                     Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
                   </td>
                 </tr>
@@ -284,6 +429,20 @@ function InventoryPage() {
           Successiva
         </button>
       </div>
+      <QrCodeDialog device={qrDevice} onClose={() => setQrDevice(null)} />
+      <ImportCsvDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {
+          setSelectedIds(new Set());
+          triggerRefresh();
+        }}
+      />
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetected={(code) => void handleDetected(code)}
+      />
     </div>
   );
 }
@@ -299,4 +458,31 @@ function DeviceStatusBadge({ status }: { status: DeviceStatus }) {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function toQrDevice(row: Row): QrDevice {
+  return { id: row.id, serial: row.serial, model: row.model };
+}
+
+function extractDeviceCode(rawCode: string) {
+  const trimmed = rawCode.trim();
+  const id = extractDeviceId(trimmed);
+  if (id) return id;
+  return trimmed;
+}
+
+function extractDeviceId(rawCode: string) {
+  const trimmed = rawCode.trim();
+  const appMatch = trimmed.match(/^pcready:\/\/device\/([0-9a-f-]{36})$/i);
+  if (appMatch) return appMatch[1];
+
+  try {
+    const url = new URL(trimmed);
+    const queryDevice = url.searchParams.get("device");
+    if (queryDevice) return queryDevice;
+    const pathMatch = url.pathname.match(/\/inventory\/([0-9a-f-]{36})$/i);
+    return pathMatch?.[1] ?? null;
+  } catch {
+    return null;
+  }
 }

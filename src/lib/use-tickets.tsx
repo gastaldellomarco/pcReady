@@ -5,6 +5,7 @@ interface State {
   pendingCount: number;
   createOpen: boolean;
   addDeviceOpen: boolean;
+  addDeviceInitialSerial: string;
   refreshKey: number;
 }
 interface API extends State {
@@ -12,7 +13,7 @@ interface API extends State {
   setPendingCount: (n: number) => void;
   openCreate: () => void;
   closeCreate: () => void;
-  openAddDevice: () => void;
+  openAddDevice: (initialSerial?: string) => void;
   closeAddDevice: () => void;
   triggerRefresh: () => void;
 }
@@ -22,6 +23,7 @@ let s: State = {
   pendingCount: 0,
   createOpen: false,
   addDeviceOpen: false,
+  addDeviceInitialSerial: "",
   refreshKey: 0,
 };
 const listeners = new Set<() => void>();
@@ -31,8 +33,9 @@ const actions = {
   setPendingCount: (n: number) => set({ pendingCount: n }),
   openCreate: () => set({ createOpen: true }),
   closeCreate: () => set({ createOpen: false }),
-  openAddDevice: () => set({ addDeviceOpen: true }),
-  closeAddDevice: () => set({ addDeviceOpen: false }),
+  openAddDevice: (initialSerial = "") =>
+    set({ addDeviceOpen: true, addDeviceInitialSerial: initialSerial }),
+  closeAddDevice: () => set({ addDeviceOpen: false, addDeviceInitialSerial: "" }),
   triggerRefresh: () => set({ refreshKey: s.refreshKey + 1 }),
 };
 

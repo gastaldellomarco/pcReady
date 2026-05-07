@@ -64,8 +64,9 @@ function NotificationsPage() {
           type: type === "all" ? null : type,
         },
       });
-      setRows(data.rows);
-      setTotal(data.total);
+      const result = data as { rows: NotificationRow[]; total: number };
+      setRows(result.rows);
+      setTotal(result.total);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossibile caricare notifiche");
     } finally {
@@ -161,7 +162,9 @@ function NotificationsPage() {
           <CardTitle>Inbox notifiche</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loading && <div className="px-4 py-8 text-center text-sm text-text3">Caricamento...</div>}
+          {loading && (
+            <div className="px-4 py-8 text-center text-sm text-text3">Caricamento...</div>
+          )}
           {!loading &&
             rows.map((notification) => {
               const Icon = iconForType(notification.type);

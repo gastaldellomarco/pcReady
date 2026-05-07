@@ -1,5 +1,7 @@
 # PCReady
 
+[![CI](https://github.com/gastaldellomarco/pcReady/actions/workflows/ci.yml/badge.svg)](https://github.com/gastaldellomarco/pcReady/actions/workflows/ci.yml)
+
 Applicazione web per gestire preparazione PC, ticket operativi, checklist, inventario dispositivi e utenti in ambiente aziendale.
 
 ## Stack Tecnologico
@@ -79,6 +81,24 @@ bun run dev
 ```bash
 bun run build
 ```
+
+### Qualita e Test
+
+```bash
+bun run lint
+bun run typecheck
+bun run test
+bun run migrations:check
+```
+
+La CI usa GitHub Actions su pull request verso `main` e `develop`, eseguendo lint, type-check, controllo migration Supabase e build. Il workflow `Tests` esegue la suite Vitest su push e pull request.
+
+Configurare in GitHub Secrets:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
 
 ## Database e Migration
 

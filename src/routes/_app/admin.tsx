@@ -1,5 +1,3 @@
-/* eslint-disable prettier/prettier */
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -207,7 +205,7 @@ function AdminUsersPage() {
         setLoadingAudit(false);
       }
     },
-    [session?.access_token, isAdmin, loadAuditLog, auditPageSize]
+    [session?.access_token, isAdmin, loadAuditLog, auditPageSize],
   );
 
   useEffect(() => {
@@ -288,7 +286,6 @@ function AdminUsersPage() {
     }
   }
 
- 
   const createNewClient = oauthForm.handleSubmit(async (vals) => {
     if (!session?.access_token) return;
     setCreateClientBusy(true);
@@ -458,14 +455,22 @@ function AdminUsersPage() {
               placeholder="utente@azienda.it"
             />
             {inviteForm.formState.errors.email && (
-              <p className="text-sm text-destructive mt-1">{String(inviteForm.formState.errors.email?.message)}</p>
+              <p className="text-sm text-destructive mt-1">
+                {String(inviteForm.formState.errors.email?.message)}
+              </p>
             )}
           </div>
           <div className="flex-1 min-w-[180px]">
             <label className="pc-label">Nome</label>
-            <input className="pc-input" {...inviteForm.register("fullName")} placeholder="Mario Rossi" />
+            <input
+              className="pc-input"
+              {...inviteForm.register("fullName")}
+              placeholder="Mario Rossi"
+            />
             {inviteForm.formState.errors.fullName && (
-              <p className="text-sm text-destructive mt-1">{String(inviteForm.formState.errors.fullName?.message)}</p>
+              <p className="text-sm text-destructive mt-1">
+                {String(inviteForm.formState.errors.fullName?.message)}
+              </p>
             )}
           </div>
           <div className="min-w-[160px]">
@@ -478,7 +483,11 @@ function AdminUsersPage() {
               ))}
             </select>
           </div>
-          <button className="pc-btn pc-btn-primary" disabled={inviteBusy || !inviteForm.formState.isValid} type="submit">
+          <button
+            className="pc-btn pc-btn-primary"
+            disabled={inviteBusy || !inviteForm.formState.isValid}
+            type="submit"
+          >
             <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? "Invio..." : "Invita"}
           </button>
         </form>
@@ -650,21 +659,36 @@ function AdminUsersPage() {
                   <Label htmlFor="clientName">Nome Applicazione</Label>
                   <Input id="clientName" {...oauthForm.register("name")} placeholder="My App" />
                   {oauthForm.formState.errors.name && (
-                    <p className="text-sm text-destructive mt-1">{String(oauthForm.formState.errors.name?.message)}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {String(oauthForm.formState.errors.name?.message)}
+                    </p>
                   )}
                 </div>
                 <div>
                   <Label htmlFor="clientDescription">Descrizione</Label>
-                  <Input id="clientDescription" {...oauthForm.register("description")} placeholder="Breve descrizione dell'app" />
+                  <Input
+                    id="clientDescription"
+                    {...oauthForm.register("description")}
+                    placeholder="Breve descrizione dell'app"
+                  />
                 </div>
               </div>
               <div>
                 <Label htmlFor="redirectUris">URL di Redirect</Label>
-                <Textarea id="redirectUris" {...oauthForm.register("redirectUrisRaw")} placeholder="https://myapp.com/callback&#10;https://myapp.com/oauth/callback" rows={3} />
+                <Textarea
+                  id="redirectUris"
+                  {...oauthForm.register("redirectUrisRaw")}
+                  placeholder="https://myapp.com/callback&#10;https://myapp.com/oauth/callback"
+                  rows={3}
+                />
                 {oauthForm.formState.errors.redirectUrisRaw && (
-                  <p className="text-sm text-destructive mt-1">{String(oauthForm.formState.errors.redirectUrisRaw?.message)}</p>
+                  <p className="text-sm text-destructive mt-1">
+                    {String(oauthForm.formState.errors.redirectUrisRaw?.message)}
+                  </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Una URL per riga. Deve corrispondere esattamente nelle richieste OAuth.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Una URL per riga. Deve corrispondere esattamente nelle richieste OAuth.
+                </p>
               </div>
               <div>
                 <Label>Permessi Consentiti</Label>
@@ -679,17 +703,24 @@ function AdminUsersPage() {
                           onCheckedChange={(val) => {
                             const current = oauthForm.getValues().scopesAllowed || [];
                             if (val) oauthForm.setValue("scopesAllowed", [...current, scope]);
-                            else oauthForm.setValue("scopesAllowed", current.filter((s: string) => s !== scope));
+                            else
+                              oauthForm.setValue(
+                                "scopesAllowed",
+                                current.filter((s: string) => s !== scope),
+                              );
                           }}
                         />
-                        <Label htmlFor={scope} className="text-sm">{def.label}</Label>
+                        <Label htmlFor={scope} className="text-sm">
+                          {def.label}
+                        </Label>
                       </div>
                     );
                   })}
                 </div>
               </div>
               <Button type="submit" disabled={createClientBusy || !oauthForm.formState.isValid}>
-                <Plus className="w-4 h-4 mr-2" />{createClientBusy ? "Creazione..." : "Crea Client"}
+                <Plus className="w-4 h-4 mr-2" />
+                {createClientBusy ? "Creazione..." : "Crea Client"}
               </Button>
             </form>
           </CardContent>
@@ -716,11 +747,11 @@ function AdminUsersPage() {
             </div>
             {loadingClients ? (
               <p className="text-center py-4 text-muted-foreground">Caricamento client...</p>
-            ) : clients.length === 0 ? (
+            ) : (clients ?? []).length === 0 ? (
               <p className="text-center py-4 text-muted-foreground">Nessun client registrato</p>
             ) : (
               <div className="space-y-4">
-                {clients.map((client) => (
+                {(Array.isArray(clients) ? clients : []).map((client) => (
                   <div key={client.clientId} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div>
@@ -736,7 +767,7 @@ function AdminUsersPage() {
                     <div className="mt-3">
                       <p className="text-sm font-medium mb-2">Permessi:</p>
                       <div className="flex flex-wrap gap-1">
-                        {client.scopesAllowed.map((scope) => (
+                        {(client.scopesAllowed ?? []).map((scope) => (
                           <Badge key={scope} variant="secondary">
                             {getScopeLabel(scope)}
                           </Badge>
@@ -814,7 +845,12 @@ function AdminUsersPage() {
                   </div>
                   <div>
                     <Label htmlFor="support_email">Email Supporto</Label>
-                    <Input id="support_email" type="email" {...settingsForm.register("support_email")} placeholder="support@pcready.it" />
+                    <Input
+                      id="support_email"
+                      type="email"
+                      {...settingsForm.register("support_email")}
+                      placeholder="support@pcready.it"
+                    />
                     {settingsForm.formState.errors.support_email && (
                       <p className="text-sm text-destructive mt-1">
                         {String(settingsForm.formState.errors.support_email?.message)}
@@ -829,7 +865,10 @@ function AdminUsersPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
                       {WIP_LIMIT_FIELDS.map(([status, label]) => (
                         <div key={status}>
-                          <Label htmlFor={`wip_${status}`} className="text-xs text-muted-foreground">
+                          <Label
+                            htmlFor={`wip_${status}`}
+                            className="text-xs text-muted-foreground"
+                          >
                             {label}
                           </Label>
                           <Input
@@ -850,23 +889,38 @@ function AdminUsersPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="self_registration_enabled" {...settingsForm.register("self_registration_enabled")} />
-                    <Label htmlFor="self_registration_enabled">Abilita registrazione autonoma nuovi utenti</Label>
+                    <Checkbox
+                      id="self_registration_enabled"
+                      {...settingsForm.register("self_registration_enabled")}
+                    />
+                    <Label htmlFor="self_registration_enabled">
+                      Abilita registrazione autonoma nuovi utenti
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="admin_approval_required" {...settingsForm.register("admin_approval_required")} />
-                    <Label htmlFor="admin_approval_required">Richiedi approvazione admin per nuovi account</Label>
+                    <Checkbox
+                      id="admin_approval_required"
+                      {...settingsForm.register("admin_approval_required")}
+                    />
+                    <Label htmlFor="admin_approval_required">
+                      Richiedi approvazione admin per nuovi account
+                    </Label>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={!settingsForm.formState.isValid || saveSettingsBusy}>
+                <Button
+                  type="submit"
+                  disabled={!settingsForm.formState.isValid || saveSettingsBusy}
+                >
                   <Settings className="w-4 h-4 mr-2" />
                   {saveSettingsBusy ? "Salvataggio..." : "Salva Impostazioni"}
                 </Button>
               </form>
             ) : (
-              <p className="text-center py-4 text-muted-foreground">Errore nel caricamento delle impostazioni</p>
+              <p className="text-center py-4 text-muted-foreground">
+                Errore nel caricamento delle impostazioni
+              </p>
             )}
           </CardContent>
         </Card>
@@ -879,9 +933,7 @@ function AdminUsersPage() {
               <FileText className="h-5 w-5" />
               Log di Audit
             </CardTitle>
-            <CardDescription>
-              Visualizza le azioni amministrative e di sistema
-            </CardDescription>
+            <CardDescription>Visualizza le azioni amministrative e di sistema</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -939,7 +991,11 @@ function AdminUsersPage() {
                             <span>{entry.actor_name}</span>
                             <span>{new Date(entry.created_at).toLocaleString("it-IT")}</span>
                             <Badge variant="outline">
-                              {entry.type === "sys" ? "Sistema" : entry.type === "auto" ? "Automatico" : "Utente"}
+                              {entry.type === "sys"
+                                ? "Sistema"
+                                : entry.type === "auto"
+                                  ? "Automatico"
+                                  : "Utente"}
                             </Badge>
                             {entry.ticket_id && <span>Ticket: {entry.ticket_id}</span>}
                           </div>
@@ -950,7 +1006,8 @@ function AdminUsersPage() {
 
                   <div className="flex items-center justify-between pt-4">
                     <span className="text-sm text-muted-foreground">
-                      Pagina {auditPage} di {Math.ceil(auditTotal / auditPageSize)} ({auditTotal} totale)
+                      Pagina {auditPage} di {Math.ceil(auditTotal / auditPageSize)} ({auditTotal}{" "}
+                      totale)
                     </span>
                     <div className="flex gap-2">
                       <Button

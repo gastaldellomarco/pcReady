@@ -54,9 +54,9 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
 
     // Validate client_id exists and redirect_uri is allowed
     const { data: client, error: clientError } = await supabaseAdmin
-      .from('oauth_clients' as any)
-      .select('client_id, name, description, redirect_uris, scopes_allowed')
-      .eq('client_id', data.clientId)
+      .from("oauth_clients" as any)
+      .select("client_id, name, description, redirect_uris, scopes_allowed")
+      .eq("client_id", data.clientId)
       .single();
 
     if (clientError || !client) {
@@ -70,10 +70,12 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
     }
 
     // Parse and validate scopes
-    const requestedScopes = data.scope.split(' ').filter(Boolean) as OAuthScope[];
-    const invalidScopes = requestedScopes.filter(scope => !(clientAny.scopes_allowed || []).includes(scope));
+    const requestedScopes = data.scope.split(" ").filter(Boolean) as OAuthScope[];
+    const invalidScopes = requestedScopes.filter(
+      (scope) => !(clientAny.scopes_allowed || []).includes(scope),
+    );
     if (invalidScopes.length > 0) {
-      throw new Response(`Invalid scopes: ${invalidScopes.join(', ')}`, { status: 400 });
+      throw new Response(`Invalid scopes: ${invalidScopes.join(", ")}`, { status: 400 });
     }
 
     return {
@@ -81,10 +83,10 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
         clientId: clientAny.client_id,
         name: clientAny.name,
         description: clientAny.description,
-        scopesAllowed: clientAny.scopes_allowed || []
+        scopesAllowed: clientAny.scopes_allowed || [],
       },
       requestedScopes,
-      state: data.state
+      state: data.state,
     };
   });
 
@@ -104,14 +106,14 @@ export const grantConsent = createServerFn({ method: "POST" })
     const codeBytes = new Uint8Array(32);
     crypto.getRandomValues(codeBytes);
     const authCode = Array.from(codeBytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
 
     // Store authorization code temporarily (10 minute expiration)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    
+
     const { error: insertError } = await supabaseAdmin
-      .from('oauth_authorization_codes' as any)
+      .from("oauth_authorization_codes" as any)
       .insert({
         code: authCode,
         user_id: userId,
@@ -119,7 +121,7 @@ export const grantConsent = createServerFn({ method: "POST" })
         scopes_granted: data.scopes,
         redirect_uri: data.redirectUri,
         state: data.state,
-        expires_at: expiresAt
+        expires_at: expiresAt,
       } as any);
 
     if (insertError) {
@@ -129,11 +131,11 @@ export const grantConsent = createServerFn({ method: "POST" })
     // Build redirect URL
     const params = new URLSearchParams({
       code: authCode,
-      ...(data.state && { state: data.state })
+      ...(data.state && { state: data.state }),
     });
 
     return {
-      redirectUrl: `${data.redirectUri}?${params.toString()}`
+      redirectUrl: `${data.redirectUri}?${params.toString()}`,
     };
   });
 
@@ -144,7 +146,7 @@ interface CreateOAuthClientInput extends AuthedInput {
   scopesAllowed: OAuthScope[];
 }
 
-interface ListOAuthClientsInput extends AuthedInput {}
+type ListOAuthClientsInput = AuthedInput;
 
 // List OAuth clients (admin only)
 export const listOAuthClients = createServerFn({ method: "POST" })
@@ -157,16 +159,16 @@ export const listOAuthClients = createServerFn({ method: "POST" })
     if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
 
     // Check admin role
-    const { data: roleData, error: roleError } = await supabaseAdmin.rpc('has_role', {
+    const { data: roleData, error: roleError } = await supabaseAdmin.rpc("has_role", {
       _user_id: authData.user.id,
-      _role: 'admin'
+      _role: "admin",
     });
     if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
 
     const { data: clients, error: clientsError } = await supabaseAdmin
-      .from('oauth_clients' as any)
-      .select('client_id, name, description, redirect_uris, scopes_allowed')
-      .order('created_at', { ascending: false });
+      .from("oauth_clients" as any)
+      .select("client_id, name, description, redirect_uris, scopes_allowed")
+      .order("created_at", { ascending: false });
 
     if (clientsError) throw new Response("Failed to fetch clients", { status: 500 });
 
@@ -175,7 +177,7 @@ export const listOAuthClients = createServerFn({ method: "POST" })
       clientId: client.client_id,
       name: client.name,
       description: client.description,
-      scopesAllowed: client.scopes_allowed || []
+      scopesAllowed: client.scopes_allowed || [],
     }));
   });
 
@@ -190,9 +192,9 @@ export const createOAuthClient = createServerFn({ method: "POST" })
     if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
 
     // Check admin role
-    const { data: roleData, error: roleError } = await supabaseAdmin.rpc('has_role', {
+    const { data: roleData, error: roleError } = await supabaseAdmin.rpc("has_role", {
       _user_id: authData.user.id,
-      _role: 'admin'
+      _role: "admin",
     });
     if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
 
@@ -201,7 +203,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
     const clientSecret = `secret_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
 
     const { data: client, error: clientError } = await supabaseAdmin
-      .from('oauth_clients' as any)
+      .from("oauth_clients" as any)
       .insert({
         client_id: clientId,
         client_secret: clientSecret,
@@ -209,9 +211,9 @@ export const createOAuthClient = createServerFn({ method: "POST" })
         description: data.description,
         redirect_uris: data.redirectUris,
         scopes_allowed: data.scopesAllowed,
-        created_by: authData.user.id
+        created_by: authData.user.id,
       } as any)
-      .select('client_id, name, description, redirect_uris, scopes_allowed')
+      .select("client_id, name, description, redirect_uris, scopes_allowed")
       .single();
 
     if (clientError) throw new Response("Failed to create client", { status: 500 });
@@ -221,7 +223,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
       clientId: clientAny.client_id,
       name: clientAny.name,
       description: clientAny.description,
-      scopesAllowed: clientAny.scopes_allowed || []
+      scopesAllowed: clientAny.scopes_allowed || [],
     };
   });
 
@@ -231,12 +233,12 @@ export const denyConsent = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ redirectUrl: string }> => {
     // Build redirect URL with error
     const params = new URLSearchParams({
-      error: 'access_denied',
-      error_description: 'User denied access',
-      ...(data.state && { state: data.state })
+      error: "access_denied",
+      error_description: "User denied access",
+      ...(data.state && { state: data.state }),
     });
 
     return {
-      redirectUrl: `${data.redirectUri}?${params.toString()}`
+      redirectUrl: `${data.redirectUri}?${params.toString()}`,
     };
   });

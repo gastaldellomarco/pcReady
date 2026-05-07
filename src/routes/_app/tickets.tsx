@@ -185,7 +185,7 @@ function TicketsPage() {
           onChange={(e) => setFc(e.target.value)}
         >
           <option value="">Tutti i clienti</option>
-          {clients.map((c) => (
+          {(Array.isArray(clients) ? clients : []).map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>

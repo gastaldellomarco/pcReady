@@ -122,8 +122,10 @@ export function fmtDate(s: string | Date): string {
   return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
 }
 
-export function fmtDateTime(s: string | Date): string {
+export function fmtDateTime(s?: string | Date | null): string {
+  if (!s) return "-";
   const d = typeof s === "string" ? new Date(s) : s;
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "-";
   const today = new Date();
   const isToday = d.toDateString() === today.toDateString();
   const yest = new Date(today);

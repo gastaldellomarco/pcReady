@@ -2,7 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ClientSchema, ContactSchema, type ClientInput, type ContactInput } from "@/lib/schemas/clients";
+import {
+  ClientSchema,
+  ContactSchema,
+  type ClientInput,
+  type ContactInput,
+} from "@/lib/schemas/clients";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
@@ -163,7 +168,7 @@ function ClientsPage() {
 
   function startNewClient() {
     setSelectedId(null);
-    setClientForm(emptyClient);
+    clientForm.reset(emptyClient as ClientInput);
     setContacts([]);
     resetContactForm();
   }
@@ -233,7 +238,10 @@ function ClientsPage() {
     try {
       const fullName = values.full_name.trim();
       if (values.is_primary) {
-        await supabase.from("client_contacts").update({ is_primary: false }).eq("client_id", selectedId);
+        await supabase
+          .from("client_contacts")
+          .update({ is_primary: false })
+          .eq("client_id", selectedId);
       }
       const base = {
         full_name: fullName,
@@ -248,7 +256,10 @@ function ClientsPage() {
         notes: clean(values.notes || ""),
       };
       if (editingContactId) {
-        const { error } = await supabase.from("client_contacts").update(base as TablesUpdate<"client_contacts">).eq("id", editingContactId);
+        const { error } = await supabase
+          .from("client_contacts")
+          .update(base as TablesUpdate<"client_contacts">)
+          .eq("id", editingContactId);
         if (error) throw error;
         toast.success("Referente aggiornato");
       } else {
@@ -335,7 +346,11 @@ function ClientsPage() {
                   <Trash2 className="w-3 h-3" /> Elimina
                 </button>
               )}
-              <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !canEdit} onClick={onSaveClient}>
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                disabled={busy || !canEdit}
+                onClick={onSaveClient}
+              >
                 <Save className="w-3 h-3" /> Salva cliente
               </button>
             </div>
@@ -344,7 +359,9 @@ function ClientsPage() {
             <Field label="Ragione sociale *">
               <input className="pc-input" {...clientForm.register("company_name")} />
               {clientForm.formState.errors.company_name && (
-                <p className="text-sm text-destructive mt-1">{clientForm.formState.errors.company_name.message}</p>
+                <p className="text-sm text-destructive mt-1">
+                  {clientForm.formState.errors.company_name.message}
+                </p>
               )}
             </Field>
             <Field label="P.IVA">
@@ -356,7 +373,9 @@ function ClientsPage() {
             <Field label="Email">
               <input className="pc-input" type="email" {...clientForm.register("email")} />
               {clientForm.formState.errors.email && (
-                <p className="text-sm text-destructive mt-1">{clientForm.formState.errors.email.message}</p>
+                <p className="text-sm text-destructive mt-1">
+                  {clientForm.formState.errors.email.message}
+                </p>
               )}
             </Field>
             <Field label="Telefono">
@@ -471,13 +490,17 @@ function ClientsPage() {
                 <Field label="Nome e cognome *">
                   <input className="pc-input" {...contactForm.register("full_name")} />
                   {contactForm.formState.errors.full_name && (
-                    <p className="text-sm text-destructive mt-1">{contactForm.formState.errors.full_name.message}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {contactForm.formState.errors.full_name.message}
+                    </p>
                   )}
                 </Field>
                 <Field label="Email">
                   <input className="pc-input" type="email" {...contactForm.register("email")} />
                   {contactForm.formState.errors.email && (
-                    <p className="text-sm text-destructive mt-1">{contactForm.formState.errors.email.message}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {contactForm.formState.errors.email.message}
+                    </p>
                   )}
                 </Field>
                 <Field label="Telefono">
@@ -496,7 +519,11 @@ function ClientsPage() {
                 <Field label="Note">
                   <textarea className="pc-input min-h-[64px]" {...contactForm.register("notes")} />
                 </Field>
-                <button className="pc-btn pc-btn-primary justify-center" disabled={busy || !canEdit || !selectedId} onClick={onSaveContact}>
+                <button
+                  className="pc-btn pc-btn-primary justify-center"
+                  disabled={busy || !canEdit || !selectedId}
+                  onClick={onSaveContact}
+                >
                   <Save className="w-3 h-3" /> Salva referente
                 </button>
               </div>
