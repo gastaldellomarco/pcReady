@@ -2,6 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
+import type { TicketStatus } from "@/lib/pcready";
+
+export type WipLimits = Record<TicketStatus, number>;
+
+export const DEFAULT_WIP_LIMITS: WipLimits = {
+  pending: 20,
+  "in-progress": 5,
+  testing: 5,
+  ready: 20,
+};
 
 export type AppSettings = {
   organization_name: string;
@@ -10,6 +20,7 @@ export type AppSettings = {
   self_registration_enabled: boolean;
   admin_approval_required: boolean;
   support_email: string;
+  wip_limits: WipLimits;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -19,7 +30,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   self_registration_enabled: false,
   admin_approval_required: true,
   support_email: "",
+  wip_limits: DEFAULT_WIP_LIMITS,
 };
+
+const WipLimitsSchema = z.object({
+  pending: z.number().int().min(0).max(999),
+  "in-progress": z.number().int().min(0).max(999),
+  testing: z.number().int().min(0).max(999),
+  ready: z.number().int().min(0).max(999),
+});
 
 export const getAppSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { accessToken: string }) => data)
@@ -49,6 +68,31 @@ export const getAppSettings = createServerFn({ method: "GET" })
     return settings;
   });
 
+export const getKanbanAppSettings = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }) => {
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
+
+    const { data, error } = await supabaseAdmin
+      .from("app_settings" as any)
+      .select("value")
+      .eq("key", "wip_limits")
+      .maybeSingle();
+
+    if (error) throw error;
+
+    let parsed: unknown = data?.value ?? DEFAULT_WIP_LIMITS;
+    try {
+      parsed = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+    } catch {
+      parsed = DEFAULT_WIP_LIMITS;
+    }
+
+    const result = WipLimitsSchema.safeParse(parsed);
+    return { wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS };
+  });
+
 export const updateAppSettings = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string; settings: AppSettings }) => data)
   .handler(async ({ data: { accessToken, settings } }) => {
@@ -61,7 +105,11 @@ export const updateAppSettings = createServerFn({ method: "POST" })
       max_devices_per_technician: z.number().min(1).max(100),
       self_registration_enabled: z.boolean(),
       admin_approval_required: z.boolean(),
-      support_email: z.string().email().max(254).transform(val => val.toLowerCase().trim()),
+      support_email: z.string().max(254).transform(val => val.toLowerCase().trim()).refine(
+        (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+        "Email non valida",
+      ),
+      wip_limits: WipLimitsSchema,
     }).parse(settings);
 
     const updates = Object.entries(validatedSettings).map(([key, value]) => ({

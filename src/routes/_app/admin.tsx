@@ -76,6 +76,12 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 const ROLES: AppRole[] = ["admin", "tech", "viewer"];
+const WIP_LIMIT_FIELDS = [
+  ["pending", "In attesa"],
+  ["in-progress", "In lavorazione"],
+  ["testing", "Testing"],
+  ["ready", "Pronto"],
+] as const;
 
 function AdminUsersPage() {
   function getErrorMessage(error: unknown, fallback: string) {
@@ -321,6 +327,12 @@ function AdminUsersPage() {
       self_registration_enabled: settings?.self_registration_enabled ?? false,
       admin_approval_required: settings?.admin_approval_required ?? false,
       support_email: settings?.support_email ?? null,
+      wip_limits: settings?.wip_limits ?? {
+        pending: 20,
+        "in-progress": 5,
+        testing: 5,
+        ready: 20,
+      },
     },
   });
 
@@ -333,6 +345,12 @@ function AdminUsersPage() {
       self_registration_enabled: settings?.self_registration_enabled ?? false,
       admin_approval_required: settings?.admin_approval_required ?? false,
       support_email: settings?.support_email ?? null,
+      wip_limits: settings?.wip_limits ?? {
+        pending: 20,
+        "in-progress": 5,
+        testing: 5,
+        ready: 20,
+      },
     });
   }, [settings, settingsForm]);
 
@@ -347,6 +365,12 @@ function AdminUsersPage() {
         self_registration_enabled: !!values.self_registration_enabled,
         admin_approval_required: !!values.admin_approval_required,
         support_email: (values.support_email as string) || "",
+        wip_limits: {
+          pending: Number(values.wip_limits.pending),
+          "in-progress": Number(values.wip_limits["in-progress"]),
+          testing: Number(values.wip_limits.testing),
+          ready: Number(values.wip_limits.ready),
+        },
       };
 
       await saveSettings({ data: { accessToken: session.access_token, settings: payload } });
@@ -800,6 +824,31 @@ function AdminUsersPage() {
                 </div>
 
                 <div className="space-y-4">
+                  <div>
+                    <Label>Limiti WIP Kanban</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      {WIP_LIMIT_FIELDS.map(([status, label]) => (
+                        <div key={status}>
+                          <Label htmlFor={`wip_${status}`} className="text-xs text-muted-foreground">
+                            {label}
+                          </Label>
+                          <Input
+                            id={`wip_${status}`}
+                            type="number"
+                            min={0}
+                            max={999}
+                            {...settingsForm.register(`wip_limits.${status}`)}
+                          />
+                          {settingsForm.formState.errors.wip_limits?.[status] && (
+                            <p className="text-sm text-destructive mt-1">
+                              {String(settingsForm.formState.errors.wip_limits?.[status]?.message)}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-2">
                     <Checkbox id="self_registration_enabled" {...settingsForm.register("self_registration_enabled")} />
                     <Label htmlFor="self_registration_enabled">Abilita registrazione autonoma nuovi utenti</Label>

@@ -11,7 +11,6 @@ import {
   Zap,
   Boxes,
   Search,
-  LogOut,
   Moon,
   Sun,
   Plus,
@@ -29,6 +28,7 @@ import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
 import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -72,6 +72,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/inventory": "Inventario",
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",
+  "/profile": "Profilo",
 };
 
 function AppLayout() {
@@ -341,25 +342,13 @@ function SidebarContent({
           </span>
         </button>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-[9px] min-w-0">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-              style={{
-                background: avatarColor.bg,
-                color: avatarColor.fg,
-                fontFamily: "var(--font-head)",
-              }}
-            >
-              {profile.initials}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[12px] font-semibold truncate">{profile.full_name}</div>
-              <div className="text-[10px] text-text3 capitalize">{roleLabel(profile.role)}</div>
-            </div>
-          </div>
-          <button onClick={onSignOut} className="pc-btn-icon" title="Logout">
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+          <UserMenu
+            profile={profile}
+            avatarColor={avatarColor}
+            roleLabel={roleLabel(profile.role)}
+            onSignOut={onSignOut}
+            onNavigate={onNavigate}
+          />
         </div>
       </div>
     </>

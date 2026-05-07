@@ -8,6 +8,7 @@ export interface AuthProfile {
   id: string;
   full_name: string;
   initials: string;
+  avatar_url: string | null;
   role: AppRole;
 }
 
@@ -45,20 +46,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
 
     try {
-      const [{ data: p, error: profileError }, { data: r, error: roleError }] = await Promise.all([
+      const [
+        { data: p, error: profileError },
+        { data: up, error: userProfileError },
+        { data: r, error: roleError },
+      ] = await Promise.all([
         supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
+        supabase.from("user_profiles" as any).select("display_name, avatar_url").eq("id", uid).maybeSingle(),
         supabase.rpc("get_user_role", { _user_id: uid }),
       ]);
 
       if (requestId !== profileRequestId.current) return;
       if (profileError) throw profileError;
+      if (userProfileError) throw userProfileError;
       if (roleError) throw roleError;
       if (!p) throw new Error("Profilo utente non trovato");
+      const displayName = (up as any)?.display_name || p.full_name;
 
       setProfile({
         id: p.id,
-        full_name: p.full_name,
-        initials: p.initials || p.full_name.slice(0, 2).toUpperCase(),
+        full_name: displayName,
+        initials: p.initials || displayName.slice(0, 2).toUpperCase(),
+        avatar_url: (up as any)?.avatar_url ?? null,
         role: (r as AppRole) ?? "viewer",
       });
     } catch (err: unknown) {

@@ -13,6 +13,21 @@ export const AppSettingsSchema = z.object({
   self_registration_enabled: z.boolean(),
   admin_approval_required: z.boolean(),
   support_email: optionalTrimmed(),
+  wip_limits: z.object({
+    pending: numberInput("Inserisci il limite per In attesa"),
+    "in-progress": numberInput("Inserisci il limite per In lavorazione"),
+    testing: numberInput("Inserisci il limite per Testing"),
+    ready: numberInput("Inserisci il limite per Pronto"),
+  }),
 });
 
 export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;
+
+function numberInput(message: string) {
+  return z
+    .union([z.number().int().min(0), z.string().regex(/^[0-9]+$/, message)])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
+    .refine((v) => Number.isInteger(v) && v >= 0 && v <= 999, {
+      message: "Deve essere un numero intero tra 0 e 999",
+    });
+}

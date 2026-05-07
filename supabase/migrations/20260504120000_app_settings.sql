@@ -36,4 +36,5 @@ insert into app_settings (key, value) values
     ('max_devices_per_technician', '10'),
     ('self_registration_enabled', 'false'),
     ('admin_approval_required', 'true'),
-    ('support_email', '""');
+    ('support_email', '""'),
+    ('wip_limits', '{"pending":20,"in-progress":5,"testing":5,"ready":20}');

@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
 import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppKanbanRouteImport } from './routes/_app/kanban'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppDocsRouteImport } from './routes/_app/docs'
@@ -46,6 +47,11 @@ const AppTicketsRoute = AppTicketsRouteImport.update({
 const AppScriptsRoute = AppScriptsRouteImport.update({
   id: '/scripts',
   path: '/scripts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKanbanRoute = AppKanbanRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
+  '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
   '/oauth/consent': typeof AppOauthConsentRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/docs': typeof AppDocsRoute
   '/inventory': typeof AppInventoryRoute
   '/kanban': typeof AppKanbanRoute
+  '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
   '/oauth/consent': typeof AppOauthConsentRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_app/docs': typeof AppDocsRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/kanban': typeof AppKanbanRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/scripts': typeof AppScriptsRoute
   '/_app/tickets': typeof AppTicketsRoute
   '/_app/oauth/consent': typeof AppOauthConsentRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/inventory'
     | '/kanban'
+    | '/profile'
     | '/scripts'
     | '/tickets'
     | '/oauth/consent'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/inventory'
     | '/kanban'
+    | '/profile'
     | '/scripts'
     | '/tickets'
     | '/oauth/consent'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/_app/docs'
     | '/_app/inventory'
     | '/_app/kanban'
+    | '/_app/profile'
     | '/_app/scripts'
     | '/_app/tickets'
     | '/_app/oauth/consent'
@@ -231,6 +243,13 @@ declare module '@tanstack/react-router' {
       path: '/scripts'
       fullPath: '/scripts'
       preLoaderRoute: typeof AppScriptsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kanban': {
@@ -308,6 +327,7 @@ interface AppRouteChildren {
   AppDocsRoute: typeof AppDocsRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppKanbanRoute: typeof AppKanbanRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppScriptsRoute: typeof AppScriptsRoute
   AppTicketsRoute: typeof AppTicketsRoute
   AppOauthConsentRoute: typeof AppOauthConsentRoute
@@ -322,6 +342,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocsRoute: AppDocsRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppKanbanRoute: AppKanbanRoute,
+  AppProfileRoute: AppProfileRoute,
   AppScriptsRoute: AppScriptsRoute,
   AppTicketsRoute: AppTicketsRoute,
   AppOauthConsentRoute: AppOauthConsentRoute,
