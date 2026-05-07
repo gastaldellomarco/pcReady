@@ -95,6 +95,12 @@ function AppLayout() {
     if (!loading && !session) navigate({ to: "/auth" });
   }, [loading, session, navigate]);
 
+  useEffect(() => {
+    if (!loading && session && profile && !profile.password_set) {
+      navigate({ to: "/auth/set-password", replace: true });
+    }
+  }, [loading, navigate, profile, session]);
+
   if (loading || profileLoading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center text-text3 text-sm">
@@ -125,6 +131,14 @@ function AppLayout() {
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!profile.password_set) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-text3 text-sm">
+        Reindirizzamento...
       </div>
     );
   }

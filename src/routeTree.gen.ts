@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthSetPasswordRouteImport } from './routes/auth.set-password'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
 import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -39,6 +41,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSetPasswordRoute = AuthSetPasswordRouteImport.update({
+  id: '/set-password',
+  path: '/set-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AppTicketsRoute = AppTicketsRouteImport.update({
   id: '/tickets',
@@ -108,7 +120,7 @@ const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/checklist': typeof AppChecklistRoute
@@ -121,11 +133,13 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/set-password': typeof AuthSetPasswordRoute
   '/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/checklist': typeof AppChecklistRoute
@@ -138,13 +152,15 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/set-password': typeof AuthSetPasswordRoute
   '/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/checklist': typeof AppChecklistRoute
@@ -157,6 +173,8 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/scripts': typeof AppScriptsRoute
   '/_app/tickets': typeof AppTicketsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/set-password': typeof AuthSetPasswordRoute
   '/_app/oauth/consent': typeof AppOauthConsentRoute
 }
 export interface FileRouteTypes {
@@ -176,6 +194,8 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scripts'
     | '/tickets'
+    | '/auth/callback'
+    | '/auth/set-password'
     | '/oauth/consent'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,6 +213,8 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scripts'
     | '/tickets'
+    | '/auth/callback'
+    | '/auth/set-password'
     | '/oauth/consent'
   id:
     | '__root__'
@@ -211,13 +233,15 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/scripts'
     | '/_app/tickets'
+    | '/auth/callback'
+    | '/auth/set-password'
     | '/_app/oauth/consent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -242,6 +266,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/set-password': {
+      id: '/auth/set-password'
+      path: '/set-password'
+      fullPath: '/auth/set-password'
+      preLoaderRoute: typeof AuthSetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_app/tickets': {
       id: '/_app/tickets'
@@ -371,10 +409,22 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthSetPasswordRoute: typeof AuthSetPasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthSetPasswordRoute: AuthSetPasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

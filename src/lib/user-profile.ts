@@ -15,6 +15,7 @@ export interface UserProfile {
   notify_device_status_changed: boolean;
   notify_checklist_completed: boolean;
   notify_mentions: boolean;
+  password_set: boolean;
   created_at: string | null;
   updated_at: string | null;
   email: string;
@@ -113,6 +114,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       notify_device_status_changed: row.notify_device_status_changed ?? true,
       notify_checklist_completed: row.notify_checklist_completed ?? true,
       notify_mentions: row.notify_mentions ?? true,
+      password_set: row.password_set ?? true,
       created_at: row.created_at ?? null,
       updated_at: row.updated_at ?? null,
       email: user.email ?? "",
@@ -122,14 +124,19 @@ export const getMyProfile = createServerFn({ method: "GET" })
   });
 
 export const updateMyProfile = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; profile: z.input<typeof ProfileUpdateSchema> }) => data)
+  .inputValidator(
+    (data: { accessToken: string; profile: z.input<typeof ProfileUpdateSchema> }) => data,
+  )
   .handler(async ({ data: { accessToken, profile } }) => {
     const user = await getAuthedUser(accessToken);
     const validated = ProfileUpdateSchema.parse(profile);
 
     const { error } = await supabaseAdmin
       .from("user_profiles" as any)
-      .upsert({ id: user.id, ...validated, updated_at: new Date().toISOString() }, { onConflict: "id" });
+      .upsert(
+        { id: user.id, ...validated, updated_at: new Date().toISOString() },
+        { onConflict: "id" },
+      );
 
     if (error) throw error;
 
@@ -163,5 +170,14 @@ export const changePassword = createServerFn({ method: "POST" })
     });
 
     if (error) throw error;
+
+    const { error: profileError } = await supabaseAdmin
+      .from("user_profiles" as any)
+      .upsert(
+        { id: user.id, password_set: true, updated_at: new Date().toISOString() },
+        { onConflict: "id" },
+      );
+    if (profileError) throw profileError;
+
     return { success: true };
   });

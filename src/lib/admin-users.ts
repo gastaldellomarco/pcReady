@@ -43,17 +43,18 @@ interface InviteUserInput extends AuthedInput {
 
 const APP_ROLES: AppRole[] = ["admin", "tech", "viewer"];
 
-
 function normalizeInitials(name: string, initials?: string) {
   const clean = initials?.trim().slice(0, 4).toUpperCase();
   if (clean) return clean;
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(part => part[0])
-    .join("")
-    .toUpperCase() || name.slice(0, 2).toUpperCase();
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || name.slice(0, 2).toUpperCase()
+  );
 }
 
 async function assertCanRemoveAdmin(targetUserId: string, nextRole?: AppRole) {
@@ -63,7 +64,7 @@ async function assertCanRemoveAdmin(targetUserId: string, nextRole?: AppRole) {
     .eq("user_id", targetUserId);
   if (targetError) throw new Error(targetError.message);
 
-  const isTargetAdmin = targetRoles?.some(r => r.role === "admin");
+  const isTargetAdmin = targetRoles?.some((r) => r.role === "admin");
   if (!isTargetAdmin || nextRole === "admin") return;
 
   const { count, error: countError } = await supabaseAdmin
@@ -71,7 +72,8 @@ async function assertCanRemoveAdmin(targetUserId: string, nextRole?: AppRole) {
     .select("id", { count: "exact", head: true })
     .eq("role", "admin");
   if (countError) throw new Error(countError.message);
-  if ((count ?? 0) <= 1) throw new Response("Impossibile rimuovere l'ultimo amministratore", { status: 400 });
+  if ((count ?? 0) <= 1)
+    throw new Response("Impossibile rimuovere l'ultimo amministratore", { status: 400 });
 }
 
 export const listAdminUsers = createServerFn({ method: "POST" })
@@ -79,23 +81,30 @@ export const listAdminUsers = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
 
-    const [{ data: authUsers, error: usersError }, { data: profiles, error: profilesError }, { data: roles, error: rolesError }] =
-      await Promise.all([
-        supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-        supabaseAdmin.from("profiles").select("id, full_name, initials, created_at"),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-      ]);
+    const [
+      { data: authUsers, error: usersError },
+      { data: profiles, error: profilesError },
+      { data: roles, error: rolesError },
+    ] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      supabaseAdmin.from("profiles").select("id, full_name, initials, created_at"),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+    ]);
 
     if (usersError) throw new Error(usersError.message);
     if (profilesError) throw new Error(profilesError.message);
     if (rolesError) throw new Error(rolesError.message);
 
-    const profileById = new Map((profiles ?? []).map(profile => [profile.id, profile]));
-    const roleById = new Map((roles ?? []).map(role => [role.user_id, role.role as AppRole]));
+    const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+    const roleById = new Map((roles ?? []).map((role) => [role.user_id, role.role as AppRole]));
 
-    return authUsers.users.map(user => {
+    return authUsers.users.map((user) => {
       const profile = profileById.get(user.id);
-      const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente";
+      const name =
+        profile?.full_name ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "Utente";
       const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
 
       return {
@@ -127,7 +136,10 @@ export const updateAdminUser = createServerFn({ method: "POST" })
       if (profileError) throw new Error(profileError.message);
     }
 
-    const { error: deleteError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
+    const { error: deleteError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId);
     if (deleteError) throw new Error(deleteError.message);
 
     const { error: insertError } = await supabaseAdmin.from("user_roles").insert({
@@ -146,13 +158,15 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
     if (!APP_ROLES.includes(data.role)) throw new Response("Ruolo non valido", { status: 400 });
 
     const email = data.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Response("Email non valida", { status: 400 });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new Response("Email non valida", { status: 400 });
 
     const fullName = data.fullName?.trim() || email.split("@")[0];
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: data.redirectTo,
-      data: { full_name: fullName },
-    });
+    const { data: inviteData, error: inviteError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: data.redirectTo,
+        data: { full_name: fullName },
+      });
     if (inviteError) throw new Error(inviteError.message);
 
     const invitedUserId = inviteData.user?.id;
@@ -163,7 +177,18 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
       .upsert({ id: invitedUserId, full_name: fullName, initials: normalizeInitials(fullName) });
     if (profileError) throw new Error(profileError.message);
 
-    const { error: deleteError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", invitedUserId);
+    const { error: userProfileError } = await supabaseAdmin
+      .from("user_profiles" as any)
+      .upsert(
+        { id: invitedUserId, display_name: fullName, password_set: false },
+        { onConflict: "id" },
+      );
+    if (userProfileError) throw new Error(userProfileError.message);
+
+    const { error: deleteError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", invitedUserId);
     if (deleteError) throw new Error(deleteError.message);
 
     const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
@@ -187,7 +212,8 @@ export const setAdminUserDisabled = createServerFn({ method: "POST" })
   .inputValidator((data: UserStateInput) => data)
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
-    if (actorId === data.userId) throw new Response("Non puoi disabilitare il tuo account", { status: 400 });
+    if (actorId === data.userId)
+      throw new Response("Non puoi disabilitare il tuo account", { status: 400 });
     if (data.disabled) await assertCanRemoveAdmin(data.userId, "viewer");
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
@@ -202,7 +228,8 @@ export const deleteAdminUser = createServerFn({ method: "POST" })
   .inputValidator((data: DeleteUserInput) => data)
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
-    if (actorId === data.userId) throw new Response("Non puoi rimuovere il tuo account", { status: 400 });
+    if (actorId === data.userId)
+      throw new Response("Non puoi rimuovere il tuo account", { status: 400 });
     await assertCanRemoveAdmin(data.userId, "viewer");
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);

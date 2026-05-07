@@ -433,7 +433,7 @@ function AdminUsersPage() {
                   email: vals.email,
                   fullName: vals.fullName,
                   role: vals.role,
-                  redirectTo: `${window.location.origin}/auth`,
+                  redirectTo: `${window.location.origin}/auth/set-password`,
                 },
               });
               toast.success("Invito inviato");

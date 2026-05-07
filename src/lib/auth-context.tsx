@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -9,6 +17,7 @@ export interface AuthProfile {
   full_name: string;
   initials: string;
   avatar_url: string | null;
+  password_set: boolean;
   role: AppRole;
 }
 
@@ -52,7 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { data: r, error: roleError },
       ] = await Promise.all([
         supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
-        supabase.from("user_profiles" as any).select("display_name, avatar_url").eq("id", uid).maybeSingle(),
+        supabase
+          .from("user_profiles" as any)
+          .select("display_name, avatar_url, password_set")
+          .eq("id", uid)
+          .maybeSingle(),
         supabase.rpc("get_user_role", { _user_id: uid }),
       ]);
 
@@ -68,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         full_name: displayName,
         initials: p.initials || displayName.slice(0, 2).toUpperCase(),
         avatar_url: (up as any)?.avatar_url ?? null,
+        password_set: (up as any)?.password_set ?? true,
         role: (r as AppRole) ?? "viewer",
       });
     } catch (err: unknown) {
@@ -79,20 +93,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const applySession = useCallback(async (s: Session | null) => {
-    setSession(s);
-    setUser(s?.user ?? null);
+  const applySession = useCallback(
+    async (s: Session | null) => {
+      setSession(s);
+      setUser(s?.user ?? null);
 
-    if (!s?.user) {
-      profileRequestId.current++;
-      setProfile(null);
-      setProfileLoading(false);
-      setAuthError(null);
-      return;
-    }
+      if (!s?.user) {
+        profileRequestId.current++;
+        setProfile(null);
+        setProfileLoading(false);
+        setAuthError(null);
+        return;
+      }
 
-    await loadProfile(s.user.id);
-  }, [loadProfile]);
+      await loadProfile(s.user.id);
+    },
+    [loadProfile],
+  );
 
   useEffect(() => {
     let active = true;
@@ -103,7 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    supabase.auth.getSession()
+    supabase.auth
+      .getSession()
       .then(({ data: { session: s }, error }) => {
         if (!active) return;
         if (error) throw error;
@@ -136,8 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authError,
     canEdit: profile?.role === "admin" || profile?.role === "tech",
     isAdmin: profile?.role === "admin",
-    refreshProfile: async () => { if (user) await loadProfile(user.id); },
-    signOut: async () => { await supabase.auth.signOut(); },
+    refreshProfile: async () => {
+      if (user) await loadProfile(user.id);
+    },
+    signOut: async () => {
+      await supabase.auth.signOut();
+    },
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

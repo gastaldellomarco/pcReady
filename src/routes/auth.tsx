@@ -1,4 +1,10 @@
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -20,15 +26,27 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 function AuthPage() {
-  const { session, loading } = useAuth();
+  const { session, profile, loading, profileLoading } = useAuth();
   const navigate = useNavigate();
+  const route = useRouterState({ select: (state) => state.location.pathname });
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { initTheme(); }, []);
+  useEffect(() => {
+    initTheme();
+  }, []);
 
-  if (!loading && session) return <Navigate to="/dashboard" replace />;
+  if (route !== "/auth") return <Outlet />;
+
+  if (!loading && !profileLoading && session) {
+    return (
+      <Navigate
+        to={profile?.password_set === false ? "/auth/set-password" : "/dashboard"}
+        replace
+      />
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,18 +64,39 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: "var(--bg2)" }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-10"
+      style={{ background: "var(--bg2)" }}
+    >
       <div className="w-full max-w-md pc-anim-in">
         <div className="flex items-center gap-3 mb-6 justify-center">
-          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center" style={{ background: "var(--text)" }}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="var(--background)" strokeWidth={1.8} className="w-5 h-5">
-              <rect x="2" y="2" width="5" height="5" rx="1" /><rect x="9" y="2" width="5" height="5" rx="1" />
-              <rect x="2" y="9" width="5" height="5" rx="1" /><path d="M9 11.5h5M11.5 9v5" />
+          <div
+            className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+            style={{ background: "var(--text)" }}
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="var(--background)"
+              strokeWidth={1.8}
+              className="w-5 h-5"
+            >
+              <rect x="2" y="2" width="5" height="5" rx="1" />
+              <rect x="9" y="2" width="5" height="5" rx="1" />
+              <rect x="2" y="9" width="5" height="5" rx="1" />
+              <path d="M9 11.5h5M11.5 9v5" />
             </svg>
           </div>
           <div>
-            <div className="text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-head)" }}>PCReady</div>
-            <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>v3.0 - Cloud</div>
+            <div
+              className="text-xl font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-head)" }}
+            >
+              PCReady
+            </div>
+            <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>
+              v3.0 - Cloud
+            </div>
           </div>
         </div>
 
@@ -73,7 +112,7 @@ function AuthPage() {
                 type="email"
                 required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@azienda.it"
               />
             </div>
@@ -85,11 +124,15 @@ function AuthPage() {
                 required
                 minLength={6}
                 value={pwd}
-                onChange={e => setPwd(e.target.value)}
+                onChange={(e) => setPwd(e.target.value)}
                 placeholder="Password"
               />
             </div>
-            <button type="submit" disabled={busy} className="pc-btn pc-btn-primary justify-center mt-1">
+            <button
+              type="submit"
+              disabled={busy}
+              className="pc-btn pc-btn-primary justify-center mt-1"
+            >
               {busy ? "Attendere..." : "Accedi"}
             </button>
             <p className="text-[11px] text-text3 text-center mt-2">
