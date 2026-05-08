@@ -40,31 +40,94 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-const NAV_PRIMARY = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutGrid, badge: false },
-  { to: "/tickets", label: "Ticket PC", icon: Ticket, badge: true },
-  { to: "/kanban", label: "Kanban", icon: Trello, badge: false },
-] as const;
-const NAV_CONFIG = [
-  { to: "/checklist", label: "Checklist", icon: ListChecks },
-  { to: "/automations", label: "Automazioni", icon: Zap },
-  { to: "/scripts", label: "Script", icon: Terminal },
-  { to: "/clients", label: "Clienti", icon: Building2 },
-  { to: "/inventory", label: "Inventario", icon: Boxes },
-  { to: "/docs", label: "API Docs", icon: BookOpenText, staffOnly: true },
-  { to: "/admin", label: "Admin / Utenti", icon: Users, adminOnly: true },
+type NavigationRole = AuthProfile["role"];
+type NavigationVisibility = "all" | "desktop" | "mobile";
+type NavigationBadge = "pendingTickets";
+type NavigationFeatureFlag = string;
+
+interface NavigationItem {
+  to: string;
+  label: string;
+  title?: string;
+  icon: LucideIcon;
+  badge?: NavigationBadge;
+  requiredRoles?: readonly NavigationRole[];
+  visibility?: NavigationVisibility;
+  featureFlag?: NavigationFeatureFlag;
+}
+
+interface NavigationGroup {
+  id: string;
+  label: string;
+  items: readonly NavigationItem[];
+}
+
+const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
+  {
+    id: "main",
+    label: "Principale",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+      { to: "/tickets", label: "Ticket PC", icon: Ticket, badge: "pendingTickets" },
+      { to: "/kanban", label: "Kanban", title: "Kanban Board", icon: Trello },
+    ],
+  },
+  {
+    id: "configuration",
+    label: "Configurazione",
+    items: [
+      { to: "/checklist", label: "Checklist", title: "Checklist Setup", icon: ListChecks },
+      { to: "/automations", label: "Automazioni", icon: Zap },
+      { to: "/scripts", label: "Script", icon: Terminal },
+      { to: "/clients", label: "Clienti", icon: Building2 },
+      { to: "/inventory", label: "Inventario", icon: Boxes },
+      { to: "/docs", label: "API Docs", icon: BookOpenText, requiredRoles: ["admin", "tech"] },
+      { to: "/admin", label: "Admin / Utenti", icon: Users, requiredRoles: ["admin"] },
+    ],
+  },
 ] as const;
 
-type NavPath = (typeof NAV_PRIMARY)[number]["to"] | (typeof NAV_CONFIG)[number]["to"];
-type ConfigNavItem = (typeof NAV_CONFIG)[number];
+type NavPath = (typeof NAVIGATION_GROUPS)[number]["items"][number]["to"];
+type ResolvedNavigationGroup = NavigationGroup & { items: readonly NavigationItem[] };
 
 interface NavLinkItemProps {
-  to: NavPath;
+  to: NavPath | string;
   label: string;
   icon: LucideIcon;
   active: boolean;
   badge?: number;
   onClick?: () => void;
+}
+
+function resolveNavigationGroups({
+  profile,
+  isMobile,
+  enabledFeatureFlags,
+}: {
+  profile: AuthProfile;
+  isMobile: boolean;
+  enabledFeatureFlags: readonly NavigationFeatureFlag[];
+}): ResolvedNavigationGroup[] {
+  return NAVIGATION_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      const roleAllowed = !item.requiredRoles || item.requiredRoles.includes(profile.role);
+      const visibilityAllowed =
+        !item.visibility ||
+        item.visibility === "all" ||
+        (item.visibility === "mobile" && isMobile) ||
+        (item.visibility === "desktop" && !isMobile);
+      const featureEnabled = !item.featureFlag || enabledFeatureFlags.includes(item.featureFlag);
+
+      return roleAllowed && visibilityAllowed && featureEnabled;
+    }),
+  })).filter((group) => group.items.length > 0);
+}
+
+function resolveNavigationBadge(item: NavigationItem, pendingCount: number) {
+  if (item.badge === "pendingTickets") return pendingCount;
+
+  return undefined;
 }
 
 const PAGE_TITLES: Record<string, string> = {
@@ -131,11 +194,11 @@ function AppLayout() {
   const avc = avatarColors(profile.initials);
   const title = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
   const pageTitle = title ? PAGE_TITLES[title] : "PCReady";
-  const configItems = NAV_CONFIG.filter(
-    (item) =>
-      (!("adminOnly" in item) || profile.role === "admin") &&
-      (!("staffOnly" in item) || profile.role === "admin" || profile.role === "tech"),
-  );
+  const navigationGroups = resolveNavigationGroups({
+    profile,
+    isMobile,
+    enabledFeatureFlags: [],
+  });
   const sidebarContent = (
     <SidebarContent
       profile={profile}
@@ -143,7 +206,7 @@ function AppLayout() {
       dark={dark}
       route={route}
       pendingCount={pendingCount}
-      configItems={configItems}
+      navigationGroups={navigationGroups}
       onToggleTheme={() => {
         toggleTheme();
         setDark(isDark());
@@ -234,7 +297,7 @@ interface SidebarContentProps {
   dark: boolean;
   route: string;
   pendingCount: number;
-  configItems: readonly ConfigNavItem[];
+  navigationGroups: readonly ResolvedNavigationGroup[];
   onToggleTheme: () => void;
   onNavigate: () => void;
   onSignOut: () => void;
@@ -246,7 +309,7 @@ function SidebarContent({
   dark,
   route,
   pendingCount,
-  configItems,
+  navigationGroups,
   onToggleTheme,
   onNavigate,
   onSignOut,
@@ -288,29 +351,21 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-[10px] py-[14px]">
-        <NavSection label="Principale">
-          {NAV_PRIMARY.map((item) => (
-            <NavLinkItem
-              key={item.to}
-              to={item.to}
-              label={item.label}
-              icon={item.icon}
-              active={route.startsWith(item.to)}
-              badge={item.badge ? pendingCount : undefined}
-              onClick={onNavigate}
-            />
-          ))}
-        </NavSection>
-        <NavSection label="Configurazione">
-          {configItems.map((item) => (
-            <NavLinkItem
-              key={item.to}
-              {...item}
-              active={route.startsWith(item.to)}
-              onClick={onNavigate}
-            />
-          ))}
-        </NavSection>
+        {navigationGroups.map((group) => (
+          <NavSection key={group.id} label={group.label}>
+            {group.items.map((item) => (
+              <NavLinkItem
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                icon={item.icon}
+                active={route.startsWith(item.to)}
+                badge={resolveNavigationBadge(item, pendingCount)}
+                onClick={onNavigate}
+              />
+            ))}
+          </NavSection>
+        ))}
       </nav>
 
       <div
