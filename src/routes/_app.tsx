@@ -30,6 +30,11 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import {
+  AuthErrorScreen,
+  AuthLoadingScreen,
+  MissingProfileScreen,
+} from "@/components/auth/AuthStateScreens";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -102,45 +107,25 @@ function AppLayout() {
   }, [loading, navigate, profile, session]);
 
   if (loading || profileLoading || !session) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (authError) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-text3 text-sm">
-        Caricamento…
-      </div>
+      <AuthErrorScreen
+        message={authError}
+        onRetry={() => refreshProfile()}
+        onSignOut={() => signOut()}
+      />
     );
   }
 
-  if (authError || !profile) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ background: "var(--bg2)" }}
-      >
-        <div className="pc-card max-w-md w-full p-6 text-center">
-          <div className="text-[17px] font-bold mb-2" style={{ fontFamily: "var(--font-head)" }}>
-            Profilo non disponibile
-          </div>
-          <p className="text-[13px] text-text3 mb-5">
-            {authError || "Non e' stato possibile caricare il profilo associato alla sessione."}
-          </p>
-          <div className="flex justify-center gap-2">
-            <button className="pc-btn pc-btn-primary" onClick={() => refreshProfile()}>
-              Riprova
-            </button>
-            <button className="pc-btn pc-btn-ghost" onClick={() => signOut()}>
-              Esci
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  if (!profile) {
+    return <MissingProfileScreen onRetry={() => refreshProfile()} onSignOut={() => signOut()} />;
   }
 
   if (!profile.password_set) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-text3 text-sm">
-        Reindirizzamento...
-      </div>
-    );
+    return <AuthLoadingScreen message="Reindirizzamento..." />;
   }
 
   const avc = avatarColors(profile.initials);
