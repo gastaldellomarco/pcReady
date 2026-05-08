@@ -29,6 +29,11 @@ import AutomationWizard from "@/components/automations/AutomationWizard";
 import { RunLogDrawer } from "@/components/automations/RunLogDrawer";
 import { DryRunDialog } from "@/components/automations/DryRunDialog";
 import {
+  AutomationRuleSchema,
+  AutomationRunLogSchema,
+  type AutomationRule,
+} from "@/types/automation";
+import {
   getAutomationRunStats,
   listAutomationRunLogs,
   runAutomationNow,
@@ -43,22 +48,9 @@ export const Route = createFileRoute("/_app/automations")({
   component: AutomationsPage,
 });
 
-interface Rule {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string | null;
-  active: boolean;
-  version: number;
-  updated_at: string | null;
-  summary?: string | null;
-  last_run_at?: string | null;
-  flow_definition?: any;
-}
-
 const CATEGORY_OPTIONS = ["Generale", "Notifica", "Stato", "Schedulazione"];
 
-function getShortSummary(rule: Rule) {
+function getShortSummary(rule: AutomationRule) {
   return `${rule.name}${rule.category ? ` — ${rule.category}` : ""}`;
 }
 
@@ -81,7 +73,7 @@ function RuleCard({
   onDelete,
   onArchive,
 }: {
-  rule: Rule;
+  rule: AutomationRule;
   isAdmin: boolean;
   expanded: boolean;
   stats?: AutomationRunStats;
@@ -233,7 +225,7 @@ function AutomationsPage() {
   const loadRunLogs = useServerFn(listAutomationRunLogs);
   const executeRun = useServerFn(runAutomationNow);
   const loadRunStats = useServerFn(getAutomationRunStats);
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<AutomationRule[]>([]);
   const [runStats, setRunStats] = useState<Record<string, AutomationRunStats>>({});
   const [kpis, setKpis] = useState<AutomationDashboardKpis | null>(null);
   const [logsByRule, setLogsByRule] = useState<Record<string, AutomationRunLog[]>>({});
@@ -248,7 +240,7 @@ function AutomationsPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
-  const [editingRule, setEditingRule] = useState<Rule | null>(null);
+  const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [saving, setSaving] = useState(false);
   const [AutomationBuilderComp, setAutomationBuilderComp] = useState<any>(null);
   const [guidedMode, setGuidedMode] = useState(true);
@@ -264,20 +256,8 @@ function AutomationsPage() {
         .order("updated_at", { ascending: false });
 
       if (error) throw new Error(`Regole: ${error.message}`);
-      const rows = (data ?? []) as any[];
-      const normalized = rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        category: r.category,
-        active: r.active,
-        version: r.version,
-        updated_at: r.updated_at,
-        flow_definition: r.flow_definition,
-        summary: r.summary ?? r.flow_definition?.meta?.summary ?? null,
-        last_run_at: r.last_run_at ?? r.flow_definition?.meta?.last_run_at ?? null,
-      }));
-      setRules(normalized as Rule[]);
+      const rules = AutomationRuleSchema.array().parse(data ?? []);
+      setRules(rules);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore nel caricamento regole");
     } finally {
@@ -301,7 +281,7 @@ function AutomationsPage() {
     }
   }
 
-  async function toggleRule(rule: Rule) {
+  async function toggleRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     const { error } = await supabase
       .from("automation_flows")
@@ -317,7 +297,7 @@ function AutomationsPage() {
     setBuilderOpen(true);
   }
 
-  function openEditDialog(rule: Rule) {
+  function openEditDialog(rule: AutomationRule) {
     setEditingRule(rule);
     setBuilderOpen(true);
   }
@@ -438,7 +418,7 @@ function AutomationsPage() {
     }
   }
 
-  async function duplicateRule(rule: Rule) {
+  async function duplicateRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
       // fetch existing flow_definition then insert a copy
@@ -468,7 +448,7 @@ function AutomationsPage() {
     }
   }
 
-  async function deleteRule(rule: Rule) {
+  async function deleteRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     const { error } = await supabase.from("automation_flows").delete().eq("id", rule.id);
     if (error) return toast.error(error.message);
@@ -476,7 +456,7 @@ function AutomationsPage() {
     void loadRules();
   }
 
-  async function archiveRule(rule: Rule) {
+  async function archiveRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
       // fetch current flow_definition
@@ -502,7 +482,7 @@ function AutomationsPage() {
     }
   }
 
-  async function toggleLogs(rule: Rule) {
+  async function toggleLogs(rule: AutomationRule) {
     const next = logsOpenRuleId === rule.id ? null : rule.id;
     setLogsOpenRuleId(next);
     if (!next || logsByRule[rule.id] || !session?.access_token) return;
@@ -511,7 +491,8 @@ function AutomationsPage() {
       const logs = await loadRunLogs({
         data: { accessToken: session.access_token, automationId: rule.id },
       });
-      setLogsByRule((current) => ({ ...current, [rule.id]: Array.isArray(logs) ? (logs as AutomationRunLog[]) : [] }));
+      const parsedLogs = AutomationRunLogSchema.array().parse(logs ?? []);
+      setLogsByRule((current) => ({ ...current, [rule.id]: parsedLogs }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore caricamento storico");
     } finally {
@@ -519,7 +500,7 @@ function AutomationsPage() {
     }
   }
 
-  async function runRule(rule: Rule, isDryRun: boolean) {
+  async function runRule(rule: AutomationRule, isDryRun: boolean) {
     if (!session?.access_token) return;
     setRunningRuleId(rule.id);
     try {
@@ -531,7 +512,7 @@ function AutomationsPage() {
           triggerPayload: { source: isDryRun ? "manual_dry_run" : "manual_run" },
         },
       });
-      const runLog = log as AutomationRunLog;
+      const runLog = AutomationRunLogSchema.parse(log);
       setLogsByRule((current) => {
         const prev = Array.isArray(current[rule.id]) ? current[rule.id] : [];
         return { ...current, [rule.id]: [runLog, ...prev].slice(0, 20) };

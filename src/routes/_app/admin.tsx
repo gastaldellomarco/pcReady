@@ -104,6 +104,10 @@ function fmtElapsed(value: string | null) {
   return `${diffDays} g`;
 }
 
+function isAppRole(value: string): value is AppRole {
+  return value === "admin" || value === "tech" || value === "viewer";
+}
+
 function AdminUsersPage() {
   function getErrorMessage(error: unknown, fallback: string) {
     try {
@@ -1141,7 +1145,9 @@ function UserRoleEditor({
         className="pc-input h-8 min-w-[145px] text-[12px]"
         value={role}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value as AppRole)}
+        onChange={(event) => {
+          if (isAppRole(event.target.value)) onChange(event.target.value);
+        }}
       >
         {ROLES.map((item) => (
           <option key={item} value={item}>
