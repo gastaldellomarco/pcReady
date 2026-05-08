@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { createNotification } from "@/lib/notifications";
 import { toast } from "sonner";
+import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
 
 interface Tech {
   id: string;
@@ -29,6 +30,7 @@ interface ClientOpt {
   id: string;
   name: string;
   company_name: string | null;
+  email?: string | null;
 }
 interface ContactOpt {
   id: string;
@@ -60,9 +62,9 @@ export function CreateTicketModal() {
   const notify = useServerFn(createNotification);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
-  const [clients, setClients] = useState<ClientOpt[]>([]);
-  const [contacts, setContacts] = useState<ContactOpt[]>([]);
-  const [devices, setDevices] = useState<DeviceOpt[]>([]);
+  const [selectedClient, setSelectedClient] = useState<ClientOpt | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactOpt | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceOpt | null>(null);
   const [templateId, setTemplateId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
@@ -85,15 +87,6 @@ export function CreateTicketModal() {
       .order("full_name")
       .then(({ data }) => setTechs((data ?? []) as Tech[]));
     supabase
-      .from("clients")
-      .select("id, name, company_name")
-      .order("name")
-      .then(({ data }) => {
-        const arr = (data ?? []) as ClientOpt[];
-        setClients(arr);
-        setF((cur) => ({ ...cur, client_id: cur.client_id || arr[0]?.id || "" }));
-      });
-    supabase
       .from("checklist_templates")
       .select("id, name, structure, is_default")
       .order("is_default", { ascending: false })
@@ -106,47 +99,6 @@ export function CreateTicketModal() {
       });
   }, [createOpen]);
 
-  useEffect(() => {
-    if (!createOpen || !f.client_id) {
-      setDevices([]);
-      setContacts([]);
-      return;
-    }
-    supabase
-      .from("devices")
-      .select("id, client_id, model, serial, os, assigned_to")
-      .eq("client_id", f.client_id)
-      .order("model")
-      .then(({ data }) => {
-        const arr = (data ?? []) as DeviceOpt[];
-        setDevices(arr);
-        setF((cur) => ({
-          ...cur,
-          device_id: arr.some((d) => d.id === cur.device_id) ? cur.device_id : "",
-        }));
-      });
-    supabase
-      .from("client_contacts")
-      .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
-      .eq("client_id", f.client_id)
-      .order("is_primary", { ascending: false })
-      .order("full_name")
-      .then(({ data }) => {
-        const arr = (data ?? []) as ContactOpt[];
-        setContacts(arr);
-        setF((cur) => {
-          if (cur.free_requester) return { ...cur, requester_contact_id: "" };
-          const current = arr.find((c) => c.id === cur.requester_contact_id);
-          const next = current || arr[0];
-          return {
-            ...cur,
-            requester_contact_id: next?.id || "",
-            requester: next ? contactName(next) : "",
-          };
-        });
-      });
-  }, [createOpen, f.client_id]);
-
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
@@ -154,10 +106,14 @@ export function CreateTicketModal() {
     try {
       const tpl = templates.find((t) => t.id === templateId);
       const structure = tpl?.structure || DEFAULT_STRUCTURE;
-      const client = clients.find((c) => c.id === f.client_id);
-      const device = devices.find((d) => d.id === f.device_id);
+      const client = selectedClient?.id === f.client_id ? selectedClient : await fetchClientById(f.client_id);
+      const device =
+        selectedDevice?.id === f.device_id ? selectedDevice : await fetchDeviceById(f.device_id);
       if (!client) return toast.error("Seleziona un cliente");
-      const contact = contacts.find((c) => c.id === f.requester_contact_id);
+      const contact =
+        selectedContact?.id === f.requester_contact_id
+          ? selectedContact
+          : await fetchContactById(f.requester_contact_id);
       const requester = f.free_requester ? f.requester.trim() : contact ? contactName(contact) : "";
       if (!requester) return toast.error("Seleziona un richiedente o usa il fallback libero");
       const ticketInsert = {
@@ -208,7 +164,7 @@ export function CreateTicketModal() {
       }
       toast.success(`${data.ticket_code} creato`);
       setF({
-        client_id: clients[0]?.id || "",
+        client_id: "",
         device_id: "",
         requester_contact_id: "",
         requester: "",
@@ -218,6 +174,9 @@ export function CreateTicketModal() {
         software: "",
         notes: "",
       });
+      setSelectedClient(null);
+      setSelectedContact(null);
+      setSelectedDevice(null);
       closeCreate();
       triggerRefresh();
     } catch (e: unknown) {
@@ -247,45 +206,40 @@ export function CreateTicketModal() {
       <div className="flex flex-col gap-[14px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Cliente *">
-            <select
-              className="pc-input"
+            <AsyncAutocomplete
               value={f.client_id}
-              onChange={(e) =>
+              selectedOption={selectedClient ? clientOption(selectedClient) : null}
+              placeholder="Cerca cliente..."
+              emptyLabel="Nessun cliente"
+              loadOptions={loadClientOptions}
+              onChange={(value, option) => {
+                const client = option ? optionToClient(option) : null;
+                setSelectedClient(client);
+                setSelectedContact(null);
+                setSelectedDevice(null);
                 setF({
                   ...f,
-                  client_id: e.target.value,
+                  client_id: value,
                   device_id: "",
                   requester_contact_id: "",
                   requester: "",
-                })
-              }
-            >
-              {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
-              {(Array.isArray(clients) ? clients : []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company_name || c.name}
-                </option>
-              ))}
-            </select>
+                });
+              }}
+            />
           </Field>
           <Field label="Dispositivo">
-            <select
-              className="pc-input"
+            <AsyncAutocomplete
               value={f.device_id}
-              onChange={(e) => setF({ ...f, device_id: e.target.value })}
-            >
-              <option value="">
-                {devices.length
-                  ? "Nessun dispositivo associato"
-                  : "Nessun dispositivo per questo cliente"}
-              </option>
-              {devices.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.model}
-                  {d.serial ? ` - ${d.serial}` : ""}
-                </option>
-              ))}
-            </select>
+              selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
+              placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
+              emptyLabel="Nessun dispositivo"
+              disabled={!f.client_id}
+              loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
+              onChange={(value, option) => {
+                setSelectedDevice(option ? optionToDevice(option) : null);
+                setF({ ...f, device_id: value });
+              }}
+            />
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
@@ -298,26 +252,23 @@ export function CreateTicketModal() {
                 placeholder="Nome richiedente non censito"
               />
             ) : (
-              <select
-                className="pc-input"
+              <AsyncAutocomplete
                 value={f.requester_contact_id}
-                onChange={(e) => {
-                  const contact = contacts.find((c) => c.id === e.target.value);
+                selectedOption={selectedContact ? contactOption(selectedContact) : null}
+                placeholder={f.client_id ? "Cerca referente..." : "Seleziona prima un cliente"}
+                emptyLabel="Nessun referente"
+                disabled={!f.client_id}
+                loadOptions={(query) => loadContactOptions(query, f.client_id)}
+                onChange={(value, option) => {
+                  const contact = option ? optionToContact(option) : null;
+                  setSelectedContact(contact);
                   setF({
                     ...f,
-                    requester_contact_id: e.target.value,
+                    requester_contact_id: value,
                     requester: contact ? contactName(contact) : "",
                   });
                 }}
-              >
-                {!contacts.length && <option value="">Nessun referente per questo cliente</option>}
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {contactName(c)}
-                    {c.job_title || c.role ? ` - ${c.job_title || c.role}` : ""}
-                  </option>
-                ))}
-              </select>
+              />
             )}
             <label className="mt-2 flex items-center gap-2 text-[12px] text-text3">
               <input
@@ -411,4 +362,150 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function contactName(c: ContactOpt) {
   return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");
+}
+
+type ClientOption = AsyncAutocompleteOption & { client: ClientOpt };
+type ContactOption = AsyncAutocompleteOption & { contact: ContactOpt };
+type DeviceOption = AsyncAutocompleteOption & { device: DeviceOpt };
+
+function cleanSearchTerm(value: string) {
+  return value.trim().replace(/[,%]/g, "");
+}
+
+async function loadClientOptions(query: string): Promise<ClientOption[]> {
+  let request = supabase.from("clients").select("id, name, company_name, email").order("name");
+  const term = cleanSearchTerm(query);
+  if (term) {
+    request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
+  }
+  const { data, error } = await request.range(0, 19);
+  if (error) {
+    toast.error(error.message);
+    return [];
+  }
+  return ((data ?? []) as ClientOpt[]).map(clientOption);
+}
+
+async function fetchClientById(id: string): Promise<ClientOpt | null> {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name, company_name, email")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    toast.error(error.message);
+    return null;
+  }
+  return (data as ClientOpt | null) ?? null;
+}
+
+async function loadContactOptions(query: string, clientId: string): Promise<ContactOption[]> {
+  if (!clientId) return [];
+  let request = supabase
+    .from("client_contacts")
+    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
+    .eq("client_id", clientId)
+    .order("is_primary", { ascending: false })
+    .order("full_name");
+  const term = cleanSearchTerm(query);
+  if (term) {
+    request = request.or(
+      `full_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,job_title.ilike.%${term}%,role.ilike.%${term}%`,
+    );
+  }
+  const { data, error } = await request.range(0, 19);
+  if (error) {
+    toast.error(error.message);
+    return [];
+  }
+  return ((data ?? []) as ContactOpt[]).map(contactOption);
+}
+
+async function fetchContactById(id: string): Promise<ContactOpt | null> {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from("client_contacts")
+    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    toast.error(error.message);
+    return null;
+  }
+  return (data as ContactOpt | null) ?? null;
+}
+
+async function loadDeviceOptions(query: string, clientId: string): Promise<DeviceOption[]> {
+  if (!clientId) return [];
+  let request = supabase
+    .from("devices")
+    .select("id, client_id, model, serial, os, assigned_to")
+    .eq("client_id", clientId)
+    .order("model");
+  const term = cleanSearchTerm(query);
+  if (term) {
+    request = request.or(
+      `model.ilike.%${term}%,serial.ilike.%${term}%,assigned_to.ilike.%${term}%`,
+    );
+  }
+  const { data, error } = await request.range(0, 19);
+  if (error) {
+    toast.error(error.message);
+    return [];
+  }
+  return ((data ?? []) as DeviceOpt[]).map(deviceOption);
+}
+
+async function fetchDeviceById(id: string): Promise<DeviceOpt | null> {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from("devices")
+    .select("id, client_id, model, serial, os, assigned_to")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    toast.error(error.message);
+    return null;
+  }
+  return (data as DeviceOpt | null) ?? null;
+}
+
+function clientOption(client: ClientOpt): ClientOption {
+  return {
+    value: client.id,
+    label: client.company_name || client.name,
+    description: client.email,
+    client,
+  };
+}
+
+function contactOption(contact: ContactOpt): ContactOption {
+  return {
+    value: contact.id,
+    label: contactName(contact),
+    description: contact.email || contact.job_title || contact.role,
+    contact,
+  };
+}
+
+function deviceOption(device: DeviceOpt): DeviceOption {
+  return {
+    value: device.id,
+    label: `${device.model}${device.serial ? ` - ${device.serial}` : ""}`,
+    description: device.assigned_to || device.os,
+    device,
+  };
+}
+
+function optionToClient(option: AsyncAutocompleteOption): ClientOpt {
+  return (option as ClientOption).client;
+}
+
+function optionToContact(option: AsyncAutocompleteOption): ContactOpt {
+  return (option as ContactOption).contact;
+}
+
+function optionToDevice(option: AsyncAutocompleteOption): DeviceOpt {
+  return (option as DeviceOption).device;
 }

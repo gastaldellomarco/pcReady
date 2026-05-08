@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
+import { AsyncAutocomplete, type AsyncAutocompleteOption } from "@/components/pcready/AsyncAutocomplete";
 
 export const Route = createFileRoute("/_app/tickets")({
   head: () => ({
@@ -42,31 +43,18 @@ interface Row {
   assignee?: { full_name: string; initials: string } | null;
 }
 
-interface ClientOpt {
-  id: string;
-  name: string;
-}
-
 const PAGE_SIZE = 50;
 
 function TicketsPage() {
   const { refreshKey, search } = useTickets();
   const [rows, setRows] = useState<Row[]>([]);
-  const [clients, setClients] = useState<ClientOpt[]>([]);
+  const [selectedClient, setSelectedClient] = useState<AsyncAutocompleteOption | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
   const [fp, setFp] = useState("");
   const [fc, setFc] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
-
-  useEffect(() => {
-    supabase
-      .from("clients")
-      .select("id, name")
-      .order("name")
-      .then(({ data }) => setClients((data ?? []) as ClientOpt[]));
-  }, [refreshKey]);
 
   useEffect(() => {
     let query = supabase
@@ -109,6 +97,24 @@ function TicketsPage() {
   const ticketClient = (t: Row) => t.client_ref?.name || t.client || "-";
   const ticketModel = (t: Row) => t.device?.model || t.model || "Nessun asset";
   const ticketSerial = (t: Row) => t.device?.serial || t.serial || null;
+
+  async function loadClientOptions(query: string): Promise<AsyncAutocompleteOption[]> {
+    let request = supabase.from("clients").select("id, name, company_name, email").order("name");
+    const term = query.trim().replace(/[,%]/g, "");
+    if (term) {
+      request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
+    }
+    const { data, error } = await request.range(0, 19);
+    if (error) {
+      toast.error(error.message);
+      return [];
+    }
+    return (data ?? []).map((client) => ({
+      value: client.id,
+      label: client.company_name || client.name,
+      description: client.email,
+    }));
+  }
 
   function pdfRows(): TicketPdfRow[] {
     return data.map((t) => ({
@@ -179,18 +185,18 @@ function TicketsPage() {
             </option>
           ))}
         </select>
-        <select
-          className="pc-input max-w-[200px]"
+        <AsyncAutocomplete
+          className="w-[220px]"
           value={fc}
-          onChange={(e) => setFc(e.target.value)}
-        >
-          <option value="">Tutti i clienti</option>
-          {(Array.isArray(clients) ? clients : []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          selectedOption={selectedClient}
+          placeholder="Tutti i clienti"
+          emptyLabel="Nessun cliente"
+          loadOptions={loadClientOptions}
+          onChange={(value, option) => {
+            setFc(value);
+            setSelectedClient(option);
+          }}
+        />
         <span className="ml-auto text-xs text-text3 font-mono">
           {total
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`

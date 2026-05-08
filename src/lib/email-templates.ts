@@ -218,26 +218,69 @@ export const sendTestEmail = createServerFn({ method: "POST" })
         });
       }
     } else if (webhookUrl) {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
-      });
-      const bodyText = await response.text().catch(() => "");
-      if (!response.ok) {
+      // Try SMTP first if configured, before webhook
+      const SMTP_HOST = process.env.SMTP_HOST;
+      const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+      const SMTP_USER = process.env.SMTP_USER;
+      const SMTP_PASS = process.env.SMTP_PASS;
+      const SMTP_FROM = process.env.SMTP_FROM || RESEND_FROM;
+      const SMTP_SECURE = String(process.env.SMTP_SECURE || "false") === "true";
+
+      if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+        try {
+          const nodemailer = await import("nodemailer");
+          const transporter = nodemailer.createTransport({
+            host: SMTP_HOST,
+            port: SMTP_PORT ?? 587,
+            secure: SMTP_SECURE,
+            auth: { user: SMTP_USER, pass: SMTP_PASS },
+          });
+          await transporter.sendMail({
+            from: SMTP_FROM,
+            to: validated.recipientEmail,
+            subject,
+            html,
+            text,
+          });
+          delivered = true;
+          await supabaseAdmin.from("activity_log").insert({
+            type: "sys",
+            actor_id: actorId,
+            message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${SMTP_HOST}.`,
+          });
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err ?? "");
+          await supabaseAdmin.from("activity_log").insert({
+            type: "sys",
+            actor_id: actorId,
+            message: `SMTP send failed: ${errMsg}`,
+          });
+          // Fall through to webhook fallback below
+        }
+      }
+
+      if (!delivered) {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
+        });
+        const bodyText = await response.text().catch(() => "");
+        if (!response.ok) {
+          await supabaseAdmin.from("activity_log").insert({
+            type: "sys",
+            actor_id: actorId,
+            message: `Webhook send failed: ${response.status} ${bodyText}`,
+          });
+          throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
+        }
+        delivered = true;
         await supabaseAdmin.from("activity_log").insert({
           type: "sys",
           actor_id: actorId,
-          message: `Webhook send failed: ${response.status} ${bodyText}`,
+          message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook.`,
         });
-        throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
       }
-      delivered = true;
-      await supabaseAdmin.from("activity_log").insert({
-        type: "sys",
-        actor_id: actorId,
-        message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook.`,
-      });
     } else {
       await supabaseAdmin.from("activity_log").insert({
         type: "sys",

@@ -56,7 +56,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
     try {
       const text = await file.text();
       const parsed = parseDevicesCsv(text);
-      const context = await loadInventoryImportContext();
+      const context = await loadInventoryImportContext(parsed);
       const preview = validateImportRows(parsed, context.clients, context.devices);
       setRows(preview);
       setStep(2);

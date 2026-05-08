@@ -69,19 +69,17 @@ export function parseDevicesCsv(text: string): CsvRow[] {
   });
 }
 
-export async function loadInventoryImportContext() {
-  const [{ data: clients, error: clientsError }, { data: devices, error: devicesError }] =
-    await Promise.all([
-      supabase.from("clients").select("id, name, company_name").order("name"),
-      supabase.from("devices").select("id, serial"),
-    ]);
-
-  if (clientsError) throw clientsError;
-  if (devicesError) throw devicesError;
+export async function loadInventoryImportContext(rows: CsvRow[]) {
+  const clientNames = uniqueValues(rows.map((row) => row.client_name));
+  const serials = uniqueValues(rows.map((row) => row.serial));
+  const [clients, devices] = await Promise.all([
+    loadClientsByName(clientNames),
+    loadDevicesBySerial(serials),
+  ]);
 
   return {
-    clients: (clients ?? []) as ClientLookup[],
-    devices: (devices ?? []) as { id: string; serial: string | null }[],
+    clients,
+    devices,
   };
 }
 
@@ -186,6 +184,52 @@ function normalizeHeader(value: string) {
 
 function normalizeKey(value: string) {
   return value.trim().toLowerCase();
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function orValue(value: string) {
+  return value.replace(/[,%]/g, "");
+}
+
+async function loadClientsByName(names: string[]) {
+  const clientsById = new Map<string, ClientLookup>();
+  for (const chunk of chunks(names.map(orValue).filter(Boolean), 25)) {
+    const filters = chunk
+      .flatMap((name) => [`name.ilike.${name}`, `company_name.ilike.${name}`])
+      .join(",");
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, name, company_name")
+      .or(filters)
+      .order("name");
+    if (error) throw error;
+    for (const client of (data ?? []) as ClientLookup[]) {
+      clientsById.set(client.id, client);
+    }
+  }
+  return Array.from(clientsById.values());
+}
+
+async function loadDevicesBySerial(serials: string[]) {
+  const devices: { id: string; serial: string | null }[] = [];
+  for (const chunk of chunks(serials.map(orValue).filter(Boolean), 50)) {
+    const filters = chunk.map((serial) => `serial.ilike.${serial}`).join(",");
+    const { data, error } = await supabase.from("devices").select("id, serial").or(filters);
+    if (error) throw error;
+    devices.push(...((data ?? []) as { id: string; serial: string | null }[]));
+  }
+  return devices;
+}
+
+function chunks<T>(values: T[], size: number) {
+  const result: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    result.push(values.slice(index, index + size));
+  }
+  return result;
 }
 
 function parseCsv(text: string): string[][] {
