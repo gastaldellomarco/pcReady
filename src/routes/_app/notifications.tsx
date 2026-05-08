@@ -176,7 +176,7 @@ function NotificationsPage() {
                   onClick={() => openNotification(notification)}
                   className={cn(
                     "flex w-full gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted",
-                    unread && "bg-blue-50",
+                    unread && "bg-primary/10",
                   )}
                 >
                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -185,7 +185,7 @@ function NotificationsPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <span className="font-medium">{notification.title}</span>
-                      {unread && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+                      {unread && <span className="h-2 w-2 rounded-full bg-primary" />}
                     </span>
                     {notification.body && (
                       <span className="mt-1 block text-sm text-muted-foreground">

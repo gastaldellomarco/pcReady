@@ -1142,7 +1142,7 @@ function UserRoleEditor({
     <div className="inline-flex items-center gap-1.5">
       <UserCog className="w-3.5 h-3.5 text-text3" />
       <select
-        className="pc-input h-8 min-w-[145px] text-[12px]"
+        className="pc-input h-8 w-[180px] text-[12px]"
         value={role}
         disabled={disabled}
         onChange={(event) => {

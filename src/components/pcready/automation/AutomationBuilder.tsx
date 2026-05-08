@@ -144,9 +144,9 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
 
         <main className="col-span-6 p-3 border rounded-md">
           <div className="mb-3 font-semibold">Canvas</div>
-          <div className="h-96 rounded bg-white/50 p-0 relative">
+          <div className="h-96 rounded bg-background/50 p-0 relative">
             {loading && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70">
                 <svg className="h-8 w-8 animate-spin text-slate-700" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
                   <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />

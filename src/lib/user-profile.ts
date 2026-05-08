@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Theme } from "./theme";
 
 export interface UserProfile {
   id: string;
@@ -9,6 +10,7 @@ export interface UserProfile {
   phone: string | null;
   timezone: string;
   language: string;
+  preferred_theme: Theme;
   notify_ticket_assigned: boolean;
   notify_ticket_status_changed: boolean;
   notify_automation_failed: boolean;
@@ -37,6 +39,7 @@ const ProfileUpdateSchema = z.object({
   phone: z.string().trim().max(40).nullable().optional(),
   timezone: z.string().trim().min(1).max(80).optional(),
   language: z.enum(["it", "en"]).optional(),
+  preferred_theme: z.enum(["light", "dark", "system"]).optional(),
   notify_ticket_assigned: z.boolean().optional(),
   notify_ticket_status_changed: z.boolean().optional(),
   notify_automation_failed: z.boolean().optional(),
@@ -114,6 +117,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       notify_device_status_changed: row.notify_device_status_changed ?? true,
       notify_checklist_completed: row.notify_checklist_completed ?? true,
       notify_mentions: row.notify_mentions ?? true,
+      preferred_theme: (row.preferred_theme as Theme) ?? "system",
       password_set: row.password_set ?? true,
       created_at: row.created_at ?? null,
       updated_at: row.updated_at ?? null,

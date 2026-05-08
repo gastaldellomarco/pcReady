@@ -61,7 +61,7 @@ export function EmailPreviewDialog({
         <div className="flex justify-center rounded-md border bg-muted/40 p-4">
           <iframe
             title="Anteprima template email"
-            className="h-[560px] rounded-md border bg-white"
+            className="h-[560px] rounded-md border bg-background"
             style={{ width: viewport === "desktop" ? 720 : 390 }}
             srcDoc={renderedHtml}
           />

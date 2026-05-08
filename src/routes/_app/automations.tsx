@@ -104,7 +104,7 @@ function RuleCard({
           </div>
 
           {rule.description && (
-            <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700">
+            <div className="rounded-2xl border border-border bg-background/80 p-3 text-sm text-muted-foreground">
               {rule.description}
             </div>
           )}
@@ -154,7 +154,7 @@ function RuleCard({
           </div>
 
           {expanded && rule.description && (
-            <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700">
+            <div className="rounded-2xl border border-border bg-background/80 p-3 text-sm text-muted-foreground">
               {rule.description}
             </div>
           )}
@@ -203,7 +203,7 @@ function RuleCard({
               style={{ background: rule.active ? "#a7f3d0" : "#e2e8f0" }}
             >
               <span
-                className="inline-block h-4 w-4 rounded-full bg-white transition-transform"
+                className="inline-block h-4 w-4 rounded-full bg-background transition-transform"
                 style={{ transform: rule.active ? "translateX(14px)" : "none" }}
               />
             </span>
@@ -770,7 +770,7 @@ function HealthBadge({ health }: { health: HealthStatus }) {
 
 function KpiCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+    <div className="rounded-lg border border-border bg-background px-3 py-2">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">{label}</div>
       <div className="mt-1 text-lg font-bold">{value}</div>
     </div>

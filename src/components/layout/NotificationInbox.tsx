@@ -45,7 +45,7 @@ export function NotificationInbox({
               onClick={() => onNotificationClick(notification)}
               className={cn(
                 "flex w-full gap-2 px-3 py-2 text-left transition-colors hover:bg-muted",
-                unreadRow && "bg-blue-50",
+                unreadRow && "bg-primary/10",
               )}
             >
               <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -54,7 +54,7 @@ export function NotificationInbox({
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1">
                   <span className="truncate text-sm font-medium">{notification.title}</span>
-                  {unreadRow && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />}
+                  {unreadRow && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                 </span>
                 {notification.body && (
                   <span className="line-clamp-2 text-xs text-muted-foreground">

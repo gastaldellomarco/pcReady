@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
-import { initTheme, isDark, toggleTheme } from "@/lib/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { avatarColors } from "@/lib/pcready";
 import {
   LayoutGrid,
@@ -13,6 +13,7 @@ import {
   Search,
   Moon,
   Sun,
+  Monitor,
   Plus,
   Terminal,
   Users,
@@ -27,6 +28,13 @@ import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
 import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -149,16 +157,12 @@ function AppLayout() {
   const { session, profile, loading, profileLoading, authError, refreshProfile, signOut } =
     useAuth();
   const navigate = useNavigate();
-  const [dark, setDark] = useState(false);
+  const { theme, setTheme, isDark } = useTheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
   const route = useRouterState({ select: (s) => s.location.pathname });
 
-  useEffect(() => {
-    initTheme();
-    setDark(isDark());
-  }, []);
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
   }, [loading, session, navigate]);
@@ -203,14 +207,12 @@ function AppLayout() {
     <SidebarContent
       profile={profile}
       avatarColor={avc}
-      dark={dark}
       route={route}
       pendingCount={pendingCount}
       navigationGroups={navigationGroups}
-      onToggleTheme={() => {
-        toggleTheme();
-        setDark(isDark());
-      }}
+      theme={theme}
+      isDark={isDark}
+      onSetTheme={setTheme}
       onNavigate={() => setMobileNavOpen(false)}
       onSignOut={() => signOut()}
     />
@@ -294,11 +296,12 @@ function AppLayout() {
 interface SidebarContentProps {
   profile: AuthProfile;
   avatarColor: { bg: string; fg: string };
-  dark: boolean;
   route: string;
   pendingCount: number;
   navigationGroups: readonly ResolvedNavigationGroup[];
-  onToggleTheme: () => void;
+  theme: "light" | "dark" | "system";
+  isDark: boolean;
+  onSetTheme: (theme: "light" | "dark" | "system") => void;
   onNavigate: () => void;
   onSignOut: () => void;
 }
@@ -306,11 +309,12 @@ interface SidebarContentProps {
 function SidebarContent({
   profile,
   avatarColor,
-  dark,
   route,
   pendingCount,
   navigationGroups,
-  onToggleTheme,
+  theme,
+  isDark,
+  onSetTheme,
   onNavigate,
   onSignOut,
 }: SidebarContentProps) {
@@ -372,32 +376,69 @@ function SidebarContent({
         className="px-[14px] py-[13px] border-t flex flex-col gap-[10px]"
         style={{ borderColor: "var(--border)" }}
       >
-        <button
-          onClick={onToggleTheme}
-          className="flex items-center justify-between rounded-[7px] px-[10px] py-[6px] text-[11px] font-semibold cursor-pointer transition-colors"
-          style={{
-            background: "var(--surface2)",
-            border: "1px solid var(--border2)",
-            color: "var(--text2)",
-          }}
-        >
-          <span className="flex items-center gap-2">
-            {dark ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />} Dark mode
-          </span>
-          <span
-            className="relative inline-block w-[30px] h-[16px] rounded-full transition-colors"
-            style={{ background: dark ? "var(--accent)" : "var(--border2)" }}
-          >
-            <span
-              className="absolute top-[2px] w-[12px] h-[12px] rounded-full bg-white transition-transform"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center justify-between rounded-[7px] px-[10px] py-[6px] text-[11px] font-semibold cursor-pointer transition-colors w-full"
               style={{
-                left: "2px",
-                transform: dark ? "translateX(14px)" : "none",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                background: "var(--surface2)",
+                border: "1px solid var(--border2)",
+                color: "var(--text2)",
               }}
-            />
-          </span>
-        </button>
+            >
+              <span className="flex items-center gap-2">
+                {theme === "light" && <Sun className="w-3 h-3" />}
+                {theme === "dark" && <Moon className="w-3 h-3" />}
+                {theme === "system" && <Monitor className="w-3 h-3" />}
+                <span>
+                  {theme === "light" && "Chiaro"}
+                  {theme === "dark" && "Scuro"}
+                  {theme === "system" && "Sistema"}
+                </span>
+              </span>
+              <span className="text-[10px] opacity-60">Tema</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-[200px]"
+            style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+          >
+            <DropdownMenuItem
+              onClick={() => onSetTheme("light")}
+              className="flex items-center gap-2 cursor-pointer text-[13px]"
+              style={{ color: "var(--text2)" }}
+            >
+              <Sun className="w-4 h-4" />
+              <span>Chiaro</span>
+              {theme === "light" && (
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSetTheme("dark")}
+              className="flex items-center gap-2 cursor-pointer text-[13px]"
+              style={{ color: "var(--text2)" }}
+            >
+              <Moon className="w-4 h-4" />
+              <span>Scuro</span>
+              {theme === "dark" && (
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSetTheme("system")}
+              className="flex items-center gap-2 cursor-pointer text-[13px]"
+              style={{ color: "var(--text2)" }}
+            >
+              <Monitor className="w-4 h-4" />
+              <span>Sistema</span>
+              {theme === "system" && (
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+              )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="flex items-center justify-between gap-2">
           <UserMenu
             profile={profile}

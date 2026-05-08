@@ -11,7 +11,7 @@ interface RunLogDrawerProps {
 
 export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
+    <div className="rounded-xl border border-border bg-background p-3">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-semibold">Storico run</div>
         <div className="text-xs text-text3">Ultime 20 esecuzioni</div>
@@ -43,7 +43,7 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
                 </div>
                 <div className="space-y-1.5">
                   {(log.actions_executed ?? []).map((action, index) => (
-                    <div key={`${action.action}-${index}`} className="rounded-md bg-white p-2 text-xs">
+                    <div key={`${action.action}-${index}`} className="rounded-md bg-background p-2 text-xs">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{action.action}</span>
                         <span
