@@ -6,12 +6,14 @@ import { createNotificationForAdmins } from "@/lib/notifications.server";
 
 export interface AdminUserRow {
   id: string;
-  email: string;
+  email: string | null;
   full_name: string;
   initials: string;
   role: AppRole;
-  status: "active" | "disabled";
-  created_at: string | null;
+  status: "active" | "disabled" | "invited";
+  created_at: string;
+  last_sign_in_at: string | null;
+  invited_at: string | null;
 }
 
 interface AuthedInput {
@@ -38,6 +40,11 @@ interface InviteUserInput extends AuthedInput {
   email: string;
   fullName?: string;
   role: AppRole;
+  redirectTo?: string;
+}
+
+interface ResendInviteInput extends AuthedInput {
+  userId: string;
   redirectTo?: string;
 }
 
@@ -109,12 +116,18 @@ export const listAdminUsers = createServerFn({ method: "POST" })
 
       return {
         id: user.id,
-        email: user.email ?? "",
+        email: user.email ?? null,
         full_name: name,
         initials: profile?.initials || normalizeInitials(name),
         role: roleById.get(user.id) ?? "viewer",
-        status: bannedUntil && bannedUntil > new Date() ? "disabled" : "active",
-        created_at: user.created_at ?? profile?.created_at ?? null,
+        status: !user.email_confirmed_at
+          ? "invited"
+          : bannedUntil && bannedUntil > new Date()
+            ? "disabled"
+            : "active",
+        created_at: user.created_at ?? profile?.created_at ?? new Date().toISOString(),
+        last_sign_in_at: user.last_sign_in_at ?? null,
+        invited_at: !user.email_confirmed_at ? (user.invited_at ?? user.created_at ?? null) : null,
       } satisfies AdminUserRow;
     });
   });
@@ -204,6 +217,29 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
       payload: { user_id: invitedUserId, email, role: data.role },
       link: "/admin",
     });
+
+    return { ok: true };
+  });
+
+export const resendAdminUserInvite = createServerFn({ method: "POST" })
+  .inputValidator((data: ResendInviteInput) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
+    );
+    if (userError) throw new Error(userError.message);
+
+    const user = userData.user;
+    if (!user?.email) throw new Response("Email utente non disponibile", { status: 400 });
+    if (user.email_confirmed_at) throw new Response("Utente già attivo", { status: 400 });
+
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
+      redirectTo: data.redirectTo,
+      data: { full_name: user.user_metadata?.full_name },
+    });
+    if (inviteError) throw new Error(inviteError.message);
 
     return { ok: true };
   });

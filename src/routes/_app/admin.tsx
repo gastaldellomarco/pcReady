@@ -31,6 +31,7 @@ import {
   deleteAdminUser,
   inviteAdminUser,
   listAdminUsers,
+  resendAdminUserInvite,
   setAdminUserDisabled,
   updateAdminUser,
   type AdminUserRow,
@@ -82,6 +83,27 @@ const WIP_LIMIT_FIELDS = [
   ["ready", "Pronto"],
 ] as const;
 
+function fmtDateTime(value: string) {
+  return new Date(value).toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fmtElapsed(value: string | null) {
+  if (!value) return "in attesa";
+  const diffMs = Date.now() - new Date(value).getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+  if (diffMinutes < 60) return `${diffMinutes} min`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} h`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} g`;
+}
+
 function AdminUsersPage() {
   function getErrorMessage(error: unknown, fallback: string) {
     try {
@@ -104,6 +126,7 @@ function AdminUsersPage() {
   const setDisabled = useServerFn(setAdminUserDisabled);
   const deleteUser = useServerFn(deleteAdminUser);
   const inviteUser = useServerFn(inviteAdminUser);
+  const resendInvite = useServerFn(resendAdminUserInvite);
   const listClients = useServerFn(listOAuthClients);
   const createClient = useServerFn(createOAuthClient);
   const loadSettings = useServerFn(getAppSettings);
@@ -263,6 +286,26 @@ function AdminUsersPage() {
       await load();
     } catch (error) {
       toast.error(getErrorMessage(error, "Operazione non riuscita"));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function resendInviteFor(row: AdminUserRow) {
+    if (!session?.access_token || row.status !== "invited") return;
+    setBusyId(row.id);
+    try {
+      await resendInvite({
+        data: {
+          accessToken: session.access_token,
+          userId: row.id,
+          redirectTo: `${window.location.origin}/auth/set-password`,
+        },
+      });
+      toast.success("Invito re-inviato");
+      await load();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Re-invio invito non riuscito"));
     } finally {
       setBusyId(null);
     }
@@ -527,7 +570,7 @@ function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["Nome", "Email", "Ruolo", "Stato", "Azioni"].map((header) => (
+                {["Nome", "Email", "Ruolo", "Creato il", "Accesso", "Stato", "Azioni"].map((header) => (
                   <th
                     key={header}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -541,7 +584,7 @@ function AdminUsersPage() {
             <tbody>
               {loadingRows && (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={7} className="text-center py-10 text-text3 text-sm">
                     Caricamento utenti...
                   </td>
                 </tr>
@@ -578,8 +621,23 @@ function AdminUsersPage() {
                         onChange={(nextRole) => saveRole(row, nextRole)}
                       />
                     </td>
+                    <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
+                      {fmtDateTime(row.created_at)}
+                    </td>
+                    <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
+                      {row.last_sign_in_at ? (
+                        fmtDateTime(row.last_sign_in_at)
+                      ) : (
+                        <span className="italic">Mai acceduto</span>
+                      )}
+                    </td>
                     <td className="px-[14px] py-[10px]">
-                      <StatusBadge status={row.status} />
+                      <StatusBadge
+                        status={row.status}
+                        invitedAt={row.invited_at}
+                        busy={busyId === row.id}
+                        onResend={() => resendInviteFor(row)}
+                      />
                     </td>
                     <td className="px-[14px] py-[10px]">
                       <div className="flex items-center gap-1">
@@ -612,7 +670,7 @@ function AdminUsersPage() {
                 ))}
               {!loadingRows && !(filtered ?? []).length && (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={7} className="text-center py-10 text-text3 text-sm">
                     Nessun utente trovato
                   </td>
                 </tr>
@@ -1095,7 +1153,43 @@ function UserRoleEditor({
   );
 }
 
-function StatusBadge({ status }: { status: AdminUserRow["status"] }) {
+function StatusBadge({
+  status,
+  invitedAt,
+  busy,
+  onResend,
+}: {
+  status: AdminUserRow["status"];
+  invitedAt?: string | null;
+  busy?: boolean;
+  onResend?: () => void;
+}) {
+  if (status === "invited") {
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <span
+          className="pc-badge"
+          style={{
+            background: "var(--warning-bg, #FEF3C7)",
+            color: "var(--warning, #D97706)",
+          }}
+        >
+          Invitato da {fmtElapsed(invitedAt ?? null)}
+        </span>
+        {onResend && (
+          <button
+            type="button"
+            className="text-[11px] font-semibold text-accent hover:underline disabled:opacity-50"
+            disabled={busy}
+            onClick={onResend}
+          >
+            Re-invia invito
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const active = status === "active";
   return (
     <span
