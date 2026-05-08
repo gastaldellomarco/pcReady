@@ -25,7 +25,6 @@ interface T {
   id: string;
   ticket_code: string;
   client: string;
-  model: string | null;
   status: TicketStatus;
   created_at: string;
   device?: { model: string; serial: string | null } | null;
@@ -55,7 +54,7 @@ function DashboardPage() {
       supabase
         .from("tickets")
         .select(
-          "id, ticket_code, client, model, status, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+          "id, ticket_code, client, status, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -82,7 +81,7 @@ function DashboardPage() {
       const assignedIds = new Set((a as any[]).map((r) => r.device_id));
       setDevicesWithoutTicket((d as any[]).filter((dev) => !assignedIds.has(dev.id)));
 
-      const withoutDevice = (t as any[]).filter((tt) => !tt.device && !tt.model).length;
+      const withoutDevice = (t as any[]).filter((tt) => !tt.device).length;
       setTicketsWithoutDeviceCount(withoutDevice);
 
       // active clients = unique clients with tickets in last 30 days
@@ -231,7 +230,7 @@ function DashboardPage() {
               <div className="flex-1">
                 <AreaSpark
                   data={computeDailyCounts(
-                    tickets.filter((tt) => !tt.device && !tt.model),
+                    tickets.filter((tt) => !tt.device),
                     "created_at",
                     trendDays,
                   )}
@@ -554,7 +553,7 @@ function Donut({ data, total }: { data: { status: TicketStatus; n: number }[]; t
 }
 
 function deviceLabel(ticket: T) {
-  return ticket.device?.model || ticket.model || "Nessun asset";
+  return ticket.device?.model || "Nessun asset";
 }
 
 function computeDailyCounts(

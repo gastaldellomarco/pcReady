@@ -131,7 +131,7 @@ function TicketCard({
         <PriorityLabel p={card.priority} />
       </div>
       <div className="mb-0.5 text-[12.5px] font-semibold">
-        {card.device?.model || card.model || "Nessun asset"}
+        {card.device?.model || "Nessun asset"}
       </div>
       <div className="mb-2 text-[11px] text-text3">{card.client}</div>
       {card.assignee ? (

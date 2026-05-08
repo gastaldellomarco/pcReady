@@ -27,14 +27,10 @@ interface TicketRow {
   id: string;
   ticket_code: string;
   client: string;
-  model: string | null;
-  serial: string | null;
   requester: string;
-  end_user: string | null;
   priority: TicketPriority;
   status: TicketStatus;
   assignee_id: string | null;
-  os: string | null;
   software: string | null;
   notes: string | null;
   checklist: ChecklistState;
@@ -399,9 +395,9 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 
 function assetInfo(ticket: TicketRow) {
   return {
-    model: ticket.device?.model || ticket.model || "Nessun asset associato",
-    serial: ticket.device?.serial || ticket.serial || "-",
-    os: ticket.device?.os || ticket.os || "-",
-    assignedTo: ticket.device?.assigned_to || ticket.end_user || "-",
+    model: ticket.device?.model || "Nessun asset associato",
+    serial: ticket.device?.serial || "-",
+    os: ticket.device?.os || "-",
+    assignedTo: ticket.device?.assigned_to || "-",
   };
 }

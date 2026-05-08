@@ -36,7 +36,6 @@ interface Card {
   id: string;
   ticket_code: string;
   client: string;
-  model: string | null;
   status: TicketStatus;
   priority: TicketPriority;
   assignee_id: string | null;
@@ -78,7 +77,7 @@ function KanbanPage() {
     supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, model, status, priority, assignee_id, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
+        "id, ticket_code, client, status, priority, assignee_id, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
       )
       .order("created_at", { ascending: false })
       .then(({ data }) => setRows((Array.isArray(data) ? data : []) as unknown as Card[]));
@@ -144,7 +143,7 @@ function KanbanPage() {
             userId: nextAssigneeId,
             type: "ticket_status_changed",
             title: `${card.ticket_code}: ${STATUS_META[status].label}`,
-            body: `${card.client} - ${card.device?.model || card.model || "Nessun asset"}`,
+            body: `${card.client} - ${card.device?.model || "Nessun asset"}`,
             payload: { ticket_id: card.id, status, assignee_id: nextAssigneeId },
             link: "/kanban",
           },
@@ -320,7 +319,7 @@ function KanbanPage() {
                         <PriorityLabel p={c.priority} />
                       </div>
                       <div className="text-[12.5px] font-semibold mb-0.5">
-                        {c.device?.model || c.model || "Nessun asset"}
+                        {c.device?.model || "Nessun asset"}
                       </div>
                       <div className="text-[11px] text-text3 mb-2">{c.client}</div>
                       {c.assignee ? (

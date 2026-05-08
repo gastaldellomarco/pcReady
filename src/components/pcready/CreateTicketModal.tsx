@@ -51,6 +51,7 @@ interface DeviceOpt {
   os: string | null;
   assigned_to: string | null;
 }
+type DeviceFlow = "existing" | "none";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -65,6 +66,7 @@ export function CreateTicketModal() {
   const [selectedClient, setSelectedClient] = useState<ClientOpt | null>(null);
   const [selectedContact, setSelectedContact] = useState<ContactOpt | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<DeviceOpt | null>(null);
+  const [deviceFlow, setDeviceFlow] = useState<DeviceFlow>("existing");
   const [templateId, setTemplateId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
@@ -102,13 +104,20 @@ export function CreateTicketModal() {
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
+    if (deviceFlow === "existing" && !f.device_id) {
+      return toast.error("Seleziona un dispositivo oppure scegli di creare il ticket senza asset");
+    }
     setBusy(true);
     try {
       const tpl = templates.find((t) => t.id === templateId);
       const structure = tpl?.structure || DEFAULT_STRUCTURE;
       const client = selectedClient?.id === f.client_id ? selectedClient : await fetchClientById(f.client_id);
       const device =
-        selectedDevice?.id === f.device_id ? selectedDevice : await fetchDeviceById(f.device_id);
+        deviceFlow === "existing"
+          ? selectedDevice?.id === f.device_id
+            ? selectedDevice
+            : await fetchDeviceById(f.device_id)
+          : null;
       if (!client) return toast.error("Seleziona un cliente");
       const contact =
         selectedContact?.id === f.requester_contact_id
@@ -177,6 +186,7 @@ export function CreateTicketModal() {
       setSelectedClient(null);
       setSelectedContact(null);
       setSelectedDevice(null);
+      setDeviceFlow("existing");
       closeCreate();
       triggerRefresh();
     } catch (e: unknown) {
@@ -228,18 +238,62 @@ export function CreateTicketModal() {
             />
           </Field>
           <Field label="Dispositivo">
-            <AsyncAutocomplete
-              value={f.device_id}
-              selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
-              placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
-              emptyLabel="Nessun dispositivo"
-              disabled={!f.client_id}
-              loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
-              onChange={(value, option) => {
-                setSelectedDevice(option ? optionToDevice(option) : null);
-                setF({ ...f, device_id: value });
-              }}
-            />
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 gap-2">
+                <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-bg2 p-3 text-sm text-text">
+                  <input
+                    className="mt-1"
+                    type="radio"
+                    name="ticket-device-flow"
+                    checked={deviceFlow === "existing"}
+                    onChange={() => setDeviceFlow("existing")}
+                  />
+                  <span>
+                    <span className="block font-medium">Collega asset esistente</span>
+                    <span className="block text-[12px] text-text3">
+                      Seleziona un dispositivo già censito per questo cliente.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-bg2 p-3 text-sm text-text">
+                  <input
+                    className="mt-1"
+                    type="radio"
+                    name="ticket-device-flow"
+                    checked={deviceFlow === "none"}
+                    onChange={() => {
+                      setDeviceFlow("none");
+                      setSelectedDevice(null);
+                      setF({ ...f, device_id: "" });
+                    }}
+                  />
+                  <span>
+                    <span className="block font-medium">Crea ticket senza asset</span>
+                    <span className="block text-[12px] text-text3">
+                      Il dispositivo potrà essere associato in un secondo momento.
+                    </span>
+                  </span>
+                </label>
+              </div>
+              {deviceFlow === "existing" ? (
+                <AsyncAutocomplete
+                  value={f.device_id}
+                  selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
+                  placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
+                  emptyLabel="Nessun dispositivo"
+                  disabled={!f.client_id}
+                  loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
+                  onChange={(value, option) => {
+                    setSelectedDevice(option ? optionToDevice(option) : null);
+                    setF({ ...f, device_id: value });
+                  }}
+                />
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-bg2 px-3 py-2 text-[12px] text-text3">
+                  Nessun dispositivo verrà collegato alla creazione del ticket.
+                </div>
+              )}
+            </div>
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">

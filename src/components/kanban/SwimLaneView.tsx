@@ -9,7 +9,6 @@ export interface SwimLaneCard {
   id: string;
   ticket_code: string;
   client: string;
-  model: string | null;
   status: TicketStatus;
   priority: TicketPriority;
   assignee_id: string | null;

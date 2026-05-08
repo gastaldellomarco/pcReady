@@ -32,8 +32,6 @@ interface Row {
   ticket_code: string;
   client: string | null;
   client_id: string | null;
-  model: string | null;
-  serial: string | null;
   requester: string;
   priority: TicketPriority;
   status: TicketStatus;
@@ -60,7 +58,7 @@ function TicketsPage() {
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, client_id, model, serial, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, client_id, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
       .order("created_at", { ascending: false });
@@ -95,8 +93,8 @@ function TicketsPage() {
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const ticketClient = (t: Row) => t.client_ref?.name || t.client || "-";
-  const ticketModel = (t: Row) => t.device?.model || t.model || "Nessun asset";
-  const ticketSerial = (t: Row) => t.device?.serial || t.serial || null;
+  const ticketModel = (t: Row) => t.device?.model || "Nessun asset";
+  const ticketSerial = (t: Row) => t.device?.serial || null;
 
   async function loadClientOptions(query: string): Promise<AsyncAutocompleteOption[]> {
     let request = supabase.from("clients").select("id, name, company_name, email").order("name");
