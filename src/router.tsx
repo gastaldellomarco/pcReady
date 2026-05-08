@@ -1,8 +1,84 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+type ErrorKind = "network" | "auth" | "missing-data" | "runtime";
+
+function getErrorKind(error: Error): ErrorKind {
+  const message = error.message.toLowerCase();
+  const status = "status" in error && typeof error.status === "number" ? error.status : undefined;
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    message.includes("auth") ||
+    message.includes("jwt") ||
+    message.includes("session") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden")
+  ) {
+    return "auth";
+  }
+
+  if (
+    status === 404 ||
+    message.includes("not found") ||
+    message.includes("missing") ||
+    message.includes("non disponibile") ||
+    message.includes("not available")
+  ) {
+    return "missing-data";
+  }
+
+  if (
+    message.includes("network") ||
+    message.includes("failed to fetch") ||
+    message.includes("fetch failed") ||
+    message.includes("load failed") ||
+    message.includes("timeout")
+  ) {
+    return "network";
+  }
+
+  return "runtime";
+}
+
+function getErrorContent(kind: ErrorKind) {
+  switch (kind) {
+    case "network":
+      return {
+        title: "Connessione non disponibile",
+        description:
+          "Non siamo riusciti a recuperare i dati. Verifica la connessione e prova a ricaricare.",
+        primaryAction: "Ricarica dati",
+      };
+    case "auth":
+      return {
+        title: "Sessione da verificare",
+        description:
+          "La sessione potrebbe essere scaduta o non avere i permessi necessari per questa operazione.",
+        primaryAction: "Ricarica dati",
+      };
+    case "missing-data":
+      return {
+        title: "Dati non disponibili",
+        description:
+          "Le informazioni richieste non sono disponibili o non possono essere caricate in questo momento.",
+        primaryAction: "Ricarica dati",
+      };
+    case "runtime":
+      return {
+        title: "Qualcosa non ha funzionato",
+        description:
+          "Si è verificato un problema inatteso. Puoi riprovare o tornare alla dashboard.",
+        primaryAction: "Riprova",
+      };
+  }
+}
+
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+  const kind = getErrorKind(error);
+  const content = getErrorContent(kind);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -23,16 +99,16 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Something went wrong</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{content.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          An unexpected error occurred. Please try again.
+          {content.description}
         </p>
         {import.meta.env.DEV && error.message && (
           <pre className="mt-4 max-h-40 overflow-auto rounded-md bg-muted p-3 text-left font-mono text-xs text-destructive">
             {error.message}
           </pre>
         )}
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => {
               router.invalidate();
@@ -40,14 +116,22 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            {content.primaryAction}
           </button>
           <a
-            href="/"
+            href="/dashboard"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            Torna alla dashboard
           </a>
+          {kind === "auth" && (
+            <a
+              href="/auth"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Esci
+            </a>
+          )}
         </div>
       </div>
     </div>
