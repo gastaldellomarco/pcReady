@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { initTheme } from "@/lib/theme";
 import { toast } from "sonner";
 
@@ -47,6 +48,8 @@ function AuthPage() {
       />
     );
   }
+
+  const deploymentLabel = viteDeploymentLabel();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,7 +98,8 @@ function AuthPage() {
               PCReady
             </div>
             <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>
-              v3.0 - Cloud
+              v{appVersion}
+              {deploymentLabel ? ` - ${deploymentLabel}` : null}
             </div>
           </div>
         </div>

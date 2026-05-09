@@ -36,6 +36,11 @@ export interface OAuthClientInfo {
   scopesAllowed: OAuthScope[];
 }
 
+/** Risposta di creazione: include il secret mostrato una sola volta. */
+export interface OAuthClientCreated extends OAuthClientInfo {
+  clientSecret: string;
+}
+
 export interface OAuthValidationResult {
   client: OAuthClientInfo;
   requestedScopes: OAuthScope[];
@@ -184,7 +189,7 @@ export const listOAuthClients = createServerFn({ method: "POST" })
 // Create OAuth client (admin only)
 export const createOAuthClient = createServerFn({ method: "POST" })
   .inputValidator((data: CreateOAuthClientInput) => data)
-  .handler(async ({ data }): Promise<OAuthClientInfo> => {
+  .handler(async ({ data }): Promise<OAuthClientCreated> => {
     const token = data.accessToken?.trim();
     if (!token) throw new Response("Unauthorized", { status: 401 });
 
@@ -221,6 +226,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
     const clientAny = client as any;
     return {
       clientId: clientAny.client_id,
+      clientSecret,
       name: clientAny.name,
       description: clientAny.description,
       scopesAllowed: clientAny.scopes_allowed || [],

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -24,6 +24,9 @@ import {
   Settings,
   FileText,
   Download,
+  ChevronDown,
+  BookOpen,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
@@ -36,7 +39,12 @@ import {
   updateAdminUser,
   type AdminUserRow,
 } from "@/lib/admin-users";
-import { listOAuthClients, createOAuthClient, type OAuthClientInfo } from "@/lib/oauth-consent";
+import {
+  listOAuthClients,
+  createOAuthClient,
+  type OAuthClientCreated,
+  type OAuthClientInfo,
+} from "@/lib/oauth-consent";
 import { OAUTH_SCOPES, getScopeLabel, type OAuthScope } from "@/lib/oauth-scopes";
 import { getAppSettings, updateAppSettings, type AppSettings } from "@/lib/app-settings";
 import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
@@ -64,6 +72,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/_app/admin")({
   head: () => ({
@@ -202,6 +220,9 @@ function AdminUsersPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [createClientBusy, setCreateClientBusy] = useState(false);
+  const [oauthCreated, setOauthCreated] = useState<
+    (OAuthClientCreated & { exampleRedirectUri: string }) | null
+  >(null);
   const [saveSettingsBusy, setSaveSettingsBusy] = useState(false);
   const [loadingRows, setLoadingRows] = useState(true);
   const [loadingClients, setLoadingClients] = useState(true);
@@ -397,7 +418,7 @@ function AdminUsersPage() {
         .split("\n")
         .map((r) => r.trim())
         .filter(Boolean);
-      await createOAuthClient({
+      const created = await createClient({
         data: {
           accessToken: session.access_token,
           name: vals.name,
@@ -407,6 +428,10 @@ function AdminUsersPage() {
         },
       });
       toast.success("Client OAuth creato");
+      setOauthCreated({
+        ...created,
+        exampleRedirectUri: redirectUris[0] ?? "",
+      });
       oauthForm.reset();
       await loadClients();
     } catch (error) {
@@ -415,6 +440,15 @@ function AdminUsersPage() {
       setCreateClientBusy(false);
     }
   });
+
+  async function copyOAuthField(label: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copiato negli appunti`);
+    } catch {
+      toast.error("Impossibile copiare. Seleziona il testo manualmente.");
+    }
+  }
 
   const settingsForm = useForm<z.input<typeof AppSettingsSchema>>({
     resolver: zodResolver(AppSettingsSchema),
@@ -775,15 +809,52 @@ function AdminUsersPage() {
               Nuovo Client OAuth
             </CardTitle>
             <CardDescription>
-              Crea un nuovo client per integrare applicazioni esterne con PCReady
+              Crea un nuovo client per integrare applicazioni esterne con PCReady in modo sicuro.
             </CardDescription>
+            <p className="text-sm pt-2">
+              <Link
+                to="/docs"
+                className="inline-flex items-center gap-1.5 text-primary underline-offset-4 hover:underline"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Leggi la documentazione API (OpenAPI / OAuth)
+              </Link>
+            </p>
           </CardHeader>
           <CardContent>
+            <Alert className="mb-4">
+              <Shield className="h-4 w-4" />
+              <AlertTitle>Cos&apos;è un Client OAuth?</AlertTitle>
+              <AlertDescription>
+                Un Client OAuth permette a un&apos;applicazione esterna (per esempio un tool di
+                automazione, un&apos;app mobile o un sistema ERP) di accedere ai dati di PCReady in
+                modo sicuro, senza condividere le password degli utenti. Crea un client solo se
+                stai collegando un&apos;applicazione esterna che deve operare per conto degli utenti
+                che la autorizzano.
+              </AlertDescription>
+            </Alert>
+
+            <Alert className="mb-4 border-muted bg-muted/40">
+              <AlertTitle className="text-foreground">Flusso supportato</AlertTitle>
+              <AlertDescription className="text-muted-foreground">
+                PCReady espone il flusso OAuth 2.0{" "}
+                <strong className="text-foreground">Authorization Code</strong> (
+                <code className="text-xs">response_type=code</code>). Gli integratori avviano
+                l&apos;accesso reindirizzando l&apos;utente all&apos;endpoint di autorizzazione,
+                poi scambiano il codice per un token. Il flusso{" "}
+                <strong className="text-foreground">Client Credentials</strong> non è supportato
+                per questi client.
+              </AlertDescription>
+            </Alert>
+
             <form onSubmit={createNewClient} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="clientName">Nome Applicazione</Label>
-                  <Input id="clientName" {...oauthForm.register("name")} placeholder="My App" />
+                  <Label htmlFor="clientName">Nome applicazione</Label>
+                  <Input id="clientName" {...oauthForm.register("name")} placeholder="Es. CRM Aziendale" />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nome visibile a chi autorizza l&apos;app e negli elenchi admin.
+                  </p>
                   {oauthForm.formState.errors.name && (
                     <p className="text-sm text-destructive mt-1">
                       {String(oauthForm.formState.errors.name?.message)}
@@ -791,16 +862,19 @@ function AdminUsersPage() {
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="clientDescription">Descrizione</Label>
+                  <Label htmlFor="clientDescription">Descrizione (facoltativa)</Label>
                   <Input
                     id="clientDescription"
                     {...oauthForm.register("description")}
-                    placeholder="Breve descrizione dell'app"
+                    placeholder="A cosa serve questa integrazione"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Testo libero per ricordare a chi è destinata l&apos;integrazione.
+                  </p>
                 </div>
               </div>
               <div>
-                <Label htmlFor="redirectUris">URL di Redirect</Label>
+                <Label htmlFor="redirectUris">URL di redirect (callback)</Label>
                 <Textarea
                   id="redirectUris"
                   {...oauthForm.register("redirectUrisRaw")}
@@ -813,18 +887,33 @@ function AdminUsersPage() {
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Una URL per riga. Deve corrispondere esattamente nelle richieste OAuth.
+                  L&apos;indirizzo a cui PCReady reindirizza il browser dopo che l&apos;utente ha
+                  effettuato l&apos;accesso e concesso i permessi (redirect URI OAuth 2.0). Deve
+                  coincidere <strong>esattamente</strong> con quanto configurato nell&apos;app esterna:
+                  trovi il valore nella documentazione o nelle impostazioni sviluppatore di quell&apos;app.
+                  Una URL per riga. Esempio:{" "}
+                  <code className="text-[11px] rounded bg-muted px-1 py-0.5">
+                    https://myapp.com/oauth/callback
+                  </code>
                 </p>
               </div>
               <div>
-                <Label>Permessi Consentiti</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <Label>Permessi consentiti (scope)</Label>
+                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                  Seleziona cosa l&apos;applicazione potrà chiedere agli utenti durante
+                  l&apos;autorizzazione. Ogni voce mostra il nome tecnico del permesso tra parentesi.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(OAUTH_SCOPES).map(([scope, def]) => {
                     const checked: string[] = oauthForm.watch("scopesAllowed") || [];
                     return (
-                      <div key={scope} className="flex items-center space-x-2">
+                      <div
+                        key={scope}
+                        className="flex gap-3 rounded-lg border border-border p-3 bg-background"
+                      >
                         <Checkbox
                           id={scope}
+                          className="mt-0.5"
                           checked={checked.includes(scope)}
                           onCheckedChange={(val) => {
                             const current = oauthForm.getValues().scopesAllowed || [];
@@ -836,9 +925,15 @@ function AdminUsersPage() {
                               );
                           }}
                         />
-                        <Label htmlFor={scope} className="text-sm">
-                          {def.label}
-                        </Label>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor={scope} className="text-sm font-medium cursor-pointer">
+                            {def.label}
+                          </Label>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {def.longDescription}
+                          </p>
+                          <code className="text-[10px] text-muted-foreground">{scope}</code>
+                        </div>
                       </div>
                     );
                   })}
@@ -846,11 +941,131 @@ function AdminUsersPage() {
               </div>
               <Button type="submit" disabled={createClientBusy || !oauthForm.formState.isValid}>
                 <Plus className="w-4 h-4 mr-2" />
-                {createClientBusy ? "Creazione..." : "Crea Client"}
+                {createClientBusy ? "Creazione..." : "Crea client"}
               </Button>
             </form>
           </CardContent>
         </Card>
+
+        <Dialog
+          open={!!oauthCreated}
+          onOpenChange={(open) => {
+            if (!open) setOauthCreated(null);
+          }}
+        >
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {oauthCreated ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Client creato</DialogTitle>
+                  <DialogDescription>
+                    {oauthCreated.name}: usa questi valori nella tua applicazione. Il secret non
+                    sarà più mostrato.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <Alert variant="destructive" className="mt-2">
+                  <AlertTitle>Salva subito il Client Secret</AlertTitle>
+                  <AlertDescription>
+                    Il Client Secret è mostrato <strong>una sola volta</strong> e non sarà
+                    recuperabile da PCReady dopo aver chiuso questa finestra. Copialo e conservalo in
+                    un gestore segreti o in configurazione sicura prima di proseguire.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-muted-foreground">Client ID</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 h-8"
+                        onClick={() => copyOAuthField("Client ID", oauthCreated.clientId)}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copia
+                      </Button>
+                    </div>
+                    <pre className="mt-1 p-2 rounded-md bg-muted text-xs font-mono break-all whitespace-pre-wrap">
+                      {oauthCreated.clientId}
+                    </pre>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-muted-foreground">Client Secret</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 h-8"
+                        onClick={() => copyOAuthField("Client Secret", oauthCreated.clientSecret)}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copia
+                      </Button>
+                    </div>
+                    <pre className="mt-1 p-2 rounded-md bg-muted text-xs font-mono break-all whitespace-pre-wrap">
+                      {oauthCreated.clientSecret}
+                    </pre>
+                  </div>
+                </div>
+
+                <Collapsible className="rounded-lg border px-3 py-2">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 py-2 text-left text-sm font-medium hover:underline [&[data-state=open]>svg]:rotate-180">
+                    Come usare questo client (Authorization Code)
+                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pb-3 text-xs text-muted-foreground">
+                    <p>
+                      1. Reindirizza l&apos;utente (già autenticato su PCReady) verso
+                      l&apos;autorizzazione con i parametri in query. Sostituisci{" "}
+                      <code className="rounded bg-muted px-1">redirect_uri</code>,{" "}
+                      <code className="rounded bg-muted px-1">scope</code> e{" "}
+                      <code className="rounded bg-muted px-1">state</code> con i valori della tua
+                      app.
+                    </p>
+                    <div>
+                      <span className="font-medium text-foreground">GET — autorizzazione</span>
+                      <pre className="mt-1 p-2 rounded-md bg-muted font-mono text-[11px] break-all whitespace-pre-wrap">
+                        {`${typeof window !== "undefined" ? window.location.origin : ""}/oauth/authorize?client_id=${encodeURIComponent(oauthCreated.clientId)}&redirect_uri=${encodeURIComponent(oauthCreated.exampleRedirectUri || "https://esempio.app/oauth/callback")}&response_type=code&scope=${encodeURIComponent(oauthCreated.scopesAllowed.length ? oauthCreated.scopesAllowed.join(" ") : "openid profile email")}&state=STATO_OPZIONALE`}
+                      </pre>
+                    </div>
+                    <p>
+                      Dopo il consenso, l&apos;utente torna al <code className="rounded bg-muted px-1">redirect_uri</code> con un <code className="rounded bg-muted px-1">code</code> temporaneo.
+                    </p>
+                    <div>
+                      <span className="font-medium text-foreground">
+                        POST — scambio code → token
+                      </span>
+                      <pre className="mt-1 p-2 rounded-md bg-muted font-mono text-[11px] break-all whitespace-pre-wrap">
+                        {`${typeof window !== "undefined" ? window.location.origin : ""}/oauth/token`}
+                      </pre>
+                      <p className="mt-1">
+                        Corpo tipico: <code className="rounded bg-muted px-1">grant_type=authorization_code</code>,{" "}
+                        <code className="rounded bg-muted px-1">code</code>,{" "}
+                        <code className="rounded bg-muted px-1">client_id</code>,{" "}
+                        <code className="rounded bg-muted px-1">client_secret</code>,{" "}
+                        <code className="rounded bg-muted px-1">redirect_uri</code> (come sopra). Dettagli e schema nella{" "}
+                        <Link to="/docs" className="text-primary underline-offset-2 hover:underline">
+                          documentazione API
+                        </Link>
+                        .
+                      </p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <DialogFooter>
+                  <Button type="button" onClick={() => setOauthCreated(null)}>
+                    Ho salvato il secret, chiudi
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader>

@@ -181,9 +181,10 @@ function OAuthConsentPage() {
                   <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{getScopeLabel(scope)}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {getScopeDescription(scope)}
                     </p>
+                    <p className="text-[11px] font-mono text-muted-foreground/90 mt-1">{scope}</p>
                   </div>
                 </div>
               ))}

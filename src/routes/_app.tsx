@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
 import { useTheme } from "@/hooks/use-theme";
 import { avatarColors } from "@/lib/pcready";
@@ -318,6 +319,8 @@ function SidebarContent({
   onNavigate,
   onSignOut,
 }: SidebarContentProps) {
+  const deploymentLabel = viteDeploymentLabel();
+
   return (
     <>
       <div
@@ -349,7 +352,8 @@ function SidebarContent({
             PCReady
           </div>
           <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
-            v3.0
+            v{appVersion}
+            {deploymentLabel ? ` - ${deploymentLabel}` : null}
           </div>
         </div>
       </div>

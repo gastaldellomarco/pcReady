@@ -1,4 +1,6 @@
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import type {
   ActionResult,
@@ -70,10 +72,17 @@ export async function executeAutomationRun({
           result: { reason: "Nessuna action configurata" },
         },
       ];
-    } else {
-      actionsExecuted = actions.map((action, index) => simulateAction(action, index, isDryRun));
+    } else if (isDryRun) {
+      actionsExecuted = actions.map((action, index) => simulateAction(action, index));
       const failed = actionsExecuted.find((action) => action.status === "error");
       if (failed) throw new Error(failed.error || "Action fallita");
+    } else {
+      actionsExecuted = [];
+      for (let index = 0; index < actions.length; index++) {
+        const result = await executeAction(actions[index], index, triggeredBy, triggerPayload);
+        actionsExecuted.push(result);
+        if (result.status === "error") throw new Error(result.error || "Action fallita");
+      }
     }
   } catch (runError) {
     status = "error";
@@ -296,7 +305,7 @@ function normalizeBlockType(block: any): DryRunStep["type"] {
   return "action";
 }
 
-function simulateAction(action: any, index: number, isDryRun: boolean): ActionResult {
+function simulateAction(action: any, index: number): ActionResult {
   const actionName = String(
     action.type || action.action || action.data?.label || `Action ${index + 1}`,
   );
@@ -311,8 +320,473 @@ function simulateAction(action: any, index: number, isDryRun: boolean): ActionRe
   return {
     action: actionName,
     status: "success",
-    result: isDryRun
-      ? { mode: "dry_run", message: "Azione validata, nessun effetto applicato" }
-      : { mode: "manual_run", message: "Azione registrata dal runtime controllato" },
+    result: { mode: "dry_run", message: "Azione validata, nessun effetto applicato" },
   };
+}
+
+const TICKET_STATUSES = ["pending", "in-progress", "testing", "ready"] as const;
+const DEVICE_STATUSES = ["available", "assigned", "maintenance", "retired"] as const;
+
+const NotificationTypeSchema = z.enum(
+  NOTIFICATION_TYPES as unknown as [NotificationType, ...NotificationType[]],
+);
+
+const optionalUuid = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : val),
+  z.string().uuid().optional(),
+);
+
+const requiredUuid = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : val),
+  z.string().uuid({ message: "UUID obbligatorio" }),
+);
+
+const SendEmailConfigSchema = z.object({
+  to: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : val),
+    z.string().email().optional(),
+  ),
+  subject: z.string().min(1).max(500),
+  body: z.string().min(1).max(50_000),
+  is_html: z.boolean().optional(),
+});
+
+const UpdateTicketStatusConfigSchema = z.object({
+  ticket_id: optionalUuid,
+  status: z.enum(TICKET_STATUSES),
+});
+
+const CreateNotificationConfigSchema = z.object({
+  user_id: optionalUuid,
+  type: NotificationTypeSchema.optional(),
+  title: z.string().min(1).max(160),
+  body: z.string().max(1000).nullable().optional(),
+  link: z.string().max(500).nullable().optional(),
+  payload: z.record(z.unknown()).nullable().optional(),
+});
+
+const UpdateDeviceStatusConfigSchema = z.object({
+  device_id: optionalUuid,
+  status: z.enum(DEVICE_STATUSES),
+});
+
+const AssignTicketConfigSchema = z.object({
+  ticket_id: optionalUuid,
+  assignee_id: requiredUuid,
+});
+
+function normalizeActionType(type: string): string {
+  if (type === "update_status") return "update_ticket_status";
+  if (type === "assign_technician") return "assign_ticket";
+  return type;
+}
+
+function resolveId(
+  key: string,
+  config: Record<string, unknown>,
+  triggerPayload: Record<string, any>,
+): string | null {
+  const direct = config[key];
+  if (typeof direct === "string" && direct.length > 0) return direct;
+  const fromPayload = triggerPayload[key];
+  if (typeof fromPayload === "string" && fromPayload.length > 0) return fromPayload;
+  return null;
+}
+
+function resolveRecipientEmail(
+  config: Record<string, unknown>,
+  triggerPayload: Record<string, any>,
+): string | null {
+  const direct = config.to;
+  if (typeof direct === "string" && direct.includes("@")) return direct.trim();
+  const keys = ["to_email", "customer_email", "requester_email", "recipient_email", "email"];
+  for (const k of keys) {
+    const v = triggerPayload[k];
+    if (typeof v === "string" && v.includes("@")) return v.trim();
+  }
+  return null;
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+async function deliverAutomationEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ via: "resend" | "smtp" | "webhook" }> {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const RESEND_FROM = process.env.RESEND_FROM || process.env.SENDGRID_FROM || "no-reply@example.com";
+  const webhookUrl = process.env.EMAIL_TEST_WEBHOOK_URL || process.env.SMTP_WEBHOOK_URL;
+  const textBody = params.text ?? stripHtml(params.html);
+
+  if (RESEND_API_KEY) {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+      }),
+    });
+
+    if (r.ok) return { via: "resend" };
+
+    let errBody: unknown = null;
+    try {
+      errBody = await r.json();
+    } catch {
+      errBody = await r.text().catch(() => null);
+    }
+    const textErr = typeof errBody === "string" ? errBody : JSON.stringify(errBody);
+
+    if (webhookUrl) {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: params.to,
+          subject: params.subject,
+          html: params.html,
+          text: textBody,
+          source: "automation",
+        }),
+      });
+      if (!response.ok) {
+        const bodyText = await response.text().catch(() => "");
+        throw new Error(`Resend ${r.status} ${textErr}; webhook ${response.status} ${bodyText}`);
+      }
+      return { via: "webhook" };
+    }
+
+    throw new Error(`Resend API error ${r.status} ${textErr}`);
+  }
+
+  const SMTP_HOST = process.env.SMTP_HOST;
+  const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+  const SMTP_USER = process.env.SMTP_USER;
+  const SMTP_PASS = process.env.SMTP_PASS;
+  const SMTP_FROM = process.env.SMTP_FROM || RESEND_FROM;
+  const SMTP_SECURE = String(process.env.SMTP_SECURE || "false") === "true";
+
+  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+    try {
+      const nodemailer = await import("nodemailer");
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT ?? 587,
+        secure: SMTP_SECURE,
+        auth: { user: SMTP_USER, pass: SMTP_PASS },
+      });
+      await transporter.sendMail({
+        from: SMTP_FROM,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+        text: textBody,
+      });
+      return { via: "smtp" };
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err ?? "");
+      if (!webhookUrl) throw new Error(`SMTP fallito e nessun webhook: ${errMsg}`);
+    }
+  }
+
+  if (webhookUrl) {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+        text: textBody,
+        source: "automation",
+      }),
+    });
+    const bodyText = await response.text().catch(() => "");
+    if (!response.ok) throw new Error(`Webhook invio email fallito (${response.status}) ${bodyText}`);
+    return { via: "webhook" };
+  }
+
+  throw new Error(
+    "Nessun canale email configurato: imposta RESEND_API_KEY, variabili SMTP o EMAIL_TEST_WEBHOOK_URL",
+  );
+}
+
+async function sendEmailAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  actionLabel: string,
+): Promise<ActionResult> {
+  const parsed = SendEmailConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+  const to = parsed.data.to ?? resolveRecipientEmail(rawConfig, triggerPayload);
+  if (!to) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "Destinatario email mancante: imposta config.to o includi un indirizzo nel trigger payload",
+    };
+  }
+
+  const html =
+    parsed.data.is_html === true
+      ? parsed.data.body
+      : `<div style="font-family:system-ui,sans-serif">${parsed.data.body.replace(/\n/g, "<br/>")}</div>`;
+
+  try {
+    const { via } = await deliverAutomationEmail({
+      to,
+      subject: parsed.data.subject,
+      html,
+      text: parsed.data.is_html === true ? stripHtml(parsed.data.body) : parsed.data.body,
+    });
+    return {
+      action: actionLabel,
+      status: "success",
+      details: { channel: via, to },
+      result: { message: "Email inviata", channel: via },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e ?? "Errore invio email");
+    return { action: actionLabel, status: "error", error: msg };
+  }
+}
+
+async function updateTicketStatusAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  actionLabel: string,
+): Promise<ActionResult> {
+  const parsed = UpdateTicketStatusConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+  const ticketId = resolveId("ticket_id", parsed.data as Record<string, unknown>, triggerPayload);
+  if (!ticketId) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "ticket_id mancante nella config o nel trigger payload",
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("tickets")
+    .update({ status: parsed.data.status })
+    .eq("id", ticketId)
+    .select("id, status")
+    .maybeSingle();
+
+  if (error) return { action: actionLabel, status: "error", error: error.message };
+  if (!data) return { action: actionLabel, status: "error", error: "Ticket non trovato" };
+
+  return {
+    action: actionLabel,
+    status: "success",
+    details: { ticket_id: data.id, status: data.status },
+    result: { message: "Stato ticket aggiornato" },
+  };
+}
+
+async function createNotificationAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  triggeredBy: string,
+  actionLabel: string,
+): Promise<ActionResult> {
+  const parsed = CreateNotificationConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+
+  const userId =
+    parsed.data.user_id ??
+    (typeof triggerPayload.assignee_id === "string" ? triggerPayload.assignee_id : null) ??
+    (typeof triggerPayload.user_id === "string" ? triggerPayload.user_id : null);
+  if (!userId) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "user_id mancante: imposta nella config o passa assignee_id nel trigger payload",
+    };
+  }
+
+  const type: NotificationType = parsed.data.type ?? "ticket_status_changed";
+  const payload = {
+    ...(parsed.data.payload ?? {}),
+    automation_triggered_by: triggeredBy,
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("notifications" as any)
+    .insert({
+      user_id: userId,
+      type,
+      title: parsed.data.title,
+      body: parsed.data.body ?? null,
+      payload,
+      link: parsed.data.link ?? null,
+    })
+    .select("id, user_id, type")
+    .single();
+
+  if (error) return { action: actionLabel, status: "error", error: error.message };
+  const row = data as unknown as { id: string; user_id: string; type: string } | null;
+  if (!row) return { action: actionLabel, status: "error", error: "Notifica non creata" };
+
+  return {
+    action: actionLabel,
+    status: "success",
+    details: { notification_id: row.id, user_id: row.user_id, type: row.type },
+    result: { message: "Notifica creata" },
+  };
+}
+
+async function updateDeviceStatusAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  actionLabel: string,
+): Promise<ActionResult> {
+  const parsed = UpdateDeviceStatusConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+  const deviceId = resolveId("device_id", parsed.data as Record<string, unknown>, triggerPayload);
+  if (!deviceId) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "device_id mancante nella config o nel trigger payload",
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("devices")
+    .update({ status: parsed.data.status })
+    .eq("id", deviceId)
+    .select("id, status")
+    .maybeSingle();
+
+  if (error) return { action: actionLabel, status: "error", error: error.message };
+  if (!data) return { action: actionLabel, status: "error", error: "Dispositivo non trovato" };
+
+  return {
+    action: actionLabel,
+    status: "success",
+    details: { device_id: data.id, status: data.status },
+    result: { message: "Stato dispositivo aggiornato" },
+  };
+}
+
+async function assignTicketAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  actionLabel: string,
+): Promise<ActionResult> {
+  const parsed = AssignTicketConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+  const ticketId = resolveId("ticket_id", parsed.data as Record<string, unknown>, triggerPayload);
+  if (!ticketId) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "ticket_id mancante nella config o nel trigger payload",
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("tickets")
+    .update({ assignee_id: parsed.data.assignee_id })
+    .eq("id", ticketId)
+    .select("id, assignee_id")
+    .maybeSingle();
+
+  if (error) return { action: actionLabel, status: "error", error: error.message };
+  if (!data) return { action: actionLabel, status: "error", error: "Ticket non trovato" };
+
+  return {
+    action: actionLabel,
+    status: "success",
+    details: { ticket_id: data.id, assignee_id: data.assignee_id },
+    result: { message: "Ticket assegnato" },
+  };
+}
+
+async function executeAction(
+  action: any,
+  index: number,
+  triggeredBy: string,
+  triggerPayload: Record<string, any>,
+): Promise<ActionResult> {
+  const rawType = String(action.type || action.action || action.data?.label || `action_${index + 1}`);
+  const type = normalizeActionType(rawType);
+  const actionLabel = rawType;
+  const config = action.config ?? action.data?.config ?? {};
+
+  if (config.force_error || action.force_error) {
+    return {
+      action: actionLabel,
+      status: "error",
+      error: "Errore simulato dalla configurazione action",
+    };
+  }
+
+  switch (type) {
+    case "send_email":
+      return sendEmailAction(config, triggerPayload, actionLabel);
+    case "update_ticket_status":
+      return updateTicketStatusAction(config, triggerPayload, actionLabel);
+    case "create_notification":
+      return createNotificationAction(config, triggerPayload, triggeredBy, actionLabel);
+    case "update_device_status":
+      return updateDeviceStatusAction(config, triggerPayload, actionLabel);
+    case "assign_ticket":
+      return assignTicketAction(config, triggerPayload, actionLabel);
+    case "create_ticket":
+      return {
+        action: actionLabel,
+        status: "skipped",
+        error: "Tipo create_ticket non ancora implementato nel runtime",
+      };
+    default:
+      return {
+        action: actionLabel,
+        status: "skipped",
+        error: "Tipo azione non supportato",
+        details: { normalized_type: type },
+      };
+  }
 }

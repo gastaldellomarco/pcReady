@@ -1,5 +1,6 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "pcready",
+  "version": "3.8.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
