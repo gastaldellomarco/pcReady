@@ -255,7 +255,10 @@ function ScriptsPage() {
         <ScriptViewer
           script={viewer}
           onClose={() => setViewer(null)}
-          onOpenVersions={() => setVersionHistoryOpen(true)}
+          onOpenVersions={() => {
+            setViewer(null);
+            setVersionHistoryOpen(true);
+          }}
         />
       )}
       {(editor || createOpen) && (

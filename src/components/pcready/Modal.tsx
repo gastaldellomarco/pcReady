@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export function Modal({ open, onClose, title, children, footer, size = "md" }:
   { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "md" | "lg" }) {
@@ -10,8 +11,8 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }:
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-[500] flex items-start justify-center px-4 py-8 overflow-y-auto"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}>
@@ -38,6 +39,7 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }:
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
