@@ -2,9 +2,11 @@ import { Document } from "@react-pdf/renderer";
 import {
   PRIORITY_LABEL,
   STATUS_META,
+  TICKET_TYPE_LABEL,
   fmtDate,
   type TicketPriority,
   type TicketStatus,
+  type TicketType,
 } from "@/lib/pcready";
 import { BrandedPage, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
@@ -15,6 +17,7 @@ export interface TicketPdfRow {
   model: string;
   serial: string | null;
   requester: string;
+  ticket_type: TicketType;
   priority: TicketPriority;
   status: TicketStatus;
   assignee: string | null;
@@ -33,6 +36,7 @@ export function TicketListPdf({ rows }: { rows: TicketPdfRow[] }) {
     { key: "serial", label: "Seriale", width: 72, mono: true, value: (row) => row.serial || "-" },
     { key: "client", label: "Cliente", width: 116, value: (row) => row.client },
     { key: "requester", label: "Richiedente", width: 104, value: (row) => row.requester },
+    { key: "type", label: "Tipo", width: 86, value: (row) => TICKET_TYPE_LABEL[row.ticket_type] },
     {
       key: "priority",
       label: "Priorita",

@@ -11,6 +11,7 @@ import {
   STATUS_META,
   type TicketPriority,
   type TicketStatus,
+  type TicketType,
   generatePrepScript,
   fmtDate,
   fmtDateTime,
@@ -18,7 +19,7 @@ import {
   DEFAULT_STRUCTURE,
   structureProgress,
 } from "@/lib/pcready";
-import { StatusBadge, PriorityLabel, AssigneeChip } from "./StatusBadge";
+import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
 import { Check, Code2, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ interface TicketRow {
   ticket_code: string;
   client: string;
   requester: string;
+  ticket_type: TicketType;
   priority: TicketPriority;
   status: TicketStatus;
   assignee_id: string | null;
@@ -227,13 +229,22 @@ export function TicketDetailModal() {
     >
       <div className="grid grid-cols-2 gap-3 mb-5">
         <Info label="Cliente" value={t.client} />
-        <Info label="Stato" value={<StatusBadge status={t.status} />} />
+        <Info
+          label="Stato"
+          value={
+            <div className="flex flex-wrap items-center gap-1.5">
+              <StatusBadge status={t.status} />
+              <TicketTypeBadge type={t.ticket_type} />
+            </div>
+          }
+        />
         <Info label="Asset" value={asset.model} />
         <Info
           label="Seriale"
           value={<span className="font-mono text-text3 text-xs">{asset.serial}</span>}
         />
         <Info label="Priorita" value={<PriorityLabel p={t.priority} />} />
+        <Info label="Tipo" value={<TicketTypeBadge type={t.ticket_type} />} />
         <Info label="Richiedente" value={t.requester} />
         <Info label="Utente asset" value={asset.assignedTo} />
         <Info

@@ -484,6 +484,7 @@ export type Database = {
           status: Database["public"]["Enums"]["ticket_status"];
           template_id: string | null;
           ticket_code: string;
+          ticket_type: string;
           updated_at: string;
         };
         Insert: {
@@ -508,6 +509,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"];
           template_id?: string | null;
           ticket_code?: string;
+          ticket_type?: string;
           updated_at?: string;
         };
         Update: {
@@ -532,6 +534,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"];
           template_id?: string | null;
           ticket_code?: string;
+          ticket_type?: string;
           updated_at?: string;
         };
         Relationships: [

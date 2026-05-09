@@ -13,6 +13,8 @@ servers:
       projectRef:
         default: your-project
         description: Project ref Supabase, per esempio abcdefghijklmnop
+  - url: /
+    description: PCReady Server Functions
 security:
   - bearerAuth: []
     supabaseAnonKey: []
@@ -25,6 +27,20 @@ tags:
     description: Anagrafica clienti
   - name: Contacts
     description: Referenti associati ai clienti
+  - name: Automations
+    description: Flussi di automazione e log di esecuzione
+  - name: OAuth
+    description: Autorizzazione OAuth2 client esterni
+  - name: Notifications
+    description: Notifiche in-app per gli utenti
+  - name: Checklist
+    description: Template checklist preparazione PC
+  - name: Versioning
+    description: Storico versioni delle entità
+  - name: Admin
+    description: Gestione utenti e impostazioni applicazione
+  - name: EmailTemplates
+    description: Template email transazionali
 paths:
   /tickets:
     get:
@@ -248,6 +264,447 @@ paths:
       responses:
         "201":
           description: Referente creato
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Lista notifiche utente
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Elenco notifiche
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    patch:
+      tags: [Notifications]
+      summary: Aggiorna notifica
+      parameters:
+        - $ref: "#/components/parameters/idFilter"
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationUpdate"
+      responses:
+        "200":
+          description: Notifica aggiornata
+  /checklist_templates:
+    get:
+      tags: [Checklist]
+      summary: Lista template checklist
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Elenco template checklist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistTemplate"
+    post:
+      tags: [Checklist]
+      summary: Crea template checklist
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistTemplateInsert"
+      responses:
+        "201":
+          description: Template creato
+    patch:
+      tags: [Checklist]
+      summary: Aggiorna template checklist
+      parameters:
+        - $ref: "#/components/parameters/idFilter"
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistTemplateUpdate"
+      responses:
+        "200":
+          description: Template aggiornato
+    delete:
+      tags: [Checklist]
+      summary: Elimina template checklist
+      parameters:
+        - $ref: "#/components/parameters/idFilter"
+      responses:
+        "204":
+          description: Template eliminato
+  /entity_versions:
+    get:
+      tags: [Versioning]
+      summary: Lista versioni entità
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - $ref: "#/components/parameters/limit"
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+            example: eq.automation_flows
+        - name: entity_id
+          in: query
+          schema:
+            type: string
+            example: eq.00000000-0000-0000-0000-000000000000
+      responses:
+        "200":
+          description: Storico versioni
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EntityVersion"
+  /app_settings:
+    get:
+      tags: [Admin]
+      summary: Lista impostazioni applicazione
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+      responses:
+        "200":
+          description: Elenco impostazioni
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppSettings"
+    patch:
+      tags: [Admin]
+      summary: Aggiorna impostazione applicazione
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+            example: eq.branding
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppSettingsUpdate"
+      responses:
+        "200":
+          description: Impostazione aggiornata
+  /email_templates:
+    get:
+      tags: [EmailTemplates]
+      summary: Lista template email
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Elenco template email
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailTemplate"
+    post:
+      tags: [EmailTemplates]
+      summary: Crea template email
+      parameters:
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailTemplateInsert"
+      responses:
+        "201":
+          description: Template email creato
+    patch:
+      tags: [EmailTemplates]
+      summary: Aggiorna template email
+      parameters:
+        - $ref: "#/components/parameters/idFilter"
+        - $ref: "#/components/parameters/preferReturn"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailTemplateUpdate"
+      responses:
+        "200":
+          description: Template email aggiornato
+    delete:
+      tags: [EmailTemplates]
+      summary: Elimina template email
+      parameters:
+        - $ref: "#/components/parameters/idFilter"
+      responses:
+        "204":
+          description: Template email eliminato
+  /activity_log:
+    get:
+      tags: [Admin]
+      summary: Lista audit log attività
+      parameters:
+        - $ref: "#/components/parameters/select"
+        - $ref: "#/components/parameters/order"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Elenco attività
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+  /oauth/authorize:
+    get:
+      tags: [OAuth]
+      summary: Avvia autorizzazione OAuth2
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [code]
+        - name: scope
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pagina o payload di autorizzazione
+  /oauth/consent:
+    post:
+      tags: [OAuth]
+      summary: Conferma consenso OAuth2
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, redirect_uri]
+              properties:
+                client_id: { type: string }
+                redirect_uri: { type: string, format: uri }
+                scope: { type: string }
+                state: { type: string }
+      responses:
+        "302":
+          description: Redirect con authorization code
+  /oauth/token:
+    post:
+      tags: [OAuth]
+      summary: Scambia authorization code per token
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [grant_type, code, client_id, redirect_uri]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [authorization_code]
+                code: { type: string }
+                client_id: { type: string }
+                client_secret: { type: string }
+                redirect_uri: { type: string, format: uri }
+      responses:
+        "200":
+          description: Token OAuth2
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthTokenResponse"
+  /api/automations/run:
+    post:
+      tags: [Automations]
+      summary: Esegui un'automazione ora
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunAutomationNowRequest"
+      responses:
+        "200":
+          description: Log esecuzione creato
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRunLog"
+  /api/automations/run-logs:
+    post:
+      tags: [Automations]
+      summary: Lista log esecuzione automazione
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [automationId]
+              properties:
+                automationId: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Log esecuzione
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AutomationRunLog"
+  /api/automations/run-stats:
+    post:
+      tags: [Automations]
+      summary: KPI e statistiche run automazioni
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      responses:
+        "200":
+          description: Statistiche run automazioni
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRunStatsResponse"
+  /api/admin/users/invite:
+    post:
+      tags: [Admin]
+      summary: Invita utente amministrativo
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserInviteRequest"
+      responses:
+        "200":
+          description: Utente invitato
+  /api/admin/users/update:
+    post:
+      tags: [Admin]
+      summary: Aggiorna utente amministrativo
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdateRequest"
+      responses:
+        "200":
+          description: Utente aggiornato
+  /api/admin/users/disable:
+    post:
+      tags: [Admin]
+      summary: Abilita o disabilita utente amministrativo
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserDisabledRequest"
+      responses:
+        "200":
+          description: Stato utente aggiornato
+  /api/admin/users/delete:
+    post:
+      tags: [Admin]
+      summary: Elimina utente amministrativo
+      security:
+        - bearerAuth: []
+      servers:
+        - url: /
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Utente eliminato
 components:
   securitySchemes:
     bearerAuth:
@@ -273,6 +730,21 @@ components:
         type: string
         example: created_at.desc
       description: Ordinamento PostgREST.
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        example: 20
+      description: Numero massimo di record PostgREST.
+    idFilter:
+      name: id
+      in: query
+      required: true
+      schema:
+        type: string
+        example: eq.00000000-0000-0000-0000-000000000000
+      description: Filtro PostgREST sull'id.
     preferReturn:
       name: Prefer
       in: header
@@ -408,3 +880,266 @@ components:
     TicketUpdate:
       allOf:
         - $ref: "#/components/schemas/TicketInsert"
+    JsonObject:
+      type: object
+      additionalProperties: true
+    AutomationFlow:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        active: { type: boolean }
+        version: { type: integer }
+        flow_definition:
+          $ref: "#/components/schemas/JsonObject"
+        trigger_definition:
+          allOf:
+            - $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        actions_definition:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        summary: { type: string, nullable: true }
+        last_run_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    AutomationRunLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        automation_id: { type: string, format: uuid }
+        triggered_at: { type: string, format: date-time }
+        triggered_by: { type: string, format: uuid, nullable: true }
+        status:
+          type: string
+          enum: [success, error, dry_run, skipped]
+        duration_ms: { type: integer, nullable: true }
+        trigger_payload:
+          allOf:
+            - $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        actions_executed:
+          type: array
+          items:
+            $ref: "#/components/schemas/AutomationActionResult"
+          nullable: true
+        error_message: { type: string, nullable: true }
+        is_dry_run: { type: boolean }
+    AutomationActionResult:
+      type: object
+      properties:
+        action: { type: string }
+        status:
+          type: string
+          enum: [success, error, skipped]
+        result:
+          $ref: "#/components/schemas/JsonObject"
+        error: { type: string }
+    RunAutomationNowRequest:
+      type: object
+      required: [automationId]
+      properties:
+        automationId: { type: string, format: uuid }
+        isDryRun: { type: boolean, default: false }
+        triggerPayload:
+          $ref: "#/components/schemas/JsonObject"
+    AutomationRunStatsResponse:
+      type: object
+      properties:
+        stats:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              automation_id: { type: string, format: uuid }
+              success: { type: integer }
+              error: { type: integer }
+              dry_run: { type: integer }
+              skipped: { type: integer }
+              health:
+                type: string
+                enum: [healthy, degraded, failing, never_run]
+        kpis:
+          type: object
+          properties:
+            activeAutomations: { type: integer }
+            runsToday: { type: integer }
+            successToday: { type: integer }
+            errorToday: { type: integer }
+            successRate7d: { type: number }
+            automationsWithRecentErrors: { type: integer }
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid, nullable: true }
+        type: { type: string }
+        title: { type: string }
+        body: { type: string, nullable: true }
+        payload:
+          allOf:
+            - $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        link: { type: string, nullable: true }
+        read_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    NotificationUpdate:
+      type: object
+      properties:
+        read_at: { type: string, format: date-time, nullable: true }
+    ChecklistTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonObject"
+        is_default: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ChecklistTemplateInsert:
+      type: object
+      required: [name, items]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonObject"
+        is_default: { type: boolean, default: false }
+    ChecklistTemplateUpdate:
+      allOf:
+        - $ref: "#/components/schemas/ChecklistTemplateInsert"
+    EntityVersion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        entity_type: { type: string }
+        entity_id: { type: string, format: uuid }
+        version_number: { type: integer }
+        snapshot:
+          $ref: "#/components/schemas/JsonObject"
+        diff:
+          allOf:
+            - $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        change_note: { type: string, nullable: true }
+        action: { type: string }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+    AppSettings:
+      type: object
+      properties:
+        key: { type: string }
+        value:
+          $ref: "#/components/schemas/JsonObject"
+        description: { type: string, nullable: true }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid, nullable: true }
+    AppSettingsUpdate:
+      type: object
+      properties:
+        value:
+          $ref: "#/components/schemas/JsonObject"
+        description: { type: string, nullable: true }
+    EmailTemplate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        name: { type: string }
+        subject: { type: string }
+        body_html: { type: string }
+        body_text: { type: string, nullable: true }
+        variables:
+          type: array
+          items:
+            type: string
+        active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    EmailTemplateInsert:
+      type: object
+      required: [key, name, subject, body_html]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        subject: { type: string }
+        body_html: { type: string }
+        body_text: { type: string, nullable: true }
+        variables:
+          type: array
+          items:
+            type: string
+        active: { type: boolean, default: true }
+    EmailTemplateUpdate:
+      allOf:
+        - $ref: "#/components/schemas/EmailTemplateInsert"
+    ActivityLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid, nullable: true }
+        type: { type: string }
+        message: { type: string }
+        metadata:
+          allOf:
+            - $ref: "#/components/schemas/JsonObject"
+          nullable: true
+        created_at: { type: string, format: date-time }
+    OAuthClient:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        redirect_uris:
+          type: array
+          items:
+            type: string
+            format: uri
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at: { type: string, format: date-time }
+    OAuthTokenResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, example: Bearer }
+        expires_in: { type: integer }
+        refresh_token: { type: string }
+        scope: { type: string }
+    AdminUserInviteRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role:
+          type: string
+          enum: [admin, tech, viewer]
+        full_name: { type: string }
+    AdminUserUpdateRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        full_name: { type: string }
+        role:
+          type: string
+          enum: [admin, tech, viewer]
+    AdminUserDisabledRequest:
+      type: object
+      required: [userId, disabled]
+      properties:
+        userId: { type: string, format: uuid }
+        disabled: { type: boolean }

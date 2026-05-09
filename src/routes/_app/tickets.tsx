@@ -7,10 +7,12 @@ import {
   STATUS_META,
   type TicketStatus,
   type TicketPriority,
+  type TicketType,
   PRIORITY_LABEL,
+  TICKET_TYPE_LABEL,
   fmtDate,
 } from "@/lib/pcready";
-import { StatusBadge, PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
+import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
 import { Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
@@ -33,6 +35,7 @@ interface Row {
   client: string | null;
   client_id: string | null;
   requester: string;
+  ticket_type: TicketType;
   priority: TicketPriority;
   status: TicketStatus;
   created_at: string;
@@ -51,6 +54,7 @@ function TicketsPage() {
   const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
   const [fp, setFp] = useState("");
+  const [ft, setFt] = useState("");
   const [fc, setFc] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
 
@@ -58,13 +62,14 @@ function TicketsPage() {
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, client_id, requester, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
       .order("created_at", { ascending: false });
 
     if (fs) query = query.eq("status", fs as TicketStatus);
     if (fp) query = query.eq("priority", fp as TicketPriority);
+    if (ft) query = query.eq("ticket_type", ft as TicketType);
     if (fc) query = query.eq("client_id", fc);
     const q = search.trim().replace(/[,%]/g, "");
     if (q) {
@@ -84,11 +89,11 @@ function TicketsPage() {
       setRows((data ?? []) as unknown as Row[]);
       setTotal(totalRows);
     });
-  }, [refreshKey, fs, fp, fc, search, page]);
+  }, [refreshKey, fs, fp, ft, fc, search, page]);
 
   useEffect(() => {
     setPage(0);
-  }, [fs, fp, fc, search]);
+  }, [fs, fp, ft, fc, search]);
 
   const data = rows;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -121,6 +126,7 @@ function TicketsPage() {
       serial: ticketSerial(t),
       client: ticketClient(t),
       requester: t.requester,
+      ticket_type: t.ticket_type,
       priority: t.priority,
       status: t.status,
       assignee: t.assignee?.full_name || null,
@@ -183,6 +189,18 @@ function TicketsPage() {
             </option>
           ))}
         </select>
+        <select
+          className="pc-input max-w-[190px]"
+          value={ft}
+          onChange={(e) => setFt(e.target.value)}
+        >
+          <option value="">Tutti i tipi</option>
+          {Object.entries(TICKET_TYPE_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
         <AsyncAutocomplete
           className="w-[220px]"
           value={fc}
@@ -226,6 +244,7 @@ function TicketsPage() {
                   "Richiedente",
                   "Priorita",
                   "Stato",
+                  "Tipo",
                   "Assegnatario",
                   "Creato",
                 ].map((h) => (
@@ -260,7 +279,13 @@ function TicketsPage() {
                     <PriorityLabel p={t.priority} />
                   </td>
                   <td className="px-[14px] py-[10px]">
-                    <StatusBadge status={t.status} />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <StatusBadge status={t.status} />
+                      <TicketTypeBadge type={t.ticket_type} />
+                    </div>
+                  </td>
+                  <td className="px-[14px] py-[10px]">
+                    <TicketTypeBadge type={t.ticket_type} />
                   </td>
                   <td className="px-[14px] py-[10px]">
                     <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />
@@ -272,7 +297,7 @@ function TicketsPage() {
               ))}
               {!data.length && (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={10} className="text-center py-10 text-text3 text-sm">
                     Nessun ticket
                   </td>
                 </tr>

@@ -4,6 +4,8 @@ import { Modal } from "./Modal";
 import {
   PRIORITY_LABEL,
   type TicketPriority,
+  TICKET_TYPE_LABEL,
+  type TicketType,
   DEFAULT_STRUCTURE,
   type ChecklistStructure,
 } from "@/lib/pcready";
@@ -75,6 +77,7 @@ export function CreateTicketModal() {
     requester_contact_id: "",
     requester: "",
     free_requester: false,
+    ticket_type: "device" as TicketType,
     priority: "med" as TicketPriority,
     assignee_id: "",
     software: "",
@@ -104,8 +107,8 @@ export function CreateTicketModal() {
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
-    if (deviceFlow === "existing" && !f.device_id) {
-      return toast.error("Seleziona un dispositivo oppure scegli di creare il ticket senza asset");
+    if (f.ticket_type === "device" && !f.device_id) {
+      return toast.error("Seleziona un dispositivo");
     }
     setBusy(true);
     try {
@@ -128,10 +131,11 @@ export function CreateTicketModal() {
       const ticketInsert = {
         client: client.company_name || client.name,
         client_id: client.id,
-        device_id: device?.id || null,
+        device_id: f.ticket_type === "device" ? device?.id || null : null,
         requester,
         requester_contact_id: f.free_requester ? null : contact?.id || null,
         priority: f.priority,
+        ticket_type: f.ticket_type,
         status: "pending",
         assignee_id: f.assignee_id || null,
         software: f.software || null,
@@ -178,6 +182,7 @@ export function CreateTicketModal() {
         requester_contact_id: "",
         requester: "",
         free_requester: false,
+        ticket_type: "device",
         priority: "med",
         assignee_id: "",
         software: "",
@@ -237,65 +242,40 @@ export function CreateTicketModal() {
               }}
             />
           </Field>
-          <Field label="Dispositivo">
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-1 gap-2">
-                <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-bg2 p-3 text-sm text-text">
-                  <input
-                    className="mt-1"
-                    type="radio"
-                    name="ticket-device-flow"
-                    checked={deviceFlow === "existing"}
-                    onChange={() => setDeviceFlow("existing")}
-                  />
-                  <span>
-                    <span className="block font-medium">Collega asset esistente</span>
-                    <span className="block text-[12px] text-text3">
-                      Seleziona un dispositivo già censito per questo cliente.
-                    </span>
-                  </span>
-                </label>
-                <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-bg2 p-3 text-sm text-text">
-                  <input
-                    className="mt-1"
-                    type="radio"
-                    name="ticket-device-flow"
-                    checked={deviceFlow === "none"}
-                    onChange={() => {
-                      setDeviceFlow("none");
-                      setSelectedDevice(null);
-                      setF({ ...f, device_id: "" });
-                    }}
-                  />
-                  <span>
-                    <span className="block font-medium">Crea ticket senza asset</span>
-                    <span className="block text-[12px] text-text3">
-                      Il dispositivo potrà essere associato in un secondo momento.
-                    </span>
-                  </span>
-                </label>
-              </div>
-              {deviceFlow === "existing" ? (
-                <AsyncAutocomplete
-                  value={f.device_id}
-                  selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
-                  placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
-                  emptyLabel="Nessun dispositivo"
-                  disabled={!f.client_id}
-                  loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
-                  onChange={(value, option) => {
-                    setSelectedDevice(option ? optionToDevice(option) : null);
-                    setF({ ...f, device_id: value });
-                  }}
-                />
-              ) : (
-                <div className="rounded-lg border border-dashed border-border bg-bg2 px-3 py-2 text-[12px] text-text3">
-                  Nessun dispositivo verrà collegato alla creazione del ticket.
-                </div>
-              )}
-            </div>
+          <Field label="Tipo ticket">
+            <select
+              className="pc-input"
+              value={f.ticket_type}
+              onChange={(e) => {
+                const ticketType = e.target.value as TicketType;
+                setF({ ...f, ticket_type: ticketType, device_id: ticketType === "device" ? f.device_id : "" });
+                if (ticketType !== "device") setSelectedDevice(null);
+              }}
+            >
+              {Object.entries(TICKET_TYPE_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
+        {f.ticket_type === "device" && (
+          <Field label="Dispositivo *">
+            <AsyncAutocomplete
+              value={f.device_id}
+              selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
+              placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
+              emptyLabel="Nessun dispositivo"
+              disabled={!f.client_id}
+              loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
+              onChange={(value, option) => {
+                setSelectedDevice(option ? optionToDevice(option) : null);
+                setF({ ...f, device_id: value });
+              }}
+            />
+          </Field>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Richiedente *">
             {f.free_requester ? (
@@ -370,32 +350,36 @@ export function CreateTicketModal() {
             </select>
           </Field>
         </div>
-        <Field label="Software richiesti">
+        {f.ticket_type === "device" && (
+          <>
+            <Field label="Software richiesti">
+              <textarea
+                className="pc-input min-h-[72px]"
+                value={f.software}
+                onChange={(e) => setF({ ...f, software: e.target.value })}
+                placeholder="Microsoft 365, Adobe CC, VS Code..."
+              />
+            </Field>
+            <Field label="Modello checklist">
+              <select
+                className="pc-input"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+              >
+                {!templates.length && <option value="">— Checklist standard —</option>}
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                    {t.is_default ? "  (predefinito)" : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </>
+        )}
+        <Field label={f.ticket_type === "device" ? "Note" : "Descrizione problema"}>
           <textarea
-            className="pc-input min-h-[72px]"
-            value={f.software}
-            onChange={(e) => setF({ ...f, software: e.target.value })}
-            placeholder="Microsoft 365, Adobe CC, VS Code..."
-          />
-        </Field>
-        <Field label="Modello checklist">
-          <select
-            className="pc-input"
-            value={templateId}
-            onChange={(e) => setTemplateId(e.target.value)}
-          >
-            {!templates.length && <option value="">— Checklist standard —</option>}
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.is_default ? "  (predefinito)" : ""}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Note">
-          <textarea
-            className="pc-input min-h-[72px]"
+            className={`pc-input ${f.ticket_type === "device" ? "min-h-[72px]" : "min-h-[132px]"}`}
             value={f.notes}
             onChange={(e) => setF({ ...f, notes: e.target.value })}
           />

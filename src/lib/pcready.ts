@@ -1,5 +1,6 @@
 export type TicketStatus = "pending" | "in-progress" | "testing" | "ready";
 export type TicketPriority = "high" | "med" | "low";
+export type TicketType = "device" | "support" | "maintenance" | "other";
 
 export const STATUS_META: Record<
   TicketStatus,
@@ -20,6 +21,24 @@ export const PRIORITY_LABEL: Record<TicketPriority, string> = {
   high: "Alta",
   med: "Media",
   low: "Bassa",
+};
+
+export const TICKET_TYPE_LABEL: Record<TicketType, string> = {
+  device: "Preparazione PC",
+  support: "Assistenza tecnica",
+  maintenance: "Manutenzione",
+  other: "Altro",
+};
+
+export const TICKET_TYPE_META: Record<TicketType, { label: string; cls: string; color: string }> = {
+  device: { label: TICKET_TYPE_LABEL.device, cls: "bg-blue-500/10 text-blue-700", color: "#1B4FD8" },
+  support: { label: TICKET_TYPE_LABEL.support, cls: "bg-emerald-500/10 text-emerald-700", color: "#16A34A" },
+  maintenance: {
+    label: TICKET_TYPE_LABEL.maintenance,
+    cls: "bg-amber-500/10 text-amber-700",
+    color: "#EF9827",
+  },
+  other: { label: TICKET_TYPE_LABEL.other, cls: "bg-purple-500/10 text-purple-700", color: "#7C3AED" },
 };
 
 export const OS_OPTIONS = ["Windows 11 Pro", "Windows 10 Pro", "Ubuntu 22.04 LTS", "macOS (BYOD)"];
