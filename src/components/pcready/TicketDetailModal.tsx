@@ -12,7 +12,6 @@ import {
   type TicketPriority,
   type TicketStatus,
   type TicketType,
-  generatePrepScript,
   fmtDate,
   fmtDateTime,
   type ChecklistStructure,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
-import { Check, Code2, Copy, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TicketRow {
@@ -77,7 +76,6 @@ export function TicketDetailModal() {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [historyEntries, setHistoryEntries] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<string>("");
-  const [showScript, setShowScript] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -213,9 +211,6 @@ export function TicketDetailModal() {
               <Trash2 className="w-3 h-3" /> Elimina
             </button>
           )}
-          <button className="pc-btn pc-btn-ghost" onClick={() => setShowScript(true)}>
-            <Code2 className="w-3 h-3" /> Script
-          </button>
           <button className="pc-btn pc-btn-ghost" onClick={close}>
             Chiudi
           </button>
@@ -347,50 +342,6 @@ export function TicketDetailModal() {
           </div>
         )}
       </div>
-
-      {showScript && (
-        <Modal
-          open={true}
-          onClose={() => setShowScript(false)}
-          size="lg"
-          title="Script di preparazione PC"
-          footer={
-            <>
-              <button className="pc-btn pc-btn-ghost" onClick={() => setShowScript(false)}>
-                Chiudi
-              </button>
-              <button
-                className="pc-btn pc-btn-primary"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(
-                    generatePrepScript({
-                      model: asset.model,
-                      serial: asset.serial,
-                      os: asset.os,
-                      software: t.software,
-                    }),
-                  );
-                  toast.success("Script copiato");
-                }}
-              >
-                <Copy className="w-3 h-3" /> Copia
-              </button>
-            </>
-          }
-        >
-          <pre
-            className="text-[11.5px] font-mono p-3 rounded-md overflow-auto max-h-[60vh]"
-            style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
-          >
-            {generatePrepScript({
-              model: asset.model,
-              serial: asset.serial,
-              os: asset.os,
-              software: t.software,
-            })}
-          </pre>
-        </Modal>
-      )}
     </Modal>
   );
 }
