@@ -7,13 +7,58 @@ import { Clock, User } from "lucide-react";
 interface VersionDiffViewerProps {
   version1: Version;
   version2: Version | null;
+  authorNames?: Record<string, string>;
   open: boolean;
   onClose: () => void;
 }
 
-export function VersionDiffViewer({ version1, version2, open, onClose }: VersionDiffViewerProps) {
+function formatFieldName(key: string) {
+  const labels: Record<string, string> = {
+    active: "Attiva",
+    category: "Categoria",
+    color: "Colore",
+    content: "Contenuto",
+    description: "Descrizione",
+    flow_definition: "Definizione workflow",
+    icon: "Icona",
+    is_default: "Predefinito",
+    language: "Linguaggio",
+    name: "Nome",
+    structure: "Struttura",
+    summary: "Riepilogo",
+    version: "Versione",
+  };
+  return labels[key] || key.replace(/_/g, " ");
+}
+
+function formatValue(value: unknown) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "boolean") return value ? "Sì" : "No";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return JSON.stringify(value, null, 2);
+}
+
+function ValueBlock({ value, tone }: { value: unknown; tone: "old" | "new" | "neutral" }) {
+  const text = formatValue(value);
+  const isLong = text.length > 120 || text.includes("\n");
+  const className =
+    tone === "old"
+      ? "p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded text-sm"
+      : tone === "new"
+        ? "p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded text-sm"
+        : "p-2 bg-muted rounded text-sm";
+
+  return isLong ? (
+    <pre className={`${className} whitespace-pre-wrap font-mono text-xs`}>{text}</pre>
+  ) : (
+    <div className={className}>{text}</div>
+  );
+}
+
+export function VersionDiffViewer({ version1, version2, authorNames = {}, open, onClose }: VersionDiffViewerProps) {
   const isComparison = !!version2;
   const diff = version2 ? compareVersions(version1, version2) : null;
+  const authorLabel = (id: string | null) => (id ? authorNames[id] || id : "Sistema");
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -43,7 +88,7 @@ export function VersionDiffViewer({ version1, version2, open, onClose }: Version
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <User className="w-3 h-3" />
-                    <span>{version1.created_by || "Sistema"}</span>
+                    <span>{authorLabel(version1.created_by)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-3 h-3" />
@@ -72,7 +117,7 @@ export function VersionDiffViewer({ version1, version2, open, onClose }: Version
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <User className="w-3 h-3" />
-                      <span>{version2.created_by || "Sistema"}</span>
+                      <span>{authorLabel(version2.created_by)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-3 h-3" />
@@ -98,27 +143,15 @@ export function VersionDiffViewer({ version1, version2, open, onClose }: Version
                     <div className="space-y-3">
                       {Object.entries(diff.changed).map(([key, change]) => (
                         <div key={key} className="border rounded-lg p-4">
-                          <div className="font-medium mb-2 capitalize">{key.replace(/_/g, ' ')}</div>
+                          <div className="font-medium mb-2 capitalize">{formatFieldName(key)}</div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Precedente</div>
-                              <div className="p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded text-sm">
-                                {typeof change.old === 'string' && change.old.includes('\n') ? (
-                                  <pre className="whitespace-pre-wrap font-mono text-xs">{change.old}</pre>
-                                ) : (
-                                  String(change.old || '')
-                                )}
-                              </div>
+                              <ValueBlock value={change.old} tone="old" />
                             </div>
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Nuovo</div>
-                              <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded text-sm">
-                                {typeof change.new === 'string' && change.new.includes('\n') ? (
-                                  <pre className="whitespace-pre-wrap font-mono text-xs">{change.new}</pre>
-                                ) : (
-                                  String(change.new || '')
-                                )}
-                              </div>
+                              <ValueBlock value={change.new} tone="new" />
                             </div>
                           </div>
                         </div>

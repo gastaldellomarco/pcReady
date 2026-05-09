@@ -42,6 +42,9 @@ import {
   type AutomationRunStats,
   type HealthStatus,
 } from "@/lib/automation-runs";
+import { VersionBadge } from "@/components/pcready/VersionBadge";
+import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
+import { createVersion } from "@/lib/versioning";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
@@ -67,6 +70,7 @@ function RuleCard({
   onEdit,
   onExpandToggle,
   onToggleLogs,
+  onOpenVersions,
   onRunNow,
   onDryRun,
   onDuplicate,
@@ -85,6 +89,7 @@ function RuleCard({
   onEdit: () => void;
   onExpandToggle: () => void;
   onToggleLogs: () => void;
+  onOpenVersions: () => void;
   onRunNow: () => void;
   onDryRun: () => void;
   onDuplicate: () => void;
@@ -101,6 +106,7 @@ function RuleCard({
             </Badge>
             <HealthBadge health={stats?.health ?? "never_run"} />
             <div className="text-sm font-semibold text-foreground">{rule.name}</div>
+            <VersionBadge entityType="automation_flows" entityId={rule.id} />
           </div>
 
           {rule.description && (
@@ -150,6 +156,14 @@ function RuleCard({
             >
               <History className="h-4 w-4" />
               Storico
+            </button>
+            <button
+              type="button"
+              onClick={onOpenVersions}
+              className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900"
+            >
+              <History className="h-4 w-4" />
+              Versioni
             </button>
           </div>
 
@@ -244,6 +258,7 @@ function AutomationsPage() {
   const [saving, setSaving] = useState(false);
   const [AutomationBuilderComp, setAutomationBuilderComp] = useState<any>(null);
   const [guidedMode, setGuidedMode] = useState(true);
+  const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
 
   async function loadRules() {
     setLoadingRules(true);
@@ -289,6 +304,14 @@ function AutomationsPage() {
       .eq("id", rule.id);
 
     if (error) return toast.error(error.message);
+    await createVersion(
+      "automation_flows",
+      rule.id,
+      { ...rule, active: !rule.active },
+      { active: { from: rule.active, to: !rule.active } },
+      rule.active ? "Automazione disattivata" : "Automazione attivata",
+      "update",
+    );
     void loadRules();
   }
 
@@ -380,25 +403,50 @@ function AutomationsPage() {
       } as any;
 
       if (editingRule) {
+        const previousSnapshot = editingRule as unknown as Record<string, unknown>;
         const { data, error } = await supabase
           .from("automation_flows")
           .update(payload)
           .eq("id", editingRule.id)
-          .select("id");
+          .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
+          .single();
         if (error) {
           console.error("Supabase update error:", error, data);
           throw error;
         }
+        await createVersion(
+          "automation_flows",
+          editingRule.id,
+          data as unknown as Record<string, unknown>,
+          {
+            name: { from: previousSnapshot.name, to: payload.name },
+            description: { from: previousSnapshot.description, to: payload.description },
+            category: { from: previousSnapshot.category, to: payload.category },
+            version: { from: previousSnapshot.version, to: payload.version },
+            flow_definition: { from: previousSnapshot.flow_definition, to: payload.flow_definition },
+          },
+          flow.changeNote || "Automazione aggiornata",
+          "update",
+        );
         toast.success("Automazione aggiornata");
       } else {
         const { data, error } = await supabase
           .from("automation_flows")
           .insert(payload)
-          .select("id");
+          .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
+          .single();
         if (error) {
           console.error("Supabase insert error:", error, data);
           throw error;
         }
+        await createVersion(
+          "automation_flows",
+          data.id,
+          data as unknown as Record<string, unknown>,
+          undefined,
+          flow.changeNote || "Automazione creata",
+          "create",
+        );
         toast.success("Automazione creata");
       }
       setBuilderOpen(false);
@@ -441,6 +489,24 @@ function AutomationsPage() {
         })
         .select("id");
       if (error) throw error;
+      const duplicatedId = data?.[0]?.id;
+      if (duplicatedId) {
+        await createVersion(
+          "automation_flows",
+          duplicatedId,
+          {
+            name: `${rule.name} (Copia)`,
+            description: rule.description,
+            category: rule.category,
+            active: false,
+            version: 1,
+            flow_definition: flowData?.flow_definition ?? {},
+          },
+          undefined,
+          "Automazione duplicata",
+          "create",
+        );
+      }
       toast.success("Automazione duplicata");
       void loadRules();
     } catch (err) {
@@ -475,6 +541,17 @@ function AutomationsPage() {
         .update({ active: false, flow_definition: fd })
         .eq("id", rule.id);
       if (error) throw error;
+      await createVersion(
+        "automation_flows",
+        rule.id,
+        { ...rule, active: false, flow_definition: fd },
+        {
+          active: { from: rule.active, to: false },
+          flow_definition: { from: rule.flow_definition, to: fd },
+        },
+        "Automazione archiviata",
+        "update",
+      );
       toast.success("Automazione archiviata");
       void loadRules();
     } catch (err) {
@@ -643,6 +720,7 @@ function AutomationsPage() {
                   onToggle={() => void toggleRule(rule)}
                   onEdit={() => openEditDialog(rule)}
                   onToggleLogs={() => void toggleLogs(rule)}
+                  onOpenVersions={() => setVersionHistoryRuleId(rule.id)}
                   onRunNow={() => void runRule(rule, false)}
                   onDryRun={() => void runRule(rule, true)}
                   onDuplicate={() => void duplicateRule(rule)}
@@ -744,6 +822,13 @@ function AutomationsPage() {
         </DialogContent>
       </Dialog>
       <DryRunDialog open={dryRunDialogOpen} run={dryRunResult} onOpenChange={setDryRunDialogOpen} />
+      <VersionHistoryDrawer
+        entityType="automation_flows"
+        entityId={versionHistoryRuleId || ""}
+        open={!!versionHistoryRuleId}
+        onClose={() => setVersionHistoryRuleId(null)}
+        onRestored={() => void loadRules()}
+      />
     </div>
   );
 }

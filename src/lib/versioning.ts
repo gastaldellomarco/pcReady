@@ -142,6 +142,8 @@ export async function createVersion(
   changeNote?: string,
   operation: VersionOperation = "update",
 ): Promise<void> {
+  const effectiveUserId = (await supabase.auth.getUser()).data.user?.id;
+
   await createVersionSnapshot({
     entityType,
     entityId,
@@ -150,6 +152,7 @@ export async function createVersion(
     previousSnapshot: null,
     changedFields,
     changeNote,
+    userId: effectiveUserId,
   });
 }
 
@@ -210,6 +213,9 @@ export async function restoreEntityVersion(
   restoreNote?: string,
   userId?: string,
 ): Promise<number> {
+  const currentUser = userId || (await supabase.auth.getUser()).data.user?.id;
+  if (!currentUser) throw new Error("Utente non autenticato");
+
   const { data: versionData, error: versionError } = await supabaseAny
     .from("entity_versions")
     .select("*")
@@ -233,6 +239,8 @@ export async function restoreEntityVersion(
   const snapshot = versionData.snapshot;
   const restorePayload = { ...snapshot } as Record<string, unknown>;
   delete restorePayload.id;
+  delete restorePayload.created_at;
+  delete restorePayload.created_by;
 
   const { error: updateError } = await supabaseAny
     .from(entityType)
@@ -248,7 +256,7 @@ export async function restoreEntityVersion(
     snapshot,
     previousSnapshot: currentData ?? null,
     changeNote: restoreNote || `Restored to version ${targetVersionNumber}`,
-    userId,
+    userId: currentUser,
   });
 }
 

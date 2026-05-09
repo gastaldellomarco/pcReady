@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,42 +8,62 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { VersionDiffViewer } from "./VersionDiffViewer";
 import { RestoreVersionDialog } from "./RestoreVersionDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VersionHistoryDrawerProps {
   entityType: string;
   entityId: string;
   open: boolean;
   onClose: () => void;
+  onRestored?: () => void;
 }
 
-export function VersionHistoryDrawer({ entityType, entityId, open, onClose }: VersionHistoryDrawerProps) {
+export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRestored }: VersionHistoryDrawerProps) {
   const { profile } = useAuth();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedVersions, setSelectedVersions] = useState<Version[]>([]);
   const [viewingVersion, setViewingVersion] = useState<Version | null>(null);
   const [restoringVersion, setRestoringVersion] = useState<Version | null>(null);
+  const [authors, setAuthors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (open && entityId) {
-      console.log("Loading versions for:", entityType, entityId);
-      loadVersions();
-    }
-  }, [open, entityId]);
+  const formatAuthor = useCallback((authorId: string | null) => {
+    if (!authorId) return "Sistema";
+    return authors[authorId] || authorId;
+  }, [authors]);
 
-  async function loadVersions() {
+  const loadVersions = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getVersions(entityType, entityId);
-      console.log("Loaded versions:", data);
       setVersions(data);
+      const userIds = Array.from(new Set(data.map((version) => version.created_by).filter(Boolean))) as string[];
+      if (userIds.length) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+        setAuthors(
+          Object.fromEntries(
+            (profiles ?? []).map((profile) => [profile.id, profile.full_name || profile.id]),
+          ),
+        );
+      } else {
+        setAuthors({});
+      }
     } catch (error) {
       console.error("Error loading versions:", error);
       toast.error("Errore caricamento versioni");
     } finally {
       setLoading(false);
     }
-  }
+  }, [entityId, entityType]);
+
+  useEffect(() => {
+    if (open && entityId) {
+      loadVersions();
+    }
+  }, [open, entityId, loadVersions]);
 
   function toggleVersionSelection(version: Version) {
     setSelectedVersions(prev => {
@@ -70,8 +90,7 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose }: Ve
       await restoreVersion(entityType, entityId, restoringVersion, note);
       toast.success("Versione ripristinata");
       onClose();
-      // Refresh parent data
-      window.location.reload(); // Simple refresh, could be improved
+      onRestored?.();
     } catch (error) {
       toast.error("Errore ripristino versione");
     } finally {
@@ -96,7 +115,7 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose }: Ve
                   onClick={() => setViewingVersion(selectedVersions[0])}
                   className="flex-1"
                 >
-                  <Eye className="w-4 h-4 mr-2" />
+                  <GitCompare className="w-4 h-4 mr-2" />
                   Confronta Versioni
                 </Button>
               </div>
@@ -139,7 +158,7 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose }: Ve
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <User className="w-3 h-3" />
-                        <span>{version.created_by || "Sistema"}</span>
+                        <span>{formatAuthor(version.created_by)}</span>
                         <Clock className="w-3 h-3 ml-2" />
                         <span>{new Date(version.created_at).toLocaleString()}</span>
                       </div>
@@ -182,15 +201,17 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose }: Ve
         <VersionDiffViewer
           version1={selectedVersions[0]}
           version2={selectedVersions[1]}
+          authorNames={authors}
           open={!!viewingVersion}
           onClose={() => setViewingVersion(null)}
         />
       )}
 
-      {viewingVersion && selectedVersions.length === 1 && (
+      {viewingVersion && selectedVersions.length !== 2 && (
         <VersionDiffViewer
           version1={viewingVersion}
           version2={null}
+          authorNames={authors}
           open={!!viewingVersion}
           onClose={() => setViewingVersion(null)}
         />

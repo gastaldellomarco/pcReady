@@ -278,6 +278,7 @@ function ScriptsPage() {
         entityId={selectedScriptId || ""}
         open={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
+        onRestored={() => setRefresh((x) => x + 1)}
       />
     </div>
   );

@@ -26,6 +26,7 @@ export default function AutomationWizard({
   const [conditions, setConditions] = useState<ConditionDef[]>(initial?.conditions_definition ?? []);
   const [actions, setActions] = useState<ActionDef[]>(initial?.actions_definition ?? []);
   const [schedule, setSchedule] = useState<any>(initial?.schedule_definition ?? null);
+  const [changeNote, setChangeNote] = useState(initial?.changeNote ?? "");
   const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>({});
 
   function validateCurrent(currentStep: number): { ok: boolean; message?: string } {
@@ -74,6 +75,7 @@ export default function AutomationWizard({
       schedule_definition: schedule,
       summary: generateSummary(),
       version: initial?.version ?? 1,
+      changeNote,
     };
     onSave(flow);
   }
@@ -123,6 +125,17 @@ export default function AutomationWizard({
             onChangeName={setName}
             onChangeDescription={setDescription}
           />
+        )}
+        {step === 4 && (
+          <div>
+            <label className="text-sm font-medium">Nota modifica</label>
+            <textarea
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              value={changeNote}
+              onChange={(event) => setChangeNote(event.target.value)}
+              placeholder="Descrivi cosa è cambiato in questa versione..."
+            />
+          </div>
         )}
       </div>
 

@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_STRUCTURE, type ChecklistStructure } from "@/lib/pcready";
-import { Plus, Trash2, Star, StarOff, Check, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Star, StarOff, Check, X, Pencil, History } from "lucide-react";
 import { toast } from "sonner";
+import { VersionBadge } from "@/components/pcready/VersionBadge";
+import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
+import { createVersion } from "@/lib/versioning";
 
 export const Route = createFileRoute("/_app/checklist")({
   head: () => ({ meta: [{ title: "Checklist — PCReady" }, { name: "description", content: "Crea e gestisci checklist personalizzate per la preparazione PC." }] }),
@@ -25,6 +28,7 @@ function ChecklistPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -41,13 +45,22 @@ function ChecklistPage() {
 
   async function createNew() {
     if (!canEdit) return toast.error("Permessi insufficienti");
-    const { data, error } = await supabase.from("checklist_templates").insert({
+    const payload = {
       name: "Nuovo modello",
       description: "",
       structure: DEFAULT_STRUCTURE as unknown as Json,
       created_by: user!.id,
-    }).select("id").single();
+    };
+    const { data, error } = await supabase.from("checklist_templates").insert(payload).select("id, name, description, structure, is_default").single();
     if (error) return toast.error(error.message);
+    await createVersion(
+      "checklist_templates",
+      data.id,
+      data as unknown as Record<string, unknown>,
+      undefined,
+      "Modello checklist creato",
+      "create",
+    );
     await load();
     setActive(data.id);
   }
@@ -55,7 +68,19 @@ function ChecklistPage() {
   async function setDefault(id: string) {
     if (!isAdmin) return toast.error("Solo amministratori");
     await supabase.from("checklist_templates").update({ is_default: false }).neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("checklist_templates").update({ is_default: true }).eq("id", id);
+    const template = templates.find((item) => item.id === id);
+    const { error } = await supabase.from("checklist_templates").update({ is_default: true }).eq("id", id);
+    if (error) return toast.error(error.message);
+    if (template) {
+      await createVersion(
+        "checklist_templates",
+        id,
+        { ...template, is_default: true } as unknown as Record<string, unknown>,
+        { is_default: { from: template.is_default, to: true } },
+        "Impostato come modello predefinito",
+        "update",
+      );
+    }
     toast.success("Modello impostato come predefinito");
     load();
   }
@@ -63,20 +88,46 @@ function ChecklistPage() {
   async function remove(id: string) {
     if (!isAdmin) return toast.error("Solo amministratori");
     if (!confirm("Eliminare questo modello?")) return;
+    const template = templates.find((item) => item.id === id);
+    if (template) {
+      await createVersion(
+        "checklist_templates",
+        id,
+        template as unknown as Record<string, unknown>,
+        undefined,
+        "Modello checklist eliminato",
+        "delete",
+      );
+    }
     const { error } = await supabase.from("checklist_templates").delete().eq("id", id);
+
     if (error) return toast.error(error.message);
     toast.success("Modello eliminato");
     if (active === id) setActive(null);
     load();
   }
 
-  async function update(t: Template, patch: Partial<Template>) {
+  async function update(t: Template, patch: Partial<Template>, changeNote = "Modello checklist aggiornato") {
     const dbPatch: TablesUpdate<"checklist_templates"> = {
       ...patch,
       structure: patch.structure as unknown as Json | undefined,
     };
     const { error } = await supabase.from("checklist_templates").update(dbPatch).eq("id", t.id);
     if (error) return toast.error(error.message);
+    const next = { ...t, ...patch } as Template;
+    await createVersion(
+      "checklist_templates",
+      t.id,
+      next as unknown as Record<string, unknown>,
+      Object.fromEntries(
+        Object.entries(patch).map(([key, value]) => [
+          key,
+          { from: (t as unknown as Record<string, unknown>)[key], to: value },
+        ]),
+      ) as Record<string, { from: unknown; to: unknown }>,
+      changeNote,
+      "update",
+    );
     setTemplates(ts => ts.map(x => x.id === t.id ? { ...x, ...patch } as Template : x));
   }
 
@@ -112,8 +163,10 @@ function ChecklistPage() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-[13px] font-semibold flex-1 truncate"
                     style={{ color: on ? "var(--accent)" : "var(--text)" }}>{t.name}</span>
+                  <VersionBadge entityType="checklist_templates" entityId={t.id} />
                   {t.is_default && <Star className="w-3 h-3 fill-current" style={{ color: "var(--warn)" }}/>}
                 </div>
+
                 {t.description && <div className="text-[11px] text-text3 truncate mt-0.5">{t.description}</div>}
                 <div className="text-[10px] text-text3 font-mono mt-1">
                   {Object.values(t.structure || {}).reduce((a, c) => a + (c.items?.length || 0), 0)} voci
@@ -126,22 +179,31 @@ function ChecklistPage() {
 
       {current ? (
         <TemplateEditor key={current.id} template={current} canEdit={canEdit} isAdmin={isAdmin}
-          onUpdate={p => update(current, p)} onDelete={() => remove(current.id)}
+          onUpdate={(p, n) => update(current, p, n)} onDelete={() => remove(current.id)}
+          onOpenVersions={() => setVersionHistoryOpen(true)}
           onSetDefault={() => setDefault(current.id)} />
       ) : (
         <div className="pc-card flex items-center justify-center min-h-[400px]">
           <div className="text-text3 text-sm">Seleziona o crea un modello</div>
         </div>
       )}
+      <VersionHistoryDrawer
+        entityType="checklist_templates"
+        entityId={active || ""}
+        open={versionHistoryOpen}
+        onClose={() => setVersionHistoryOpen(false)}
+        onRestored={() => void load()}
+      />
     </div>
   );
 }
 
-function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetDefault }: {
+function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetDefault, onOpenVersions }: {
   template: Template; canEdit: boolean; isAdmin: boolean;
-  onUpdate: (p: Partial<Template>) => void;
-  onDelete: () => void; onSetDefault: () => void;
+  onUpdate: (p: Partial<Template>, changeNote?: string) => void;
+  onDelete: () => void; onSetDefault: () => void; onOpenVersions: () => void;
 }) {
+
   const [name, setName] = useState(template.name);
   const [desc, setDesc] = useState(template.description || "");
   const [struct, setStruct] = useState<ChecklistStructure>(template.structure || {});
@@ -155,34 +217,40 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
     setActiveTab(Object.keys(template.structure || {})[0] || "");
   }, [template.id]);
 
-  function persist(s: ChecklistStructure) { setStruct(s); onUpdate({ structure: s }); }
+  function persist(s: ChecklistStructure, changeNote = "Struttura checklist aggiornata") {
+    setStruct(s);
+    onUpdate({ structure: s }, changeNote);
+  }
 
   function addTab() {
     const key = "sec_" + Math.random().toString(36).slice(2, 8);
-    persist({ ...struct, [key]: { label: "Nuova sezione", items: [] } });
+    persist({ ...struct, [key]: { label: "Nuova sezione", items: [] } }, "Sezione checklist aggiunta");
+
     setActiveTab(key);
   }
   function renameTab(key: string, label: string) {
-    persist({ ...struct, [key]: { ...struct[key], label } });
+    persist({ ...struct, [key]: { ...struct[key], label } }, "Sezione checklist rinominata");
+
   }
   function removeTab(key: string) {
     if (!confirm("Eliminare questa sezione e tutte le sue voci?")) return;
     const c = { ...struct }; delete c[key];
-    persist(c);
+    persist(c, "Sezione checklist rimossa");
+
     setActiveTab(Object.keys(c)[0] || "");
   }
   function addItem() {
     const id = "i_" + Math.random().toString(36).slice(2, 8);
     const items = [...(struct[activeTab]?.items || []), { id, text: "Nuova voce" }];
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } });
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist aggiunta");
   }
   function updateItem(id: string, text: string) {
     const items = struct[activeTab].items.map(i => i.id === id ? { ...i, text } : i);
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } });
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist aggiornata");
   }
   function removeItem(id: string) {
     const items = struct[activeTab].items.filter(i => i.id !== id);
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } });
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist rimossa");
   }
 
   return (
@@ -191,8 +259,12 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
         <input className="pc-input max-w-[280px] !text-[14px] !font-semibold"
           value={name} disabled={!canEdit}
           onChange={e => setName(e.target.value)}
-          onBlur={() => name !== template.name && onUpdate({ name })} />
+          onBlur={() => name !== template.name && onUpdate({ name }, "Nome checklist aggiornato")} />
         <div className="ml-auto flex items-center gap-2">
+          <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onOpenVersions}>
+            <History className="w-3 h-3"/> Versioni
+          </button>
+
           {isAdmin && (
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onSetDefault}
               title={template.is_default ? "Già predefinito" : "Imposta come predefinito"}>
@@ -212,7 +284,8 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
         <input className="pc-input" placeholder="Descrizione (opzionale)"
           value={desc} disabled={!canEdit}
           onChange={e => setDesc(e.target.value)}
-          onBlur={() => desc !== (template.description || "") && onUpdate({ description: desc })} />
+          onBlur={() => desc !== (template.description || "") && onUpdate({ description: desc }, "Descrizione checklist aggiornata")} />
+
       </div>
 
       <div className="border-b mt-4 px-3" style={{ borderColor: "var(--border)" }}>
