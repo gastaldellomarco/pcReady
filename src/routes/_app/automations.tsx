@@ -245,7 +245,7 @@ function AutomationsPage() {
   const [logsByRule, setLogsByRule] = useState<Record<string, AutomationRunLog[]>>({});
   const [logsOpenRuleId, setLogsOpenRuleId] = useState<string | null>(null);
   const [loadingLogsRuleId, setLoadingLogsRuleId] = useState<string | null>(null);
-  const [dryRunResult, setDryRunResult] = useState<AutomationRunLog | null>(null);
+  const [dryRunRule, setDryRunRule] = useState<AutomationRule | null>(null);
   const [dryRunDialogOpen, setDryRunDialogOpen] = useState(false);
   const [runningRuleId, setRunningRuleId] = useState<string | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -579,6 +579,11 @@ function AutomationsPage() {
 
   async function runRule(rule: AutomationRule, isDryRun: boolean) {
     if (!session?.access_token) return;
+    if (isDryRun) {
+      setDryRunRule(rule);
+      setDryRunDialogOpen(true);
+      return;
+    }
     setRunningRuleId(rule.id);
     try {
       const log = await executeRun({
@@ -597,10 +602,6 @@ function AutomationsPage() {
       setLogsOpenRuleId(rule.id);
       await loadStats();
       await loadRules();
-      if (isDryRun) {
-        setDryRunResult(runLog);
-        setDryRunDialogOpen(true);
-      }
       toast.success(isDryRun ? "Dry-run completato" : "Run manuale completata");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Run non riuscita");
@@ -821,7 +822,7 @@ function AutomationsPage() {
           )}
         </DialogContent>
       </Dialog>
-      <DryRunDialog open={dryRunDialogOpen} run={dryRunResult} onOpenChange={setDryRunDialogOpen} />
+      <DryRunDialog open={dryRunDialogOpen} rule={dryRunRule} onOpenChange={setDryRunDialogOpen} />
       <VersionHistoryDrawer
         entityType="automation_flows"
         entityId={versionHistoryRuleId || ""}

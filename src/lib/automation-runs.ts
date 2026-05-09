@@ -12,6 +12,19 @@ export interface ActionResult {
   error?: string;
 }
 
+export interface DryRunStep {
+  stepIndex: number;
+  type: "trigger" | "condition" | "action";
+  label: string;
+  result: "pass" | "skip" | "error";
+  detail: string;
+}
+
+export interface DryRunResult {
+  steps: DryRunStep[];
+  summary: "success" | "blocked" | "error";
+}
+
 export interface AutomationRunLog {
   id: string;
   automation_id: string;
@@ -48,6 +61,9 @@ const AuthedSchema = z.object({ accessToken: z.string() });
 const AutomationInputSchema = AuthedSchema.extend({
   automationId: z.string().uuid(),
 });
+const DryRunInputSchema = AuthedSchema.extend({
+  flowId: z.string().uuid(),
+});
 const RunInputSchema = AutomationInputSchema.extend({
   isDryRun: z.boolean(),
   triggerPayload: z.record(z.any()).optional(),
@@ -83,6 +99,16 @@ export const runAutomationNow = createServerFn({ method: "POST" })
       isDryRun: input.isDryRun,
       triggerPayload: input.triggerPayload,
     });
+  });
+
+export const executeDryRun = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof DryRunInputSchema>) => data)
+  .handler(async ({ data }) => {
+    const input = DryRunInputSchema.parse(data);
+    const { requireAutomationRunnerUser, simulateAutomationDryRun } =
+      await import("./automation-runs.server");
+    await requireAutomationRunnerUser(input.accessToken);
+    return simulateAutomationDryRun(input.flowId);
   });
 
 export const getAutomationRunStats = createServerFn({ method: "POST" })

@@ -1,58 +1,104 @@
-import { FlaskConical } from "lucide-react";
-import type { AutomationRunLog } from "@/lib/automation-runs";
+import { CheckCircle, FlaskConical, Loader2, MinusCircle, XCircle } from "lucide-react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import type { AutomationRule } from "@/types/automation";
+import { executeDryRun, type DryRunResult, type DryRunStep } from "@/lib/automation-runs";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RunStatusBadge } from "./RunLogDrawer";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface DryRunDialogProps {
   open: boolean;
-  run: AutomationRunLog | null;
+  rule: AutomationRule | null;
   onOpenChange: (open: boolean) => void;
 }
 
-export function DryRunDialog({ open, run, onOpenChange }: DryRunDialogProps) {
+export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
+  const { session } = useAuth();
+  const runDryRun = useServerFn(executeDryRun);
+  const [result, setResult] = useState<DryRunResult | null>(null);
+  const [running, setRunning] = useState(false);
+
+  async function handleRunDryRun() {
+    if (!rule || !session?.access_token) return;
+    setRunning(true);
+    try {
+      const data = await runDryRun({
+        data: { flowId: rule.id, accessToken: session.access_token },
+      });
+      setResult(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Dry-run non riuscito");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen);
+    if (!nextOpen) setResult(null);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FlaskConical className="h-5 w-5" />
-            Risultato dry-run
+            Dry Run{rule?.name ? `: ${rule.name}` : ""}
           </DialogTitle>
         </DialogHeader>
-        {!run ? (
-          <div className="py-8 text-center text-sm text-text3">Nessun risultato disponibile</div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <RunStatusBadge status={run.status} isDryRun={run.is_dry_run} />
-              <span className="text-sm text-text3">{run.duration_ms ?? 0} ms</span>
+        <div className="space-y-4">
+          <Button onClick={handleRunDryRun} disabled={!rule || running}>
+            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
+            Simula esecuzione
+          </Button>
+          {!result && (
+            <div className="py-6 text-center text-sm text-text3">
+              Avvia la simulazione per vedere trigger, condizioni e azioni step-by-step.
             </div>
-            {run.error_message && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                {run.error_message}
+          )}
+          {result && (
+            <div className="space-y-3">
+              <div className="text-sm text-text3">Esito simulazione: {result.summary}</div>
+              <div className="space-y-2">
+                {result.steps.map((step) => (
+                  <DryRunStepCard key={`${step.stepIndex}-${step.type}`} step={step} />
+                ))}
               </div>
-            )}
-            <div className="space-y-2">
-              {(run.actions_executed ?? []).map((action, index) => (
-                <div key={`${action.action}-${index}`} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-medium">{action.action}</div>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-mono">
-                      {action.status}
-                    </span>
-                  </div>
-                  {action.error && <div className="mt-2 text-sm text-red-700">{action.error}</div>}
-                  {action.result !== undefined && (
-                    <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-100 p-2 font-mono text-xs">
-                      {JSON.stringify(action.result, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DryRunStepCard({ step }: { step: DryRunStep }) {
+  const Icon = step.result === "pass" ? CheckCircle : step.result === "skip" ? MinusCircle : XCircle;
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-lg border p-3",
+        step.result === "pass" && "border-green-200 bg-green-50",
+        step.result === "skip" && "border-yellow-200 bg-yellow-50",
+        step.result === "error" && "border-red-200 bg-red-50",
+      )}
+    >
+      <Icon
+        className={cn(
+          "mt-0.5 h-5 w-5",
+          step.result === "pass" && "text-green-600",
+          step.result === "skip" && "text-yellow-600",
+          step.result === "error" && "text-red-600",
+        )}
+      />
+      <div>
+        <p className="text-sm font-medium">{step.label}</p>
+        <p className="text-xs text-muted-foreground">{step.detail}</p>
+      </div>
+    </div>
   );
 }

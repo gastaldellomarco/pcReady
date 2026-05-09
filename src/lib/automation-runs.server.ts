@@ -3,6 +3,8 @@ import { createNotificationForAdmins } from "@/lib/notifications.server";
 import type {
   ActionResult,
   AutomationRunLog,
+  DryRunResult,
+  DryRunStep,
   HealthStatus,
   RunLogStatus,
 } from "@/lib/automation-runs";
@@ -148,6 +150,48 @@ export async function notifyAutomationFailure({
   });
 }
 
+export async function simulateAutomationDryRun(flowId: string): Promise<DryRunResult> {
+  const { data: flow, error } = await supabaseAdmin
+    .from("automation_flows" as any)
+    .select("id, name, flow_definition, actions_definition, trigger_definition")
+    .eq("id", flowId)
+    .single();
+  if (error) throw error;
+
+  const flowAny = flow as any;
+  const blocks = extractDryRunBlocks(flowAny);
+  const steps: DryRunStep[] = [];
+
+  if (!blocks.length) {
+    return {
+      steps: [
+        {
+          stepIndex: 0,
+          type: "action",
+          label: "Validazione flow",
+          result: "error",
+          detail: "Flow senza trigger, condizioni o azioni simulabili",
+        },
+      ],
+      summary: "error",
+    };
+  }
+
+  for (const [index, block] of blocks.entries()) {
+    const step = simulateBlock(block, index);
+    steps.push(step);
+    if (step.result === "skip" || step.result === "error") break;
+  }
+
+  const summary = steps.some((step) => step.result === "error")
+    ? "error"
+    : steps.some((step) => step.result === "skip")
+      ? "blocked"
+      : "success";
+
+  return { steps, summary };
+}
+
 export function computeHealth(logs: Pick<AutomationRunLog, "status">[]): HealthStatus {
   if (!logs.length) return "never_run";
   const lastThree = logs.slice(0, 3);
@@ -172,6 +216,84 @@ function extractActions(flow: any) {
       config: node.data?.config || {},
     }));
   return Array.isArray(nodeActions) ? nodeActions : [];
+}
+
+function extractDryRunBlocks(flow: any) {
+  const blocks: any[] = [];
+  const trigger =
+    flow.trigger_definition || flow.flow_definition?.meta?.wizard?.trigger_definition || null;
+  if (trigger) blocks.push({ type: "trigger", ...trigger });
+
+  const wizardConditions = flow.flow_definition?.meta?.wizard?.conditions_definition;
+  if (Array.isArray(wizardConditions)) {
+    wizardConditions.forEach((condition: any) => blocks.push({ type: "condition", ...condition }));
+  }
+
+  const nodes = Array.isArray(flow.flow_definition?.nodes) ? flow.flow_definition.nodes : [];
+  if (!blocks.length) {
+    nodes
+      .filter((node: any) => node.type === "trigger" || node.type === "condition")
+      .forEach((node: any) => blocks.push({ type: node.type, data: node.data }));
+  }
+
+  extractActions(flow).forEach((action: any) => blocks.push({ type: "action", ...action }));
+  return blocks;
+}
+
+function simulateBlock(block: any, index: number): DryRunStep {
+  const type = normalizeBlockType(block);
+  const label = String(block.label || block.name || block.action || block.type || block.data?.label || type);
+
+  if (type === "condition") {
+    const expression = String(
+      block.expression ||
+        block.field ||
+        block.condition ||
+        block.data?.config?.expression ||
+        block.data?.label ||
+        "condizione configurata",
+    );
+    const forced = block.expected_result ?? block.result ?? block.data?.config?.expected_result;
+    const passed = forced === undefined ? true : Boolean(forced);
+    return {
+      stepIndex: index,
+      type,
+      label,
+      result: passed ? "pass" : "skip",
+      detail: `Condizione: ${expression} → ${passed ? "true" : "false"}`,
+    };
+  }
+
+  if (type === "action" && (block.config?.force_error || block.force_error)) {
+    return {
+      stepIndex: index,
+      type,
+      label,
+      result: "error",
+      detail: "Azione non eseguibile: errore simulato dalla configurazione",
+    };
+  }
+
+  return {
+    stepIndex: index,
+    type,
+    label,
+    result: "pass",
+    detail:
+      type === "trigger"
+        ? `Trigger: ${label} → valido per simulazione`
+        : `Azione: ${label} → validata, nessun effetto applicato`,
+  };
+}
+
+function normalizeBlockType(block: any): DryRunStep["type"] {
+  if (block.type === "trigger" || block.type === "condition" || block.type === "action") {
+    return block.type;
+  }
+  if (block.data?.type === "trigger" || block.data?.type === "condition" || block.data?.type === "action") {
+    return block.data.type;
+  }
+  return "action";
 }
 
 function simulateAction(action: any, index: number, isDryRun: boolean): ActionResult {
