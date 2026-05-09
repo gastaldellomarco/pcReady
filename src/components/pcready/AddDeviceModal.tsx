@@ -1,9 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useServerFn } from "@tanstack/react-start";
 import { DeviceSchema, type DeviceInput } from "@/lib/schemas/devices";
 import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
+import { getPublicAppSettings } from "@/lib/app-settings";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
@@ -22,8 +24,10 @@ interface ClientOption {
 
 export function AddDeviceModal() {
   const { addDeviceOpen, addDeviceInitialSerial, closeAddDevice, triggerRefresh } = useTickets();
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, session } = useAuth();
+  const loadSettings = useServerFn(getPublicAppSettings);
   const [clients, setClients] = useState<ClientOption[]>([]);
+  const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
   const [busy, setBusy] = useState(false);
   const form = useForm<DeviceInput>({
     resolver: zodResolver(DeviceSchema),
@@ -52,6 +56,20 @@ export function AddDeviceModal() {
         if (arr[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);
       });
   }, [addDeviceOpen, addDeviceInitialSerial, form]);
+
+  useEffect(() => {
+    if (!addDeviceOpen || !session?.access_token) return;
+    loadSettings({ data: { accessToken: session.access_token } })
+      .then((settings) => {
+        const nextOptions = settings.os_options.length ? settings.os_options : OS_OPTIONS;
+        setOsOptions(nextOptions);
+        if (!nextOptions.includes(form.getValues().os)) {
+          form.setValue("os", nextOptions[0], { shouldValidate: true });
+        }
+      })
+      .catch(() => setOsOptions(OS_OPTIONS));
+  }, [addDeviceOpen, form, loadSettings, session?.access_token]);
+
   const submit = form.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
     setBusy(true);
@@ -85,7 +103,7 @@ export function AddDeviceModal() {
         serial: "",
         client_id: client.id,
         end_user: null,
-        os: OS_OPTIONS[0],
+        os: osOptions[0] ?? OS_OPTIONS[0],
         notes: null,
       });
       closeAddDevice();
@@ -161,7 +179,7 @@ export function AddDeviceModal() {
         </div>
         <Field label="OS">
           <select className="pc-input" {...form.register("os")}>
-            {OS_OPTIONS.map((o) => (
+            {osOptions.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>

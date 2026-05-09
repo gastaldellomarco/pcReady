@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
+import { getPublicAppSettings } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
 import { Plus, FileDown, Eye, QrCode, Upload, ScanLine, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
@@ -55,6 +58,8 @@ const PAGE_SIZE = 50;
 
 function InventoryPage() {
   const { refreshKey, openAddDevice, triggerRefresh } = useTickets();
+  const { session } = useAuth();
+  const loadSettings = useServerFn(getPublicAppSettings);
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -67,6 +72,14 @@ function InventoryPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [labelsBusy, setLabelsBusy] = useState(false);
+  const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    loadSettings({ data: { accessToken: session.access_token } })
+      .then((settings) => setOsOptions(settings.os_options.length ? settings.os_options : OS_OPTIONS))
+      .catch(() => setOsOptions(OS_OPTIONS));
+  }, [loadSettings, session?.access_token]);
 
   useEffect(() => {
     // check for optional URL filter param (e.g. ?filter=without_ticket)
@@ -272,7 +285,7 @@ function InventoryPage() {
           onChange={(e) => setFos(e.target.value)}
         >
           <option value="">Tutti gli OS</option>
-          {OS_OPTIONS.map((o) => (
+          {osOptions.map((o) => (
             <option key={o}>{o}</option>
           ))}
         </select>

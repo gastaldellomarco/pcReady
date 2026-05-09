@@ -19,6 +19,9 @@ export const AppSettingsSchema = z.object({
     testing: numberInput("Inserisci il limite per Testing"),
     ready: numberInput("Inserisci il limite per Pronto"),
   }),
+  os_options: stringListInput(),
+  device_brands: stringListInput(),
+  ticket_categories: stringListInput(),
 });
 
 export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;
@@ -30,4 +33,8 @@ function numberInput(message: string) {
     .refine((v) => Number.isInteger(v) && v >= 0 && v <= 999, {
       message: "Deve essere un numero intero tra 0 e 999",
     });
+}
+
+function stringListInput() {
+  return z.array(z.string().trim().min(1)).default([]);
 }

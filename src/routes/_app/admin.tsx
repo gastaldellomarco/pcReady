@@ -108,6 +108,60 @@ function isAppRole(value: string): value is AppRole {
   return value === "admin" || value === "tech" || value === "viewer";
 }
 
+function TagListEditor({
+  label,
+  values,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function addValue() {
+    const next = draft.trim();
+    if (!next || values.some((value) => value.toLowerCase() === next.toLowerCase())) return;
+    onChange([...values, next]);
+    setDraft("");
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-2">
+        {values.map((value) => (
+          <Badge key={value} variant="secondary" className="gap-2">
+            {value}
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => onChange(values.filter((item) => item !== value))}
+            >
+              ×
+            </button>
+          </Badge>
+        ))}
+        <Input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addValue();
+            }
+          }}
+          onBlur={addValue}
+          placeholder={placeholder}
+          className="h-7 min-w-48 flex-1 border-0 px-1 shadow-none focus-visible:ring-0"
+        />
+      </div>
+    </div>
+  );
+}
+
 function AdminUsersPage() {
   function getErrorMessage(error: unknown, fallback: string) {
     try {
@@ -378,6 +432,9 @@ function AdminUsersPage() {
         testing: 5,
         ready: 20,
       },
+      os_options: settings?.os_options ?? [],
+      device_brands: settings?.device_brands ?? [],
+      ticket_categories: settings?.ticket_categories ?? [],
     },
   });
 
@@ -396,6 +453,9 @@ function AdminUsersPage() {
         testing: 5,
         ready: 20,
       },
+      os_options: settings?.os_options ?? [],
+      device_brands: settings?.device_brands ?? [],
+      ticket_categories: settings?.ticket_categories ?? [],
     });
   }, [settings, settingsForm]);
 
@@ -416,6 +476,9 @@ function AdminUsersPage() {
           testing: Number(values.wip_limits.testing),
           ready: Number(values.wip_limits.ready),
         },
+        os_options: values.os_options ?? [],
+        device_brands: values.device_brands ?? [],
+        ticket_categories: values.ticket_categories ?? [],
       };
 
       await saveSettings({ data: { accessToken: session.access_token, settings: payload } });
@@ -936,6 +999,48 @@ function AdminUsersPage() {
                     </div>
 
                     <div className="space-y-4">
+                      <div className="space-y-3 rounded-lg border p-4">
+                        <div>
+                          <h3 className="font-medium">Variabili di sistema</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Gestisci le liste usate nei form operativi dell'applicazione.
+                          </p>
+                        </div>
+                        <TagListEditor
+                          label="Sistemi Operativi disponibili"
+                          values={settingsForm.watch("os_options") ?? []}
+                          onChange={(values) =>
+                            settingsForm.setValue("os_options", values, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                          placeholder="Aggiungi sistema operativo..."
+                        />
+                        <TagListEditor
+                          label="Brand dispositivi"
+                          values={settingsForm.watch("device_brands") ?? []}
+                          onChange={(values) =>
+                            settingsForm.setValue("device_brands", values, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                          placeholder="Aggiungi brand..."
+                        />
+                        <TagListEditor
+                          label="Categorie ticket"
+                          values={settingsForm.watch("ticket_categories") ?? []}
+                          onChange={(values) =>
+                            settingsForm.setValue("ticket_categories", values, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                          placeholder="Aggiungi categoria..."
+                        />
+                      </div>
+
                       <div>
                         <Label>Limiti WIP Kanban</Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">

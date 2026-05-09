@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
-import type { TicketStatus } from "@/lib/pcready";
+import { OS_OPTIONS, type TicketStatus } from "@/lib/pcready";
 
 export type WipLimits = Record<TicketStatus, number>;
 
@@ -21,6 +21,9 @@ export type AppSettings = {
   admin_approval_required: boolean;
   support_email: string;
   wip_limits: WipLimits;
+  os_options: string[];
+  device_brands: string[];
+  ticket_categories: string[];
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -31,6 +34,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   admin_approval_required: true,
   support_email: "",
   wip_limits: DEFAULT_WIP_LIMITS,
+  os_options: [...OS_OPTIONS],
+  device_brands: ["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "Microsoft"],
+  ticket_categories: [],
 };
 
 type AppSettingRow = { key: string; value: unknown };
@@ -42,6 +48,8 @@ const WipLimitsSchema = z.object({
   ready: z.number().int().min(0).max(999),
 });
 
+const StringListSchema = z.array(z.string().trim().min(1)).default([]);
+
 export const getAppSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { accessToken: string }) => data)
   .handler(async ({ data: { accessToken } }) => {
@@ -52,6 +60,27 @@ export const getAppSettings = createServerFn({ method: "GET" })
     if (error) throw error;
 
     return mergeAppSettingsRows((data ?? []) as unknown as AppSettingRow[]);
+  });
+
+export const getPublicAppSettings = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }) => {
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
+
+    const { data, error } = await supabaseAdmin
+      .from("app_settings" as any)
+      .select("key, value")
+      .in("key", ["os_options", "device_brands", "ticket_categories"]);
+
+    if (error) throw error;
+
+    const settings = mergeAppSettingsRows((data ?? []) as unknown as AppSettingRow[]);
+    return {
+      os_options: settings.os_options,
+      device_brands: settings.device_brands,
+      ticket_categories: settings.ticket_categories,
+    };
   });
 
 export const getKanbanAppSettings = createServerFn({ method: "GET" })
@@ -133,6 +162,9 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
         .transform((val) => val.toLowerCase().trim())
         .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
       wip_limits: WipLimitsSchema,
+      os_options: StringListSchema,
+      device_brands: StringListSchema,
+      ticket_categories: StringListSchema,
     })
     .parse(settings);
 }
