@@ -31,14 +31,14 @@ export const TICKET_TYPE_LABEL: Record<TicketType, string> = {
 };
 
 export const TICKET_TYPE_META: Record<TicketType, { label: string; cls: string; color: string }> = {
-  device: { label: TICKET_TYPE_LABEL.device, cls: "bg-blue-500/10 text-blue-700", color: "#1B4FD8" },
-  support: { label: TICKET_TYPE_LABEL.support, cls: "bg-emerald-500/10 text-emerald-700", color: "#16A34A" },
+  device: { label: TICKET_TYPE_LABEL.device, cls: "pc-ticket-type-device", color: "#1B4FD8" },
+  support: { label: TICKET_TYPE_LABEL.support, cls: "pc-ticket-type-support", color: "#16A34A" },
   maintenance: {
     label: TICKET_TYPE_LABEL.maintenance,
-    cls: "bg-amber-500/10 text-amber-700",
+    cls: "pc-ticket-type-maintenance",
     color: "#EF9827",
   },
-  other: { label: TICKET_TYPE_LABEL.other, cls: "bg-purple-500/10 text-purple-700", color: "#7C3AED" },
+  other: { label: TICKET_TYPE_LABEL.other, cls: "pc-ticket-type-other", color: "#7C3AED" },
 };
 
 export const OS_OPTIONS = ["Windows 11 Pro", "Windows 10 Pro", "Ubuntu 22.04 LTS", "macOS (BYOD)"];

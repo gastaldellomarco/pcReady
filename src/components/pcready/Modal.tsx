@@ -12,18 +12,19 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }:
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center px-4"
+    <div className="fixed inset-0 z-[500] flex items-start justify-center px-4 py-8 overflow-y-auto"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}>
       <div
         onClick={e => e.stopPropagation()}
-        className="pc-anim-in flex flex-col max-h-[90vh] w-full"
+        className="pc-anim-in flex flex-col w-full my-auto"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
           boxShadow: "var(--shadow-lg)",
           maxWidth: size === "lg" ? "680px" : "560px",
+          maxHeight: "calc(100vh - 4rem)",
         }}>
         <div className="flex items-center justify-between px-[22px] py-[16px] border-b" style={{ borderColor: "var(--border)" }}>
           <span className="text-[15px] font-bold" style={{ fontFamily: "var(--font-head)" }}>{title}</span>

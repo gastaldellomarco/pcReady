@@ -437,6 +437,7 @@ function ScriptViewer({
         style={{
           background: "var(--surface2)",
           border: "1px solid var(--border)",
+          color: "var(--text)",
           maxHeight: "55vh",
         }}
       >
