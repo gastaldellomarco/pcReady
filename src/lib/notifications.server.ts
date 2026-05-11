@@ -15,6 +15,7 @@ export async function getAuthedNotificationUser(accessToken: string) {
 function preferenceColumn(type: NotificationType) {
   if (type === "ticket_assigned") return "notify_ticket_assigned";
   if (type === "ticket_status_changed") return "notify_ticket_status_changed";
+  if (type === "ticket_completed") return "notify_ticket_completed";
   if (type === "automation_failed") return "notify_automation_failed";
   if (type === "device_status_changed") return "notify_device_status_changed";
   if (type === "checklist_completed") return "notify_checklist_completed";

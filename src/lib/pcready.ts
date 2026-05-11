@@ -1,4 +1,4 @@
-export type TicketStatus = "pending" | "in-progress" | "testing" | "ready";
+export type TicketStatus = "pending" | "in-progress" | "testing" | "ready" | "completed";
 export type TicketPriority = "high" | "med" | "low";
 export type TicketType = "device" | "support" | "maintenance" | "other";
 
@@ -14,7 +14,8 @@ export const STATUS_META: Record<
     color: "#1B4FD8",
   },
   testing: { label: "Testing", cls: "pc-badge-testing", next: "ready", color: "#7C3AED" },
-  ready: { label: "Pronto", cls: "pc-badge-ready", next: null, color: "#16A34A" },
+  ready: { label: "Pronto", cls: "pc-badge-ready", next: "completed", color: "#16A34A" },
+  completed: { label: "Completato", cls: "pc-badge-completed", next: null, color: "#22C55E" },
 };
 
 export const PRIORITY_LABEL: Record<TicketPriority, string> = {

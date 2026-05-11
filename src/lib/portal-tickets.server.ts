@@ -74,12 +74,27 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
   if (error) throw error;
   if (!ticket) throw new Response("Ticket non trovato", { status: 404 });
 
-  const { data: history } = await supabaseAdmin
-    .from("entity_versions" as any)
-    .select("created_at, change_type, changed_fields")
-    .eq("entity_type", "ticket")
-    .eq("entity_id", input.ticketId)
-    .order("created_at", { ascending: true });
+  // Fetch status history from the new ticket_status_history table
+  const { data: history, error: historyError } = await supabaseAdmin
+    .from("ticket_status_history" as any)
+    .select("id, ticket_id, from_status, to_status, changed_by, changed_at, note")
+    .eq("ticket_id", input.ticketId)
+    .order("changed_at", { ascending: true });
+  if (historyError) {
+    console.error("Error fetching status history:", historyError);
+  }
+
+  // Fetch actor info for status history
+  const actorIds = [...new Set(((history ?? []) as any[]).map((h) => h.changed_by).filter(Boolean))];
+  const { data: actors, error: actorsError } = actorIds.length
+    ? await supabaseAdmin.from("profiles").select("id, full_name, initials").in("id", actorIds)
+    : { data: [], error: null };
+  if (actorsError) console.error("Error fetching actors:", actorsError);
+  const actorById = new Map(((actors ?? []) as any[]).map((actor) => [actor.id, actor]));
+  const historyWithActors = ((history ?? []) as any[]).map((h) => ({
+    ...h,
+    actor: actorById.get(h.changed_by) ?? null,
+  }));
 
   const { data: publicNotes, error: notesError } = await supabaseAdmin
     .from("ticket_notes" as any)
@@ -100,7 +115,7 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
     author: authorById.get(note.author_id) ?? null,
   }));
 
-  return { session, ticket, history: history ?? [], publicNotes: notesWithAuthors };
+  return { session, ticket, history: historyWithActors, publicNotes: notesWithAuthors };
 }
 
 export async function createPortalTicketServer(input: {
@@ -132,6 +147,16 @@ export async function createPortalTicketServer(input: {
     .single();
 
   if (error) throw error;
+
+  // Insert initial status history record for portal-created tickets
+  await supabaseAdmin.from("ticket_status_history" as any).insert({
+    ticket_id: (ticket as any).id,
+    from_status: null,
+    to_status: "pending",
+    changed_by: null, // Portal/system created
+    changed_at: new Date().toISOString(),
+    note: "Ticket creato dal portale cliente",
+  });
 
   await createNotificationForAdmins({
     type: "ticket_comment",

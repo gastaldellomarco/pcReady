@@ -4,6 +4,7 @@ import { z } from "zod";
 export const NOTIFICATION_TYPES = [
   "ticket_assigned",
   "ticket_status_changed",
+  "ticket_completed",
   "ticket_comment",
   "automation_failed",
   "device_status_changed",

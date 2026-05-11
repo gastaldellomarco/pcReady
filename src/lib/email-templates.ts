@@ -287,6 +287,11 @@ function buildSampleVariables(organizationName: string, supportEmail: string) {
     "{{ticket_title}}": "Preparazione notebook Lenovo ThinkPad",
     "{{ticket_link}}": "https://app.pcready.it/tickets?ticket=PC-2026-0142",
     "{{checklist_name}}": "Setup Windows 11 Pro",
+    "{{client_name}}": "ACME Srl",
+    "{{assignee_name}}": "Marco Gastaldello",
+    "{{completed_date}}": "12 mag 2026",
+    "{{pdf_link}}": "https://app.pcready.it/api/documents/verbale-PC-2026-0142.pdf?token=demo",
+    "{{portal_link}}": "https://app.pcready.it/portal",
   };
 }
 
@@ -331,6 +336,14 @@ function defaultTemplates() {
         '<h1>Checklist completata</h1><p>La checklist {{checklist_name}} per il ticket {{ticket_code}} e\' stata completata.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
       body_text:
         "La checklist {{checklist_name}} per il ticket {{ticket_code}} e' stata completata. Apri: {{ticket_link}}",
+    },
+    {
+      event_type: "ticket_completed",
+      subject: "[{{organization_name}}] Ticket {{ticket_code}} completato",
+      body_html:
+        '<h1>Ticket completato</h1><p>Gentile {{client_name}},</p><p>Il ticket <strong>{{ticket_code}}</strong> e\' stato completato il {{completed_date}}.</p><p>Tecnico assegnatario: {{assignee_name}}.</p><p>Puoi scaricare il verbale al seguente link:</p><p><a href="{{pdf_link}}">Scarica verbale PDF</a></p><p>Per qualsiasi necessita, rispondi a questa email o accedi al <a href="{{portal_link}}">portale clienti</a>.</p><p>Cordiali saluti,<br/>{{organization_name}}</p>',
+      body_text:
+        "Gentile {{client_name}}, il ticket {{ticket_code}} e' stato completato il {{completed_date}}. Tecnico: {{assignee_name}}. Scarica il verbale: {{pdf_link}}. Portale: {{portal_link}}. Cordiali saluti, {{organization_name}}",
     },
   ].map((template) => ({
     ...template,

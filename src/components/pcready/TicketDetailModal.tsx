@@ -162,7 +162,17 @@ export function TicketDetailModal() {
   }
 
   async function advance(next: TicketStatus, auto = false) {
+    const previousStatus = ticket.status;
     await update({ status: next });
+    // Insert status history record
+    await (supabase as any).from("ticket_status_history").insert({
+      ticket_id: ticket.id,
+      from_status: previousStatus,
+      to_status: next,
+      changed_by: user!.id,
+      changed_at: new Date().toISOString(),
+      note: auto ? "Avanzamento automatico via checklist" : null,
+    });
     await supabase.from("activity_log").insert({
       type: auto ? "auto" : "user",
       message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? " automaticamente" : ""}`,
@@ -185,8 +195,16 @@ export function TicketDetailModal() {
       });
     }
     toast.success(`Avanzato a ${STATUS_META[next].label}`);
-  }
 
+    // Trigger completion workflow when status changes to 'completed'
+    if (next === "completed" && session?.access_token) {
+      const { completeTicketServer } = await import("@/lib/ticket-completion");
+      void completeTicketServer({ data: { ticketId: ticket.id, changedBy: user!.id, accessToken: session.access_token } }).catch((err) => {
+        console.error("Failed to complete ticket:", err);
+        toast.error("Ticket completato, ma errore invio email/verbale");
+      });
+    }
+  }
 
   async function del() {
     if (!confirm(`Eliminare ${ticket.ticket_code}?`)) return;

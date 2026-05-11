@@ -11,6 +11,7 @@ export const DEFAULT_WIP_LIMITS: WipLimits = {
   "in-progress": 5,
   testing: 5,
   ready: 20,
+  completed: 0, // No WIP limit for completed tickets
 };
 
 export type AppSettings = {
@@ -46,6 +47,7 @@ const WipLimitsSchema = z.object({
   "in-progress": z.number().int().min(0).max(999),
   testing: z.number().int().min(0).max(999),
   ready: z.number().int().min(0).max(999),
+  completed: z.number().int().min(0).max(999),
 });
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);

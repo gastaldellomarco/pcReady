@@ -44,7 +44,7 @@ interface Card {
 }
 
 type ViewMode = "columns" | "swimlanes";
-const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready"];
+const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready", "completed"];
 const KANBAN_VIEW_MODE_KEY = "pcready:kanban:view-mode";
 
 function KanbanPage() {
@@ -128,6 +128,26 @@ function KanbanPage() {
       toast.error(error.message);
       setRows((rs) => rs.map((r) => (r.id === id ? card : r)));
       return;
+    }
+    // Insert status history record when status changes
+    if (card.status !== status) {
+      await (supabase as any).from("ticket_status_history").insert({
+        ticket_id: id,
+        from_status: card.status,
+        to_status: status,
+        changed_by: user!.id,
+        changed_at: new Date().toISOString(),
+        note: nextAssigneeId !== card.assignee_id ? `Assegnato a ${nextAssignee?.full_name || "Non assegnato"}` : null,
+      });
+    }
+
+    // Trigger completion workflow when status changes to 'completed'
+    if (status === "completed" && card.status !== "completed" && session?.access_token) {
+      const { completeTicketServer } = await import("@/lib/ticket-completion");
+      void completeTicketServer({ data: { ticketId: id, changedBy: user!.id, accessToken: session.access_token } }).catch((err) => {
+        console.error("Failed to complete ticket:", err);
+        toast.error("Ticket completato, ma errore invio email/verbale");
+      });
     }
     await supabase.from("activity_log").insert({
       type: "user",
@@ -240,7 +260,7 @@ function KanbanPage() {
           onMove={(id, status, assigneeId) => void moveTo(id, status, assigneeId)}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {KANBAN_STATUSES.map((s) => {
             const items = filteredRows.filter((r) => r.status === s);
             const count = items.length;

@@ -152,6 +152,15 @@ export function CreateTicketModal() {
         .select("id, ticket_code")
         .single();
       if (error) throw error;
+      // Insert initial status history record
+      await (supabase as any).from("ticket_status_history").insert({
+        ticket_id: data.id,
+        from_status: null,
+        to_status: "pending",
+        changed_by: user!.id,
+        changed_at: new Date().toISOString(),
+        note: "Ticket creato",
+      });
       await supabase.from("activity_log").insert({
         type: "user",
         message: `${data.ticket_code} creato`,

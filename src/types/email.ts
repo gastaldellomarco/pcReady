@@ -3,7 +3,8 @@ export type EmailEventType =
   | "reset_password"
   | "confirm_account"
   | "ticket_assigned"
-  | "checklist_completed";
+  | "checklist_completed"
+  | "ticket_completed";
 
 export interface EmailTemplateVariable {
   token: string;
@@ -30,6 +31,7 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
   confirm_account: "Conferma account",
   ticket_assigned: "Notifica assegnazione ticket",
   checklist_completed: "Notifica completamento checklist",
+  ticket_completed: "Notifica completamento ticket (cliente)",
 };
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
@@ -65,5 +67,15 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<EmailEventType, EmailTemplateVaria
     { token: "{{checklist_name}}", description: "Nome della checklist completata" },
     { token: "{{ticket_code}}", description: "Codice del ticket collegato" },
     { token: "{{ticket_link}}", description: "Link diretto al ticket" },
+  ],
+  ticket_completed: [
+    ...COMMON_VARIABLES,
+    { token: "{{ticket_code}}", description: "Codice del ticket completato" },
+    { token: "{{ticket_title}}", description: "Titolo o descrizione del ticket" },
+    { token: "{{client_name}}", description: "Nome del cliente" },
+    { token: "{{assignee_name}}", description: "Nome del tecnico assegnatario" },
+    { token: "{{completed_date}}", description: "Data di completamento" },
+    { token: "{{pdf_link}}", description: "Link per scaricare il verbale PDF" },
+    { token: "{{portal_link}}", description: "Link al portale clienti" },
   ],
 };
