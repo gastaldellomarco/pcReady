@@ -172,6 +172,17 @@ export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
 }
 
 export function validateAppSettingsInput(settings: AppSettings): AppSettings {
+  // Merge incoming settings with defaults so missing optional fields get default values
+  const mergedSettings: AppSettings = {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+    wip_limits: { ...DEFAULT_WIP_LIMITS, ...(settings.wip_limits || {}) },
+    os_options: settings.os_options ?? DEFAULT_SETTINGS.os_options,
+    device_brands: settings.device_brands ?? DEFAULT_SETTINGS.device_brands,
+    ticket_categories: settings.ticket_categories ?? DEFAULT_SETTINGS.ticket_categories,
+    archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
+  };
+
   return z
     .object({
       organization_name: z.string().min(1),
@@ -190,5 +201,5 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
       device_brands: StringListSchema,
       ticket_categories: StringListSchema,
     })
-    .parse(settings);
+    .parse(mergedSettings);
 }
