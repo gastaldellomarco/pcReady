@@ -58,6 +58,46 @@ export function getTemplates() {
   return LEGACY_TEMPLATES;
 }
 
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text?: string,
+): Promise<void> {
+  const SMTP_HOST = process.env.SMTP_HOST;
+  const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+  const SMTP_USER = process.env.SMTP_USER;
+  const SMTP_PASS = process.env.SMTP_PASS;
+  const SMTP_FROM = process.env.SMTP_FROM ?? SMTP_USER;
+  const SMTP_SECURE = process.env.SMTP_SECURE === "true";
+
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.warn("SMTP non configurato: email non inviata.");
+    return;
+  }
+
+  const nodemailer = await import("nodemailer");
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+
+  const info = await transporter.sendMail({
+    from: SMTP_FROM,
+    to,
+    subject,
+    html,
+    text,
+  });
+
+  console.log("Email inviata:", info.messageId);
+}
+
 export const listEmailTemplates = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string }) => data)
   .handler(async ({ data: { accessToken } }) => {
@@ -145,149 +185,16 @@ export const sendTestEmail = createServerFn({ method: "POST" })
     const html = renderTemplate(row.body_html, sample);
     const text = renderTemplate(row.body_text ?? "", sample);
 
-    // Prefer provider APIs when configured (Resend), otherwise fall back to webhook
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const RESEND_FROM = process.env.RESEND_FROM || process.env.SENDGRID_FROM || "no-reply@example.com";
+    const delivered = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+    await sendEmail(validated.recipientEmail, subject, html, text);
 
-    let delivered = false;
-    const webhookUrl = process.env.EMAIL_TEST_WEBHOOK_URL || process.env.SMTP_WEBHOOK_URL;
-
-    if (RESEND_API_KEY) {
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({ from: RESEND_FROM, to: validated.recipientEmail, subject, html }),
-      });
-
-      if (!r.ok) {
-        // Try to parse error body for helpful info
-        let errBody: any = null;
-        try {
-          errBody = await r.json();
-        } catch {
-          errBody = await r.text().catch(() => null);
-        }
-
-        const isDomainValidationError =
-          r.status === 403 &&
-          (errBody?.name === "validation_error" || (typeof errBody === "string" && /domain/i.test(errBody)) ||
-            (errBody?.message && /domain/i.test(String(errBody.message))));
-
-        if (isDomainValidationError && webhookUrl) {
-          // Try webhook fallback
-          const response = await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
-          });
-          const bodyText = await response.text().catch(() => "");
-          if (!response.ok) {
-            await supabaseAdmin.from("activity_log").insert({
-              type: "sys",
-              actor_id: actorId,
-              message: `Webhook fallback failed after Resend error: ${response.status} ${bodyText}`,
-            });
-            throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
-          }
-          delivered = true;
-          await supabaseAdmin.from("activity_log").insert({
-            type: "sys",
-            actor_id: actorId,
-            message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook dopo errore Resend: ${JSON.stringify(
-              errBody,
-            )}`,
-          });
-        } else {
-          const textErr = typeof errBody === "string" ? errBody : JSON.stringify(errBody);
-          await supabaseAdmin.from("activity_log").insert({
-            type: "sys",
-            actor_id: actorId,
-            message: `Resend API error ${r.status} ${textErr}`,
-          });
-          throw new Error(`Resend API error ${r.status} ${textErr}`);
-        }
-      } else {
-        delivered = true;
-        await supabaseAdmin.from("activity_log").insert({
-          type: "sys",
-          actor_id: actorId,
-          message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via Resend.`,
-        });
-      }
-    } else if (webhookUrl) {
-      // Try SMTP first if configured, before webhook
-      const SMTP_HOST = process.env.SMTP_HOST;
-      const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-      const SMTP_USER = process.env.SMTP_USER;
-      const SMTP_PASS = process.env.SMTP_PASS;
-      const SMTP_FROM = process.env.SMTP_FROM || RESEND_FROM;
-      const SMTP_SECURE = String(process.env.SMTP_SECURE || "false") === "true";
-
-      if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-        try {
-          const nodemailer = await import("nodemailer");
-          const transporter = nodemailer.createTransport({
-            host: SMTP_HOST,
-            port: SMTP_PORT ?? 587,
-            secure: SMTP_SECURE,
-            auth: { user: SMTP_USER, pass: SMTP_PASS },
-          });
-          await transporter.sendMail({
-            from: SMTP_FROM,
-            to: validated.recipientEmail,
-            subject,
-            html,
-            text,
-          });
-          delivered = true;
-          await supabaseAdmin.from("activity_log").insert({
-            type: "sys",
-            actor_id: actorId,
-            message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${SMTP_HOST}.`,
-          });
-        } catch (err: unknown) {
-          const errMsg = err instanceof Error ? err.message : String(err ?? "");
-          await supabaseAdmin.from("activity_log").insert({
-            type: "sys",
-            actor_id: actorId,
-            message: `SMTP send failed: ${errMsg}`,
-          });
-          // Fall through to webhook fallback below
-        }
-      }
-
-      if (!delivered) {
-        const response = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: validated.recipientEmail, subject, html, text, eventType: validated.eventType }),
-        });
-        const bodyText = await response.text().catch(() => "");
-        if (!response.ok) {
-          await supabaseAdmin.from("activity_log").insert({
-            type: "sys",
-            actor_id: actorId,
-            message: `Webhook send failed: ${response.status} ${bodyText}`,
-          });
-          throw new Error(`Invio email fallito (${response.status}) ${bodyText}`);
-        }
-        delivered = true;
-        await supabaseAdmin.from("activity_log").insert({
-          type: "sys",
-          actor_id: actorId,
-          message: `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via webhook.`,
-        });
-      }
-    } else {
-      await supabaseAdmin.from("activity_log").insert({
-        type: "sys",
-        actor_id: actorId,
-        message: `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. Configura EMAIL_TEST_WEBHOOK_URL per l'invio SMTP.`,
-      });
-    }
+    await supabaseAdmin.from("activity_log").insert({
+      type: "sys",
+      actor_id: actorId,
+      message: delivered
+        ? `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${process.env.SMTP_HOST}.`
+        : `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. SMTP non configurato.`,
+    });
 
     return { ok: true, delivered, subject };
   });

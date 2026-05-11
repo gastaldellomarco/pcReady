@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendEmail } from "@/lib/email-templates";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import type {
@@ -416,109 +417,11 @@ async function deliverAutomationEmail(params: {
   subject: string;
   html: string;
   text?: string;
-}): Promise<{ via: "resend" | "smtp" | "webhook" }> {
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const RESEND_FROM = process.env.RESEND_FROM || process.env.SENDGRID_FROM || "no-reply@example.com";
-  const webhookUrl = process.env.EMAIL_TEST_WEBHOOK_URL || process.env.SMTP_WEBHOOK_URL;
+}): Promise<{ via: "smtp" }> {
   const textBody = params.text ?? stripHtml(params.html);
 
-  if (RESEND_API_KEY) {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: params.to,
-        subject: params.subject,
-        html: params.html,
-      }),
-    });
-
-    if (r.ok) return { via: "resend" };
-
-    let errBody: unknown = null;
-    try {
-      errBody = await r.json();
-    } catch {
-      errBody = await r.text().catch(() => null);
-    }
-    const textErr = typeof errBody === "string" ? errBody : JSON.stringify(errBody);
-
-    if (webhookUrl) {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: params.to,
-          subject: params.subject,
-          html: params.html,
-          text: textBody,
-          source: "automation",
-        }),
-      });
-      if (!response.ok) {
-        const bodyText = await response.text().catch(() => "");
-        throw new Error(`Resend ${r.status} ${textErr}; webhook ${response.status} ${bodyText}`);
-      }
-      return { via: "webhook" };
-    }
-
-    throw new Error(`Resend API error ${r.status} ${textErr}`);
-  }
-
-  const SMTP_HOST = process.env.SMTP_HOST;
-  const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-  const SMTP_USER = process.env.SMTP_USER;
-  const SMTP_PASS = process.env.SMTP_PASS;
-  const SMTP_FROM = process.env.SMTP_FROM || RESEND_FROM;
-  const SMTP_SECURE = String(process.env.SMTP_SECURE || "false") === "true";
-
-  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-    try {
-      const nodemailer = await import("nodemailer");
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: SMTP_PORT ?? 587,
-        secure: SMTP_SECURE,
-        auth: { user: SMTP_USER, pass: SMTP_PASS },
-      });
-      await transporter.sendMail({
-        from: SMTP_FROM,
-        to: params.to,
-        subject: params.subject,
-        html: params.html,
-        text: textBody,
-      });
-      return { via: "smtp" };
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err ?? "");
-      if (!webhookUrl) throw new Error(`SMTP fallito e nessun webhook: ${errMsg}`);
-    }
-  }
-
-  if (webhookUrl) {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: params.to,
-        subject: params.subject,
-        html: params.html,
-        text: textBody,
-        source: "automation",
-      }),
-    });
-    const bodyText = await response.text().catch(() => "");
-    if (!response.ok) throw new Error(`Webhook invio email fallito (${response.status}) ${bodyText}`);
-    return { via: "webhook" };
-  }
-
-  throw new Error(
-    "Nessun canale email configurato: imposta RESEND_API_KEY, variabili SMTP o EMAIL_TEST_WEBHOOK_URL",
-  );
+  await sendEmail(params.to, params.subject, params.html, textBody);
+  return { via: "smtp" };
 }
 
 async function sendEmailAction(

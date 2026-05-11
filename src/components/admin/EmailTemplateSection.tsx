@@ -102,7 +102,7 @@ export function EmailTemplateSection({
       toast.success(
         result.delivered
           ? "Email di test inviata"
-          : "Test preparato. Configura EMAIL_TEST_WEBHOOK_URL per inviare via SMTP.",
+          : "Test preparato. Configura SMTP_HOST, SMTP_USER e SMTP_PASS per inviare via SMTP.",
       );
     } catch (error) {
       toast.error(errorMessage(error, "Invio email di test non riuscito"));
