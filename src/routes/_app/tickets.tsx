@@ -290,7 +290,6 @@ function TicketsPage() {
                   <td className="px-[14px] py-[10px]">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <StatusBadge status={t.status} />
-                      <TicketTypeBadge type={t.ticket_type} />
                     </div>
                   </td>
                   <td className="px-[14px] py-[10px]">

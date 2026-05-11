@@ -34,7 +34,7 @@ import { Route as PortalTicketsIndexRouteImport } from './routes/portal/tickets/
 import { Route as PortalDocumentsIndexRouteImport } from './routes/portal/documents/index'
 import { Route as PortalTicketsNewRouteImport } from './routes/portal/tickets/new'
 import { Route as PortalTicketsTicketIdRouteImport } from './routes/portal/tickets/$ticketId'
-import { Route as AppTicketsArchiveRouteImport } from './routes/_app/tickets.archive'
+import { Route as AppTicketsArchiveRouteImport } from './routes/_app/tickets_.archive'
 import { Route as AppOauthConsentRouteImport } from './routes/_app/oauth.consent'
 
 const PortalRoute = PortalRouteImport.update({
@@ -162,9 +162,9 @@ const PortalTicketsTicketIdRoute = PortalTicketsTicketIdRouteImport.update({
   getParentRoute: () => PortalRoute,
 } as any)
 const AppTicketsArchiveRoute = AppTicketsArchiveRouteImport.update({
-  id: '/archive',
-  path: '/archive',
-  getParentRoute: () => AppTicketsRoute,
+  id: '/tickets_/archive',
+  path: '/tickets/archive',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
   id: '/oauth/consent',
@@ -188,7 +188,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
-  '/tickets': typeof AppTicketsRouteWithChildren
+  '/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
@@ -215,7 +215,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
-  '/tickets': typeof AppTicketsRouteWithChildren
+  '/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
@@ -245,13 +245,13 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/scripts': typeof AppScriptsRoute
-  '/_app/tickets': typeof AppTicketsRouteWithChildren
+  '/_app/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
   '/portal/': typeof PortalIndexRoute
   '/_app/oauth/consent': typeof AppOauthConsentRoute
-  '/_app/tickets/archive': typeof AppTicketsArchiveRoute
+  '/_app/tickets_/archive': typeof AppTicketsArchiveRoute
   '/portal/tickets/$ticketId': typeof PortalTicketsTicketIdRoute
   '/portal/tickets/new': typeof PortalTicketsNewRoute
   '/portal/documents/': typeof PortalDocumentsIndexRoute
@@ -337,7 +337,7 @@ export interface FileRouteTypes {
     | '/portal/dashboard'
     | '/portal/'
     | '/_app/oauth/consent'
-    | '/_app/tickets/archive'
+    | '/_app/tickets_/archive'
     | '/portal/tickets/$ticketId'
     | '/portal/tickets/new'
     | '/portal/documents/'
@@ -529,12 +529,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalTicketsTicketIdRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/_app/tickets/archive': {
-      id: '/_app/tickets/archive'
-      path: '/archive'
+    '/_app/tickets_/archive': {
+      id: '/_app/tickets_/archive'
+      path: '/tickets/archive'
       fullPath: '/tickets/archive'
       preLoaderRoute: typeof AppTicketsArchiveRouteImport
-      parentRoute: typeof AppTicketsRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/oauth/consent': {
       id: '/_app/oauth/consent'
@@ -545,18 +545,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AppTicketsRouteChildren {
-  AppTicketsArchiveRoute: typeof AppTicketsArchiveRoute
-}
-
-const AppTicketsRouteChildren: AppTicketsRouteChildren = {
-  AppTicketsArchiveRoute: AppTicketsArchiveRoute,
-}
-
-const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
-  AppTicketsRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
@@ -570,8 +558,9 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppScriptsRoute: typeof AppScriptsRoute
-  AppTicketsRoute: typeof AppTicketsRouteWithChildren
+  AppTicketsRoute: typeof AppTicketsRoute
   AppOauthConsentRoute: typeof AppOauthConsentRoute
+  AppTicketsArchiveRoute: typeof AppTicketsArchiveRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -586,8 +575,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppScriptsRoute: AppScriptsRoute,
-  AppTicketsRoute: AppTicketsRouteWithChildren,
+  AppTicketsRoute: AppTicketsRoute,
   AppOauthConsentRoute: AppOauthConsentRoute,
+  AppTicketsArchiveRoute: AppTicketsArchiveRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

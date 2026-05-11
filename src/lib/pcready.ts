@@ -15,8 +15,8 @@ export const STATUS_META: Record<
   },
   testing: { label: "Testing", cls: "pc-badge-testing", next: "ready", color: "#7C3AED" },
   ready: { label: "Pronto", cls: "pc-badge-ready", next: "completed", color: "#16A34A" },
-  completed: { label: "Completato", cls: "pc-badge-completed", next: "archived", color: "#22C55E" },
-  archived: { label: "Archiviato", cls: "pc-badge-archived", next: null, color: "#6B7280" },
+  completed: { label: "Completato", cls: "pc-badge-completed", next: "archived", color: "#0EA5E9" },
+  archived: { label: "Archiviato", cls: "pc-badge-archived", next: null, color: "#94A3B8" },
 };
 
 export const PRIORITY_LABEL: Record<TicketPriority, string> = {

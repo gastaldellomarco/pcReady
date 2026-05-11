@@ -245,12 +245,7 @@ export function TicketDetailModal() {
         <Info label="Cliente" value={t.client} />
         <Info
           label="Stato"
-          value={
-            <div className="flex flex-wrap items-center gap-1.5">
-              <StatusBadge status={t.status} />
-              <TicketTypeBadge type={t.ticket_type} />
-            </div>
-          }
+          value={<div className="flex flex-wrap items-center gap-1.5"><StatusBadge status={t.status} /></div>}
         />
         <Info label="Asset" value={asset.model} />
         <Info

@@ -259,13 +259,14 @@
   .pc-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
+    gap: 8px; /* increased gap for readability */
+    padding: 4px 10px; /* slightly larger padding */
+    border-radius: 9999px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
     border: 1px solid color-mix(in oklab, currentColor 24%, transparent);
+    line-height: 1;
   }
   .pc-badge::before {
     content: "";
@@ -290,6 +291,19 @@
   .pc-badge-ready {
     background: var(--success-bg);
     color: var(--success);
+  }
+  /* Make completed and archived visually consistent with the palette */
+  .pc-badge-completed {
+    /* Distinct from 'ready' — use accent-tinted background with accent text */
+    background: color-mix(in oklab, var(--accent2) 78%, var(--surface2) 22%);
+    color: var(--accent);
+    border-color: color-mix(in oklab, currentColor 18%, transparent);
+  }
+  .pc-badge-archived {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    opacity: 1;
   }
 
   .pc-input {

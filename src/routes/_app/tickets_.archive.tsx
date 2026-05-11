@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import TicketsArchivePage from "@/components/pages/tickets.archive.page";
 
-export const Route = createFileRoute("/_app/tickets/archive")({
+export const Route = createFileRoute("/_app/tickets_/archive")({
   head: () => ({
     meta: [
       { title: "Storico ticket — PCReady" },
