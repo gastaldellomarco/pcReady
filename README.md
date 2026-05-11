@@ -25,6 +25,7 @@ Applicazione web per gestire preparazione PC, ticket operativi, checklist, inven
 - Script di preparazione PC generabili dai dati del ticket
 - Gestione utenti e ruoli da sezione Admin
 - Log attivita per azioni utente e automazioni
+- Sezione Admin per Backup & Disaster Recovery con export ZIP dei dati principali
 
 ## Flussi Importanti
 
@@ -114,6 +115,12 @@ Il modello dati separa le responsabilita principali:
 - `client_contacts`: contatti associati al cliente
 - `devices`: asset fisici e inventario
 - `tickets`: workflow operativo e checklist, con FK opzionali verso cliente, dispositivo e contatto richiedente
+
+## Backup & Recovery
+
+PCReady usa Supabase hosted per backup automatici giornalieri, retention in base al piano e procedure di restore coordinate tramite supporto. La pagina `Admin -> Impostazioni App` mostra la policy operativa con RPO, RTO, retention, contatto di emergenza e pulsante di export manuale ZIP dei dati principali.
+
+La procedura completa è documentata in [`docs/BACKUP.md`](docs/BACKUP.md).
 
 ## Struttura Del Progetto
 

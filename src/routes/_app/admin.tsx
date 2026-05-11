@@ -27,6 +27,7 @@ import {
   ChevronDown,
   BookOpen,
   Copy,
+  DatabaseBackup,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/lib/auth-context";
@@ -54,6 +55,7 @@ import {
   type ActivityLogEntry,
   type AuditLogFilters,
 } from "@/lib/audit-log";
+import { exportAllData } from "@/lib/export-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -209,6 +211,7 @@ function AdminUsersPage() {
   const saveSettings = useServerFn(updateAppSettings);
   const loadAuditLog = useServerFn(getAuditLog);
   const exportAudit = useServerFn(exportAuditLog);
+  const exportData = useServerFn(exportAllData);
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [clients, setClients] = useState<OAuthClientInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -220,6 +223,7 @@ function AdminUsersPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [createClientBusy, setCreateClientBusy] = useState(false);
+  const [exportAllBusy, setExportAllBusy] = useState(false);
   const [oauthCreated, setOauthCreated] = useState<
     (OAuthClientCreated & { exampleRedirectUri: string }) | null
   >(null);
@@ -549,6 +553,28 @@ function AdminUsersPage() {
       toast.success("File CSV esportato");
     } catch (error) {
       toast.error(getErrorMessage(error, "Esportazione non riuscita"));
+    }
+  }
+
+  async function handleExportAllData() {
+    if (!session?.access_token) return;
+    setExportAllBusy(true);
+    try {
+      const data = await exportData({ data: { accessToken: session.access_token } });
+      const files = Object.values(data.files);
+      const zipBlob = createZipBlob(
+        files.map((file) => ({
+          name: file.filename,
+          content: file.csv,
+        })),
+      );
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(zipBlob, `pcready_full_export_${date}.zip`);
+      toast.success("Export completo generato");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Export dati non riuscito"));
+    } finally {
+      setExportAllBusy(false);
     }
   }
 
@@ -1131,6 +1157,47 @@ function AdminUsersPage() {
           </TabsList>
 
           <TabsContent value="general">
+            <Card className="mb-5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DatabaseBackup className="h-5 w-5" />
+                  Backup &amp; Disaster Recovery
+                </CardTitle>
+                <CardDescription>
+                  Policy di protezione dati, continuità operativa ed export manuale.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  <BackupMetric label="Frequenza" value="Giornaliero automatico" detail="Backup gestiti da Supabase" />
+                  <BackupMetric label="Retention" value="30 giorni Pro / 7 giorni Free" detail="In base al piano Supabase" />
+                  <BackupMetric label="Ultimo backup" value="Gestito dal provider" detail="Verificabile dalla dashboard Supabase" />
+                  <BackupMetric label="RPO" value="< 24 ore" detail="Per backup automatici giornalieri" />
+                  <BackupMetric label="RTO" value="< 4 ore" detail="Ripristino coordinato con il supporto" />
+                  <BackupMetric
+                    label="Emergenze"
+                    value={settings?.support_email || "Email supporto non configurata"}
+                    detail="Contatto operativo per restore e incidenti"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                  <div>
+                    <p className="text-sm font-medium">Export manuale dati</p>
+                    <p className="text-xs text-muted-foreground">
+                      Scarica un archivio ZIP con CSV di ticket, dispositivi e clienti.
+                    </p>
+                  </div>
+                  <Button onClick={handleExportAllData} disabled={exportAllBusy} variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    {exportAllBusy ? "Esportazione..." : "Esporta tutti i dati"}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Shield className="h-3 w-3" />
+                  <span>Dati protetti con backup giornalieri automatici</span>
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1479,6 +1546,16 @@ function UserRoleEditor({
   );
 }
 
+function BackupMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-lg border bg-muted/30 p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
 function StatusBadge({
   status,
   invitedAt,
@@ -1534,4 +1611,118 @@ function roleLabel(role: AppRole) {
   if (role === "admin") return "Amministratore";
   if (role === "tech") return "Tecnico";
   return "Visualizzatore";
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function createZipBlob(files: { name: string; content: string }[]) {
+  const encoder = new TextEncoder();
+  const parts: Uint8Array[] = [];
+  const centralDirectory: Uint8Array[] = [];
+  let offset = 0;
+
+  files.forEach((file) => {
+    const name = encoder.encode(file.name);
+    const content = encoder.encode(file.content);
+    const crc = crc32(content);
+    const localHeader = concatBytes([
+      u32(0x04034b50),
+      u16(20),
+      u16(0),
+      u16(0),
+      u16(0),
+      u16(0),
+      u32(crc),
+      u32(content.length),
+      u32(content.length),
+      u16(name.length),
+      u16(0),
+      name,
+    ]);
+    parts.push(localHeader, content);
+
+    centralDirectory.push(
+      concatBytes([
+        u32(0x02014b50),
+        u16(20),
+        u16(20),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(crc),
+        u32(content.length),
+        u32(content.length),
+        u16(name.length),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(0),
+        u32(offset),
+        name,
+      ]),
+    );
+    offset += localHeader.length + content.length;
+  });
+
+  const centralOffset = offset;
+  const central = concatBytes(centralDirectory);
+  const end = concatBytes([
+    u32(0x06054b50),
+    u16(0),
+    u16(0),
+    u16(files.length),
+    u16(files.length),
+    u32(central.length),
+    u32(centralOffset),
+    u16(0),
+  ]);
+
+  const zipBytes = concatBytes([...parts, central, end]);
+  return new Blob([zipBytes.buffer.slice(0)], { type: "application/zip" });
+}
+
+function concatBytes(chunks: Uint8Array[]) {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+  chunks.forEach((chunk) => {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  });
+  return result;
+}
+
+function u16(value: number) {
+  const bytes = new Uint8Array(2);
+  new DataView(bytes.buffer).setUint16(0, value, true);
+  return bytes;
+}
+
+function u32(value: number) {
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setUint32(0, value >>> 0, true);
+  return bytes;
+}
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) {
+      crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
