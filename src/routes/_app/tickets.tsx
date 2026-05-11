@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
@@ -65,9 +65,13 @@ function TicketsPage() {
         "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
+      .not("status", "eq", "archived")
       .order("created_at", { ascending: false });
 
-    if (fs) query = query.eq("status", fs as TicketStatus);
+    if (fs) {
+      // disallow filtering archived from active list; archived handled in archive page
+      if (fs !== "archived") query = query.eq("status", fs as TicketStatus);
+    }
     if (fp) query = query.eq("priority", fp as TicketPriority);
     if (ft) query = query.eq("ticket_type", ft as TicketType);
     if (fc) query = query.eq("client_id", fc);
@@ -171,11 +175,13 @@ function TicketsPage() {
           onChange={(e) => setFs(e.target.value)}
         >
           <option value="">Tutti gli stati</option>
-          {Object.entries(STATUS_META).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v.label}
-            </option>
-          ))}
+          {Object.entries(STATUS_META)
+            .filter(([k]) => k !== "archived")
+            .map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
         </select>
         <select
           className="pc-input max-w-[160px]"
@@ -225,6 +231,9 @@ function TicketsPage() {
         >
           <Eye className="w-3 h-3" /> Anteprima PDF
         </button>
+        <Link to="/tickets/archive" className="pc-btn pc-btn-ghost pc-btn-sm">
+          Storico
+        </Link>
         <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
           {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}

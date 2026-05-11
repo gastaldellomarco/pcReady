@@ -101,6 +101,8 @@ const WIP_LIMIT_FIELDS = [
   ["in-progress", "In lavorazione"],
   ["testing", "Testing"],
   ["ready", "Pronto"],
+  ["completed", "Completato"],
+  ["archived", "Archiviato"],
 ] as const;
 
 function fmtDateTime(value: string) {
@@ -469,7 +471,10 @@ function AdminUsersPage() {
         "in-progress": 5,
         testing: 5,
         ready: 20,
+        completed: 0,
+        archived: 0,
       },
+      archive_after_days: settings?.archive_after_days ?? 7,
       os_options: settings?.os_options ?? [],
       device_brands: settings?.device_brands ?? [],
       ticket_categories: settings?.ticket_categories ?? [],
@@ -490,7 +495,10 @@ function AdminUsersPage() {
         "in-progress": 5,
         testing: 5,
         ready: 20,
+        completed: 0,
+        archived: 0,
       },
+      archive_after_days: settings?.archive_after_days ?? 7,
       os_options: settings?.os_options ?? [],
       device_brands: settings?.device_brands ?? [],
       ticket_categories: settings?.ticket_categories ?? [],
@@ -513,7 +521,10 @@ function AdminUsersPage() {
           "in-progress": Number(values.wip_limits["in-progress"]),
           testing: Number(values.wip_limits.testing),
           ready: Number(values.wip_limits.ready),
+          completed: Number(values.wip_limits.completed ?? 0),
+          archived: Number(values.wip_limits.archived ?? 0),
         },
+        archive_after_days: Number(values.archive_after_days ?? 7),
         os_options: values.os_options ?? [],
         device_brands: values.device_brands ?? [],
         ticket_categories: values.ticket_categories ?? [],
@@ -1351,6 +1362,22 @@ function AdminUsersPage() {
                             </div>
                           ))}
                         </div>
+                          <div className="mt-3">
+                            <Label htmlFor="archive_after_days">Archiviazione automatica (giorni)</Label>
+                            <Input
+                              id="archive_after_days"
+                              type="number"
+                              min={0}
+                              max={365}
+                              {...settingsForm.register("archive_after_days")}
+                            />
+                            {settingsForm.formState.errors.archive_after_days && (
+                              <p className="text-sm text-destructive mt-1">
+                                {String(settingsForm.formState.errors.archive_after_days?.message)}
+                              </p>
+                            )}
+                            <p className="text-sm text-muted-foreground mt-1">Numero di giorni dopo il completamento per spostare il ticket in archivio. 0 = mai.</p>
+                          </div>
                       </div>
 
                       <div className="flex items-center space-x-2">

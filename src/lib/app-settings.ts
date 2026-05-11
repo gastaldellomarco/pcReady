@@ -12,6 +12,7 @@ export const DEFAULT_WIP_LIMITS: WipLimits = {
   testing: 5,
   ready: 20,
   completed: 0, // No WIP limit for completed tickets
+  archived: 0,
 };
 
 export type AppSettings = {
@@ -22,6 +23,7 @@ export type AppSettings = {
   admin_approval_required: boolean;
   support_email: string;
   wip_limits: WipLimits;
+  archive_after_days: number;
   os_options: string[];
   device_brands: string[];
   ticket_categories: string[];
@@ -38,6 +40,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   os_options: [...OS_OPTIONS],
   device_brands: ["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "Microsoft"],
   ticket_categories: [],
+  archive_after_days: 7,
 };
 
 type AppSettingRow = { key: string; value: unknown };
@@ -48,6 +51,7 @@ const WipLimitsSchema = z.object({
   testing: z.number().int().min(0).max(999),
   ready: z.number().int().min(0).max(999),
   completed: z.number().int().min(0).max(999),
+  archived: z.number().int().min(0).max(999),
 });
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);
@@ -115,22 +119,17 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("app_settings" as any)
-      .select("value")
-      .eq("key", "wip_limits")
-      .maybeSingle();
+      .select("key, value")
+      .in("key", ["wip_limits", "archive_after_days"]);
 
     if (error) throw error;
 
-    const row = data as unknown as { value?: unknown } | null;
-    let parsed: unknown = row?.value ?? DEFAULT_WIP_LIMITS;
-    try {
-      parsed = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-    } catch {
-      parsed = DEFAULT_WIP_LIMITS;
-    }
+    const rows = (data ?? []) as unknown as AppSettingRow[];
 
-    const result = WipLimitsSchema.safeParse(parsed);
-    return { wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS };
+    const merged = mergeAppSettingsRows(rows);
+    const parsedWip = merged.wip_limits ?? DEFAULT_WIP_LIMITS;
+    const result = WipLimitsSchema.safeParse(parsedWip);
+    return { wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS, archive_after_days: merged.archive_after_days ?? 7 };
   });
 
 export const updateAppSettings = createServerFn({ method: "POST" })
@@ -186,6 +185,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
         .transform((val) => val.toLowerCase().trim())
         .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
       wip_limits: WipLimitsSchema,
+      archive_after_days: z.number().int().min(0).max(365),
       os_options: StringListSchema,
       device_brands: StringListSchema,
       ticket_categories: StringListSchema,

@@ -41,6 +41,7 @@ interface Card {
   assignee_id: string | null;
   device?: { model: string; serial: string | null } | null;
   assignee?: { id: string; full_name: string; initials: string } | null;
+  completed_at?: string | null;
 }
 
 type ViewMode = "columns" | "swimlanes";
@@ -55,6 +56,7 @@ function KanbanPage() {
   const notify = useServerFn(createNotification);
 
   const [rows, setRows] = useState<Card[]>([]);
+  const [archiveDays, setArchiveDays] = useState<number>(7);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [wipLimits, setWipLimits] = useState<WipLimits>(DEFAULT_WIP_LIMITS);
   const [filterAssignee, setFilterAssignee] = useState("all");
@@ -77,16 +79,29 @@ function KanbanPage() {
     supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, status, priority, assignee_id, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
+        "id, ticket_code, client, status, priority, assignee_id, completed_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
       )
+      // exclude archived when DB supports it; errors will be surfaced
+      .neq("status", "archived")
       .order("created_at", { ascending: false })
-      .then(({ data }) => setRows((Array.isArray(data) ? data : []) as unknown as Card[]));
+      .then(({ data, error }) => {
+        if (error) {
+          // Surface DB errors (e.g. invalid enum value) so it's easier to diagnose
+          toast.error(error.message || "Errore caricamento ticket");
+          setRows([]);
+          return;
+        }
+        setRows((Array.isArray(data) ? data : []) as unknown as Card[]);
+      });
   }, [refreshKey]);
 
   useEffect(() => {
     if (!session?.access_token) return;
     loadKanbanSettings({ data: { accessToken: session.access_token } })
-      .then((settings) => setWipLimits(settings?.wip_limits ?? DEFAULT_WIP_LIMITS))
+      .then((settings) => {
+        setWipLimits(settings?.wip_limits ?? DEFAULT_WIP_LIMITS);
+        setArchiveDays(settings?.archive_after_days ?? 7);
+      })
       .catch((error) => toast.error(errorMessage(error, "Impossibile caricare i limiti WIP")));
     loadTechnicians({ data: { accessToken: session.access_token } })
       .then((t) => setTechnicians(Array.isArray(t) ? t : []))
@@ -262,7 +277,16 @@ function KanbanPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {KANBAN_STATUSES.map((s) => {
-            const items = filteredRows.filter((r) => r.status === s);
+            let items = filteredRows.filter((r) => r.status === s);
+            if (s === "completed") {
+              try {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - (archiveDays ?? 7));
+                items = items.filter((r) => r.completed_at && new Date(r.completed_at) >= cutoff);
+              } catch {
+                // ignore date parse issues
+              }
+            }
             const count = items.length;
             const limit = (wipLimits ?? DEFAULT_WIP_LIMITS)[s];
             const isOverLimit = limit > 0 && count > limit;
