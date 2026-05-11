@@ -81,7 +81,26 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
     .eq("entity_id", input.ticketId)
     .order("created_at", { ascending: true });
 
-  return { session, ticket, history: history ?? [] };
+  const { data: publicNotes, error: notesError } = await supabaseAdmin
+    .from("ticket_notes" as any)
+    .select("id, content, created_at, author_id")
+    .eq("ticket_id", input.ticketId)
+    .eq("is_internal", false)
+    .order("created_at", { ascending: true });
+  if (notesError) throw notesError;
+
+  const authorIds = [...new Set(((publicNotes ?? []) as any[]).map((note) => note.author_id).filter(Boolean))];
+  const { data: authors, error: authorsError } = authorIds.length
+    ? await supabaseAdmin.from("profiles").select("id, full_name, initials").in("id", authorIds)
+    : { data: [], error: null };
+  if (authorsError) throw authorsError;
+  const authorById = new Map(((authors ?? []) as any[]).map((author) => [author.id, author]));
+  const notesWithAuthors = ((publicNotes ?? []) as any[]).map((note) => ({
+    ...note,
+    author: authorById.get(note.author_id) ?? null,
+  }));
+
+  return { session, ticket, history: history ?? [], publicNotes: notesWithAuthors };
 }
 
 export async function createPortalTicketServer(input: {

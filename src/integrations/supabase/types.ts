@@ -464,6 +464,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      ticket_notes: {
+        Row: {
+          author_id: string;
+          content: string;
+          created_at: string;
+          id: string;
+          is_internal: boolean;
+          ticket_id: string;
+        };
+        Insert: {
+          author_id: string;
+          content: string;
+          created_at?: string;
+          id?: string;
+          is_internal?: boolean;
+          ticket_id: string;
+        };
+        Update: {
+          author_id?: string;
+          content?: string;
+          created_at?: string;
+          id?: string;
+          is_internal?: boolean;
+          ticket_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ticket_notes_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tickets: {
         Row: {
           assignee_id: string | null;

@@ -22,6 +22,7 @@ import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./Sta
 import { createNotification } from "@/lib/notifications";
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { TicketNotes } from "@/components/tickets/TicketNotes";
 
 interface TicketRow {
   id: string;
@@ -342,6 +343,8 @@ export function TicketDetailModal() {
           </div>
         )}
       </div>
+
+      <TicketNotes ticketId={ticket.id} onChanged={triggerRefresh} />
     </Modal>
   );
 }
