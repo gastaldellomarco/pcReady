@@ -9,9 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalDashboardRouteImport } from './routes/portal/dashboard'
 import { Route as AuthSetPasswordRouteImport } from './routes/auth.set-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
@@ -26,8 +30,17 @@ import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
 import { Route as AppAutomationsRouteImport } from './routes/_app/automations'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as PortalTicketsIndexRouteImport } from './routes/portal/tickets/index'
+import { Route as PortalDocumentsIndexRouteImport } from './routes/portal/documents/index'
+import { Route as PortalTicketsNewRouteImport } from './routes/portal/tickets/new'
+import { Route as PortalTicketsTicketIdRouteImport } from './routes/portal/tickets/$ticketId'
 import { Route as AppOauthConsentRouteImport } from './routes/_app/oauth.consent'
 
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -37,10 +50,25 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDashboardRoute = PortalDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => PortalRoute,
 } as any)
 const AuthSetPasswordRoute = AuthSetPasswordRouteImport.update({
   id: '/set-password',
@@ -112,6 +140,26 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const PortalTicketsIndexRoute = PortalTicketsIndexRouteImport.update({
+  id: '/tickets/',
+  path: '/tickets/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDocumentsIndexRoute = PortalDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalTicketsNewRoute = PortalTicketsNewRouteImport.update({
+  id: '/tickets/new',
+  path: '/tickets/new',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalTicketsTicketIdRoute = PortalTicketsTicketIdRouteImport.update({
+  id: '/tickets/$ticketId',
+  path: '/tickets/$ticketId',
+  getParentRoute: () => PortalRoute,
+} as any)
 const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
@@ -120,7 +168,9 @@ const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/auth': typeof AuthRouteWithChildren
+  '/portal': typeof PortalRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/checklist': typeof AppChecklistRoute
@@ -135,10 +185,17 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
+  '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal/': typeof PortalIndexRoute
   '/oauth/consent': typeof AppOauthConsentRoute
+  '/portal/tickets/$ticketId': typeof PortalTicketsTicketIdRoute
+  '/portal/tickets/new': typeof PortalTicketsNewRoute
+  '/portal/documents/': typeof PortalDocumentsIndexRoute
+  '/portal/tickets/': typeof PortalTicketsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/auth': typeof AuthRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
@@ -154,13 +211,21 @@ export interface FileRoutesByTo {
   '/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
+  '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal': typeof PortalIndexRoute
   '/oauth/consent': typeof AppOauthConsentRoute
+  '/portal/tickets/$ticketId': typeof PortalTicketsTicketIdRoute
+  '/portal/tickets/new': typeof PortalTicketsNewRoute
+  '/portal/documents': typeof PortalDocumentsIndexRoute
+  '/portal/tickets': typeof PortalTicketsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/portal': typeof PortalRouteWithChildren
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/checklist': typeof AppChecklistRoute
@@ -175,13 +240,21 @@ export interface FileRoutesById {
   '/_app/tickets': typeof AppTicketsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
+  '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal/': typeof PortalIndexRoute
   '/_app/oauth/consent': typeof AppOauthConsentRoute
+  '/portal/tickets/$ticketId': typeof PortalTicketsTicketIdRoute
+  '/portal/tickets/new': typeof PortalTicketsNewRoute
+  '/portal/documents/': typeof PortalDocumentsIndexRoute
+  '/portal/tickets/': typeof PortalTicketsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/auth'
+    | '/portal'
     | '/admin'
     | '/automations'
     | '/checklist'
@@ -196,10 +269,17 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/auth/callback'
     | '/auth/set-password'
+    | '/portal/dashboard'
+    | '/portal/'
     | '/oauth/consent'
+    | '/portal/tickets/$ticketId'
+    | '/portal/tickets/new'
+    | '/portal/documents/'
+    | '/portal/tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$'
     | '/auth'
     | '/admin'
     | '/automations'
@@ -215,12 +295,20 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/auth/callback'
     | '/auth/set-password'
+    | '/portal/dashboard'
+    | '/portal'
     | '/oauth/consent'
+    | '/portal/tickets/$ticketId'
+    | '/portal/tickets/new'
+    | '/portal/documents'
+    | '/portal/tickets'
   id:
     | '__root__'
     | '/'
+    | '/$'
     | '/_app'
     | '/auth'
+    | '/portal'
     | '/_app/admin'
     | '/_app/automations'
     | '/_app/checklist'
@@ -235,17 +323,32 @@ export interface FileRouteTypes {
     | '/_app/tickets'
     | '/auth/callback'
     | '/auth/set-password'
+    | '/portal/dashboard'
+    | '/portal/'
     | '/_app/oauth/consent'
+    | '/portal/tickets/$ticketId'
+    | '/portal/tickets/new'
+    | '/portal/documents/'
+    | '/portal/tickets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  PortalRoute: typeof PortalRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -260,12 +363,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/dashboard': {
+      id: '/portal/dashboard'
+      path: '/dashboard'
+      fullPath: '/portal/dashboard'
+      preLoaderRoute: typeof PortalDashboardRouteImport
+      parentRoute: typeof PortalRoute
     }
     '/auth/set-password': {
       id: '/auth/set-password'
@@ -365,6 +489,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/portal/tickets/': {
+      id: '/portal/tickets/'
+      path: '/tickets'
+      fullPath: '/portal/tickets/'
+      preLoaderRoute: typeof PortalTicketsIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/documents/': {
+      id: '/portal/documents/'
+      path: '/documents'
+      fullPath: '/portal/documents/'
+      preLoaderRoute: typeof PortalDocumentsIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/tickets/new': {
+      id: '/portal/tickets/new'
+      path: '/tickets/new'
+      fullPath: '/portal/tickets/new'
+      preLoaderRoute: typeof PortalTicketsNewRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/tickets/$ticketId': {
+      id: '/portal/tickets/$ticketId'
+      path: '/tickets/$ticketId'
+      fullPath: '/portal/tickets/$ticketId'
+      preLoaderRoute: typeof PortalTicketsTicketIdRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_app/oauth/consent': {
       id: '/_app/oauth/consent'
       path: '/oauth/consent'
@@ -421,10 +573,33 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface PortalRouteChildren {
+  PortalDashboardRoute: typeof PortalDashboardRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalTicketsTicketIdRoute: typeof PortalTicketsTicketIdRoute
+  PortalTicketsNewRoute: typeof PortalTicketsNewRoute
+  PortalDocumentsIndexRoute: typeof PortalDocumentsIndexRoute
+  PortalTicketsIndexRoute: typeof PortalTicketsIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalDashboardRoute: PortalDashboardRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  PortalTicketsTicketIdRoute: PortalTicketsTicketIdRoute,
+  PortalTicketsNewRoute: PortalTicketsNewRoute,
+  PortalDocumentsIndexRoute: PortalDocumentsIndexRoute,
+  PortalTicketsIndexRoute: PortalTicketsIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  PortalRoute: PortalRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

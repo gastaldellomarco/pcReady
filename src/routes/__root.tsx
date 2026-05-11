@@ -1,33 +1,12 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { MaintenancePage } from "@/components/errors/MaintenancePage";
+import NotFoundPage from "@/components/errors/NotFoundPage";
+import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
-
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1
-          className="text-7xl font-bold text-foreground"
-          style={{ fontFamily: "var(--font-head)" }}
-        >
-          404
-        </h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Pagina non trovata</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          La pagina richiesta non esiste o e' stata spostata.
-        </p>
-        <div className="mt-6">
-          <Link to="/dashboard" className="pc-btn pc-btn-primary">
-            Torna alla Dashboard
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -60,8 +39,17 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  notFoundComponent: NotFoundComponent,
+  errorComponent: ({ error }) => <ErrorBoundary error={error} />,
+  notFoundComponent: NotFoundPage,
 });
+
+export function ErrorBoundary({ error }: { error: Error }) {
+  return (
+    <ThemeProvider defaultTheme="system" enableSystem>
+      <ServerErrorPage error={error} />
+    </ThemeProvider>
+  );
+}
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
@@ -78,6 +66,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  if (import.meta.env.VITE_MAINTENANCE_MODE === "true") {
+    return (
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <MaintenancePage />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider defaultTheme="system" enableSystem>
       <AuthProvider>

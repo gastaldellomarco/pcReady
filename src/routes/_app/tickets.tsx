@@ -62,7 +62,7 @@ function TicketsPage() {
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
       .order("created_at", { ascending: false });
@@ -297,7 +297,7 @@ function TicketsPage() {
               ))}
               {!data.length && (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={11} className="text-center py-10 text-text3 text-sm">
                     Nessun ticket
                   </td>
                 </tr>

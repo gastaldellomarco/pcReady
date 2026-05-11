@@ -83,6 +83,28 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
     };
   });
 
+export const getSupportContact = createServerFn({ method: "GET" }).handler(async () => {
+  const { data, error } = await supabaseAdmin
+    .from("app_settings" as any)
+    .select("value")
+    .eq("key", "support_email")
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const rawValue = (data as { value?: unknown } | null)?.value ?? "";
+  let supportEmail = "";
+
+  try {
+    const parsed = typeof rawValue === "string" ? JSON.parse(rawValue) : rawValue;
+    supportEmail = typeof parsed === "string" ? parsed.trim() : "";
+  } catch {
+    supportEmail = typeof rawValue === "string" ? rawValue.trim() : "";
+  }
+
+  return { support_email: supportEmail };
+});
+
 export const getKanbanAppSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { accessToken: string }) => data)
   .handler(async ({ data: { accessToken } }) => {

@@ -236,6 +236,7 @@ export type Database = {
           name: string;
           notes: string | null;
           phone: string | null;
+          portal_enabled: boolean;
           updated_at: string;
           vat_number: string | null;
         };
@@ -249,6 +250,7 @@ export type Database = {
           name: string;
           notes?: string | null;
           phone?: string | null;
+          portal_enabled?: boolean;
           updated_at?: string;
           vat_number?: string | null;
         };
@@ -262,6 +264,7 @@ export type Database = {
           name?: string;
           notes?: string | null;
           phone?: string | null;
+          portal_enabled?: boolean;
           updated_at?: string;
           vat_number?: string | null;
         };
@@ -477,10 +480,12 @@ export type Database = {
           notes: string | null;
           os: string | null;
           priority: Database["public"]["Enums"]["ticket_priority"];
+          public_notes: string | null;
           requester: string;
           requester_contact_id: string | null;
           serial: string | null;
           software: string | null;
+          source: string;
           status: Database["public"]["Enums"]["ticket_status"];
           template_id: string | null;
           ticket_code: string;
@@ -502,10 +507,12 @@ export type Database = {
           notes?: string | null;
           os?: string | null;
           priority?: Database["public"]["Enums"]["ticket_priority"];
+          public_notes?: string | null;
           requester: string;
           requester_contact_id?: string | null;
           serial?: string | null;
           software?: string | null;
+          source?: string;
           status?: Database["public"]["Enums"]["ticket_status"];
           template_id?: string | null;
           ticket_code?: string;
@@ -527,10 +534,12 @@ export type Database = {
           notes?: string | null;
           os?: string | null;
           priority?: Database["public"]["Enums"]["ticket_priority"];
+          public_notes?: string | null;
           requester?: string;
           requester_contact_id?: string | null;
           serial?: string | null;
           software?: string | null;
+          source?: string;
           status?: Database["public"]["Enums"]["ticket_status"];
           template_id?: string | null;
           ticket_code?: string;
