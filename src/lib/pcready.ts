@@ -41,6 +41,20 @@ export const TICKET_TYPE_META: Record<TicketType, { label: string; cls: string; 
   other: { label: TICKET_TYPE_LABEL.other, cls: "pc-ticket-type-other", color: "#7C3AED" },
 };
 
+/** Stati inventario dispositivi (DB enum device_status). */
+export type DeviceInventoryStatus = "available" | "assigned" | "maintenance" | "retired";
+
+export const DEVICE_STATUS_LABEL: Record<DeviceInventoryStatus, string> = {
+  available: "Disponibile",
+  assigned: "Assegnato",
+  maintenance: "In manutenzione",
+  retired: "Dismesso",
+};
+
+export function formatDeviceStatus(status: string): string {
+  return DEVICE_STATUS_LABEL[status as DeviceInventoryStatus] ?? status;
+}
+
 export const OS_OPTIONS = ["Windows 11 Pro", "Windows 10 Pro", "Ubuntu 22.04 LTS", "macOS (BYOD)"];
 
 export const CHECKLIST_TEMPLATE = {

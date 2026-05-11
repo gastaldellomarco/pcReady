@@ -2,8 +2,14 @@ import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 
+const MODAL_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
+  md: "560px",
+  lg: "680px",
+  xl: "920px",
+};
+
 export function Modal({ open, onClose, title, children, footer, size = "md" }:
-  { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "md" | "lg" }) {
+  { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "md" | "lg" | "xl" }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -24,7 +30,7 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }:
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
           boxShadow: "var(--shadow-lg)",
-          maxWidth: size === "lg" ? "680px" : "560px",
+          maxWidth: MODAL_MAX_WIDTH[size],
           maxHeight: "calc(100vh - 4rem)",
         }}>
         <div className="flex items-center justify-between px-[22px] py-[16px] border-b" style={{ borderColor: "var(--border)" }}>
