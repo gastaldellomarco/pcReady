@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Tipo di bump semver"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Bump version & create release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          NEW_VERSION=$(npm version ${{ inputs.bump }} --no-git-tag-version)
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Nuova versione: ${NEW_VERSION}"
+
+      - name: Commit version bump
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          git add package.json
+          git commit -m "chore(release): v${{ steps.bump.outputs.version }}"
+
+      - name: Create tag
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          git tag v${{ steps.bump.outputs.version }}
+
+      - name: Push commit + tag
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          git push origin main
+          git push origin v${{ steps.bump.outputs.version }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" | head -30)
+          else
+            # Exclude the bump commit itself (HEAD) when generating changelog
+            CHANGELOG=$(git log ${PREV_TAG}..HEAD~1 --pretty=format:"- %s (%h)")
+          fi
+          echo "$CHANGELOG" > /tmp/changelog.md
+          echo "prev_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v%s', steps.bump.outputs.version) || github.ref_name }}
+          name: "PCReady ${{ github.event_name == 'workflow_dispatch' && format('v%s', steps.bump.outputs.version) || github.ref_name }}"
+          body_path: /tmp/changelog.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,10 +1,13 @@
 {
   "name": "pcready",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "release:patch": "bash scripts/bump.sh patch",
+    "release:minor": "bash scripts/bump.sh minor",
+    "release:major": "bash scripts/bump.sh major",
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
