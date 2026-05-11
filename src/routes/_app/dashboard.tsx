@@ -1,12 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { openTicketDetail } from "@/lib/use-detail";
-import { TrendingUp, Activity, Boxes, Clock, CircleCheck, ArrowRight } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
+import { downloadPdf } from "@/components/pcready/pdf/export";
+import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
+import { TrendingUp, Activity, Boxes, Clock, CircleCheck, ArrowRight, CalendarDays } from "lucide-react";
+
+const AnalyticsCard = lazy(() =>
+  import("@/components/dashboard/AnalyticsCard").then((module) => ({ default: module.AnalyticsCard })),
+);
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -39,6 +48,9 @@ interface Log {
 
 function DashboardPage() {
   const { refreshKey, setPendingCount } = useTickets();
+  const { session } = useAuth();
+  const loadAnalytics = useServerFn(getDashboardAnalytics);
+  const defaultRange = useMemo(() => defaultDateRange(), []);
   const [tickets, setTickets] = useState<T[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
@@ -46,25 +58,42 @@ function DashboardPage() {
   const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<any[]>([]);
   const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
   const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
-  const [trendDays, setTrendDays] = useState<number>(14);
+  const [dateFrom, setDateFrom] = useState(defaultRange.from);
+  const [dateTo, setDateTo] = useState(defaultRange.to);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const range = useMemo(() => {
+    const from = startOfDayIso(dateFrom);
+    const to = endOfDayIso(dateTo);
+    return { from, to, days: Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000)) };
+  }, [dateFrom, dateTo]);
+  const periodLabel = useMemo(() => formatPeriodLabel(range.from, range.to), [range.from, range.to]);
 
   useEffect(() => {
-    // fetch tickets, logs, devices in parallel
+    const from = range.from;
+    const to = range.to;
     Promise.all([
       supabase
         .from("tickets")
         .select(
           "id, ticket_code, client, status, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         )
+        .gte("created_at", from)
+        .lte("created_at", to)
         .order("created_at", { ascending: false }),
       supabase
         .from("activity_log")
         .select("id, type, message, created_at")
+        .gte("created_at", from)
+        .lte("created_at", to)
         .order("created_at", { ascending: false })
         .limit(6),
       supabase
         .from("devices")
         .select("id, model, serial, created_at, status, client_id, assigned_to")
+        .gte("created_at", from)
+        .lte("created_at", to)
         .order("created_at", { ascending: false })
         .limit(200),
       supabase.from("ticket_device_assignments").select("device_id").is("unassigned_at", null),
@@ -84,17 +113,23 @@ function DashboardPage() {
       const withoutDevice = (t as any[]).filter((tt) => !tt.device).length;
       setTicketsWithoutDeviceCount(withoutDevice);
 
-      // active clients = unique clients with tickets in last 30 days
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const activeClients = new Set(
         (t as any[])
-          .filter((tt) => tt.created_at >= since)
           .map((tt) => tt.client)
           .filter(Boolean),
       );
       setActiveClientsCount(activeClients.size);
     });
-  }, [refreshKey]);
+  }, [refreshKey, range.from, range.to]);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    setAnalyticsLoading(true);
+    loadAnalytics({ data: { accessToken: session.access_token, dateFrom: range.from, dateTo: range.to } })
+      .then((data) => setAnalytics(data))
+      .catch(() => setAnalytics(null))
+      .finally(() => setAnalyticsLoading(false));
+  }, [session?.access_token, loadAnalytics, range.from, range.to]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { pending: 0, "in-progress": 0, testing: 0, ready: 0 };
@@ -137,17 +172,17 @@ function DashboardPage() {
           icon={<Boxes className="w-5 h-5" />}
         />
         <StatCard
-          label="Clienti attivi (30d)"
+          label="Clienti attivi"
           value={activeClientsCount}
           accent="var(--purple)"
-          sub="ultimi 30 giorni"
+          sub="nel periodo"
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <StatCard
           label="In lavorazione"
           value={counts["in-progress"]}
           accent="var(--warn)"
-          sub="attivi ora"
+          sub="nel periodo"
           valueColor="var(--accent)"
           icon={<Clock className="w-5 h-5" />}
         />
@@ -155,7 +190,7 @@ function DashboardPage() {
           label="Pronti"
           value={counts.ready}
           accent="var(--success)"
-          sub="da consegnare"
+          sub="nel periodo"
           valueColor="var(--success)"
           icon={<CircleCheck className="w-5 h-5" />}
         />
@@ -163,7 +198,7 @@ function DashboardPage() {
           label="In attesa"
           value={counts.pending}
           accent="var(--purple)"
-          sub="in coda"
+          sub="nel periodo"
           valueColor="var(--purple)"
           icon={<Activity className="w-5 h-5" />}
         />
@@ -172,21 +207,25 @@ function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold">Panoramica dispositivi & ticket</h3>
-          <div className="text-xs text-text3">Trend e widget di riepilogo</div>
+          <div className="text-xs text-text3">Trend e widget di riepilogo filtrati per periodo</div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] text-text3">Periodo</span>
-          {[7, 14, 30].map((d) => (
-            <button
-              key={d}
-              onClick={() => setTrendDays(d)}
-              className={`pc-btn pc-btn-sm ${trendDays === d ? "pc-btn-primary" : "pc-btn-ghost"}`}
-            >
-              {d}d
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-text3" />
+          <input className="pc-input pc-input-sm" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <span className="text-[12px] text-text3">→</span>
+          <input className="pc-input pc-input-sm" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </div>
       </div>
+
+      <Suspense fallback={<div className="pc-card pc-card-body text-sm text-text3">Caricamento analytics...</div>}>
+        <AnalyticsCard
+          analytics={analytics}
+          loading={analyticsLoading}
+          periodLabel={periodLabel}
+          onDownloadPdf={() => analytics && downloadPdf(<AnalyticsReportPdf analytics={analytics} periodLabel={periodLabel} />, "dashboard-report.pdf")}
+          onDownloadCsv={() => analytics && downloadAnalyticsCsv(analytics)}
+        />
+      </Suspense>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         <div className="pc-card">
@@ -202,7 +241,7 @@ function DashboardPage() {
                   data={computeDailyCounts(
                     devices,
                     "created_at",
-                    trendDays,
+                    range.days,
                     (d) => d.status === "available",
                   )}
                   color="#3b82f6"
@@ -232,7 +271,7 @@ function DashboardPage() {
                   data={computeDailyCounts(
                     tickets.filter((tt) => !tt.device),
                     "created_at",
-                    trendDays,
+                    range.days,
                   )}
                   color="#f97316"
                 />
@@ -251,7 +290,7 @@ function DashboardPage() {
         <div className="pc-card">
           <div className="pc-card-hd">
             <span className="pc-card-title">Trend: Ticket aperti vs Asset disponibili</span>
-            <span className="text-[11px] text-text3 font-mono">ultimi 14 giorni</span>
+            <span className="text-[11px] text-text3 font-mono">{periodLabel}</span>
           </div>
           <div className="pc-card-body">
             <div className="flex items-center gap-3">
@@ -262,7 +301,7 @@ function DashboardPage() {
                       data: computeDailyCounts(
                         tickets.filter((tt) => tt.status !== "ready"),
                         "created_at",
-                        trendDays,
+                        range.days,
                       ),
                       color: "#ef4444",
                       label: "Ticket aperti",
@@ -271,7 +310,7 @@ function DashboardPage() {
                       data: computeDailyCounts(
                         devices.filter((d) => d.status === "available"),
                         "created_at",
-                        trendDays,
+                        range.days,
                       ),
                       color: "#10b981",
                       label: "Asset disponibili",
@@ -554,6 +593,56 @@ function Donut({ data, total }: { data: { status: TicketStatus; n: number }[]; t
 
 function deviceLabel(ticket: T) {
   return ticket.device?.model || "Nessun asset";
+}
+
+function defaultDateRange() {
+  const to = new Date();
+  const from = new Date();
+  from.setMonth(from.getMonth() - 5);
+  from.setDate(1);
+  return { from: toDateInputValue(from), to: toDateInputValue(to) };
+}
+
+function toDateInputValue(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function startOfDayIso(value: string) {
+  return new Date(`${value}T00:00:00.000Z`).toISOString();
+}
+
+function endOfDayIso(value: string) {
+  return new Date(`${value}T23:59:59.999Z`).toISOString();
+}
+
+function formatPeriodLabel(from: string, to: string) {
+  const fmt = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", year: "numeric" });
+  return `${fmt.format(new Date(from))} - ${fmt.format(new Date(to))}`;
+}
+
+function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
+  const rows = [
+    ["Report mensile"],
+    ["Mese", "Ticket aperti", "Ticket chiusi", "Tempo medio risoluzione giorni"],
+    ...analytics.ticketsByMonth.map((row) => [row.label, row.opened, row.closed, row.avg_days ?? ""]),
+    [],
+    ["Performance tecnici"],
+    ["Tecnico", "Ticket assegnati", "Ticket completati", "Tempo medio risoluzione giorni"],
+    ...analytics.technicianKpi.map((row) => [row.full_name, row.assigned, row.completed, row.avg_days ?? ""]),
+  ];
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = window.document.createElement("a");
+  anchor.href = url;
+  anchor.download = "dashboard-report.csv";
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvCell(value: string | number) {
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function computeDailyCounts(
