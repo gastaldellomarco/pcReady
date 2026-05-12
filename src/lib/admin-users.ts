@@ -191,7 +191,7 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
     if (profileError) throw new Error(profileError.message);
 
     const { error: userProfileError } = await supabaseAdmin
-      .from("user_profiles" as any)
+      .from("user_profiles")
       .upsert(
         { id: invitedUserId, display_name: fullName, password_set: false },
         { onConflict: "id" },

@@ -29,7 +29,7 @@ export async function createNotificationForUser(params: CreateNotificationParams
 
   if (pref) {
     const { data, error } = await supabaseAdmin
-      .from("user_profiles" as any)
+      .from("user_profiles")
       .select(pref)
       .eq("id", input.userId)
       .maybeSingle();

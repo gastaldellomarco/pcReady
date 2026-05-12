@@ -62,7 +62,7 @@ export async function fetchProfileName(userId: string): Promise<string> {
 
 export async function userAllowsEmail(userId: string, preference: "notify_ticket_assigned" | "notify_checklist_completed"): Promise<boolean> {
   const { data, error } = await supabaseAdmin
-    .from("user_profiles" as any)
+    .from("user_profiles")
     .select(preference)
     .eq("id", userId)
     .maybeSingle();

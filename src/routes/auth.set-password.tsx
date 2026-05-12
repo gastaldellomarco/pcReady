@@ -75,7 +75,7 @@ function SetPasswordPage() {
       if (error) throw error;
 
       const { error: profileError } = await supabase
-        .from("user_profiles" as any)
+        .from("user_profiles")
         .upsert(
           { id: session.user.id, password_set: true, updated_at: new Date().toISOString() },
           { onConflict: "id" },

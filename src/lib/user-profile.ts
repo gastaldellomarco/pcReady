@@ -77,21 +77,27 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
     const fallbackName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente";
     const { data: profile, error } = await supabaseAdmin
-      .from("user_profiles" as any)
+      .from("user_profiles")
       .select("*")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error("[getMyProfile] failed to load user profile:", error);
+      throw error;
+    }
 
     let row = profile as Partial<UserProfile> | null;
     if (!row) {
       const { data: inserted, error: insertError } = await supabaseAdmin
-        .from("user_profiles" as any)
+        .from("user_profiles")
         .insert({ id: user.id, display_name: fallbackName })
         .select("*")
         .single();
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("[getMyProfile] failed to create user profile:", insertError);
+        throw insertError;
+      }
       row = inserted as Partial<UserProfile>;
     }
 
@@ -136,13 +142,20 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     const validated = ProfileUpdateSchema.parse(profile);
 
     const { error } = await supabaseAdmin
-      .from("user_profiles" as any)
+      .from("user_profiles")
       .upsert(
         { id: user.id, ...validated, updated_at: new Date().toISOString() },
         { onConflict: "id" },
       );
 
-    if (error) throw error;
+    if (error) {
+      console.error("[updateMyProfile] failed to upsert user profile:", {
+        userId: user.id,
+        payloadKeys: Object.keys(validated),
+        error,
+      });
+      throw error;
+    }
 
     if (validated.display_name) {
       const { error: profileError } = await supabaseAdmin
@@ -176,12 +189,15 @@ export const changePassword = createServerFn({ method: "POST" })
     if (error) throw error;
 
     const { error: profileError } = await supabaseAdmin
-      .from("user_profiles" as any)
+      .from("user_profiles")
       .upsert(
         { id: user.id, password_set: true, updated_at: new Date().toISOString() },
         { onConflict: "id" },
       );
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("[changePassword] failed to mark password_set:", profileError);
+      throw profileError;
+    }
 
     return { success: true };
   });
