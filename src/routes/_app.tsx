@@ -1,5 +1,10 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+// Ensure a safe global fallback so accidental bare references don't crash rendering
+try {
+  (globalThis as any).organizationName = (globalThis as any).__APP_SETTINGS__?.organization_name ?? "PCReady";
+} catch {}
 import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
 import { useTheme } from "@/hooks/use-theme";
@@ -28,6 +33,7 @@ import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
 import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
+import { getPublicAppSettings, setClientAppSettings } from "@/lib/app-settings";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -163,10 +169,33 @@ function AppLayout() {
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
   const route = useRouterState({ select: (s) => s.location.pathname });
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const loadSettings = useServerFn(getPublicAppSettings);
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
   }, [loading, session, navigate]);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    loadSettings({ data: { accessToken: session.access_token } })
+      .then((s) => {
+        const org = s?.organization_name || null;
+        setOrganizationName(org);
+        setClientAppSettings(s || {});
+        try {
+          (globalThis as any).organizationName = org || "PCReady";
+        } catch {}
+      })
+      .catch(() => {});
+  }, [loadSettings, session?.access_token]);
+  
+  useEffect(() => {
+    const titleKey = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
+    const currentPageTitle = titleKey ? PAGE_TITLES[titleKey] : "PCReady";
+    const org = organizationName || "PCReady";
+    document.title = currentPageTitle ? `${currentPageTitle} - ${org}` : org;
+  }, [route, organizationName]);
 
   useEffect(() => {
     if (!loading && session && profile && !profile.password_set) {
@@ -349,7 +378,7 @@ function SidebarContent({
             className="text-[16px] font-bold tracking-tight leading-none"
             style={{ fontFamily: "var(--font-head)" }}
           >
-            PCReady
+            {organizationName || "PCReady"}
           </div>
           <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
             v{appVersion}

@@ -7,9 +7,11 @@ import { formatAvgDays } from "./analytics-format";
 export function AnalyticsReportPdf({
   analytics,
   periodLabel,
+  organizationName,
 }: {
   analytics: DashboardAnalytics;
   periodLabel: string;
+  organizationName?: string;
 }) {
   const monthColumns: PdfColumn<DashboardAnalytics["ticketsByMonth"][number]>[] = [
     { key: "month", label: "Mese", width: "25%", value: (row) => row.label },
@@ -26,8 +28,8 @@ export function AnalyticsReportPdf({
   ];
 
   return (
-    <Document>
-      <BrandedPage title="Report analytics dashboard" meta={periodLabel}>
+    <Document author={organizationName || "PCReady"} title="Report analytics dashboard">
+      <BrandedPage title="Report analytics dashboard" meta={periodLabel} organizationName={organizationName}>
         <StatStrip
           stats={[
             { label: "Ticket aperti", value: analytics.summary.opened, color: pdfPalette.accent },

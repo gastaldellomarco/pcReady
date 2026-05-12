@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
+import { getPublicAppSettings } from "@/lib/app-settings";
 import { TrendingUp, Activity, Boxes, Clock, CircleCheck, ArrowRight, CalendarDays } from "lucide-react";
 
 const AnalyticsCard = lazy(() =>
@@ -50,6 +51,7 @@ function DashboardPage() {
   const { refreshKey, setPendingCount } = useTickets();
   const { session } = useAuth();
   const loadAnalytics = useServerFn(getDashboardAnalytics);
+  const loadSettings = useServerFn(getPublicAppSettings);
   const defaultRange = useMemo(() => defaultDateRange(), []);
   const [tickets, setTickets] = useState<T[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -222,7 +224,15 @@ function DashboardPage() {
           analytics={analytics}
           loading={analyticsLoading}
           periodLabel={periodLabel}
-          onDownloadPdf={() => analytics && downloadPdf(<AnalyticsReportPdf analytics={analytics} periodLabel={periodLabel} />, "dashboard-report.pdf")}
+          onDownloadPdf={async () => {
+            if (!analytics) return;
+            const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+            const org = settings?.organization_name;
+            await downloadPdf(
+              <AnalyticsReportPdf analytics={analytics} periodLabel={periodLabel} organizationName={org} />,
+              "dashboard-report.pdf",
+            );
+          }}
           onDownloadCsv={() => analytics && downloadAnalyticsCsv(analytics)}
         />
       </Suspense>

@@ -23,7 +23,7 @@ const DEVICE_STATUS_META: Record<DevicePdfStatus, { label: string; color: string
   retired: { label: "Dismesso", color: pdfPalette.gray },
 };
 
-export function InventoryPdf({ rows }: { rows: DevicePdfRow[] }) {
+export function InventoryPdf({ rows, organizationName }: { rows: DevicePdfRow[]; organizationName?: string }) {
   const counts: Record<DevicePdfStatus, number> = {
     available: 0,
     assigned: 0,
@@ -56,8 +56,8 @@ export function InventoryPdf({ rows }: { rows: DevicePdfRow[] }) {
   ];
 
   return (
-    <Document author="PCReady" title="Inventario dispositivi">
-      <BrandedPage title="Inventario dispositivi" meta={`${rows.length} dispositivi`}>
+    <Document author={organizationName || "PCReady"} title="Inventario dispositivi">
+      <BrandedPage title="Inventario dispositivi" meta={`${rows.length} dispositivi`} organizationName={organizationName}>
         <StatStrip
           stats={[
             { label: "Disponibili", value: counts.available, color: pdfPalette.success },

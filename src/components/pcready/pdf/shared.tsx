@@ -174,16 +174,18 @@ export function BrandedPage({
   title,
   meta,
   children,
+  organizationName,
 }: {
   title: string;
   meta: string;
   children: React.ReactNode;
+  organizationName?: string;
 }) {
   const generatedAt = new Date().toLocaleString("it-IT", {
     dateStyle: "long",
     timeStyle: "short",
   });
-
+  const org = organizationName || (globalThis as any).__APP_SETTINGS__?.organization_name || "PCReady";
   return (
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.header} fixed>
@@ -194,7 +196,7 @@ export function BrandedPage({
           <View style={styles.logoCell} />
         </View>
         <View>
-          <Text style={styles.brand}>PCReady</Text>
+          <Text style={styles.brand}>{org}</Text>
           <Text style={styles.subtitle}>{title}</Text>
         </View>
         <View style={styles.headerMeta}>
@@ -204,7 +206,7 @@ export function BrandedPage({
       </View>
       {children}
       <View style={styles.footer} fixed>
-        <Text>PCReady - {title}</Text>
+        <Text>{org} - {title}</Text>
         <Text
           style={styles.pageNumber}
           render={({ pageNumber, totalPages }) => `Pagina ${pageNumber} di ${totalPages}`}

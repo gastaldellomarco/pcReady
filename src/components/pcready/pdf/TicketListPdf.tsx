@@ -24,7 +24,7 @@ export interface TicketPdfRow {
   created_at: string;
 }
 
-export function TicketListPdf({ rows }: { rows: TicketPdfRow[] }) {
+export function TicketListPdf({ rows, organizationName }: { rows: TicketPdfRow[]; organizationName?: string }) {
   const priorityCounts: Record<TicketPriority, number> = { high: 0, med: 0, low: 0 };
   rows.forEach((row) => {
     priorityCounts[row.priority] += 1;
@@ -69,8 +69,8 @@ export function TicketListPdf({ rows }: { rows: TicketPdfRow[] }) {
   ];
 
   return (
-    <Document author="PCReady" title="Ticket PC">
-      <BrandedPage title="Ticket PC" meta={`${rows.length} ticket`}>
+    <Document author={organizationName || "PCReady"} title="Ticket PC">
+      <BrandedPage title="Ticket PC" meta={`${rows.length} ticket`} organizationName={organizationName}>
         <StatStrip
           stats={[
             { label: "Priorita alta", value: priorityCounts.high, color: pdfPalette.danger },

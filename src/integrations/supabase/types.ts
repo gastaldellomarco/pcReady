@@ -387,6 +387,7 @@ export type Database = {
       devices: {
         Row: {
           assigned_to: string | null
+          brand: string | null
           client_id: string
           created_at: string
           created_by: string | null
@@ -400,6 +401,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          brand?: string | null
           client_id: string
           created_at?: string
           created_by?: string | null
@@ -413,6 +415,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          brand?: string | null
           client_id?: string
           created_at?: string
           created_by?: string | null
@@ -963,6 +966,7 @@ export type Database = {
           assignee_id: string | null
           checklist: Json
           checklist_structure: Json | null
+          category: string | null
           client: string
           client_id: string | null
           closed_at: string | null
@@ -991,6 +995,7 @@ export type Database = {
           assignee_id?: string | null
           checklist?: Json
           checklist_structure?: Json | null
+          category?: string | null
           client: string
           client_id?: string | null
           closed_at?: string | null
@@ -1019,6 +1024,7 @@ export type Database = {
           assignee_id?: string | null
           checklist?: Json
           checklist_structure?: Json | null
+          category?: string | null
           client?: string
           client_id?: string | null
           closed_at?: string | null

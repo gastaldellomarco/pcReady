@@ -77,12 +77,22 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_settings" as any)
       .select("key, value")
-      .in("key", ["os_options", "device_brands", "ticket_categories"]);
+      .in("key", [
+        "organization_name",
+        "default_timezone",
+        "support_email",
+        "os_options",
+        "device_brands",
+        "ticket_categories",
+      ]);
 
     if (error) throw error;
 
     const settings = mergeAppSettingsRows((data ?? []) as unknown as AppSettingRow[]);
     return {
+      organization_name: settings.organization_name,
+      default_timezone: settings.default_timezone,
+      support_email: settings.support_email,
       os_options: settings.os_options,
       device_brands: settings.device_brands,
       ticket_categories: settings.ticket_categories,
@@ -110,6 +120,46 @@ export const getSupportContact = createServerFn({ method: "GET" }).handler(async
 
   return { support_email: supportEmail };
 });
+
+// Client-side cached settings helpers
+export function setClientAppSettings(settings: Partial<AppSettings>) {
+  try {
+    (globalThis as any).__APP_SETTINGS__ = settings;
+  } catch {}
+}
+
+export function getClientAppSettings(): AppSettings {
+  return (globalThis as any).__APP_SETTINGS__ ?? DEFAULT_SETTINGS;
+}
+
+/**
+ * Validate that a technician does not exceed the configured max devices limit.
+ * This can be called from client code (via `useServerFn`) before assigning/creating device tickets.
+ */
+export const validateTechnicianDeviceLimit = createServerFn({ method: "POST" })
+  .inputValidator((data: { assigneeId: string }) => data)
+  .handler(async ({ data: { assigneeId } }) => {
+    // Count active device tickets assigned to this technician
+    const { data, error, count } = await supabaseAdmin
+      .from("tickets" as any)
+      .select("id", { count: "exact", head: false })
+      .eq("assignee_id", assigneeId)
+      .eq("ticket_type", "device")
+      .not("status", "in", ["completed", "archived"]);
+
+    if (error) throw error;
+
+    const { data: settingsRows } = await supabaseAdmin.from("app_settings" as any).select("key, value");
+    const settings = mergeAppSettingsRows((settingsRows ?? []) as unknown as AppSettingRow[]);
+    const max = settings.max_devices_per_technician ?? DEFAULT_SETTINGS.max_devices_per_technician;
+    const current = typeof count === "number" ? count : Array.isArray(data) ? data.length : 0;
+
+    if (current >= (max ?? 0)) {
+      throw new Response("Limite dispositivi per tecnico raggiunto", { status: 400 });
+    }
+
+    return { ok: true, current, max };
+  });
 
 export const getKanbanAppSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { accessToken: string }) => data)

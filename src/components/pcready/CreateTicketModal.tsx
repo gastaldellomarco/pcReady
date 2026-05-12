@@ -17,6 +17,7 @@ import { createNotification } from "@/lib/notifications";
 import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { toast } from "sonner";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
+import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
 
 interface Tech {
   id: string;
@@ -65,8 +66,11 @@ export function CreateTicketModal() {
   const { user, canEdit, session } = useAuth();
   const notify = useServerFn(createNotification);
   const sendAssignedEmail = useServerFn(sendTicketAssignedEmail);
+  const loadSettings = useServerFn(getPublicAppSettings);
+  const validateLimit = useServerFn(validateTechnicianDeviceLimit);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
+  const [ticketCategories, setTicketCategories] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState<ClientOpt | null>(null);
   const [selectedContact, setSelectedContact] = useState<ContactOpt | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<DeviceOpt | null>(null);
@@ -82,6 +86,7 @@ export function CreateTicketModal() {
     ticket_type: "device" as TicketType,
     priority: "med" as TicketPriority,
     assignee_id: "",
+    ticket_category: "",
     software: "",
     notes: "",
   });
@@ -104,6 +109,9 @@ export function CreateTicketModal() {
         const def = arr.find((t) => t.is_default) || arr[0];
         if (def) setTemplateId(def.id);
       });
+    loadSettings()
+      .then((s) => setTicketCategories(s?.ticket_categories ?? []))
+      .catch(() => setTicketCategories([]));
   }, [createOpen]);
 
   async function submit() {
@@ -134,6 +142,7 @@ export function CreateTicketModal() {
         client: client.company_name || client.name,
         client_id: client.id,
         device_id: f.ticket_type === "device" ? device?.id || null : null,
+        category: f.ticket_category || null,
         requester,
         requester_contact_id: f.free_requester ? null : contact?.id || null,
         priority: f.priority,
@@ -170,6 +179,12 @@ export function CreateTicketModal() {
         actor_id: user!.id,
       });
       if (f.assignee_id && session?.access_token) {
+        // Validate technician device limit for device tickets
+        if (f.ticket_type === "device") {
+          await validateLimit({ data: { assigneeId: f.assignee_id } }).catch((err) => {
+            throw err instanceof Error ? err : new Error("Limite tecnico superato");
+          });
+        }
         const assignee = techs.find((t) => t.id === f.assignee_id);
         await notify({
           data: {
@@ -199,6 +214,7 @@ export function CreateTicketModal() {
         ticket_type: "device",
         priority: "med",
         assignee_id: "",
+        ticket_category: "",
         software: "",
         notes: "",
       });
@@ -255,6 +271,20 @@ export function CreateTicketModal() {
                 });
               }}
             />
+          </Field>
+          <Field label="Categoria">
+            <select
+              className="pc-input"
+              value={f.ticket_category}
+              onChange={(e) => setF({ ...f, ticket_category: e.target.value })}
+            >
+              <option value="">— Nessuna —</option>
+              {ticketCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Tipo ticket">
             <select

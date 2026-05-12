@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { openTicketDetail } from "@/lib/use-detail";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
+import { getPublicAppSettings } from "@/lib/app-settings";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "@/components/pcready/AsyncAutocomplete";
 
 export const Route = createFileRoute("/_app/tickets")({
@@ -57,6 +59,7 @@ function TicketsPage() {
   const [ft, setFt] = useState("");
   const [fc, setFc] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
+  const loadSettings = useServerFn(getPublicAppSettings);
 
   useEffect(() => {
     let query = supabase
@@ -142,8 +145,10 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da esportare");
     setPdfBusy("download");
     try {
+      const settings = await loadSettings().catch(() => null);
+      const org = settings?.organization_name;
       await downloadPdf(
-        <TicketListPdf rows={pdfRows()} />,
+        <TicketListPdf rows={pdfRows()} organizationName={org} />,
         `pcready-ticket-${new Date().toISOString().slice(0, 10)}.pdf`,
       );
       toast.success("PDF ticket esportato");
@@ -158,7 +163,9 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da visualizzare");
     setPdfBusy("preview");
     try {
-      await previewPdf(<TicketListPdf rows={pdfRows()} />);
+      const settings = await loadSettings().catch(() => null);
+      const org = settings?.organization_name;
+      await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
       toast.error(errorMessage(error, "Errore anteprima PDF"));
     } finally {

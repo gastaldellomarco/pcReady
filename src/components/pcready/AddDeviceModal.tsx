@@ -28,11 +28,13 @@ export function AddDeviceModal() {
   const loadSettings = useServerFn(getPublicAppSettings);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const form = useForm<DeviceInput>({
     resolver: zodResolver(DeviceSchema),
     mode: "onChange",
     defaultValues: {
+      brand: null,
       model: "",
       serial: "",
       client_id: "",
@@ -62,12 +64,16 @@ export function AddDeviceModal() {
     loadSettings({ data: { accessToken: session.access_token } })
       .then((settings) => {
         const nextOptions = settings.os_options.length ? settings.os_options : OS_OPTIONS;
+        setBrandOptions(settings.device_brands);
         setOsOptions(nextOptions);
         if (!nextOptions.includes(form.getValues().os)) {
           form.setValue("os", nextOptions[0], { shouldValidate: true });
         }
       })
-      .catch(() => setOsOptions(OS_OPTIONS));
+      .catch(() => {
+        setBrandOptions([]);
+        setOsOptions(OS_OPTIONS);
+      });
   }, [addDeviceOpen, form, loadSettings, session?.access_token]);
 
   const submit = form.handleSubmit(async (values) => {
@@ -78,6 +84,7 @@ export function AddDeviceModal() {
       if (!client) return toast.error("Seleziona un cliente");
 
       const deviceInsert: TablesInsert<"devices"> = {
+        brand: (values.brand as string) || null,
         client_id: client.id,
         model: values.model,
         serial: values.serial,
@@ -99,6 +106,7 @@ export function AddDeviceModal() {
       });
       toast.success("Dispositivo aggiunto all'inventario");
       form.reset({
+        brand: null,
         model: "",
         serial: "",
         client_id: client.id,
@@ -134,6 +142,16 @@ export function AddDeviceModal() {
     >
       <div className="flex flex-col gap-[14px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <Field label="Brand">
+            <select className="pc-input" {...form.register("brand")}>
+              <option value="">— Nessun brand —</option>
+              {brandOptions.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Modello *">
             <input
               className="pc-input"

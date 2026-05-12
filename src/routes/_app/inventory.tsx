@@ -172,8 +172,10 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da esportare");
     setPdfBusy("download");
     try {
+      const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+      const org = settings?.organization_name;
       await downloadPdf(
-        <InventoryPdf rows={pdfRows()} />,
+        <InventoryPdf rows={pdfRows()} organizationName={org} />,
         `pcready-inventario-${new Date().toISOString().slice(0, 10)}.pdf`,
       );
       toast.success("PDF inventario esportato");
@@ -188,7 +190,9 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da visualizzare");
     setPdfBusy("preview");
     try {
-      await previewPdf(<InventoryPdf rows={pdfRows()} />);
+      const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+      const org = settings?.organization_name;
+      await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
       toast.error(errorMessage(error, "Errore anteprima PDF"));
     } finally {

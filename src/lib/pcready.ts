@@ -166,10 +166,15 @@ export function fmtDateTime(s?: string | Date | null): string {
   const yest = new Date(today);
   yest.setDate(yest.getDate() - 1);
   const isYest = d.toDateString() === yest.toDateString();
-  const time = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  // Respect application default timezone if set in client cache
+  const clientSettings = (globalThis as any).__APP_SETTINGS__ as { default_timezone?: string } | undefined;
+  const timeZone = clientSettings?.default_timezone || undefined;
+  const time = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone });
   if (isToday) return `Oggi ${time}`;
   if (isYest) return `Ieri ${time}`;
-  return `${fmtDate(d)} ${time}`;
+  // For full date, pass timezone to locale formatting where possible
+  const dateStr = d.toLocaleDateString("it-IT", { day: "2-digit", month: "short", timeZone });
+  return `${dateStr} ${time}`;
 }
 
 export interface ChecklistState {

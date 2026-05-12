@@ -2,6 +2,7 @@ import { z } from "zod";
 import { optionalTrimmed } from "./utils";
 
 export const DeviceSchema = z.object({
+  brand: optionalTrimmed(),
   model: z.string().min(1, "Modello obbligatorio"),
   serial: z.string().min(1, "Seriale obbligatorio"),
   client_id: z.string().uuid("Client ID non valido"),
