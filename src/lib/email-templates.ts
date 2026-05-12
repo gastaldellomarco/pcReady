@@ -27,6 +27,11 @@ const TestEmailSchema = z.object({
   recipientEmail: z.string().email(),
 });
 
+const CreateTemplateSchema = z.object({
+  accessToken: z.string().min(1),
+  eventType: EmailEventSchema,
+});
+
 type EmailTemplateRow = {
   id: string;
   event_type: EmailEventType;
@@ -197,6 +202,42 @@ export const sendTestEmail = createServerFn({ method: "POST" })
     });
 
     return { ok: true, delivered, subject };
+  });
+
+export const createDefaultEmailTemplate = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof CreateTemplateSchema>) => data)
+  .handler(async ({ data }) => {
+    const actorId = await requireAdmin(data.accessToken);
+    const validated = CreateTemplateSchema.parse(data);
+
+    // Get the default template for this event type
+    const defaults = defaultTemplates();
+    const defaultTemplate = defaults.find((t) => t.event_type === validated.eventType);
+    if (!defaultTemplate) {
+      throw new Response(`Template di default non trovato per ${validated.eventType}`, { status: 404 });
+    }
+
+    // Insert or update the template
+    const { data: saved, error } = await supabaseAdmin
+      .from("email_templates" as any)
+      .upsert(
+        {
+          event_type: validated.eventType,
+          subject: defaultTemplate.subject,
+          body_html: defaultTemplate.body_html,
+          body_text: defaultTemplate.body_text,
+          variables: defaultTemplate.variables,
+          is_active: true,
+          last_modified_at: new Date().toISOString(),
+          last_modified_by: actorId,
+        },
+        { onConflict: "event_type" },
+      )
+      .select("*")
+      .single();
+    if (error) throw error;
+
+    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
   });
 
 async function ensureDefaultTemplates() {

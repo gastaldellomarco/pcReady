@@ -78,6 +78,11 @@ export function EmailTemplateEditor({
       "{{ticket_title}}": "Preparazione notebook Lenovo ThinkPad",
       "{{ticket_link}}": `${window.location.origin}/tickets?ticket=PC-2026-0142`,
       "{{checklist_name}}": "Setup Windows 11 Pro",
+      "{{client_name}}": "ACME Srl",
+      "{{assignee_name}}": "Marco Gastaldello",
+      "{{completed_date}}": new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" }),
+      "{{pdf_link}}": `${window.location.origin}/api/documents/verbale-PC-2026-0142.pdf?token=demo`,
+      "{{portal_link}}": `${window.location.origin}/portal`,
     }),
     [organizationName, supportEmail],
   );

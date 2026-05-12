@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EmailTemplateEditor } from "@/components/admin/EmailTemplateEditor";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listEmailTemplates, sendTestEmail, updateEmailTemplate } from "@/lib/email-templates";
+import { createDefaultEmailTemplate, listEmailTemplates, sendTestEmail, updateEmailTemplate } from "@/lib/email-templates";
 import {
   EMAIL_EVENT_LABELS,
   EMAIL_EVENT_TYPES,
@@ -35,6 +36,7 @@ export function EmailTemplateSection({
   const loadTemplates = useServerFn(listEmailTemplates);
   const saveTemplate = useServerFn(updateEmailTemplate);
   const sendTemplateTest = useServerFn(sendTestEmail);
+  const createTemplate = useServerFn(createDefaultEmailTemplate);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [eventType, setEventType] = useState<EmailEventType>("invite");
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,27 @@ export function EmailTemplateSection({
     }
   }
 
+  async function handleCreateDefault() {
+    setSaving(true);
+    try {
+      const created = await createTemplate({
+        data: { accessToken, eventType },
+      });
+      setTemplates((current) => {
+        const exists = current.find((t) => t.event_type === created.event_type);
+        if (exists) {
+          return current.map((t) => (t.event_type === created.event_type ? created : t));
+        }
+        return [...current, created];
+      });
+      toast.success("Template di default creato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Creazione template non riuscita"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -156,7 +179,14 @@ export function EmailTemplateSection({
             onSendTest={handleSendTest}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">Template non trovato.</p>
+          <div className="text-center py-8 space-y-4">
+            <p className="text-muted-foreground">
+              Nessun template trovato per questo evento.
+            </p>
+            <Button onClick={handleCreateDefault} disabled={saving}>
+              {saving ? "Creazione..." : "Crea template di default"}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
