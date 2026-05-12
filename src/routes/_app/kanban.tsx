@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_WIP_LIMITS, getKanbanAppSettings, type WipLimits } from "@/lib/app-settings";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { createNotification } from "@/lib/notifications";
+import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { Rows3 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,6 +55,7 @@ function KanbanPage() {
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
   const notify = useServerFn(createNotification);
+  const sendAssignedEmail = useServerFn(sendTicketAssignedEmail);
 
   const [rows, setRows] = useState<Card[]>([]);
   const [archiveDays, setArchiveDays] = useState<number>(7);
@@ -183,6 +185,11 @@ function KanbanPage() {
             link: "/kanban",
           },
         },
+      });
+    }
+    if (nextAssigneeId && nextAssigneeId !== card.assignee_id) {
+      void sendAssignedEmail({ data: { ticketId: card.id, assigneeId: nextAssigneeId } }).catch((err) => {
+        console.error("Failed to send ticket assigned email:", err);
       });
     }
     toast.success(

@@ -14,6 +14,7 @@ import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { createNotification } from "@/lib/notifications";
+import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { toast } from "sonner";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
 
@@ -63,6 +64,7 @@ export function CreateTicketModal() {
   const { createOpen, closeCreate, triggerRefresh } = useTickets();
   const { user, canEdit, session } = useAuth();
   const notify = useServerFn(createNotification);
+  const sendAssignedEmail = useServerFn(sendTicketAssignedEmail);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
   const [selectedClient, setSelectedClient] = useState<ClientOpt | null>(null);
@@ -181,6 +183,9 @@ export function CreateTicketModal() {
               link: "/tickets",
             },
           },
+        });
+        void sendAssignedEmail({ data: { ticketId: data.id, assigneeId: f.assignee_id } }).catch((err) => {
+          console.error("Failed to send ticket assigned email:", err);
         });
         if (assignee) toast.message(`Notifica inviata a ${assignee.full_name}`);
       }

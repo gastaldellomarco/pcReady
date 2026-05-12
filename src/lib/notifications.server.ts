@@ -34,8 +34,12 @@ export async function createNotificationForUser(params: CreateNotificationParams
       .eq("id", input.userId)
       .maybeSingle();
     if (error) {
-      console.error("createNotification preference check failed:", error);
-      return null;
+      if (error.code === "42703") {
+        console.warn(`Notification preference column "${pref}" missing; using default enabled.`);
+      } else {
+        console.error("createNotification preference check failed:", error);
+        return null;
+      }
     }
     if (data && (data as any)[pref] === false) return null;
   }

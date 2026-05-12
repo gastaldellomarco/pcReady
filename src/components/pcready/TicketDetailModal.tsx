@@ -23,6 +23,7 @@ import { createNotification } from "@/lib/notifications";
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { TicketNotes } from "@/components/tickets/TicketNotes";
+import { sendChecklistCompletedEmail } from "@/lib/email-events";
 
 interface TicketRow {
   id: string;
@@ -72,6 +73,7 @@ export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
   const { canEdit, isAdmin, user, session } = useAuth();
   const notify = useServerFn(createNotification);
+  const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
   const { triggerRefresh } = useTickets();
   const [t, setT] = useState<TicketRow | null>(null);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
@@ -155,6 +157,11 @@ export function TicketDetailModal() {
           },
         });
       }
+      void sendChecklistEmail({
+        data: { ticketId: ticket.id, checklistName: struct[currentTab]?.label || "Checklist completata" },
+      }).catch((err) => {
+        console.error("Failed to send checklist completed email:", err);
+      });
       if (currentTab === "os" && ticket.status === "pending") await advance("in-progress", true);
       if (currentTab === "software" && ticket.status === "in-progress")
         await advance("testing", true);

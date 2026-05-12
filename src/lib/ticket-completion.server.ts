@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendEmail, renderTemplate } from "@/lib/email-templates";
+import { getEmailTemplateByEvent, sendEmailEvent } from "@/lib/email-helpers.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { STATUS_META, fmtDate } from "@/lib/pcready";
 import { getAppSettings } from "@/lib/app-settings";
@@ -129,21 +129,11 @@ export async function completeTicket(params: {
 
     const pdfUrl = signedUrlData?.signedUrl || "";
 
-    // Get email template
-    const { data: template, error: templateError } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .eq("event_type", "ticket_completed")
-      .maybeSingle();
-
-    if (templateError) {
-      console.error("Failed to fetch email template:", templateError);
-    }
+    const template = await getEmailTemplateByEvent("ticket_completed");
 
     // Send email to client if we have an email
     const clientEmail = clientData?.email;
     if (clientEmail && template && clientData) {
-      const templateRow = template as any;
       const completedDate = fmtDate(ticketData.completed_at);
 
       const templateVars: Record<string, string> = {
@@ -160,11 +150,13 @@ export async function completeTicket(params: {
         "{{portal_link}}": portalUrl,
       };
 
-      const subject = renderTemplate(templateRow.subject, templateVars);
-      const html = renderTemplate(templateRow.body_html, templateVars);
-      const text = templateRow.body_text ? renderTemplate(templateRow.body_text, templateVars) : undefined;
-
-      await sendEmail(clientEmail, subject, html, text);
+      void sendEmailEvent({
+        eventType: "ticket_completed",
+        to: clientEmail,
+        variables: templateVars,
+      }).catch((err) => {
+        console.error("Failed to send ticket completed email:", err);
+      });
     }
 
     // Notify admins
