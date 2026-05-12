@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email-templates.server";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import type {

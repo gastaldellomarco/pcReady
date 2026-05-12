@@ -1,14 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireAdmin } from "@/lib/admin-users.server";
-import { getAppSettings } from "@/lib/app-settings";
-import {
-  EMAIL_EVENT_TYPES,
-  EMAIL_TEMPLATE_VARIABLES,
-  type EmailEventType,
-  type EmailTemplate,
-} from "@/types/email";
+import { EMAIL_EVENT_TYPES, type EmailEventType } from "@/types/email";
 
 const EmailEventSchema = z.enum(EMAIL_EVENT_TYPES as [EmailEventType, ...EmailEventType[]]);
 
@@ -32,19 +24,6 @@ const CreateTemplateSchema = z.object({
   eventType: EmailEventSchema,
 });
 
-type EmailTemplateRow = {
-  id: string;
-  event_type: EmailEventType;
-  subject: string;
-  body_html: string;
-  body_text: string | null;
-  variables: unknown;
-  is_active: boolean;
-  last_modified_at: string;
-  last_modified_by: string | null;
-  created_at: string;
-};
-
 type LegacyEmailTemplate = {
   id: string;
   subject: string;
@@ -63,231 +42,47 @@ export function getTemplates() {
   return LEGACY_TEMPLATES;
 }
 
-export async function sendEmail(
-  to: string,
-  subject: string,
-  html: string,
-  text?: string,
-): Promise<void> {
-  const SMTP_HOST = process.env.SMTP_HOST;
-  const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-  const SMTP_USER = process.env.SMTP_USER;
-  const SMTP_PASS = process.env.SMTP_PASS;
-  const SMTP_FROM = process.env.SMTP_FROM ?? SMTP_USER;
-  const SMTP_SECURE = process.env.SMTP_SECURE === "true";
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.warn("SMTP non configurato: email non inviata.");
-    return;
-  }
-
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-  });
-
-  const info = await transporter.sendMail({
-    from: SMTP_FROM,
-    to,
-    subject,
-    html,
-    text,
-  });
-
-  console.log("Email inviata:", info.messageId);
-}
-
 export const listEmailTemplates = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string }) => data)
-  .handler(async ({ data: { accessToken } }) => {
-    await requireAdmin(accessToken);
-    await ensureDefaultTemplates();
-
-    const { data, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .order("event_type");
-    if (error) throw error;
-
-    return hydrateTemplates((data ?? []) as unknown as EmailTemplateRow[]);
+  .handler(async ({ data }) => {
+    const { listEmailTemplatesServer } = await import("@/lib/email-templates.server");
+    return listEmailTemplatesServer(data);
   });
 
 export const getEmailTemplate = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string; eventType: EmailEventType }) => data)
-  .handler(async ({ data: { accessToken, eventType } }) => {
-    await requireAdmin(accessToken);
-    const parsedEvent = EmailEventSchema.parse(eventType);
-    await ensureDefaultTemplates();
-
-    const { data, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .eq("event_type", parsedEvent)
-      .single();
-    if (error) throw error;
-
-    return (await hydrateTemplates([data as unknown as EmailTemplateRow]))[0];
+  .handler(async ({ data }) => {
+    const { getEmailTemplateServer } = await import("@/lib/email-templates.server");
+    return getEmailTemplateServer(data);
   });
 
 export const updateEmailTemplate = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof TemplateUpdateSchema>) => data)
   .handler(async ({ data }) => {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = TemplateUpdateSchema.parse(data);
-    validateTemplateVariables(validated.eventType, [
-      validated.subject,
-      validated.bodyHtml,
-      validated.bodyText ?? "",
-    ]);
-
-    const variables = EMAIL_TEMPLATE_VARIABLES[validated.eventType].map((variable) => variable.token);
-    const { data: saved, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .upsert(
-        {
-          event_type: validated.eventType,
-          subject: validated.subject,
-          body_html: validated.bodyHtml,
-          body_text: validated.bodyText || null,
-          variables,
-          is_active: validated.isActive,
-          last_modified_at: new Date().toISOString(),
-          last_modified_by: actorId,
-        },
-        { onConflict: "event_type" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
-
-    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
+    const { updateEmailTemplateServer } = await import("@/lib/email-templates.server");
+    return updateEmailTemplateServer(data);
   });
 
 export const sendTestEmail = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof TestEmailSchema>) => data)
   .handler(async ({ data }) => {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = TestEmailSchema.parse(data);
-    await ensureDefaultTemplates();
-
-    const { data: template, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .eq("event_type", validated.eventType)
-      .single();
-    if (error) throw error;
-
-    const settings = await getAppSettings({ data: { accessToken: validated.accessToken } });
-    const row = template as unknown as EmailTemplateRow;
-    const sample = buildSampleVariables(settings.organization_name, settings.support_email);
-    const subject = renderTemplate(row.subject, sample);
-    const html = renderTemplate(row.body_html, sample);
-    const text = renderTemplate(row.body_text ?? "", sample);
-
-    const delivered = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
-    await sendEmail(validated.recipientEmail, subject, html, text);
-
-    await supabaseAdmin.from("activity_log").insert({
-      type: "sys",
-      actor_id: actorId,
-      message: delivered
-        ? `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${process.env.SMTP_HOST}.`
-        : `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. SMTP non configurato.`,
-    });
-
-    return { ok: true, delivered, subject };
+    const { sendTestEmailServer } = await import("@/lib/email-templates.server");
+    return sendTestEmailServer(data);
   });
 
 export const createDefaultEmailTemplate = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof CreateTemplateSchema>) => data)
   .handler(async ({ data }) => {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = CreateTemplateSchema.parse(data);
-
-    // Get the default template for this event type
-    const defaults = defaultTemplates();
-    const defaultTemplate = defaults.find((t) => t.event_type === validated.eventType);
-    if (!defaultTemplate) {
-      throw new Response(`Template di default non trovato per ${validated.eventType}`, { status: 404 });
-    }
-
-    // Insert or update the template
-    const { data: saved, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .upsert(
-        {
-          event_type: validated.eventType,
-          subject: defaultTemplate.subject,
-          body_html: defaultTemplate.body_html,
-          body_text: defaultTemplate.body_text,
-          variables: defaultTemplate.variables,
-          is_active: true,
-          last_modified_at: new Date().toISOString(),
-          last_modified_by: actorId,
-        },
-        { onConflict: "event_type" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
-
-    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
+    const { createDefaultEmailTemplateServer } = await import("@/lib/email-templates.server");
+    return createDefaultEmailTemplateServer(data);
   });
 
-async function ensureDefaultTemplates() {
-  const defaults = defaultTemplates();
-  const { error } = await supabaseAdmin
-    .from("email_templates" as any)
-    .upsert(defaults, { onConflict: "event_type", ignoreDuplicates: true });
-  if (error) throw error;
-}
-
-async function hydrateTemplates(rows: EmailTemplateRow[]) {
-  const authorIds = rows
-    .map((row) => row.last_modified_by)
-    .filter((id): id is string => Boolean(id));
-  const { data: profiles } = authorIds.length
-    ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", authorIds)
-    : { data: [] };
-  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
-
-  return rows.map((row) => ({
-    id: row.id,
-    event_type: row.event_type,
-    subject: row.subject,
-    body_html: row.body_html,
-    body_text: row.body_text,
-    variables: Array.isArray(row.variables) ? (row.variables as string[]) : [],
-    is_active: row.is_active,
-    last_modified_at: row.last_modified_at,
-    last_modified_by: row.last_modified_by,
-    last_modified_by_name: row.last_modified_by
-      ? (profileById.get(row.last_modified_by) ?? null)
-      : null,
-    created_at: row.created_at,
-  })) satisfies EmailTemplate[];
-}
-
-function validateTemplateVariables(eventType: EmailEventType, parts: string[]) {
-  const allowed = new Set(EMAIL_TEMPLATE_VARIABLES[eventType].map((variable) => variable.token));
-  const unknown = new Set<string>();
-
-  for (const part of parts) {
-    for (const match of part.matchAll(/\{\{[a-z0-9_]+\}\}/gi)) {
-      if (!allowed.has(match[0])) unknown.add(match[0]);
-    }
-  }
-
-  if (unknown.size) {
-    throw new Response(`Variabili non valide: ${Array.from(unknown).join(", ")}`, { status: 400 });
-  }
-}
+export const resetEmailTemplate = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof CreateTemplateSchema>) => data)
+  .handler(async ({ data }) => {
+    const { resetEmailTemplateServer } = await import("@/lib/email-templates.server");
+    return resetEmailTemplateServer(data);
+  });
 
 export function renderTemplate(template: string, values: Record<string, string>): string;
 export function renderTemplate(
@@ -313,84 +108,4 @@ function replaceVariables(template: string, values: Record<string, string>) {
     const bareToken = token.slice(2, -2);
     return values[token] ?? values[bareToken] ?? token;
   });
-}
-
-function buildSampleVariables(organizationName: string, supportEmail: string) {
-  return {
-    "{{organization_name}}": organizationName || "PCReady",
-    "{{support_email}}": supportEmail || "support@pcready.it",
-    "{{user_name}}": "Mario Rossi",
-    "{{user_email}}": "mario.rossi@example.com",
-    "{{invite_link}}": "https://app.pcready.it/auth/set-password#access_token=demo&type=invite",
-    "{{reset_link}}": "https://app.pcready.it/auth/set-password#access_token=demo&type=recovery",
-    "{{confirm_link}}": "https://app.pcready.it/auth/callback#access_token=demo&type=signup",
-    "{{ticket_code}}": "PC-2026-0142",
-    "{{ticket_title}}": "Preparazione notebook Lenovo ThinkPad",
-    "{{ticket_link}}": "https://app.pcready.it/tickets?ticket=PC-2026-0142",
-    "{{checklist_name}}": "Setup Windows 11 Pro",
-    "{{client_name}}": "ACME Srl",
-    "{{assignee_name}}": "Marco Gastaldello",
-    "{{completed_date}}": "12 mag 2026",
-    "{{pdf_link}}": "https://app.pcready.it/api/documents/verbale-PC-2026-0142.pdf?token=demo",
-    "{{portal_link}}": "https://app.pcready.it/portal",
-  };
-}
-
-function defaultTemplates() {
-  return [
-    {
-      event_type: "invite",
-      subject: "[{{organization_name}}] Sei stato invitato",
-      body_html:
-        '<h1>Benvenuto in {{organization_name}}</h1><p>Ciao {{user_name}},</p><p>sei stato invitato ad accedere a PCReady.</p><p><a href="{{invite_link}}">Imposta la password e accedi</a></p><p>Per assistenza: {{support_email}}</p>',
-      body_text:
-        "Ciao {{user_name}}, sei stato invitato ad accedere a {{organization_name}}. Apri {{invite_link}} per impostare la password. Supporto: {{support_email}}",
-    },
-    {
-      event_type: "reset_password",
-      subject: "[{{organization_name}}] Reset password",
-      body_html:
-        '<h1>Reset password</h1><p>Ciao {{user_name}},</p><p>usa questo link per impostare una nuova password:</p><p><a href="{{reset_link}}">Reimposta password</a></p><p>Supporto: {{support_email}}</p>',
-      body_text:
-        "Ciao {{user_name}}, usa questo link per impostare una nuova password: {{reset_link}}. Supporto: {{support_email}}",
-    },
-    {
-      event_type: "confirm_account",
-      subject: "[{{organization_name}}] Conferma account",
-      body_html:
-        '<h1>Conferma account</h1><p>Ciao {{user_name}},</p><p>conferma il tuo account da qui:</p><p><a href="{{confirm_link}}">Conferma account</a></p><p>Supporto: {{support_email}}</p>',
-      body_text:
-        "Ciao {{user_name}}, conferma il tuo account da qui: {{confirm_link}}. Supporto: {{support_email}}",
-    },
-    {
-      event_type: "ticket_assigned",
-      subject: "[{{organization_name}}] Ticket assegnato {{ticket_code}}",
-      body_html:
-        '<h1>Nuovo ticket assegnato</h1><p>Ciao {{user_name}},</p><p>ti e\' stato assegnato il ticket <strong>{{ticket_code}}</strong>: {{ticket_title}}.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
-      body_text:
-        "Ciao {{user_name}}, ti e' stato assegnato il ticket {{ticket_code}}: {{ticket_title}}. Apri: {{ticket_link}}",
-    },
-    {
-      event_type: "checklist_completed",
-      subject: "[{{organization_name}}] Checklist completata",
-      body_html:
-        '<h1>Checklist completata</h1><p>La checklist {{checklist_name}} per il ticket {{ticket_code}} e\' stata completata.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
-      body_text:
-        "La checklist {{checklist_name}} per il ticket {{ticket_code}} e' stata completata. Apri: {{ticket_link}}",
-    },
-    {
-      event_type: "ticket_completed",
-      subject: "[{{organization_name}}] Ticket {{ticket_code}} completato",
-      body_html:
-        '<h1>Ticket completato</h1><p>Gentile {{client_name}},</p><p>Il ticket <strong>{{ticket_code}}</strong> e\' stato completato il {{completed_date}}.</p><p>Tecnico assegnatario: {{assignee_name}}.</p><p>Puoi scaricare il verbale al seguente link:</p><p><a href="{{pdf_link}}">Scarica verbale PDF</a></p><p>Per qualsiasi necessita, rispondi a questa email o accedi al <a href="{{portal_link}}">portale clienti</a>.</p><p>Cordiali saluti,<br/>{{organization_name}}</p>',
-      body_text:
-        "Gentile {{client_name}}, il ticket {{ticket_code}} e' stato completato il {{completed_date}}. Tecnico: {{assignee_name}}. Scarica il verbale: {{pdf_link}}. Portale: {{portal_link}}. Cordiali saluti, {{organization_name}}",
-    },
-  ].map((template) => ({
-    ...template,
-    variables: EMAIL_TEMPLATE_VARIABLES[template.event_type as EmailEventType].map(
-      (variable) => variable.token,
-    ),
-    is_active: true,
-  }));
 }

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email-templates.server";
 
 export interface PortalSessionContext {
   token: string;

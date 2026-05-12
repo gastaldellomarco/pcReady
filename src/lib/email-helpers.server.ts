@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { mergeAppSettingsRows } from "@/lib/app-settings";
-import { sendEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email-templates.server";
 import type { EmailEventType } from "@/types/email";
 
 type EmailTemplateRow = {

@@ -1,6 +1,16 @@
-import { Eye, Mail, Save } from "lucide-react";
+import { Eye, Mail, RotateCcw, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import {
+  DEFAULT_TEMPLATES,
   EMAIL_EVENT_LABELS,
   EMAIL_TEMPLATE_VARIABLES,
   type EmailEventType,
@@ -49,6 +60,7 @@ export function EmailTemplateEditor({
   const [isActive, setIsActive] = useState(template.is_active);
   const [mode, setMode] = useState<"html" | "text">("html");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [testEmail, setTestEmail] = useState(adminEmail);
   const htmlRef = useRef<HTMLTextAreaElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
@@ -65,6 +77,11 @@ export function EmailTemplateEditor({
   }, [adminEmail]);
 
   const variables = EMAIL_TEMPLATE_VARIABLES[template.event_type];
+  const defaultTemplate = DEFAULT_TEMPLATES[template.event_type];
+  const isDirtyFromDefault =
+    subject !== defaultTemplate.subject ||
+    bodyHtml !== defaultTemplate.body_html ||
+    bodyText !== defaultTemplate.body_text;
   const sampleValues = useMemo(
     () => ({
       "{{organization_name}}": organizationName || "PCReady",
@@ -108,12 +125,26 @@ export function EmailTemplateEditor({
     });
   }
 
+  function handleResetToDefault() {
+    setSubject(defaultTemplate.subject);
+    setBodyHtml(defaultTemplate.body_html);
+    setBodyText(defaultTemplate.body_text);
+    setResetOpen(false);
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold">{EMAIL_EVENT_LABELS[template.event_type]}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold">{EMAIL_EVENT_LABELS[template.event_type]}</h3>
+              {isDirtyFromDefault && (
+                <Badge variant="outline" className="text-yellow-600 border-yellow-500/50">
+                  Modificato dal default
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               Ultima modifica: {formatDate(template.last_modified_at)} da{" "}
               {template.last_modified_by_name || "Sistema"}
@@ -185,6 +216,15 @@ export function EmailTemplateEditor({
             <Eye className="mr-2 h-4 w-4" />
             Anteprima
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setResetOpen(true)}
+            disabled={saving || !isDirtyFromDefault}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Ripristina default
+          </Button>
           <div className="flex min-w-[260px] flex-1 items-center gap-2">
             <Input
               type="email"
@@ -234,6 +274,21 @@ export function EmailTemplateEditor({
         html={bodyHtml}
         sampleValues={sampleValues}
       />
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ripristinare il template di default?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le modifiche non salvate nell'editor verranno sostituite dai valori di default. Il
+              ripristino non verrà salvato nel database finché non clicchi "Salva template".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetToDefault}>Ripristina default</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

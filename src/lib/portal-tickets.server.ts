@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email-templates.server";
 import { getPortalSession } from "@/lib/portal-auth.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 

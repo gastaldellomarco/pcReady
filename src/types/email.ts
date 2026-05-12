@@ -36,6 +36,51 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
 
+export const DEFAULT_TEMPLATES: Record<EmailEventType, { subject: string; body_html: string; body_text: string }> = {
+  invite: {
+    subject: "[{{organization_name}}] Sei stato invitato",
+    body_html:
+      '<h1>Benvenuto in {{organization_name}}</h1><p>Ciao {{user_name}},</p><p>sei stato invitato ad accedere a PCReady.</p><p><a href="{{invite_link}}">Imposta la password e accedi</a></p><p>Per assistenza: {{support_email}}</p>',
+    body_text:
+      "Ciao {{user_name}}, sei stato invitato ad accedere a {{organization_name}}. Apri {{invite_link}} per impostare la password. Supporto: {{support_email}}",
+  },
+  reset_password: {
+    subject: "[{{organization_name}}] Reset password",
+    body_html:
+      '<h1>Reset password</h1><p>Ciao {{user_name}},</p><p>usa questo link per impostare una nuova password:</p><p><a href="{{reset_link}}">Reimposta password</a></p><p>Supporto: {{support_email}}</p>',
+    body_text:
+      "Ciao {{user_name}}, usa questo link per impostare una nuova password: {{reset_link}}. Supporto: {{support_email}}",
+  },
+  confirm_account: {
+    subject: "[{{organization_name}}] Conferma account",
+    body_html:
+      '<h1>Conferma account</h1><p>Ciao {{user_name}},</p><p>conferma il tuo account da qui:</p><p><a href="{{confirm_link}}">Conferma account</a></p><p>Supporto: {{support_email}}</p>',
+    body_text:
+      "Ciao {{user_name}}, conferma il tuo account da qui: {{confirm_link}}. Supporto: {{support_email}}",
+  },
+  ticket_assigned: {
+    subject: "[{{organization_name}}] Ticket assegnato {{ticket_code}}",
+    body_html:
+      '<h1>Nuovo ticket assegnato</h1><p>Ciao {{user_name}},</p><p>ti e\' stato assegnato il ticket <strong>{{ticket_code}}</strong>: {{ticket_title}}.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
+    body_text:
+      "Ciao {{user_name}}, ti e' stato assegnato il ticket {{ticket_code}}: {{ticket_title}}. Apri: {{ticket_link}}",
+  },
+  checklist_completed: {
+    subject: "[{{organization_name}}] Checklist completata",
+    body_html:
+      '<h1>Checklist completata</h1><p>La checklist {{checklist_name}} per il ticket {{ticket_code}} e\' stata completata.</p><p><a href="{{ticket_link}}">Apri ticket</a></p>',
+    body_text:
+      "La checklist {{checklist_name}} per il ticket {{ticket_code}} e' stata completata. Apri: {{ticket_link}}",
+  },
+  ticket_completed: {
+    subject: "[{{organization_name}}] Ticket {{ticket_code}} completato",
+    body_html:
+      '<h1>Ticket completato</h1><p>Gentile {{client_name}},</p><p>Il ticket <strong>{{ticket_code}}</strong> e\' stato completato il {{completed_date}}.</p><p>Tecnico assegnatario: {{assignee_name}}.</p><p>Puoi scaricare il verbale al seguente link:</p><p><a href="{{pdf_link}}">Scarica verbale PDF</a></p><p>Per qualsiasi necessita, rispondi a questa email o accedi al <a href="{{portal_link}}">portale clienti</a>.</p><p>Cordiali saluti,<br/>{{organization_name}}</p>',
+    body_text:
+      "Gentile {{client_name}}, il ticket {{ticket_code}} e' stato completato il {{completed_date}}. Tecnico: {{assignee_name}}. Scarica il verbale: {{pdf_link}}. Portale: {{portal_link}}. Cordiali saluti, {{organization_name}}",
+  },
+};
+
 const COMMON_VARIABLES: EmailTemplateVariable[] = [
   { token: "{{organization_name}}", description: "Nome dell'organizzazione" },
   { token: "{{support_email}}", description: "Email supporto configurata nelle impostazioni" },
