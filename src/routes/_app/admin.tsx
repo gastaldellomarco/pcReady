@@ -231,6 +231,11 @@ function AdminUsersPage() {
   >(null);
   const [saveSettingsBusy, setSaveSettingsBusy] = useState(false);
   const [loadingRows, setLoadingRows] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<"disable" | "enable" | null>(null);
+  const [bulkRole, setBulkRole] = useState<AppRole>("viewer");
   const [loadingClients, setLoadingClients] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [loadingAudit, setLoadingAudit] = useState(false);
@@ -705,10 +710,141 @@ function AdminUsersPage() {
         </div>
 
         <div className="pc-card overflow-hidden">
+          {selectedIds.size > 0 && (
+            <div className="px-4 py-3 border-b bg-surface2 border-border flex items-center gap-3">
+              <div className="text-sm text-text3">{selectedIds.size} selezionati</div>
+              <div className="flex items-center gap-2">
+                <select
+                  className="pc-input max-w-[160px]"
+                  value={bulkRole}
+                  onChange={(e) => setBulkRole(e.target.value as AppRole)}
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {roleLabel(r)}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  onClick={async () => {
+                    if (bulkBusy) return;
+                    setBulkBusy(true);
+                    try {
+                      const ids = Array.from(selectedIds);
+                      const results = await Promise.allSettled(
+                        ids.map((id) =>
+                          updateUser({
+                            data: {
+                              accessToken: session?.access_token || "",
+                              userId: id,
+                              role: bulkRole,
+                              fullName: "",
+                              initials: "",
+                            },
+                          }),
+                        ),
+                      );
+                      const ok = results.filter((r) => r.status === "fulfilled").length;
+                      toast.success(`${ok} utenti aggiornati`);
+                      await load();
+                      setSelectedIds(new Set());
+                    } catch (err) {
+                      toast.error(getErrorMessage(err, "Operazione bulk fallita"));
+                    } finally {
+                      setBulkBusy(false);
+                    }
+                  }}
+                >
+                  Applica ruolo
+                </Button>
+                <Button
+                  onClick={() => {
+                    // determine target: if any selected active -> disable, else enable
+                    const ids = new Set(selectedIds);
+                    const anyActive = rows.some((r) => ids.has(r.id) && r.status === "active");
+                    setBulkAction(anyActive ? "disable" : "enable");
+                    setBulkConfirmOpen(true);
+                  }}
+                >
+                  Disabilita / Riabilita
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (bulkBusy) return;
+                    setBulkBusy(true);
+                    try {
+                      const ids = Array.from(selectedIds);
+                      const invitedIds = ids.filter((id) => rows.some((r) => r.id === id && r.status === "invited"));
+                      const results = await Promise.allSettled(
+                        invitedIds.map((id) =>
+                          resendInvite({ data: { accessToken: session?.access_token || "", userId: id, redirectTo: `${window.location.origin}/auth/set-password` } }),
+                        ),
+                      );
+                      const ok = results.filter((r) => r.status === "fulfilled").length;
+                      toast.success(`${ok} inviti reinviati`);
+                      await load();
+                      setSelectedIds(new Set());
+                    } catch (err) {
+                      toast.error(getErrorMessage(err, "Re-invio bulk fallito"));
+                    } finally {
+                      setBulkBusy(false);
+                    }
+                  }}
+                >
+                  Re-invia inviti
+                </Button>
+                <Button
+                  onClick={() => {
+                    // export CSV for selected
+                    const ids = new Set(selectedIds);
+                    const selectedRows = rows.filter((r) => ids.has(r.id));
+                    if (selectedRows.length === 0) return toast.error("Nessun utente selezionato");
+                    const headers = ["id", "email", "full_name", "role", "status", "created_at", "last_sign_in_at"];
+                    const csv = [headers.join(",")]
+                      .concat(
+                        selectedRows.map((r) =>
+                          [r.id, r.email ?? "", r.full_name, r.role, r.status, r.created_at, r.last_sign_in_at ?? ""].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+                        ),
+                      )
+                      .join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const link = document.createElement("a");
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `users_export_${new Date().toISOString().slice(0,10)}.csv`);
+                    link.style.visibility = "hidden";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success("CSV esportato");
+                  }}
+                >
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["Nome", "Email", "Ruolo", "Creato il", "Accesso", "Stato", "Azioni"].map((header) => (
+                <th className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b" style={{ background: "var(--surface2)", borderColor: "var(--border)" }}>
+                  <Checkbox
+                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    onCheckedChange={(val) => {
+                      if (val) setSelectedIds(new Set(filtered.map((r) => r.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                  />
+                </th>
+                {[
+                  "Nome",
+                  "Email",
+                  "Ruolo",
+                  "Creato il",
+                  "Accesso",
+                  "Stato",
+                  "Azioni",
+                ].map((header) => (
                   <th
                     key={header}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -722,7 +858,7 @@ function AdminUsersPage() {
             <tbody>
               {loadingRows && (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={8} className="text-center py-10 text-text3 text-sm">
                     Caricamento utenti...
                   </td>
                 </tr>
@@ -734,6 +870,17 @@ function AdminUsersPage() {
                     className="border-b hover:bg-surface2 transition-colors"
                     style={{ borderColor: "var(--border)" }}
                   >
+                    <td className="px-[14px] py-[10px]">
+                      <Checkbox
+                        checked={selectedIds.has(row.id)}
+                        onCheckedChange={(val) => {
+                          const next = new Set(selectedIds);
+                          if (val) next.add(row.id);
+                          else next.delete(row.id);
+                          setSelectedIds(next);
+                        }}
+                      />
+                    </td>
                     <td className="px-[14px] py-[10px]">
                       <div className="flex items-center gap-2.5">
                         <span
@@ -808,7 +955,7 @@ function AdminUsersPage() {
                 ))}
               {!loadingRows && !(filtered ?? []).length && (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-text3 text-sm">
+                  <td colSpan={8} className="text-center py-10 text-text3 text-sm">
                     Nessun utente trovato
                   </td>
                 </tr>
@@ -833,6 +980,56 @@ function AdminUsersPage() {
             <AlertDialogFooter>
               <AlertDialogCancel>Annulla</AlertDialogCancel>
               <AlertDialogAction onClick={confirmRemove}>Conferma</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog
+          open={bulkConfirmOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setBulkConfirmOpen(false);
+              setBulkAction(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {bulkAction === "disable" ? "Disabilita utenti" : "Riabilita utenti"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler {bulkAction === "disable" ? "disabilitare" : "riabilitare"} {selectedIds.size} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (!session?.access_token || !bulkAction) return;
+                  setBulkConfirmOpen(false);
+                  setBulkBusy(true);
+                  try {
+                    const ids = Array.from(selectedIds);
+                    const targetDisabled = bulkAction === "disable";
+                    const results = await Promise.allSettled(
+                      ids.map((id) =>
+                        setDisabled({ data: { accessToken: session?.access_token || "", userId: id, disabled: targetDisabled } }),
+                      ),
+                    );
+                    const ok = results.filter((r) => r.status === "fulfilled").length;
+                    toast.success(`${ok} utenti aggiornati`);
+                    await load();
+                    setSelectedIds(new Set());
+                  } catch (err) {
+                    toast.error(getErrorMessage(err, "Operazione bulk fallita"));
+                  } finally {
+                    setBulkBusy(false);
+                    setBulkAction(null);
+                  }
+                }}
+              >
+                Conferma
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

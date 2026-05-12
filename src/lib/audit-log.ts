@@ -25,19 +25,25 @@ export const getAuditLog = createServerFn({ method: "GET" })
   .handler(async ({ data: { accessToken, page = 1, pageSize = 25, filters } }) => {
     await requireAdmin(accessToken);
 
-    let query = supabaseAdmin
-      .from("activity_log")
-      .select(`
+    // Fetch all matching rows server-side, deduplicate by (message + created_at second),
+    // then apply pagination in JS. This ensures duplicates (same message and same second)
+    // are removed before returning results.
+    // Use deduplicated view created by migration: activity_log_dedup
+    let baseQuery = supabaseAdmin.from("activity_log_dedup").select(
+      `
         id,
         type,
         message,
         ticket_id,
         actor_id,
         created_at,
-        profiles!activity_log_actor_id_fkey(full_name)
-      `, { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range((page - 1) * pageSize, page * pageSize - 1);
+        actor_name,
+        actor_initials
+      `,
+      { count: "exact" },
+    );
+
+    // apply filters to baseQuery
 
     if (filters?.user) {
       query = query.ilike("profiles.full_name", `%${filters.user}%`);
@@ -55,12 +61,29 @@ export const getAuditLog = createServerFn({ method: "GET" })
       query = query.lte("created_at", filters.dateTo);
     }
 
-    const { data, error, count } = await query;
-
+    const { data, error } = await baseQuery.order("created_at", { ascending: false });
     if (error) throw error;
 
     const rows = (data ?? []) as any[];
-    const entries: ActivityLogEntry[] = rows.map((row: any) => ({
+
+    // Deduplicate by message + created_at (to the second)
+    const seen = new Set<string>();
+    const deduped: any[] = [];
+    for (const row of rows) {
+      const key = `${row.message}|${String(row.created_at).slice(0, 19)}`; // same second
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(row);
+    }
+
+    const total = deduped.length;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+
+    // apply pagination server-side after deduplication
+    const start = (page - 1) * pageSize;
+    const pageRows = deduped.slice(start, start + pageSize);
+
+    const entries: ActivityLogEntry[] = pageRows.map((row: any) => ({
       id: row.id,
       type: row.type as ActivityLogEntry["type"],
       message: row.message,
@@ -72,10 +95,10 @@ export const getAuditLog = createServerFn({ method: "GET" })
 
     return {
       entries,
-      total: count || 0,
+      total,
       page,
       pageSize,
-      totalPages: Math.ceil((count || 0) / pageSize),
+      totalPages,
     };
   });
 
@@ -114,13 +137,23 @@ export const exportAuditLog = createServerFn({ method: "GET" })
     }
 
     const { data, error } = await query;
-
     if (error) throw error;
+
+    const rows2 = (data ?? []) as any[];
+
+    // Deduplicate rows (same message and same second)
+    const seen = new Set<string>();
+    const dedup: any[] = [];
+    for (const row of rows2) {
+      const key = `${row.message}|${String(row.created_at).slice(0, 19)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      dedup.push(row);
+    }
 
     // Generate CSV
     const csvHeader = "Data,Ora,Utente,Tipo,Azione,Ticket\n";
-    const rows2 = (data ?? []) as any[];
-    const csvRows = rows2.map((row: any) => {
+    const csvRows = dedup.map((row: any) => {
       const date = new Date(row.created_at);
       const dateStr = date.toLocaleDateString("it-IT");
       const timeStr = date.toLocaleTimeString("it-IT");

@@ -62,6 +62,15 @@ function TicketsPage() {
   const loadSettings = useServerFn(getPublicAppSettings);
 
   useEffect(() => {
+    // Read initial status filter from URL query param `status` (e.g. /_app/tickets?status=pending)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const statusParam = params.get("status");
+      if (statusParam) setFs(statusParam);
+    } catch {
+      /* ignore in non-browser contexts */
+    }
+
     let query = supabase
       .from("tickets")
       .select(

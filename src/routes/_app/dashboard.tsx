@@ -65,6 +65,19 @@ function DashboardPage() {
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
+  const dedupLogs = useMemo(() => {
+    const arr = Array.isArray(logs) ? logs : [];
+    const seen = new Set<string>();
+    const out: typeof arr = [];
+    for (const l of arr) {
+      const key = `${l.message}|${String(l.created_at).slice(0, 19)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(l);
+    }
+    return out;
+  }, [logs]);
+
   const range = useMemo(() => {
     const from = startOfDayIso(dateFrom);
     const to = endOfDayIso(dateTo);
@@ -86,7 +99,9 @@ function DashboardPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("activity_log")
-        .select("id, type, message, created_at")
+        .select(
+          "id, type, message, created_at, actor:profiles!activity_log_actor_id_fkey(full_name, initials)",
+        )
         .gte("created_at", from)
         .lte("created_at", to)
         .order("created_at", { ascending: false })
@@ -187,6 +202,8 @@ function DashboardPage() {
           sub="nel periodo"
           valueColor="var(--accent)"
           icon={<Clock className="w-5 h-5" />}
+          href={"/tickets?status=in-progress"}
+          highlight
         />
         <StatCard
           label="Pronti"
@@ -203,6 +220,8 @@ function DashboardPage() {
           sub="nel periodo"
           valueColor="var(--purple)"
           icon={<Activity className="w-5 h-5" />}
+          href={"/tickets?status=pending"}
+          highlight
         />
       </div>
 
@@ -475,38 +494,40 @@ function DashboardPage() {
           </div>
           <div className="pc-card-body">
             <div className="flex flex-col gap-[7px]">
-              {(Array.isArray(logs) ? logs : []).map((l) => (
-                <div
-                  key={l.id}
-                  className="flex items-start gap-[10px] px-[12px] py-[10px] rounded-[7px] text-[12px]"
-                  style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
-                >
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                    style={{
-                      background:
-                        l.type === "auto"
-                          ? "var(--accent2)"
-                          : l.type === "user"
-                            ? "var(--success-bg)"
-                            : "var(--surface3)",
-                      color:
-                        l.type === "auto"
-                          ? "var(--accent)"
-                          : l.type === "user"
-                            ? "var(--success)"
-                            : "var(--text3)",
-                    }}
+                {dedupLogs.map((l) => (
+                  <div
+                    key={l.id}
+                    className="flex items-start gap-[10px] px-[12px] py-[10px] rounded-[7px] text-[12px]"
+                    style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
                   >
-                    {l.type === "auto" ? "A" : l.type === "user" ? "U" : "-"}
-                  </span>
-                  <span className="flex-1 text-text2">{l.message}</span>
-                  <span className="text-[10.5px] text-text3 font-mono whitespace-nowrap">
-                    {fmtDateTime(l.created_at)}
-                  </span>
-                </div>
-              ))}
-              {!(Array.isArray(logs) ? logs : []).length && (
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                      title={l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}
+                      aria-label={`Azione eseguita da: ${l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}`}
+                      style={{
+                        background:
+                          l.type === "auto"
+                            ? "var(--accent2)"
+                            : l.type === "user"
+                              ? "var(--success-bg)"
+                              : "var(--surface3)",
+                        color:
+                          l.type === "auto"
+                            ? "var(--accent)"
+                            : l.type === "user"
+                              ? "var(--success)"
+                              : "var(--text3)",
+                      }}
+                    >
+                      {l.actor?.initials ?? (l.type === "auto" ? "A" : l.type === "user" ? "U" : "-")}
+                    </span>
+                    <span className="flex-1 text-text2">{l.message}</span>
+                    <span className="text-[10.5px] text-text3 font-mono whitespace-nowrap">
+                      {fmtDateTime(l.created_at)}
+                    </span>
+                  </div>
+                ))}
+              {!dedupLogs.length && (
                 <div className="text-center text-text3 text-sm py-4">Nessuna attivita</div>
               )}
             </div>
@@ -524,11 +545,21 @@ interface StatCardProps {
   sub: string;
   valueColor?: string;
   icon: ReactNode;
+  href?: string;
+  highlight?: boolean;
 }
 
-function StatCard({ label, value, accent, sub, valueColor, icon }: StatCardProps) {
-  return (
-    <div className="pc-stat" style={{ borderLeft: `3px solid ${accent}` }}>
+function StatCard({ label, value, accent, sub, valueColor, icon, href, highlight }: StatCardProps) {
+  const inner = (
+    <div
+      className={`pc-stat ${href ? "hover:opacity-95 cursor-pointer transition-all" : ""}`}
+      style={{
+        borderLeft: `3px solid ${accent}`,
+        boxShadow: highlight
+          ? `0 0 0 2px color-mix(in oklab, ${accent} 14%, transparent)`
+          : undefined,
+      }}
+    >
       <div
         className="absolute right-4 top-4 w-8 h-8 rounded-lg flex items-center justify-center opacity-15"
         style={{ background: accent, color: accent }}
@@ -542,6 +573,9 @@ function StatCard({ label, value, accent, sub, valueColor, icon }: StatCardProps
       <div className="pc-stat-sub">{sub}</div>
     </div>
   );
+
+  if (href) return <Link to={href}>{inner}</Link>;
+  return inner;
 }
 
 function Donut({ data, total }: { data: { status: TicketStatus; n: number }[]; total: number }) {
