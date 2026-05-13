@@ -40,28 +40,98 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
-    const [monthlyRes, technicianRes] = await Promise.all([
-      supabaseAdmin.rpc("get_tickets_by_month" as any, {
-        date_from: data.dateFrom,
-        date_to: data.dateTo,
-      }),
+    // Build tickets by month server-side to ensure archived tickets count as closed
+    const [technicianRes, ticketsRes, archivedHistRes] = await Promise.all([
       supabaseAdmin.rpc("get_technician_kpi" as any, {
         date_from: data.dateFrom,
         date_to: data.dateTo,
       }),
+      supabaseAdmin
+        .from("tickets")
+        .select("id, created_at, closed_at, status")
+        .gte("created_at", data.dateFrom)
+        .lt("created_at", data.dateTo),
+      supabaseAdmin
+        .from("ticket_status_history")
+        .select("ticket_id, changed_at")
+        .eq("to_status", "archived")
+        .gte("changed_at", data.dateFrom)
+        .lt("changed_at", data.dateTo),
     ]);
 
-    if (monthlyRes.error) throw monthlyRes.error;
     if (technicianRes.error) throw technicianRes.error;
+    if (ticketsRes.error) throw ticketsRes.error;
+    if (archivedHistRes.error) throw archivedHistRes.error;
 
-    const ticketsByMonth = ((monthlyRes.data ?? []) as any[]).map((row) => {
-      const month = String(row.month);
+    const ticketsAll = (ticketsRes.data ?? []) as any[];
+    const archivedHist = (archivedHistRes.data ?? []) as any[];
+
+    // map ticket_id -> archived changed_at (first occurrence)
+    const archivedDateByTicket = new Map<string, string>();
+    for (const h of archivedHist) {
+      if (!archivedDateByTicket.has(h.ticket_id)) archivedDateByTicket.set(h.ticket_id, h.changed_at);
+    }
+
+    // helper to extract month key YYYY-MM-01
+    function monthKey(d: Date) {
+      return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+    }
+
+    const countsByMonth = new Map<string, { opened: number; closed: number; days: number[] }>();
+
+    for (const t of ticketsAll) {
+      const created = new Date(t.created_at);
+      const mOpened = monthKey(created);
+      const mOpenedEntry = countsByMonth.get(mOpened) ?? { opened: 0, closed: 0, days: [] };
+      mOpenedEntry.opened += 1;
+      countsByMonth.set(mOpened, mOpenedEntry);
+
+      // determine closed month: prefer closed_at, otherwise archived history
+      if (t.closed_at) {
+        const closed = new Date(t.closed_at);
+        const mClosed = monthKey(closed);
+        const mClosedEntry = countsByMonth.get(mClosed) ?? { opened: 0, closed: 0, days: [] };
+        mClosedEntry.closed += 1;
+        // accumulate resolution days when closed_at exists
+        const days = (closed.getTime() - created.getTime()) / (1000 * 3600 * 24);
+        mClosedEntry.days.push(days);
+        countsByMonth.set(mClosed, mClosedEntry);
+      } else if (t.status === "archived") {
+        const archivedAt = archivedDateByTicket.get(t.id);
+        if (archivedAt) {
+          const closed = new Date(archivedAt);
+          const mClosed = monthKey(closed);
+          const mClosedEntry = countsByMonth.get(mClosed) ?? { opened: 0, closed: 0, days: [] };
+          mClosedEntry.closed += 1;
+          countsByMonth.set(mClosed, mClosedEntry);
+        } else {
+          // no archived timestamp; count as closed in created month as fallback
+          const mClosed = monthKey(created);
+          const mClosedEntry = countsByMonth.get(mClosed) ?? { opened: 0, closed: 0, days: [] };
+          mClosedEntry.closed += 1;
+          countsByMonth.set(mClosed, mClosedEntry);
+        }
+      }
+    }
+
+    // Build sorted months between dateFrom and dateTo by month start
+    const start = new Date(data.dateFrom);
+    const end = new Date(data.dateTo);
+    const months: string[] = [];
+    const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cur < end) {
+      months.push(monthKey(cur));
+      cur.setMonth(cur.getMonth() + 1);
+    }
+
+    const ticketsByMonth = months.map((m) => {
+      const entry = countsByMonth.get(m) ?? { opened: 0, closed: 0, days: [] };
       return {
-        month,
-        label: new Date(month).toLocaleDateString("it-IT", { month: "short", year: "2-digit" }),
-        opened: Number(row.opened ?? 0),
-        closed: Number(row.closed ?? 0),
-        avg_days: row.avg_days == null ? null : Number(row.avg_days),
+        month: m,
+        label: new Date(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" }),
+        opened: entry.opened,
+        closed: entry.closed,
+        avg_days: entry.days.length ? Number((entry.days.reduce((a, b) => a + b, 0) / entry.days.length).toFixed(2)) : null,
       };
     });
 
@@ -187,11 +257,14 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     const toIso = end.toISOString();
 
     // get KPI by day per technician
+    // Use closed_at + status to count ticket closures per day (completed or archived)
     const { data: activityData, error: activityError } = await supabaseAdmin
       .from("tickets")
-      .select("assignee:assignee_id, updated_at")
-      .gte("updated_at", fromIso)
-      .lt("updated_at", toIso)
+      .select("assignee:assignee_id, closed_at, status")
+      .gte("closed_at", fromIso)
+      .lt("closed_at", toIso)
+      .in("status", ["completed", "archived"]) // count only closed tickets
+      .not("closed_at", "is", null)
       .order("assignee_id", { ascending: true });
 
     if (activityError) throw activityError;
@@ -214,7 +287,8 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     for (const row of (activityData ?? [] as any[])) {
       const tid = row.assignee ?? null;
       if (!tid || !assignableIds.has(tid)) continue;
-      const d = new Date(row.updated_at);
+      // use closed_at date to count closures per day
+      const d = new Date(row.closed_at);
       const dateKey = d.toISOString().slice(0, 10);
       const tm = map.get(tid)!;
       tm.set(dateKey, (tm.get(dateKey) || 0) + 1);
@@ -259,7 +333,8 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
 
     // Fetch tickets in range (by creation) to compute assigned/volume
-    const ticketsQ = supabaseAdmin.from("tickets").select("id, assignee_id, created_at, closed_at");
+    // include `status` so we can treat archived tickets as closed even when closed_at is null
+    const ticketsQ = supabaseAdmin.from("tickets").select("id, assignee_id, created_at, closed_at, status");
     if (dateFrom) ticketsQ.gte("created_at", dateFrom);
     if (dateTo) ticketsQ.lt("created_at", dateTo);
     const ticketsRes = await ticketsQ;
@@ -316,13 +391,18 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
       if (!tid || !byTech.has(tid)) continue;
       const s = byTech.get(tid)!;
       s.assigned += 1;
-      if (t.closed_at) {
+      // consider a ticket closed if it has `closed_at` OR if its status is 'archived'
+      const isClosed = Boolean(t.closed_at) || t.status === "archived";
+      if (isClosed) {
         s.completed += 1;
-        const created = new Date(t.created_at).getTime();
-        const closed = new Date(t.closed_at).getTime();
-        const days = (closed - created) / (1000 * 3600 * 24);
-        s.totalResolutionDays += days;
-        s.resolutionCount += 1;
+        // only compute resolution days when closed_at is available
+        if (t.closed_at) {
+          const created = new Date(t.created_at).getTime();
+          const closed = new Date(t.closed_at).getTime();
+          const days = (closed - created) / (1000 * 3600 * 24);
+          s.totalResolutionDays += days;
+          s.resolutionCount += 1;
+        }
       }
       // first response
       const firstNote = notesByTicket.get(t.id);
@@ -350,6 +430,10 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     const maxAssigned = assignedValues.length ? Math.max(...assignedValues) : 1;
 
     const rows: any[] = [];
+    // create a map for profile full names
+    const profileNameById = new Map<string, string>();
+    for (const p of (profiles ?? [])) profileNameById.set(p.id, p.full_name || "");
+
     for (const [id, v] of byTech.entries()) {
       const completionPct = v.assigned > 0 ? (v.completed / v.assigned) * 100 : 0;
       const avgResolutionDays = v.resolutionCount ? v.totalResolutionDays / v.resolutionCount : null;
@@ -359,6 +443,8 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
 
       rows.push({
         id,
+        technician_id: id,
+        full_name: profileNameById.get(id) ?? "Non assegnato",
         assigned: v.assigned,
         completed: v.completed,
         completionPct: Math.round(completionPct),
@@ -371,24 +457,34 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     }
 
     // normalize to 0-100 where needed (velocità and reattività are inverted: smaller -> higher)
-    const allAvgRes = rows.map((r) => (r.avgResolutionDays == null ? 0 : r.avgResolutionDays));
-    const allFirstResp = rows.map((r) => (r.avgFirstRespMs == null ? Number.MAX_SAFE_INTEGER : r.avgFirstRespMs));
-    const minMax = (arr: number[]) => ({ min: Math.min(...arr), max: Math.max(...arr) });
-    const resRange = minMax(allAvgRes);
-    const firstRange = minMax(allFirstResp);
+    // build numeric arrays excluding nulls for robust min/max
+    const numericAvgRes = rows.map((r) => r.avgResolutionDays).filter((v) => v != null) as number[];
+    const numericFirstResp = rows.map((r) => r.avgFirstRespMs).filter((v) => v != null) as number[];
+    const resRange = numericAvgRes.length ? { min: Math.min(...numericAvgRes), max: Math.max(...numericAvgRes) } : { min: 0, max: 0 };
+    const firstRange = numericFirstResp.length ? { min: Math.min(...numericFirstResp), max: Math.max(...numericFirstResp) } : { min: 0, max: 0 };
 
     const normalized = rows.map((r) => {
       const vol = clamp(r.volumeScore, 0, 100);
       const comp = clamp(r.completionPct, 0, 100);
       const rel = clamp(r.reliabilityPct, 0, 100);
 
-      // Velocita: invert avgResolutionDays
-      const avgR = r.avgResolutionDays == null ? resRange.max : r.avgResolutionDays;
-      const vVel = Math.round(((resRange.max - avgR) / Math.max(1, resRange.max - resRange.min)) * 100);
+      // Velocita: invert avgResolutionDays (smaller = better)
+      let vVel = 0;
+      if (resRange.max === resRange.min) {
+        vVel = resRange.max > 0 ? 100 : 0;
+      } else {
+        const avgR = r.avgResolutionDays == null ? resRange.max : r.avgResolutionDays;
+        vVel = Math.round(((resRange.max - avgR) / (resRange.max - resRange.min)) * 100);
+      }
 
-      // Reattività: invert avgFirstRespMs (ms -> days not necessary for normalization)
-      const avgF = r.avgFirstRespMs == null ? firstRange.max : r.avgFirstRespMs;
-      const vRea = Math.round(((firstRange.max - avgF) / Math.max(1, firstRange.max - firstRange.min)) * 100);
+      // Reattivita: invert avgFirstRespMs (smaller = better)
+      let vRea = 0;
+      if (firstRange.max === firstRange.min) {
+        vRea = firstRange.max > 0 ? 100 : 0;
+      } else {
+        const avgF = r.avgFirstRespMs == null ? firstRange.max : r.avgFirstRespMs;
+        vRea = Math.round(((firstRange.max - avgF) / (firstRange.max - firstRange.min)) * 100);
+      }
 
       return {
         ...r,

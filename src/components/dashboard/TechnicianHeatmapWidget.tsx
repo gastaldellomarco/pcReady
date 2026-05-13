@@ -91,7 +91,7 @@ export default function TechnicianHeatmapWidget() {
                   <div key={t.id} className="grid grid-cols-8 gap-2 items-center p-2 pc-card">
                     <div className="font-semibold text-sm">{t.initials} {" "}{t.name}</div>
                     {t.counts.map((c: number, i: number) => (
-                      <div key={i} className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`} title={`${c} ticket`}>
+                      <div key={i} className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`} title={`${c} ticket chiusi`}>
                         <div className="text-sm">{c || ""}</div>
                       </div>
                     ))}

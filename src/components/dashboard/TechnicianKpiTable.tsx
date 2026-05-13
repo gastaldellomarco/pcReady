@@ -25,7 +25,7 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
           <div
             key={row.technician_id ?? "unassigned"}
             className="pc-card p-3 min-w-[220px] flex-shrink-0 cursor-pointer"
-            onClick={() => navigate({ to: "/_app/tickets", search: { technician: row.technician_id } })}
+            onClick={() => navigate({ to: "/_app/tickets", search: { technician: row.technician_id } } as any)}
           >
             <div className="flex items-center gap-3">
               <Avatar className="w-9 h-9">{(row.full_name || "").split(" ").map((p) => p[0]).join("").slice(0,2).toUpperCase()}</Avatar>

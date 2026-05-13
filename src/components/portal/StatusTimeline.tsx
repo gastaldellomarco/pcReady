@@ -66,9 +66,9 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
                   className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isLatest ? "ring-2 ring-offset-1 ring-primary" : ""
                   }`}
-                  style={{ 
+                  style={{
                     backgroundColor: toMeta.color,
-                    ringColor: isLatest ? toMeta.color : undefined
+                    boxShadow: isLatest ? `0 0 0 4px ${toMeta.color}33` : undefined,
                   }}
                 >
                   <span className="text-white text-xs font-bold">

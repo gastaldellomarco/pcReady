@@ -381,7 +381,7 @@ function SidebarContent({
             className="text-[16px] font-bold tracking-tight leading-none"
             style={{ fontFamily: "var(--font-head)" }}
           >
-            {organizationName || "PCReady"}
+            {(globalThis as any).organizationName || "PCReady"}
           </div>
           <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
             v{appVersion}

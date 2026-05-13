@@ -24,6 +24,7 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const load = async () => {
     if (!session?.access_token) return;
@@ -32,7 +33,7 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
       const res = await fetcher({ data: { accessToken: session.access_token, dateFrom, dateTo } });
       const out = res?.rows ?? [];
       setRows(out);
-      setSelectedId((prev) => prev ?? out[0]?.id ?? null);
+      setSelectedId((prev) => prev ?? out[0]?.id ?? out[0]?.technician_id ?? null);
     } catch (err) {
       console.error(err);
       setRows([]);
@@ -46,7 +47,18 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
     void load();
   }, [session?.access_token, dateFrom, dateTo]);
 
-  const selected = useMemo(() => rows.find((r) => r.id === selectedId) ?? rows[0] ?? null, [rows, selectedId]);
+  // Ensure selectedId is initialized when rows change (handles cases where load
+  // might be called without setting selectedId above)
+  useEffect(() => {
+    if (rows.length > 0 && selectedId === null) {
+      setSelectedId(rows[0]?.id ?? rows[0]?.technician_id ?? null);
+    }
+  }, [rows, selectedId]);
+
+  const selected = useMemo(
+    () => rows.find((r) => r.id === selectedId || r.technician_id === selectedId) ?? rows[0] ?? null,
+    [rows, selectedId]
+  );
 
   const data = useMemo(() => {
     if (!selected) return [];
@@ -62,20 +74,47 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
     return metricKeys.map((m) => ({ metric: m.label, value: clamp(Number(n[m.key] ?? 0), 0, 100) }));
   }, [selected]);
 
+  const dataAll = useMemo(() => {
+    if (!rows || rows.length === 0) return [];
+    const metricKeys: Array<{ key: string; label: string }> = [
+      { key: "volume", label: "Volume" },
+      { key: "velocita", label: "Velocità" },
+      { key: "completamento", label: "Completamento" },
+      { key: "reattivita", label: "Reattività" },
+      { key: "affidabilita", label: "Affidabilità" },
+    ];
+
+    return metricKeys.map((m) => {
+      const entry: any = { metric: m.label };
+      for (const r of rows) {
+        const n = r.normalized ?? {};
+        entry[`t_${r.id}`] = clamp(Number(n[m.key] ?? 0), 0, 100);
+      }
+      return entry;
+    });
+  }, [rows]);
+
+  const palette = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#a28fd0", "#4db6ac"];
+
   return (
     <Card className="h-full">
       <CardHeader className="flex items-center justify-between">
         <div>
           <CardTitle>Radar tecnico</CardTitle>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="form-checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
+            Mostra tutti
+          </label>
           <select
             className="pc-select pc-select-sm"
             value={selectedId ?? ""}
             onChange={(e) => setSelectedId(e.target.value || null)}
+            disabled={showAll}
           >
             {rows.map((r) => (
-              <option key={r.id} value={r.id}>{r.full_name}</option>
+              <option key={r.id ?? r.technician_id} value={r.id ?? r.technician_id}>{r.full_name}</option>
             ))}
           </select>
         </div>
@@ -85,14 +124,34 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
           <div className="h-full flex items-center justify-center text-text3">Caricamento...</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius={90} data={data}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="metric" />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} />
-              <Radar name={selected?.full_name ?? "Tecnico"} dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-              <Tooltip />
-              <Legend />
-            </RadarChart>
+            {showAll ? (
+              <RadarChart cx="50%" cy="50%" outerRadius={90} data={dataAll}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="metric" />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                {rows.map((r, idx) => (
+                  <Radar
+                    key={r.id}
+                    name={r.full_name}
+                    dataKey={`t_${r.id}`}
+                    stroke={palette[idx % palette.length]}
+                    fill={palette[idx % palette.length]}
+                    fillOpacity={0.45}
+                  />
+                ))}
+                <Tooltip />
+                <Legend />
+              </RadarChart>
+            ) : (
+              <RadarChart cx="50%" cy="50%" outerRadius={90} data={data}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="metric" />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                <Radar name={selected?.full_name ?? "Tecnico"} dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                <Tooltip />
+                <Legend />
+              </RadarChart>
+            )}
           </ResponsiveContainer>
         )}
       </CardContent>

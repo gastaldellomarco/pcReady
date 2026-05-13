@@ -29,7 +29,8 @@ export const getAuditLog = createServerFn({ method: "GET" })
     // then apply pagination in JS. This ensures duplicates (same message and same second)
     // are removed before returning results.
     // Use deduplicated view created by migration: activity_log_dedup
-    let baseQuery = supabaseAdmin.from("activity_log_dedup").select(
+    // cast query to any to avoid strict typed relation names in supabase client
+    let baseQuery: any = supabaseAdmin.from("activity_log_dedup" as any).select(
       `
         id,
         type,
@@ -46,19 +47,19 @@ export const getAuditLog = createServerFn({ method: "GET" })
     // apply filters to baseQuery
 
     if (filters?.user) {
-      query = query.ilike("profiles.full_name", `%${filters.user}%`);
+      baseQuery = baseQuery.ilike("actor_name", `%${filters.user}%`);
     }
 
     if (filters?.actionType) {
-      query = query.eq("type", filters.actionType);
+      baseQuery = baseQuery.eq("type", filters.actionType);
     }
 
     if (filters?.dateFrom) {
-      query = query.gte("created_at", filters.dateFrom);
+      baseQuery = baseQuery.gte("created_at", filters.dateFrom);
     }
 
     if (filters?.dateTo) {
-      query = query.lte("created_at", filters.dateTo);
+      baseQuery = baseQuery.lte("created_at", filters.dateTo);
     }
 
     const { data, error } = await baseQuery.order("created_at", { ascending: false });
@@ -90,7 +91,7 @@ export const getAuditLog = createServerFn({ method: "GET" })
       ticket_id: row.ticket_id,
       actor_id: row.actor_id,
       created_at: row.created_at,
-      actor_name: row.profiles?.full_name || "Sistema",
+      actor_name: row.actor_name || "Sistema",
     }));
 
     return {

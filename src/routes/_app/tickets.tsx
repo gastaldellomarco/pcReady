@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
+import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
 import {
   STATUS_META,
@@ -53,6 +54,7 @@ const PAGE_SIZE = 50;
 
 function TicketsPage() {
   const { refreshKey, search } = useTickets();
+  const { session } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [selectedClient, setSelectedClient] = useState<AsyncAutocompleteOption | null>(null);
   const [total, setTotal] = useState(0);
@@ -80,12 +82,12 @@ function TicketsPage() {
         "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
         { count: "exact" },
       )
-      .not("status", "eq", "archived")
+      .not("status", "eq", "archived" as any)
       .order("created_at", { ascending: false });
 
     if (fs) {
       // disallow filtering archived from active list; archived handled in archive page
-      if (fs !== "archived") query = query.eq("status", fs as TicketStatus);
+      if (fs !== "archived") query = query.eq("status", fs as any);
     }
     if (fp) query = query.eq("priority", fp as TicketPriority);
     if (ft) query = query.eq("ticket_type", ft as TicketType);

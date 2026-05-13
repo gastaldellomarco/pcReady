@@ -87,7 +87,7 @@ function KanbanPage() {
         "id, ticket_code, client, status, priority, assignee_id, completed_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
       )
       // exclude archived when DB supports it; errors will be surfaced
-      .neq("status", "archived")
+      .neq("status", "archived" as any)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) {
@@ -142,7 +142,7 @@ function KanbanPage() {
     );
     const { error } = await supabase
       .from("tickets")
-      .update({ status, assignee_id: nextAssigneeId })
+      .update(({ status, assignee_id: nextAssigneeId } as any))
       .eq("id", id);
     if (error) {
       toast.error(error.message);

@@ -105,7 +105,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               <div
                 key={t.id}
                 className="min-w-[220px] pc-card p-3 cursor-pointer flex-shrink-0"
-                onClick={() => navigate({ to: "/_app/tickets", search: { technician: t.id } })}
+                onClick={() => navigate({ to: "/_app/tickets", search: { technician: t.id } } as any)}
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="w-9 h-9">{t.initials}</Avatar>

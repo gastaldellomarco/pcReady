@@ -125,10 +125,11 @@ export function TicketDetailModal() {
   const asset = assetInfo(ticket);
 
   async function update(patch: { checklist?: ChecklistState; status?: TicketStatus }) {
-    const dbPatch: TablesUpdate<"tickets"> = {
+    // cast to any to avoid strict DB update typing differences for status enum
+    const dbPatch: TablesUpdate<"tickets"> = ({
       ...patch,
       checklist: patch.checklist as unknown as Json | undefined,
-    };
+    } as any);
     const { error } = await supabase.from("tickets").update(dbPatch).eq("id", ticket.id);
     if (error) return toast.error(error.message);
     setT({ ...ticket, ...patch } as TicketRow);
