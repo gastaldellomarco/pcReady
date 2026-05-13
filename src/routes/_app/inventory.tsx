@@ -175,7 +175,10 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da esportare");
     setPdfBusy("download");
     try {
-      const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+      const settings =
+        session?.access_token
+          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+          : null;
       const org = settings?.organization_name;
       await downloadPdf(
         <InventoryPdf rows={pdfRows()} organizationName={org} />,
@@ -193,7 +196,10 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da visualizzare");
     setPdfBusy("preview");
     try {
-      const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+      const settings =
+        session?.access_token
+          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+          : null;
       const org = settings?.organization_name;
       await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {

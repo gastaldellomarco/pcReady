@@ -10,6 +10,7 @@ import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { openTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
+import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
 import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
@@ -48,6 +49,7 @@ interface Log {
   type: string;
   message: string;
   created_at: string;
+  actor?: { full_name?: string; initials?: string } | null;
 }
 
 function DashboardPage() {
@@ -248,7 +250,10 @@ function DashboardPage() {
           periodLabel={periodLabel}
           onDownloadPdf={async () => {
             if (!analytics) return;
-            const settings = await loadSettings({ data: { accessToken: session?.access_token } }).catch(() => null);
+            const settings =
+              session?.access_token
+                ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+                : null;
             const org = settings?.organization_name;
             await downloadPdf(
               <AnalyticsReportPdf analytics={analytics} periodLabel={periodLabel} organizationName={org} />,
@@ -417,76 +422,45 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="pc-card">
+        <div className="pc-card dashboard-widget">
           <div className="pc-card-hd">
             <span className="pc-card-title">Distribuzione stati</span>
             <span className="text-[11px] text-text3 font-mono">{total} totali</span>
           </div>
           <div className="pc-card-body">
-            <Donut
-              data={Object.entries(counts).map(([s, n]) => ({ status: s as TicketStatus, n }))}
-              total={total}
-            />
+            <div className="flex gap-4 items-center lg:items-stretch">
+              <div className="flex-shrink-0 flex items-center justify-center px-2">
+                <Donut
+                  data={Object.entries(counts).map(([s, n]) => ({ status: s as TicketStatus, n }))}
+                  total={total}
+                  hideLegend={true}
+                />
+              </div>
+              <div className="flex-1 flex items-center">
+                <div className="w-full">
+                  <div className="grid grid-cols-1 gap-2">
+                    {Object.entries(counts)
+                      .map(([s, n]) => ({ status: s as TicketStatus, n }))
+                      .map((d) => (
+                        <div key={d.status} className="flex items-center justify-between text-[12px]">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: STATUS_META[d.status].color }} />
+                            <span className="text-text2">{STATUS_META[d.status].label}</span>
+                          </div>
+                          <div className="font-mono text-text3">{d.n}</div>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="text-sm text-text3 mt-3">{total} ticket totali</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-[18px]">
-        <div className="pc-card">
-          <div className="pc-card-hd">
-            <span className="pc-card-title">Pipeline preparazione</span>
-            <span className="text-[11px] text-text3 font-mono flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> Flusso automatico
-            </span>
-          </div>
-          <div className="px-[22px] py-[18px] flex items-center gap-0 overflow-x-auto">
-            {pipelineSteps.map((s, i) => {
-              const cnt = s.status ? counts[s.status] || 0 : 0;
-              const done = !s.status;
-              return (
-                <div key={i} className="flex items-center flex-shrink-0">
-                  <div className="flex flex-col items-center gap-[5px] min-w-[78px]">
-                    <div
-                      className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[11px] font-bold font-mono border-2"
-                      style={{
-                        background: done
-                          ? "var(--success-bg)"
-                          : cnt
-                            ? "var(--accent2)"
-                            : "var(--surface)",
-                        borderColor: done
-                          ? "var(--success)"
-                          : cnt
-                            ? "var(--accent)"
-                            : "var(--border2)",
-                        color: done ? "var(--success)" : cnt ? "var(--accent)" : "var(--text3)",
-                        boxShadow: cnt
-                          ? "0 0 0 4px color-mix(in oklab, var(--accent) 15%, transparent)"
-                          : undefined,
-                      }}
-                    >
-                      {done ? "OK" : cnt}
-                    </div>
-                    <div
-                      className="text-[10.5px] font-semibold"
-                      style={{
-                        color: done ? "var(--success)" : cnt ? "var(--accent)" : "var(--text3)",
-                      }}
-                    >
-                      {s.label}
-                    </div>
-                  </div>
-                  {i < pipelineSteps.length - 1 && (
-                    <div
-                      className="h-[2px] flex-1 min-w-[24px] max-w-[52px]"
-                      style={{ background: done ? "var(--success)" : "var(--border2)" }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <TechnicianHeatmapWidget />
 
         <div className="pc-card">
           <div className="pc-card-hd">
@@ -581,54 +555,69 @@ function StatCard({ label, value, accent, sub, valueColor, icon, href, highlight
   return inner;
 }
 
-function Donut({ data, total }: { data: { status: TicketStatus; n: number }[]; total: number }) {
+function Donut({
+  data,
+  total,
+  hideLegend = false,
+}: {
+  data: { status: TicketStatus; n: number }[];
+  total: number;
+  hideLegend?: boolean;
+}) {
   const r = 38;
   const c = 2 * Math.PI * r;
   let off = 0;
+  // Build the SVG segments
+  const segments =
+    total > 0
+      ? data
+          .filter((d) => d.n > 0)
+          .map((d) => {
+            const len = (d.n / total) * c;
+            const seg = (
+              <circle
+                key={d.status}
+                cx={55}
+                cy={55}
+                r={r}
+                fill="none"
+                stroke={STATUS_META[d.status].color}
+                strokeWidth={14}
+                strokeDasharray={`${len} ${c}`}
+                strokeDashoffset={-off}
+              />
+            );
+            off += len;
+            return seg;
+          })
+      : [];
+
+  const svg = (
+    <div className="relative" style={{ width: 110, height: 110 }}>
+      <svg width={110} height={110} viewBox="0 0 110 110" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={55} cy={55} r={r} fill="none" stroke="var(--surface3)" strokeWidth={14} />
+        {segments}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <div className="text-[22px] font-bold leading-none" style={{ fontFamily: "var(--font-head)" }}>
+          {total}
+        </div>
+        <div className="text-[10px] text-text3 uppercase tracking-wider">Ticket</div>
+      </div>
+    </div>
+  );
+
+  if (hideLegend) {
+    return svg;
+  }
+
   return (
     <div className="flex items-center gap-6">
-      <div className="relative" style={{ width: 110, height: 110 }}>
-        <svg width={110} height={110} viewBox="0 0 110 110" style={{ transform: "rotate(-90deg)" }}>
-          <circle cx={55} cy={55} r={r} fill="none" stroke="var(--surface3)" strokeWidth={14} />
-          {total > 0 &&
-            data
-              .filter((d) => d.n > 0)
-              .map((d) => {
-                const len = (d.n / total) * c;
-                const seg = (
-                  <circle
-                    key={d.status}
-                    cx={55}
-                    cy={55}
-                    r={r}
-                    fill="none"
-                    stroke={STATUS_META[d.status].color}
-                    strokeWidth={14}
-                    strokeDasharray={`${len} ${c}`}
-                    strokeDashoffset={-off}
-                  />
-                );
-                off += len;
-                return seg;
-              })}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div
-            className="text-[22px] font-bold leading-none"
-            style={{ fontFamily: "var(--font-head)" }}
-          >
-            {total}
-          </div>
-          <div className="text-[10px] text-text3 uppercase tracking-wider">Ticket</div>
-        </div>
-      </div>
+      {svg}
       <div className="flex-1 flex flex-col gap-2">
         {data.map((d) => (
           <div key={d.status} className="flex items-center gap-2 text-[12px]">
-            <span
-              className="w-2.5 h-2.5 rounded-sm"
-              style={{ background: STATUS_META[d.status].color }}
-            />
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: STATUS_META[d.status].color }} />
             <span className="flex-1 text-text2">{STATUS_META[d.status].label}</span>
             <span className="font-mono text-text3">{d.n}</span>
           </div>

@@ -157,7 +157,10 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da esportare");
     setPdfBusy("download");
     try {
-      const settings = await loadSettings().catch(() => null);
+      const settings =
+        session?.access_token
+          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+          : null;
       const org = settings?.organization_name;
       await downloadPdf(
         <TicketListPdf rows={pdfRows()} organizationName={org} />,
@@ -175,7 +178,10 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da visualizzare");
     setPdfBusy("preview");
     try {
-      const settings = await loadSettings().catch(() => null);
+      const settings =
+        session?.access_token
+          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+          : null;
       const org = settings?.organization_name;
       await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {

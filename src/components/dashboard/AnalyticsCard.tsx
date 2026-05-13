@@ -1,7 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { TechnicianKpiTable } from "./TechnicianKpiTable";
+import TechnicianRadarWidget from "./TechnicianRadarWidget";
 import { formatAvgDays } from "./analytics-format";
 
 interface AnalyticsCardProps {
@@ -89,7 +89,13 @@ export function AnalyticsCard({
           </div>
           <span className="text-[11px] text-text3 font-mono">{technicians.length} tecnici</span>
         </div>
-        {loading ? <div className="pc-card-body"><AnalyticsSkeleton /></div> : <TechnicianKpiTable rows={technicians} />}
+        {loading ? (
+          <div className="pc-card-body"><AnalyticsSkeleton /></div>
+        ) : (
+          <div className="pc-card-body">
+            <TechnicianRadarWidget />
+          </div>
+        )}
       </div>
     </div>
   );

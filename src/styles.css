@@ -434,6 +434,15 @@
     align-items: center;
     justify-content: center;
   }
+
+  /* Dashboard widgets should size to content and avoid large empty areas */
+  .dashboard-widget {
+    height: auto !important;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* center content vertically when small */
+  }
 }
 
 @keyframes pc-fade-in {

@@ -109,9 +109,13 @@ export function CreateTicketModal() {
         const def = arr.find((t) => t.is_default) || arr[0];
         if (def) setTemplateId(def.id);
       });
-    loadSettings()
-      .then((s) => setTicketCategories(s?.ticket_categories ?? []))
-      .catch(() => setTicketCategories([]));
+    if (session?.access_token) {
+      loadSettings({ data: { accessToken: session.access_token } })
+        .then((s) => setTicketCategories(s?.ticket_categories ?? []))
+        .catch(() => setTicketCategories([]));
+    } else {
+      setTicketCategories([]);
+    }
   }, [createOpen]);
 
   async function submit() {
