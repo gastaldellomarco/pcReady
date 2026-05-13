@@ -145,3 +145,14 @@ La registrazione pubblica e' disabilitata. I nuovi utenti vengono invitati dagli
 Il progetto usa Bun. Il lockfile di riferimento e' `bun.lockb`; non usare `npm install` per aggiornare le dipendenze.
 
 In ambiente Windows alcuni comandi di verifica possono essere eseguiti anche con `npm.cmd run build`, ma la gestione delle dipendenze resta affidata a Bun.
+
+## Seeding the database
+
+To populate a local/dev database with rich sample data (clients, contacts, devices, checklists, scripts, tickets) run the SQL seed file added in this repo:
+
+```bash
+# Using psql (adjust connection string as needed)
+psql "postgresql://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" -f supabase/seed_data.sql
+```
+
+If you use the Supabase CLI, you can also apply `supabase/seed_data.sql` against your local project database. The seed is idempotent and safe to re-run; it uses `ON CONFLICT` checks and backfill updates.
