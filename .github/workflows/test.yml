@@ -32,6 +32,15 @@ jobs:
         with:
           version: latest
 
-      - run: supabase db push --db-url "$SUPABASE_DB_URL"
+      - run: |
+          HOST=$(echo "$SUPABASE_DB_URL" | sed -n 's#.*@\([^:/]*\).*#\1#p')
+          IPV4=$(python3 -c "import socket,sys; print(socket.getaddrinfo(sys.argv[1], None, socket.AF_INET)[0][4][0])" "$HOST" 2>/dev/null || true)
+          if [ -z "$IPV4" ]; then
+            echo "Failed to resolve IPv4 for $HOST"
+            exit 1
+          fi
+          NEW_SUPABASE_DB_URL=$(echo "$SUPABASE_DB_URL" | sed "s@$HOST@$IPV4@")
+          echo "Resolved $HOST -> $IPV4"
+          supabase db push --db-url "$NEW_SUPABASE_DB_URL"
 
       - run: bun run test
