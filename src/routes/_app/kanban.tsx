@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/_app/kanban")({
     ],
   }),
   component: KanbanPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 interface Card {

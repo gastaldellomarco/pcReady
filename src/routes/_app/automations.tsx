@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +50,8 @@ import { createVersion } from "@/lib/versioning";
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
   component: AutomationsPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 const CATEGORY_OPTIONS = ["Generale", "Notifica", "Stato", "Schedulazione"];

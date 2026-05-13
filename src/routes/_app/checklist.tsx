@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
@@ -13,6 +14,8 @@ import { createVersion } from "@/lib/versioning";
 export const Route = createFileRoute("/_app/checklist")({
   head: () => ({ meta: [{ title: "Checklist — PCReady" }, { name: "description", content: "Crea e gestisci checklist personalizzate per la preparazione PC." }] }),
   component: ChecklistPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 interface Template {

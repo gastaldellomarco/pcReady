@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Check, X, Shield, User } from "lucide-react";
@@ -23,6 +24,8 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_app/oauth/consent")({
   validateSearch: searchSchema,
   component: OAuthConsentPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 function OAuthConsentPage() {

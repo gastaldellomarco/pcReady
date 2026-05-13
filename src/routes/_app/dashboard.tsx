@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -29,6 +30,8 @@ export const Route = createFileRoute("/_app/dashboard")({
     ],
   }),
   component: DashboardPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 interface T {

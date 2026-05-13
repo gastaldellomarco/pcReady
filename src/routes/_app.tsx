@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 // Ensure a safe global fallback so accidental bare references don't crash rendering
@@ -53,6 +54,8 @@ import {
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 type NavigationRole = AuthProfile["role"];

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { CheckCheck, Trash2 } from "lucide-react";
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/_app/notifications")({
     ],
   }),
   component: NotificationsPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 const PAGE_SIZE = 20;

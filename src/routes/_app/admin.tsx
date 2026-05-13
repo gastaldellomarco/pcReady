@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -93,6 +94,8 @@ export const Route = createFileRoute("/_app/admin")({
     ],
   }),
   component: AdminUsersPage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 const ROLES: AppRole[] = ["admin", "tech", "viewer"];
@@ -1749,23 +1752,57 @@ function UserRoleEditor({
   disabled: boolean;
   onChange: (role: AppRole) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  function roleBgColor(r: AppRole) {
+    if (r === "admin") return "var(--danger, #DC2626)";
+    if (r === "tech") return "var(--primary, #2563EB)";
+    return "var(--muted, #E6E7EA)";
+  }
+
+  function roleTextColor(r: AppRole) {
+    if (r === "admin" || r === "tech") return "#ffffff";
+    return "var(--foreground)";
+  }
+
   return (
-    <div className="inline-flex items-center gap-1.5">
+    <div className="inline-flex items-center gap-2">
       <UserCog className="w-3.5 h-3.5 text-text3" />
-      <select
-        className="pc-input h-8 w-[180px] text-[12px]"
-        value={role}
-        disabled={disabled}
-        onChange={(event) => {
-          if (isAppRole(event.target.value)) onChange(event.target.value);
-        }}
-      >
-        {ROLES.map((item) => (
-          <option key={item} value={item}>
-            {roleLabel(item)}
-          </option>
-        ))}
-      </select>
+      {!isEditing ? (
+        <span
+          className={disabled ? "inline-block" : "inline-block cursor-pointer"}
+          onClick={() => {
+            if (!disabled) setIsEditing(true);
+          }}
+          title={roleLabel(role)}
+        >
+          <Badge
+            className="gap-2"
+            style={{ background: roleBgColor(role), color: roleTextColor(role) }}
+          >
+            {roleLabel(role)}
+          </Badge>
+        </span>
+      ) : (
+        <select
+          className="pc-input h-8 min-w-[165px] text-[12px]"
+          value={role}
+          disabled={disabled}
+          onBlur={() => setIsEditing(false)}
+          onChange={(event) => {
+            if (isAppRole(event.target.value)) {
+              onChange(event.target.value);
+              setIsEditing(false);
+            }
+          }}
+        >
+          {ROLES.map((item) => (
+            <option key={item} value={item}>
+              {roleLabel(item)}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

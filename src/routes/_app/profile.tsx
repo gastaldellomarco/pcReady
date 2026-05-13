@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Camera, KeyRound, Save, Shield, UserRound } from "lucide-react";
@@ -60,6 +61,8 @@ export const Route = createFileRoute("/_app/profile")({
     ],
   }),
   component: ProfilePage,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 function ProfilePage() {
