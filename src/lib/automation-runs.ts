@@ -92,14 +92,15 @@ export const runAutomationNow = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof RunInputSchema>) => data)
   .handler(async ({ data }) => {
     const input = RunInputSchema.parse(data);
-    const { executeAutomationRun, requireAutomationRunnerUser } =
+    const { executeAutomationFlow, requireAutomationRunnerUser } =
       await import("./automation-runs.server");
     const user = await requireAutomationRunnerUser(input.accessToken);
-    return executeAutomationRun({
-      automationId: input.automationId,
+    return executeAutomationFlow({
+      flowId: input.automationId,
+      trigger: input.isDryRun ? "manual_dry_run" : "manual_run",
+      input: input.triggerPayload ?? {},
       triggeredBy: user.id,
       isDryRun: input.isDryRun,
-      triggerPayload: input.triggerPayload,
     });
   });
 
@@ -111,6 +112,30 @@ export const executeDryRun = createServerFn({ method: "POST" })
       await import("./automation-runs.server");
     await requireAutomationRunnerUser(input.accessToken);
     return simulateAutomationDryRun(input.flowId);
+  });
+
+const ExecuteAutomationFlowSchema = AuthedSchema.extend({
+  flowId: z.string().uuid(),
+  trigger: z.string().min(1).max(200),
+  input: z.record(z.unknown()).default({}),
+  isDryRun: z.boolean().optional(),
+});
+
+/** Esecuzione runtime con trigger e payload strutturato (stesso runner di "Esegui ora"). */
+export const executeAutomationFlow = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof ExecuteAutomationFlowSchema>) => data)
+  .handler(async ({ data }) => {
+    const input = ExecuteAutomationFlowSchema.parse(data);
+    const { executeAutomationFlow: runFlow, requireAutomationRunnerUser } =
+      await import("./automation-runs.server");
+    const user = await requireAutomationRunnerUser(input.accessToken);
+    return runFlow({
+      flowId: input.flowId,
+      trigger: input.trigger,
+      input: input.input,
+      triggeredBy: user.id,
+      isDryRun: input.isDryRun ?? false,
+    });
   });
 
 export const getAutomationRunStats = createServerFn({ method: "POST" })

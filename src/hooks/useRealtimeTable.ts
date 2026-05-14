@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DependencyList } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { randomUUID } from "@/lib/random-uuid";
 
 /**
  * Loads rows via `query`, then keeps them in sync with Postgres changes on `table`
@@ -27,11 +28,7 @@ export function useRealtimeTable<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- caller controls refresh via deps
   }, deps);
 
-  const channelSuffix = useRef(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2, 11),
-  ).current;
+  const channelSuffix = useRef(randomUUID()).current;
 
   useEffect(() => {
     void load();

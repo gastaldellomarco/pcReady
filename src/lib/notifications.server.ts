@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { DEVICE_STATUS_LABEL } from "@/lib/pcready";
 import {
   CreateNotificationSchema,
   type CreateNotificationParams,
@@ -63,6 +64,31 @@ export async function createNotificationForUser(params: CreateNotificationParams
   }
 
   return data as unknown as NotificationRow;
+}
+
+export async function notifyDeviceStatusChangedForAdmins(params: {
+  deviceId: string;
+  deviceName: string;
+  status: string;
+  previousStatus?: string | null;
+}) {
+  const label = (s: string) =>
+    DEVICE_STATUS_LABEL[s as keyof typeof DEVICE_STATUS_LABEL] ?? s;
+  await createNotificationForAdmins({
+    type: "device_status_changed",
+    title: `Dispositivo ${params.deviceName} → ${label(params.status)}`,
+    body: params.previousStatus
+      ? `Stato aggiornato da "${label(params.previousStatus)}" a "${label(params.status)}".`
+      : `Lo stato del dispositivo è cambiato in "${label(params.status)}".`,
+    payload: {
+      entity_type: "device",
+      entity_id: params.deviceId,
+      device_id: params.deviceId,
+      status: params.status,
+      previous_status: params.previousStatus ?? null,
+    },
+    link: "/inventory",
+  });
 }
 
 export async function createNotificationForAdmins(

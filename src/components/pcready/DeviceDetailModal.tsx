@@ -1,15 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import { supabase } from "@/integrations/supabase/client";
 import { openTicketDetail, useDeviceDetail } from "@/lib/use-detail";
 import {
+  DEVICE_STATUS_LABEL,
   fmtDateTime,
   formatDeviceStatus,
   STATUS_META,
   TICKET_TYPE_LABEL,
+  type DeviceInventoryStatus,
   type TicketType,
 } from "@/lib/pcready";
+import { useAuth } from "@/lib/auth-context";
+import { updateDeviceStatus } from "@/lib/device-status";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DeviceRow {
   id: string;
@@ -86,8 +108,17 @@ interface TimelineItem {
   ticketId?: string | null;
 }
 
+const DEVICE_STATUS_OPTIONS: DeviceInventoryStatus[] = [
+  "available",
+  "assigned",
+  "maintenance",
+  "retired",
+];
+
 export function DeviceDetailModal() {
   const { id, close } = useDeviceDetail();
+  const { session, canEdit } = useAuth();
+  const patchDeviceStatus = useServerFn(updateDeviceStatus);
   const [d, setD] = useState<DeviceRow | null>(null);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [tickets, setTickets] = useState<TicketRow[]>([]);
@@ -95,6 +126,9 @@ export function DeviceDetailModal() {
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<DeviceInventoryStatus | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -278,6 +312,39 @@ export function DeviceDetailModal() {
     return profileNames[uid] ?? `Utente ${uid.slice(0, 8)}…`;
   };
 
+  async function commitDeviceStatus(next: DeviceInventoryStatus) {
+    if (!session?.access_token || !d) return;
+    setStatusSaving(true);
+    try {
+      await patchDeviceStatus({
+        data: {
+          accessToken: session.access_token,
+          deviceId: d.id,
+          status: next,
+        },
+      });
+      setD({ ...d, status: next });
+      toast.success("Stato dispositivo aggiornato");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Aggiornamento stato non riuscito");
+    } finally {
+      setStatusSaving(false);
+      setConfirmStatusOpen(false);
+      setPendingStatus(null);
+    }
+  }
+
+  function onDeviceStatusSelect(value: string) {
+    const next = value as DeviceInventoryStatus;
+    if (!d || next === d.status) return;
+    if (next === "maintenance" || next === "retired") {
+      setPendingStatus(next);
+      setConfirmStatusOpen(true);
+      return;
+    }
+    void commitDeviceStatus(next);
+  }
+
   if (!id) return null;
 
   if (loading || !d) {
@@ -305,9 +372,28 @@ export function DeviceDetailModal() {
       <p className="text-[11px] text-text3 font-mono mb-3 -mt-1">Asset · {d.id}</p>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div>
+        <div className="min-w-0">
           <div className="pc-label">Stato dispositivo</div>
-          <div className="text-[13px] font-medium">{formatDeviceStatus(d.status)}</div>
+          {canEdit ? (
+            <Select
+              value={d.status as DeviceInventoryStatus}
+              onValueChange={onDeviceStatusSelect}
+              disabled={statusSaving}
+            >
+              <SelectTrigger className="mt-1 h-9 text-[13px]">
+                <SelectValue placeholder="Stato" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEVICE_STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {DEVICE_STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="text-[13px] font-medium mt-1">{formatDeviceStatus(d.status)}</div>
+          )}
         </div>
         <div>
           <div className="pc-label">Ultimo aggiornamento scheda</div>
@@ -453,6 +539,43 @@ export function DeviceDetailModal() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmStatusOpen} onOpenChange={(open) => {
+        setConfirmStatusOpen(open);
+        if (!open) setPendingStatus(null);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma cambio stato</AlertDialogTitle>
+            <AlertDialogDescription>
+              Impostare lo stato su{" "}
+              <span className="font-medium text-foreground">
+                {pendingStatus ? DEVICE_STATUS_LABEL[pendingStatus] : "—"}
+              </span>{" "}
+              può impattare disponibilità e assegnazioni. Continuare?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              type="button"
+              onClick={() => {
+                setPendingStatus(null);
+              }}
+            >
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={!pendingStatus || statusSaving}
+              onClick={() => {
+                if (pendingStatus) void commitDeviceStatus(pendingStatus);
+              }}
+            >
+              Conferma
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex justify-end">
         <button className="pc-btn pc-btn-ghost" type="button" onClick={close}>

@@ -174,6 +174,17 @@ describe("notifications", () => {
     expect(calls.inserted.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("notifyDeviceStatusChangedForAdmins uses device_status_changed type", async () => {
+    const { notifyDeviceStatusChangedForAdmins } = await import("@/lib/notifications.server");
+    await notifyDeviceStatusChangedForAdmins({
+      deviceId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      deviceName: "ThinkPad T14",
+      status: "maintenance",
+      previousStatus: "available",
+    });
+    expect(calls.inserted.some((row: any) => row.type === "device_status_changed")).toBe(true);
+  });
+
   it("marks one notification as read", async () => {
     const { markNotificationReadForUser } = await import("@/lib/notifications.server");
 

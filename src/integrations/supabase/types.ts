@@ -1164,7 +1164,29 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      automation_runs: {
+        Row: {
+          id: string;
+          flow_id: string;
+          trigger: string;
+          status: string;
+          error_message: string | null;
+          duration_ms: number | null;
+          input: Json | null;
+          output: Json | null;
+          started_at: string;
+          finished_at: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "automation_run_logs_automation_id_fkey";
+            columns: ["flow_id"];
+            isOneToOne: false;
+            referencedRelation: "automation_flows";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       get_technician_kpi: {

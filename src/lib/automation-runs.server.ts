@@ -2,7 +2,10 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
-import { createNotificationForAdmins } from "@/lib/notifications.server";
+import {
+  createNotificationForAdmins,
+  notifyDeviceStatusChangedForAdmins,
+} from "@/lib/notifications.server";
 import type {
   ActionResult,
   AutomationRunLog,
@@ -19,6 +22,57 @@ interface ExecuteAutomationInput {
   triggeredBy: string;
   isDryRun: boolean;
   triggerPayload?: Record<string, any>;
+}
+
+export interface SaveAutomationRunInput {
+  automationId: string;
+  triggeredBy: string;
+  status: RunLogStatus;
+  durationMs: number;
+  triggerPayload: Record<string, any>;
+  actionsExecuted: ActionResult[];
+  errorMessage: string | null;
+  isDryRun: boolean;
+}
+
+/** Persiste una riga in `automation_run_logs` (esposta anche come vista `automation_runs`). */
+export async function saveAutomationRun(input: SaveAutomationRunInput): Promise<AutomationRunLog> {
+  const { data: log, error: insertError } = await supabaseAdmin
+    .from("automation_run_logs" as any)
+    .insert({
+      automation_id: input.automationId,
+      triggered_by: input.triggeredBy,
+      status: input.status,
+      duration_ms: input.durationMs,
+      trigger_payload: input.triggerPayload,
+      actions_executed: input.actionsExecuted,
+      error_message: input.errorMessage,
+      is_dry_run: input.isDryRun,
+    })
+    .select("*")
+    .single();
+  if (insertError) throw insertError;
+  return log as unknown as AutomationRunLog;
+}
+
+/** Entry point runtime: esegue il flow, logga esito e notifica in caso di errore. */
+export async function executeAutomationFlow(opts: {
+  flowId: string;
+  trigger: string;
+  input: Record<string, unknown>;
+  triggeredBy: string;
+  isDryRun?: boolean;
+}) {
+  const triggerPayload = {
+    ...opts.input,
+    _automation_trigger: opts.trigger,
+  };
+  return executeAutomationRun({
+    automationId: opts.flowId,
+    triggeredBy: opts.triggeredBy,
+    isDryRun: opts.isDryRun ?? false,
+    triggerPayload,
+  });
 }
 
 export async function requireAutomationRunnerUser(accessToken: string) {
@@ -100,21 +154,16 @@ export async function executeAutomationRun({
   }
 
   const durationMs = Date.now() - started;
-  const { data: log, error: insertError } = await supabaseAdmin
-    .from("automation_run_logs" as any)
-    .insert({
-      automation_id: automationId,
-      triggered_by: triggeredBy,
-      status,
-      duration_ms: durationMs,
-      trigger_payload: triggerPayload,
-      actions_executed: actionsExecuted,
-      error_message: errorMessage,
-      is_dry_run: isDryRun,
-    })
-    .select("*")
-    .single();
-  if (insertError) throw insertError;
+  const log = await saveAutomationRun({
+    automationId,
+    triggeredBy,
+    status,
+    durationMs,
+    triggerPayload,
+    actionsExecuted,
+    errorMessage,
+    isDryRun,
+  });
 
   await supabaseAdmin
     .from("automation_flows" as any)
@@ -139,7 +188,7 @@ export async function executeAutomationRun({
     });
   }
 
-  return log as unknown as AutomationRunLog;
+  return log;
 }
 
 export async function notifyAutomationFailure({
@@ -600,20 +649,44 @@ async function updateDeviceStatusAction(
     };
   }
 
+  const { data: before, error: beforeErr } = await supabaseAdmin
+    .from("devices")
+    .select("id, model, serial, status")
+    .eq("id", deviceId)
+    .maybeSingle();
+  if (beforeErr) return { action: actionLabel, status: "error", error: beforeErr.message };
+  if (!before) return { action: actionLabel, status: "error", error: "Dispositivo non trovato" };
+
+  const previousStatus = String((before as { status: string }).status);
+
   const { data, error } = await supabaseAdmin
     .from("devices")
     .update({ status: parsed.data.status })
     .eq("id", deviceId)
-    .select("id, status")
+    .select("id, model, serial, status")
     .maybeSingle();
 
   if (error) return { action: actionLabel, status: "error", error: error.message };
   if (!data) return { action: actionLabel, status: "error", error: "Dispositivo non trovato" };
 
+  const row = data as { id: string; model: string; serial: string | null; status: string };
+  const deviceLabel = [row.model, row.serial].filter(Boolean).join(" · ") || row.model;
+  if (
+    (parsed.data.status === "maintenance" || parsed.data.status === "retired") &&
+    previousStatus !== parsed.data.status
+  ) {
+    await notifyDeviceStatusChangedForAdmins({
+      deviceId: row.id,
+      deviceName: deviceLabel,
+      status: parsed.data.status,
+      previousStatus,
+    });
+  }
+
   return {
     action: actionLabel,
     status: "success",
-    details: { device_id: data.id, status: data.status },
+    details: { device_id: row.id, status: row.status },
     result: { message: "Stato dispositivo aggiornato" },
   };
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { randomUUID } from "@/lib/random-uuid";
 
 const supabaseAny = supabase as any;
 
@@ -108,8 +109,7 @@ export async function createVersionSnapshot({
   const versionNumber = (await getNextVersionNumber(entityType, entityId)) + 1;
   const computedChangedFields = changedFields ?? computeChangedFields(previousSnapshot, snapshot);
 
-  const effectiveRequestId =
-    requestId || (typeof crypto !== "undefined" ? crypto.randomUUID() : undefined);
+  const effectiveRequestId = requestId || randomUUID();
   const effectiveUserId = userId || (await supabase.auth.getUser()).data.user?.id || null;
 
   const { error } = await supabaseAny.from("entity_versions").insert({

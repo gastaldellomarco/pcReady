@@ -1,21 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { ReactNode } from "react";
-import {
-  useDashboardSnapshot,
-  type DashboardDeviceRow,
-  type DashboardLogRow,
-  type DashboardTicketRow,
-} from "@/lib/queries/dashboard";
+import { lazy, Suspense } from "react";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { openTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
-import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helpers";
+import {
+  DashboardStatCard,
+  DashboardDonut,
+  dashboardDeviceLabel,
+  DashboardAreaSpark,
+  DashboardAreaSparkMulti,
+} from "@/components/dashboard/DashboardStatWidgets";
 import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
 import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
@@ -29,7 +29,6 @@ import {
   ArrowRight,
   CalendarDays,
 } from "lucide-react";
-import { toast } from "sonner";
 
 const AnalyticsCard = lazy(() =>
   import("@/components/dashboard/AnalyticsCard").then((module) => ({
@@ -55,145 +54,54 @@ export const Route = createFileRoute("/_app/dashboard")({
 function DashboardPage() {
   const { setPendingCount } = useTickets();
   const { session } = useAuth();
-  const loadAnalytics = useServerFn(getDashboardAnalytics);
   const loadSettings = useServerFn(getPublicAppSettings);
-  const defaultRange = useMemo(() => defaultDateRange(), []);
-  const [tickets, setTickets] = useState<DashboardTicketRow[]>([]);
-  const [logs, setLogs] = useState<DashboardLogRow[]>([]);
-  const [devices, setDevices] = useState<DashboardDeviceRow[]>([]);
-  const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<DashboardDeviceRow[]>([]);
-  const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
-  const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
-  const [dateFrom, setDateFrom] = useState(defaultRange.from);
-  const [dateTo, setDateTo] = useState(defaultRange.to);
-  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-
-  const dedupLogs = useMemo(() => {
-    const arr = Array.isArray(logs) ? logs : [];
-    const seen = new Set<string>();
-    const out: typeof arr = [];
-    for (const l of arr) {
-      const key = `${l.message}|${String(l.created_at).slice(0, 19)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(l);
-    }
-    return out;
-  }, [logs]);
-
-  const range = useMemo(() => {
-    const from = startOfDayIso(dateFrom);
-    const to = endOfDayIso(dateTo);
-    return {
-      from,
-      to,
-      days: Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000)),
-    };
-  }, [dateFrom, dateTo]);
-  const periodLabel = useMemo(
-    () => formatPeriodLabel(range.from, range.to),
-    [range.from, range.to],
-  );
-
-  const snap = useDashboardSnapshot({ from: range.from, to: range.to });
-  const refetchDashboard = snap.refetch;
-  const lastSnapshotError = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (snap.isSuccess) lastSnapshotError.current = null;
-  }, [snap.isSuccess]);
-
-  useEffect(() => {
-    if (!snap.isError || !snap.error) return;
-    const msg = snap.error instanceof Error ? snap.error.message : String(snap.error);
-    if (lastSnapshotError.current === msg) return;
-    lastSnapshotError.current = msg;
-    toast.error("Errore nel caricamento della dashboard", { description: msg });
-  }, [snap.isError, snap.error]);
-
-  useEffect(() => {
-    if (snap.data) {
-      setTickets(snap.data.tickets);
-      setLogs(snap.data.logs);
-      setDevices(snap.data.devices);
-      setDevicesWithoutTicket(snap.data.devicesWithoutTicket);
-      setTicketsWithoutDeviceCount(snap.data.ticketsWithoutDeviceCount ?? 0);
-      setActiveClientsCount(snap.data.activeClientsCount ?? 0);
-    }
-  }, [snap.data]);
-
-  useEffect(() => {
-    const tables = [
-      "tickets",
-      "devices",
-      "clients",
-      "activity_log",
-      "ticket_device_assignments",
-    ] as const;
-    const channel = supabase.channel(`dashboard-kpi:${range.from}:${range.to}`);
-    const onChange = () => {
-      void refetchDashboard();
-    };
-    for (const table of tables) {
-      channel.on("postgres_changes", { event: "*", schema: "public", table }, onChange);
-    }
-    void channel.subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [refetchDashboard, range.from, range.to]);
-
-  useEffect(() => {
-    if (!session?.access_token) return;
-    setAnalyticsLoading(true);
-    loadAnalytics({
-      data: { accessToken: session.access_token, dateFrom: range.from, dateTo: range.to },
-    })
-      .then((data) => setAnalytics(data))
-      .catch(() => setAnalytics(null))
-      .finally(() => setAnalyticsLoading(false));
-  }, [session?.access_token, loadAnalytics, range.from, range.to]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { pending: 0, "in-progress": 0, testing: 0, ready: 0 };
-    tickets.forEach((t) => {
-      c[t.status] = (c[t.status] || 0) + 1;
-    });
-    return c;
-  }, [tickets]);
-
-  useEffect(() => {
-    setPendingCount(counts.pending || 0);
-  }, [counts.pending, setPendingCount]);
-
-  const total = tickets.length;
+  const {
+    tickets,
+    devices,
+    devicesWithoutTicket,
+    ticketsWithoutDeviceCount,
+    activeClientsCount,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    analytics,
+    analyticsLoading,
+    dedupLogs,
+    range,
+    periodLabel,
+    counts,
+    total,
+  } = useDashboardData({
+    accessToken: session?.access_token,
+    setPendingCount,
+  });
 
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <StatCard
+        <DashboardStatCard
           label="Ticket totali"
           value={total}
           accent="var(--accent)"
           sub="totali"
           icon={<Boxes className="w-5 h-5" />}
         />
-        <StatCard
+        <DashboardStatCard
           label="Dispositivi totali"
           value={devices.length}
           accent="var(--accent2)"
           sub="totali"
           icon={<Boxes className="w-5 h-5" />}
         />
-        <StatCard
+        <DashboardStatCard
           label="Clienti attivi"
           value={activeClientsCount}
           accent="var(--purple)"
           sub="nel periodo"
           icon={<TrendingUp className="w-5 h-5" />}
         />
-        <StatCard
+        <DashboardStatCard
           label="In lavorazione"
           value={counts["in-progress"]}
           accent="var(--warn)"
@@ -203,7 +111,7 @@ function DashboardPage() {
           href={"/tickets?status=in-progress"}
           highlight
         />
-        <StatCard
+        <DashboardStatCard
           label="Pronti"
           value={counts.ready}
           accent="var(--success)"
@@ -211,7 +119,7 @@ function DashboardPage() {
           valueColor="var(--success)"
           icon={<CircleCheck className="w-5 h-5" />}
         />
-        <StatCard
+        <DashboardStatCard
           label="In attesa"
           value={counts.pending}
           accent="var(--purple)"
@@ -286,7 +194,7 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="text-[22px] font-bold">{devicesWithoutTicket.length}</div>
               <div className="flex-1">
-                <AreaSpark
+                <DashboardAreaSpark
                   data={computeDailyCounts(
                     devices,
                     "created_at",
@@ -316,7 +224,7 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="text-[22px] font-bold">{ticketsWithoutDeviceCount}</div>
               <div className="flex-1">
-                <AreaSpark
+                <DashboardAreaSpark
                   data={computeDailyCounts(
                     tickets.filter((tt) => !tt.device),
                     "created_at",
@@ -344,7 +252,7 @@ function DashboardPage() {
           <div className="pc-card-body">
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <AreaSparkMulti
+                <DashboardAreaSparkMulti
                   series={[
                     {
                       data: computeDailyCounts(
@@ -411,7 +319,7 @@ function DashboardPage() {
                       {t.ticket_code}
                     </td>
                     <td className="px-[14px] py-[10px] text-[12.5px]">
-                      {deviceLabel(t)}
+                      {dashboardDeviceLabel(t)}
                       <div className="text-[11px] text-text3">{t.client}</div>
                     </td>
                     <td className="px-[14px] py-[10px]">
@@ -442,7 +350,7 @@ function DashboardPage() {
           <div className="pc-card-body">
             <div className="flex gap-4 items-center lg:items-stretch">
               <div className="flex-shrink-0 flex items-center justify-center px-2">
-                <Donut
+                <DashboardDonut
                   data={Object.entries(counts).map(([s, n]) => ({ status: s as TicketStatus, n }))}
                   total={total}
                   hideLegend={true}
@@ -529,338 +437,6 @@ function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  accent: string;
-  sub: string;
-  valueColor?: string;
-  icon: ReactNode;
-  href?: string;
-  highlight?: boolean;
-}
-
-function StatCard({ label, value, accent, sub, valueColor, icon, href, highlight }: StatCardProps) {
-  const inner = (
-    <div
-      className={`pc-stat ${href ? "hover:opacity-95 cursor-pointer transition-all" : ""}`}
-      style={{
-        borderLeft: `3px solid ${accent}`,
-        boxShadow: highlight
-          ? `0 0 0 2px color-mix(in oklab, ${accent} 14%, transparent)`
-          : undefined,
-      }}
-    >
-      <div
-        className="absolute right-4 top-4 w-8 h-8 rounded-lg flex items-center justify-center opacity-15"
-        style={{ background: accent, color: accent }}
-      >
-        {icon}
-      </div>
-      <div className="pc-stat-lbl">{label}</div>
-      <div className="pc-stat-val" style={{ color: valueColor || "inherit" }}>
-        {value}
-      </div>
-      <div className="pc-stat-sub">{sub}</div>
-    </div>
-  );
-
-  if (href) return <Link to={href}>{inner}</Link>;
-  return inner;
-}
-
-function Donut({
-  data,
-  total,
-  hideLegend = false,
-}: {
-  data: { status: TicketStatus; n: number }[];
-  total: number;
-  hideLegend?: boolean;
-}) {
-  const r = 38;
-  const c = 2 * Math.PI * r;
-  let off = 0;
-  // Build the SVG segments
-  const segments =
-    total > 0
-      ? data
-          .filter((d) => d.n > 0)
-          .map((d) => {
-            const len = (d.n / total) * c;
-            const seg = (
-              <circle
-                key={d.status}
-                cx={55}
-                cy={55}
-                r={r}
-                fill="none"
-                stroke={STATUS_META[d.status].color}
-                strokeWidth={14}
-                strokeDasharray={`${len} ${c}`}
-                strokeDashoffset={-off}
-              />
-            );
-            off += len;
-            return seg;
-          })
-      : [];
-
-  const svg = (
-    <div className="relative" style={{ width: 110, height: 110 }}>
-      <svg width={110} height={110} viewBox="0 0 110 110" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={55} cy={55} r={r} fill="none" stroke="var(--surface3)" strokeWidth={14} />
-        {segments}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div
-          className="text-[22px] font-bold leading-none"
-          style={{ fontFamily: "var(--font-head)" }}
-        >
-          {total}
-        </div>
-        <div className="text-[10px] text-text3 uppercase tracking-wider">Ticket</div>
-      </div>
-    </div>
-  );
-
-  if (hideLegend) {
-    return svg;
-  }
-
-  return (
-    <div className="flex items-center gap-6">
-      {svg}
-      <div className="flex-1 flex flex-col gap-2">
-        {data.map((d) => (
-          <div key={d.status} className="flex items-center gap-2 text-[12px]">
-            <span
-              className="w-2.5 h-2.5 rounded-sm"
-              style={{ background: STATUS_META[d.status].color }}
-            />
-            <span className="flex-1 text-text2">{STATUS_META[d.status].label}</span>
-            <span className="font-mono text-text3">{d.n}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function deviceLabel(ticket: DashboardTicketRow) {
-  return ticket.device?.model || "Nessun asset";
-}
-
-function defaultDateRange() {
-  const to = new Date();
-  const from = new Date();
-  from.setMonth(from.getMonth() - 5);
-  from.setDate(1);
-  return { from: toDateInputValue(from), to: toDateInputValue(to) };
-}
-
-function toDateInputValue(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function startOfDayIso(value: string) {
-  return new Date(`${value}T00:00:00.000Z`).toISOString();
-}
-
-function endOfDayIso(value: string) {
-  return new Date(`${value}T23:59:59.999Z`).toISOString();
-}
-
-function formatPeriodLabel(from: string, to: string) {
-  const fmt = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", year: "numeric" });
-  return `${fmt.format(new Date(from))} - ${fmt.format(new Date(to))}`;
-}
-
-function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
-  const rows = [
-    ["Report mensile"],
-    ["Mese", "Ticket aperti", "Ticket chiusi", "Tempo medio risoluzione giorni"],
-    ...analytics.ticketsByMonth.map((row) => [
-      row.label,
-      row.opened,
-      row.closed,
-      row.avg_days ?? "",
-    ]),
-    [],
-    ["Performance tecnici"],
-    ["Tecnico", "Ticket assegnati", "Ticket completati", "Tempo medio risoluzione giorni"],
-    ...analytics.technicianKpi.map((row) => [
-      row.full_name,
-      row.assigned,
-      row.completed,
-      row.avg_days ?? "",
-    ]),
-  ];
-  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = window.document.createElement("a");
-  anchor.href = url;
-  anchor.download = "dashboard-report.csv";
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function csvCell(value: string | number) {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function computeDailyCounts<T extends { created_at: string }>(
-  items: T[],
-  dateKey: keyof T & string,
-  days = 14,
-  filter?: (it: T) => boolean,
-) {
-  const res = new Array(days).fill(0);
-  const now = new Date();
-  for (const it of items) {
-    if (filter && !filter(it)) continue;
-    const raw = it[dateKey];
-    const d = new Date(typeof raw === "string" ? raw : String(raw));
-    if (isNaN(d.getTime())) continue;
-    const diff = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
-    if (diff >= 0 && diff < days) {
-      // index 0 = oldest day (days-1 days ago) -> res[days-1-diff]
-      res[days - 1 - diff] += 1;
-    }
-  }
-  return res;
-}
-
-function AreaSpark({ data, color = "#3b82f6" }: { data: number[]; color?: string }) {
-  const w = 160;
-  const h = 48;
-  const max = Math.max(...data, 1);
-  const step = w / Math.max(1, data.length - 1);
-  const path = data
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`)
-    .join(" ");
-  const area = `${data.map((v, i) => `${i * step} ${h - (v / max) * h}`).join(" L ")}`;
-  const [hover, setHover] = useState<number | null>(null);
-  function onMove(e: React.MouseEvent<SVGSVGElement>) {
-    const rect = (e.target as SVGElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const idx = Math.round((x / w) * (data.length - 1));
-    setHover(Math.max(0, Math.min(data.length - 1, idx)));
-  }
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      preserveAspectRatio="none"
-      onMouseMove={onMove}
-      onMouseLeave={() => setHover(null)}
-    >
-      <path d={`M0 ${h} L ${area} L ${w} ${h} Z`} fill={color} opacity={0.12} />
-      <path
-        d={path}
-        fill="none"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {hover !== null && (
-        <g>
-          <circle cx={hover * step} cy={h - (data[hover!] / max) * h} r={3} fill={color} />
-          <text x={hover * step} y={10} fontSize={10} textAnchor="middle" fill={color}>
-            {data[hover!]}
-          </text>
-        </g>
-      )}
-    </svg>
-  );
-}
-
-function AreaSparkMulti({
-  series,
-}: {
-  series: { data: number[]; color: string; label?: string }[];
-}) {
-  const w = 260;
-  const h = 64;
-  const length = series[0]?.data.length || 1;
-  const max = Math.max(...series.flatMap((s) => s.data), 1);
-  const step = w / Math.max(1, length - 1);
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  function onMove(e: React.MouseEvent<SVGSVGElement>) {
-    const rect = (e.target as SVGElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const idx = Math.round((x / w) * (length - 1));
-    setHoverIdx(Math.max(0, Math.min(length - 1, idx)));
-  }
-  return (
-    <div style={{ position: "relative" }}>
-      <svg
-        width={w}
-        height={h}
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="none"
-        onMouseMove={onMove}
-        onMouseLeave={() => setHoverIdx(null)}
-      >
-        {series.map((s, si) => {
-          const path = s.data
-            .map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (v / max) * h}`)
-            .join(" ");
-          return (
-            <path
-              key={si}
-              d={path}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.95}
-            />
-          );
-        })}
-        {hoverIdx !== null && (
-          <line
-            x1={hoverIdx * step}
-            x2={hoverIdx * step}
-            y1={0}
-            y2={h}
-            stroke="#000"
-            strokeOpacity={0.06}
-          />
-        )}
-      </svg>
-      {hoverIdx !== null && (
-        <div
-          className="absolute"
-          style={{
-            right: 6,
-            top: 6,
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            padding: 8,
-            borderRadius: 6,
-          }}
-        >
-          {series.map((s, i) => (
-            <div key={i} className="flex items-center gap-2 text-[12px]">
-              <span
-                style={{ width: 10, height: 6, background: s.color, display: "inline-block" }}
-              />
-              <span className="text-text2">{s.label}</span>
-              <span className="font-mono text-text3 ml-2">{s.data[hoverIdx]}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
