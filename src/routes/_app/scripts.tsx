@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { createVersion } from "@/lib/versioning";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
@@ -121,6 +122,7 @@ function ScriptsPage() {
   const [refresh, setRefresh] = useState(0);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ScriptRow | null>(null);
 
   const { useScriptsList, useDeleteScript } = queries as any;
   const listQuery = useScriptsList();
@@ -151,9 +153,8 @@ function ScriptsPage() {
 
   const cats = Array.from(new Set(rows.map((r) => r.category))).sort();
 
-  async function remove(id: string) {
-    if (!confirm("Eliminare questo script?")) return;
-    await deleteMut.mutateAsync(id);
+  async function remove(script: ScriptRow) {
+    await deleteMut.mutateAsync(script.id);
     toast.success("Script eliminato");
   }
 
@@ -244,7 +245,7 @@ function ScriptsPage() {
                       }
                     : undefined
                 }
-                onDelete={isAdmin ? () => remove(s.id) : undefined}
+                onDelete={isAdmin ? () => setDeleteTarget(s) : undefined}
               />
             ))}
           </div>
@@ -283,6 +284,21 @@ function ScriptsPage() {
         open={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
         onRestored={() => setRefresh((x) => x + 1)}
+      />
+      <DestructiveConfirmDialog
+        open={!!deleteTarget}
+        title="Eliminare questo script?"
+        description={
+          deleteTarget
+            ? `Lo script "${deleteTarget.name}" verra' rimosso dalla libreria. L'azione non puo' essere annullata.`
+            : "Lo script verra' rimosso dalla libreria. L'azione non puo' essere annullata."
+        }
+        confirmLabel="Elimina script"
+        loadingLabel="Eliminazione..."
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) await remove(deleteTarget);
+        }}
       />
     </div>
   );

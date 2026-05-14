@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { TicketNotes } from "@/components/tickets/TicketNotes";
 import { sendChecklistCompletedEmail } from "@/lib/email-events";
 import activityQueries from "@/lib/queries/activity";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 
 interface TicketRow {
   id: string;
@@ -82,6 +83,7 @@ export function TicketDetailModal() {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [historyEntries, setHistoryEntries] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<string>("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { useTicketQuery, useTicketAssignmentsQuery, useTicketHistoryQuery, useUpdateTicket, useDeleteTicket } = queries as any;
   const ticketQuery = useTicketQuery(id);
@@ -203,7 +205,6 @@ export function TicketDetailModal() {
   }
 
   async function del() {
-    if (!confirm(`Eliminare ${ticket.ticket_code}?`)) return;
     try {
       await deleteTicket.mutateAsync(ticket.id);
       toast.success("Ticket eliminato");
@@ -225,7 +226,7 @@ export function TicketDetailModal() {
       footer={
         <>
           {isAdmin && (
-            <button className="pc-btn pc-btn-danger pc-btn-sm mr-auto" onClick={del}>
+            <button className="pc-btn pc-btn-danger pc-btn-sm mr-auto" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="w-3 h-3" /> Elimina
             </button>
           )}
@@ -362,6 +363,15 @@ export function TicketDetailModal() {
           qc.invalidateQueries(QUERY_KEYS.ticket(ticket.id) as any);
           qc.invalidateQueries(QUERY_KEYS.tickets as any);
         }}
+      />
+      <DestructiveConfirmDialog
+        open={deleteOpen}
+        title="Eliminare questo ticket?"
+        description={`Il ticket ${ticket.ticket_code} verra' rimosso definitivamente. L'azione non puo' essere annullata.`}
+        confirmLabel="Elimina ticket"
+        loadingLabel="Eliminazione..."
+        onOpenChange={setDeleteOpen}
+        onConfirm={del}
       />
     </Modal>
   );

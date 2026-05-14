@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePortalAccessLink, revokePortalAccessLink } from "@/lib/portal-auth";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 
 export const Route = createFileRoute("/_app/clients")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -118,6 +119,11 @@ type ContactForm = {
 
 type ClientTab = "info" | "contacts" | "tickets" | "devices";
 type ClientListFilter = "all" | "openTickets" | "portalActive";
+type DestructiveAction =
+  | { type: "client"; client: ClientRow }
+  | { type: "bulkClients"; ids: string[] }
+  | { type: "contact"; contact: ContactRow }
+  | { type: "revokePortal"; contact: ContactRow };
 
 type TicketRow = {
   id: string;
@@ -190,6 +196,7 @@ function ClientsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [contactImportOpen, setContactImportOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [destructiveAction, setDestructiveAction] = useState<DestructiveAction | null>(null);
   const [portalLink, setPortalLink] = useState<{
     contactName: string;
     clientName: string;
@@ -408,7 +415,6 @@ function ClientsPage() {
 
   async function deleteClient() {
     if (!selected || !canDelete) return toast.error("Solo admin puo' eliminare clienti");
-    if (!confirm(`Eliminare ${selected.company_name || selected.name}?`)) return;
     await deleteClientMut.mutateAsync(selected.id);
     toast.success("Cliente eliminato");
     setSelectedId(null);
@@ -418,7 +424,6 @@ function ClientsPage() {
     if (!canDelete) return toast.error("Solo admin puo' eliminare clienti");
     const ids = Array.from(selectedIds);
     if (!ids.length) return toast.error("Seleziona almeno un cliente");
-    if (!confirm(`Eliminare ${ids.length} clienti selezionati?`)) return;
     await bulkDeleteMut.mutateAsync(ids);
     toast.success(`${ids.length} clienti eliminati`);
     if (selectedId && selectedIds.has(selectedId)) {
@@ -526,7 +531,6 @@ function ClientsPage() {
 
   async function deleteContact(contact: ContactRow) {
     if (!canDelete) return toast.error("Solo admin puo' eliminare referenti");
-    if (!confirm(`Eliminare ${contactLabel(contact)}?`)) return;
     await deleteContactMut.mutateAsync({ id: contact.id, clientId: contact.client_id });
     toast.success("Referente eliminato");
   }
@@ -564,7 +568,6 @@ function ClientsPage() {
   async function revokeContactPortalAccess(contact: ContactRow) {
     if (!session?.access_token) return toast.error("Sessione non valida");
     if (!canManagePortalAccess) return toast.error("Permessi insufficienti");
-    if (!confirm(`Revocare i link portale attivi per ${contactLabel(contact)}?`)) return;
     setPortalRevokingContactId(contact.id);
     try {
       const result = await revokePortalLink({
@@ -580,6 +583,32 @@ function ClientsPage() {
       toast.error(errorMessage(error, "Errore revoca accesso portale"));
     } finally {
       setPortalRevokingContactId(null);
+    }
+  }
+
+  async function confirmDestructiveAction() {
+    if (!destructiveAction) return;
+    if (destructiveAction.type === "client") {
+      if (!canDelete) {
+        toast.error("Solo admin puo' eliminare clienti");
+        return;
+      }
+      await deleteClientMut.mutateAsync(destructiveAction.client.id);
+      toast.success("Cliente eliminato");
+      if (selectedId === destructiveAction.client.id) setSelectedId(null);
+    } else if (destructiveAction.type === "bulkClients") {
+      if (!canDelete) {
+        toast.error("Solo admin puo' eliminare clienti");
+        return;
+      }
+      await bulkDeleteMut.mutateAsync(destructiveAction.ids);
+      toast.success(`${destructiveAction.ids.length} clienti eliminati`);
+      if (selectedId && destructiveAction.ids.includes(selectedId)) setSelectedId(null);
+      setSelectedIds(new Set());
+    } else if (destructiveAction.type === "contact") {
+      await deleteContact(destructiveAction.contact);
+    } else {
+      await revokeContactPortalAccess(destructiveAction.contact);
     }
   }
 
@@ -640,7 +669,7 @@ function ClientsPage() {
           {selectedIds.size > 0 && (
             <div className="flex items-center justify-between rounded-md px-3 py-2" style={{ background: "var(--surface2)" }}>
               <span className="text-xs text-text2">{selectedIds.size} selezionati</span>
-              <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canDelete} onClick={bulkDelete}>
+              <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "bulkClients", ids: Array.from(selectedIds) })}>
                 <Trash2 className="w-3 h-3" /> Elimina
               </button>
             </div>
@@ -763,7 +792,7 @@ function ClientsPage() {
             {activeTab === "info" && (
               <div className="pc-card-body">
                 <div className="mb-4 flex flex-wrap justify-end gap-2">
-                  <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!canDelete} onClick={deleteClient}>
+                  <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "client", client: selected })}>
                     <Trash2 className="w-3 h-3" /> Elimina
                   </button>
                   <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !canEdit} onClick={onSaveClient}>
@@ -846,11 +875,11 @@ function ClientsPage() {
                         <Link2 className="h-3 w-3" /> Link
                       </button>
                       {portalAccess[contact.id] && (
-                        <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || portalRevokingContactId === contact.id} onClick={() => revokeContactPortalAccess(contact)}>
+                        <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || portalRevokingContactId === contact.id} onClick={() => setDestructiveAction({ type: "revokePortal", contact })}>
                           Revoca
                         </button>
                       )}
-                      <button className="pc-btn-icon" disabled={!canDelete} onClick={() => deleteContact(contact)} title="Elimina referente">
+                      <button className="pc-btn-icon" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "contact", contact })} title="Elimina referente">
                         <Trash2 className="h-3 w-3" />
                       </button>
                     </div>,
@@ -975,6 +1004,13 @@ function ClientsPage() {
         onClose={() => setPortalLink(null)}
         onCopy={copyPortalLink}
       />
+      <DestructiveConfirmDialog
+        open={!!destructiveAction}
+        {...destructiveDialogCopy(destructiveAction)}
+        loadingLabel="Operazione in corso..."
+        onOpenChange={(open) => !open && setDestructiveAction(null)}
+        onConfirm={confirmDestructiveAction}
+      />
       <ImportContactsCsvDialog
         open={contactImportOpen}
         clientId={selectedId}
@@ -995,6 +1031,47 @@ function ClientsPage() {
       />
     </div>
   );
+}
+
+function destructiveDialogCopy(action: DestructiveAction | null) {
+  if (!action) {
+    return {
+      title: "Confermare l'azione?",
+      description: "Questa azione e' distruttiva e non puo' essere annullata.",
+      confirmLabel: "Conferma",
+    };
+  }
+
+  if (action.type === "client") {
+    const name = action.client.company_name || action.client.name;
+    return {
+      title: "Eliminare questo cliente?",
+      description: `Il cliente "${name}" verra' rimosso insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.`,
+      confirmLabel: "Elimina cliente",
+    };
+  }
+
+  if (action.type === "bulkClients") {
+    return {
+      title: "Eliminare i clienti selezionati?",
+      description: `${action.ids.length} clienti verranno rimossi insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.`,
+      confirmLabel: "Elimina clienti",
+    };
+  }
+
+  if (action.type === "contact") {
+    return {
+      title: "Eliminare questo referente?",
+      description: `Il referente "${contactLabel(action.contact)}" verra' rimosso dal cliente. L'azione non puo' essere annullata.`,
+      confirmLabel: "Elimina referente",
+    };
+  }
+
+  return {
+    title: "Revocare l'accesso portale?",
+    description: `Tutti i link portale attivi per "${contactLabel(action.contact)}" verranno revocati. Il referente non potra' piu' usarli per accedere.`,
+    confirmLabel: "Revoca accesso",
+  };
 }
 
 

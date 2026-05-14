@@ -11,6 +11,7 @@ import { CheckCircle2, Copy, Link2, Pencil, Search, Star, Trash2, Users } from "
 import { useMemo, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 
 export const Route = createFileRoute("/_app/contacts")({
   head: () => ({
@@ -51,6 +52,7 @@ function ContactsPage() {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [portalFilter, setPortalFilter] = useState<"all" | "active" | "inactive">("all");
   const [editing, setEditing] = useState<GlobalContactRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GlobalContactRow | null>(null);
   const [form, setForm] = useState<ContactForm>(emptyContactForm);
   const [busy, setBusy] = useState(false);
   const [portalLink, setPortalLink] = useState<{ contactName: string; clientName: string; loginUrl: string; expiresAt: string } | null>(null);
@@ -137,7 +139,6 @@ function ContactsPage() {
 
   async function deleteContact(contact: GlobalContactRow) {
     if (!canDelete) return toast.error("Solo admin puo' eliminare referenti");
-    if (!confirm(`Eliminare ${contactLabel(contact)}?`)) return;
     const { error } = await supabase.from("client_contacts").delete().eq("id", contact.id);
     if (error) return toast.error(error.message);
     await qc.invalidateQueries({ queryKey: ["clients"] });
@@ -241,7 +242,7 @@ function ContactsPage() {
                     <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || busy} onClick={() => generateContactPortalLink(contact)}>
                       <Link2 className="h-3 w-3" /> Portale
                     </button>
-                    <button className="pc-btn-icon" disabled={!canDelete} onClick={() => deleteContact(contact)} title="Elimina referente">
+                    <button className="pc-btn-icon" disabled={!canDelete} onClick={() => setDeleteTarget(contact)} title="Elimina referente">
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
@@ -259,6 +260,21 @@ function ContactsPage() {
 
       <EditContactModal editing={editing} form={form} busy={busy} canEdit={canEdit} setForm={setForm} onClose={() => setEditing(null)} onSave={saveEdit} />
       <PortalLinkModal portalLink={portalLink} copied={copiedPortalLink} onClose={() => setPortalLink(null)} onCopy={copyPortalLink} />
+      <DestructiveConfirmDialog
+        open={!!deleteTarget}
+        title="Eliminare questo referente?"
+        description={
+          deleteTarget
+            ? `Il referente "${contactLabel(deleteTarget)}" verra' rimosso da ${deleteTarget.client ? clientName(deleteTarget.client) : "questo cliente"}. L'azione non puo' essere annullata.`
+            : "Il referente verra' rimosso dal cliente. L'azione non puo' essere annullata."
+        }
+        confirmLabel="Elimina referente"
+        loadingLabel="Eliminazione..."
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) await deleteContact(deleteTarget);
+        }}
+      />
     </div>
   );
 }

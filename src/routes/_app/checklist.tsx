@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { createVersion } from "@/lib/versioning";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 
 export const Route = createFileRoute("/_app/checklist")({
   head: () => ({ meta: [{ title: "Checklist — PCReady" }, { name: "description", content: "Crea e gestisci checklist personalizzate per la preparazione PC." }] }),
@@ -33,6 +34,7 @@ function ChecklistPage() {
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [deleteTemplateTarget, setDeleteTemplateTarget] = useState<Template | null>(null);
   const { useChecklistTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate, useSetDefaultTemplate } = queries as any;
   const listQuery = useChecklistTemplates();
   const createMut = useCreateTemplate();
@@ -89,7 +91,6 @@ function ChecklistPage() {
 
   async function remove(id: string) {
     if (!isAdmin) return toast.error("Solo amministratori");
-    if (!confirm("Eliminare questo modello?")) return;
     const template = templates.find((item) => item.id === id);
     if (template) {
       await createVersion(
@@ -177,7 +178,7 @@ function ChecklistPage() {
 
       {current ? (
         <TemplateEditor key={current.id} template={current} canEdit={canEdit} isAdmin={isAdmin}
-          onUpdate={(p, n) => update(current, p, n)} onDelete={() => remove(current.id)}
+          onUpdate={(p, n) => update(current, p, n)} onDelete={() => setDeleteTemplateTarget(current)}
           onOpenVersions={() => setVersionHistoryOpen(true)}
           onSetDefault={() => setDefault(current.id)} />
       ) : (
@@ -191,6 +192,21 @@ function ChecklistPage() {
         open={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
         onRestored={() => void listQuery.refetch()}
+      />
+      <DestructiveConfirmDialog
+        open={!!deleteTemplateTarget}
+        title="Eliminare questo modello?"
+        description={
+          deleteTemplateTarget
+            ? `Il modello "${deleteTemplateTarget.name}" e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata.`
+            : "Il modello e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata."
+        }
+        confirmLabel="Elimina modello"
+        loadingLabel="Eliminazione..."
+        onOpenChange={(open) => !open && setDeleteTemplateTarget(null)}
+        onConfirm={async () => {
+          if (deleteTemplateTarget) await remove(deleteTemplateTarget.id);
+        }}
       />
     </div>
   );
@@ -208,6 +224,7 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
   const [activeTab, setActiveTab] = useState<string>(Object.keys(template.structure || {})[0] || "");
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [tabLabel, setTabLabel] = useState("");
+  const [deleteSectionKey, setDeleteSectionKey] = useState<string | null>(null);
 
   useEffect(() => {
     setName(template.name); setDesc(template.description || "");
@@ -231,7 +248,6 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
 
   }
   function removeTab(key: string) {
-    if (!confirm("Eliminare questa sezione e tutte le sue voci?")) return;
     const c = { ...struct }; delete c[key];
     persist(c, "Sezione checklist rimossa");
 
@@ -252,6 +268,7 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
   }
 
   return (
+    <>
     <div className="pc-card">
       <div className="pc-card-hd flex-wrap gap-2">
         <input className="pc-input max-w-[280px] !text-[14px] !font-semibold"
@@ -336,7 +353,7 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
                 </button>
               )}
               {canEdit && Object.keys(struct).length > 1 && (
-                <button className="pc-btn pc-btn-danger pc-btn-sm" onClick={() => removeTab(activeTab)}>
+                <button className="pc-btn pc-btn-danger pc-btn-sm" onClick={() => setDeleteSectionKey(activeTab)}>
                   <Trash2 className="w-3 h-3"/> Sezione
                 </button>
               )}
@@ -369,5 +386,21 @@ function TemplateEditor({ template, canEdit, isAdmin, onUpdate, onDelete, onSetD
         )}
       </div>
     </div>
+    <DestructiveConfirmDialog
+      open={!!deleteSectionKey}
+      title="Eliminare questa sezione?"
+      description={
+        deleteSectionKey && struct[deleteSectionKey]
+          ? `La sezione "${struct[deleteSectionKey].label}" e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.`
+          : "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata."
+      }
+      confirmLabel="Elimina sezione"
+      loadingLabel="Eliminazione..."
+      onOpenChange={(open) => !open && setDeleteSectionKey(null)}
+      onConfirm={async () => {
+        if (deleteSectionKey) removeTab(deleteSectionKey);
+      }}
+    />
+    </>
   );
 }
