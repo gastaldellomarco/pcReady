@@ -18,6 +18,7 @@ import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog
 import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
@@ -44,6 +45,7 @@ interface Row {
   client?: { name: string } | null;
   updated_at: string;
   assigned_to: string | null;
+  has_active_assignment?: boolean;
 }
 
 type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
@@ -74,6 +76,7 @@ function InventoryPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [labelsBusy, setLabelsBusy] = useState(false);
+  const [statusSavingId, setStatusSavingId] = useState<string | null>(null);
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
   const [withoutTicketFilter] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -235,6 +238,41 @@ function InventoryPage() {
     });
   }
 
+  async function handleStatusChange(deviceId: string, newStatus: DeviceStatus) {
+    const row = data.find((r) => r.id === deviceId);
+    if (!row || row.status === newStatus) return;
+    if (row.has_active_assignment && row.status === "assigned") return;
+
+    setStatusSavingId(deviceId);
+    try {
+      const { data: updated, error } = await supabase
+        .from("devices")
+        .update({ status: newStatus })
+        .eq("id", deviceId)
+        .select("status, updated_at")
+        .single();
+      if (error) throw error;
+      const nextStatus = (updated?.status ?? newStatus) as DeviceStatus;
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === deviceId
+            ? {
+                ...r,
+                status: nextStatus,
+                updated_at: updated?.updated_at ?? r.updated_at,
+              }
+            : r,
+        ),
+      );
+      toast.success(`Stato aggiornato a ${DEVICE_STATUS_META[nextStatus].label}`);
+      void qc.invalidateQueries({ queryKey: ["inventory"] });
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore aggiornamento stato"));
+    } finally {
+      setStatusSavingId(null);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2 items-center">
@@ -370,8 +408,17 @@ function InventoryPage() {
                       </td>
                       <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
                       <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "-"}</td>
-                      <td className="px-[14px] py-[10px]">
-                        <DeviceStatusBadge status={r.status} />
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <DeviceStatusBadge
+                          deviceId={r.id}
+                          status={r.status}
+                          hasActiveAssignment={!!r.has_active_assignment}
+                          saving={statusSavingId === r.id}
+                          onStatusChange={handleStatusChange}
+                        />
                       </td>
                       <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
                       <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
@@ -443,12 +490,59 @@ function InventoryPage() {
   );
 }
 
-function DeviceStatusBadge({ status }: { status: DeviceStatus }) {
+function DeviceStatusBadge({
+  deviceId,
+  status,
+  hasActiveAssignment,
+  saving,
+  onStatusChange,
+}: {
+  deviceId: string;
+  status: DeviceStatus;
+  hasActiveAssignment: boolean;
+  saving: boolean;
+  onStatusChange: (id: string, next: DeviceStatus) => void | Promise<void>;
+}) {
   const meta = DEVICE_STATUS_META[status];
+  const readOnlyAssigned = hasActiveAssignment && status === "assigned";
+
+  if (readOnlyAssigned) {
+    return (
+      <span
+        className="pc-badge"
+        title="Assegnazione ticket attiva: per coerenza modifica lo stato dal flusso ticket."
+        style={{ color: meta.color, background: `${meta.color}26` }}
+      >
+        {meta.label}
+      </span>
+    );
+  }
+
   return (
-    <span className="pc-badge" style={{ color: meta.color, background: "var(--surface2)" }}>
-      {meta.label}
-    </span>
+    <select
+      aria-label="Stato dispositivo"
+      className="pc-badge cursor-pointer max-w-[155px] disabled:opacity-60 disabled:cursor-wait"
+      style={{
+        color: meta.color,
+        background: `${meta.color}26`,
+        borderColor: `color-mix(in oklab, ${meta.color} 24%, transparent)`,
+      }}
+      value={status}
+      disabled={saving}
+      onClick={(event) => event.stopPropagation()}
+      onChange={(event) => {
+        const next = event.target.value as DeviceStatus;
+        void onStatusChange(deviceId, next);
+      }}
+    >
+      {(Object.entries(DEVICE_STATUS_META) as [DeviceStatus, { label: string }][]).map(
+        ([key, v]) => (
+          <option key={key} value={key}>
+            {v.label}
+          </option>
+        ),
+      )}
+    </select>
   );
 }
 

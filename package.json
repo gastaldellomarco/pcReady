@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint src --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "migrations:check": "node scripts/validate-migrations.mjs",
     "format": "prettier --write ."

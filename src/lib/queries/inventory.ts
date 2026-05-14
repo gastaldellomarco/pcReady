@@ -23,11 +23,8 @@ export async function fetchDevicesList(params: DevicesListParams) {
   const PAGE_SIZE = params.pageSize ?? 50;
   const page = params.page ?? 0;
 
-  let assignedIds: string[] = [];
-  if (params.withoutTicket) {
-    const ids = await fetchAssignedDeviceIds();
-    assignedIds = ids;
-  }
+  const assignedIds = await fetchAssignedDeviceIds();
+  const assignedSet = new Set(assignedIds);
 
   let query = supabase
     .from("devices")
@@ -49,7 +46,11 @@ export async function fetchDevicesList(params: DevicesListParams) {
 
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
-  return { data: (data ?? []) as any[], count: count ?? 0 };
+  const rows = (data ?? []).map((row: Record<string, unknown>) => ({
+    ...row,
+    has_active_assignment: assignedSet.has(row.id as string),
+  }));
+  return { data: rows as any[], count: count ?? 0 };
 }
 
 export function useInventoryList(params: DevicesListParams) {

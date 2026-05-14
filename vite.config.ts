@@ -43,6 +43,14 @@ export default defineConfig({
       coverage: {
         provider: "v8",
         reporter: ["text", "lcov"],
+        /** Solo moduli con test mirati; evita createServerFn non invocabili in Vitest che abbassano le % funzioni. */
+        include: ["src/lib/inventory-import.ts", "src/lib/notifications.server.ts"],
+        exclude: ["**/*.d.ts", "**/*.test.ts", "**/*.test.tsx"],
+        thresholds: {
+          lines: 60,
+          functions: 60,
+          branches: 50,
+        },
       },
     },
   } as any,

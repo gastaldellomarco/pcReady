@@ -20,4 +20,12 @@ describe("email templates", () => {
       body: "Ciao Marco, il ticket PC-100 per ACME ti e' stato assegnato.",
     });
   });
+
+  it("renderTemplate supports raw string templates", () => {
+    expect(renderTemplate("Ciao {{name}}", { name: "Mondo" })).toBe("Ciao Mondo");
+  });
+
+  it("renderTemplate leaves unknown placeholders unchanged", () => {
+    expect(renderTemplate("{{missing}}", {})).toBe("{{missing}}");
+  });
 });

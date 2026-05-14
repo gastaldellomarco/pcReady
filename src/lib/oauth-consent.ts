@@ -28,6 +28,23 @@ interface DenyConsentInput {
   state?: string;
 }
 
+/** Costruisce l'URL di redirect per consenso negato (usata anche dai test). */
+export function buildDenyConsentRedirect(data: DenyConsentInput): string {
+  const params = new URLSearchParams({
+    error: "access_denied",
+    error_description: "User denied access",
+    ...(data.state && { state: data.state }),
+  });
+  return `${data.redirectUri}?${params.toString()}`;
+}
+
+export function invalidOAuthScopesAgainstAllowed(
+  requestedScopes: OAuthScope[],
+  allowed: OAuthScope[],
+): OAuthScope[] {
+  return requestedScopes.filter((scope) => !allowed.includes(scope));
+}
+
 export interface OAuthClientInfo {
   clientId: string;
   name: string;
@@ -75,8 +92,9 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
 
     // Parse and validate scopes
     const requestedScopes = data.scope.split(" ").filter(Boolean) as OAuthScope[];
-    const invalidScopes = requestedScopes.filter(
-      (scope) => !(clientAny.scopes_allowed || []).includes(scope),
+    const invalidScopes = invalidOAuthScopesAgainstAllowed(
+      requestedScopes,
+      (clientAny.scopes_allowed || []) as OAuthScope[],
     );
     if (invalidScopes.length > 0) {
       throw new Response(`Invalid scopes: ${invalidScopes.join(", ")}`, { status: 400 });
@@ -236,14 +254,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
 export const denyConsent = createServerFn({ method: "POST" })
   .inputValidator((data: DenyConsentInput) => data)
   .handler(async ({ data }): Promise<{ redirectUrl: string }> => {
-    // Build redirect URL with error
-    const params = new URLSearchParams({
-      error: "access_denied",
-      error_description: "User denied access",
-      ...(data.state && { state: data.state }),
-    });
-
     return {
-      redirectUrl: `${data.redirectUri}?${params.toString()}`,
+      redirectUrl: buildDenyConsentRedirect(data),
     };
   });
