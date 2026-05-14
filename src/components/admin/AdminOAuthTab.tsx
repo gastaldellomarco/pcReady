@@ -1,5 +1,6 @@
 ﻿import { Link } from "@tanstack/react-router";
-import { Shield, Plus, BookOpen, Copy, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Shield, Plus, BookOpen, Copy, ChevronDown, History, KeyRound, Ban, RotateCcw, Skull } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { fmtDateTime } from "@/lib/pcready";
+import type { OAuthClientInfo } from "@/lib/oauth-consent";
 import { useAuth } from "@/lib/auth-context";
 import { OAUTH_SCOPES, getScopeLabel } from "@/lib/oauth-scopes";
 import { useAdminOAuthClients } from "@/hooks/useAdminOAuthClients";
@@ -26,8 +30,22 @@ export function AdminOAuthTab() {
     createClientBusy,
     oauthCreated,
     setOauthCreated,
+    rotatedSecret,
+    setRotatedSecret,
     copyOAuthField,
+    updateClientStatus,
+    rotateClientSecret,
+    actionBusyId,
+    lifecycleOpenFor,
+    lifecycleData,
+    lifecycleLoading,
+    openLifecycle,
+    closeLifecycle,
   } = useAdminOAuthClients({ accessToken, isAdmin });
+
+  const [rotateTarget, setRotateTarget] = useState<OAuthClientInfo | null>(null);
+  const [disableTarget, setDisableTarget] = useState<OAuthClientInfo | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<OAuthClientInfo | null>(null);
 
   return (
 <TabsContent value="oauth" className="space-y-5">
@@ -308,6 +326,55 @@ export function AdminOAuthTab() {
           </DialogContent>
         </Dialog>
 
+        <Dialog
+          open={!!rotatedSecret}
+          onOpenChange={(open) => {
+            if (!open) setRotatedSecret(null);
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            {rotatedSecret ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Nuovo Client Secret</DialogTitle>
+                  <DialogDescription>
+                    Il secret precedente non e&apos; piu&apos; valido. Aggiorna subito le integrazioni
+                    che usano questo client.
+                  </DialogDescription>
+                </DialogHeader>
+                <Alert variant="destructive" className="mt-2">
+                  <AlertTitle>Copia ora</AlertTitle>
+                  <AlertDescription>
+                    Questo valore non verra&apos; mostrato di nuovo dopo la chiusura della finestra.
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2 text-sm mt-2">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground">Client Secret</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyOAuthField("Client Secret", rotatedSecret.clientSecret)}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      Copia
+                    </Button>
+                  </div>
+                  <pre className="p-2 rounded-md bg-muted text-xs font-mono break-all whitespace-pre-wrap">
+                    {rotatedSecret.clientSecret}
+                  </pre>
+                </div>
+                <DialogFooter>
+                  <Button type="button" onClick={() => setRotatedSecret(null)}>
+                    Ho aggiornato le integrazioni, chiudi
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
         <Card>
           <CardHeader>
             <CardTitle>Client Registrati</CardTitle>
@@ -333,35 +400,279 @@ export function AdminOAuthTab() {
               <p className="text-center py-4 text-muted-foreground">Nessun client registrato</p>
             ) : (
               <div className="space-y-4">
-                {(Array.isArray(clients) ? clients : []).map((client) => (
-                  <div key={client.clientId} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
+                {(Array.isArray(clients) ? clients : []).map((client) => {
+                  const busy = actionBusyId === client.clientId;
+                  const statusLabel =
+                    client.status === "active"
+                      ? "Attivo"
+                      : client.status === "disabled"
+                        ? "Disattivato"
+                        : "Revocato";
+                  const statusVariant =
+                    client.status === "active" ? "default" : client.status === "disabled" ? "secondary" : "destructive";
+                  return (
+                    <div key={client.clientId} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-semibold">{client.name}</h4>
+                            <Badge variant={statusVariant}>{statusLabel}</Badge>
+                          </div>
+                          {client.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{client.description}</p>
+                          )}
+                          <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
+                            Client ID: {client.clientId}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span>
+                              Creato: <span className="text-foreground">{fmtDateTime(client.createdAt)}</span>
+                            </span>
+                            <span>
+                              Ultima attivita:{" "}
+                              <span className="text-foreground">
+                                {client.lastUsedAt ? fmtDateTime(client.lastUsedAt) : "—"}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void openLifecycle(client.clientId)}
+                          >
+                            <History className="h-3.5 w-3.5 mr-1" />
+                            Storico
+                          </Button>
+                          {client.status === "active" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => setRotateTarget(client)}
+                            >
+                              <KeyRound className="h-3.5 w-3.5 mr-1" />
+                              Ruota secret
+                            </Button>
+                          ) : null}
+                          {client.status === "active" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => setDisableTarget(client)}
+                            >
+                              <Ban className="h-3.5 w-3.5 mr-1" />
+                              Disattiva
+                            </Button>
+                          ) : null}
+                          {client.status === "disabled" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => void updateClientStatus(client.clientId, "active")}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                              Riattiva
+                            </Button>
+                          ) : null}
+                          {client.status !== "revoked" ? (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => setRevokeTarget(client)}
+                            >
+                              <Skull className="h-3.5 w-3.5 mr-1" />
+                              Revoca
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
                       <div>
-                        <h4 className="font-semibold">{client.name}</h4>
-                        {client.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{client.description}</p>
-                        )}
-                        <p className="text-xs font-mono text-muted-foreground mt-2">
-                          Client ID: {client.clientId}
-                        </p>
+                        <p className="text-sm font-medium mb-2">Permessi:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(client.scopesAllowed ?? []).map((scope) => (
+                            <Badge key={scope} variant="secondary">
+                              {getScopeLabel(scope)}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-3">
-                      <p className="text-sm font-medium mb-2">Permessi:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {(client.scopesAllowed ?? []).map((scope) => (
-                          <Badge key={scope} variant="secondary">
-                            {getScopeLabel(scope)}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={!!lifecycleOpenFor} onOpenChange={(o) => !o && closeLifecycle()}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Storico client OAuth</DialogTitle>
+              <DialogDescription>
+                Consensi utenti, codici di autorizzazione recenti e azioni amministrative.
+              </DialogDescription>
+            </DialogHeader>
+            {lifecycleLoading ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">Caricamento...</p>
+            ) : lifecycleData && lifecycleOpenFor ? (
+              <div className="space-y-6 text-sm">
+                <div>
+                  <h4 className="font-semibold mb-2">Consensi ({lifecycleData.consents.length})</h4>
+                  {lifecycleData.consents.length === 0 ? (
+                    <p className="text-muted-foreground text-xs">Nessun consenso registrato.</p>
+                  ) : (
+                    <div className="border rounded-md overflow-x-auto max-h-48 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2">Utente</th>
+                            <th className="text-left p-2">Scope</th>
+                            <th className="text-left p-2">Concesso</th>
+                            <th className="text-left p-2">Revoca</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lifecycleData.consents.map((c) => (
+                            <tr key={`${c.userId}-${c.grantedAt}`} className="border-t">
+                              <td className="p-2 align-top">
+                                {c.userName || <span className="font-mono">{c.userId.slice(0, 8)}…</span>}
+                              </td>
+                              <td className="p-2 align-top font-mono text-[10px]">
+                                {c.scopesGranted.join(", ")}
+                              </td>
+                              <td className="p-2 align-top whitespace-nowrap">{fmtDateTime(c.grantedAt)}</td>
+                              <td className="p-2 align-top whitespace-nowrap">
+                                {c.revokedAt ? fmtDateTime(c.revokedAt) : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Codici di autorizzazione (recenti)</h4>
+                  {lifecycleData.authorizationEvents.length === 0 ? (
+                    <p className="text-muted-foreground text-xs">Nessun codice registrato.</p>
+                  ) : (
+                    <div className="border rounded-md overflow-x-auto max-h-40 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2">Creato</th>
+                            <th className="text-left p-2">Scadenza</th>
+                            <th className="text-left p-2">Stato</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lifecycleData.authorizationEvents.map((row, i) => (
+                            <tr key={`${row.createdAt}-${i}`} className="border-t">
+                              <td className="p-2 whitespace-nowrap">{fmtDateTime(row.createdAt)}</td>
+                              <td className="p-2 whitespace-nowrap">{fmtDateTime(row.expiresAt)}</td>
+                              <td className="p-2">{row.redeemed ? "Riscattato" : "Non riscattato"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Audit amministrativo</h4>
+                  {lifecycleData.adminEvents.length === 0 ? (
+                    <p className="text-muted-foreground text-xs">Nessuna voce.</p>
+                  ) : (
+                    <ul className="border rounded-md divide-y max-h-40 overflow-y-auto text-xs">
+                      {lifecycleData.adminEvents.map((ev) => (
+                        <li key={ev.id} className="p-2">
+                          <div className="text-muted-foreground">{fmtDateTime(ev.createdAt)}</div>
+                          <div>{ev.message}</div>
+                          {ev.actionType ? (
+                            <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
+                              {ev.actionType}
+                            </div>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={closeLifecycle}>
+                Chiudi
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <DestructiveConfirmDialog
+          open={!!rotateTarget}
+          title="Ruotare il Client Secret?"
+          description={
+            rotateTarget
+              ? `Ruotando il secret per "${rotateTarget.name}", il valore attuale smette di funzionare immediatamente. Tutte le integrazioni che usano il vecchio secret falliranno finche' non aggiorni la configurazione. Questa azione viene registrata in audit.`
+              : ""
+          }
+          confirmLabel="Ruota secret"
+          loadingLabel="Rotazione..."
+          onOpenChange={(open) => !open && setRotateTarget(null)}
+          onConfirm={async () => {
+            if (!rotateTarget) return;
+            const uri = rotateTarget.redirectUris[0] ?? "";
+            await rotateClientSecret(rotateTarget.clientId, uri);
+            setRotateTarget(null);
+          }}
+        />
+
+        <DestructiveConfirmDialog
+          open={!!disableTarget}
+          title="Disattivare questo client?"
+          description={
+            disableTarget
+              ? `Il client "${disableTarget.name}" non potra' avviare nuovi flussi OAuth finche' non lo riattivi. I consensi esistenti restano in archivio.`
+              : ""
+          }
+          confirmLabel="Disattiva"
+          loadingLabel="Disattivazione..."
+          onOpenChange={(open) => !open && setDisableTarget(null)}
+          onConfirm={async () => {
+            if (!disableTarget) return;
+            await updateClientStatus(disableTarget.clientId, "disabled");
+            setDisableTarget(null);
+          }}
+        />
+
+        <DestructiveConfirmDialog
+          open={!!revokeTarget}
+          title="Revocare definitivamente questo client?"
+          description={
+            revokeTarget
+              ? `La revoca di "${revokeTarget.name}" e' irreversibile: non potrai riattivare questo client. Crea un nuovo client se serve un'integrazione analoga.`
+              : ""
+          }
+          confirmLabel="Revoca client"
+          loadingLabel="Revoca..."
+          onOpenChange={(open) => !open && setRevokeTarget(null)}
+          onConfirm={async () => {
+            if (!revokeTarget) return;
+            await updateClientStatus(revokeTarget.clientId, "revoked");
+            setRevokeTarget(null);
+          }}
+        />
       </TabsContent>
 
 

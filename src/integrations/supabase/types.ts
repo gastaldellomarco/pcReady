@@ -609,9 +609,11 @@ export type Database = {
           created_by: string | null;
           description: string | null;
           id: string;
+          last_used_at: string | null;
           name: string;
           redirect_uris: string[];
           scopes_allowed: Database["public"]["Enums"]["oauth_scope"][];
+          status: Database["public"]["Enums"]["oauth_client_status"];
           updated_at: string;
         };
         Insert: {
@@ -621,9 +623,11 @@ export type Database = {
           created_by?: string | null;
           description?: string | null;
           id?: string;
+          last_used_at?: string | null;
           name: string;
           redirect_uris?: string[];
           scopes_allowed?: Database["public"]["Enums"]["oauth_scope"][];
+          status?: Database["public"]["Enums"]["oauth_client_status"];
           updated_at?: string;
         };
         Update: {
@@ -633,9 +637,11 @@ export type Database = {
           created_by?: string | null;
           description?: string | null;
           id?: string;
+          last_used_at?: string | null;
           name?: string;
           redirect_uris?: string[];
           scopes_allowed?: Database["public"]["Enums"]["oauth_scope"][];
+          status?: Database["public"]["Enums"]["oauth_client_status"];
           updated_at?: string;
         };
         Relationships: [
@@ -1223,6 +1229,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "tech" | "viewer";
       device_status: "available" | "assigned" | "maintenance" | "retired";
+      oauth_client_status: "active" | "disabled" | "revoked";
       oauth_scope:
         | "openid"
         | "profile"
@@ -1359,6 +1366,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "tech", "viewer"],
       device_status: ["available", "assigned", "maintenance", "retired"],
+      oauth_client_status: ["active", "disabled", "revoked"],
       oauth_scope: ["openid", "profile", "email", "pcready:read", "pcready:write", "pcready:admin"],
       ticket_priority: ["high", "med", "low"],
       ticket_status: ["pending", "in-progress", "testing", "ready"],

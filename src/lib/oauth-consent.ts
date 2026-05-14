@@ -2,9 +2,13 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
 import type { OAuthScope } from "@/lib/oauth-scopes";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
+
+export type OAuthClientStatus = Database["public"]["Enums"]["oauth_client_status"];
 
 interface AuthedInput {
   accessToken: string;
@@ -30,6 +34,41 @@ interface DenyConsentInput {
   state?: string;
 }
 
+async function requireAdminUserId(accessToken: string): Promise<{ userId: string }> {
+  const token = accessToken?.trim();
+  if (!token) throw new Response("Unauthorized", { status: 401 });
+  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
+  const { data: roleData, error: roleError } = await supabaseAdmin.rpc("has_role", {
+    _user_id: authData.user.id,
+    _role: "admin",
+  });
+  if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
+  return { userId: authData.user.id };
+}
+
+async function logOAuthClientAudit(params: {
+  actorId: string;
+  actionType: string;
+  clientId: string;
+  message: string;
+  oldValue?: Record<string, unknown> | null;
+  newValue?: Record<string, unknown> | null;
+}) {
+  const { error } = await supabaseAdmin.from("activity_log" as any).insert({
+    type: "user",
+    action_type: params.actionType,
+    actor_id: params.actorId,
+    entity_type: "oauth_client",
+    entity_id: params.clientId,
+    severity: "info",
+    message: params.message,
+    old_value: params.oldValue ?? null,
+    new_value: params.newValue ?? null,
+  });
+  if (error) console.error("[oauth] activity_log insert failed", error);
+}
+
 /** Costruisce l'URL di redirect per consenso negato (usata anche dai test). */
 export function buildDenyConsentRedirect(data: DenyConsentInput): string {
   const params = new URLSearchParams({
@@ -52,6 +91,10 @@ export interface OAuthClientInfo {
   name: string;
   description?: string;
   scopesAllowed: OAuthScope[];
+  redirectUris: string[];
+  status: OAuthClientStatus;
+  lastUsedAt: string | null;
+  createdAt: string;
 }
 
 /** Risposta di creazione: include il secret mostrato una sola volta. */
@@ -65,6 +108,35 @@ export interface OAuthValidationResult {
   state?: string;
 }
 
+export interface OAuthConsentHistoryRow {
+  userId: string;
+  userName: string | null;
+  scopesGranted: OAuthScope[];
+  grantedAt: string;
+  revokedAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface OAuthAuthorizationEventRow {
+  createdAt: string;
+  expiresAt: string;
+  redeemed: boolean;
+}
+
+export interface OAuthAdminEventRow {
+  id: string;
+  message: string;
+  createdAt: string;
+  actionType: string | null;
+  actorId: string | null;
+}
+
+export interface OAuthClientLifecyclePayload {
+  consents: OAuthConsentHistoryRow[];
+  authorizationEvents: OAuthAuthorizationEventRow[];
+  adminEvents: OAuthAdminEventRow[];
+}
+
 // Validate OAuth request parameters
 export const validateOAuthRequest = createServerFn({ method: "POST" })
   .inputValidator((data: ValidateOAuthRequestInput) => data)
@@ -75,10 +147,11 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
 
-    // Validate client_id exists and redirect_uri is allowed
     const { data: client, error: clientError } = await supabaseAdmin
-      .from("oauth_clients" as any)
-      .select("client_id, name, description, redirect_uris, scopes_allowed")
+      .from("oauth_clients")
+      .select(
+        "client_id, name, description, redirect_uris, scopes_allowed, status, last_used_at, created_at",
+      )
       .eq("client_id", data.clientId)
       .single();
 
@@ -86,13 +159,15 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
       throw new Response("Invalid client_id", { status: 400 });
     }
 
-    // Check redirect_uri is in allowed list
     const clientAny = client as any;
+    if (clientAny.status && clientAny.status !== "active") {
+      throw new Response("Client OAuth disattivato o revocato", { status: 403 });
+    }
+
     if (!clientAny.redirect_uris || !clientAny.redirect_uris.includes(data.redirectUri)) {
       throw new Response("Invalid redirect_uri", { status: 400 });
     }
 
-    // Parse and validate scopes
     const requestedScopes = data.scope.split(" ").filter(Boolean) as OAuthScope[];
     const invalidScopes = invalidOAuthScopesAgainstAllowed(
       requestedScopes,
@@ -108,6 +183,10 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
         name: clientAny.name,
         description: clientAny.description,
         scopesAllowed: clientAny.scopes_allowed || [],
+        redirectUris: clientAny.redirect_uris || [],
+        status: clientAny.status ?? "active",
+        lastUsedAt: clientAny.last_used_at ?? null,
+        createdAt: clientAny.created_at,
       },
       requestedScopes,
       state: data.state,
@@ -126,33 +205,44 @@ export const grantConsent = createServerFn({ method: "POST" })
 
     const userId = authData.user.id;
 
-    // Generate authorization code (using crypto.getRandomValues for secure random)
+    const { data: clientRow, error: clientErr } = await supabaseAdmin
+      .from("oauth_clients")
+      .select("status")
+      .eq("client_id", data.clientId)
+      .single();
+    if (clientErr || !clientRow) throw new Response("Invalid client", { status: 400 });
+    if ((clientRow as any).status !== "active") {
+      throw new Response("Client OAuth disattivato o revocato", { status: 403 });
+    }
+
     const codeBytes = new Uint8Array(32);
     crypto.getRandomValues(codeBytes);
     const authCode = Array.from(codeBytes)
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Store authorization code temporarily (10 minute expiration)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const nowIso = new Date().toISOString();
 
-    const { error: insertError } = await supabaseAdmin
-      .from("oauth_authorization_codes" as any)
-      .insert({
-        code: authCode,
-        user_id: userId,
-        client_id: data.clientId,
-        scopes_granted: data.scopes,
-        redirect_uri: data.redirectUri,
-        state: data.state,
-        expires_at: expiresAt,
-      } as any);
+    const { error: insertError } = await supabaseAdmin.from("oauth_authorization_codes" as any).insert({
+      code: authCode,
+      user_id: userId,
+      client_id: data.clientId,
+      scopes_granted: data.scopes,
+      redirect_uri: data.redirectUri,
+      state: data.state,
+      expires_at: expiresAt,
+    } as any);
 
     if (insertError) {
       throw new Response("Failed to generate authorization code", { status: 500 });
     }
 
-    // Build redirect URL
+    await supabaseAdmin
+      .from("oauth_clients")
+      .update({ last_used_at: nowIso, updated_at: nowIso })
+      .eq("client_id", data.clientId);
+
     const params = new URLSearchParams({
       code: authCode,
       ...(data.state && { state: data.state }),
@@ -176,22 +266,14 @@ type ListOAuthClientsInput = AuthedInput;
 export const listOAuthClients = createServerFn({ method: "POST" })
   .inputValidator((data: ListOAuthClientsInput) => data)
   .handler(async ({ data }): Promise<OAuthClientInfo[]> => {
-    const token = data.accessToken?.trim();
-    if (!token) throw new Response("Unauthorized", { status: 401 });
-
-    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
-
-    // Check admin role
-    const { data: roleData, error: roleError } = await supabaseAdmin.rpc("has_role", {
-      _user_id: authData.user.id,
-      _role: "admin",
-    });
-    if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
+    const { userId } = await requireAdminUserId(data.accessToken);
+    void userId;
 
     const { data: clients, error: clientsError } = await supabaseAdmin
-      .from("oauth_clients" as any)
-      .select("client_id, name, description, redirect_uris, scopes_allowed")
+      .from("oauth_clients")
+      .select(
+        "client_id, name, description, redirect_uris, scopes_allowed, status, last_used_at, created_at",
+      )
       .order("created_at", { ascending: false });
 
     if (clientsError) throw new Response("Failed to fetch clients", { status: 500 });
@@ -202,6 +284,10 @@ export const listOAuthClients = createServerFn({ method: "POST" })
       name: client.name,
       description: client.description,
       scopesAllowed: client.scopes_allowed || [],
+      redirectUris: client.redirect_uris || [],
+      status: (client.status ?? "active") as OAuthClientStatus,
+      lastUsedAt: client.last_used_at ?? null,
+      createdAt: client.created_at,
     }));
   });
 
@@ -209,27 +295,15 @@ export const listOAuthClients = createServerFn({ method: "POST" })
 export const createOAuthClient = createServerFn({ method: "POST" })
   .inputValidator((data: CreateOAuthClientInput) => data)
   .handler(async ({ data }): Promise<OAuthClientCreated> => {
-    const token = data.accessToken?.trim();
-    if (!token) throw new Response("Unauthorized", { status: 401 });
+    const { userId } = await requireAdminUserId(data.accessToken);
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
+    throwIfRateLimited(userId, RATE_LIMITER_KEYS.CREATE_OAUTH_CLIENT);
 
-    // Check admin role
-    const { data: roleData, error: roleError } = await supabaseAdmin.rpc("has_role", {
-      _user_id: authData.user.id,
-      _role: "admin",
-    });
-    if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
-
-    throwIfRateLimited(authData.user.id, RATE_LIMITER_KEYS.CREATE_OAUTH_CLIENT);
-
-    // Generate client_id and secret
     const clientId = `pcready_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const clientSecret = `secret_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
 
     const { data: client, error: clientError } = await supabaseAdmin
-      .from("oauth_clients" as any)
+      .from("oauth_clients")
       .insert({
         client_id: clientId,
         client_secret: clientSecret,
@@ -237,21 +311,202 @@ export const createOAuthClient = createServerFn({ method: "POST" })
         description: data.description,
         redirect_uris: data.redirectUris,
         scopes_allowed: data.scopesAllowed,
-        created_by: authData.user.id,
+        created_by: userId,
       } as any)
-      .select("client_id, name, description, redirect_uris, scopes_allowed")
+      .select(
+        "client_id, name, description, redirect_uris, scopes_allowed, status, last_used_at, created_at",
+      )
       .single();
 
     if (clientError) throw new Response("Failed to create client", { status: 500 });
 
     const clientAny = client as any;
+    await logOAuthClientAudit({
+      actorId: userId,
+      actionType: AUDIT_ACTIONS.OAUTH_CLIENT_CREATED,
+      clientId: clientAny.client_id,
+      message: `Client OAuth creato: ${clientAny.name} (${clientAny.client_id})`,
+      newValue: { name: clientAny.name, redirect_count: data.redirectUris.length },
+    });
+
     return {
       clientId: clientAny.client_id,
       clientSecret,
       name: clientAny.name,
       description: clientAny.description,
       scopesAllowed: clientAny.scopes_allowed || [],
+      redirectUris: clientAny.redirect_uris || [],
+      status: (clientAny.status ?? "active") as OAuthClientStatus,
+      lastUsedAt: clientAny.last_used_at ?? null,
+      createdAt: clientAny.created_at,
     };
+  });
+
+interface SetOAuthClientStatusInput extends AuthedInput {
+  clientId: string;
+  nextStatus: OAuthClientStatus;
+}
+
+export const setOAuthClientStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: SetOAuthClientStatusInput) => data)
+  .handler(async ({ data }): Promise<{ ok: true; status: OAuthClientStatus }> => {
+    const { userId } = await requireAdminUserId(data.accessToken);
+
+    const { data: row, error: fetchErr } = await supabaseAdmin
+      .from("oauth_clients")
+      .select("status, name")
+      .eq("client_id", data.clientId)
+      .single();
+    if (fetchErr || !row) throw new Response("Client non trovato", { status: 404 });
+
+    const prev = (row as any).status as OAuthClientStatus;
+    const next = data.nextStatus;
+    if (prev === "revoked") {
+      throw new Response("Client gia' revocato: non e' possibile modificarlo.", { status: 400 });
+    }
+    if (next === prev) return { ok: true, status: prev };
+
+    const nowIso = new Date().toISOString();
+    const { error: upErr } = await supabaseAdmin
+      .from("oauth_clients")
+      .update({ status: next, updated_at: nowIso })
+      .eq("client_id", data.clientId);
+    if (upErr) throw new Response("Aggiornamento non riuscito", { status: 500 });
+
+    const name = (row as any).name as string;
+    const actionType =
+      next === "active"
+        ? AUDIT_ACTIONS.OAUTH_CLIENT_ENABLED
+        : next === "revoked"
+          ? AUDIT_ACTIONS.OAUTH_CLIENT_REVOKED
+          : AUDIT_ACTIONS.OAUTH_CLIENT_DISABLED;
+    const message =
+      next === "active"
+        ? `Client OAuth riattivato: ${name} (${data.clientId})`
+        : next === "revoked"
+          ? `Client OAuth revocato: ${name} (${data.clientId})`
+          : `Client OAuth disattivato: ${name} (${data.clientId})`;
+
+    await logOAuthClientAudit({
+      actorId: userId,
+      actionType,
+      clientId: data.clientId,
+      message,
+      oldValue: { status: prev },
+      newValue: { status: next },
+    });
+
+    return { ok: true, status: next };
+  });
+
+interface RotateOAuthSecretInput extends AuthedInput {
+  clientId: string;
+}
+
+export const rotateOAuthClientSecret = createServerFn({ method: "POST" })
+  .inputValidator((data: RotateOAuthSecretInput) => data)
+  .handler(async ({ data }): Promise<{ clientId: string; clientSecret: string }> => {
+    const { userId } = await requireAdminUserId(data.accessToken);
+
+    const newSecret = `secret_${Date.now()}_${Math.random().toString(36).slice(2, 18)}`;
+    const nowIso = new Date().toISOString();
+
+    const { data: updated, error } = await supabaseAdmin
+      .from("oauth_clients")
+      .update({ client_secret: newSecret, updated_at: nowIso })
+      .eq("client_id", data.clientId)
+      .select("name, status")
+      .single();
+
+    if (error || !updated) throw new Response("Client non trovato o aggiornamento fallito", { status: 400 });
+    if ((updated as any).status !== "active") {
+      throw new Response("Ruota il secret solo per client attivi (riattiva prima se necessario).", {
+        status: 400,
+      });
+    }
+
+    await logOAuthClientAudit({
+      actorId: userId,
+      actionType: AUDIT_ACTIONS.OAUTH_CLIENT_SECRET_ROTATED,
+      clientId: data.clientId,
+      message: `Secret OAuth ruotato per ${(updated as any).name} (${data.clientId})`,
+      newValue: { rotated_at: nowIso },
+    });
+
+    return { clientId: data.clientId, clientSecret: newSecret };
+  });
+
+interface GetOAuthClientLifecycleInput extends AuthedInput {
+  clientId: string;
+}
+
+export const getOAuthClientLifecycle = createServerFn({ method: "POST" })
+  .inputValidator((data: GetOAuthClientLifecycleInput) => data)
+  .handler(async ({ data }): Promise<OAuthClientLifecyclePayload> => {
+    await requireAdminUserId(data.accessToken);
+    const clientId = data.clientId;
+
+    const { data: consents, error: cErr } = await supabaseAdmin
+      .from("oauth_consents")
+      .select("user_id, scopes_granted, granted_at, revoked_at, expires_at")
+      .eq("client_id", clientId)
+      .order("granted_at", { ascending: false })
+      .limit(100);
+    if (cErr) throw new Response("Impossibile caricare i consensi", { status: 500 });
+
+    const userIds = [...new Set((consents ?? []).map((c: any) => c.user_id as string))];
+    let nameById = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profiles, error: pErr } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      if (!pErr && profiles) {
+        nameById = new Map((profiles as any[]).map((p) => [p.id as string, p.full_name as string | null]));
+      }
+    }
+
+    const consentRows: OAuthConsentHistoryRow[] = (consents ?? []).map((c: any) => ({
+      userId: c.user_id,
+      userName: nameById.get(c.user_id) ?? null,
+      scopesGranted: (c.scopes_granted || []) as OAuthScope[],
+      grantedAt: c.granted_at,
+      revokedAt: c.revoked_at ?? null,
+      expiresAt: c.expires_at ?? null,
+    }));
+
+    const { data: codes, error: codeErr } = await supabaseAdmin
+      .from("oauth_authorization_codes")
+      .select("created_at, expires_at, used_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (codeErr) throw new Response("Impossibile caricare i codici di autorizzazione", { status: 500 });
+
+    const authorizationEvents: OAuthAuthorizationEventRow[] = (codes ?? []).map((row: any) => ({
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+      redeemed: !!row.used_at,
+    }));
+
+    const { data: logs, error: logErr } = await supabaseAdmin
+      .from("activity_log")
+      .select("id, message, created_at, action_type, actor_id")
+      .eq("entity_type", "oauth_client")
+      .eq("entity_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (logErr) throw new Response("Impossibile caricare il log amministrativo", { status: 500 });
+
+    const adminEvents: OAuthAdminEventRow[] = (logs ?? []).map((row: any) => ({
+      id: row.id,
+      message: row.message,
+      createdAt: row.created_at,
+      actionType: row.action_type ?? null,
+      actorId: row.actor_id ?? null,
+    }));
+
+    return { consents: consentRows, authorizationEvents, adminEvents };
   });
 
 // Deny consent

@@ -5,13 +5,26 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { OAuthClientSchema, type OAuthClientInput } from "@/lib/schemas";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
-import { listOAuthClients, createOAuthClient, type OAuthClientCreated, type OAuthClientInfo } from "@/lib/oauth-consent";
+import {
+  listOAuthClients,
+  createOAuthClient,
+  setOAuthClientStatus,
+  rotateOAuthClientSecret,
+  getOAuthClientLifecycle,
+  type OAuthClientCreated,
+  type OAuthClientInfo,
+  type OAuthClientLifecyclePayload,
+  type OAuthClientStatus,
+} from "@/lib/oauth-consent";
 import type { OAuthScope } from "@/lib/oauth-scopes";
 
 export function useAdminOAuthClients(args: { accessToken: string | undefined; isAdmin: boolean }) {
   const { accessToken, isAdmin } = args;
   const listClients = useServerFn(listOAuthClients);
   const createClient = useServerFn(createOAuthClient);
+  const setStatusFn = useServerFn(setOAuthClientStatus);
+  const rotateFn = useServerFn(rotateOAuthClientSecret);
+  const lifecycleFn = useServerFn(getOAuthClientLifecycle);
 
   const [clients, setClients] = useState<OAuthClientInfo[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
@@ -19,6 +32,13 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
   const [oauthCreated, setOauthCreated] = useState<
     (OAuthClientCreated & { exampleRedirectUri: string }) | null
   >(null);
+  const [rotatedSecret, setRotatedSecret] = useState<
+    (OAuthClientCreated & { exampleRedirectUri: string }) | null
+  >(null);
+  const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+  const [lifecycleOpenFor, setLifecycleOpenFor] = useState<string | null>(null);
+  const [lifecycleData, setLifecycleData] = useState<OAuthClientLifecyclePayload | null>(null);
+  const [lifecycleLoading, setLifecycleLoading] = useState(false);
 
   const oauthForm = useForm<OAuthClientInput>({
     resolver: zodResolver(OAuthClientSchema),
@@ -83,6 +103,74 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     }
   }
 
+  async function updateClientStatus(clientId: string, nextStatus: OAuthClientStatus) {
+    if (!accessToken) return;
+    setActionBusyId(clientId);
+    try {
+      await setStatusFn({ data: { accessToken, clientId, nextStatus } });
+      toast.success(
+        nextStatus === "active"
+          ? "Client riattivato"
+          : nextStatus === "revoked"
+            ? "Client revocato"
+            : "Client disattivato",
+      );
+      await loadClients();
+    } catch (error) {
+      toast.error(getAdminErrorMessage(error, "Aggiornamento stato non riuscito"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function rotateClientSecret(clientId: string, exampleRedirectUri: string) {
+    if (!accessToken) return;
+    setActionBusyId(clientId);
+    try {
+      const res = await rotateFn({ data: { accessToken, clientId } });
+      const meta = clients.find((c) => c.clientId === clientId);
+      toast.success("Secret ruotato: copia il nuovo valore ora.");
+      setRotatedSecret({
+        clientId: res.clientId,
+        clientSecret: res.clientSecret,
+        name: meta?.name ?? res.clientId,
+        description: meta?.description,
+        scopesAllowed: meta?.scopesAllowed ?? [],
+        redirectUris: meta?.redirectUris ?? [],
+        status: meta?.status ?? "active",
+        lastUsedAt: meta?.lastUsedAt ?? null,
+        createdAt: meta?.createdAt ?? new Date().toISOString(),
+        exampleRedirectUri: exampleRedirectUri || (meta?.redirectUris[0] ?? ""),
+      });
+      await loadClients();
+    } catch (error) {
+      toast.error(getAdminErrorMessage(error, "Rotazione secret non riuscita"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function openLifecycle(clientId: string) {
+    if (!accessToken) return;
+    setLifecycleOpenFor(clientId);
+    setLifecycleLoading(true);
+    setLifecycleData(null);
+    try {
+      const payload = await lifecycleFn({ data: { accessToken, clientId } });
+      setLifecycleData(payload);
+    } catch (error) {
+      toast.error(getAdminErrorMessage(error, "Impossibile caricare lo storico"));
+      setLifecycleOpenFor(null);
+    } finally {
+      setLifecycleLoading(false);
+    }
+  }
+
+  function closeLifecycle() {
+    setLifecycleOpenFor(null);
+    setLifecycleData(null);
+  }
+
   return {
     clients,
     loadingClients,
@@ -91,7 +179,17 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     createClientBusy,
     oauthCreated,
     setOauthCreated,
+    rotatedSecret,
+    setRotatedSecret,
     copyOAuthField,
     loadClients,
+    updateClientStatus,
+    rotateClientSecret,
+    actionBusyId,
+    lifecycleOpenFor,
+    lifecycleData,
+    lifecycleLoading,
+    openLifecycle,
+    closeLifecycle,
   };
 }
