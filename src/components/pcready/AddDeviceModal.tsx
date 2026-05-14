@@ -7,6 +7,9 @@ import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { supabase } from "@/integrations/supabase/client";
+import clientQueries from "@/lib/queries/clients";
+import activityQueries from "@/lib/queries/activity";
+import inventoryQueries from "@/lib/queries/inventory";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
@@ -23,7 +26,7 @@ interface ClientOption {
 }
 
 export function AddDeviceModal() {
-  const { addDeviceOpen, addDeviceInitialSerial, closeAddDevice, triggerRefresh } = useTickets();
+  const { addDeviceOpen, addDeviceInitialSerial, closeAddDevice } = useTickets();
   const { user, canEdit, session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -48,15 +51,11 @@ export function AddDeviceModal() {
     if (!addDeviceOpen) return;
     if (addDeviceInitialSerial)
       form.setValue("serial", addDeviceInitialSerial, { shouldValidate: true });
-    supabase
-      .from("clients")
-      .select("id, name, company_name")
-      .order("name")
-      .then(({ data }) => {
-        const arr = (data ?? []) as ClientOption[];
-        setClients(arr);
-        if (arr[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);
-      });
+    const { loadClientOptions } = clientQueries as any;
+    loadClientOptions("").then((arr: any[]) => {
+      setClients(arr || []);
+      if (arr?.[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);
+    });
   }, [addDeviceOpen, addDeviceInitialSerial, form]);
 
   useEffect(() => {
@@ -76,6 +75,8 @@ export function AddDeviceModal() {
       });
   }, [addDeviceOpen, form, loadSettings, session?.access_token]);
 
+  const createDeviceMut = (inventoryQueries as any).useCreateDevice();
+
   const submit = form.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
     setBusy(true);
@@ -93,17 +94,9 @@ export function AddDeviceModal() {
         notes: (values.notes as string) || null,
         created_by: user!.id,
       };
-      const { data, error } = await supabase
-        .from("devices")
-        .insert(deviceInsert)
-        .select("id, serial")
-        .single();
-      if (error) throw error;
-      await supabase.from("activity_log").insert({
-        type: "user",
-        message: `Dispositivo ${data.serial || values.model} aggiunto all'inventario`,
-        actor_id: user!.id,
-      });
+      const data = await createDeviceMut.mutateAsync(deviceInsert as any);
+      const insertActivity = activityQueries.insertActivity as any;
+      await insertActivity({ type: 'user', message: `Dispositivo ${data.serial || values.model} aggiunto all'inventario`, actor_id: user!.id });
       toast.success("Dispositivo aggiunto all'inventario");
       form.reset({
         brand: null,
@@ -115,7 +108,6 @@ export function AddDeviceModal() {
         notes: null,
       });
       closeAddDevice();
-      triggerRefresh();
     } catch (e: unknown) {
       toast.error(errorMessage(e, "Errore creazione dispositivo"));
     } finally {

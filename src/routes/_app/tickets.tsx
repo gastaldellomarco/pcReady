@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
+import queries from "@/lib/queries/tickets";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
 import {
@@ -53,7 +53,7 @@ interface Row {
 const PAGE_SIZE = 50;
 
 function TicketsPage() {
-  const { refreshKey, search } = useTickets();
+  const { search } = useTickets();
   const { session } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [selectedClient, setSelectedClient] = useState<AsyncAutocompleteOption | null>(null);
@@ -65,6 +65,23 @@ function TicketsPage() {
   const [fc, setFc] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
   const loadSettings = useServerFn(getPublicAppSettings);
+  const { useTicketsList, loadClientOptions } = queries as any;
+  const listQuery = useTicketsList({
+    status: fs || undefined,
+    priority: fp || undefined,
+    ticket_type: ft || undefined,
+    client_id: fc || undefined,
+    q: search || undefined,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
+  useEffect(() => {
+    if (listQuery.data) {
+      setRows(listQuery.data.data as Row[]);
+      setTotal(listQuery.data.count ?? 0);
+    }
+  }, [listQuery.data]);
 
   useEffect(() => {
     // Read initial status filter from URL query param `status` (e.g. /_app/tickets?status=pending)
@@ -75,42 +92,7 @@ function TicketsPage() {
     } catch {
       /* ignore in non-browser contexts */
     }
-
-    let query = supabase
-      .from("tickets")
-      .select(
-        "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-        { count: "exact" },
-      )
-      .not("status", "eq", "archived" as any)
-      .order("created_at", { ascending: false });
-
-    if (fs) {
-      // disallow filtering archived from active list; archived handled in archive page
-      if (fs !== "archived") query = query.eq("status", fs as any);
-    }
-    if (fp) query = query.eq("priority", fp as TicketPriority);
-    if (ft) query = query.eq("ticket_type", ft as TicketType);
-    if (fc) query = query.eq("client_id", fc);
-    const q = search.trim().replace(/[,%]/g, "");
-    if (q) {
-      query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
-    }
-
-    query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).then(({ data, count, error }) => {
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      const totalRows = count ?? 0;
-      if (page > 0 && page * PAGE_SIZE >= totalRows) {
-        setPage(0);
-        return;
-      }
-      setRows((data ?? []) as unknown as Row[]);
-      setTotal(totalRows);
-    });
-  }, [refreshKey, fs, fp, ft, fc, search, page]);
+  }, [fs, fp, ft, fc, search, page]);
 
   useEffect(() => {
     setPage(0);
@@ -122,22 +104,19 @@ function TicketsPage() {
   const ticketModel = (t: Row) => t.device?.model || "Nessun asset";
   const ticketSerial = (t: Row) => t.device?.serial || null;
 
-  async function loadClientOptions(query: string): Promise<AsyncAutocompleteOption[]> {
-    let request = supabase.from("clients").select("id, name, company_name, email").order("name");
-    const term = query.trim().replace(/[,%]/g, "");
-    if (term) {
-      request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
-    }
-    const { data, error } = await request.range(0, 19);
-    if (error) {
-      toast.error(error.message);
+  // useTicketsList provides a loadClientOptions helper as well
+  async function loadClientOptsWrapper(q: string) {
+    try {
+      const data = await loadClientOptions(q);
+      return (data ?? []).map((client: any) => ({
+        value: client.id,
+        label: client.company_name || client.name,
+        description: client.email,
+      }));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Errore caricamento clienti');
       return [];
     }
-    return (data ?? []).map((client) => ({
-      value: client.id,
-      label: client.company_name || client.name,
-      description: client.email,
-    }));
   }
 
   function pdfRows(): TicketPdfRow[] {
@@ -234,13 +213,13 @@ function TicketsPage() {
             </option>
           ))}
         </select>
-        <AsyncAutocomplete
+          <AsyncAutocomplete
           className="w-[220px]"
           value={fc}
           selectedOption={selectedClient}
           placeholder="Tutti i clienti"
           emptyLabel="Nessun cliente"
-          loadOptions={loadClientOptions}
+          loadOptions={loadClientOptsWrapper}
           onChange={(value, option) => {
             setFc(value);
             setSelectedClient(option);

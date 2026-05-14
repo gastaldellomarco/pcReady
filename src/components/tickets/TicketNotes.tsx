@@ -1,9 +1,11 @@
 import { MessageSquare } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
+import ticketNotesQueries from "@/lib/queries/ticketNotes";
+
+const { useTicketNotes, useCreateTicketNote } = ticketNotesQueries as any;
 
 interface TicketNote {
   id: string;
@@ -23,44 +25,14 @@ interface TicketNoteAuthor {
 
 export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChanged?: () => void }) {
   const { user, canEdit } = useAuth();
-  const [notes, setNotes] = useState<TicketNote[]>([]);
+  const notesQuery = useTicketNotes(ticketId);
+  const notes = (notesQuery.data ?? []) as TicketNote[];
+  const createNoteMut = useCreateTicketNote();
   const [content, setContent] = useState("");
   const [isInternal, setIsInternal] = useState(true);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const loadNotes = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("ticket_notes")
-      .select("id, ticket_id, author_id, content, is_internal, created_at")
-      .eq("ticket_id", ticketId)
-      .order("created_at", { ascending: true });
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-    const rows = (data ?? []) as unknown as TicketNote[];
-    const authorIds = [...new Set(rows.map((note) => note.author_id))];
-    const { data: authors, error: authorsError } = authorIds.length
-      ? await supabase.from("profiles").select("id, full_name, initials").in("id", authorIds)
-      : { data: [], error: null };
-    if (authorsError) {
-      toast.error(authorsError.message);
-      setLoading(false);
-      return;
-    }
-    const authorById = new Map<string, TicketNoteAuthor>(
-      ((authors ?? []) as TicketNoteAuthor[]).map((author) => [author.id, author]),
-    );
-    setNotes(rows.map((note) => ({ ...note, author: authorById.get(note.author_id) ?? null })));
-    setLoading(false);
-  }, [ticketId]);
-
-  useEffect(() => {
-    void loadNotes();
-  }, [loadNotes]);
+  useEffect(() => {}, [notesQuery.data]);
 
   async function addNote(event: React.FormEvent) {
     event.preventDefault();
@@ -68,18 +40,16 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
     const text = content.trim();
     if (!text) return toast.error("Inserisci una nota");
     setSubmitting(true);
-    const { error } = await supabase.from("ticket_notes").insert({
-      ticket_id: ticketId,
-      author_id: user.id,
-      content: text,
-      is_internal: isInternal,
-    });
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
-    setContent("");
-    toast.success("Nota aggiunta");
-    await loadNotes();
-    onChanged?.();
+    try {
+      await createNoteMut.mutateAsync({ ticket_id: ticketId, author_id: user.id, content: text, is_internal: isInternal });
+      setContent("");
+      toast.success("Nota aggiunta");
+      onChanged?.();
+    } catch (err: any) {
+      toast.error(err?.message || "Errore inserimento nota");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -98,9 +68,11 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       </div>
 
       <div className="mb-3 flex flex-col gap-2">
-        {loading && <div className="text-[12px] text-text3">Caricamento note...</div>}
-        {!loading && !notes.length && <div className="text-[12px] text-text3">Nessuna nota inserita</div>}
-        {notes.map((note) => (
+        {notesQuery.isLoading && <div className="text-[12px] text-text3">Caricamento note...</div>}
+        {!notesQuery.isLoading && (!notesQuery.data || !notesQuery.data.length) && (
+          <div className="text-[12px] text-text3">Nessuna nota inserita</div>
+        )}
+        {notesQuery.data?.map((note: any) => (
           <article key={note.id} className="rounded-md border bg-background p-3" style={{ borderColor: "var(--border)" }}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">

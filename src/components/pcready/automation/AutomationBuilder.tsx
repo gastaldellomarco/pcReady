@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import automationsQueries from "@/lib/queries/automations";
 import type { Json } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import ReactFlow, {
@@ -66,6 +67,9 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
     };
   }, [initialFlow]);
 
+  const createAutomationMut = (automationsQueries as any).useCreateAutomation();
+  const updateAutomationMut = (automationsQueries as any).useUpdateAutomation();
+
   const onNodesChange = useCallback((changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
   const onConnect = useCallback((connection: Connection) => setEdges((eds) => addEdge(connection, eds)), []);
@@ -96,22 +100,10 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
       }
       const flowDef = JSON.parse(JSON.stringify({ nodes, edges })) as Json;
       if (initialFlow && initialFlow.id) {
-        const { error } = await supabase
-          .from("automation_flows")
-          .update({ name, description, category, active, flow_definition: flowDef })
-          .eq("id", initialFlow.id);
-        if (error) throw error;
+        await updateAutomationMut.mutateAsync({ id: initialFlow.id, payload: { name, description, category, active, flow_definition: flowDef } });
         toast.success("Automazione aggiornata");
       } else {
-        const { error } = await supabase.from("automation_flows").insert({
-          name,
-          description,
-          category,
-          active,
-          version: 1,
-          flow_definition: flowDef,
-        });
-        if (error) throw error;
+        await createAutomationMut.mutateAsync({ name, description, category, active, version: 1, flow_definition: flowDef });
         toast.success("Automazione creata");
       }
       onSave?.();

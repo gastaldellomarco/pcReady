@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/scripts";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
 import {
@@ -121,14 +122,13 @@ function ScriptsPage() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
 
+  const { useScriptsList, useDeleteScript } = queries as any;
+  const listQuery = useScriptsList();
+  const deleteMut = useDeleteScript();
+
   useEffect(() => {
-    supabase
-      .from("scripts")
-      .select("*")
-      .order("category", { ascending: true })
-      .order("name", { ascending: true })
-      .then(({ data }) => setRows((data ?? []) as ScriptRow[]));
-  }, [refresh]);
+    if (listQuery.data) setRows(listQuery.data as ScriptRow[]);
+  }, [listQuery.data]);
 
   const filtered = useMemo(
     () =>
@@ -153,10 +153,8 @@ function ScriptsPage() {
 
   async function remove(id: string) {
     if (!confirm("Eliminare questo script?")) return;
-    const { error } = await supabase.from("scripts").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    await deleteMut.mutateAsync(id);
     toast.success("Script eliminato");
-    setRefresh((x) => x + 1);
   }
 
   return (

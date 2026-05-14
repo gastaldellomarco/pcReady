@@ -4,6 +4,7 @@ import NotFoundPage from "@/components/errors/NotFoundPage";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import QueryProvider from "@/lib/queries/queryClient";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
@@ -76,10 +77,12 @@ function RootComponent() {
 
   return (
     <ThemeProvider defaultTheme="system" enableSystem>
-      <AuthProvider>
-        <Outlet />
-        <Toaster richColors position="bottom-right" />
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster richColors position="bottom-right" />
+        </AuthProvider>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

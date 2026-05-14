@@ -6,7 +6,6 @@ interface State {
   createOpen: boolean;
   addDeviceOpen: boolean;
   addDeviceInitialSerial: string;
-  refreshKey: number;
 }
 interface API extends State {
   setSearch: (s: string) => void;
@@ -15,7 +14,6 @@ interface API extends State {
   closeCreate: () => void;
   openAddDevice: (initialSerial?: string) => void;
   closeAddDevice: () => void;
-  triggerRefresh: () => void;
 }
 
 let s: State = {
@@ -24,7 +22,6 @@ let s: State = {
   createOpen: false,
   addDeviceOpen: false,
   addDeviceInitialSerial: "",
-  refreshKey: 0,
 };
 const listeners = new Set<() => void>();
 
@@ -36,7 +33,7 @@ const actions = {
   openAddDevice: (initialSerial = "") =>
     set({ addDeviceOpen: true, addDeviceInitialSerial: initialSerial }),
   closeAddDevice: () => set({ addDeviceOpen: false, addDeviceInitialSerial: "" }),
-  triggerRefresh: () => set({ refreshKey: s.refreshKey + 1 }),
+  // legacy refresh removed; rely on React Query invalidation
 };
 
 function set(p: Partial<State>) {

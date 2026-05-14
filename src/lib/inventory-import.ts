@@ -150,7 +150,7 @@ export async function importDevicesFromCsv(
           .eq("id", row.existingDeviceId);
         if (error) throw error;
         results.updated++;
-      } else {
+        } else {
         const insert: TablesInsert<"devices"> = {
           client_id: row.client_id!,
           serial: row.serial,
@@ -160,8 +160,9 @@ export async function importDevicesFromCsv(
           notes: row.notes,
           created_by: userId,
         };
-        const { error } = await supabase.from("devices").insert(insert);
-        if (error) throw error;
+        // Use bulk insert helper when importing many rows
+        const { createDevice } = await import("@/lib/queries/inventory");
+        await createDevice(insert as any);
         results.inserted++;
       }
     } catch (error) {

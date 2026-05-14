@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/dashboard";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
@@ -53,7 +54,7 @@ interface Log {
 }
 
 function DashboardPage() {
-  const { refreshKey, setPendingCount } = useTickets();
+  const { setPendingCount } = useTickets();
   const { session } = useAuth();
   const loadAnalytics = useServerFn(getDashboardAnalytics);
   const loadSettings = useServerFn(getPublicAppSettings);
@@ -90,59 +91,20 @@ function DashboardPage() {
   }, [dateFrom, dateTo]);
   const periodLabel = useMemo(() => formatPeriodLabel(range.from, range.to), [range.from, range.to]);
 
+  const { useDashboardSnapshot } = queries as any;
+  const snap = useDashboardSnapshot({ from: range.from, to: range.to });
+
   useEffect(() => {
-    const from = range.from;
-    const to = range.to;
-    Promise.all([
-      supabase
-        .from("tickets")
-        .select(
-          "id, ticket_code, client, status, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-        )
-        .gte("created_at", from)
-        .lte("created_at", to)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("activity_log")
-        .select(
-          "id, type, message, created_at, actor:profiles!activity_log_actor_id_fkey(full_name, initials)",
-        )
-        .gte("created_at", from)
-        .lte("created_at", to)
-        .order("created_at", { ascending: false })
-        .limit(6),
-      supabase
-        .from("devices")
-        .select("id, model, serial, created_at, status, client_id, assigned_to")
-        .gte("created_at", from)
-        .lte("created_at", to)
-        .order("created_at", { ascending: false })
-        .limit(200),
-      supabase.from("ticket_device_assignments").select("device_id").is("unassigned_at", null),
-    ]).then(([tRes, lRes, dRes, aRes]) => {
-      const t = (tRes as any).data ?? [];
-      const l = (lRes as any).data ?? [];
-      const d = (dRes as any).data ?? [];
-      const a = (aRes as any).data ?? [];
-      setTickets(t as T[]);
-      setLogs(l as Log[]);
-      setDevices(d as any[]);
-      setRecentDevices((d as any[]).slice(0, 6));
-
-      const assignedIds = new Set((a as any[]).map((r) => r.device_id));
-      setDevicesWithoutTicket((d as any[]).filter((dev) => !assignedIds.has(dev.id)));
-
-      const withoutDevice = (t as any[]).filter((tt) => !tt.device).length;
-      setTicketsWithoutDeviceCount(withoutDevice);
-
-      const activeClients = new Set(
-        (t as any[])
-          .map((tt) => tt.client)
-          .filter(Boolean),
-      );
-      setActiveClientsCount(activeClients.size);
-    });
-  }, [refreshKey, range.from, range.to]);
+    if (snap.data) {
+      setTickets(snap.data.tickets as T[]);
+      setLogs(snap.data.logs as Log[]);
+      setDevices(snap.data.devices as any[]);
+      setRecentDevices(snap.data.recentDevices as any[]);
+      setDevicesWithoutTicket(snap.data.devicesWithoutTicket as any[]);
+      setTicketsWithoutDeviceCount(snap.data.ticketsWithoutDeviceCount ?? 0);
+      setActiveClientsCount(snap.data.activeClientsCount ?? 0);
+    }
+  }, [snap.data]);
 
   useEffect(() => {
     if (!session?.access_token) return;

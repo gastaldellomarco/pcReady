@@ -263,7 +263,7 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
       .select("assignee:assignee_id, closed_at, status")
       .gte("closed_at", fromIso)
       .lt("closed_at", toIso)
-      .in("status", ["completed", "archived"]) // count only closed tickets
+      .in("status", ["completed", "archived"] as any) // count only closed tickets
       .not("closed_at", "is", null)
       .order("assignee_id", { ascending: true });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/tickets";
 import { openTicketDetail } from "@/lib/use-detail";
 import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "@/components/pcready/StatusBadge";
@@ -29,62 +29,31 @@ export default function TicketsArchivePage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    const q = supabase
-      .from("tickets")
-      .select(
-        "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-        { count: "exact" },
-      )
-      .eq("status", "archived" as any)
-      .order("created_at", { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  const { useTicketsList, useUpdateTicket } = queries as any;
+  const ticketsQuery = useTicketsList({ status: 'archived', page, pageSize: PAGE_SIZE });
+  const updateTicket = useUpdateTicket();
 
-    q.then(({ data, count, error }) => {
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      try {
-        // debug: log how many rows the archive query returned
-        // eslint-disable-next-line no-console
-        console.debug("TicketsArchive: rows fetched", Array.isArray(data) ? data.length : 0);
-        // debug: show a small sample of returned rows and their statuses
-        if (Array.isArray(data)) {
-          // eslint-disable-next-line no-console
-          console.debug(
-            "TicketsArchive: data sample",
-            data.slice(0, 10).map((r: any) => ({ id: r.id, ticket_code: r.ticket_code, status: r.status })),
-          );
-          // eslint-disable-next-line no-console
-          console.debug(
-            "TicketsArchive: statuses",
-            Array.from(new Set((data as any[]).map((r) => r.status))).slice(0, 20),
-          );
-        }
-      } catch {}
-      setRows((data ?? []) as unknown as Row[]);
-      setTotal(count ?? 0);
-    });
-  }, [page]);
+  useEffect(() => {
+    if (ticketsQuery.data) {
+      setRows(ticketsQuery.data.data as Row[]);
+      setTotal(ticketsQuery.data.count ?? 0);
+    }
+  }, [ticketsQuery.data]);
 
   async function reopen(id: string) {
     try {
-      const { error } = await supabase.from("tickets").update({ status: "pending" }).eq("id", id);
-      if (error) throw error;
-      await supabase.from("ticket_status_history").insert({
-        ticket_id: id,
-        from_status: "archived",
-        to_status: "pending",
+      await updateTicket.mutateAsync({ id, patch: { status: 'pending' } });
+      await (queries as any).addTicketStatusHistory(id, {
+        from_status: 'archived',
+        to_status: 'pending',
         changed_by: null,
         changed_at: new Date().toISOString(),
-        note: "Riaperto da archivio",
+        note: 'Riaperto da archivio',
       });
-      toast.success("Ticket riaperto");
-      // refresh list
+      toast.success('Ticket riaperto');
       setRows((rs) => rs.filter((r) => r.id !== id));
     } catch (err: any) {
-      toast.error(err?.message || "Errore riapertura ticket");
+      toast.error(err?.message || 'Errore riapertura ticket');
     }
   }
 

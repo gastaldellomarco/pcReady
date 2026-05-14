@@ -3,6 +3,8 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/tickets";
+import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketPriority, type TicketStatus, PRIORITY_LABEL } from "@/lib/pcready";
@@ -53,7 +55,7 @@ const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "r
 const KANBAN_VIEW_MODE_KEY = "pcready:kanban:view-mode";
 
 function KanbanPage() {
-  const { refreshKey, triggerRefresh } = useTickets();
+  useTickets();
   const { canEdit, user, profile, session } = useAuth();
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
@@ -80,25 +82,12 @@ function KanbanPage() {
     window.localStorage.setItem(KANBAN_VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
+  const { useTicketsList, useUpdateTicket } = queries as any;
+  const listQuery = useTicketsList({ pageSize: 2000 });
+  const updateTicket = useUpdateTicket();
   useEffect(() => {
-    supabase
-      .from("tickets")
-      .select(
-        "id, ticket_code, client, status, priority, assignee_id, completed_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(id, full_name, initials)",
-      )
-      // exclude archived when DB supports it; errors will be surfaced
-      .neq("status", "archived" as any)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          // Surface DB errors (e.g. invalid enum value) so it's easier to diagnose
-          toast.error(error.message || "Errore caricamento ticket");
-          setRows([]);
-          return;
-        }
-        setRows((Array.isArray(data) ? data : []) as unknown as Card[]);
-      });
-  }, [refreshKey]);
+    if (listQuery.data) setRows((Array.isArray(listQuery.data.data) ? listQuery.data.data : []) as Card[]);
+  }, [listQuery.data]);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -140,19 +129,16 @@ function KanbanPage() {
           : r,
       ),
     );
-    const { error } = await supabase
-      .from("tickets")
-      .update(({ status, assignee_id: nextAssigneeId } as any))
-      .eq("id", id);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await updateTicket.mutateAsync({ id, patch: { status, assignee_id: nextAssigneeId } });
+    } catch (err: any) {
+      toast.error(err?.message || 'Errore aggiornamento ticket');
       setRows((rs) => rs.map((r) => (r.id === id ? card : r)));
       return;
     }
     // Insert status history record when status changes
     if (card.status !== status) {
-      await (supabase as any).from("ticket_status_history").insert({
-        ticket_id: id,
+      await (queries as any).addTicketStatusHistory(id, {
         from_status: card.status,
         to_status: status,
         changed_by: user!.id,
@@ -169,12 +155,7 @@ function KanbanPage() {
         toast.error("Ticket completato, ma errore invio email/verbale");
       });
     }
-    await supabase.from("activity_log").insert({
-      type: "user",
-      message: `${card.ticket_code}: stato → "${STATUS_META[status].label}" (kanban)`,
-      ticket_id: card.id,
-      actor_id: user!.id,
-    });
+    await (activityQueries.insertActivity as any)({ type: 'user', message: `${card.ticket_code}: stato → "${STATUS_META[status].label}" (kanban)`, ticket_id: card.id, actor_id: user!.id });
     if (nextAssigneeId && session?.access_token) {
       await notify({
         data: {
@@ -200,7 +181,7 @@ function KanbanPage() {
         ? `Spostato in ${STATUS_META[status].label} (${nextAssignee?.full_name || "Non assegnato"})`
         : `Spostato in ${STATUS_META[status].label}`,
     );
-    triggerRefresh();
+    // React Query invalidation handles refreshing lists
   }
 
   const filteredRows = useMemo(() => {

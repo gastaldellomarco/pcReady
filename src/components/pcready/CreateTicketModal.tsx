@@ -10,6 +10,18 @@ import {
   type ChecklistStructure,
 } from "@/lib/pcready";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/tickets";
+const {
+  loadClientOptions,
+  fetchClientById,
+  loadContactOptions,
+  fetchContactById,
+  loadDeviceOptions,
+  fetchDeviceById,
+} = queries;
+import activityQueries from "@/lib/queries/activity";
+const { useAddTicketStatusHistory } = queries as any;
+const insertActivity = activityQueries.insertActivity as any;
 import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
@@ -62,7 +74,7 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export function CreateTicketModal() {
-  const { createOpen, closeCreate, triggerRefresh } = useTickets();
+  const { createOpen, closeCreate } = useTickets();
   const { user, canEdit, session } = useAuth();
   const notify = useServerFn(createNotification);
   const sendAssignedEmail = useServerFn(sendTicketAssignedEmail);
@@ -118,6 +130,8 @@ export function CreateTicketModal() {
     }
   }, [createOpen]);
 
+  const createTicket = queries.useCreateTicket();
+
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
@@ -161,27 +175,16 @@ export function CreateTicketModal() {
         checklist_structure: structure as unknown as Json,
       } as Omit<TablesInsert<"tickets">, "ticket_code">;
       // ticket_code viene assegnato dal trigger DB per evitare collisioni tra client.
-      const { data, error } = await supabase
-        .from("tickets")
-        .insert(ticketInsert as TablesInsert<"tickets">)
-        .select("id, ticket_code")
-        .single();
-      if (error) throw error;
+      const data = await createTicket.mutateAsync(ticketInsert as TablesInsert<"tickets">);
       // Insert initial status history record
-      await (supabase as any).from("ticket_status_history").insert({
-        ticket_id: data.id,
+      await (queries.addTicketStatusHistory as any)(data.id, {
         from_status: null,
-        to_status: "pending",
+        to_status: 'pending',
         changed_by: user!.id,
         changed_at: new Date().toISOString(),
-        note: "Ticket creato",
+        note: 'Ticket creato',
       });
-      await supabase.from("activity_log").insert({
-        type: "user",
-        message: `${data.ticket_code} creato`,
-        ticket_id: data.id,
-        actor_id: user!.id,
-      });
+      await insertActivity({ type: 'user', message: `${data.ticket_code} creato`, ticket_id: data.id, actor_id: user!.id });
       if (f.assignee_id && session?.access_token) {
         // Validate technician device limit for device tickets
         if (f.ticket_type === "device") {
@@ -227,7 +230,6 @@ export function CreateTicketModal() {
       setSelectedDevice(null);
       setDeviceFlow("existing");
       closeCreate();
-      triggerRefresh();
     } catch (e: unknown) {
       toast.error(errorMessage(e, "Errore creazione"));
     } finally {
@@ -458,104 +460,7 @@ function cleanSearchTerm(value: string) {
   return value.trim().replace(/[,%]/g, "");
 }
 
-async function loadClientOptions(query: string): Promise<ClientOption[]> {
-  let request = supabase.from("clients").select("id, name, company_name, email").order("name");
-  const term = cleanSearchTerm(query);
-  if (term) {
-    request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
-  }
-  const { data, error } = await request.range(0, 19);
-  if (error) {
-    toast.error(error.message);
-    return [];
-  }
-  return ((data ?? []) as ClientOpt[]).map(clientOption);
-}
 
-async function fetchClientById(id: string): Promise<ClientOpt | null> {
-  if (!id) return null;
-  const { data, error } = await supabase
-    .from("clients")
-    .select("id, name, company_name, email")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) {
-    toast.error(error.message);
-    return null;
-  }
-  return (data as ClientOpt | null) ?? null;
-}
-
-async function loadContactOptions(query: string, clientId: string): Promise<ContactOption[]> {
-  if (!clientId) return [];
-  let request = supabase
-    .from("client_contacts")
-    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
-    .eq("client_id", clientId)
-    .order("is_primary", { ascending: false })
-    .order("full_name");
-  const term = cleanSearchTerm(query);
-  if (term) {
-    request = request.or(
-      `full_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,job_title.ilike.%${term}%,role.ilike.%${term}%`,
-    );
-  }
-  const { data, error } = await request.range(0, 19);
-  if (error) {
-    toast.error(error.message);
-    return [];
-  }
-  return ((data ?? []) as ContactOpt[]).map(contactOption);
-}
-
-async function fetchContactById(id: string): Promise<ContactOpt | null> {
-  if (!id) return null;
-  const { data, error } = await supabase
-    .from("client_contacts")
-    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) {
-    toast.error(error.message);
-    return null;
-  }
-  return (data as ContactOpt | null) ?? null;
-}
-
-async function loadDeviceOptions(query: string, clientId: string): Promise<DeviceOption[]> {
-  if (!clientId) return [];
-  let request = supabase
-    .from("devices")
-    .select("id, client_id, model, serial, os, assigned_to")
-    .eq("client_id", clientId)
-    .order("model");
-  const term = cleanSearchTerm(query);
-  if (term) {
-    request = request.or(
-      `model.ilike.%${term}%,serial.ilike.%${term}%,assigned_to.ilike.%${term}%`,
-    );
-  }
-  const { data, error } = await request.range(0, 19);
-  if (error) {
-    toast.error(error.message);
-    return [];
-  }
-  return ((data ?? []) as DeviceOpt[]).map(deviceOption);
-}
-
-async function fetchDeviceById(id: string): Promise<DeviceOpt | null> {
-  if (!id) return null;
-  const { data, error } = await supabase
-    .from("devices")
-    .select("id, client_id, model, serial, os, assigned_to")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) {
-    toast.error(error.message);
-    return null;
-  }
-  return (data as DeviceOpt | null) ?? null;
-}
 
 function clientOption(client: ClientOpt): ClientOption {
   return {

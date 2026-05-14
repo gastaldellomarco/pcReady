@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import queries from "@/lib/queries/inventory";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
@@ -60,7 +61,8 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
 const PAGE_SIZE = 50;
 
 function InventoryPage() {
-  const { refreshKey, openAddDevice, triggerRefresh } = useTickets();
+  const { openAddDevice } = useTickets();
+  const qc = useQueryClient();
   const { session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
   const [rows, setRows] = useState<Row[]>([]);
@@ -76,6 +78,19 @@ function InventoryPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [labelsBusy, setLabelsBusy] = useState(false);
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
+  const [withoutTicketFilter] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("filter") === "without_ticket";
+  });
+  const { useInventoryList } = queries as any;
+  const listQuery = useInventoryList({
+    status: fs || undefined,
+    os: fos || undefined,
+    q,
+    page,
+    pageSize: PAGE_SIZE,
+    withoutTicket: withoutTicketFilter,
+  });
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -87,67 +102,16 @@ function InventoryPage() {
   useEffect(() => {
     // check for optional URL filter param (e.g. ?filter=without_ticket)
     const params = new URLSearchParams(window.location.search);
-    const urlFilter = params.get("filter");
     const detailDeviceId = params.get("device");
     if (detailDeviceId) openDeviceDetail(detailDeviceId);
+  }, []);
 
-    async function load() {
-      // if asking for devices without ticket, fetch assigned ids first
-      let assignedIds: string[] = [];
-      if (urlFilter === "without_ticket") {
-        const { data: assigned } = await supabase
-          .from("ticket_device_assignments")
-          .select("device_id")
-          .is("unassigned_at", null);
-        assignedIds = ((assigned ?? []) as AssignmentDeviceRow[])
-          .map((r) => r.device_id)
-          .filter((id): id is string => Boolean(id));
-      }
-
-      let query = supabase
-        .from("devices")
-        .select(
-          "id, serial, model, os, status, client_id, updated_at, assigned_to, client:clients(name)",
-          {
-            count: "exact",
-          },
-        )
-        .order("updated_at", { ascending: false });
-
-      if (fs) query = query.eq("status", fs as DeviceStatus);
-      if (fos) query = query.eq("os", fos);
-      const term = q.trim().replace(/[,%]/g, "");
-      if (term) {
-        query = query.or(
-          `serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`,
-        );
-      }
-
-      if (urlFilter === "without_ticket" && assignedIds.length) {
-        // exclude assigned ids
-        const inList = assignedIds.map((id) => `'${id}'`).join(",");
-        query = query.not("id", "in", `(${assignedIds.join(",")})`);
-      }
-
-      const { data, count, error } = await query.range(
-        page * PAGE_SIZE,
-        (page + 1) * PAGE_SIZE - 1,
-      );
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      const totalRows = count ?? 0;
-      if (page > 0 && page * PAGE_SIZE >= totalRows) {
-        setPage(0);
-        return;
-      }
-      setRows((data ?? []) as Row[]);
-      setTotal(totalRows);
+  useEffect(() => {
+    if (listQuery.data) {
+      setRows(listQuery.data.data as Row[]);
+      setTotal(listQuery.data.count ?? 0);
     }
-
-    void load();
-  }, [refreshKey, fs, fos, q, page]);
+  }, [listQuery.data]);
 
   useEffect(() => {
     setPage(0);
@@ -231,19 +195,15 @@ function InventoryPage() {
       openDeviceDetail(idFromUrl);
       return;
     }
-
-    const { data: found, error } = await supabase
-      .from("devices")
-      .select("id, serial")
-      .ilike("serial", code)
-      .maybeSingle();
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    if (found?.id) {
-      openDeviceDetail(found.id);
+    try {
+      const { fetchDeviceBySerial } = queries as any;
+      const found = await fetchDeviceBySerial(code);
+      if (found?.id) {
+        openDeviceDetail(found.id);
+        return;
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Errore ricerca dispositivo');
       return;
     }
 
@@ -461,7 +421,7 @@ function InventoryPage() {
         onClose={() => setImportOpen(false)}
         onImported={() => {
           setSelectedIds(new Set());
-          triggerRefresh();
+          qc.invalidateQueries({ queryKey: ['inventory'] });
         }}
       />
       <BarcodeScanner

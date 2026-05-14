@@ -10,6 +10,7 @@ import {
   type ContactInput,
 } from "@/lib/schemas/clients";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/clients";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
@@ -140,43 +141,48 @@ function ClientsPage() {
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const loadClients = useCallback(async () => {
-    let query = supabase.from("clients").select(CLIENT_SELECT, { count: "exact" }).order("name");
-    const term = cleanSearchTerm(q);
-    if (term) {
-      query = query.or(
-        `name.ilike.%${term}%,company_name.ilike.%${term}%,vat_number.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`,
-      );
-    }
-    const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-    if (error) return toast.error(error.message);
-    const totalRows = count ?? 0;
-    if (page > 0 && page * PAGE_SIZE >= totalRows) {
-      setPage(0);
-      return;
-    }
-    const arr = (data ?? []) as ClientRow[];
-    setClients(arr);
-    setTotal(totalRows);
-    setSelectedId((cur) => (cur && arr.some((c) => c.id === cur) ? cur : arr[0]?.id || null));
-    setSelectedIds((current) => {
-      const pageIds = new Set(arr.map((c) => c.id));
-      const next = new Set<string>();
-      for (const id of current) {
-        if (pageIds.has(id)) next.add(id);
-      }
-      return next;
-    });
-  }, [page, q]);
+  const { useClientsList, useClientContacts, fetchAllClientsForExport } = queries as any;
+  const listQuery = useClientsList({ q, page, pageSize: PAGE_SIZE });
+  const {
+    useCreateClient,
+    useUpdateClient,
+    useDeleteClient,
+    useBulkDeleteClients,
+    useCreateContact,
+    useUpdateContact,
+    useDeleteContact,
+  } = queries as any;
+
+  const createClientMut = useCreateClient();
+  const updateClientMut = useUpdateClient();
+  const deleteClientMut = useDeleteClient();
+  const bulkDeleteMut = useBulkDeleteClients();
+  const createContactMut = useCreateContact();
+  const updateContactMut = useUpdateContact();
+  const deleteContactMut = useDeleteContact();
 
   useEffect(() => {
-    void loadClients();
-  }, [loadClients]);
+    if (listQuery.data) {
+      const arr = listQuery.data.data as ClientRow[];
+      setClients(arr);
+      setTotal(listQuery.data.count ?? 0);
+      setSelectedId((cur) => (cur && arr.some((c) => c.id === cur) ? cur : arr[0]?.id || null));
+      setSelectedIds((current) => {
+        const pageIds = new Set(arr.map((c) => c.id));
+        const next = new Set<string>();
+        for (const id of current) {
+          if (pageIds.has(id)) next.add(id);
+        }
+        return next;
+      });
+    }
+  }, [listQuery.data]);
 
   useEffect(() => {
     setPage(0);
   }, [q]);
 
+  const contactsQuery = useClientContacts(selectedId);
   useEffect(() => {
     if (!selectedId) {
       setContacts([]);
@@ -185,8 +191,8 @@ function ClientsPage() {
     }
     const client = clients.find((c) => c.id === selectedId);
     if (client) clientForm.reset(toClientForm(client) as ClientInput);
-    loadContacts(selectedId);
-  }, [selectedId, clients, clientForm]);
+    if (contactsQuery.data) setContacts(contactsQuery.data as ContactRow[]);
+  }, [selectedId, clients, clientForm, contactsQuery.data]);
 
   const selected = clients.find((c) => c.id === selectedId) || null;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -233,8 +239,7 @@ function ClientsPage() {
           address: clean(values.address || ""),
           notes: clean(values.notes || ""),
         };
-        const { error } = await supabase.from("clients").update(patch).eq("id", selected!.id);
-        if (error) throw error;
+        await updateClientMut.mutateAsync({ id: selected!.id, payload: patch });
         toast.success("Cliente aggiornato");
       } else {
         const insert: TablesInsert<"clients"> = {
@@ -247,12 +252,11 @@ function ClientsPage() {
           address: clean(values.address || ""),
           notes: clean(values.notes || ""),
         };
-        const { data, error } = await supabase.from("clients").insert(insert).select("id").single();
-        if (error) throw error;
+        const data = await createClientMut.mutateAsync(insert);
         setSelectedId(data.id);
         toast.success("Cliente creato");
       }
-      await loadClients();
+      // list will refresh via invalidation
     } catch (e) {
       toast.error(errorMessage(e, "Errore salvataggio cliente"));
     } finally {
@@ -263,11 +267,9 @@ function ClientsPage() {
   async function deleteClient() {
     if (!selected || !canDelete) return toast.error("Solo admin puo' eliminare clienti");
     if (!confirm(`Eliminare ${selected.company_name || selected.name}?`)) return;
-    const { error } = await supabase.from("clients").delete().eq("id", selected.id);
-    if (error) return toast.error(error.message);
+    await deleteClientMut.mutateAsync(selected.id);
     toast.success("Cliente eliminato");
     setSelectedId(null);
-    await loadClients();
   }
 
   async function bulkDelete() {
@@ -275,20 +277,19 @@ function ClientsPage() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return toast.error("Seleziona almeno un cliente");
     if (!confirm(`Eliminare ${ids.length} clienti selezionati?`)) return;
-    const { error } = await supabase.from("clients").delete().in("id", ids);
-    if (error) return toast.error(error.message);
+    await bulkDeleteMut.mutateAsync(ids);
     toast.success(`${ids.length} clienti eliminati`);
     if (selectedId && selectedIds.has(selectedId)) {
       setSelectedId(null);
     }
     setSelectedIds(new Set());
-    await loadClients();
   }
 
   async function exportCsv() {
     setExportBusy(true);
     try {
-      const allClients = await loadAllClientsForExport();
+      const { fetchAllClientsForExport } = queries as any;
+      const allClients = await fetchAllClientsForExport();
       if (!allClients.length) return toast.error("Nessun cliente da esportare");
       downloadClientsCsv(allClients);
       toast.success("CSV clienti esportato");
@@ -344,20 +345,14 @@ function ClientsPage() {
         notes: clean(values.notes || ""),
       };
       if (editingContactId) {
-        const { error } = await supabase
-          .from("client_contacts")
-          .update(base as TablesUpdate<"client_contacts">)
-          .eq("id", editingContactId);
-        if (error) throw error;
+        await updateContactMut.mutateAsync({ id: editingContactId, clientId: selectedId, payload: base });
         toast.success("Referente aggiornato");
       } else {
-        const insert: TablesInsert<"client_contacts"> = { client_id: selectedId, ...base };
-        const { error } = await supabase.from("client_contacts").insert(insert);
-        if (error) throw error;
+        await createContactMut.mutateAsync({ clientId: selectedId, payload: base });
         toast.success("Referente aggiunto");
       }
       resetContactForm();
-      await loadContacts(selectedId);
+      // contacts query will refresh via invalidation
     } catch (e) {
       toast.error(errorMessage(e, "Errore salvataggio referente"));
     } finally {
@@ -368,10 +363,8 @@ function ClientsPage() {
   async function deleteContact(contact: ContactRow) {
     if (!canDelete) return toast.error("Solo admin puo' eliminare referenti");
     if (!confirm(`Eliminare ${contactLabel(contact)}?`)) return;
-    const { error } = await supabase.from("client_contacts").delete().eq("id", contact.id);
-    if (error) return toast.error(error.message);
+    await deleteContactMut.mutateAsync({ id: contact.id, clientId: contact.client_id });
     toast.success("Referente eliminato");
-    await loadContacts(contact.client_id);
   }
 
   return (
@@ -705,7 +698,7 @@ function ClientsPage() {
         onClose={() => setImportOpen(false)}
         onImported={() => {
           setSelectedIds(new Set());
-          void loadClients();
+          void listQuery.refetch();
         }}
       />
     </div>
@@ -1020,21 +1013,7 @@ function cleanSearchTerm(value: string) {
   return value.trim().replace(/[,%]/g, "");
 }
 
-async function loadAllClientsForExport() {
-  const rows: ClientRow[] = [];
-  for (let from = 0; ; from += EXPORT_CHUNK_SIZE) {
-    const { data, error } = await supabase
-      .from("clients")
-      .select(CLIENT_SELECT)
-      .order("name")
-      .range(from, from + EXPORT_CHUNK_SIZE - 1);
-    if (error) throw error;
-    const chunk = (data ?? []) as ClientRow[];
-    rows.push(...chunk);
-    if (chunk.length < EXPORT_CHUNK_SIZE) break;
-  }
-  return rows;
-}
+// fetchAllClientsForExport moved to queries/clients
 
 function downloadClientsCsv(clients: ClientRow[]) {
   const headers = ["Nome", "Azienda", "P.IVA", "Email", "Telefono", "Indirizzo"];

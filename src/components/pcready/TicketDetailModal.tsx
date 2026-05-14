@@ -6,6 +6,7 @@ import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
+import queries from "@/lib/queries/tickets";
 import {
   type ChecklistState,
   STATUS_META,
@@ -20,10 +21,13 @@ import {
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/lib/queries/keys';
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { TicketNotes } from "@/components/tickets/TicketNotes";
 import { sendChecklistCompletedEmail } from "@/lib/email-events";
+import activityQueries from "@/lib/queries/activity";
 
 interface TicketRow {
   id: string;
@@ -74,47 +78,31 @@ export function TicketDetailModal() {
   const { canEdit, isAdmin, user, session } = useAuth();
   const notify = useServerFn(createNotification);
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
-  const { triggerRefresh } = useTickets();
-  const [t, setT] = useState<TicketRow | null>(null);
+  useTickets();
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [historyEntries, setHistoryEntries] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<string>("");
 
+  const { useTicketQuery, useTicketAssignmentsQuery, useTicketHistoryQuery, useUpdateTicket, useDeleteTicket } = queries as any;
+  const ticketQuery = useTicketQuery(id);
+  const assignmentsQuery = useTicketAssignmentsQuery(id);
+  const historyQuery = useTicketHistoryQuery(id);
+  const updateTicket = useUpdateTicket();
+  const deleteTicket = useDeleteTicket();
+  const insertActivity = activityQueries.insertActivity as any;
+  const addTicketStatusHistory = (queries as any).addTicketStatusHistory as any;
+  const qc = useQueryClient();
+
   useEffect(() => {
-    if (!id) {
-      setT(null);
-      setAssignments([]);
-      return;
-    }
+    if (assignmentsQuery.data) setAssignments(assignmentsQuery.data as AssignmentRow[]);
+  }, [assignmentsQuery.data]);
 
-    supabase
-      .from("tickets")
-      .select(
-        "*, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-      )
-      .eq("id", id)
-      .maybeSingle()
-      .then(({ data }) => setT(data as unknown as TicketRow | null));
+  useEffect(() => {
+    if (historyQuery.data) setHistoryEntries(historyQuery.data as HistoryRow[]);
+  }, [historyQuery.data]);
 
-    supabase
-      .from("ticket_device_assignments")
-      .select("id, assigned_at, unassigned_at, notes, device:devices(model, serial)")
-      .eq("ticket_id", id)
-      .order("assigned_at", { ascending: false })
-      .then(({ data }) => setAssignments((data ?? []) as unknown as AssignmentRow[]));
-
-    supabase
-      .from("ticket_device_assignment_history")
-      .select(
-        "id, action, occurred_at, actor_id, notes, changed_fields, device:devices(model, serial)",
-      )
-      .eq("ticket_id", id)
-      .order("occurred_at", { ascending: false })
-      .then(({ data }) => setHistoryEntries((data ?? []) as unknown as HistoryRow[]));
-  }, [id]);
-
-  if (!id || !t) return null;
-  const ticket = t;
+  if (!id || ticketQuery.isLoading || !ticketQuery.data) return null;
+  const ticket = ticketQuery.data as TicketRow;
   const struct: ChecklistStructure = (
     ticket.checklist_structure && Object.keys(ticket.checklist_structure).length
       ? ticket.checklist_structure
@@ -130,10 +118,12 @@ export function TicketDetailModal() {
       ...patch,
       checklist: patch.checklist as unknown as Json | undefined,
     } as any);
-    const { error } = await supabase.from("tickets").update(dbPatch).eq("id", ticket.id);
-    if (error) return toast.error(error.message);
-    setT({ ...ticket, ...patch } as TicketRow);
-    triggerRefresh();
+    try {
+      await updateTicket.mutateAsync({ id: ticket.id, patch: dbPatch });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Errore aggiornamento';
+      return toast.error(message);
+    }
   }
 
   async function toggleItem(itemId: string) {
@@ -173,20 +163,18 @@ export function TicketDetailModal() {
     const previousStatus = ticket.status;
     await update({ status: next });
     // Insert status history record
-    await (supabase as any).from("ticket_status_history").insert({
-      ticket_id: ticket.id,
-      from_status: previousStatus,
-      to_status: next,
-      changed_by: user!.id,
-      changed_at: new Date().toISOString(),
-      note: auto ? "Avanzamento automatico via checklist" : null,
-    });
-    await supabase.from("activity_log").insert({
-      type: auto ? "auto" : "user",
-      message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? " automaticamente" : ""}`,
-      ticket_id: ticket.id,
-      actor_id: user!.id,
-    });
+    try {
+      await addTicketStatusHistory(ticket.id, {
+        from_status: previousStatus,
+        to_status: next,
+        changed_by: user!.id,
+        changed_at: new Date().toISOString(),
+        note: auto ? 'Avanzamento automatico via checklist' : null,
+      });
+      await insertActivity({ type: auto ? 'auto' : 'user', message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? ' automaticamente' : ''}`, ticket_id: ticket.id, actor_id: user!.id });
+    } catch (err) {
+      console.error('Failed to write status history/activity log', err);
+    }
     if (ticket.assignee_id && session?.access_token) {
       await notify({
         data: {
@@ -216,21 +204,24 @@ export function TicketDetailModal() {
 
   async function del() {
     if (!confirm(`Eliminare ${ticket.ticket_code}?`)) return;
-    const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
-    if (error) return toast.error(error.message);
-    toast.success("Ticket eliminato");
-    close();
-    triggerRefresh();
+    try {
+      await deleteTicket.mutateAsync(ticket.id);
+      toast.success("Ticket eliminato");
+      close();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Errore cancellazione';
+      toast.error(message);
+    }
   }
 
-  const meta = STATUS_META[t.status];
+  const meta = STATUS_META[ticket.status];
 
   return (
     <Modal
       open={true}
       onClose={close}
       size="lg"
-      title={`${t.ticket_code} - ${asset.model}`}
+      title={`${ticket.ticket_code} - ${asset.model}`}
       footer={
         <>
           {isAdmin && (
@@ -250,27 +241,27 @@ export function TicketDetailModal() {
       }
     >
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <Info label="Cliente" value={t.client} />
+        <Info label="Cliente" value={ticket.client} />
         <Info
           label="Stato"
-          value={<div className="flex flex-wrap items-center gap-1.5"><StatusBadge status={t.status} /></div>}
+          value={<div className="flex flex-wrap items-center gap-1.5"><StatusBadge status={ticket.status} /></div>}
         />
         <Info label="Asset" value={asset.model} />
         <Info
           label="Seriale"
           value={<span className="font-mono text-text3 text-xs">{asset.serial}</span>}
         />
-        <Info label="Priorita" value={<PriorityLabel p={t.priority} />} />
-        <Info label="Tipo" value={<TicketTypeBadge type={t.ticket_type} />} />
-        <Info label="Richiedente" value={t.requester} />
+        <Info label="Priorita" value={<PriorityLabel p={ticket.priority} />} />
+        <Info label="Tipo" value={<TicketTypeBadge type={ticket.ticket_type} />} />
+        <Info label="Richiedente" value={ticket.requester} />
         <Info label="Utente asset" value={asset.assignedTo} />
         <Info
           label="Assegnato a"
-          value={<AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />}
+          value={<AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />}
         />
-        <Info label="Creato" value={fmtDate(t.created_at)} />
+        <Info label="Creato" value={fmtDate(ticket.created_at)} />
         <Info label="OS asset" value={asset.os} />
-        <Info label="Software" value={<span className="text-xs">{t.software || "-"}</span>} />
+        <Info label="Software" value={<span className="text-xs">{ticket.software || "-"}</span>} />
       </div>
 
       {assignments.length > 0 && (
@@ -294,20 +285,20 @@ export function TicketDetailModal() {
         </div>
       )}
 
-      {t.notes && (
+      {ticket.notes && (
         <div
           className="mb-4 p-3 rounded-lg"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
           <div className="pc-label">Note</div>
-          <div className="text-[12.5px] text-text2">{t.notes}</div>
+          <div className="text-[12.5px] text-text2">{ticket.notes}</div>
         </div>
       )}
 
       <div className="border-b mb-3" style={{ borderColor: "var(--border)" }}>
         <div className="flex">
           {tabKeys.map((key) => {
-            const p = structureProgress(t.checklist || {}, struct, key);
+            const p = structureProgress(ticket.checklist || {}, struct, key);
             const on = currentTab === key;
             return (
               <button
@@ -331,7 +322,7 @@ export function TicketDetailModal() {
 
       <div className="flex flex-col gap-1.5">
         {(struct[currentTab]?.items || []).map((item) => {
-          const done = t.checklist?.[currentTab]?.[item.id];
+          const done = ticket.checklist?.[currentTab]?.[item.id];
           return (
             <button
               key={item.id}
@@ -365,7 +356,13 @@ export function TicketDetailModal() {
         )}
       </div>
 
-      <TicketNotes ticketId={ticket.id} onChanged={triggerRefresh} />
+      <TicketNotes
+        ticketId={ticket.id}
+        onChanged={() => {
+          qc.invalidateQueries(QUERY_KEYS.ticket(ticket.id) as any);
+          qc.invalidateQueries(QUERY_KEYS.tickets as any);
+        }}
+      />
     </Modal>
   );
 }

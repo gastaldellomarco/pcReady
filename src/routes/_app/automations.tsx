@@ -3,6 +3,7 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/automations";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
 import { Badge } from "@/components/ui/badge";
@@ -263,30 +264,27 @@ function AutomationsPage() {
   const [guidedMode, setGuidedMode] = useState(true);
   const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
 
-  async function loadRules() {
-    setLoadingRules(true);
-    try {
-      const { data, error } = await supabase
-        .from("automation_flows")
-        .select(
-          "id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary",
-        )
-        .order("updated_at", { ascending: false });
-
-      if (error) throw new Error(`Regole: ${error.message}`);
-      const rules = AutomationRuleSchema.array().parse(data ?? []);
-      setRules(rules);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore nel caricamento regole");
-    } finally {
-      setLoadingRules(false);
-    }
-  }
+  const { useAutomationFlows, useCreateAutomation, useUpdateAutomation, useDeleteAutomation, useDuplicateAutomation, useArchiveAutomation, useToggleAutomation } = queries as any;
+  const listQuery = useAutomationFlows();
+  const createMut = useCreateAutomation();
+  const updateMut = useUpdateAutomation();
+  const deleteMut = useDeleteAutomation();
+  const duplicateMut = useDuplicateAutomation();
+  const archiveMut = useArchiveAutomation();
+  const toggleMut = useToggleAutomation();
 
   useEffect(() => {
-    void loadRules();
+    if (listQuery.data) {
+      try {
+        const parsed = AutomationRuleSchema.array().parse(listQuery.data ?? []);
+        setRules(parsed);
+      } catch (err) {
+        console.error('Failed to parse automation rules', err);
+        setRules([]);
+      }
+    }
     void loadStats();
-  }, []);
+  }, [listQuery.data]);
 
   async function loadStats() {
     if (!session?.access_token) return;
@@ -301,21 +299,19 @@ function AutomationsPage() {
 
   async function toggleRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
-    const { error } = await supabase
-      .from("automation_flows")
-      .update({ active: !rule.active })
-      .eq("id", rule.id);
-
-    if (error) return toast.error(error.message);
-    await createVersion(
-      "automation_flows",
-      rule.id,
-      { ...rule, active: !rule.active },
-      { active: { from: rule.active, to: !rule.active } },
-      rule.active ? "Automazione disattivata" : "Automazione attivata",
-      "update",
-    );
-    void loadRules();
+    try {
+      await toggleMut.mutateAsync({ id: rule.id, active: !rule.active });
+      await createVersion(
+        "automation_flows",
+        rule.id,
+        { ...rule, active: !rule.active },
+        { active: { from: rule.active, to: !rule.active } },
+        rule.active ? "Automazione disattivata" : "Automazione attivata",
+        "update",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore toggle automazione");
+    }
   }
 
   function openCreateDialog() {
@@ -405,65 +401,51 @@ function AutomationsPage() {
         updated_by: currentUserId,
       } as any;
 
-      if (editingRule) {
-        const previousSnapshot = editingRule as unknown as Record<string, unknown>;
-        const { data, error } = await supabase
-          .from("automation_flows")
-          .update(payload)
-          .eq("id", editingRule.id)
-          .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
-          .single();
-        if (error) {
-          console.error("Supabase update error:", error, data);
-          throw error;
+      try {
+        if (editingRule) {
+          const previousSnapshot = editingRule as unknown as Record<string, unknown>;
+          const data = await updateMut.mutateAsync({ id: editingRule.id, payload });
+          await createVersion(
+            "automation_flows",
+            editingRule.id,
+            data as unknown as Record<string, unknown>,
+            {
+              name: { from: previousSnapshot.name, to: payload.name },
+              description: { from: previousSnapshot.description, to: payload.description },
+              category: { from: previousSnapshot.category, to: payload.category },
+              version: { from: previousSnapshot.version, to: payload.version },
+              flow_definition: { from: previousSnapshot.flow_definition, to: payload.flow_definition },
+            },
+            flow.changeNote || "Automazione aggiornata",
+            "update",
+          );
+          toast.success("Automazione aggiornata");
+        } else {
+          const data = await createMut.mutateAsync(payload);
+          await createVersion(
+            "automation_flows",
+            data.id,
+            data as unknown as Record<string, unknown>,
+            undefined,
+            flow.changeNote || "Automazione creata",
+            "create",
+          );
+          toast.success("Automazione creata");
         }
-        await createVersion(
-          "automation_flows",
-          editingRule.id,
-          data as unknown as Record<string, unknown>,
-          {
-            name: { from: previousSnapshot.name, to: payload.name },
-            description: { from: previousSnapshot.description, to: payload.description },
-            category: { from: previousSnapshot.category, to: payload.category },
-            version: { from: previousSnapshot.version, to: payload.version },
-            flow_definition: { from: previousSnapshot.flow_definition, to: payload.flow_definition },
-          },
-          flow.changeNote || "Automazione aggiornata",
-          "update",
-        );
-        toast.success("Automazione aggiornata");
-      } else {
-        const { data, error } = await supabase
-          .from("automation_flows")
-          .insert(payload)
-          .select("id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary")
-          .single();
-        if (error) {
-          console.error("Supabase insert error:", error, data);
-          throw error;
-        }
-        await createVersion(
-          "automation_flows",
-          data.id,
-          data as unknown as Record<string, unknown>,
-          undefined,
-          flow.changeNote || "Automazione creata",
-          "create",
-        );
-        toast.success("Automazione creata");
+        setBuilderOpen(false);
+      } catch (err) {
+        console.error('Save wizard flow failed:', err);
+        const e = err as any;
+        const userMsg =
+          e && typeof e === 'object' && (e.message || e.error || e.details)
+            ? e.message || e.error || e.details
+            : err instanceof Error
+              ? err.message
+              : JSON.stringify(err);
+        toast.error(userMsg || 'Errore salvataggio');
       }
-      setBuilderOpen(false);
-      void loadRules();
     } catch (err) {
-      console.error("Save wizard flow failed:", err);
-      const e = err as any;
-      const userMsg =
-        e && typeof e === "object" && (e.message || e.error || e.details)
-          ? e.message || e.error || e.details
-          : err instanceof Error
-            ? err.message
-            : JSON.stringify(err);
-      toast.error(userMsg || "Errore salvataggio");
+      // handled above
     } finally {
       setSaving(false);
     }
@@ -472,46 +454,25 @@ function AutomationsPage() {
   async function duplicateRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
-      // fetch existing flow_definition then insert a copy
-      const { data: flowData, error: fetchErr } = await supabase
-        .from("automation_flows")
-        .select("flow_definition")
-        .eq("id", rule.id)
-        .single();
-      if (fetchErr) throw fetchErr;
-
-      const { data, error } = await supabase
-        .from("automation_flows")
-        .insert({
-          name: `${rule.name} (Copia)`,
-          description: rule.description,
-          category: rule.category,
-          active: false,
-          version: 1,
-          flow_definition: flowData?.flow_definition ?? {},
-        })
-        .select("id");
-      if (error) throw error;
-      const duplicatedId = data?.[0]?.id;
-      if (duplicatedId) {
+      const newId = await duplicateMut.mutateAsync({ id: rule.id, name: `${rule.name} (Copia)` });
+      if (newId) {
         await createVersion(
-          "automation_flows",
-          duplicatedId,
+          'automation_flows',
+          newId,
           {
             name: `${rule.name} (Copia)`,
             description: rule.description,
             category: rule.category,
             active: false,
             version: 1,
-            flow_definition: flowData?.flow_definition ?? {},
+            flow_definition: undefined,
           },
           undefined,
-          "Automazione duplicata",
-          "create",
+          'Automazione duplicata',
+          'create',
         );
       }
-      toast.success("Automazione duplicata");
-      void loadRules();
+      toast.success('Automazione duplicata');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore duplicazione");
     }
@@ -519,46 +480,38 @@ function AutomationsPage() {
 
   async function deleteRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
-    const { error } = await supabase.from("automation_flows").delete().eq("id", rule.id);
-    if (error) return toast.error(error.message);
-    toast.success("Automazione eliminata");
-    void loadRules();
+    try {
+      await deleteMut.mutateAsync(rule.id);
+      toast.success('Automazione eliminata');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Errore eliminazione');
+    }
   }
 
   async function archiveRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
       // fetch current flow_definition
-      const { data: fdata, error: fetchErr } = await supabase
-        .from("automation_flows")
-        .select("flow_definition")
-        .eq("id", rule.id)
-        .single();
-      if (fetchErr) throw fetchErr;
+      const { data: fdata } = await supabase.from('automation_flows').select('flow_definition').eq('id', rule.id).single();
       const fd: any = fdata?.flow_definition ?? {};
       const meta: any = fd.meta ?? {};
       meta.archived = true;
       fd.meta = meta;
-      const { error } = await supabase
-        .from("automation_flows")
-        .update({ active: false, flow_definition: fd })
-        .eq("id", rule.id);
-      if (error) throw error;
+      await archiveMut.mutateAsync({ id: rule.id, fd });
       await createVersion(
-        "automation_flows",
+        'automation_flows',
         rule.id,
         { ...rule, active: false, flow_definition: fd },
         {
           active: { from: rule.active, to: false },
           flow_definition: { from: rule.flow_definition, to: fd },
         },
-        "Automazione archiviata",
-        "update",
+        'Automazione archiviata',
+        'update',
       );
-      toast.success("Automazione archiviata");
-      void loadRules();
+      toast.success('Automazione archiviata');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore archivio");
+      toast.error(err instanceof Error ? err.message : 'Errore archivio');
     }
   }
 
@@ -604,7 +557,7 @@ function AutomationsPage() {
       });
       setLogsOpenRuleId(rule.id);
       await loadStats();
-      await loadRules();
+      await listQuery.refetch();
       toast.success(isDryRun ? "Dry-run completato" : "Run manuale completata");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Run non riuscita");
@@ -816,7 +769,7 @@ function AutomationsPage() {
               initialFlow={editingRule ? { id: editingRule.id } : undefined}
               onSave={() => {
                 setBuilderOpen(false);
-                void loadRules();
+                void listQuery.refetch();
               }}
               onCancel={() => setBuilderOpen(false)}
             />
@@ -831,7 +784,7 @@ function AutomationsPage() {
         entityId={versionHistoryRuleId || ""}
         open={!!versionHistoryRuleId}
         onClose={() => setVersionHistoryRuleId(null)}
-        onRestored={() => void loadRules()}
+        onRestored={() => void listQuery.refetch()}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import queries from "@/lib/queries/checklist";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_STRUCTURE, type ChecklistStructure } from "@/lib/pcready";
@@ -32,19 +33,22 @@ function ChecklistPage() {
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const { useChecklistTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate, useSetDefaultTemplate } = queries as any;
+  const listQuery = useChecklistTemplates();
+  const createMut = useCreateTemplate();
+  const updateMut = useUpdateTemplate();
+  const deleteMut = useDeleteTemplate();
+  const setDefaultMut = useSetDefaultTemplate();
 
-  async function load() {
-    setLoading(true);
-    const { data } = await supabase.from("checklist_templates")
-      .select("id, name, description, structure, is_default")
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: true });
-    const arr = (data ?? []) as unknown as Template[];
-    setTemplates(arr);
-    if (!active && arr.length) setActive(arr[0].id);
-    setLoading(false);
-  }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (listQuery.isLoading) setLoading(true);
+    else setLoading(false);
+    if (listQuery.data) {
+      const arr = listQuery.data as Template[];
+      setTemplates(arr);
+      if (!active && arr.length) setActive(arr[0].id);
+    }
+  }, [listQuery.isLoading, listQuery.data]);
 
   async function createNew() {
     if (!canEdit) return toast.error("Permessi insufficienti");
@@ -54,8 +58,7 @@ function ChecklistPage() {
       structure: DEFAULT_STRUCTURE as unknown as Json,
       created_by: user!.id,
     };
-    const { data, error } = await supabase.from("checklist_templates").insert(payload).select("id, name, description, structure, is_default").single();
-    if (error) return toast.error(error.message);
+    const data = await createMut.mutateAsync(payload);
     await createVersion(
       "checklist_templates",
       data.id,
@@ -64,16 +67,13 @@ function ChecklistPage() {
       "Modello checklist creato",
       "create",
     );
-    await load();
     setActive(data.id);
   }
 
   async function setDefault(id: string) {
     if (!isAdmin) return toast.error("Solo amministratori");
-    await supabase.from("checklist_templates").update({ is_default: false }).neq("id", "00000000-0000-0000-0000-000000000000");
     const template = templates.find((item) => item.id === id);
-    const { error } = await supabase.from("checklist_templates").update({ is_default: true }).eq("id", id);
-    if (error) return toast.error(error.message);
+    await setDefaultMut.mutateAsync(id);
     if (template) {
       await createVersion(
         "checklist_templates",
@@ -85,7 +85,6 @@ function ChecklistPage() {
       );
     }
     toast.success("Modello impostato come predefinito");
-    load();
   }
 
   async function remove(id: string) {
@@ -102,12 +101,9 @@ function ChecklistPage() {
         "delete",
       );
     }
-    const { error } = await supabase.from("checklist_templates").delete().eq("id", id);
-
-    if (error) return toast.error(error.message);
+    await deleteMut.mutateAsync(id);
     toast.success("Modello eliminato");
     if (active === id) setActive(null);
-    load();
   }
 
   async function update(t: Template, patch: Partial<Template>, changeNote = "Modello checklist aggiornato") {
@@ -115,8 +111,7 @@ function ChecklistPage() {
       ...patch,
       structure: patch.structure as unknown as Json | undefined,
     };
-    const { error } = await supabase.from("checklist_templates").update(dbPatch).eq("id", t.id);
-    if (error) return toast.error(error.message);
+    await updateMut.mutateAsync({ id: t.id, patch: dbPatch });
     const next = { ...t, ...patch } as Template;
     await createVersion(
       "checklist_templates",
@@ -131,7 +126,7 @@ function ChecklistPage() {
       changeNote,
       "update",
     );
-    setTemplates(ts => ts.map(x => x.id === t.id ? { ...x, ...patch } as Template : x));
+    setTemplates((ts) => ts.map((x) => (x.id === t.id ? ({ ...x, ...patch } as Template) : x)));
   }
 
   const current = templates.find(t => t.id === active);
@@ -195,7 +190,7 @@ function ChecklistPage() {
         entityId={active || ""}
         open={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
-        onRestored={() => void load()}
+        onRestored={() => void listQuery.refetch()}
       />
     </div>
   );
