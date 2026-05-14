@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 
 export const NOTIFICATION_TYPES = [
   "ticket_assigned",
@@ -58,7 +60,8 @@ export const createNotification = createServerFn({ method: "POST" })
   .handler(async ({ data: { accessToken, notification } }) => {
     const { createNotificationForUser, getAuthedNotificationUser } =
       await import("./notifications.server");
-    await getAuthedNotificationUser(accessToken);
+    const actor = await getAuthedNotificationUser(accessToken);
+    throwIfRateLimited(actor.id, RATE_LIMITER_KEYS.CREATE_NOTIFICATION);
     return createNotificationForUser(notification);
   });
 

@@ -24,6 +24,7 @@ import {
   type EmailEventType,
   type EmailTemplate,
 } from "@/types/email";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 interface EmailTemplateSectionProps {
   accessToken: string;
@@ -197,5 +198,5 @@ export function EmailTemplateSection({
 }
 
 function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
+  return formatServerFnErrorForToast(error, fallback);
 }

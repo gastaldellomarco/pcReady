@@ -3,6 +3,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { OAuthScope } from "@/lib/oauth-scopes";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 
 interface AuthedInput {
   accessToken: string;
@@ -219,6 +221,8 @@ export const createOAuthClient = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (roleError || !roleData) throw new Response("Forbidden", { status: 403 });
+
+    throwIfRateLimited(authData.user.id, RATE_LIMITER_KEYS.CREATE_OAUTH_CLIENT);
 
     // Generate client_id and secret
     const clientId = `pcready_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

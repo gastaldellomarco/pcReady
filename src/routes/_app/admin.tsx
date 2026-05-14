@@ -57,6 +57,10 @@ import {
   type AuditLogFilters,
 } from "@/lib/audit-log";
 import { exportAllData } from "@/lib/export-data";
+import {
+  parseRateLimitFromServerFnError,
+  rateLimitToastMessage,
+} from "@/lib/server-fn-rate-limit-message";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -190,6 +194,8 @@ function TagListEditor({
 function AdminUsersPage() {
   function getErrorMessage(error: unknown, fallback: string) {
     try {
+      const rl = parseRateLimitFromServerFnError(error);
+      if (rl) return rateLimitToastMessage(rl);
       if (!error) return fallback;
       if (error instanceof Error) return error.message;
       const anyErr = error as any;

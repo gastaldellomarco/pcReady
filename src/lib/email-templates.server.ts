@@ -2,6 +2,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "@/lib/admin-users.server";
 import { getAppSettings } from "@/lib/app-settings";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_EVENT_TYPES,
@@ -176,6 +178,7 @@ export async function updateEmailTemplateServer(data: z.input<typeof TemplateUpd
 
 export async function sendTestEmailServer(data: z.input<typeof TestEmailSchema>) {
   const actorId = await requireAdmin(data.accessToken);
+  throwIfRateLimited(actorId, RATE_LIMITER_KEYS.SEND_TEST_EMAIL);
   const validated = TestEmailSchema.parse(data);
   await ensureDefaultTemplates();
 

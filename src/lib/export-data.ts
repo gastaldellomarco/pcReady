@@ -12,8 +12,11 @@ export const exportAllData = createServerFn({ method: "GET" })
   .handler(async ({ data: { accessToken } }): Promise<ExportAllDataResult> => {
     const { requireAdmin } = await import("./admin-users.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { throwIfRateLimited } = await import("@/lib/rate-limit");
+    const { RATE_LIMITER_KEYS } = await import("@/lib/rate-limit-config");
 
-    await requireAdmin(accessToken);
+    const actorId = await requireAdmin(accessToken);
+    throwIfRateLimited(actorId, RATE_LIMITER_KEYS.EXPORT_ALL_DATA);
 
     const [ticketsRes, devicesRes, clientsRes] = await Promise.all([
       supabaseAdmin.from("tickets").select("*"),

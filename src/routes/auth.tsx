@@ -7,10 +7,13 @@ import {
 } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { initTheme } from "@/lib/theme";
+import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -42,6 +45,7 @@ function AuthPage() {
   const { session, profile, loading, profileLoading } = useAuth();
   const navigate = useNavigate();
   const route = useRouterState({ select: (state) => state.location.pathname });
+  const assertLoginLimit = useServerFn(assertStaffLoginRateLimit);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,12 +71,13 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
+      await assertLoginLimit({ data: { email } });
       const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
       if (error) throw error;
       toast.success("Bentornato!");
       navigate({ to: "/dashboard" });
     } catch (err: unknown) {
-      toast.error(errorMessage(err, "Errore"));
+      toast.error(formatServerFnErrorForToast(err, errorMessage(err, "Errore")));
     } finally {
       setBusy(false);
     }

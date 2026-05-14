@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { requestPortalLogin } from "@/lib/portal-auth";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 export const Route = createFileRoute("/portal/")({
   component: PortalLoginPage,
@@ -34,7 +35,7 @@ function PortalLoginPage() {
       await requestLogin({ data: { email } });
       setSent(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore invio magic link");
+      toast.error(formatServerFnErrorForToast(error, "Errore invio magic link"));
     } finally {
       setBusy(false);
     }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createPortalTicket } from "@/lib/portal-tickets";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 export function NewTicketForm({ token, categories }: { token: string; categories: string[] }) {
   const createTicket = useServerFn(createPortalTicket);
@@ -20,7 +21,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
       toast.success("Ticket aperto correttamente");
       window.location.href = `/portal/tickets/${result.ticketId}`;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore apertura ticket");
+      toast.error(formatServerFnErrorForToast(error, "Errore apertura ticket"));
     } finally {
       setBusy(false);
     }

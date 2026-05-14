@@ -1,0 +1,110 @@
+"use server";
+
+import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import type { Database, Json } from "@/integrations/supabase/types";
+import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+
+const StaffTicketPayloadSchema = z.object({
+  client: z.string().min(1),
+  client_id: z.string().uuid(),
+  device_id: z.union([z.string().uuid(), z.literal(""), z.null()]).optional(),
+  category: z.string().nullable().optional(),
+  requester: z.string().min(1),
+  requester_contact_id: z.union([z.string().uuid(), z.literal(""), z.null()]).optional(),
+  priority: z.enum(["low", "med", "high"]),
+  ticket_type: z.string().min(1),
+  status: z.literal("pending"),
+  assignee_id: z.union([z.string().uuid(), z.literal(""), z.null()]).optional(),
+  software: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  checklist: z.record(z.unknown()).optional(),
+  template_id: z.union([z.string().uuid(), z.literal(""), z.null()]).optional(),
+  checklist_structure: z.unknown().optional(),
+  source: z.string().optional(),
+});
+
+const CreateTicketInputSchema = z.object({
+  accessToken: z.string().min(1),
+  ticket: StaffTicketPayloadSchema,
+});
+
+function createSupabaseForAccessToken(accessToken: string) {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    throw new Response("Configurazione Supabase mancante sul server", { status: 500 });
+  }
+  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    global: {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+export const createTicket = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof CreateTicketInputSchema>) => CreateTicketInputSchema.parse(data))
+  .handler(async ({ data }) => {
+    const supabase = createSupabaseForAccessToken(data.accessToken);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) throw new Response("Non autenticato", { status: 401 });
+
+    throwIfRateLimited(user.id, RATE_LIMITER_KEYS.CREATE_STAFF_TICKET);
+
+    const t = data.ticket;
+    const deviceId = t.device_id && t.device_id.length > 0 ? t.device_id : null;
+    const assigneeId = t.assignee_id && t.assignee_id.length > 0 ? t.assignee_id : null;
+    const requesterContactId =
+      t.requester_contact_id && t.requester_contact_id.length > 0 ? t.requester_contact_id : null;
+    const templateId = t.template_id && t.template_id.length > 0 ? t.template_id : null;
+
+    const insertPayload = {
+      client: t.client,
+      client_id: t.client_id,
+      device_id: deviceId,
+      category: t.category ?? null,
+      requester: t.requester,
+      requester_contact_id: requesterContactId,
+      priority: t.priority,
+      ticket_type: t.ticket_type,
+      status: t.status,
+      assignee_id: assigneeId,
+      software: t.software ?? null,
+      notes: t.notes ?? null,
+      checklist: (t.checklist ?? {}) as Json,
+      template_id: templateId,
+      checklist_structure: (t.checklist_structure ?? null) as Json | null,
+      source: t.source ?? "app",
+      created_by: user.id,
+    };
+
+    const { data: row, error } = await supabase
+      .from("tickets")
+      .insert(insertPayload as never)
+      .select("id, ticket_code")
+      .single();
+
+    if (error) throw error;
+
+    const { error: histError } = await supabase.from("ticket_status_history").insert({
+      ticket_id: row.id,
+      from_status: null,
+      to_status: "pending",
+      changed_by: user.id,
+      changed_at: new Date().toISOString(),
+      note: "Ticket creato",
+    } as never);
+    if (histError) throw histError;
+
+    return { id: row.id, ticket_code: row.ticket_code };
+  });

@@ -21,7 +21,7 @@ const {
 } = queries;
 import activityQueries from "@/lib/queries/activity";
 const insertActivity = activityQueries.insertActivity as any;
-import type { Json, TablesInsert } from "@/integrations/supabase/types";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
 import { createNotification } from "@/lib/notifications";
@@ -29,6 +29,8 @@ import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { toast } from "sonner";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
 import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
+import { createTicket } from "@/lib/tickets.server";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 interface Tech {
   id: string;
@@ -68,10 +70,6 @@ interface DeviceOpt {
 }
 type DeviceFlow = "existing" | "none";
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
-
 export function CreateTicketModal() {
   const { createOpen, closeCreate } = useTickets();
   const { user, canEdit, session } = useAuth();
@@ -79,6 +77,7 @@ export function CreateTicketModal() {
   const sendAssignedEmail = useServerFn(sendTicketAssignedEmail);
   const loadSettings = useServerFn(getPublicAppSettings);
   const validateLimit = useServerFn(validateTechnicianDeviceLimit);
+  const createTicketFn = useServerFn(createTicket);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [templates, setTemplates] = useState<TplOpt[]>([]);
   const [ticketCategories, setTicketCategories] = useState<string[]>([]);
@@ -129,14 +128,13 @@ export function CreateTicketModal() {
     }
   }, [createOpen]);
 
-  const createTicket = queries.useCreateTicket();
-
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     if (!f.client_id || !f.requester) return toast.error("Compila i campi obbligatori");
     if (f.ticket_type === "device" && !f.device_id) {
       return toast.error("Seleziona un dispositivo");
     }
+    if (!session?.access_token) return toast.error("Sessione non valida");
     setBusy(true);
     try {
       const tpl = templates.find((t) => t.id === templateId);
@@ -165,24 +163,16 @@ export function CreateTicketModal() {
         requester_contact_id: f.free_requester ? null : contact?.id || null,
         priority: f.priority,
         ticket_type: f.ticket_type,
-        status: "pending",
+        status: "pending" as const,
         assignee_id: f.assignee_id || null,
         software: f.software || null,
         notes: f.notes || null,
         checklist: {},
-        created_by: user!.id,
         template_id: tpl?.id || null,
         checklist_structure: structure as unknown as Json,
-      } as Omit<TablesInsert<"tickets">, "ticket_code">;
-      // ticket_code viene assegnato dal trigger DB per evitare collisioni tra client.
-      const data = await createTicket.mutateAsync(ticketInsert as TablesInsert<"tickets">);
-      // Insert initial status history record
-      await (queries.addTicketStatusHistory as any)(data.id, {
-        from_status: null,
-        to_status: "pending",
-        changed_by: user!.id,
-        changed_at: new Date().toISOString(),
-        note: "Ticket creato",
+      };
+      const data = await createTicketFn({
+        data: { accessToken: session.access_token, ticket: ticketInsert },
       });
       await insertActivity({
         type: "user",
@@ -238,7 +228,7 @@ export function CreateTicketModal() {
       setDeviceFlow("existing");
       closeCreate();
     } catch (e: unknown) {
-      toast.error(errorMessage(e, "Errore creazione"));
+      toast.error(formatServerFnErrorForToast(e, "Errore creazione"));
     } finally {
       setBusy(false);
     }

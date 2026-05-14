@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 import { sendEmail } from "@/lib/email-templates.server";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 
 export interface PortalSessionContext {
   token: string;
@@ -59,6 +61,7 @@ async function createPortalSession(contact: any, ttlHours = 24) {
 
 export async function requestPortalLoginServer(input: { email: string; sendMail?: boolean }) {
   const email = input.email.trim().toLowerCase();
+  throwIfRateLimited(`email:${email}`, RATE_LIMITER_KEYS.PORTAL_MAGIC_LINK);
 
   const { data: contact, error } = await supabaseAdmin
     .from("client_contacts" as any)

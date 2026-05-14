@@ -3,6 +3,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
 import type { AppRole } from "@/lib/auth-context";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 
 export interface AdminUserRow {
   id: string;
@@ -167,7 +169,8 @@ export const updateAdminUser = createServerFn({ method: "POST" })
 export const inviteAdminUser = createServerFn({ method: "POST" })
   .inputValidator((data: InviteUserInput) => data)
   .handler(async ({ data }) => {
-    await requireAdmin(data.accessToken);
+    const actorId = await requireAdmin(data.accessToken);
+    throwIfRateLimited(actorId, RATE_LIMITER_KEYS.INVITE_ADMIN_USER);
     if (!APP_ROLES.includes(data.role)) throw new Response("Ruolo non valido", { status: 400 });
 
     const email = data.email.trim().toLowerCase();

@@ -2,6 +2,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 import { getPortalSession } from "@/lib/portal-auth.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { throwIfRateLimited } from "@/lib/rate-limit";
 
 function urgencyToPriority(urgency: "low" | "normal" | "high") {
   if (urgency === "high") return "high";
@@ -136,6 +138,7 @@ export async function createPortalTicketServer(input: {
   urgency: "low" | "normal" | "high";
 }) {
   const session = await getPortalSession(input.token);
+  throwIfRateLimited(session.contactId, RATE_LIMITER_KEYS.CREATE_PORTAL_TICKET);
   const details = `${input.title}\n\nCategoria: ${input.category}\nUrgenza cliente: ${input.urgency}\n\n${input.description}`;
 
   const { data: ticket, error } = await supabaseAdmin
