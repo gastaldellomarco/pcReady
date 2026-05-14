@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { buildDownloadFileName } from "@/lib/export-format";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
 
@@ -176,6 +177,6 @@ export const exportAuditLog = createServerFn({ method: "GET" })
 
     return {
       csv,
-      filename: `audit-log-${new Date().toISOString().split("T")[0]}.csv`,
+      filename: buildDownloadFileName("pcready-audit-log", "csv", { dated: true }),
     };
   });

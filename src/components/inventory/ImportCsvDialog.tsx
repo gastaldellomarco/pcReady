@@ -12,6 +12,7 @@ import {
   type PreviewRow,
 } from "@/lib/inventory-import";
 import { toast } from "sonner";
+import { downloadCsv } from "@/lib/downloads";
 
 interface Props {
   open: boolean;
@@ -69,13 +70,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
   }
 
   function downloadTemplate() {
-    const blob = new Blob([csvTemplate()], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "template-inventario-pcready.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(csvTemplate(), "pcready-template-inventario.csv");
   }
 
   async function confirmImport() {

@@ -40,6 +40,7 @@ import {
 import { toast } from "sonner";
 import { generatePortalAccessLink, revokePortalAccessLink } from "@/lib/portal-auth";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { downloadCsv } from "@/lib/downloads";
 
 export const Route = createFileRoute("/_app/clients")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -1682,7 +1683,7 @@ function ImportContactsCsvDialog({
         ],
         ["Mario", "Rossi", "mario@azienda.it", "0123456789", "IT Manager", "IT", "true"],
       ],
-      "template-referenti-pcready.csv",
+      "pcready-template-referenti.csv",
     );
   }
 
@@ -1950,7 +1951,7 @@ function ImportClientsCsvDialog({
         "",
       ],
     ];
-    downloadCsv(template, "template-clienti-pcready.csv");
+    downloadCsv(template, "pcready-template-clienti.csv");
   }
 
   async function confirmImport() {
@@ -2172,19 +2173,6 @@ function normalizeOptionalUrl(value: string) {
 }
 
 // fetchAllClientsForExport moved to queries/clients
-
-function downloadCsv(rows: string[][], filename: string) {
-  const csv = rows
-    .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 type CsvRecord = {
   rowNumber: number;

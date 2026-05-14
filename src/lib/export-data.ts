@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { buildDownloadFileName, csvCell } from "@/lib/export-format";
 
 export type ExportTableName = "tickets" | "devices" | "clients";
 
@@ -28,23 +29,21 @@ export const exportAllData = createServerFn({ method: "GET" })
     if (devicesRes.error) throw devicesRes.error;
     if (clientsRes.error) throw clientsRes.error;
 
-    const date = new Date().toISOString().slice(0, 10);
-
     return {
       generatedAt: new Date().toISOString(),
       files: {
         tickets: {
-          filename: `tickets_export_${date}.csv`,
+          filename: buildDownloadFileName("pcready-tickets-export", "csv", { dated: true }),
           csv: toCsv((ticketsRes.data ?? []) as Record<string, unknown>[]),
           rowCount: ticketsRes.data?.length ?? 0,
         },
         devices: {
-          filename: `devices_export_${date}.csv`,
+          filename: buildDownloadFileName("pcready-devices-export", "csv", { dated: true }),
           csv: toCsv((devicesRes.data ?? []) as Record<string, unknown>[]),
           rowCount: devicesRes.data?.length ?? 0,
         },
         clients: {
-          filename: `clients_export_${date}.csv`,
+          filename: buildDownloadFileName("pcready-clients-export", "csv", { dated: true }),
           csv: toCsv((clientsRes.data ?? []) as Record<string, unknown>[]),
           rowCount: clientsRes.data?.length ?? 0,
         },
@@ -59,10 +58,4 @@ function toCsv(rows: Record<string, unknown>[]) {
     columns.map(csvCell).join(","),
     ...rows.map((row) => columns.map((key) => csvCell(row[key])).join(",")),
   ].join("\n");
-}
-
-function csvCell(value: unknown) {
-  if (value == null) return "";
-  const normalized = typeof value === "object" ? JSON.stringify(value) : String(value);
-  return `"${normalized.replace(/"/g, '""')}"`;
 }

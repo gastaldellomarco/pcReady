@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
+import { buildDownloadFileName, downloadText } from "@/lib/downloads";
 import { createVersion } from "@/lib/versioning";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
@@ -403,13 +404,7 @@ function ScriptViewer({
 
   function download() {
     const ext = LANG_EXT[script.language] || "txt";
-    const blob = new Blob([script.content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${script.name.replace(/\s+/g, "-").toLowerCase()}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText(script.content, buildDownloadFileName(script.name, ext));
   }
 
   return (

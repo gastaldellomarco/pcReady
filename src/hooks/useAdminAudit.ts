@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import { getAuditLog, exportAuditLog, type ActivityLogEntry, type AuditLogFilters } from "@/lib/audit-log";
+import { downloadCsv } from "@/lib/downloads";
 
 export function useAdminAudit(args: {
   accessToken: string | undefined;
@@ -59,16 +60,7 @@ export function useAdminAudit(args: {
         },
       });
 
-      const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", data.filename);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      downloadCsv(data.csv, data.filename);
       toast.success("File CSV esportato");
     } catch (error) {
       toast.error(getAdminErrorMessage(error, "Esportazione non riuscita"));

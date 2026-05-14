@@ -28,6 +28,7 @@ import { Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 import { getPublicAppSettings } from "@/lib/app-settings";
+import { buildDownloadFileName } from "@/lib/downloads";
 import {
   AsyncAutocomplete,
   type AsyncAutocompleteOption,
@@ -167,7 +168,7 @@ function TicketsPage() {
       const org = settings?.organization_name;
       await downloadPdf(
         <TicketListPdf rows={pdfRows()} organizationName={org} />,
-        `pcready-ticket-${new Date().toISOString().slice(0, 10)}.pdf`,
+        buildDownloadFileName("pcready-ticket", "pdf", { dated: true }),
       );
       toast.success("PDF ticket esportato");
     } catch (error) {

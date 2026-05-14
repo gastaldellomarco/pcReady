@@ -1,9 +1,5 @@
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
-
-function csvCell(value: string | number) {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
+import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 
 export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
   const rows = [
@@ -25,14 +21,7 @@ export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
       row.avg_days ?? "",
     ]),
   ];
-  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = window.document.createElement("a");
-  anchor.href = url;
-  anchor.download = "dashboard-report.csv";
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadCsv(rows, buildDownloadFileName("pcready-dashboard-report", "csv", { dated: true }));
 }
 
 export function defaultDateRange() {

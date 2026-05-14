@@ -18,6 +18,7 @@ import { useAuth, type AppRole } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import { ADMIN_ROLES, adminRoleLabel } from "@/lib/admin/admin-constants";
+import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
 import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
@@ -253,35 +254,21 @@ export function AdminUsersTab() {
                       "created_at",
                       "last_sign_in_at",
                     ];
-                    const csv = [headers.join(",")]
-                      .concat(
-                        selectedRows.map((r) =>
-                          [
-                            r.id,
-                            r.email ?? "",
-                            r.full_name,
-                            r.role,
-                            r.status,
-                            r.created_at,
-                            r.last_sign_in_at ?? "",
-                          ]
-                            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-                            .join(","),
-                        ),
-                      )
-                      .join("\n");
-                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                    const link = document.createElement("a");
-                    const url = URL.createObjectURL(blob);
-                    link.setAttribute("href", url);
-                    link.setAttribute(
-                      "download",
-                      `users_export_${new Date().toISOString().slice(0, 10)}.csv`,
+                    downloadCsv(
+                      [
+                        headers,
+                        ...selectedRows.map((r) => [
+                          r.id,
+                          r.email ?? "",
+                          r.full_name,
+                          r.role,
+                          r.status,
+                          r.created_at,
+                          r.last_sign_in_at ?? "",
+                        ]),
+                      ],
+                      buildDownloadFileName("pcready-users", "csv", { dated: true }),
                     );
-                    link.style.visibility = "hidden";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
                     toast.success("CSV esportato");
                   }}
                 >

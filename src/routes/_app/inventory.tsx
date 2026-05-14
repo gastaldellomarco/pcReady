@@ -19,6 +19,7 @@ import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import { supabase } from "@/integrations/supabase/client";
+import { buildDownloadFileName } from "@/lib/downloads";
 
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
@@ -148,7 +149,7 @@ function InventoryPage() {
       const org = settings?.organization_name;
       await downloadPdf(
         <InventoryPdf rows={pdfRows()} organizationName={org} />,
-        `pcready-inventario-${new Date().toISOString().slice(0, 10)}.pdf`,
+        buildDownloadFileName("pcready-inventario", "pdf", { dated: true }),
       );
       toast.success("PDF inventario esportato");
     } catch (error) {

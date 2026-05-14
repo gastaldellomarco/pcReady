@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppSettingsSchema } from "@/lib/schemas";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
-import { createZipBlob, downloadBlob } from "@/lib/admin/zip-download";
+import { buildDownloadFileName, downloadZip } from "@/lib/downloads";
 import { getAppSettings, updateAppSettings, type AppSettings } from "@/lib/app-settings";
 import { exportAllData } from "@/lib/export-data";
 
@@ -127,14 +127,13 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
     try {
       const data = await exportData({ data: { accessToken } });
       const files = Object.values(data.files);
-      const zipBlob = createZipBlob(
+      downloadZip(
         files.map((file) => ({
           name: file.filename,
           content: file.csv,
         })),
+        buildDownloadFileName("pcready-full-export", "zip", { dated: true }),
       );
-      const date = new Date().toISOString().slice(0, 10);
-      downloadBlob(zipBlob, `pcready_full_export_${date}.zip`);
       toast.success("Export completo generato");
     } catch (error) {
       toast.error(getAdminErrorMessage(error, "Export dati non riuscito"));

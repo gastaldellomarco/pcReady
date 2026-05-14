@@ -16,10 +16,12 @@ import {
   DashboardAreaSpark,
   DashboardAreaSparkMulti,
 } from "@/components/dashboard/DashboardStatWidgets";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
 import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
+import { buildDownloadFileName } from "@/lib/downloads";
 import {
   TrendingUp,
   Activity,
@@ -27,7 +29,6 @@ import {
   Clock,
   CircleCheck,
   ArrowRight,
-  CalendarDays,
 } from "lucide-react";
 
 const AnalyticsCard = lazy(() =>
@@ -136,22 +137,14 @@ function DashboardPage() {
           <h3 className="text-sm font-semibold">Panoramica dispositivi & ticket</h3>
           <div className="text-xs text-text3">Trend e widget di riepilogo filtrati per periodo</div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-text3" />
-          <input
-            className="pc-input pc-input-sm"
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-          />
-          <span className="text-[12px] text-text3">→</span>
-          <input
-            className="pc-input pc-input-sm"
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-          />
-        </div>
+        <DateRangePicker
+          from={dateFrom}
+          to={dateTo}
+          onChange={(from, to) => {
+            setDateFrom(from);
+            setDateTo(to);
+          }}
+        />
       </div>
 
       <Suspense
@@ -177,7 +170,7 @@ function DashboardPage() {
                 periodLabel={periodLabel}
                 organizationName={org}
               />,
-              "dashboard-report.pdf",
+              buildDownloadFileName("pcready-dashboard-report", "pdf", { dated: true }),
             );
           }}
           onDownloadCsv={() => analytics && downloadAnalyticsCsv(analytics)}
