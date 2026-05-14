@@ -353,6 +353,7 @@ export type Database = {
           portal_enabled: boolean
           updated_at: string
           vat_number: string | null
+          website_url: string | null
         }
         Insert: {
           address?: string | null
@@ -367,6 +368,7 @@ export type Database = {
           portal_enabled?: boolean
           updated_at?: string
           vat_number?: string | null
+          website_url?: string | null
         }
         Update: {
           address?: string | null
@@ -381,6 +383,7 @@ export type Database = {
           portal_enabled?: boolean
           updated_at?: string
           vat_number?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }

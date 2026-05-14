@@ -14,6 +14,8 @@ export const AUDIT_ACTIONS = {
   OAUTH_CLIENT_CREATED: "oauth.client_created",
   AUTOMATION_TRIGGERED: "automation.triggered",
   AUTOMATION_FAILED: "automation.failed",
+  PORTAL_LINK_GENERATED: "portal.link_generated",
+  PORTAL_LINK_REVOKED: "portal.link_revoked",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

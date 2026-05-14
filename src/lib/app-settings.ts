@@ -125,7 +125,9 @@ export const getSupportContact = createServerFn({ method: "GET" }).handler(async
 export function setClientAppSettings(settings: Partial<AppSettings>) {
   try {
     (globalThis as any).__APP_SETTINGS__ = settings;
-  } catch {}
+  } catch {
+    // Ignore environments where globalThis is not writable.
+  }
 }
 
 export function getClientAppSettings(): AppSettings {

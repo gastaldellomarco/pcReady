@@ -5,7 +5,9 @@ import { useServerFn } from "@tanstack/react-start";
 // Ensure a safe global fallback so accidental bare references don't crash rendering
 try {
   (globalThis as any).organizationName = (globalThis as any).__APP_SETTINGS__?.organization_name ?? "PCReady";
-} catch {}
+} catch {
+  // Ignore environments where globalThis is not writable.
+}
 import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
 import { useTheme } from "@/hooks/use-theme";
@@ -24,6 +26,7 @@ import {
   Plus,
   Terminal,
   Users,
+  UserRound,
   Menu,
   Building2,
   BookOpenText,
@@ -98,6 +101,7 @@ const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
       { to: "/automations", label: "Automazioni", icon: Zap },
       { to: "/scripts", label: "Script", icon: Terminal },
       { to: "/clients", label: "Clienti", icon: Building2 },
+      { to: "/contacts", label: "Referenti", icon: UserRound },
       { to: "/inventory", label: "Inventario", icon: Boxes },
       { to: "/docs", label: "API Docs", icon: BookOpenText, requiredRoles: ["admin", "tech"] },
       { to: "/admin", label: "Admin / Utenti", icon: Users, requiredRoles: ["admin"] },
@@ -156,6 +160,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/automations": "Automazioni",
   "/scripts": "Script",
   "/clients": "Clienti",
+  "/contacts": "Referenti",
   "/inventory": "Inventario",
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",
@@ -188,7 +193,9 @@ function AppLayout() {
         setClientAppSettings(s || {});
         try {
           (globalThis as any).organizationName = org || "PCReady";
-        } catch {}
+        } catch {
+          // Ignore environments where globalThis is not writable.
+        }
       })
       .catch(() => {});
   }, [loadSettings, session?.access_token]);

@@ -7,6 +7,20 @@ export const ClientSchema = z.object({
   fiscal_code: optionalTrimmed(),
   email: z.string().email("Email non valida").nullable().optional(),
   phone: optionalTrimmed(),
+  website_url: z
+    .string()
+    .trim()
+    .transform((value) => (value === "" ? null : value))
+    .nullable()
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }, "URL sito web non valido"),
   address: optionalTrimmed(),
   notes: optionalTrimmed(),
 });
