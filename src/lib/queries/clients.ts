@@ -317,14 +317,14 @@ export function useCreateContact() {
 
 export function useUpdateContact() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, clientId, payload }: { id: string; clientId?: string; payload: Record<string, any> }) => updateContact(id, payload), onSuccess: (_res, vars) => {
+  return useMutation({ mutationFn: ({ id, clientId: _clientId, payload }: { id: string; clientId?: string; payload: Record<string, any> }) => updateContact(id, payload), onSuccess: (_res, vars) => {
       if (vars.clientId) qc.invalidateQueries({ queryKey: ['clients', vars.clientId, 'contacts'] });
     } });
 }
 
 export function useDeleteContact() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, clientId }: { id: string; clientId?: string }) => deleteContact(id), onSuccess: (_res, vars) => {
+  return useMutation({ mutationFn: ({ id, clientId: _clientId }: { id: string; clientId?: string }) => deleteContact(id), onSuccess: (_res, vars) => {
       if (vars.clientId) qc.invalidateQueries({ queryKey: ['clients', vars.clientId, 'contacts'] });
     } });
 }

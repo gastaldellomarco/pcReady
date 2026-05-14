@@ -7,11 +7,10 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { validateOAuthRequest, grantConsent, denyConsent, type OAuthValidationResult } from "@/lib/oauth-consent";
-import { getScopeLabel, getScopeDescription, type OAuthScope } from "@/lib/oauth-scopes";
+import { getScopeLabel, getScopeDescription } from "@/lib/oauth-scopes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
 const searchSchema = z.object({
   client_id: z.string(),

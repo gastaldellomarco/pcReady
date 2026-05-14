@@ -1,11 +1,8 @@
-import React from "react";
-import { fmtDateTime } from "@/lib/pcready";
-
 export default function ReviewStep({
   name,
   description,
   trigger,
-  conditions,
+  conditions: _conditions,
   actions,
   schedule,
   summary,

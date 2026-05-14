@@ -3,7 +3,6 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/dashboard";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
@@ -62,7 +61,6 @@ function DashboardPage() {
   const [tickets, setTickets] = useState<T[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
-  const [recentDevices, setRecentDevices] = useState<any[]>([]);
   const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<any[]>([]);
   const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
   const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
@@ -99,7 +97,6 @@ function DashboardPage() {
       setTickets(snap.data.tickets as T[]);
       setLogs(snap.data.logs as Log[]);
       setDevices(snap.data.devices as any[]);
-      setRecentDevices(snap.data.recentDevices as any[]);
       setDevicesWithoutTicket(snap.data.devicesWithoutTicket as any[]);
       setTicketsWithoutDeviceCount(snap.data.ticketsWithoutDeviceCount ?? 0);
       setActiveClientsCount(snap.data.activeClientsCount ?? 0);
@@ -128,15 +125,6 @@ function DashboardPage() {
   }, [counts.pending, setPendingCount]);
 
   const total = tickets.length;
-  const pipelineSteps: { label: string; status?: TicketStatus }[] = [
-    { label: "Richiesta" },
-    { label: "Assegnaz." },
-    { label: "Setup OS", status: "in-progress" },
-    { label: "Software", status: "in-progress" },
-    { label: "Test", status: "testing" },
-    { label: "QA", status: "testing" },
-    { label: "Pronto", status: "ready" },
-  ];
 
   return (
     <div className="flex flex-col gap-5">

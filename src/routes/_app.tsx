@@ -46,7 +46,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -356,7 +355,7 @@ function SidebarContent({
   pendingCount,
   navigationGroups,
   theme,
-  isDark,
+  isDark: _isDark,
   onSetTheme,
   onNavigate,
   onSignOut,

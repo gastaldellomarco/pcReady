@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { errorMessage, ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/checklist";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";

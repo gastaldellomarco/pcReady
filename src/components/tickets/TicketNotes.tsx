@@ -1,5 +1,5 @@
 import { MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
@@ -17,12 +17,6 @@ interface TicketNote {
   author?: { full_name: string; initials: string } | null;
 }
 
-interface TicketNoteAuthor {
-  id: string;
-  full_name: string;
-  initials: string;
-}
-
 export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChanged?: () => void }) {
   const { user, canEdit } = useAuth();
   const notesQuery = useTicketNotes(ticketId);
@@ -31,8 +25,6 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
   const [content, setContent] = useState("");
   const [isInternal, setIsInternal] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {}, [notesQuery.data]);
 
   async function addNote(event: React.FormEvent) {
     event.preventDefault();

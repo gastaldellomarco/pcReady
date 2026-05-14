@@ -51,7 +51,7 @@ export async function completeTicket(params: {
   changedBy: string;
   accessToken?: string;
 }): Promise<{ success: boolean; pdfUrl?: string; error?: string }> {
-  const { ticketId, changedBy } = params;
+  const { ticketId } = params;
 
   try {
     // Fetch ticket data
@@ -105,7 +105,7 @@ export async function completeTicket(params: {
 
     // Upload to Supabase Storage
     const pdfPath = `completions/${ticketData.ticket_code}-${Date.now()}.pdf`;
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from("ticket-documents")
       .upload(pdfPath, pdfBuffer, {
         contentType: "application/pdf",

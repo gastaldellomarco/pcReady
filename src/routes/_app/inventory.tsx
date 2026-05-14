@@ -46,10 +46,6 @@ interface Row {
   assigned_to: string | null;
 }
 
-interface AssignmentDeviceRow {
-  device_id: string | null;
-}
-
 type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
 
 const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }> = {

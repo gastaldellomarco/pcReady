@@ -1,7 +1,6 @@
 "use server";
 
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { OAuthScope } from "@/lib/oauth-scopes";
 

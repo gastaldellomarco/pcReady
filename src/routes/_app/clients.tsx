@@ -3,7 +3,7 @@ import { ListSkeleton } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,7 +25,6 @@ import {
   CheckCircle2,
   Copy,
   Download,
-  FileDown,
   FileUp,
   HardDrive,
   Link2,
@@ -36,10 +35,7 @@ import {
   Star,
   Trash2,
   Ticket,
-  Upload,
   Users,
-  UserRound,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePortalAccessLink, revokePortalAccessLink } from "@/lib/portal-auth";
@@ -193,7 +189,6 @@ function ClientsPage() {
   const [q, setQ] = useState("");
   const [listFilter, setListFilter] = useState<ClientListFilter>("all");
   const [activeTab, setActiveTab] = useState<ClientTab>("info");
-  const [exportBusy, setExportBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [contactImportOpen, setContactImportOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -228,7 +223,6 @@ function ClientsPage() {
     useContactPortalAccess,
     useClientTickets,
     useClientDevices,
-    fetchAllClientsForExport,
   } = queries as any;
   const listQuery = useClientsList({ q, page, pageSize: PAGE_SIZE });
   const {
@@ -327,7 +321,6 @@ function ClientsPage() {
   }, [selectedId, clients, clientForm, contactsQuery.data]);
 
   const selected = clients.find((c) => c.id === selectedId) || null;
-  const editingContact = contacts.find((contact) => contact.id === editingContactId) || null;
   const stats = (statsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientStats>;
   const selectedStats = selected?.id
     ? stats[selected.id] ?? { openTickets: 0, devices: 0, contacts: contacts.length, portalActive: false }
@@ -414,40 +407,6 @@ function ClientsPage() {
       setBusy(false);
     }
   });
-
-  async function deleteClient() {
-    if (!selected || !canDelete) return toast.error("Solo admin puo' eliminare clienti");
-    await deleteClientMut.mutateAsync(selected.id);
-    toast.success("Cliente eliminato");
-    setSelectedId(null);
-  }
-
-  async function bulkDelete() {
-    if (!canDelete) return toast.error("Solo admin puo' eliminare clienti");
-    const ids = Array.from(selectedIds);
-    if (!ids.length) return toast.error("Seleziona almeno un cliente");
-    await bulkDeleteMut.mutateAsync(ids);
-    toast.success(`${ids.length} clienti eliminati`);
-    if (selectedId && selectedIds.has(selectedId)) {
-      setSelectedId(null);
-    }
-    setSelectedIds(new Set());
-  }
-
-  async function exportCsv() {
-    setExportBusy(true);
-    try {
-      const { fetchAllClientsForExport } = queries as any;
-      const allClients = await fetchAllClientsForExport();
-      if (!allClients.length) return toast.error("Nessun cliente da esportare");
-      downloadClientsCsv(allClients);
-      toast.success("CSV clienti esportato");
-    } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione CSV"));
-    } finally {
-      setExportBusy(false);
-    }
-  }
 
   function toggleSelected(id: string, checked: boolean) {
     setSelectedIds((current) => {
@@ -1945,24 +1904,7 @@ function normalizeOptionalUrl(value: string) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-function cleanSearchTerm(value: string) {
-  return value.trim().replace(/[,%]/g, "");
-}
-
 // fetchAllClientsForExport moved to queries/clients
-
-function downloadClientsCsv(clients: ClientRow[]) {
-  const headers = ["Nome", "Azienda", "P.IVA", "Email", "Telefono", "Indirizzo"];
-  const rows = clients.map((c) => [
-    c.name,
-    c.company_name ?? "",
-    c.vat_number ?? "",
-    c.email ?? "",
-    c.phone ?? "",
-    c.address ?? "",
-  ]);
-  downloadCsv([headers, ...rows], `clienti_${new Date().toISOString().slice(0, 10)}.csv`);
-}
 
 function downloadCsv(rows: string[][], filename: string) {
   const csv = rows

@@ -57,10 +57,6 @@ export const Route = createFileRoute("/_app/automations")({
 
 const CATEGORY_OPTIONS = ["Generale", "Notifica", "Stato", "Schedulazione"];
 
-function getShortSummary(rule: AutomationRule) {
-  return `${rule.name}${rule.category ? ` — ${rule.category}` : ""}`;
-}
-
 function RuleCard({
   rule,
   isAdmin,
@@ -253,13 +249,11 @@ function AutomationsPage() {
   const [dryRunDialogOpen, setDryRunDialogOpen] = useState(false);
   const [runningRuleId, setRunningRuleId] = useState<string | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [loadingRules, setLoadingRules] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
-  const [saving, setSaving] = useState(false);
   const [AutomationBuilderComp, setAutomationBuilderComp] = useState<any>(null);
   const [guidedMode, setGuidedMode] = useState(true);
   const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
@@ -272,6 +266,7 @@ function AutomationsPage() {
   const duplicateMut = useDuplicateAutomation();
   const archiveMut = useArchiveAutomation();
   const toggleMut = useToggleAutomation();
+  const loadingRules = listQuery.isLoading;
 
   useEffect(() => {
     if (listQuery.data) {
@@ -347,9 +342,7 @@ function AutomationsPage() {
 
   async function saveWizardFlow(flow: any) {
     if (!isAdmin) return toast.error("Solo amministratori");
-    setSaving(true);
-    try {
-      function uid(prefix = "n") {
+    function uid(prefix = "n") {
         if (typeof crypto !== "undefined" && (crypto as any).randomUUID)
           return (crypto as any).randomUUID();
         return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -444,11 +437,6 @@ function AutomationsPage() {
               : JSON.stringify(err);
         toast.error(userMsg || 'Errore salvataggio');
       }
-    } catch (err) {
-      // handled above
-    } finally {
-      setSaving(false);
-    }
   }
 
   async function duplicateRule(rule: AutomationRule) {

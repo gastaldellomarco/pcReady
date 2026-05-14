@@ -8,7 +8,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AppSettingsSchema,
-  type AppSettingsInput,
   AdminUserInviteSchema,
   type AdminUserInviteInput,
   OAuthClientSchema,

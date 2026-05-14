@@ -1,4 +1,3 @@
-import React from "react";
 
 function uid(prefix = 'c') {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;

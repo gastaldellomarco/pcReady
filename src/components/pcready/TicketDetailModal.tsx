@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
-import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
@@ -29,6 +28,7 @@ import { TicketNotes } from "@/components/tickets/TicketNotes";
 import { sendChecklistCompletedEmail } from "@/lib/email-events";
 import activityQueries from "@/lib/queries/activity";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { parseChecklistStructure } from "@/types/checklist-structure";
 
 interface TicketRow {
   id: string;
@@ -64,16 +64,6 @@ interface AssignmentRow {
   device?: { model: string; serial: string | null } | null;
 }
 
-interface HistoryRow {
-  id: string;
-  action: string;
-  occurred_at: string;
-  actor_id: string | null;
-  notes: string | null;
-  device?: { model: string; serial: string | null } | null;
-  changed_fields?: Json | null;
-}
-
 export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
   const { canEdit, isAdmin, user, session } = useAuth();
@@ -81,14 +71,12 @@ export function TicketDetailModal() {
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
   useTickets();
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
-  const [historyEntries, setHistoryEntries] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<string>("");
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { useTicketQuery, useTicketAssignmentsQuery, useTicketHistoryQuery, useUpdateTicket, useDeleteTicket } = queries as any;
+  const { useTicketQuery, useTicketAssignmentsQuery, useUpdateTicket, useDeleteTicket } = queries as any;
   const ticketQuery = useTicketQuery(id);
   const assignmentsQuery = useTicketAssignmentsQuery(id);
-  const historyQuery = useTicketHistoryQuery(id);
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
   const insertActivity = activityQueries.insertActivity as any;
@@ -99,17 +87,12 @@ export function TicketDetailModal() {
     if (assignmentsQuery.data) setAssignments(assignmentsQuery.data as AssignmentRow[]);
   }, [assignmentsQuery.data]);
 
-  useEffect(() => {
-    if (historyQuery.data) setHistoryEntries(historyQuery.data as HistoryRow[]);
-  }, [historyQuery.data]);
-
   if (!id || ticketQuery.isLoading || !ticketQuery.data) return null;
   const ticket = ticketQuery.data as TicketRow;
-  const struct: ChecklistStructure = (
+  const struct: ChecklistStructure =
     ticket.checklist_structure && Object.keys(ticket.checklist_structure).length
-      ? ticket.checklist_structure
-      : DEFAULT_STRUCTURE
-  ) as ChecklistStructure;
+      ? parseChecklistStructure(ticket.checklist_structure)
+      : DEFAULT_STRUCTURE;
   const tabKeys = Object.keys(struct);
   const currentTab = tab && struct[tab] ? tab : tabKeys[0];
   const asset = assetInfo(ticket);

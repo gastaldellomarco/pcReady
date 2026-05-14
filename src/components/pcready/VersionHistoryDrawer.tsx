@@ -91,7 +91,7 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRe
       toast.success("Versione ripristinata");
       onClose();
       onRestored?.();
-    } catch (error) {
+    } catch (_error) {
       toast.error("Errore ripristino versione");
     } finally {
       setRestoringVersion(null);

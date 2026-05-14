@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";

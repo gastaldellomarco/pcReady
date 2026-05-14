@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

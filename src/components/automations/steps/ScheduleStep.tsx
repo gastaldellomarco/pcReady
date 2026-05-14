@@ -1,4 +1,3 @@
-import React from "react";
 
 export default function ScheduleStep({ value, onChange }: { value: any; onChange: (v: any) => void }) {
   return (

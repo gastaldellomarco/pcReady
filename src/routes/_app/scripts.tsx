@@ -119,7 +119,6 @@ function ScriptsPage() {
   const [viewer, setViewer] = useState<ScriptRow | null>(null);
   const [editor, setEditor] = useState<ScriptRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [refresh, setRefresh] = useState(0);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ScriptRow | null>(null);
@@ -273,7 +272,7 @@ function ScriptsPage() {
           onSaved={() => {
             setEditor(null);
             setCreateOpen(false);
-            setRefresh((x) => x + 1);
+            void listQuery.refetch();
           }}
         />
       )}
@@ -283,7 +282,7 @@ function ScriptsPage() {
         entityId={selectedScriptId || ""}
         open={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
-        onRestored={() => setRefresh((x) => x + 1)}
+        onRestored={() => void listQuery.refetch()}
       />
       <DestructiveConfirmDialog
         open={!!deleteTarget}

@@ -134,8 +134,7 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
             const meta = STATUS_META[status];
             const isCompleted = completedStatuses.has(status);
             const isCurrent = status === effectiveCurrentStatus;
-            const isFuture = !reachedStatuses.has(status);
-            
+
             return (
               <div key={status} className="flex items-center">
                 <span

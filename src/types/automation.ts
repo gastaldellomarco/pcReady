@@ -1,17 +1,24 @@
 import { z } from "zod";
 
+/** Contenuto JSON `automation_flows.flow_definition` (nodi React Flow + meta wizard). */
 const AutomationFlowDefinitionSchema = z
   .object({
+    nodes: z.array(z.record(z.string(), z.unknown())).optional(),
+    edges: z.array(z.record(z.string(), z.unknown())).optional(),
     meta: z
       .object({
         archived: z.boolean().optional(),
         paused: z.boolean().optional(),
         wizard: z.record(z.unknown()).optional(),
+        summary: z.string().optional(),
+        migrated_at: z.string().optional(),
       })
       .catchall(z.unknown())
       .optional(),
   })
   .catchall(z.unknown());
+
+export type AutomationFlowDefinition = z.infer<typeof AutomationFlowDefinitionSchema>;
 
 export const AutomationRuleSchema = z.object({
   id: z.string(),

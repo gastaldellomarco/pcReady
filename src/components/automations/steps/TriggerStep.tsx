@@ -1,4 +1,3 @@
-import React from "react";
 
 export default function TriggerStep({ value, onChange }: { value: any; onChange: (v: any) => void }) {
   return (

@@ -1,22 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
+import type { ChecklistStructure } from '@/lib/pcready';
+import { parseChecklistStructure } from '@/types/checklist-structure';
 
 export interface ChecklistTemplateRow {
   id: string;
   name: string;
   description: string | null;
-  structure: any;
+  structure: ChecklistStructure;
   is_default: boolean;
 }
 
-export async function fetchChecklistTemplates() {
+type ChecklistTemplateDbRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  structure: Json;
+  is_default: boolean;
+};
+
+export async function fetchChecklistTemplates(): Promise<ChecklistTemplateRow[]> {
   const { data, error } = await supabase
     .from('checklist_templates')
     .select('id, name, description, structure, is_default')
     .order('is_default', { ascending: false })
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []) as ChecklistTemplateRow[];
+  return ((data ?? []) as ChecklistTemplateDbRow[]).map((row) => ({
+    ...row,
+    structure: parseChecklistStructure(row.structure),
+  }));
 }
 
 export function useChecklistTemplates() {
@@ -30,7 +44,8 @@ async function createTemplate(payload: Record<string, any>) {
     .select('id, name, description, structure, is_default')
     .single();
   if (error) throw error;
-  return data as ChecklistTemplateRow;
+  const row = data as ChecklistTemplateDbRow;
+  return { ...row, structure: parseChecklistStructure(row.structure) };
 }
 
 async function updateTemplate(id: string, patch: Record<string, any>) {

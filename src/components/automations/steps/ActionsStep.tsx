@@ -1,4 +1,3 @@
-import React from "react";
 import { NOTIFICATION_TYPES } from "@/lib/notifications";
 
 function uid(prefix = "a") {

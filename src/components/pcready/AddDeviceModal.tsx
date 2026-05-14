@@ -6,7 +6,6 @@ import { DeviceSchema, type DeviceInput } from "@/lib/schemas/devices";
 import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
 import { getPublicAppSettings } from "@/lib/app-settings";
-import { supabase } from "@/integrations/supabase/client";
 import clientQueries from "@/lib/queries/clients";
 import activityQueries from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";

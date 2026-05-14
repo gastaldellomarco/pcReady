@@ -20,7 +20,6 @@ const {
   fetchDeviceById,
 } = queries;
 import activityQueries from "@/lib/queries/activity";
-const { useAddTicketStatusHistory } = queries as any;
 const insertActivity = activityQueries.insertActivity as any;
 import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
@@ -455,12 +454,6 @@ function contactName(c: ContactOpt) {
 type ClientOption = AsyncAutocompleteOption & { client: ClientOpt };
 type ContactOption = AsyncAutocompleteOption & { contact: ContactOpt };
 type DeviceOption = AsyncAutocompleteOption & { device: DeviceOpt };
-
-function cleanSearchTerm(value: string) {
-  return value.trim().replace(/[,%]/g, "");
-}
-
-
 
 function clientOption(client: ClientOpt): ClientOption {
   return {

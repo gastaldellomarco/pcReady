@@ -57,28 +57,28 @@ export const getEmailTemplate = createServerFn({ method: "POST" })
   });
 
 export const updateEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof TemplateUpdateSchema>) => data)
+  .inputValidator((data: unknown) => TemplateUpdateSchema.parse(data))
   .handler(async ({ data }) => {
     const { updateEmailTemplateServer } = await import("@/lib/email-templates.server");
     return updateEmailTemplateServer(data);
   });
 
 export const sendTestEmail = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof TestEmailSchema>) => data)
+  .inputValidator((data: unknown) => TestEmailSchema.parse(data))
   .handler(async ({ data }) => {
     const { sendTestEmailServer } = await import("@/lib/email-templates.server");
     return sendTestEmailServer(data);
   });
 
 export const createDefaultEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof CreateTemplateSchema>) => data)
+  .inputValidator((data: unknown) => CreateTemplateSchema.parse(data))
   .handler(async ({ data }) => {
     const { createDefaultEmailTemplateServer } = await import("@/lib/email-templates.server");
     return createDefaultEmailTemplateServer(data);
   });
 
 export const resetEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof CreateTemplateSchema>) => data)
+  .inputValidator((data: unknown) => CreateTemplateSchema.parse(data))
   .handler(async ({ data }) => {
     const { resetEmailTemplateServer } = await import("@/lib/email-templates.server");
     return resetEmailTemplateServer(data);
