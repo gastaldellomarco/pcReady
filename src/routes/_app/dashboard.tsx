@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
-import queries from "@/lib/queries/dashboard";
+import {
+  useDashboardSnapshot,
+  type DashboardDeviceRow,
+  type DashboardLogRow,
+  type DashboardTicketRow,
+} from "@/lib/queries/dashboard";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
@@ -24,6 +29,7 @@ import {
   ArrowRight,
   CalendarDays,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const AnalyticsCard = lazy(() =>
   import("@/components/dashboard/AnalyticsCard").then((module) => ({
@@ -46,33 +52,16 @@ export const Route = createFileRoute("/_app/dashboard")({
   pendingComponent: () => <LoadingSkeleton />,
 });
 
-interface T {
-  id: string;
-  ticket_code: string;
-  client: string;
-  status: TicketStatus;
-  created_at: string;
-  device?: { model: string; serial: string | null } | null;
-  assignee?: { full_name: string; initials: string } | null;
-}
-interface Log {
-  id: string;
-  type: string;
-  message: string;
-  created_at: string;
-  actor?: { full_name?: string; initials?: string } | null;
-}
-
 function DashboardPage() {
   const { setPendingCount } = useTickets();
   const { session } = useAuth();
   const loadAnalytics = useServerFn(getDashboardAnalytics);
   const loadSettings = useServerFn(getPublicAppSettings);
   const defaultRange = useMemo(() => defaultDateRange(), []);
-  const [tickets, setTickets] = useState<T[]>([]);
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [devices, setDevices] = useState<any[]>([]);
-  const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<DashboardTicketRow[]>([]);
+  const [logs, setLogs] = useState<DashboardLogRow[]>([]);
+  const [devices, setDevices] = useState<DashboardDeviceRow[]>([]);
+  const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<DashboardDeviceRow[]>([]);
   const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
   const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
   const [dateFrom, setDateFrom] = useState(defaultRange.from);
@@ -107,23 +96,41 @@ function DashboardPage() {
     [range.from, range.to],
   );
 
-  const { useDashboardSnapshot } = queries as any;
   const snap = useDashboardSnapshot({ from: range.from, to: range.to });
   const refetchDashboard = snap.refetch;
+  const lastSnapshotError = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (snap.isSuccess) lastSnapshotError.current = null;
+  }, [snap.isSuccess]);
+
+  useEffect(() => {
+    if (!snap.isError || !snap.error) return;
+    const msg = snap.error instanceof Error ? snap.error.message : String(snap.error);
+    if (lastSnapshotError.current === msg) return;
+    lastSnapshotError.current = msg;
+    toast.error("Errore nel caricamento della dashboard", { description: msg });
+  }, [snap.isError, snap.error]);
 
   useEffect(() => {
     if (snap.data) {
-      setTickets(snap.data.tickets as T[]);
-      setLogs(snap.data.logs as Log[]);
-      setDevices(snap.data.devices as any[]);
-      setDevicesWithoutTicket(snap.data.devicesWithoutTicket as any[]);
+      setTickets(snap.data.tickets);
+      setLogs(snap.data.logs);
+      setDevices(snap.data.devices);
+      setDevicesWithoutTicket(snap.data.devicesWithoutTicket);
       setTicketsWithoutDeviceCount(snap.data.ticketsWithoutDeviceCount ?? 0);
       setActiveClientsCount(snap.data.activeClientsCount ?? 0);
     }
   }, [snap.data]);
 
   useEffect(() => {
-    const tables = ["tickets", "devices", "clients", "activity_log"] as const;
+    const tables = [
+      "tickets",
+      "devices",
+      "clients",
+      "activity_log",
+      "ticket_device_assignments",
+    ] as const;
     const channel = supabase.channel(`dashboard-kpi:${range.from}:${range.to}`);
     const onChange = () => {
       void refetchDashboard();
@@ -408,7 +415,7 @@ function DashboardPage() {
                       <div className="text-[11px] text-text3">{t.client}</div>
                     </td>
                     <td className="px-[14px] py-[10px]">
-                      <StatusBadge status={t.status} />
+                      <StatusBadge status={t.status as TicketStatus} />
                     </td>
                     <td className="px-[14px] py-[10px]">
                       <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />
@@ -644,7 +651,7 @@ function Donut({
   );
 }
 
-function deviceLabel(ticket: T) {
+function deviceLabel(ticket: DashboardTicketRow) {
   return ticket.device?.model || "Nessun asset";
 }
 
@@ -708,17 +715,18 @@ function csvCell(value: string | number) {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function computeDailyCounts(
-  items: any[],
-  dateKey: string,
+function computeDailyCounts<T extends { created_at: string }>(
+  items: T[],
+  dateKey: keyof T & string,
   days = 14,
-  filter?: (it: any) => boolean,
+  filter?: (it: T) => boolean,
 ) {
   const res = new Array(days).fill(0);
   const now = new Date();
   for (const it of items) {
     if (filter && !filter(it)) continue;
-    const d = new Date(it[dateKey]);
+    const raw = it[dateKey];
+    const d = new Date(typeof raw === "string" ? raw : String(raw));
     if (isNaN(d.getTime())) continue;
     const diff = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
     if (diff >= 0 && diff < days) {

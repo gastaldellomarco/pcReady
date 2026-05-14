@@ -1,12 +1,82 @@
 import { useQuery } from "@tanstack/react-query";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 export type DashboardRange = { from: string; to: string };
 
-export async function fetchDashboardSnapshot(range: DashboardRange) {
+type ProfilesEmbed = Pick<Database["public"]["Tables"]["profiles"]["Row"], "full_name" | "initials">;
+
+export type DashboardDeviceRow = Pick<
+  Database["public"]["Tables"]["devices"]["Row"],
+  "id" | "model" | "serial" | "created_at" | "status" | "client_id" | "assigned_to"
+>;
+
+export type DashboardTicketRow = Pick<
+  Database["public"]["Tables"]["tickets"]["Row"],
+  "id" | "ticket_code" | "client" | "status" | "created_at"
+> & {
+  device: { model: string; serial: string | null } | null;
+  assignee: ProfilesEmbed | null;
+};
+
+export type DashboardLogRow = Pick<
+  Database["public"]["Tables"]["activity_log"]["Row"],
+  "id" | "type" | "message" | "created_at"
+> & {
+  actor: ProfilesEmbed | null;
+};
+
+export type DashboardAssignmentRow = Pick<
+  Database["public"]["Tables"]["ticket_device_assignments"]["Row"],
+  "device_id"
+>;
+
+export type DashboardSnapshot = {
+  tickets: DashboardTicketRow[];
+  logs: DashboardLogRow[];
+  devices: DashboardDeviceRow[];
+  recentDevices: DashboardDeviceRow[];
+  devicesWithoutTicket: DashboardDeviceRow[];
+  ticketsWithoutDeviceCount: number;
+  activeClientsCount: number;
+};
+
+const DEVICE_PAGE_SIZE = 1000;
+const DEVICE_FETCH_CAP = 100_000;
+
+function throwIfError(context: string, error: PostgrestError | null): void {
+  if (error) {
+    throw new Error(`${context}: ${error.message}`);
+  }
+}
+
+async function fetchDevicesInRange(from: string, to: string): Promise<DashboardDeviceRow[]> {
+  const out: DashboardDeviceRow[] = [];
+  let offset = 0;
+  for (;;) {
+    const res = await supabase
+      .from("devices")
+      .select("id, model, serial, created_at, status, client_id, assigned_to")
+      .gte("created_at", from)
+      .lte("created_at", to)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + DEVICE_PAGE_SIZE - 1);
+    throwIfError("devices", res.error);
+    const chunk: DashboardDeviceRow[] = (res.data ?? []) as DashboardDeviceRow[];
+    out.push(...chunk);
+    if (chunk.length < DEVICE_PAGE_SIZE) break;
+    offset += DEVICE_PAGE_SIZE;
+    if (offset >= DEVICE_FETCH_CAP) break;
+  }
+  return out;
+}
+
+export async function fetchDashboardSnapshot(range: DashboardRange): Promise<DashboardSnapshot> {
   const from = range.from;
   const to = range.to;
-  const [tRes, lRes, dRes, aRes] = await Promise.all([
+
+  const [tRes, lRes, aRes] = await Promise.all([
     supabase
       .from("tickets")
       .select(
@@ -24,35 +94,32 @@ export async function fetchDashboardSnapshot(range: DashboardRange) {
       .lte("created_at", to)
       .order("created_at", { ascending: false })
       .limit(6),
-    supabase
-      .from("devices")
-      .select("id, model, serial, created_at, status, client_id, assigned_to")
-      .gte("created_at", from)
-      .lte("created_at", to)
-      .order("created_at", { ascending: false })
-      .limit(200),
     supabase.from("ticket_device_assignments").select("device_id").is("unassigned_at", null),
   ]);
 
-  const t = (tRes as any).data ?? [];
-  const l = (lRes as any).data ?? [];
-  const d = (dRes as any).data ?? [];
-  const a = (aRes as any).data ?? [];
+  throwIfError("tickets", tRes.error);
+  throwIfError("activity_log", lRes.error);
+  throwIfError("ticket_device_assignments", aRes.error);
 
-  const assignedIds = new Set((a as any[]).map((r) => r.device_id));
-  const devices = d as any[];
+  const devices = await fetchDevicesInRange(from, to);
+
+  const tickets: DashboardTicketRow[] = (tRes.data ?? []) as DashboardTicketRow[];
+  const logs: DashboardLogRow[] = (lRes.data ?? []) as DashboardLogRow[];
+  const assignments: DashboardAssignmentRow[] = (aRes.data ?? []) as DashboardAssignmentRow[];
+
+  const assignedIds = new Set(assignments.map((r) => r.device_id));
   const recentDevices = devices.slice(0, 6);
   const devicesWithoutTicket = devices.filter((dev) => !assignedIds.has(dev.id));
-  const withoutDevice = (t as any[]).filter((tt) => !tt.device).length;
-  const activeClients = new Set((t as any[]).map((tt) => tt.client).filter(Boolean));
+  const ticketsWithoutDeviceCount = tickets.filter((tt) => !tt.device).length;
+  const activeClients = new Set(tickets.map((tt) => tt.client).filter(Boolean));
 
   return {
-    tickets: t,
-    logs: l,
+    tickets,
+    logs,
     devices,
     recentDevices,
     devicesWithoutTicket,
-    ticketsWithoutDeviceCount: withoutDevice,
+    ticketsWithoutDeviceCount,
     activeClientsCount: activeClients.size,
   };
 }
