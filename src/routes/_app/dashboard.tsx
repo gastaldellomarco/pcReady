@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
@@ -77,6 +77,17 @@ function DashboardPage() {
     accessToken: session?.access_token,
     setPendingCount,
   });
+  const priorityCounts = useMemo(
+    () =>
+      tickets.reduce(
+        (acc, ticket) => {
+          acc[ticket.priority] += 1;
+          return acc;
+        },
+        { high: 0, med: 0, low: 0 },
+      ),
+    [tickets],
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -169,6 +180,7 @@ function DashboardPage() {
                 analytics={analytics}
                 periodLabel={periodLabel}
                 organizationName={org}
+                priorityCounts={priorityCounts}
               />,
               buildDownloadFileName("pcready-dashboard-report", "pdf", { dated: true }),
             );

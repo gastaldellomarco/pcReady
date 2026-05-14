@@ -8,6 +8,9 @@ export type HealthStatus = "healthy" | "degraded" | "failing" | "never_run";
 export interface ActionResult {
   action: string;
   status: ActionResultStatus;
+  blockId?: string;
+  blockType?: "trigger" | "condition" | "action";
+  input?: Record<string, any>;
   /** Structured outcome (es. id aggiornati, canale email usato) */
   details?: Record<string, any>;
   result?: any;

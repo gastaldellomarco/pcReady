@@ -61,6 +61,28 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
                         </span>
                       </div>
                       {action.error && <div className="mt-1 text-red-700">{action.error}</div>}
+                      <div className="mt-1 grid gap-1 md:grid-cols-2">
+                        {action.blockId && (
+                          <div className="rounded bg-slate-100 p-1 font-mono text-[11px]">
+                            blocco: {action.blockId}
+                          </div>
+                        )}
+                        {action.blockType && (
+                          <div className="rounded bg-slate-100 p-1 font-mono text-[11px]">
+                            tipo: {action.blockType}
+                          </div>
+                        )}
+                      </div>
+                      {action.input !== undefined && (
+                        <pre className="mt-1 max-h-28 overflow-auto rounded bg-slate-100 p-2 font-mono text-[11px]">
+                          {JSON.stringify(action.input, null, 2)}
+                        </pre>
+                      )}
+                      {action.details !== undefined && (
+                        <pre className="mt-1 max-h-28 overflow-auto rounded bg-slate-100 p-2 font-mono text-[11px]">
+                          {JSON.stringify(action.details, null, 2)}
+                        </pre>
+                      )}
                       {action.result !== undefined && (
                         <pre className="mt-1 max-h-28 overflow-auto rounded bg-slate-100 p-2 font-mono text-[11px]">
                           {JSON.stringify(action.result, null, 2)}

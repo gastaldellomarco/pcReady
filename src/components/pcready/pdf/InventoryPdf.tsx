@@ -1,6 +1,6 @@
 import { Document } from "@react-pdf/renderer";
 import { fmtDate } from "@/lib/pcready";
-import { BrandedPage, PdfTable, StatStrip, type PdfColumn } from "./shared";
+import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
 export type DevicePdfStatus = "available" | "assigned" | "maintenance" | "retired";
@@ -19,8 +19,8 @@ export interface DevicePdfRow {
 const DEVICE_STATUS_META: Record<DevicePdfStatus, { label: string; color: string }> = {
   available: { label: "Disponibile", color: pdfPalette.success },
   assigned: { label: "Assegnato", color: pdfPalette.accent },
-  maintenance: { label: "Manutenzione", color: pdfPalette.warn },
-  retired: { label: "Dismesso", color: pdfPalette.gray },
+  maintenance: { label: "In manutenzione", color: pdfPalette.warn },
+  retired: { label: "Dismesso", color: pdfPalette.danger },
 };
 
 export function InventoryPdf({
@@ -73,10 +73,12 @@ export function InventoryPdf({
             { label: "Disponibili", value: counts.available, color: pdfPalette.success },
             { label: "Assegnati", value: counts.assigned, color: pdfPalette.accent },
             { label: "Manutenzione", value: counts.maintenance, color: pdfPalette.warn },
-            { label: "Dismessi", value: counts.retired, color: pdfPalette.gray },
+            { label: "Dismessi", value: counts.retired, color: pdfPalette.danger },
           ]}
         />
-        <PdfTable rows={rows} columns={columns} />
+        <PdfSection title="Dettaglio dispositivi" meta={`${rows.length} righe`}>
+          <PdfTable rows={rows} columns={columns} />
+        </PdfSection>
       </BrandedPage>
     </Document>
   );
@@ -86,5 +88,5 @@ function statusSoftColor(status: DevicePdfStatus) {
   if (status === "available") return pdfPalette.successSoft;
   if (status === "assigned") return pdfPalette.accentSoft;
   if (status === "maintenance") return pdfPalette.warnSoft;
-  return pdfPalette.graySoft;
+  return pdfPalette.dangerSoft;
 }

@@ -1,6 +1,17 @@
 import { Document } from "@react-pdf/renderer";
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
-import { BrandedPage, PdfTable, StatStrip, type PdfColumn } from "@/components/pcready/pdf/shared";
+import {
+  BrandedPage,
+  ChartGrid,
+  ChartPanel,
+  DonutChart,
+  HorizontalBars,
+  MonthlyBars,
+  PdfSection,
+  PdfTable,
+  StatStrip,
+  type PdfColumn,
+} from "@/components/pcready/pdf/shared";
 import { pdfPalette } from "@/components/pcready/pdf/theme";
 import { formatAvgDays } from "./analytics-format";
 
@@ -8,10 +19,12 @@ export function AnalyticsReportPdf({
   analytics,
   periodLabel,
   organizationName,
+  priorityCounts = { high: 0, med: 0, low: 0 },
 }: {
   analytics: DashboardAnalytics;
   periodLabel: string;
   organizationName?: string;
+  priorityCounts?: { high: number; med: number; low: number };
 }) {
   const monthColumns: PdfColumn<DashboardAnalytics["ticketsByMonth"][number]>[] = [
     { key: "month", label: "Mese", width: "25%", value: (row) => row.label },
@@ -78,11 +91,43 @@ export function AnalyticsReportPdf({
               label: "Tempo medio",
               value: formatAvgDays(analytics.summary.avgDays),
               color: pdfPalette.warn,
+              helper: "risoluzione ticket",
             },
           ]}
         />
-        <PdfTable rows={analytics.ticketsByMonth} columns={monthColumns} />
-        <PdfTable rows={analytics.technicianKpi} columns={techColumns} />
+        <PdfSection title="Andamento e distribuzione" meta={periodLabel}>
+          <ChartGrid>
+            <ChartPanel title="Ticket aperti vs chiusi per mese">
+              <MonthlyBars rows={analytics.ticketsByMonth} />
+            </ChartPanel>
+            <ChartPanel title="Distribuzione priorita ticket">
+              <DonutChart
+                items={[
+                  { label: "Alta", value: priorityCounts.high, color: pdfPalette.danger },
+                  { label: "Media", value: priorityCounts.med, color: pdfPalette.warn },
+                  { label: "Bassa", value: priorityCounts.low, color: pdfPalette.success },
+                ]}
+              />
+            </ChartPanel>
+          </ChartGrid>
+        </PdfSection>
+        <PdfSection title="Performance tecnici" meta="assegnati vs completati">
+          <ChartPanel title="Carico e completamento per tecnico">
+            <HorizontalBars
+              rows={analytics.technicianKpi.map((row) => ({
+                label: row.full_name,
+                assigned: row.assigned,
+                completed: row.completed,
+              }))}
+            />
+          </ChartPanel>
+        </PdfSection>
+        <PdfSection title="Dettaglio mensile" meta={`${analytics.ticketsByMonth.length} periodi`}>
+          <PdfTable rows={analytics.ticketsByMonth} columns={monthColumns} />
+        </PdfSection>
+        <PdfSection title="Dettaglio tecnici" meta={`${analytics.technicianKpi.length} tecnici`}>
+          <PdfTable rows={analytics.technicianKpi} columns={techColumns} />
+        </PdfSection>
       </BrandedPage>
     </Document>
   );

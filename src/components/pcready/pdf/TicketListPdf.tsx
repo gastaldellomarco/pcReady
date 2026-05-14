@@ -8,7 +8,7 @@ import {
   type TicketStatus,
   type TicketType,
 } from "@/lib/pcready";
-import { BrandedPage, PdfTable, StatStrip, type PdfColumn } from "./shared";
+import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
 export interface TicketPdfRow {
@@ -60,7 +60,7 @@ export function TicketListPdf({
       width: 82,
       badge: (row) => ({
         label: STATUS_META[row.status].label,
-        color: STATUS_META[row.status].color,
+        color: statusColor(row.status),
         backgroundColor: statusSoftColor(row.status),
       }),
       value: (row) => STATUS_META[row.status].label,
@@ -88,7 +88,9 @@ export function TicketListPdf({
             { label: "Priorita bassa", value: priorityCounts.low, color: pdfPalette.success },
           ]}
         />
-        <PdfTable rows={rows} columns={columns} />
+        <PdfSection title="Dettaglio ticket" meta={`${rows.length} righe`}>
+          <PdfTable rows={rows} columns={columns} />
+        </PdfSection>
       </BrandedPage>
     </Document>
   );
@@ -111,4 +113,12 @@ function statusSoftColor(status: TicketStatus) {
   if (status === "in-progress") return pdfPalette.accentSoft;
   if (status === "testing") return pdfPalette.purpleSoft;
   return pdfPalette.successSoft;
+}
+
+function statusColor(status: TicketStatus) {
+  if (status === "pending") return pdfPalette.warn;
+  if (status === "in-progress") return pdfPalette.accent;
+  if (status === "testing") return pdfPalette.purple;
+  if (status === "archived") return pdfPalette.gray;
+  return pdfPalette.success;
 }

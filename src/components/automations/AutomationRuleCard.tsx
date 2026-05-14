@@ -21,7 +21,7 @@ import type { AutomationRule } from "@/types/automation";
 import type { AutomationRunLog, AutomationRunStats, HealthStatus } from "@/lib/automation-runs";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 
-function HealthBadge({ health }: { health: HealthStatus }) {
+function HealthBadge({ health, onClick }: { health: HealthStatus; onClick?: () => void }) {
   const cls =
     health === "healthy"
       ? "bg-emerald-100 text-emerald-800"
@@ -38,7 +38,15 @@ function HealthBadge({ health }: { health: HealthStatus }) {
         : health === "failing"
           ? "failing"
           : "never run";
-  return <Badge className={`${cls} border-transparent`}>{label}</Badge>;
+  const badge = <Badge className={`${cls} border-transparent`}>{label}</Badge>;
+  if ((health === "degraded" || health === "failing") && onClick) {
+    return (
+      <button type="button" onClick={onClick} title="Apri ultimo errore">
+        {badge}
+      </button>
+    );
+  }
+  return badge;
 }
 
 export function AutomationRuleCard({
@@ -88,7 +96,7 @@ export function AutomationRuleCard({
             <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
               AUTOMAZIONE
             </Badge>
-            <HealthBadge health={stats?.health ?? "never_run"} />
+            <HealthBadge health={stats?.health ?? "never_run"} onClick={onToggleLogs} />
             <div className="text-sm font-semibold text-foreground">{rule.name}</div>
             <VersionBadge entityType="automation_flows" entityId={rule.id} />
           </div>

@@ -36,6 +36,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
   const idRef = useRef(1);
@@ -89,12 +90,17 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
     [],
   );
 
-  const addNode = (type: "trigger" | "condition" | "action", label: string) => {
+  const addNode = (
+    type: "trigger" | "condition" | "action",
+    label: string,
+    config: Record<string, unknown> = {},
+    actionType?: string,
+  ) => {
     const id = `${idRef.current++}`;
     const newNode: Node = {
       id,
       position: { x: 200 + nodes.length * 10, y: 100 + nodes.length * 80 },
-      data: { label, type },
+      data: { label, type, config, actionType },
       style: { padding: 10, borderRadius: 8 },
     };
     setNodes((n) => n.concat(newNode));
@@ -102,6 +108,12 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
 
   const onNodeClick = useCallback((_: any, node: Node) => {
     setSelectedId(node.id);
+    setSelectedEdgeId(null);
+  }, []);
+
+  const onEdgeClick = useCallback((_: any, edge: Edge) => {
+    setSelectedEdgeId(edge.id);
+    setSelectedId(null);
   }, []);
 
   async function handleSave() {
@@ -140,6 +152,41 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
   }
 
   const selectedNode = nodes.find((n) => n.id === selectedId) ?? null;
+  const selectedEdge = edges.find((edge) => edge.id === selectedEdgeId) ?? null;
+
+  function updateSelectedNodeData(patch: Record<string, unknown>) {
+    if (!selectedNode) return;
+    setNodes((nds) =>
+      nds.map((n) => (n.id === selectedNode.id ? { ...n, data: { ...n.data, ...patch } } : n)),
+    );
+  }
+
+  function updateSelectedNodeConfig(patch: Record<string, unknown>) {
+    if (!selectedNode) return;
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === selectedNode.id
+          ? { ...n, data: { ...n.data, config: { ...(n.data?.config ?? {}), ...patch } } }
+          : n,
+      ),
+    );
+  }
+
+  function updateSelectedEdgeData(patch: Record<string, unknown>) {
+    if (!selectedEdge) return;
+    setEdges((eds) =>
+      eds.map((edge) =>
+        edge.id === selectedEdge.id
+          ? {
+              ...edge,
+              label: patch.branch === "true" ? "True" : patch.branch === "false" ? "False" : "",
+              data: { ...(edge.data ?? {}), ...patch },
+            }
+          : edge,
+      ),
+    );
+  }
+
   return (
     <ReactFlowProvider>
       <div className="grid grid-cols-12 gap-4">
@@ -166,6 +213,22 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               Esecuzione pianificata
             </li>
           </ul>
+          <div className="mt-4 text-sm text-text3">Condizioni</div>
+          <ul className="mt-2 space-y-2">
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("condition", "Condizione", {
+                  field: "priority",
+                  operator: "equals",
+                  value: "high",
+                })
+              }
+            >
+              Se campo / operatore / valore
+            </li>
+          </ul>
           <div className="mt-4 text-sm text-text3">Azioni</div>
           <ul className="mt-2 space-y-2">
             <li
@@ -185,6 +248,29 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               onClick={() => !loading && addNode("action", "Crea ticket")}
             >
               Crea ticket
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("action", "Aspetta", { amount: 1, unit: "hours" }, "delay")
+              }
+            >
+              Aspetta / Delay
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode(
+                  "action",
+                  "Webhook",
+                  { url: "", payload: '{\n  "event": "{{trigger}}"\n}' },
+                  "send_webhook",
+                )
+              }
+            >
+              Webhook HTTP POST
             </li>
           </ul>
         </aside>
@@ -223,6 +309,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeClick={onNodeClick}
+              onEdgeClick={onEdgeClick}
               nodesDraggable={!loading}
               nodesConnectable={!loading}
               elementsSelectable={!loading}
@@ -291,17 +378,109 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                     <Label>Label</Label>
                     <Input
                       value={selectedNode.data?.label ?? ""}
-                      onChange={(e: any) => {
-                        setNodes((nds) =>
-                          nds.map((n) =>
-                            n.id === selectedNode.id
-                              ? { ...n, data: { ...n.data, label: e.target.value } }
-                              : n,
-                          ),
-                        );
-                      }}
+                      onChange={(e: any) => updateSelectedNodeData({ label: e.target.value })}
                       disabled={loading}
                     />
+                  </div>
+                  {selectedNode.data?.type === "condition" && (
+                    <div className="space-y-2 rounded-md border p-2">
+                      <div className="text-xs font-semibold text-text3">Condizione</div>
+                      <Label>Campo payload</Label>
+                      <Input
+                        value={selectedNode.data?.config?.field ?? ""}
+                        onChange={(e: any) => updateSelectedNodeConfig({ field: e.target.value })}
+                        placeholder="priority"
+                        disabled={loading}
+                      />
+                      <Label>Operatore</Label>
+                      <select
+                        className="pc-input"
+                        value={selectedNode.data?.config?.operator ?? "equals"}
+                        onChange={(e) => updateSelectedNodeConfig({ operator: e.target.value })}
+                        disabled={loading}
+                      >
+                        <option value="equals">uguale a</option>
+                        <option value="not_equals">diverso da</option>
+                        <option value="contains">contiene</option>
+                        <option value="exists">esiste</option>
+                        <option value="gt">maggiore di</option>
+                        <option value="lt">minore di</option>
+                      </select>
+                      <Label>Valore</Label>
+                      <Input
+                        value={selectedNode.data?.config?.value ?? ""}
+                        onChange={(e: any) => updateSelectedNodeConfig({ value: e.target.value })}
+                        placeholder="high"
+                        disabled={loading}
+                      />
+                      <div className="text-xs text-text3">
+                        Collega due edge in uscita e seleziona ogni edge per marcarlo True o False.
+                      </div>
+                    </div>
+                  )}
+                  {selectedNode.data?.actionType === "delay" && (
+                    <div className="grid grid-cols-2 gap-2 rounded-md border p-2">
+                      <label className="text-xs">
+                        Quantita
+                        <Input
+                          type="number"
+                          min={1}
+                          value={selectedNode.data?.config?.amount ?? 1}
+                          onChange={(e: any) =>
+                            updateSelectedNodeConfig({ amount: Number(e.target.value) })
+                          }
+                          disabled={loading}
+                        />
+                      </label>
+                      <label className="text-xs">
+                        Unita
+                        <select
+                          className="pc-input mt-1"
+                          value={selectedNode.data?.config?.unit ?? "hours"}
+                          onChange={(e) => updateSelectedNodeConfig({ unit: e.target.value })}
+                          disabled={loading}
+                        >
+                          <option value="hours">ore</option>
+                          <option value="days">giorni</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  {selectedNode.data?.actionType === "send_webhook" && (
+                    <div className="space-y-2 rounded-md border p-2">
+                      <Label>URL webhook</Label>
+                      <Input
+                        value={selectedNode.data?.config?.url ?? ""}
+                        onChange={(e: any) => updateSelectedNodeConfig({ url: e.target.value })}
+                        placeholder="https://..."
+                        disabled={loading}
+                      />
+                      <Label>Payload JSON</Label>
+                      <textarea
+                        className="pc-input min-h-24 font-mono text-xs"
+                        value={selectedNode.data?.config?.payload ?? ""}
+                        onChange={(e) => updateSelectedNodeConfig({ payload: e.target.value })}
+                        disabled={loading}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : selectedEdge ? (
+                <div className="space-y-2">
+                  <div>ID edge: {selectedEdge.id}</div>
+                  <Label>Ramo condizione</Label>
+                  <select
+                    className="pc-input"
+                    value={(selectedEdge.data?.branch as string) ?? ""}
+                    onChange={(e) => updateSelectedEdgeData({ branch: e.target.value || null })}
+                    disabled={loading}
+                  >
+                    <option value="">Sequenziale</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+                  <div className="text-xs text-text3">
+                    Usa True/False sugli edge che partono da un blocco Condizione.
                   </div>
                 </div>
               ) : (

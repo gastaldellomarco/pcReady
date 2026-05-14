@@ -57,6 +57,10 @@ export const AutomationRunLogSchema = z.object({
       z.object({
         action: z.string(),
         status: z.enum(["success", "error", "skipped"]),
+        blockId: z.string().optional(),
+        blockType: z.enum(["trigger", "condition", "action"]).optional(),
+        input: z.record(z.unknown()).optional(),
+        details: z.record(z.unknown()).optional(),
         result: z.unknown().optional(),
         error: z.string().optional(),
       }),

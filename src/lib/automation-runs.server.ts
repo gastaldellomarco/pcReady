@@ -106,6 +106,7 @@ export async function executeAutomationRun({
   if (error) throw error;
 
   const flowAny = flow as any;
+  const graphBlocks = extractGraphExecutionBlocks(flowAny, triggerPayload);
   const actions = extractActions(flowAny);
   const trigger =
     flowAny.trigger_definition || flowAny.flow_definition?.meta?.wizard?.trigger_definition || null;
@@ -118,7 +119,21 @@ export async function executeAutomationRun({
       throw new Error("Flow senza trigger o nodi validi");
     }
 
-    if (!actions.length) {
+    if (graphBlocks.length) {
+      actionsExecuted = [];
+      for (let index = 0; index < graphBlocks.length; index++) {
+        const block = graphBlocks[index];
+        const result =
+          block.kind === "condition"
+            ? executeConditionBlock(block, index, triggerPayload)
+            : isDryRun
+              ? simulateAction(block.action, index)
+              : await executeAction(block.action, index, triggeredBy, triggerPayload);
+        actionsExecuted.push(result);
+        if (result.status === "error") throw new Error(result.error || "Blocco fallito");
+        if (block.kind === "condition" && result.status === "skipped") break;
+      }
+    } else if (!actions.length) {
       status = "skipped";
       actionsExecuted = [
         {
@@ -271,10 +286,121 @@ function extractActions(flow: any) {
   const nodeActions = flow.flow_definition?.nodes
     ?.filter((node: any) => node.type === "action")
     .map((node: any) => ({
-      type: node.data?.label || "action",
+      id: node.id,
+      type: node.data?.actionType || node.data?.label || "action",
+      label: node.data?.label || node.data?.actionType || "action",
       config: node.data?.config || {},
     }));
   return Array.isArray(nodeActions) ? nodeActions : [];
+}
+
+type GraphExecutionBlock =
+  | { kind: "condition"; node: any }
+  | { kind: "action"; action: any };
+
+function extractGraphExecutionBlocks(flow: any, triggerPayload: Record<string, any>) {
+  const nodes = Array.isArray(flow.flow_definition?.nodes) ? flow.flow_definition.nodes : [];
+  const edges = Array.isArray(flow.flow_definition?.edges) ? flow.flow_definition.edges : [];
+  if (!nodes.some((node: any) => node.data?.type === "condition" || node.type === "condition")) {
+    return [];
+  }
+
+  const byId = new Map<string, any>(nodes.map((node: any) => [String(node.id), node]));
+  const trigger =
+    nodes.find((node: any) => node.data?.type === "trigger" || node.type === "trigger") ??
+    nodes[0];
+  const blocks: GraphExecutionBlock[] = [];
+  const visited = new Set<string>();
+  let current = trigger;
+
+  while (current && !visited.has(String(current.id))) {
+    visited.add(String(current.id));
+    const nodeType = current.data?.type || current.type;
+    if (nodeType === "condition") {
+      blocks.push({ kind: "condition", node: current });
+      const passed = evaluateCondition(current.data?.config ?? {}, triggerPayload);
+      current = nextNodeForBranch(current, edges, byId, passed);
+      continue;
+    }
+    if (nodeType === "action") {
+      blocks.push({
+        kind: "action",
+        action: {
+          id: current.id,
+          type: current.data?.actionType || current.data?.label || "action",
+          label: current.data?.label || current.data?.actionType || "action",
+          config: current.data?.config || {},
+          data: current.data,
+        },
+      });
+    }
+    current = nextSequentialNode(current, edges, byId);
+  }
+
+  return blocks;
+}
+
+function nextNodeForBranch(
+  node: any,
+  edges: any[],
+  byId: Map<string, any>,
+  passed: boolean,
+) {
+  const outgoing = edges.filter((edge) => String(edge.source) === String(node.id));
+  const wanted = passed ? "true" : "false";
+  const edge =
+    outgoing.find((item) => item.data?.branch === wanted) ??
+    outgoing.find((item) => !item.data?.branch);
+  return edge ? byId.get(String(edge.target)) : null;
+}
+
+function nextSequentialNode(node: any, edges: any[], byId: Map<string, any>) {
+  const edge = edges.find((item) => String(item.source) === String(node.id));
+  return edge ? byId.get(String(edge.target)) : null;
+}
+
+function executeConditionBlock(
+  block: { node: any },
+  index: number,
+  triggerPayload: Record<string, any>,
+): ActionResult {
+  const config = block.node.data?.config ?? {};
+  const passed = evaluateCondition(config, triggerPayload);
+  const label = block.node.data?.label || `Condizione ${index + 1}`;
+  return {
+    action: String(label),
+    blockId: String(block.node.id),
+    blockType: "condition",
+    status: passed ? "success" : "skipped",
+    input: triggerPayload,
+    details: {
+      field: config.field,
+      operator: config.operator ?? "equals",
+      expected: config.value,
+      actual: getPath(triggerPayload, String(config.field ?? "")),
+      branch: passed ? "true" : "false",
+    },
+    result: { passed },
+  };
+}
+
+function evaluateCondition(config: Record<string, any>, payload: Record<string, any>) {
+  const field = String(config.field ?? "");
+  const operator = String(config.operator ?? "equals");
+  const expected = config.value;
+  const actual = getPath(payload, field);
+
+  if (operator === "exists") return actual !== undefined && actual !== null && actual !== "";
+  if (operator === "not_equals") return String(actual ?? "") !== String(expected ?? "");
+  if (operator === "contains") return String(actual ?? "").includes(String(expected ?? ""));
+  if (operator === "gt") return Number(actual) > Number(expected);
+  if (operator === "lt") return Number(actual) < Number(expected);
+  return String(actual ?? "") === String(expected ?? "");
+}
+
+function getPath(source: Record<string, any>, path: string) {
+  if (!path) return undefined;
+  return path.split(".").reduce<any>((current, key) => current?.[key], source);
 }
 
 function extractDryRunBlocks(flow: any) {
@@ -363,19 +489,25 @@ function normalizeBlockType(block: any): DryRunStep["type"] {
 
 function simulateAction(action: any, index: number): ActionResult {
   const actionName = String(
-    action.type || action.action || action.data?.label || `Action ${index + 1}`,
+    action.label || action.type || action.action || action.data?.label || `Action ${index + 1}`,
   );
   if (action.config?.force_error || action.force_error) {
     return {
       action: actionName,
+      blockId: action.id ? String(action.id) : undefined,
+      blockType: "action",
       status: "error",
+      input: action.config ?? action.data?.config ?? {},
       error: "Errore simulato dalla configurazione action",
     };
   }
 
   return {
     action: actionName,
+    blockId: action.id ? String(action.id) : undefined,
+    blockType: "action",
     status: "success",
+    input: action.config ?? action.data?.config ?? {},
     result: { mode: "dry_run", message: "Azione validata, nessun effetto applicato" },
   };
 }
@@ -431,9 +563,21 @@ const AssignTicketConfigSchema = z.object({
   assignee_id: requiredUuid,
 });
 
+const DelayConfigSchema = z.object({
+  amount: z.number().int().positive().max(365),
+  unit: z.enum(["hours", "days"]),
+});
+
+const WebhookConfigSchema = z.object({
+  url: z.string().url(),
+  payload: z.string().optional(),
+});
+
 function normalizeActionType(type: string): string {
   if (type === "update_status") return "update_ticket_status";
   if (type === "assign_technician") return "assign_ticket";
+  if (type === "Webhook") return "send_webhook";
+  if (type === "Aspetta") return "delay";
   return type;
 }
 
@@ -731,6 +875,118 @@ async function assignTicketAction(
   };
 }
 
+function delayAction(
+  rawConfig: Record<string, any>,
+  actionLabel: string,
+  actionId?: string,
+): ActionResult {
+  const config = {
+    ...rawConfig,
+    amount: Number(rawConfig.amount ?? 1),
+    unit: rawConfig.unit === "days" ? "days" : "hours",
+  };
+  const parsed = DelayConfigSchema.safeParse(config);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      blockId: actionId,
+      blockType: "action",
+      status: "error",
+      input: rawConfig,
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+  const delayMs =
+    parsed.data.amount * (parsed.data.unit === "days" ? 86_400_000 : 3_600_000);
+  return {
+    action: actionLabel,
+    blockId: actionId,
+    blockType: "action",
+    status: "success",
+    input: rawConfig,
+    details: { amount: parsed.data.amount, unit: parsed.data.unit, delay_ms: delayMs },
+    result: {
+      message: "Delay registrato; l'esecuzione differita richiede una coda/scheduler dedicata.",
+    },
+  };
+}
+
+async function webhookAction(
+  rawConfig: Record<string, any>,
+  triggerPayload: Record<string, any>,
+  actionLabel: string,
+  actionId?: string,
+): Promise<ActionResult> {
+  const parsed = WebhookConfigSchema.safeParse(rawConfig);
+  if (!parsed.success) {
+    return {
+      action: actionLabel,
+      blockId: actionId,
+      blockType: "action",
+      status: "error",
+      input: rawConfig,
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+    };
+  }
+
+  let payload: unknown = triggerPayload;
+  if (parsed.data.payload?.trim()) {
+    try {
+      payload = JSON.parse(
+        parsed.data.payload
+          .replaceAll("{{trigger}}", String(triggerPayload._automation_trigger ?? "automation"))
+          .replaceAll("{{ticket_id}}", String(triggerPayload.ticket_id ?? "")),
+      );
+    } catch {
+      return {
+        action: actionLabel,
+        blockId: actionId,
+        blockType: "action",
+        status: "error",
+        input: rawConfig,
+        error: "Payload webhook non e JSON valido",
+      };
+    }
+  }
+
+  try {
+    const response = await fetch(parsed.data.url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const text = await response.text().catch(() => "");
+    if (!response.ok) {
+      return {
+        action: actionLabel,
+        blockId: actionId,
+        blockType: "action",
+        status: "error",
+        input: { url: parsed.data.url, payload },
+        error: `Webhook HTTP ${response.status}: ${text.slice(0, 500)}`,
+      };
+    }
+    return {
+      action: actionLabel,
+      blockId: actionId,
+      blockType: "action",
+      status: "success",
+      input: { url: parsed.data.url, payload },
+      details: { status: response.status },
+      result: { message: "Webhook inviato", response: text.slice(0, 1000) },
+    };
+  } catch (error) {
+    return {
+      action: actionLabel,
+      blockId: actionId,
+      blockType: "action",
+      status: "error",
+      input: { url: parsed.data.url, payload },
+      error: error instanceof Error ? error.message : "Errore invio webhook",
+    };
+  }
+}
+
 async function executeAction(
   action: any,
   index: number,
@@ -741,18 +997,26 @@ async function executeAction(
     action.type || action.action || action.data?.label || `action_${index + 1}`,
   );
   const type = normalizeActionType(rawType);
-  const actionLabel = rawType;
+  const actionLabel = String(action.label || rawType);
+  const actionId = action.id ? String(action.id) : undefined;
   const config = action.config ?? action.data?.config ?? {};
 
   if (config.force_error || action.force_error) {
     return {
       action: actionLabel,
+      blockId: actionId,
+      blockType: "action",
       status: "error",
+      input: config,
       error: "Errore simulato dalla configurazione action",
     };
   }
 
   switch (type) {
+    case "delay":
+      return delayAction(config, actionLabel, actionId);
+    case "send_webhook":
+      return webhookAction(config, triggerPayload, actionLabel, actionId);
     case "send_email":
       return sendEmailAction(config, triggerPayload, actionLabel);
     case "update_ticket_status":
@@ -766,13 +1030,19 @@ async function executeAction(
     case "create_ticket":
       return {
         action: actionLabel,
+        blockId: actionId,
+        blockType: "action",
         status: "skipped",
+        input: config,
         error: "Tipo create_ticket non ancora implementato nel runtime",
       };
     default:
       return {
         action: actionLabel,
+        blockId: actionId,
+        blockType: "action",
         status: "skipped",
+        input: config,
         error: "Tipo azione non supportato",
         details: { normalized_type: type },
       };

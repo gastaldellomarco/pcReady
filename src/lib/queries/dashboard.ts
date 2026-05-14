@@ -14,7 +14,7 @@ export type DashboardDeviceRow = Pick<
 
 export type DashboardTicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
-  "id" | "ticket_code" | "client" | "status" | "created_at"
+  "id" | "ticket_code" | "client" | "status" | "priority" | "created_at"
 > & {
   device: { model: string; serial: string | null } | null;
   assignee: ProfilesEmbed | null;
@@ -80,7 +80,7 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
     supabase
       .from("tickets")
       .select(
-        "id, ticket_code, client, status, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+        "id, ticket_code, client, status, priority, created_at, device:devices(model, serial), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
       )
       .gte("created_at", from)
       .lte("created_at", to)
