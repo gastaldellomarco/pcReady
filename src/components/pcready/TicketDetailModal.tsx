@@ -66,7 +66,7 @@ interface AssignmentRow {
 
 export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
-  const { canEdit, isAdmin, user, session } = useAuth();
+  const { canEdit, user, session } = useAuth();
   const notify = useServerFn(createNotification);
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
   useTickets();
@@ -219,7 +219,7 @@ export function TicketDetailModal() {
       title={`${ticket.ticket_code} - ${asset.model}`}
       footer={
         <>
-          {isAdmin && (
+          {canEdit && (
             <button
               className="pc-btn pc-btn-danger pc-btn-sm mr-auto"
               onClick={() => setDeleteOpen(true)}

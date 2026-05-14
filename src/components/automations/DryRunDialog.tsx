@@ -68,9 +68,11 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
             <div className="space-y-3">
               <div className="text-sm text-text3">Esito simulazione: {result.summary}</div>
               <div className="space-y-2">
-                {result.steps.map((step) => (
-                  <DryRunStepCard key={`${step.stepIndex}-${step.type}`} step={step} />
-                ))}
+                {result.steps
+                  .filter((step): step is DryRunStep => step != null)
+                  .map((step) => (
+                    <DryRunStepCard key={`${step.stepIndex}-${step.type}`} step={step} />
+                  ))}
               </div>
             </div>
           )}
@@ -81,28 +83,29 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
 }
 
 function DryRunStepCard({ step }: { step: DryRunStep }) {
+  const result = step?.result ?? "error";
   const Icon =
-    step.result === "pass" ? CheckCircle : step.result === "skip" ? MinusCircle : XCircle;
+    result === "pass" ? CheckCircle : result === "skip" ? MinusCircle : XCircle;
   return (
     <div
       className={cn(
         "flex items-start gap-3 rounded-lg border p-3",
-        step.result === "pass" && "border-green-200 bg-green-50",
-        step.result === "skip" && "border-yellow-200 bg-yellow-50",
-        step.result === "error" && "border-red-200 bg-red-50",
+        result === "pass" && "border-green-200 bg-green-50",
+        result === "skip" && "border-yellow-200 bg-yellow-50",
+        result === "error" && "border-red-200 bg-red-50",
       )}
     >
       <Icon
         className={cn(
           "mt-0.5 h-5 w-5",
-          step.result === "pass" && "text-green-600",
-          step.result === "skip" && "text-yellow-600",
-          step.result === "error" && "text-red-600",
+          result === "pass" && "text-green-600",
+          result === "skip" && "text-yellow-600",
+          result === "error" && "text-red-600",
         )}
       />
       <div>
-        <p className="text-sm font-medium">{step.label}</p>
-        <p className="text-xs text-muted-foreground">{step.detail}</p>
+        <p className="text-sm font-medium">{step?.label ?? "—"}</p>
+        <p className="text-xs text-muted-foreground">{step?.detail ?? ""}</p>
       </div>
     </div>
   );

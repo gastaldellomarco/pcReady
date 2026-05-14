@@ -36,7 +36,9 @@ export function AsyncAutocomplete<T extends AsyncAutocompleteOption>({
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (selectedOption?.value === value) setQuery(selectedOption.label);
+    if (selectedOption != null && selectedOption.value === value) {
+      setQuery(selectedOption.label ?? String(value));
+    }
     if (!value && !open) setQuery("");
   }, [open, selectedOption, value]);
 
@@ -52,7 +54,7 @@ export function AsyncAutocomplete<T extends AsyncAutocompleteOption>({
       setLoading(true);
       loadOptions(trimmed)
         .then((items) => {
-          if (active) setOptions(items);
+          if (active) setOptions((items ?? []).filter((item): item is T => item != null));
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -120,12 +122,12 @@ export function AsyncAutocomplete<T extends AsyncAutocompleteOption>({
               type="button"
               className="block w-full px-3 py-2 text-left text-sm hover:bg-surface2"
               onClick={() => {
-                setQuery(option.label);
+                setQuery(option.label ?? option.value);
                 onChange(option.value, option);
                 setOpen(false);
               }}
             >
-              <span className="block truncate font-medium">{option.label}</span>
+              <span className="block truncate font-medium">{option.label ?? option.value}</span>
               {option.description && (
                 <span className="block truncate text-xs text-text3">{option.description}</span>
               )}

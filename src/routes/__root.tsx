@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import QueryProvider from "@/lib/queries/queryClient";
 import { Toaster } from "@/components/ui/sonner";
+import { isMaintenanceModeEnabled } from "@/lib/maintenance-env";
 
 import appCss from "../styles.css?url";
 
@@ -67,7 +68,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  if (import.meta.env.VITE_MAINTENANCE_MODE === "true") {
+  if (isMaintenanceModeEnabled()) {
     return (
       <ThemeProvider defaultTheme="system" enableSystem>
         <MaintenancePage />

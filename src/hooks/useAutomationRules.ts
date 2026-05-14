@@ -99,14 +99,6 @@ export function useAutomationRules() {
     if (!isAdmin) return toast.error("Solo amministratori");
     try {
       await toggleMut.mutateAsync({ id: rule.id, active: !rule.active });
-      await createVersion(
-        "automation_flows",
-        rule.id,
-        { ...rule, active: !rule.active },
-        { active: { from: rule.active, to: !rule.active } },
-        rule.active ? "Automazione disattivata" : "Automazione attivata",
-        "update",
-      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore toggle automazione");
     }

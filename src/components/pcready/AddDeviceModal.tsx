@@ -6,7 +6,7 @@ import { DeviceSchema, type DeviceInput } from "@/lib/schemas/devices";
 import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
 import { getPublicAppSettings } from "@/lib/app-settings";
-import clientQueries from "@/lib/queries/clients";
+import { loadClientOptions } from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";
 import type { TablesInsert } from "@/integrations/supabase/types";
@@ -50,7 +50,6 @@ export function AddDeviceModal() {
     if (!addDeviceOpen) return;
     if (addDeviceInitialSerial)
       form.setValue("serial", addDeviceInitialSerial, { shouldValidate: true });
-    const { loadClientOptions } = clientQueries as any;
     loadClientOptions("").then((arr: any[]) => {
       setClients(arr || []);
       if (arr?.[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);

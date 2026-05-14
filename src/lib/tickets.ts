@@ -1,5 +1,3 @@
-"use server";
-
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -23,7 +21,7 @@ const StaffTicketPayloadSchema = z.object({
   checklist: z.record(z.unknown()).optional(),
   template_id: z.union([z.string().uuid(), z.literal(""), z.null()]).optional(),
   checklist_structure: z.unknown().optional(),
-  source: z.string().optional(),
+  source: z.enum(["internal", "portal"]).optional(),
 });
 
 const CreateTicketInputSchema = z.object({
@@ -50,7 +48,9 @@ function createSupabaseForAccessToken(accessToken: string) {
 }
 
 export const createTicket = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof CreateTicketInputSchema>) => CreateTicketInputSchema.parse(data))
+  .inputValidator((data: z.input<typeof CreateTicketInputSchema>) =>
+    CreateTicketInputSchema.parse(data),
+  )
   .handler(async ({ data }) => {
     const supabase = createSupabaseForAccessToken(data.accessToken);
     const {
@@ -84,7 +84,7 @@ export const createTicket = createServerFn({ method: "POST" })
       checklist: (t.checklist ?? {}) as Json,
       template_id: templateId,
       checklist_structure: (t.checklist_structure ?? null) as Json | null,
-      source: t.source ?? "app",
+      source: t.source === "portal" ? "portal" : "internal",
       created_by: user.id,
     };
 

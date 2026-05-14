@@ -9,10 +9,10 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   vite: {
     optimizeDeps: {
-      include: ["@react-pdf/renderer", "@react-pdf/fontkit"],
+      include: ["@react-pdf/renderer"],
     },
     ssr: {
-      noExternal: ["@react-pdf/renderer", "@react-pdf/fontkit"],
+      noExternal: ["@react-pdf/renderer"],
     },
     build: {
       chunkSizeWarningLimit: 4500,

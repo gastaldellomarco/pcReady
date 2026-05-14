@@ -10,15 +10,14 @@ import {
   type ChecklistStructure,
 } from "@/lib/pcready";
 import { supabase } from "@/integrations/supabase/client";
-import queries from "@/lib/queries/tickets";
-const {
+import {
   loadClientOptions,
   fetchClientById,
   loadContactOptions,
   fetchContactById,
   loadDeviceOptions,
   fetchDeviceById,
-} = queries;
+} from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 const insertActivity = activityQueries.insertActivity as any;
 import type { Json } from "@/integrations/supabase/types";
@@ -29,7 +28,7 @@ import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { toast } from "sonner";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
 import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
-import { createTicket } from "@/lib/tickets.server";
+import { createTicket } from "@/lib/tickets";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 interface Tech {
@@ -69,6 +68,72 @@ interface DeviceOpt {
   assigned_to: string | null;
 }
 type DeviceFlow = "existing" | "none";
+
+type ClientOption = AsyncAutocompleteOption & { client: ClientOpt };
+type ContactOption = AsyncAutocompleteOption & { contact: ContactOpt };
+type DeviceOption = AsyncAutocompleteOption & { device: DeviceOpt };
+
+async function loadClientAutocompleteOptions(query: string): Promise<ClientOption[]> {
+  const rows = await loadClientOptions(query);
+  return (rows ?? []).map((r: any) => {
+    const client: ClientOpt = {
+      id: r.id,
+      name: r.name ?? "",
+      company_name: r.company_name ?? null,
+      email: r.email ?? null,
+    };
+    return {
+      value: client.id,
+      label: (client.company_name || client.name || "Cliente").trim() || "Cliente",
+      description: client.email ?? undefined,
+      client,
+    };
+  });
+}
+
+async function loadContactAutocompleteOptions(
+  query: string,
+  clientId: string,
+): Promise<ContactOption[]> {
+  const rows = await loadContactOptions(query, clientId);
+  return (rows ?? []).map((r: any) => {
+    const contact: ContactOpt = {
+      id: r.id,
+      client_id: r.client_id,
+      full_name: r.full_name,
+      first_name: r.first_name,
+      last_name: r.last_name,
+      email: r.email,
+      job_title: r.job_title,
+      role: r.role,
+      is_primary: Boolean(r.is_primary),
+    };
+    return {
+      value: contact.id,
+      label: contactName(contact) || "Referente",
+      description: contact.email || contact.job_title || contact.role || undefined,
+      contact,
+    };
+  });
+}
+
+async function loadDeviceAutocompleteOptions(
+  query: string,
+  clientId: string,
+): Promise<DeviceOption[]> {
+  const rows = await loadDeviceOptions(query, clientId);
+  return (rows ?? []).map((r: any) => {
+    const device: DeviceOpt = {
+      id: r.id,
+      client_id: r.client_id,
+      model: r.model,
+      serial: r.serial,
+      os: r.os,
+      assigned_to: r.assigned_to,
+    };
+    return deviceOption(device);
+  });
+}
 
 export function CreateTicketModal() {
   const { createOpen, closeCreate } = useTickets();
@@ -259,7 +324,7 @@ export function CreateTicketModal() {
               selectedOption={selectedClient ? clientOption(selectedClient) : null}
               placeholder="Cerca cliente..."
               emptyLabel="Nessun cliente"
-              loadOptions={loadClientOptions}
+              loadOptions={loadClientAutocompleteOptions}
               onChange={(value, option) => {
                 const client = option ? optionToClient(option) : null;
                 setSelectedClient(client);
@@ -319,7 +384,7 @@ export function CreateTicketModal() {
               placeholder={f.client_id ? "Cerca dispositivo..." : "Seleziona prima un cliente"}
               emptyLabel="Nessun dispositivo"
               disabled={!f.client_id}
-              loadOptions={(query) => loadDeviceOptions(query, f.client_id)}
+              loadOptions={(query) => loadDeviceAutocompleteOptions(query, f.client_id)}
               onChange={(value, option) => {
                 setSelectedDevice(option ? optionToDevice(option) : null);
                 setF({ ...f, device_id: value });
@@ -343,7 +408,7 @@ export function CreateTicketModal() {
                 placeholder={f.client_id ? "Cerca referente..." : "Seleziona prima un cliente"}
                 emptyLabel="Nessun referente"
                 disabled={!f.client_id}
-                loadOptions={(query) => loadContactOptions(query, f.client_id)}
+                loadOptions={(query) => loadContactAutocompleteOptions(query, f.client_id)}
                 onChange={(value, option) => {
                   const contact = option ? optionToContact(option) : null;
                   setSelectedContact(contact);
@@ -452,10 +517,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function contactName(c: ContactOpt) {
   return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");
 }
-
-type ClientOption = AsyncAutocompleteOption & { client: ClientOpt };
-type ContactOption = AsyncAutocompleteOption & { contact: ContactOpt };
-type DeviceOption = AsyncAutocompleteOption & { device: DeviceOpt };
 
 function clientOption(client: ClientOpt): ClientOption {
   return {

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
-import queries from "@/lib/queries/tickets";
+import { loadClientOptions, useTicketsList } from "@/lib/queries/tickets";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
 import {
@@ -76,7 +76,6 @@ function TicketsPage() {
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
   const [hasUpdates, setHasUpdates] = useState(false);
   const loadSettings = useServerFn(getPublicAppSettings);
-  const { useTicketsList, loadClientOptions } = queries as any;
   const listQuery = useTicketsList({
     status: fs || undefined,
     priority: fp || undefined,

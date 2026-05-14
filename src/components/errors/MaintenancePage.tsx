@@ -1,7 +1,22 @@
 import { Wrench } from "lucide-react";
 import { SupportContact } from "@/components/errors/SupportContact";
+import { getMaintenanceEndEnv } from "@/lib/maintenance-env";
+
+function formatMaintenanceEnd(raw: unknown): string | null {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "full",
+    timeStyle: "short",
+  }).format(d);
+}
 
 export function MaintenancePage() {
+  const endLabel = formatMaintenanceEnd(getMaintenanceEndEnv());
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -13,11 +28,9 @@ export function MaintenancePage() {
           PCReady è temporaneamente non disponibile per aggiornamenti. Tornerà operativo a breve.
         </p>
       </div>
-      {import.meta.env.VITE_MAINTENANCE_END && (
-        <p className="text-sm text-muted-foreground">
-          Rientro previsto: {import.meta.env.VITE_MAINTENANCE_END}
-        </p>
-      )}
+      {endLabel ? (
+        <p className="text-sm text-muted-foreground">Rientro previsto: {endLabel}</p>
+      ) : null}
       <SupportContact prefix="Per urgenze contatta" />
     </div>
   );
