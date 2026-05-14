@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { fetchTicketsList } from "@/lib/queries/tickets";
 import queries from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";
@@ -81,12 +83,19 @@ function KanbanPage() {
     window.localStorage.setItem(KANBAN_VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
-  const { useTicketsList, useUpdateTicket } = queries as any;
-  const listQuery = useTicketsList({ pageSize: 2000 });
+  const { useUpdateTicket } = queries as any;
   const updateTicket = useUpdateTicket();
+  const { data: liveTickets, loading: ticketsLoading } = useRealtimeTable<Card>(
+    "tickets",
+    async () => {
+      const { data } = await fetchTicketsList({ pageSize: 2000 });
+      return (Array.isArray(data) ? data : []) as Card[];
+    },
+    [],
+  );
   useEffect(() => {
-    if (listQuery.data) setRows((Array.isArray(listQuery.data.data) ? listQuery.data.data : []) as Card[]);
-  }, [listQuery.data]);
+    setRows(Array.isArray(liveTickets) ? liveTickets : []);
+  }, [liveTickets]);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -229,7 +238,8 @@ function KanbanPage() {
           </SelectContent>
         </Select>
 
-        <span className="ml-auto text-xs text-text3 font-mono">
+        <span className="ml-auto text-xs text-text3 font-mono flex items-center gap-2">
+          {ticketsLoading ? <span className="text-[10px] uppercase tracking-wide">Sincronizzazione…</span> : null}
           {filteredRows.length} di {rows.length} ticket
         </span>
         <button

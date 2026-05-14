@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import queries from "@/lib/queries/dashboard";
 import { useTickets } from "@/lib/use-tickets";
@@ -91,6 +92,7 @@ function DashboardPage() {
 
   const { useDashboardSnapshot } = queries as any;
   const snap = useDashboardSnapshot({ from: range.from, to: range.to });
+  const refetchDashboard = snap.refetch;
 
   useEffect(() => {
     if (snap.data) {
@@ -102,6 +104,21 @@ function DashboardPage() {
       setActiveClientsCount(snap.data.activeClientsCount ?? 0);
     }
   }, [snap.data]);
+
+  useEffect(() => {
+    const tables = ["tickets", "devices", "clients", "activity_log"] as const;
+    const channel = supabase.channel(`dashboard-kpi:${range.from}:${range.to}`);
+    const onChange = () => {
+      void refetchDashboard();
+    };
+    for (const table of tables) {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, onChange);
+    }
+    void channel.subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [refetchDashboard, range.from, range.to]);
 
   useEffect(() => {
     if (!session?.access_token) return;

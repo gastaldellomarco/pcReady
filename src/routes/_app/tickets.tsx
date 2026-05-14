@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { TableSkeletonRows } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
 import queries from "@/lib/queries/tickets";
@@ -65,6 +66,7 @@ function TicketsPage() {
   const [ft, setFt] = useState("");
   const [fc, setFc] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
+  const [hasUpdates, setHasUpdates] = useState(false);
   const loadSettings = useServerFn(getPublicAppSettings);
   const { useTicketsList, loadClientOptions } = queries as any;
   const listQuery = useTicketsList({
@@ -98,6 +100,20 @@ function TicketsPage() {
   useEffect(() => {
     setPage(0);
   }, [fs, fp, ft, fc, search]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("tickets-list-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets" },
+        () => setHasUpdates(true),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
 
   const data = rows;
   const listLoading = listQuery.isLoading;
@@ -176,6 +192,26 @@ function TicketsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {hasUpdates ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+          style={{
+            background: "color-mix(in oklab, var(--accent) 8%, var(--surface1))",
+            borderColor: "var(--border)",
+          }}
+        >
+          <span className="text-text2">Sono disponibili aggiornamenti alla lista ticket.</span>
+          <button
+            type="button"
+            className="pc-btn pc-btn-primary pc-btn-sm shrink-0"
+            onClick={() => {
+              void listQuery.refetch().then(() => setHasUpdates(false));
+            }}
+          >
+            Aggiorna
+          </button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2 items-center">
         <select
           className="pc-input max-w-[180px]"
