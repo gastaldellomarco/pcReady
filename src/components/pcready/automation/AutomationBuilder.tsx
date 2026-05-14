@@ -55,11 +55,17 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
       setDescription(data.description ?? null);
       setCategory(data.category ?? null);
       setActive(!!data.active);
-      const def = (data.flow_definition ?? { nodes: [], edges: [] }) as { nodes?: Node[]; edges?: Edge[] };
+      const def = (data.flow_definition ?? { nodes: [], edges: [] }) as {
+        nodes?: Node[];
+        edges?: Edge[];
+      };
       setNodes(def.nodes ?? []);
       setEdges(def.edges ?? []);
       // ensure idRef is greater than existing ids
-      const maxId = (def.nodes ?? []).reduce((m: number, n: Node) => Math.max(m, Number(n.id) || 0), 0);
+      const maxId = (def.nodes ?? []).reduce(
+        (m: number, n: Node) => Math.max(m, Number(n.id) || 0),
+        0,
+      );
       idRef.current = Math.max(idRef.current, maxId + 1);
     })();
     return () => {
@@ -70,9 +76,18 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
   const createAutomationMut = (automationsQueries as any).useCreateAutomation();
   const updateAutomationMut = (automationsQueries as any).useUpdateAutomation();
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
-  const onConnect = useCallback((connection: Connection) => setEdges((eds) => addEdge(connection, eds)), []);
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [],
+  );
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
+  );
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [],
+  );
 
   const addNode = (type: "trigger" | "condition" | "action", label: string) => {
     const id = `${idRef.current++}`;
@@ -100,10 +115,20 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
       }
       const flowDef = JSON.parse(JSON.stringify({ nodes, edges })) as Json;
       if (initialFlow && initialFlow.id) {
-        await updateAutomationMut.mutateAsync({ id: initialFlow.id, payload: { name, description, category, active, flow_definition: flowDef } });
+        await updateAutomationMut.mutateAsync({
+          id: initialFlow.id,
+          payload: { name, description, category, active, flow_definition: flowDef },
+        });
         toast.success("Automazione aggiornata");
       } else {
-        await createAutomationMut.mutateAsync({ name, description, category, active, version: 1, flow_definition: flowDef });
+        await createAutomationMut.mutateAsync({
+          name,
+          description,
+          category,
+          active,
+          version: 1,
+          flow_definition: flowDef,
+        });
         toast.success("Automazione creata");
       }
       onSave?.();
@@ -122,15 +147,45 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           <div className="mb-3 font-semibold">Palette blocchi</div>
           <div className="text-sm text-text3">Trigger</div>
           <ul className="mt-2 space-y-2">
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("trigger", "Quando viene creato un ticket")}>Quando viene creato un ticket</li>
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("trigger", "Quando cambia stato ticket")}>Quando cambia stato ticket</li>
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("trigger", "Esecuzione pianificata")}>Esecuzione pianificata</li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("trigger", "Quando viene creato un ticket")}
+            >
+              Quando viene creato un ticket
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("trigger", "Quando cambia stato ticket")}
+            >
+              Quando cambia stato ticket
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("trigger", "Esecuzione pianificata")}
+            >
+              Esecuzione pianificata
+            </li>
           </ul>
           <div className="mt-4 text-sm text-text3">Azioni</div>
           <ul className="mt-2 space-y-2">
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("action", "Assegna tecnico")}>Assegna tecnico</li>
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("action", "Invia notifica")}>Invia notifica</li>
-            <li className={`rounded border px-2 py-1 ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !loading && addNode("action", "Crea ticket")}>Crea ticket</li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("action", "Assegna tecnico")}
+            >
+              Assegna tecnico
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("action", "Invia notifica")}
+            >
+              Invia notifica
+            </li>
+            <li
+              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => !loading && addNode("action", "Crea ticket")}
+            >
+              Crea ticket
+            </li>
           </ul>
         </aside>
 
@@ -139,9 +194,25 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           <div className="h-96 rounded bg-background/50 p-0 relative">
             {loading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70">
-                <svg className="h-8 w-8 animate-spin text-slate-700" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />
+                <svg
+                  className="h-8 w-8 animate-spin text-slate-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 018-8"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-75"
+                  />
                 </svg>
               </div>
             )}
@@ -169,7 +240,12 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           <div className="space-y-3">
             <div>
               <Label>Nome automazione</Label>
-              <Input value={name} onChange={(e: any) => setName(e.target.value)} disabled={loading} aria-invalid={attemptedSave && !name.trim()} />
+              <Input
+                value={name}
+                onChange={(e: any) => setName(e.target.value)}
+                disabled={loading}
+                aria-invalid={attemptedSave && !name.trim()}
+              />
               {attemptedSave && !name.trim() && (
                 <div className="text-sm text-destructive mt-1">Il nome è obbligatorio.</div>
               )}
@@ -177,17 +253,30 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
 
             <div>
               <Label>Categoria</Label>
-              <Input value={category ?? ""} onChange={(e: any) => setCategory(e.target.value)} disabled={loading} />
+              <Input
+                value={category ?? ""}
+                onChange={(e: any) => setCategory(e.target.value)}
+                disabled={loading}
+              />
             </div>
 
             <div>
               <Label>Descrizione</Label>
-              <Input value={description ?? ""} onChange={(e: any) => setDescription(e.target.value)} disabled={loading} />
+              <Input
+                value={description ?? ""}
+                onChange={(e: any) => setDescription(e.target.value)}
+                disabled={loading}
+              />
             </div>
 
             <div>
               <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={loading} />
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  disabled={loading}
+                />
                 Attiva
               </label>
             </div>
@@ -200,9 +289,19 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                   <div>Tipo: {selectedNode.data?.type}</div>
                   <div>
                     <Label>Label</Label>
-                    <Input value={selectedNode.data?.label ?? ""} onChange={(e: any) => {
-                      setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, label: e.target.value } } : n));
-                    }} disabled={loading} />
+                    <Input
+                      value={selectedNode.data?.label ?? ""}
+                      onChange={(e: any) => {
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? { ...n, data: { ...n.data, label: e.target.value } }
+                              : n,
+                          ),
+                        );
+                      }}
+                      disabled={loading}
+                    />
                   </div>
                 </div>
               ) : (
@@ -218,8 +317,20 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                 {loading ? (
                   <>
                     <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-                      <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" className="opacity-75" />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="opacity-25"
+                      />
+                      <path
+                        d="M4 12a8 8 0 018-8"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="opacity-75"
+                      />
                     </svg>
                     Salvataggio...
                   </>

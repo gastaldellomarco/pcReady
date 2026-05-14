@@ -2,6 +2,9 @@ node_modules
 dist
 .output
 .vinxi
+.venv
+**/.venv
 pnpm-lock.yaml
 package-lock.json
 routeTree.gen.ts
+src/integrations/supabase/types.ts

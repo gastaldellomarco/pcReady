@@ -777,10 +777,18 @@ function AdminUsersPage() {
                     setBulkBusy(true);
                     try {
                       const ids = Array.from(selectedIds);
-                      const invitedIds = ids.filter((id) => rows.some((r) => r.id === id && r.status === "invited"));
+                      const invitedIds = ids.filter((id) =>
+                        rows.some((r) => r.id === id && r.status === "invited"),
+                      );
                       const results = await Promise.allSettled(
                         invitedIds.map((id) =>
-                          resendInvite({ data: { accessToken: session?.access_token || "", userId: id, redirectTo: `${window.location.origin}/auth/set-password` } }),
+                          resendInvite({
+                            data: {
+                              accessToken: session?.access_token || "",
+                              userId: id,
+                              redirectTo: `${window.location.origin}/auth/set-password`,
+                            },
+                          }),
                         ),
                       );
                       const ok = results.filter((r) => r.status === "fulfilled").length;
@@ -802,11 +810,29 @@ function AdminUsersPage() {
                     const ids = new Set(selectedIds);
                     const selectedRows = rows.filter((r) => ids.has(r.id));
                     if (selectedRows.length === 0) return toast.error("Nessun utente selezionato");
-                    const headers = ["id", "email", "full_name", "role", "status", "created_at", "last_sign_in_at"];
+                    const headers = [
+                      "id",
+                      "email",
+                      "full_name",
+                      "role",
+                      "status",
+                      "created_at",
+                      "last_sign_in_at",
+                    ];
                     const csv = [headers.join(",")]
                       .concat(
                         selectedRows.map((r) =>
-                          [r.id, r.email ?? "", r.full_name, r.role, r.status, r.created_at, r.last_sign_in_at ?? ""].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+                          [
+                            r.id,
+                            r.email ?? "",
+                            r.full_name,
+                            r.role,
+                            r.status,
+                            r.created_at,
+                            r.last_sign_in_at ?? "",
+                          ]
+                            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+                            .join(","),
                         ),
                       )
                       .join("\n");
@@ -814,7 +840,10 @@ function AdminUsersPage() {
                     const link = document.createElement("a");
                     const url = URL.createObjectURL(blob);
                     link.setAttribute("href", url);
-                    link.setAttribute("download", `users_export_${new Date().toISOString().slice(0,10)}.csv`);
+                    link.setAttribute(
+                      "download",
+                      `users_export_${new Date().toISOString().slice(0, 10)}.csv`,
+                    );
                     link.style.visibility = "hidden";
                     document.body.appendChild(link);
                     link.click();
@@ -830,7 +859,10 @@ function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b" style={{ background: "var(--surface2)", borderColor: "var(--border)" }}>
+                <th
+                  className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                  style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                >
                   <Checkbox
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
                     onCheckedChange={(val) => {
@@ -839,23 +871,17 @@ function AdminUsersPage() {
                     }}
                   />
                 </th>
-                {[
-                  "Nome",
-                  "Email",
-                  "Ruolo",
-                  "Creato il",
-                  "Accesso",
-                  "Stato",
-                  "Azioni",
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                  >
-                    {header}
-                  </th>
-                ))}
+                {["Nome", "Email", "Ruolo", "Creato il", "Accesso", "Stato", "Azioni"].map(
+                  (header) => (
+                    <th
+                      key={header}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    >
+                      {header}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
@@ -950,7 +976,8 @@ function AdminUsersPage() {
                       </div>
                     </td>
                   </tr>
-                )))}
+                ))
+              )}
               {!loadingRows && !(filtered ?? []).length && (
                 <tr>
                   <td colSpan={8} className="text-center py-10 text-text3 text-sm">
@@ -996,7 +1023,9 @@ function AdminUsersPage() {
                 {bulkAction === "disable" ? "Disabilita utenti" : "Riabilita utenti"}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Sei sicuro di voler {bulkAction === "disable" ? "disabilitare" : "riabilitare"} {selectedIds.size} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.
+                Sei sicuro di voler {bulkAction === "disable" ? "disabilitare" : "riabilitare"}{" "}
+                {selectedIds.size} utenti selezionati? Questa azione può essere annullata
+                riabilitando gli utenti individualmente.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1011,7 +1040,13 @@ function AdminUsersPage() {
                     const targetDisabled = bulkAction === "disable";
                     const results = await Promise.allSettled(
                       ids.map((id) =>
-                        setDisabled({ data: { accessToken: session?.access_token || "", userId: id, disabled: targetDisabled } }),
+                        setDisabled({
+                          data: {
+                            accessToken: session?.access_token || "",
+                            userId: id,
+                            disabled: targetDisabled,
+                          },
+                        }),
                       ),
                     );
                     const ok = results.filter((r) => r.status === "fulfilled").length;
@@ -1060,9 +1095,9 @@ function AdminUsersPage() {
               <AlertDescription>
                 Un Client OAuth permette a un&apos;applicazione esterna (per esempio un tool di
                 automazione, un&apos;app mobile o un sistema ERP) di accedere ai dati di PCReady in
-                modo sicuro, senza condividere le password degli utenti. Crea un client solo se
-                stai collegando un&apos;applicazione esterna che deve operare per conto degli utenti
-                che la autorizzano.
+                modo sicuro, senza condividere le password degli utenti. Crea un client solo se stai
+                collegando un&apos;applicazione esterna che deve operare per conto degli utenti che
+                la autorizzano.
               </AlertDescription>
             </Alert>
 
@@ -1072,10 +1107,10 @@ function AdminUsersPage() {
                 PCReady espone il flusso OAuth 2.0{" "}
                 <strong className="text-foreground">Authorization Code</strong> (
                 <code className="text-xs">response_type=code</code>). Gli integratori avviano
-                l&apos;accesso reindirizzando l&apos;utente all&apos;endpoint di autorizzazione,
-                poi scambiano il codice per un token. Il flusso{" "}
-                <strong className="text-foreground">Client Credentials</strong> non è supportato
-                per questi client.
+                l&apos;accesso reindirizzando l&apos;utente all&apos;endpoint di autorizzazione, poi
+                scambiano il codice per un token. Il flusso{" "}
+                <strong className="text-foreground">Client Credentials</strong> non è supportato per
+                questi client.
               </AlertDescription>
             </Alert>
 
@@ -1083,7 +1118,11 @@ function AdminUsersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="clientName">Nome applicazione</Label>
-                  <Input id="clientName" {...oauthForm.register("name")} placeholder="Es. CRM Aziendale" />
+                  <Input
+                    id="clientName"
+                    {...oauthForm.register("name")}
+                    placeholder="Es. CRM Aziendale"
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
                     Nome visibile a chi autorizza l&apos;app e negli elenchi admin.
                   </p>
@@ -1121,9 +1160,9 @@ function AdminUsersPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   L&apos;indirizzo a cui PCReady reindirizza il browser dopo che l&apos;utente ha
                   effettuato l&apos;accesso e concesso i permessi (redirect URI OAuth 2.0). Deve
-                  coincidere <strong>esattamente</strong> con quanto configurato nell&apos;app esterna:
-                  trovi il valore nella documentazione o nelle impostazioni sviluppatore di quell&apos;app.
-                  Una URL per riga. Esempio:{" "}
+                  coincidere <strong>esattamente</strong> con quanto configurato nell&apos;app
+                  esterna: trovi il valore nella documentazione o nelle impostazioni sviluppatore di
+                  quell&apos;app. Una URL per riga. Esempio:{" "}
                   <code className="text-[11px] rounded bg-muted px-1 py-0.5">
                     https://myapp.com/oauth/callback
                   </code>
@@ -1133,7 +1172,8 @@ function AdminUsersPage() {
                 <Label>Permessi consentiti (scope)</Label>
                 <p className="text-xs text-muted-foreground mt-1 mb-3">
                   Seleziona cosa l&apos;applicazione potrà chiedere agli utenti durante
-                  l&apos;autorizzazione. Ogni voce mostra il nome tecnico del permesso tra parentesi.
+                  l&apos;autorizzazione. Ogni voce mostra il nome tecnico del permesso tra
+                  parentesi.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(OAUTH_SCOPES).map(([scope, def]) => {
@@ -1200,8 +1240,8 @@ function AdminUsersPage() {
                   <AlertTitle>Salva subito il Client Secret</AlertTitle>
                   <AlertDescription>
                     Il Client Secret è mostrato <strong>una sola volta</strong> e non sarà
-                    recuperabile da PCReady dopo aver chiuso questa finestra. Copialo e conservalo in
-                    un gestore segreti o in configurazione sicura prima di proseguire.
+                    recuperabile da PCReady dopo aver chiuso questa finestra. Copialo e conservalo
+                    in un gestore segreti o in configurazione sicura prima di proseguire.
                   </AlertDescription>
                 </Alert>
 
@@ -1265,7 +1305,9 @@ function AdminUsersPage() {
                       </pre>
                     </div>
                     <p>
-                      Dopo il consenso, l&apos;utente torna al <code className="rounded bg-muted px-1">redirect_uri</code> con un <code className="rounded bg-muted px-1">code</code> temporaneo.
+                      Dopo il consenso, l&apos;utente torna al{" "}
+                      <code className="rounded bg-muted px-1">redirect_uri</code> con un{" "}
+                      <code className="rounded bg-muted px-1">code</code> temporaneo.
                     </p>
                     <div>
                       <span className="font-medium text-foreground">
@@ -1275,12 +1317,17 @@ function AdminUsersPage() {
                         {`${typeof window !== "undefined" ? window.location.origin : ""}/oauth/token`}
                       </pre>
                       <p className="mt-1">
-                        Corpo tipico: <code className="rounded bg-muted px-1">grant_type=authorization_code</code>,{" "}
-                        <code className="rounded bg-muted px-1">code</code>,{" "}
+                        Corpo tipico:{" "}
+                        <code className="rounded bg-muted px-1">grant_type=authorization_code</code>
+                        , <code className="rounded bg-muted px-1">code</code>,{" "}
                         <code className="rounded bg-muted px-1">client_id</code>,{" "}
                         <code className="rounded bg-muted px-1">client_secret</code>,{" "}
-                        <code className="rounded bg-muted px-1">redirect_uri</code> (come sopra). Dettagli e schema nella{" "}
-                        <Link to="/docs" className="text-primary underline-offset-2 hover:underline">
+                        <code className="rounded bg-muted px-1">redirect_uri</code> (come sopra).
+                        Dettagli e schema nella{" "}
+                        <Link
+                          to="/docs"
+                          className="text-primary underline-offset-2 hover:underline"
+                        >
                           documentazione API
                         </Link>
                         .
@@ -1375,11 +1422,31 @@ function AdminUsersPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  <BackupMetric label="Frequenza" value="Giornaliero automatico" detail="Backup gestiti da Supabase" />
-                  <BackupMetric label="Retention" value="30 giorni Pro / 7 giorni Free" detail="In base al piano Supabase" />
-                  <BackupMetric label="Ultimo backup" value="Gestito dal provider" detail="Verificabile dalla dashboard Supabase" />
-                  <BackupMetric label="RPO" value="< 24 ore" detail="Per backup automatici giornalieri" />
-                  <BackupMetric label="RTO" value="< 4 ore" detail="Ripristino coordinato con il supporto" />
+                  <BackupMetric
+                    label="Frequenza"
+                    value="Giornaliero automatico"
+                    detail="Backup gestiti da Supabase"
+                  />
+                  <BackupMetric
+                    label="Retention"
+                    value="30 giorni Pro / 7 giorni Free"
+                    detail="In base al piano Supabase"
+                  />
+                  <BackupMetric
+                    label="Ultimo backup"
+                    value="Gestito dal provider"
+                    detail="Verificabile dalla dashboard Supabase"
+                  />
+                  <BackupMetric
+                    label="RPO"
+                    value="< 24 ore"
+                    detail="Per backup automatici giornalieri"
+                  />
+                  <BackupMetric
+                    label="RTO"
+                    value="< 4 ore"
+                    detail="Ripristino coordinato con il supporto"
+                  />
                   <BackupMetric
                     label="Emergenze"
                     value={settings?.support_email || "Email supporto non configurata"}
@@ -1557,22 +1624,27 @@ function AdminUsersPage() {
                             </div>
                           ))}
                         </div>
-                          <div className="mt-3">
-                            <Label htmlFor="archive_after_days">Archiviazione automatica (giorni)</Label>
-                            <Input
-                              id="archive_after_days"
-                              type="number"
-                              min={0}
-                              max={365}
-                              {...settingsForm.register("archive_after_days")}
-                            />
-                            {settingsForm.formState.errors.archive_after_days && (
-                              <p className="text-sm text-destructive mt-1">
-                                {String(settingsForm.formState.errors.archive_after_days?.message)}
-                              </p>
-                            )}
-                            <p className="text-sm text-muted-foreground mt-1">Numero di giorni dopo il completamento per spostare il ticket in archivio. 0 = mai.</p>
-                          </div>
+                        <div className="mt-3">
+                          <Label htmlFor="archive_after_days">
+                            Archiviazione automatica (giorni)
+                          </Label>
+                          <Input
+                            id="archive_after_days"
+                            type="number"
+                            min={0}
+                            max={365}
+                            {...settingsForm.register("archive_after_days")}
+                          />
+                          {settingsForm.formState.errors.archive_after_days && (
+                            <p className="text-sm text-destructive mt-1">
+                              {String(settingsForm.formState.errors.archive_after_days?.message)}
+                            </p>
+                          )}
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Numero di giorni dopo il completamento per spostare il ticket in
+                            archivio. 0 = mai.
+                          </p>
+                        </div>
                       </div>
 
                       <div className="flex items-center space-x-2">

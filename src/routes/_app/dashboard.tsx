@@ -15,10 +15,20 @@ import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWid
 import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
-import { TrendingUp, Activity, Boxes, Clock, CircleCheck, ArrowRight, CalendarDays } from "lucide-react";
+import {
+  TrendingUp,
+  Activity,
+  Boxes,
+  Clock,
+  CircleCheck,
+  ArrowRight,
+  CalendarDays,
+} from "lucide-react";
 
 const AnalyticsCard = lazy(() =>
-  import("@/components/dashboard/AnalyticsCard").then((module) => ({ default: module.AnalyticsCard })),
+  import("@/components/dashboard/AnalyticsCard").then((module) => ({
+    default: module.AnalyticsCard,
+  })),
 );
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -86,9 +96,16 @@ function DashboardPage() {
   const range = useMemo(() => {
     const from = startOfDayIso(dateFrom);
     const to = endOfDayIso(dateTo);
-    return { from, to, days: Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000)) };
+    return {
+      from,
+      to,
+      days: Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000)),
+    };
   }, [dateFrom, dateTo]);
-  const periodLabel = useMemo(() => formatPeriodLabel(range.from, range.to), [range.from, range.to]);
+  const periodLabel = useMemo(
+    () => formatPeriodLabel(range.from, range.to),
+    [range.from, range.to],
+  );
 
   const { useDashboardSnapshot } = queries as any;
   const snap = useDashboardSnapshot({ from: range.from, to: range.to });
@@ -123,7 +140,9 @@ function DashboardPage() {
   useEffect(() => {
     if (!session?.access_token) return;
     setAnalyticsLoading(true);
-    loadAnalytics({ data: { accessToken: session.access_token, dateFrom: range.from, dateTo: range.to } })
+    loadAnalytics({
+      data: { accessToken: session.access_token, dateFrom: range.from, dateTo: range.to },
+    })
       .then((data) => setAnalytics(data))
       .catch(() => setAnalytics(null))
       .finally(() => setAnalyticsLoading(false));
@@ -204,26 +223,45 @@ function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <CalendarDays className="w-4 h-4 text-text3" />
-          <input className="pc-input pc-input-sm" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <input
+            className="pc-input pc-input-sm"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
           <span className="text-[12px] text-text3">→</span>
-          <input className="pc-input pc-input-sm" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <input
+            className="pc-input pc-input-sm"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
         </div>
       </div>
 
-      <Suspense fallback={<div className="pc-card pc-card-body text-sm text-text3">Caricamento analytics...</div>}>
+      <Suspense
+        fallback={
+          <div className="pc-card pc-card-body text-sm text-text3">Caricamento analytics...</div>
+        }
+      >
         <AnalyticsCard
           analytics={analytics}
           loading={analyticsLoading}
           periodLabel={periodLabel}
           onDownloadPdf={async () => {
             if (!analytics) return;
-            const settings =
-              session?.access_token
-                ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-                : null;
+            const settings = session?.access_token
+              ? await loadSettings({ data: { accessToken: session.access_token } }).catch(
+                  () => null,
+                )
+              : null;
             const org = settings?.organization_name;
             await downloadPdf(
-              <AnalyticsReportPdf analytics={analytics} periodLabel={periodLabel} organizationName={org} />,
+              <AnalyticsReportPdf
+                analytics={analytics}
+                periodLabel={periodLabel}
+                organizationName={org}
+              />,
               "dashboard-report.pdf",
             );
           }}
@@ -409,9 +447,15 @@ function DashboardPage() {
                     {Object.entries(counts)
                       .map(([s, n]) => ({ status: s as TicketStatus, n }))
                       .map((d) => (
-                        <div key={d.status} className="flex items-center justify-between text-[12px]">
+                        <div
+                          key={d.status}
+                          className="flex items-center justify-between text-[12px]"
+                        >
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: STATUS_META[d.status].color }} />
+                            <span
+                              className="w-2.5 h-2.5 rounded-sm"
+                              style={{ background: STATUS_META[d.status].color }}
+                            />
                             <span className="text-text2">{STATUS_META[d.status].label}</span>
                           </div>
                           <div className="font-mono text-text3">{d.n}</div>
@@ -438,39 +482,39 @@ function DashboardPage() {
           </div>
           <div className="pc-card-body">
             <div className="flex flex-col gap-[7px]">
-                {dedupLogs.map((l) => (
-                  <div
-                    key={l.id}
-                    className="flex items-start gap-[10px] px-[12px] py-[10px] rounded-[7px] text-[12px]"
-                    style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+              {dedupLogs.map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-start gap-[10px] px-[12px] py-[10px] rounded-[7px] text-[12px]"
+                  style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+                >
+                  <span
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                    title={l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}
+                    aria-label={`Azione eseguita da: ${l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}`}
+                    style={{
+                      background:
+                        l.type === "auto"
+                          ? "var(--accent2)"
+                          : l.type === "user"
+                            ? "var(--success-bg)"
+                            : "var(--surface3)",
+                      color:
+                        l.type === "auto"
+                          ? "var(--accent)"
+                          : l.type === "user"
+                            ? "var(--success)"
+                            : "var(--text3)",
+                    }}
                   >
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                      title={l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}
-                      aria-label={`Azione eseguita da: ${l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}`}
-                      style={{
-                        background:
-                          l.type === "auto"
-                            ? "var(--accent2)"
-                            : l.type === "user"
-                              ? "var(--success-bg)"
-                              : "var(--surface3)",
-                        color:
-                          l.type === "auto"
-                            ? "var(--accent)"
-                            : l.type === "user"
-                              ? "var(--success)"
-                              : "var(--text3)",
-                      }}
-                    >
-                      {l.actor?.initials ?? (l.type === "auto" ? "A" : l.type === "user" ? "U" : "-")}
-                    </span>
-                    <span className="flex-1 text-text2">{l.message}</span>
-                    <span className="text-[10.5px] text-text3 font-mono whitespace-nowrap">
-                      {fmtDateTime(l.created_at)}
-                    </span>
-                  </div>
-                ))}
+                    {l.actor?.initials ?? (l.type === "auto" ? "A" : l.type === "user" ? "U" : "-")}
+                  </span>
+                  <span className="flex-1 text-text2">{l.message}</span>
+                  <span className="text-[10.5px] text-text3 font-mono whitespace-nowrap">
+                    {fmtDateTime(l.created_at)}
+                  </span>
+                </div>
+              ))}
               {!dedupLogs.length && (
                 <div className="text-center text-text3 text-sm py-4">Nessuna attivita</div>
               )}
@@ -566,7 +610,10 @@ function Donut({
         {segments}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div className="text-[22px] font-bold leading-none" style={{ fontFamily: "var(--font-head)" }}>
+        <div
+          className="text-[22px] font-bold leading-none"
+          style={{ fontFamily: "var(--font-head)" }}
+        >
           {total}
         </div>
         <div className="text-[10px] text-text3 uppercase tracking-wider">Ticket</div>
@@ -584,7 +631,10 @@ function Donut({
       <div className="flex-1 flex flex-col gap-2">
         {data.map((d) => (
           <div key={d.status} className="flex items-center gap-2 text-[12px]">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: STATUS_META[d.status].color }} />
+            <span
+              className="w-2.5 h-2.5 rounded-sm"
+              style={{ background: STATUS_META[d.status].color }}
+            />
             <span className="flex-1 text-text2">{STATUS_META[d.status].label}</span>
             <span className="font-mono text-text3">{d.n}</span>
           </div>
@@ -627,11 +677,21 @@ function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
   const rows = [
     ["Report mensile"],
     ["Mese", "Ticket aperti", "Ticket chiusi", "Tempo medio risoluzione giorni"],
-    ...analytics.ticketsByMonth.map((row) => [row.label, row.opened, row.closed, row.avg_days ?? ""]),
+    ...analytics.ticketsByMonth.map((row) => [
+      row.label,
+      row.opened,
+      row.closed,
+      row.avg_days ?? "",
+    ]),
     [],
     ["Performance tecnici"],
     ["Tecnico", "Ticket assegnati", "Ticket completati", "Tempo medio risoluzione giorni"],
-    ...analytics.technicianKpi.map((row) => [row.full_name, row.assigned, row.completed, row.avg_days ?? ""]),
+    ...analytics.technicianKpi.map((row) => [
+      row.full_name,
+      row.assigned,
+      row.completed,
+      row.avg_days ?? "",
+    ]),
   ];
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });

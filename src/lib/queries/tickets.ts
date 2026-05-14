@@ -1,11 +1,12 @@
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { QUERY_KEYS } from './keys';
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { QUERY_KEYS } from "./keys";
 
 export async function loadClientOptions(query: string) {
-  let request = supabase.from('clients').select('id, name, company_name, email').order('name');
-  const term = query.trim().replace(/[,%]/g, '');
-  if (term) request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
+  let request = supabase.from("clients").select("id, name, company_name, email").order("name");
+  const term = query.trim().replace(/[,%]/g, "");
+  if (term)
+    request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%`);
   const { data, error } = await request.range(0, 19);
   if (error) throw error;
   return (data ?? []) as any[];
@@ -13,20 +14,24 @@ export async function loadClientOptions(query: string) {
 
 export async function fetchClientById(id: string) {
   if (!id) return null;
-  const { data, error } = await supabase.from('clients').select('id, name, company_name, email').eq('id', id).maybeSingle();
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name, company_name, email")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw error;
   return data ?? null;
 }
 
 export async function loadContactOptions(query: string, clientId: string) {
   if (!clientId) return [];
-  const term = query.trim().replace(/[,%]/g, '');
+  const term = query.trim().replace(/[,%]/g, "");
   let request = supabase
-    .from('client_contacts')
-    .select('id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary')
-    .eq('client_id', clientId)
-    .order('is_primary', { ascending: false })
-    .order('full_name');
+    .from("client_contacts")
+    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
+    .eq("client_id", clientId)
+    .order("is_primary", { ascending: false })
+    .order("full_name");
   if (term)
     request = request.or(
       `full_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,job_title.ilike.%${term}%,role.ilike.%${term}%`,
@@ -39,9 +44,9 @@ export async function loadContactOptions(query: string, clientId: string) {
 export async function fetchContactById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
-    .from('client_contacts')
-    .select('id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary')
-    .eq('id', id)
+    .from("client_contacts")
+    .select("id, client_id, full_name, first_name, last_name, email, job_title, role, is_primary")
+    .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   return data ?? null;
@@ -49,9 +54,16 @@ export async function fetchContactById(id: string) {
 
 export async function loadDeviceOptions(query: string, clientId: string) {
   if (!clientId) return [];
-  const term = query.trim().replace(/[,%]/g, '');
-  let request = supabase.from('devices').select('id, client_id, model, serial, os, assigned_to').eq('client_id', clientId).order('model');
-  if (term) request = request.or(`model.ilike.%${term}%,serial.ilike.%${term}%,assigned_to.ilike.%${term}%`);
+  const term = query.trim().replace(/[,%]/g, "");
+  let request = supabase
+    .from("devices")
+    .select("id, client_id, model, serial, os, assigned_to")
+    .eq("client_id", clientId)
+    .order("model");
+  if (term)
+    request = request.or(
+      `model.ilike.%${term}%,serial.ilike.%${term}%,assigned_to.ilike.%${term}%`,
+    );
   const { data, error } = await request.range(0, 19);
   if (error) throw error;
   return (data ?? []) as any[];
@@ -59,7 +71,11 @@ export async function loadDeviceOptions(query: string, clientId: string) {
 
 export async function fetchDeviceById(id: string) {
   if (!id) return null;
-  const { data, error } = await supabase.from('devices').select('id, client_id, model, serial, os, assigned_to').eq('id', id).maybeSingle();
+  const { data, error } = await supabase
+    .from("devices")
+    .select("id, client_id, model, serial, os, assigned_to")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw error;
   return data ?? null;
 }
@@ -68,7 +84,11 @@ export function useCreateTicket() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const { error, data } = await supabase.from('tickets').insert(payload).select('id, ticket_code').single();
+      const { error, data } = await supabase
+        .from("tickets")
+        .insert(payload)
+        .select("id, ticket_code")
+        .single();
       if (error) throw error;
       return data;
     },
@@ -81,11 +101,11 @@ export function useCreateTicket() {
 export async function fetchTicketById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
-    .from('tickets')
+    .from("tickets")
     .select(
       "*, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
     )
-    .eq('id', id)
+    .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   return data ?? null;
@@ -94,10 +114,10 @@ export async function fetchTicketById(id: string) {
 export async function fetchTicketAssignments(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
-    .from('ticket_device_assignments')
-    .select('id, assigned_at, unassigned_at, notes, device:devices(model, serial)')
-    .eq('ticket_id', id)
-    .order('assigned_at', { ascending: false });
+    .from("ticket_device_assignments")
+    .select("id, assigned_at, unassigned_at, notes, device:devices(model, serial)")
+    .eq("ticket_id", id)
+    .order("assigned_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as any[];
 }
@@ -105,10 +125,12 @@ export async function fetchTicketAssignments(id: string) {
 export async function fetchTicketAssignmentHistory(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
-    .from('ticket_device_assignment_history')
-    .select('id, action, occurred_at, actor_id, notes, changed_fields, device:devices(model, serial)')
-    .eq('ticket_id', id)
-    .order('occurred_at', { ascending: false });
+    .from("ticket_device_assignment_history")
+    .select(
+      "id, action, occurred_at, actor_id, notes, changed_fields, device:devices(model, serial)",
+    )
+    .eq("ticket_id", id)
+    .order("occurred_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as any[];
 }
@@ -128,19 +150,20 @@ export async function fetchTicketsList(params: TicketsListParams) {
   const page = params.page ?? 0;
 
   let query = supabase
-    .from('tickets')
+    .from("tickets")
     .select(
       "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-      { count: 'exact' },
+      { count: "exact" },
     )
-    .not('status', 'eq', 'archived' as any)
-    .order('created_at', { ascending: false });
+    .not("status", "eq", "archived" as any)
+    .order("created_at", { ascending: false });
 
-  if (params.status && params.status !== 'archived') query = query.eq('status', params.status as any);
-  if (params.priority) query = query.eq('priority', params.priority as any);
-  if (params.ticket_type) query = query.eq('ticket_type', params.ticket_type as any);
-  if (params.client_id) query = query.eq('client_id', params.client_id as any);
-  const q = (params.q || '').trim().replace(/[,%]/g, '');
+  if (params.status && params.status !== "archived")
+    query = query.eq("status", params.status as any);
+  if (params.priority) query = query.eq("priority", params.priority as any);
+  if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
+  if (params.client_id) query = query.eq("client_id", params.client_id as any);
+  const q = (params.q || "").trim().replace(/[,%]/g, "");
   if (q) query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
 
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -152,11 +175,11 @@ export function useTicketsList(params: TicketsListParams) {
   return useQuery({
     queryKey: [
       ...QUERY_KEYS.tickets,
-      params.status || '',
-      params.priority || '',
-      params.ticket_type || '',
-      params.client_id || '',
-      params.q || '',
+      params.status || "",
+      params.priority || "",
+      params.ticket_type || "",
+      params.client_id || "",
+      params.q || "",
       params.page ?? 0,
       params.pageSize ?? 50,
     ],
@@ -167,7 +190,7 @@ export function useTicketsList(params: TicketsListParams) {
 
 export function useTicketQuery(id: string | null) {
   return useQuery({
-    queryKey: QUERY_KEYS.ticket(id ?? 'null'),
+    queryKey: QUERY_KEYS.ticket(id ?? "null"),
     queryFn: () => fetchTicketById(id as string),
     enabled: !!id,
   });
@@ -175,7 +198,7 @@ export function useTicketQuery(id: string | null) {
 
 export function useTicketAssignmentsQuery(id: string | null) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.ticket(id ?? 'null'), 'assignments'],
+    queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "assignments"],
     queryFn: () => fetchTicketAssignments(id as string),
     enabled: !!id,
   });
@@ -183,7 +206,7 @@ export function useTicketAssignmentsQuery(id: string | null) {
 
 export function useTicketHistoryQuery(id: string | null) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.ticket(id ?? 'null'), 'history'],
+    queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "history"],
     queryFn: () => fetchTicketAssignmentHistory(id as string),
     enabled: !!id,
   });
@@ -193,7 +216,7 @@ export function useUpdateTicket() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
-      const { error } = await supabase.from('tickets').update(patch).eq('id', id);
+      const { error } = await supabase.from("tickets").update(patch).eq("id", id);
       if (error) throw error;
       return { id, patch };
     },
@@ -208,7 +231,7 @@ export function useDeleteTicket() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('tickets').delete().eq('id', id);
+      const { error } = await supabase.from("tickets").delete().eq("id", id);
       if (error) throw error;
       return id;
     },
@@ -220,7 +243,7 @@ export function useDeleteTicket() {
 
 export async function addTicketStatusHistory(ticketId: string, payload: any) {
   const record = { ticket_id: ticketId, ...payload };
-  const { error } = await supabase.from('ticket_status_history').insert(record);
+  const { error } = await supabase.from("ticket_status_history").insert(record);
   if (error) throw error;
   return true;
 }
@@ -228,7 +251,8 @@ export async function addTicketStatusHistory(ticketId: string, payload: any) {
 export function useAddTicketStatusHistory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, payload }: { ticketId: string; payload: any }) => addTicketStatusHistory(ticketId, payload),
+    mutationFn: ({ ticketId, payload }: { ticketId: string; payload: any }) =>
+      addTicketStatusHistory(ticketId, payload),
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.ticket(vars.ticketId) });
       qc.invalidateQueries({ queryKey: QUERY_KEYS.tickets });

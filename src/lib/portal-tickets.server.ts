@@ -36,7 +36,9 @@ export async function getPortalDashboardServer(input: { token: string }) {
     session,
     stats: {
       open: rows.filter((ticket) => ticket.status === "pending").length,
-      inProgress: rows.filter((ticket) => ticket.status === "in-progress" || ticket.status === "testing").length,
+      inProgress: rows.filter(
+        (ticket) => ticket.status === "in-progress" || ticket.status === "testing",
+      ).length,
       resolvedThisMonth: rows.filter(
         (ticket) => ticket.status === "ready" && new Date(ticket.updated_at) >= monthStart,
       ).length,
@@ -56,7 +58,9 @@ export async function listPortalTicketsServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data: tickets, error } = await supabaseAdmin
     .from("tickets" as any)
-    .select("id, ticket_code, model, notes, status, priority, created_at, updated_at, public_notes, assignee:profiles!tickets_assignee_id_fkey(full_name)")
+    .select(
+      "id, ticket_code, model, notes, status, priority, created_at, updated_at, public_notes, assignee:profiles!tickets_assignee_id_fkey(full_name)",
+    )
     .eq("client_id", session.clientId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -67,7 +71,9 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
   const session = await getPortalSession(input.token);
   const { data: ticket, error } = await supabaseAdmin
     .from("tickets" as any)
-    .select("id, ticket_code, model, notes, public_notes, status, priority, created_at, updated_at, assignee:profiles!tickets_assignee_id_fkey(full_name)")
+    .select(
+      "id, ticket_code, model, notes, public_notes, status, priority, created_at, updated_at, assignee:profiles!tickets_assignee_id_fkey(full_name)",
+    )
     .eq("id", input.ticketId)
     .eq("client_id", session.clientId)
     .maybeSingle();
@@ -85,7 +91,9 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
   }
 
   // Fetch actor info for status history
-  const actorIds = [...new Set(((history ?? []) as any[]).map((h) => h.changed_by).filter(Boolean))];
+  const actorIds = [
+    ...new Set(((history ?? []) as any[]).map((h) => h.changed_by).filter(Boolean)),
+  ];
   const { data: actors, error: actorsError } = actorIds.length
     ? await supabaseAdmin.from("profiles").select("id, full_name, initials").in("id", actorIds)
     : { data: [], error: null };
@@ -104,7 +112,9 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
     .order("created_at", { ascending: true });
   if (notesError) throw notesError;
 
-  const authorIds = [...new Set(((publicNotes ?? []) as any[]).map((note) => note.author_id).filter(Boolean))];
+  const authorIds = [
+    ...new Set(((publicNotes ?? []) as any[]).map((note) => note.author_id).filter(Boolean)),
+  ];
   const { data: authors, error: authorsError } = authorIds.length
     ? await supabaseAdmin.from("profiles").select("id, full_name, initials").in("id", authorIds)
     : { data: [], error: null };

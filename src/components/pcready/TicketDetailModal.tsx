@@ -20,8 +20,8 @@ import {
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
-import { useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEYS } from '@/lib/queries/keys';
+import { useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/queries/keys";
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { TicketNotes } from "@/components/tickets/TicketNotes";
@@ -74,7 +74,8 @@ export function TicketDetailModal() {
   const [tab, setTab] = useState<string>("");
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { useTicketQuery, useTicketAssignmentsQuery, useUpdateTicket, useDeleteTicket } = queries as any;
+  const { useTicketQuery, useTicketAssignmentsQuery, useUpdateTicket, useDeleteTicket } =
+    queries as any;
   const ticketQuery = useTicketQuery(id);
   const assignmentsQuery = useTicketAssignmentsQuery(id);
   const updateTicket = useUpdateTicket();
@@ -99,14 +100,14 @@ export function TicketDetailModal() {
 
   async function update(patch: { checklist?: ChecklistState; status?: TicketStatus }) {
     // cast to any to avoid strict DB update typing differences for status enum
-    const dbPatch: TablesUpdate<"tickets"> = ({
+    const dbPatch: TablesUpdate<"tickets"> = {
       ...patch,
       checklist: patch.checklist as unknown as Json | undefined,
-    } as any);
+    } as any;
     try {
       await updateTicket.mutateAsync({ id: ticket.id, patch: dbPatch });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Errore aggiornamento';
+      const message = err instanceof Error ? err.message : "Errore aggiornamento";
       return toast.error(message);
     }
   }
@@ -134,7 +135,10 @@ export function TicketDetailModal() {
         });
       }
       void sendChecklistEmail({
-        data: { ticketId: ticket.id, checklistName: struct[currentTab]?.label || "Checklist completata" },
+        data: {
+          ticketId: ticket.id,
+          checklistName: struct[currentTab]?.label || "Checklist completata",
+        },
       }).catch((err) => {
         console.error("Failed to send checklist completed email:", err);
       });
@@ -154,11 +158,16 @@ export function TicketDetailModal() {
         to_status: next,
         changed_by: user!.id,
         changed_at: new Date().toISOString(),
-        note: auto ? 'Avanzamento automatico via checklist' : null,
+        note: auto ? "Avanzamento automatico via checklist" : null,
       });
-      await insertActivity({ type: auto ? 'auto' : 'user', message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? ' automaticamente' : ''}`, ticket_id: ticket.id, actor_id: user!.id });
+      await insertActivity({
+        type: auto ? "auto" : "user",
+        message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? " automaticamente" : ""}`,
+        ticket_id: ticket.id,
+        actor_id: user!.id,
+      });
     } catch (err) {
-      console.error('Failed to write status history/activity log', err);
+      console.error("Failed to write status history/activity log", err);
     }
     if (ticket.assignee_id && session?.access_token) {
       await notify({
@@ -180,7 +189,9 @@ export function TicketDetailModal() {
     // Trigger completion workflow when status changes to 'completed'
     if (next === "completed" && session?.access_token) {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
-      void completeTicketServer({ data: { ticketId: ticket.id, changedBy: user!.id, accessToken: session.access_token } }).catch((err) => {
+      void completeTicketServer({
+        data: { ticketId: ticket.id, changedBy: user!.id, accessToken: session.access_token },
+      }).catch((err) => {
         console.error("Failed to complete ticket:", err);
         toast.error("Ticket completato, ma errore invio email/verbale");
       });
@@ -193,7 +204,7 @@ export function TicketDetailModal() {
       toast.success("Ticket eliminato");
       close();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Errore cancellazione';
+      const message = err instanceof Error ? err.message : "Errore cancellazione";
       toast.error(message);
     }
   }
@@ -209,7 +220,10 @@ export function TicketDetailModal() {
       footer={
         <>
           {isAdmin && (
-            <button className="pc-btn pc-btn-danger pc-btn-sm mr-auto" onClick={() => setDeleteOpen(true)}>
+            <button
+              className="pc-btn pc-btn-danger pc-btn-sm mr-auto"
+              onClick={() => setDeleteOpen(true)}
+            >
               <Trash2 className="w-3 h-3" /> Elimina
             </button>
           )}
@@ -228,7 +242,11 @@ export function TicketDetailModal() {
         <Info label="Cliente" value={ticket.client} />
         <Info
           label="Stato"
-          value={<div className="flex flex-wrap items-center gap-1.5"><StatusBadge status={ticket.status} /></div>}
+          value={
+            <div className="flex flex-wrap items-center gap-1.5">
+              <StatusBadge status={ticket.status} />
+            </div>
+          }
         />
         <Info label="Asset" value={asset.model} />
         <Info
@@ -241,7 +259,9 @@ export function TicketDetailModal() {
         <Info label="Utente asset" value={asset.assignedTo} />
         <Info
           label="Assegnato a"
-          value={<AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />}
+          value={
+            <AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />
+          }
         />
         <Info label="Creato" value={fmtDate(ticket.created_at)} />
         <Info label="OS asset" value={asset.os} />

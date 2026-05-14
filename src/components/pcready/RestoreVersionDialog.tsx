@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -13,7 +19,12 @@ interface RestoreVersionDialogProps {
   onConfirm: (note?: string) => void;
 }
 
-export function RestoreVersionDialog({ version, open, onClose, onConfirm }: RestoreVersionDialogProps) {
+export function RestoreVersionDialog({
+  version,
+  open,
+  onClose,
+  onConfirm,
+}: RestoreVersionDialogProps) {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -39,8 +50,8 @@ export function RestoreVersionDialog({ version, open, onClose, onConfirm }: Rest
         <div className="space-y-4">
           <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
             <p className="text-sm text-orange-800 dark:text-orange-200">
-              Stai per ripristinare questa versione. Verrà creata una nuova versione con il contenuto ripristinato.
-              L'operazione non può essere annullata.
+              Stai per ripristinare questa versione. Verrà creata una nuova versione con il
+              contenuto ripristinato. L'operazione non può essere annullata.
             </p>
           </div>
 
@@ -60,11 +71,7 @@ export function RestoreVersionDialog({ version, open, onClose, onConfirm }: Rest
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Annulla
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={loading}
-          >
+          <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
             {loading ? "Ripristino..." : "Conferma Ripristino"}
           </Button>
         </DialogFooter>

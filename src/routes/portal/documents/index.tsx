@@ -17,7 +17,8 @@ function PortalDocumentsPage() {
         </p>
       </div>
       <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-        Generazione PDF server-side protetta pronta per integrazione completa con i verbali ticket completati.
+        Generazione PDF server-side protetta pronta per integrazione completa con i verbali ticket
+        completati.
       </div>
     </div>
   );

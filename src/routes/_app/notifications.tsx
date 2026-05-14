@@ -129,9 +129,7 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      {loadError && (
-        <PageFetchError message={loadError} onRetry={() => void load()} />
-      )}
+      {loadError && <PageFetchError message={loadError} onRetry={() => void load()} />}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={view} onValueChange={(value) => setView(value as "all" | "unread")}>
           <SelectTrigger className="w-40">

@@ -17,10 +17,15 @@ type EmailTemplateRow = {
 };
 
 export function renderTemplate(template: string, values: Record<string, string>): string {
-  return template.replace(/\{\{[a-z0-9_]+\}\}/gi, (token) => values[token] ?? values[token.slice(2, -2)] ?? "");
+  return template.replace(
+    /\{\{[a-z0-9_]+\}\}/gi,
+    (token) => values[token] ?? values[token.slice(2, -2)] ?? "",
+  );
 }
 
-export async function getEmailTemplateByEvent(eventType: EmailEventType): Promise<EmailTemplateRow | null> {
+export async function getEmailTemplateByEvent(
+  eventType: EmailEventType,
+): Promise<EmailTemplateRow | null> {
   const { data, error } = await supabaseAdmin
     .from("email_templates" as any)
     .select("*")
@@ -60,7 +65,10 @@ export async function fetchProfileName(userId: string): Promise<string> {
   return data?.full_name || "Utente";
 }
 
-export async function userAllowsEmail(userId: string, preference: "notify_ticket_assigned" | "notify_checklist_completed"): Promise<boolean> {
+export async function userAllowsEmail(
+  userId: string,
+  preference: "notify_ticket_assigned" | "notify_checklist_completed",
+): Promise<boolean> {
   const { data, error } = await supabaseAdmin
     .from("user_profiles")
     .select(preference)
@@ -82,7 +90,9 @@ export async function userAllowsEmail(userId: string, preference: "notify_ticket
 export async function getEmailCommonVariables(userId?: string | null, userEmail?: string | null) {
   const { data, error } = await supabaseAdmin.from("app_settings" as any).select("key, value");
   if (error) console.error("getEmailCommonVariables settings failed:", error);
-  const settings = mergeAppSettingsRows((data ?? []) as unknown as { key: string; value: unknown }[]);
+  const settings = mergeAppSettingsRows(
+    (data ?? []) as unknown as { key: string; value: unknown }[],
+  );
   const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000";
 
   return {
@@ -106,7 +116,9 @@ export async function sendEmailEvent(params: {
 
   const subject = renderTemplate(template.subject, params.variables);
   const html = renderTemplate(template.body_html, params.variables);
-  const text = template.body_text ? renderTemplate(template.body_text, params.variables) : undefined;
+  const text = template.body_text
+    ? renderTemplate(template.body_text, params.variables)
+    : undefined;
 
   await sendEmail(params.to, subject, html, text);
 }

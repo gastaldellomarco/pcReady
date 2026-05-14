@@ -5,13 +5,7 @@ export function LoadingSkeleton({ variant = "app" as const }: { variant?: "app" 
   return <ListSkeleton rows={5} variant={variant} className="p-1" />;
 }
 
-function RouteErrorView({
-  error,
-  reset,
-}: {
-  error: Error | unknown;
-  reset?: () => void;
-}) {
+function RouteErrorView({ error, reset }: { error: Error | unknown; reset?: () => void }) {
   const router = useRouter();
   const message = errorMessage(error, "Errore sconosciuto");
   const onRetry = () => {
@@ -21,13 +15,7 @@ function RouteErrorView({
   return <PageFetchError title="Qualcosa è andato storto" message={message} onRetry={onRetry} />;
 }
 
-export function RouteError({
-  error,
-  reset,
-}: {
-  error: Error | unknown;
-  reset?: () => void;
-}) {
+export function RouteError({ error, reset }: { error: Error | unknown; reset?: () => void }) {
   return <RouteErrorView error={error} reset={reset} />;
 }
 

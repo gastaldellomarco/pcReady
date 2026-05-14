@@ -18,7 +18,13 @@ function clamp(v: number, a: number, b: number) {
   return Math.max(a, Math.min(b, v));
 }
 
-export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: string }) {
+export default function TechnicianRadarWidget({
+  dateFrom,
+  dateTo,
+}: {
+  dateFrom?: string;
+  dateTo?: string;
+}) {
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianRadarMetrics);
   const [rows, setRows] = useState<any[]>([]);
@@ -56,8 +62,9 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
   }, [rows, selectedId]);
 
   const selected = useMemo(
-    () => rows.find((r) => r.id === selectedId || r.technician_id === selectedId) ?? rows[0] ?? null,
-    [rows, selectedId]
+    () =>
+      rows.find((r) => r.id === selectedId || r.technician_id === selectedId) ?? rows[0] ?? null,
+    [rows, selectedId],
   );
 
   const data = useMemo(() => {
@@ -71,7 +78,10 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
       { key: "affidabilita", label: "Affidabilità" },
     ];
 
-    return metricKeys.map((m) => ({ metric: m.label, value: clamp(Number(n[m.key] ?? 0), 0, 100) }));
+    return metricKeys.map((m) => ({
+      metric: m.label,
+      value: clamp(Number(n[m.key] ?? 0), 0, 100),
+    }));
   }, [selected]);
 
   const dataAll = useMemo(() => {
@@ -104,7 +114,12 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="form-checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="form-checkbox"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+            />
             Mostra tutti
           </label>
           <select
@@ -114,7 +129,9 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
             disabled={showAll}
           >
             {rows.map((r) => (
-              <option key={r.id ?? r.technician_id} value={r.id ?? r.technician_id}>{r.full_name}</option>
+              <option key={r.id ?? r.technician_id} value={r.id ?? r.technician_id}>
+                {r.full_name}
+              </option>
             ))}
           </select>
         </div>
@@ -147,7 +164,13 @@ export default function TechnicianRadarWidget({ dateFrom, dateTo }: { dateFrom?:
                 <PolarGrid />
                 <PolarAngleAxis dataKey="metric" />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                <Radar name={selected?.full_name ?? "Tecnico"} dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                <Radar
+                  name={selected?.full_name ?? "Tecnico"}
+                  dataKey="value"
+                  stroke="#8884d8"
+                  fill="#8884d8"
+                  fillOpacity={0.6}
+                />
                 <Tooltip />
                 <Legend />
               </RadarChart>

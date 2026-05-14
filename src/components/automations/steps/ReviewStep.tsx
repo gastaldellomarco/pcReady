@@ -27,11 +27,19 @@ export default function ReviewStep({
       <div className="mt-3 space-y-2">
         <div>
           <label className="text-sm">Nome</label>
-          <input className="block w-full mt-1 rounded-md border px-2 py-1" value={name} onChange={(e) => onChangeName(e.target.value)} />
+          <input
+            className="block w-full mt-1 rounded-md border px-2 py-1"
+            value={name}
+            onChange={(e) => onChangeName(e.target.value)}
+          />
         </div>
         <div>
           <label className="text-sm">Descrizione</label>
-          <input className="block w-full mt-1 rounded-md border px-2 py-1" value={description ?? ""} onChange={(e) => onChangeDescription(e.target.value)} />
+          <input
+            className="block w-full mt-1 rounded-md border px-2 py-1"
+            value={description ?? ""}
+            onChange={(e) => onChangeDescription(e.target.value)}
+          />
         </div>
 
         <div className="rounded border p-3">
@@ -56,7 +64,10 @@ export default function ReviewStep({
         {schedule && (
           <div className="rounded border p-3">
             <div className="text-sm font-medium">Schedule</div>
-            <div className="text-sm text-text3 mt-1">{schedule.type}{schedule.cron ? ` - ${schedule.cron}` : ""}</div>
+            <div className="text-sm text-text3 mt-1">
+              {schedule.type}
+              {schedule.cron ? ` - ${schedule.cron}` : ""}
+            </div>
           </div>
         )}
       </div>

@@ -1,4 +1,10 @@
-export type TicketStatus = "pending" | "in-progress" | "testing" | "ready" | "completed" | "archived";
+export type TicketStatus =
+  | "pending"
+  | "in-progress"
+  | "testing"
+  | "ready"
+  | "completed"
+  | "archived";
 export type TicketPriority = "high" | "med" | "low";
 export type TicketType = "device" | "support" | "maintenance" | "other";
 
@@ -167,7 +173,9 @@ export function fmtDateTime(s?: string | Date | null): string {
   yest.setDate(yest.getDate() - 1);
   const isYest = d.toDateString() === yest.toDateString();
   // Respect application default timezone if set in client cache
-  const clientSettings = (globalThis as any).__APP_SETTINGS__ as { default_timezone?: string } | undefined;
+  const clientSettings = (globalThis as any).__APP_SETTINGS__ as
+    | { default_timezone?: string }
+    | undefined;
   const timeZone = clientSettings?.default_timezone || undefined;
   const time = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone });
   if (isToday) return `Oggi ${time}`;

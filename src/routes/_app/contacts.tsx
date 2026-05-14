@@ -44,7 +44,7 @@ function ContactsPage() {
   const { useGlobalContacts } = queries as any;
   const contactsQuery = useGlobalContacts();
   const contacts = useMemo(
-    () => ((contactsQuery.data ?? []) as GlobalContactRow[]),
+    () => (contactsQuery.data ?? []) as GlobalContactRow[],
     [contactsQuery.data],
   );
   const [q, setQ] = useState("");
@@ -55,7 +55,12 @@ function ContactsPage() {
   const [deleteTarget, setDeleteTarget] = useState<GlobalContactRow | null>(null);
   const [form, setForm] = useState<ContactForm>(emptyContactForm);
   const [busy, setBusy] = useState(false);
-  const [portalLink, setPortalLink] = useState<{ contactName: string; clientName: string; loginUrl: string; expiresAt: string } | null>(null);
+  const [portalLink, setPortalLink] = useState<{
+    contactName: string;
+    clientName: string;
+    loginUrl: string;
+    expiresAt: string;
+  } | null>(null);
   const [copiedPortalLink, setCopiedPortalLink] = useState(false);
 
   const clients = useMemo(
@@ -71,7 +76,10 @@ function ContactsPage() {
     [contacts],
   );
   const departments = useMemo(
-    () => Array.from(new Set(contacts.map((contact) => contact.department).filter(Boolean) as string[])).sort(),
+    () =>
+      Array.from(
+        new Set(contacts.map((contact) => contact.department).filter(Boolean) as string[]),
+      ).sort(),
     [contacts],
   );
   const filteredContacts = contacts.filter((contact) => {
@@ -110,7 +118,10 @@ function ContactsPage() {
     setBusy(true);
     try {
       if (form.is_primary) {
-        await supabase.from("client_contacts").update({ is_primary: false }).eq("client_id", editing.client_id);
+        await supabase
+          .from("client_contacts")
+          .update({ is_primary: false })
+          .eq("client_id", editing.client_id);
       }
       const { error } = await supabase
         .from("client_contacts")
@@ -180,29 +191,55 @@ function ContactsPage() {
       <div className="pc-card-hd">
         <div>
           <div className="pc-card-title">Referenti</div>
-          <div className="mt-1 text-sm text-text3">{filteredContacts.length}/{contacts.length} referenti</div>
+          <div className="mt-1 text-sm text-text3">
+            {filteredContacts.length}/{contacts.length} referenti
+          </div>
         </div>
         <Users className="h-5 w-5 text-text3" />
       </div>
 
-      <div className="grid gap-2 border-b p-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_170px]" style={{ borderColor: "var(--border)" }}>
+      <div
+        className="grid gap-2 border-b p-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_170px]"
+        style={{ borderColor: "var(--border)" }}
+      >
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-text3" />
-          <input className="pc-input" value={q} onChange={(event) => setQ(event.target.value)} placeholder="Cerca per nome, email o cliente..." />
+          <input
+            className="pc-input"
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            placeholder="Cerca per nome, email o cliente..."
+          />
         </div>
-        <select className="pc-input" value={clientFilter} onChange={(event) => setClientFilter(event.target.value)}>
+        <select
+          className="pc-input"
+          value={clientFilter}
+          onChange={(event) => setClientFilter(event.target.value)}
+        >
           <option value="all">Tutti i clienti</option>
           {clients.map((client) => (
-            <option key={client.id} value={client.id}>{clientName(client)}</option>
+            <option key={client.id} value={client.id}>
+              {clientName(client)}
+            </option>
           ))}
         </select>
-        <select className="pc-input" value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value)}>
+        <select
+          className="pc-input"
+          value={departmentFilter}
+          onChange={(event) => setDepartmentFilter(event.target.value)}
+        >
           <option value="all">Tutti i reparti</option>
           {departments.map((department) => (
-            <option key={department} value={department}>{department}</option>
+            <option key={department} value={department}>
+              {department}
+            </option>
           ))}
         </select>
-        <select className="pc-input" value={portalFilter} onChange={(event) => setPortalFilter(event.target.value as typeof portalFilter)}>
+        <select
+          className="pc-input"
+          value={portalFilter}
+          onChange={(event) => setPortalFilter(event.target.value as typeof portalFilter)}
+        >
           <option value="all">Accesso portale</option>
           <option value="active">Portale attivo</option>
           <option value="inactive">Senza accesso</option>
@@ -213,17 +250,46 @@ function ContactsPage() {
         <table className="w-full text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
-              {["Nome", "Cliente", "Email", "Telefono", "Ruolo", "Reparto", "Principale", "Accesso portale", "Azioni"].map((header) => (
-                <th key={header} className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">{header}</th>
+              {[
+                "Nome",
+                "Cliente",
+                "Email",
+                "Telefono",
+                "Ruolo",
+                "Reparto",
+                "Principale",
+                "Accesso portale",
+                "Azioni",
+              ].map((header) => (
+                <th
+                  key={header}
+                  className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+                >
+                  {header}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filteredContacts.map((contact) => (
-              <tr key={contact.id} className="border-t hover:bg-surface2" style={{ borderColor: "var(--border)" }}>
+              <tr
+                key={contact.id}
+                className="border-t hover:bg-surface2"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <td className="px-3 py-2 font-semibold">
-                  <button className="inline-flex items-center gap-1 text-left text-accent" onClick={() => void navigate({ to: "/clients", search: { clientId: contact.client_id, tab: "contacts" } })}>
-                    {contact.is_primary && <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />}
+                  <button
+                    className="inline-flex items-center gap-1 text-left text-accent"
+                    onClick={() =>
+                      void navigate({
+                        to: "/clients",
+                        search: { clientId: contact.client_id, tab: "contacts" },
+                      })
+                    }
+                  >
+                    {contact.is_primary && (
+                      <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />
+                    )}
                     {contactLabel(contact)}
                   </button>
                 </td>
@@ -233,16 +299,31 @@ function ContactsPage() {
                 <td className="px-3 py-2">{contact.job_title || "-"}</td>
                 <td className="px-3 py-2">{contact.department || "-"}</td>
                 <td className="px-3 py-2">{contact.is_primary ? "Si" : "-"}</td>
-                <td className="px-3 py-2"><PortalBadge active={contact.portal_active} /></td>
+                <td className="px-3 py-2">
+                  <PortalBadge active={contact.portal_active} />
+                </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
-                    <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canEdit} onClick={() => openEdit(contact)}>
+                    <button
+                      className="pc-btn pc-btn-ghost pc-btn-xs"
+                      disabled={!canEdit}
+                      onClick={() => openEdit(contact)}
+                    >
                       <Pencil className="h-3 w-3" /> Modifica
                     </button>
-                    <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || busy} onClick={() => generateContactPortalLink(contact)}>
+                    <button
+                      className="pc-btn pc-btn-ghost pc-btn-xs"
+                      disabled={!canManagePortalAccess || busy}
+                      onClick={() => generateContactPortalLink(contact)}
+                    >
                       <Link2 className="h-3 w-3" /> Portale
                     </button>
-                    <button className="pc-btn-icon" disabled={!canDelete} onClick={() => setDeleteTarget(contact)} title="Elimina referente">
+                    <button
+                      className="pc-btn-icon"
+                      disabled={!canDelete}
+                      onClick={() => setDeleteTarget(contact)}
+                      title="Elimina referente"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
@@ -251,15 +332,30 @@ function ContactsPage() {
             ))}
             {!filteredContacts.length && (
               <tr>
-                <td className="px-3 py-10 text-center text-sm text-text3" colSpan={9}>Nessun referente trovato</td>
+                <td className="px-3 py-10 text-center text-sm text-text3" colSpan={9}>
+                  Nessun referente trovato
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <EditContactModal editing={editing} form={form} busy={busy} canEdit={canEdit} setForm={setForm} onClose={() => setEditing(null)} onSave={saveEdit} />
-      <PortalLinkModal portalLink={portalLink} copied={copiedPortalLink} onClose={() => setPortalLink(null)} onCopy={copyPortalLink} />
+      <EditContactModal
+        editing={editing}
+        form={form}
+        busy={busy}
+        canEdit={canEdit}
+        setForm={setForm}
+        onClose={() => setEditing(null)}
+        onSave={saveEdit}
+      />
+      <PortalLinkModal
+        portalLink={portalLink}
+        copied={copiedPortalLink}
+        onClose={() => setPortalLink(null)}
+        onCopy={copyPortalLink}
+      />
       <DestructiveConfirmDialog
         open={!!deleteTarget}
         title="Eliminare questo referente?"
@@ -303,19 +399,66 @@ function EditContactModal({
       title="Modifica referente"
       footer={
         <>
-          <button className="pc-btn pc-btn-ghost" onClick={onClose} disabled={busy}>Annulla</button>
-          <button className="pc-btn pc-btn-primary" onClick={onSave} disabled={busy || !canEdit}>Salva referente</button>
+          <button className="pc-btn pc-btn-ghost" onClick={onClose} disabled={busy}>
+            Annulla
+          </button>
+          <button className="pc-btn pc-btn-primary" onClick={onSave} disabled={busy || !canEdit}>
+            Salva referente
+          </button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Field label="Nome e cognome *"><input className="pc-input" value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></Field>
-        <Field label="Email"><input className="pc-input" type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></Field>
-        <Field label="Telefono"><input className="pc-input" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></Field>
-        <Field label="Ruolo"><input className="pc-input" value={form.job_title} onChange={(event) => setForm((current) => ({ ...current, job_title: event.target.value }))} /></Field>
-        <Field label="Reparto"><input className="pc-input" value={form.department} onChange={(event) => setForm((current) => ({ ...current, department: event.target.value }))} /></Field>
+        <Field label="Nome e cognome *">
+          <input
+            className="pc-input"
+            value={form.full_name}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, full_name: event.target.value }))
+            }
+          />
+        </Field>
+        <Field label="Email">
+          <input
+            className="pc-input"
+            type="email"
+            value={form.email}
+            onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+          />
+        </Field>
+        <Field label="Telefono">
+          <input
+            className="pc-input"
+            value={form.phone}
+            onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+          />
+        </Field>
+        <Field label="Ruolo">
+          <input
+            className="pc-input"
+            value={form.job_title}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, job_title: event.target.value }))
+            }
+          />
+        </Field>
+        <Field label="Reparto">
+          <input
+            className="pc-input"
+            value={form.department}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, department: event.target.value }))
+            }
+          />
+        </Field>
         <label className="flex items-center gap-2 pt-6 text-[12px] text-text2">
-          <input type="checkbox" checked={form.is_primary} onChange={(event) => setForm((current) => ({ ...current, is_primary: event.target.checked }))} />
+          <input
+            type="checkbox"
+            checked={form.is_primary}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, is_primary: event.target.checked }))
+            }
+          />
           Referente principale
         </label>
       </div>
@@ -329,7 +472,12 @@ function PortalLinkModal({
   onClose,
   onCopy,
 }: {
-  portalLink: { contactName: string; clientName: string; loginUrl: string; expiresAt: string } | null;
+  portalLink: {
+    contactName: string;
+    clientName: string;
+    loginUrl: string;
+    expiresAt: string;
+  } | null;
   copied: boolean;
   onClose: () => void;
   onCopy: () => void;
@@ -341,9 +489,19 @@ function PortalLinkModal({
       title="Link accesso portale"
       footer={
         <>
-          <button className="pc-btn pc-btn-ghost" onClick={onClose}>Chiudi</button>
+          <button className="pc-btn pc-btn-ghost" onClick={onClose}>
+            Chiudi
+          </button>
           <button className="pc-btn pc-btn-primary" onClick={onCopy}>
-            {copied ? <><CheckCircle2 className="w-3 h-3" /> Copiato</> : <><Copy className="w-3 h-3" /> Copia link</>}
+            {copied ? (
+              <>
+                <CheckCircle2 className="w-3 h-3" /> Copiato
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3" /> Copia link
+              </>
+            )}
           </button>
         </>
       }
@@ -355,7 +513,10 @@ function PortalLinkModal({
             <div className="text-[13px] font-semibold">{portalLink.contactName}</div>
             <div className="text-[12px] text-text3">{portalLink.clientName}</div>
           </div>
-          <div className="break-all rounded-md border px-3 py-2 font-mono text-[12px]" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+          <div
+            className="break-all rounded-md border px-3 py-2 font-mono text-[12px]"
+            style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+          >
             {portalLink.loginUrl}
           </div>
         </div>
@@ -375,7 +536,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function PortalBadge({ active }: { active: boolean }) {
   return (
-    <span className="inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ background: active ? "rgba(22, 163, 74, .12)" : "var(--surface2)", color: active ? "#15803d" : "var(--text3)" }}>
+    <span
+      className="inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+      style={{
+        background: active ? "rgba(22, 163, 74, .12)" : "var(--surface2)",
+        color: active ? "#15803d" : "var(--text3)",
+      }}
+    >
       {active ? "Attivo" : "Nessun accesso"}
     </span>
   );

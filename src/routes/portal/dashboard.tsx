@@ -44,11 +44,7 @@ function PortalDashboardPage() {
 
   if (error) {
     return (
-      <PageFetchError
-        variant="portal"
-        message={error}
-        onRetry={() => setRetryKey((k) => k + 1)}
-      />
+      <PageFetchError variant="portal" message={error} onRetry={() => setRetryKey((k) => k + 1)} />
     );
   }
 

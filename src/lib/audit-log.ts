@@ -20,7 +20,10 @@ export type AuditLogFilters = {
 };
 
 export const getAuditLog = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string; page?: number; pageSize?: number; filters?: AuditLogFilters }) => data)
+  .inputValidator(
+    (data: { accessToken: string; page?: number; pageSize?: number; filters?: AuditLogFilters }) =>
+      data,
+  )
   .handler(async ({ data: { accessToken, page = 1, pageSize = 25, filters } }) => {
     await requireAdmin(accessToken);
 
@@ -109,7 +112,8 @@ export const exportAuditLog = createServerFn({ method: "GET" })
 
     let query = supabaseAdmin
       .from("activity_log")
-      .select(`
+      .select(
+        `
         id,
         type,
         message,
@@ -117,7 +121,8 @@ export const exportAuditLog = createServerFn({ method: "GET" })
         actor_id,
         created_at,
         profiles!activity_log_actor_id_fkey(full_name)
-      `)
+      `,
+      )
       .order("created_at", { ascending: false });
 
     if (filters?.user) {
@@ -153,17 +158,19 @@ export const exportAuditLog = createServerFn({ method: "GET" })
 
     // Generate CSV
     const csvHeader = "Data,Ora,Utente,Tipo,Azione,Ticket\n";
-    const csvRows = dedup.map((row: any) => {
-      const date = new Date(row.created_at);
-      const dateStr = date.toLocaleDateString("it-IT");
-      const timeStr = date.toLocaleTimeString("it-IT");
-      const actor = row.profiles?.full_name || "Sistema";
-      const type = row.type === "sys" ? "Sistema" : row.type === "auto" ? "Automatico" : "Utente";
-      const message = `"${(row.message || "").replace(/"/g, '""')}"`;
-      const ticket = row.ticket_id || "";
+    const csvRows = dedup
+      .map((row: any) => {
+        const date = new Date(row.created_at);
+        const dateStr = date.toLocaleDateString("it-IT");
+        const timeStr = date.toLocaleTimeString("it-IT");
+        const actor = row.profiles?.full_name || "Sistema";
+        const type = row.type === "sys" ? "Sistema" : row.type === "auto" ? "Automatico" : "Utente";
+        const message = `"${(row.message || "").replace(/"/g, '""')}"`;
+        const ticket = row.ticket_id || "";
 
-      return `${dateStr},${timeStr},${actor},${type},${message},${ticket}`;
-    }).join("\n");
+        return `${dateStr},${timeStr},${actor},${type},${message},${ticket}`;
+      })
+      .join("\n");
 
     const csv = csvHeader + csvRows;
 

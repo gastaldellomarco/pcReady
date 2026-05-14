@@ -38,13 +38,9 @@ export function useRealtimeTable<T>(
 
     const channel = supabase
       .channel(`realtime:public:${table}:${channelSuffix}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table },
-        () => {
-          void load();
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+        void load();
+      })
       .subscribe();
 
     return () => {

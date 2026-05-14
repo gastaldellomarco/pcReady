@@ -17,13 +17,21 @@ import {
   TICKET_TYPE_LABEL,
   fmtDate,
 } from "@/lib/pcready";
-import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "@/components/pcready/StatusBadge";
+import {
+  StatusBadge,
+  PriorityLabel,
+  AssigneeChip,
+  TicketTypeBadge,
+} from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
 import { Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 import { getPublicAppSettings } from "@/lib/app-settings";
-import { AsyncAutocomplete, type AsyncAutocompleteOption } from "@/components/pcready/AsyncAutocomplete";
+import {
+  AsyncAutocomplete,
+  type AsyncAutocompleteOption,
+} from "@/components/pcready/AsyncAutocomplete";
 
 export const Route = createFileRoute("/_app/tickets")({
   head: () => ({
@@ -104,10 +112,8 @@ function TicketsPage() {
   useEffect(() => {
     const channel = supabase
       .channel("tickets-list-updates")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tickets" },
-        () => setHasUpdates(true),
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () =>
+        setHasUpdates(true),
       )
       .subscribe();
     return () => {
@@ -132,7 +138,7 @@ function TicketsPage() {
         description: client.email,
       }));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Errore caricamento clienti');
+      toast.error(err instanceof Error ? err.message : "Errore caricamento clienti");
       return [];
     }
   }
@@ -156,10 +162,9 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da esportare");
     setPdfBusy("download");
     try {
-      const settings =
-        session?.access_token
-          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-          : null;
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
       const org = settings?.organization_name;
       await downloadPdf(
         <TicketListPdf rows={pdfRows()} organizationName={org} />,
@@ -177,10 +182,9 @@ function TicketsPage() {
     if (!data.length) return toast.error("Nessun ticket da visualizzare");
     setPdfBusy("preview");
     try {
-      const settings =
-        session?.access_token
-          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-          : null;
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
       const org = settings?.organization_name;
       await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
@@ -251,7 +255,7 @@ function TicketsPage() {
             </option>
           ))}
         </select>
-          <AsyncAutocomplete
+        <AsyncAutocomplete
           className="w-[220px]"
           value={fc}
           selectedOption={selectedClient}
@@ -344,7 +348,10 @@ function TicketsPage() {
                         <TicketTypeBadge type={t.ticket_type} />
                       </td>
                       <td className="px-[14px] py-[10px]">
-                        <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />
+                        <AssigneeChip
+                          initials={t.assignee?.initials}
+                          name={t.assignee?.full_name}
+                        />
                       </td>
                       <td className="px-[14px] py-[10px] text-[11px] text-text3">
                         {fmtDate(t.created_at)}

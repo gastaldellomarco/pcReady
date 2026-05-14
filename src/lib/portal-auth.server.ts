@@ -62,7 +62,9 @@ export async function requestPortalLoginServer(input: { email: string; sendMail?
 
   const { data: contact, error } = await supabaseAdmin
     .from("client_contacts" as any)
-    .select("id, client_id, full_name, email, clients!inner(id, name, company_name, portal_enabled)")
+    .select(
+      "id, client_id, full_name, email, clients!inner(id, name, company_name, portal_enabled)",
+    )
     .ilike("email", email)
     .maybeSingle();
 
@@ -73,7 +75,8 @@ export async function requestPortalLoginServer(input: { email: string; sendMail?
   }
 
   const { loginUrl, expiresAt } = await createPortalSession(contact, 24);
-  const clientName = (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
+  const clientName =
+    (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
 
   if (input.sendMail !== false) {
     await sendEmail(
@@ -98,7 +101,9 @@ export async function generatePortalAccessLinkServer(input: {
 
   const { data: contact, error } = await supabaseAdmin
     .from("client_contacts" as any)
-    .select("id, client_id, full_name, email, clients!inner(id, name, company_name, portal_enabled)")
+    .select(
+      "id, client_id, full_name, email, clients!inner(id, name, company_name, portal_enabled)",
+    )
     .eq("id", input.contactId)
     .maybeSingle();
   if (error) throw error;
@@ -109,7 +114,8 @@ export async function generatePortalAccessLinkServer(input: {
 
   const { loginUrl, expiresAt } = await createPortalSession(contact, ttlHours);
   const contactName = (contact as any).full_name || (contact as any).email || "referente";
-  const clientName = (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
+  const clientName =
+    (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
 
   await supabaseAdmin.from("activity_log" as any).insert({
     type: "user",
@@ -135,7 +141,10 @@ export async function generatePortalAccessLinkServer(input: {
   };
 }
 
-export async function revokePortalAccessLinkServer(input: { accessToken: string; contactId: string }) {
+export async function revokePortalAccessLinkServer(input: {
+  accessToken: string;
+  contactId: string;
+}) {
   const user = await assertPortalLinkOperator(input.accessToken);
   const now = new Date().toISOString();
 
@@ -157,7 +166,8 @@ export async function revokePortalAccessLinkServer(input: { accessToken: string;
   if (error) throw error;
 
   const contactName = (contact as any).full_name || (contact as any).email || "referente";
-  const clientName = (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
+  const clientName =
+    (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
   const revokedCount = Array.isArray(revoked) ? revoked.length : 0;
 
   await supabaseAdmin.from("activity_log" as any).insert({

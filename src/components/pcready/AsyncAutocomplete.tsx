@@ -73,7 +73,8 @@ export function AsyncAutocomplete<T extends AsyncAutocompleteOption>({
   }, []);
 
   const mergedOptions = useMemo(() => {
-    if (!selectedOption || options.some((option) => option.value === selectedOption.value)) return options;
+    if (!selectedOption || options.some((option) => option.value === selectedOption.value))
+      return options;
     return [selectedOption, ...options];
   }, [options, selectedOption]);
 

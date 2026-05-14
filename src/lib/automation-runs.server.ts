@@ -252,7 +252,9 @@ function extractDryRunBlocks(flow: any) {
 
 function simulateBlock(block: any, index: number): DryRunStep {
   const type = normalizeBlockType(block);
-  const label = String(block.label || block.name || block.action || block.type || block.data?.label || type);
+  const label = String(
+    block.label || block.name || block.action || block.type || block.data?.label || type,
+  );
 
   if (type === "condition") {
     const expression = String(
@@ -300,7 +302,11 @@ function normalizeBlockType(block: any): DryRunStep["type"] {
   if (block.type === "trigger" || block.type === "condition" || block.type === "action") {
     return block.type;
   }
-  if (block.data?.type === "trigger" || block.data?.type === "condition" || block.data?.type === "action") {
+  if (
+    block.data?.type === "trigger" ||
+    block.data?.type === "condition" ||
+    block.data?.type === "action"
+  ) {
     return block.data.type;
   }
   return "action";
@@ -409,7 +415,10 @@ function resolveRecipientEmail(
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function deliverAutomationEmail(params: {
@@ -442,7 +451,8 @@ async function sendEmailAction(
     return {
       action: actionLabel,
       status: "error",
-      error: "Destinatario email mancante: imposta config.to o includi un indirizzo nel trigger payload",
+      error:
+        "Destinatario email mancante: imposta config.to o includi un indirizzo nel trigger payload",
     };
   }
 
@@ -654,7 +664,9 @@ async function executeAction(
   triggeredBy: string,
   triggerPayload: Record<string, any>,
 ): Promise<ActionResult> {
-  const rawType = String(action.type || action.action || action.data?.label || `action_${index + 1}`);
+  const rawType = String(
+    action.type || action.action || action.data?.label || `action_${index + 1}`,
+  );
   const type = normalizeActionType(rawType);
   const actionLabel = rawType;
   const config = action.config ?? action.data?.config ?? {};

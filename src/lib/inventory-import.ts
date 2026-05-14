@@ -150,7 +150,7 @@ export async function importDevicesFromCsv(
           .eq("id", row.existingDeviceId);
         if (error) throw error;
         results.updated++;
-        } else {
+      } else {
         const insert: TablesInsert<"devices"> = {
           client_id: row.client_id!,
           serial: row.serial,

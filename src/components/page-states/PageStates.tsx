@@ -29,7 +29,12 @@ export function PageFetchError({
   return (
     <div className={cn(shellClass(variant), className)}>
       <h2 className="text-base font-semibold text-destructive">{title}</h2>
-      <p className={cn("mt-2 text-sm", variant === "portal" ? "text-muted-foreground" : "text-text3")}>
+      <p
+        className={cn(
+          "mt-2 text-sm",
+          variant === "portal" ? "text-muted-foreground" : "text-text3",
+        )}
+      >
         {message}
       </p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -39,7 +44,12 @@ export function PageFetchError({
             Riprova
           </Button>
         )}
-        <Button type="button" variant={onRetry ? "outline" : "default"} size="sm" onClick={() => window.location.reload()}>
+        <Button
+          type="button"
+          variant={onRetry ? "outline" : "default"}
+          size="sm"
+          onClick={() => window.location.reload()}
+        >
           Ricarica pagina
         </Button>
       </div>
@@ -71,11 +81,21 @@ export function PageEmptyState({
         )}
         aria-hidden
       />
-      <h2 className={cn("mt-3 text-base font-semibold", variant === "portal" ? "text-foreground" : "text-text")}>
+      <h2
+        className={cn(
+          "mt-3 text-base font-semibold",
+          variant === "portal" ? "text-foreground" : "text-text",
+        )}
+      >
         {title}
       </h2>
       {description && (
-        <p className={cn("mt-2 text-sm", variant === "portal" ? "text-muted-foreground" : "text-text3")}>
+        <p
+          className={cn(
+            "mt-2 text-sm",
+            variant === "portal" ? "text-muted-foreground" : "text-text3",
+          )}
+        >
           {description}
         </p>
       )}
@@ -99,7 +119,11 @@ export function ListSkeleton({
       : "pc-card p-4 space-y-2";
 
   return (
-    <div className={cn("flex flex-col gap-3", className)} aria-busy aria-label="Caricamento in corso">
+    <div
+      className={cn("flex flex-col gap-3", className)}
+      aria-busy
+      aria-label="Caricamento in corso"
+    >
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={cardClass}>
           <Skeleton className="h-4 w-1/3 max-w-[200px]" />

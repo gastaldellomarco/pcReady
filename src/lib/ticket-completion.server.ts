@@ -58,7 +58,7 @@ export async function completeTicket(params: {
     const { data: ticket, error: ticketError } = await supabaseAdmin
       .from("tickets" as any)
       .select(
-        "id, ticket_code, client, client_id, requester, model, notes, status, priority, assignee_id, created_at, device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name)"
+        "id, ticket_code, client, client_id, requester, model, notes, status, priority, assignee_id, created_at, device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name)",
       )
       .eq("id", ticketId)
       .maybeSingle();
@@ -191,7 +191,9 @@ async function generateCompletionPdf(ticket: TicketData): Promise<Buffer> {
 
   // Import pdfkit dynamically for server-side use
   try {
-    const pdfkitModule = await import("pdfkit").catch(() => null) as unknown as { default: new () => PDFKitDocument } | null;
+    const pdfkitModule = (await import("pdfkit").catch(() => null)) as unknown as {
+      default: new () => PDFKitDocument;
+    } | null;
     if (!pdfkitModule) {
       throw new Error("pdfkit not available - install with: npm install pdfkit");
     }
@@ -216,7 +218,11 @@ async function generateCompletionPdf(ticket: TicketData): Promise<Buffer> {
       doc.text(`Seriale: ${ticket.device.serial}`, 50, 225);
     }
     const statusY = ticket.device?.serial ? 245 : 225;
-    doc.text(`Stato: ${STATUS_META[ticket.status as keyof typeof STATUS_META]?.label || ticket.status}`, 50, statusY);
+    doc.text(
+      `Stato: ${STATUS_META[ticket.status as keyof typeof STATUS_META]?.label || ticket.status}`,
+      50,
+      statusY,
+    );
     doc.text(`Priorità: ${ticket.priority}`, 50, statusY + 20);
     doc.text(`Tecnico assegnatario: ${ticket.assignee_name}`, 50, statusY + 40);
     doc.text(`Data apertura: ${fmtDate(ticket.created_at)}`, 50, statusY + 60);
@@ -265,7 +271,7 @@ export async function getCompletionPdfUrl(ticketId: string): Promise<string | nu
 
   // Get the most recent file
   const sortedFiles = files.sort(
-    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
   );
   const latestFile = sortedFiles[0];
 

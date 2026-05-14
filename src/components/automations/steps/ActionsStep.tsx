@@ -43,9 +43,18 @@ function defaultConfigForType(type: string): Record<string, unknown> {
   }
 }
 
-export default function ActionsStep({ value, onChange }: { value: any[]; onChange: (v: any[]) => void }) {
+export default function ActionsStep({
+  value,
+  onChange,
+}: {
+  value: any[];
+  onChange: (v: any[]) => void;
+}) {
   const addAction = () => {
-    onChange([...(value || []), { id: uid(), type: "send_email", config: defaultConfigForType("send_email") }]);
+    onChange([
+      ...(value || []),
+      { id: uid(), type: "send_email", config: defaultConfigForType("send_email") },
+    ]);
   };
 
   function updateConfig(id: string, configPatch: Record<string, unknown>) {
@@ -58,7 +67,9 @@ export default function ActionsStep({ value, onChange }: { value: any[]; onChang
 
   function setType(id: string, type: string) {
     onChange(
-      (value || []).map((c) => (c.id === id ? { ...c, type, config: defaultConfigForType(type) } : c)),
+      (value || []).map((c) =>
+        c.id === id ? { ...c, type, config: defaultConfigForType(type) } : c,
+      ),
     );
   }
 
@@ -69,10 +80,13 @@ export default function ActionsStep({ value, onChange }: { value: any[]; onChang
   return (
     <div>
       <h3 className="text-lg font-semibold">Azioni</h3>
-      <p className="text-sm text-text3">Definisci le azioni eseguite dal runtime (Supabase / email).</p>
+      <p className="text-sm text-text3">
+        Definisci le azioni eseguite dal runtime (Supabase / email).
+      </p>
       <p className="mt-1 text-xs text-text3">
-        Ticket e dispositivo: lascia vuoto l&apos;ID se il trigger invia <code className="text-xs">ticket_id</code> /{" "}
-        <code className="text-xs">device_id</code> nel payload.
+        Ticket e dispositivo: lascia vuoto l&apos;ID se il trigger invia{" "}
+        <code className="text-xs">ticket_id</code> / <code className="text-xs">device_id</code> nel
+        payload.
       </p>
 
       <div className="mt-3 space-y-4">
@@ -270,7 +284,11 @@ export default function ActionsStep({ value, onChange }: { value: any[]; onChang
       </div>
 
       <div className="mt-3">
-        <button type="button" onClick={addAction} className="rounded bg-slate-100 px-3 py-1 text-sm">
+        <button
+          type="button"
+          onClick={addAction}
+          className="rounded bg-slate-100 px-3 py-1 text-sm"
+        >
           Aggiungi azione
         </button>
       </div>

@@ -33,7 +33,12 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
     if (!text) return toast.error("Inserisci una nota");
     setSubmitting(true);
     try {
-      await createNoteMut.mutateAsync({ ticket_id: ticketId, author_id: user.id, content: text, is_internal: isInternal });
+      await createNoteMut.mutateAsync({
+        ticket_id: ticketId,
+        author_id: user.id,
+        content: text,
+        is_internal: isInternal,
+      });
       setContent("");
       toast.success("Nota aggiunta");
       onChanged?.();
@@ -53,7 +58,10 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-text3" />
           <h3 className="text-[13px] font-bold">Note</h3>
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-mono text-text3" style={{ background: "var(--surface3)" }}>
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-mono text-text3"
+            style={{ background: "var(--surface3)" }}
+          >
             {notes.length}
           </span>
         </div>
@@ -65,14 +73,22 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
           <div className="text-[12px] text-text3">Nessuna nota inserita</div>
         )}
         {notesQuery.data?.map((note: any) => (
-          <article key={note.id} className="rounded-md border bg-background p-3" style={{ borderColor: "var(--border)" }}>
+          <article
+            key={note.id}
+            className="rounded-md border bg-background p-3"
+            style={{ borderColor: "var(--border)" }}
+          >
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
                 {note.author?.initials || "??"}
               </span>
-              <span className="text-[12px] font-semibold">{note.author?.full_name || "Utente"}</span>
+              <span className="text-[12px] font-semibold">
+                {note.author?.full_name || "Utente"}
+              </span>
               <span className="text-[11px] text-text3">{fmtDateTime(note.created_at)}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${note.is_internal ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${note.is_internal ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+              >
                 {note.is_internal ? "Interna" : "Visibile cliente"}
               </span>
             </div>

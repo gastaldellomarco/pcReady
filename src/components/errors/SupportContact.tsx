@@ -27,7 +27,10 @@ export function SupportContact({ prefix = "Problemi? Contatta" }: { prefix?: str
   return (
     <p className="text-xs text-muted-foreground">
       {prefix}{" "}
-      <a href={`mailto:${supportEmail}`} className="underline underline-offset-4 hover:text-foreground">
+      <a
+        href={`mailto:${supportEmail}`}
+        className="underline underline-offset-4 hover:text-foreground"
+      >
         {supportEmail}
       </a>
     </p>

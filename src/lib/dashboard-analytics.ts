@@ -69,7 +69,8 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
     // map ticket_id -> archived changed_at (first occurrence)
     const archivedDateByTicket = new Map<string, string>();
     for (const h of archivedHist) {
-      if (!archivedDateByTicket.has(h.ticket_id)) archivedDateByTicket.set(h.ticket_id, h.changed_at);
+      if (!archivedDateByTicket.has(h.ticket_id))
+        archivedDateByTicket.set(h.ticket_id, h.changed_at);
     }
 
     // helper to extract month key YYYY-MM-01
@@ -131,7 +132,9 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
         label: new Date(m).toLocaleDateString("it-IT", { month: "short", year: "2-digit" }),
         opened: entry.opened,
         closed: entry.closed,
-        avg_days: entry.days.length ? Number((entry.days.reduce((a, b) => a + b, 0) / entry.days.length).toFixed(2)) : null,
+        avg_days: entry.days.length
+          ? Number((entry.days.reduce((a, b) => a + b, 0) / entry.days.length).toFixed(2))
+          : null,
       };
     });
 
@@ -183,7 +186,9 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
     const to = new Date(now);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data?.accessToken || "");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(
+      data?.accessToken || "",
+    );
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
     const technicianRes = await supabaseAdmin.rpc("get_technician_kpi" as any, {
@@ -194,21 +199,24 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
     if (technicianRes.error) throw technicianRes.error;
 
     // Fetch all profiles that have role admin or tech so we can include users with 0 assigned
-    const [{ data: roles, error: rolesError }, { data: profiles, error: profilesError }] = await Promise.all([
-      supabaseAdmin.from("user_roles").select("user_id, role").in("role", ["admin", "tech"]),
-      supabaseAdmin.from("profiles").select("id, full_name, initials").order("full_name"),
-    ]);
+    const [{ data: roles, error: rolesError }, { data: profiles, error: profilesError }] =
+      await Promise.all([
+        supabaseAdmin.from("user_roles").select("user_id, role").in("role", ["admin", "tech"]),
+        supabaseAdmin.from("profiles").select("id, full_name, initials").order("full_name"),
+      ]);
 
     if (rolesError) throw rolesError;
     if (profilesError) throw profilesError;
 
     const kpiById = new Map<string | null, any>();
-    ((technicianRes.data ?? []) as any[]).forEach((row) => kpiById.set(row.technician_id ?? null, row));
+    ((technicianRes.data ?? []) as any[]).forEach((row) =>
+      kpiById.set(row.technician_id ?? null, row),
+    );
 
     const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
 
     const out: any[] = [];
-    for (const p of (profiles ?? [])) {
+    for (const p of profiles ?? []) {
       if (!assignableIds.has(p.id)) continue;
       const row = kpiById.get(p.id) ?? null;
       const assigned = row ? Number(row.assigned ?? 0) : 0;
@@ -216,7 +224,14 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
       const avg_days = row && row.avg_days != null ? Number(row.avg_days) : null;
       const avg_resolution_ms = avg_days == null ? null : Math.round(avg_days * 24 * 3600 * 1000);
       const full_name = p.full_name || "Non assegnato";
-      const initials = (p.initials as string) || (full_name || "").split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase();
+      const initials =
+        (p.initials as string) ||
+        (full_name || "")
+          .split(" ")
+          .map((s: string) => s[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
       const pending = Math.max(0, assigned - completed);
       out.push({
         id: p.id,
@@ -240,7 +255,9 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<any> => {
     const weekOffset = Number(data?.weekOffset || 0); // 0 = current week, -1 previous, +1 next
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data?.accessToken || "");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(
+      data?.accessToken || "",
+    );
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
     const now = new Date();
@@ -278,13 +295,17 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
     const technicians = (profiles ?? [])
       .filter((p: any) => assignableIds.has(p.id))
-      .map((p: any) => ({ id: p.id, full_name: p.full_name, initials: p.initials || p.full_name.slice(0, 2).toUpperCase() }));
+      .map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name,
+        initials: p.initials || p.full_name.slice(0, 2).toUpperCase(),
+      }));
 
     // build map technician -> date -> count
     const map = new Map<string, Map<string, number>>();
     for (const t of technicians) map.set(t.id, new Map());
 
-    for (const row of (activityData ?? [] as any[])) {
+    for (const row of activityData ?? ([] as any[])) {
       const tid = row.assignee ?? null;
       if (!tid || !assignableIds.has(tid)) continue;
       // use closed_at date to count closures per day
@@ -315,17 +336,20 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }): Promise<any> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data?.accessToken || "");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(
+      data?.accessToken || "",
+    );
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
     const dateFrom = data?.dateFrom ?? null;
     const dateTo = data?.dateTo ?? null;
 
     // Fetch assignable technicians
-    const [{ data: roles, error: rolesError }, { data: profiles, error: profilesError }] = await Promise.all([
-      supabaseAdmin.from("user_roles").select("user_id, role").in("role", ["admin", "tech"]),
-      supabaseAdmin.from("profiles").select("id, full_name, initials").order("full_name"),
-    ]);
+    const [{ data: roles, error: rolesError }, { data: profiles, error: profilesError }] =
+      await Promise.all([
+        supabaseAdmin.from("user_roles").select("user_id, role").in("role", ["admin", "tech"]),
+        supabaseAdmin.from("profiles").select("id, full_name, initials").order("full_name"),
+      ]);
 
     if (rolesError) throw rolesError;
     if (profilesError) throw profilesError;
@@ -334,7 +358,9 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
 
     // Fetch tickets in range (by creation) to compute assigned/volume
     // include `status` so we can treat archived tickets as closed even when closed_at is null
-    const ticketsQ = supabaseAdmin.from("tickets").select("id, assignee_id, created_at, closed_at, status");
+    const ticketsQ = supabaseAdmin
+      .from("tickets")
+      .select("id, assignee_id, created_at, closed_at, status");
     if (dateFrom) ticketsQ.gte("created_at", dateFrom);
     if (dateTo) ticketsQ.lt("created_at", dateTo);
     const ticketsRes = await ticketsQ;
@@ -368,10 +394,29 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     }
 
     // Aggregate per technician
-    const byTech = new Map<string, { assigned: number; completed: number; totalResolutionDays: number; resolutionCount: number; totalFirstRespMs: number; firstRespCount: number; reopenCount: number }>();
-    for (const p of (profiles ?? [])) {
+    const byTech = new Map<
+      string,
+      {
+        assigned: number;
+        completed: number;
+        totalResolutionDays: number;
+        resolutionCount: number;
+        totalFirstRespMs: number;
+        firstRespCount: number;
+        reopenCount: number;
+      }
+    >();
+    for (const p of profiles ?? []) {
       if (!assignableIds.has(p.id)) continue;
-      byTech.set(p.id, { assigned: 0, completed: 0, totalResolutionDays: 0, resolutionCount: 0, totalFirstRespMs: 0, firstRespCount: 0, reopenCount: 0 });
+      byTech.set(p.id, {
+        assigned: 0,
+        completed: 0,
+        totalResolutionDays: 0,
+        resolutionCount: 0,
+        totalFirstRespMs: 0,
+        firstRespCount: 0,
+        reopenCount: 0,
+      });
     }
 
     const notesByTicket = new Map<string, string>();
@@ -416,7 +461,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
       const hist = historyByTicket.get(t.id) ?? [];
       for (const h of hist) {
         // consider reopen when to_status becomes 'pending' or 'open' after being closed/archived
-        if ((h.to_status === "pending" || h.to_status === "open")) {
+        if (h.to_status === "pending" || h.to_status === "open") {
           // optionally check time window
           if (!dateFrom || (h.changed_at >= dateFrom && (!dateTo || h.changed_at <= dateTo))) {
             s.reopenCount += 1;
@@ -432,14 +477,17 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     const rows: any[] = [];
     // create a map for profile full names
     const profileNameById = new Map<string, string>();
-    for (const p of (profiles ?? [])) profileNameById.set(p.id, p.full_name || "");
+    for (const p of profiles ?? []) profileNameById.set(p.id, p.full_name || "");
 
     for (const [id, v] of byTech.entries()) {
       const completionPct = v.assigned > 0 ? (v.completed / v.assigned) * 100 : 0;
-      const avgResolutionDays = v.resolutionCount ? v.totalResolutionDays / v.resolutionCount : null;
+      const avgResolutionDays = v.resolutionCount
+        ? v.totalResolutionDays / v.resolutionCount
+        : null;
       const avgFirstRespMs = v.firstRespCount ? v.totalFirstRespMs / v.firstRespCount : null;
       const reopenCount = v.reopenCount;
-      const reliabilityPct = v.completed > 0 ? ((v.completed - reopenCount) / v.completed) * 100 : 0;
+      const reliabilityPct =
+        v.completed > 0 ? ((v.completed - reopenCount) / v.completed) * 100 : 0;
 
       rows.push({
         id,
@@ -460,8 +508,12 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     // build numeric arrays excluding nulls for robust min/max
     const numericAvgRes = rows.map((r) => r.avgResolutionDays).filter((v) => v != null) as number[];
     const numericFirstResp = rows.map((r) => r.avgFirstRespMs).filter((v) => v != null) as number[];
-    const resRange = numericAvgRes.length ? { min: Math.min(...numericAvgRes), max: Math.max(...numericAvgRes) } : { min: 0, max: 0 };
-    const firstRange = numericFirstResp.length ? { min: Math.min(...numericFirstResp), max: Math.max(...numericFirstResp) } : { min: 0, max: 0 };
+    const resRange = numericAvgRes.length
+      ? { min: Math.min(...numericAvgRes), max: Math.max(...numericAvgRes) }
+      : { min: 0, max: 0 };
+    const firstRange = numericFirstResp.length
+      ? { min: Math.min(...numericFirstResp), max: Math.max(...numericFirstResp) }
+      : { min: 0, max: 0 };
 
     const normalized = rows.map((r) => {
       const vol = clamp(r.volumeScore, 0, 100);
@@ -488,7 +540,13 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
 
       return {
         ...r,
-        normalized: { volume: vol, velocita: clamp(vVel, 0, 100), completamento: comp, reattivita: clamp(vRea, 0, 100), affidabilita: rel },
+        normalized: {
+          volume: vol,
+          velocita: clamp(vVel, 0, 100),
+          completamento: comp,
+          reattivita: clamp(vRea, 0, 100),
+          affidabilita: rel,
+        },
       };
     });
 

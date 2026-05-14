@@ -82,7 +82,9 @@ function PortalTicketDetailPage() {
       </div>
       <section className="rounded-lg border bg-card p-4">
         <h2 className="font-semibold">Descrizione</h2>
-        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{ticket.notes || "-"}</p>
+        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+          {ticket.notes || "-"}
+        </p>
       </section>
       <section className="rounded-lg border bg-card p-4">
         <h2 className="font-semibold">Note pubbliche del tecnico</h2>

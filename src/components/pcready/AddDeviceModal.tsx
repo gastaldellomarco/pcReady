@@ -95,7 +95,11 @@ export function AddDeviceModal() {
       };
       const data = await createDeviceMut.mutateAsync(deviceInsert as any);
       const insertActivity = activityQueries.insertActivity as any;
-      await insertActivity({ type: 'user', message: `Dispositivo ${data.serial || values.model} aggiunto all'inventario`, actor_id: user!.id });
+      await insertActivity({
+        type: "user",
+        message: `Dispositivo ${data.serial || values.model} aggiunto all'inventario`,
+        actor_id: user!.id,
+      });
       toast.success("Dispositivo aggiunto all'inventario");
       form.reset({
         brand: null,

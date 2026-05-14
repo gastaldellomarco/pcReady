@@ -141,7 +141,8 @@ export function CreateTicketModal() {
     try {
       const tpl = templates.find((t) => t.id === templateId);
       const structure = tpl?.structure || DEFAULT_STRUCTURE;
-      const client = selectedClient?.id === f.client_id ? selectedClient : await fetchClientById(f.client_id);
+      const client =
+        selectedClient?.id === f.client_id ? selectedClient : await fetchClientById(f.client_id);
       const device =
         deviceFlow === "existing"
           ? selectedDevice?.id === f.device_id
@@ -178,12 +179,17 @@ export function CreateTicketModal() {
       // Insert initial status history record
       await (queries.addTicketStatusHistory as any)(data.id, {
         from_status: null,
-        to_status: 'pending',
+        to_status: "pending",
         changed_by: user!.id,
         changed_at: new Date().toISOString(),
-        note: 'Ticket creato',
+        note: "Ticket creato",
       });
-      await insertActivity({ type: 'user', message: `${data.ticket_code} creato`, ticket_id: data.id, actor_id: user!.id });
+      await insertActivity({
+        type: "user",
+        message: `${data.ticket_code} creato`,
+        ticket_id: data.id,
+        actor_id: user!.id,
+      });
       if (f.assignee_id && session?.access_token) {
         // Validate technician device limit for device tickets
         if (f.ticket_type === "device") {
@@ -205,9 +211,11 @@ export function CreateTicketModal() {
             },
           },
         });
-        void sendAssignedEmail({ data: { ticketId: data.id, assigneeId: f.assignee_id } }).catch((err) => {
-          console.error("Failed to send ticket assigned email:", err);
-        });
+        void sendAssignedEmail({ data: { ticketId: data.id, assigneeId: f.assignee_id } }).catch(
+          (err) => {
+            console.error("Failed to send ticket assigned email:", err);
+          },
+        );
         if (assignee) toast.message(`Notifica inviata a ${assignee.full_name}`);
       }
       toast.success(`${data.ticket_code} creato`);
@@ -297,7 +305,11 @@ export function CreateTicketModal() {
               value={f.ticket_type}
               onChange={(e) => {
                 const ticketType = e.target.value as TicketType;
-                setF({ ...f, ticket_type: ticketType, device_id: ticketType === "device" ? f.device_id : "" });
+                setF({
+                  ...f,
+                  ticket_type: ticketType,
+                  device_id: ticketType === "device" ? f.device_id : "",
+                });
                 if (ticketType !== "device") setSelectedDevice(null);
               }}
             >

@@ -109,16 +109,16 @@ export async function sendEmail(
 }
 
 export async function listEmailTemplatesServer({ accessToken }: { accessToken: string }) {
-    await requireAdmin(accessToken);
-    await ensureDefaultTemplates();
+  await requireAdmin(accessToken);
+  await ensureDefaultTemplates();
 
-    const { data, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .order("event_type");
-    if (error) throw error;
+  const { data, error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .select("*")
+    .order("event_type");
+  if (error) throw error;
 
-    return hydrateTemplates((data ?? []) as unknown as EmailTemplateRow[]);
+  return hydrateTemplates((data ?? []) as unknown as EmailTemplateRow[]);
 }
 
 export async function getEmailTemplateServer({
@@ -128,116 +128,120 @@ export async function getEmailTemplateServer({
   accessToken: string;
   eventType: EmailEventType;
 }) {
-    await requireAdmin(accessToken);
-    const parsedEvent = EmailEventSchema.parse(eventType);
-    await ensureDefaultTemplates();
+  await requireAdmin(accessToken);
+  const parsedEvent = EmailEventSchema.parse(eventType);
+  await ensureDefaultTemplates();
 
-    const { data, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .eq("event_type", parsedEvent)
-      .single();
-    if (error) throw error;
+  const { data, error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .select("*")
+    .eq("event_type", parsedEvent)
+    .single();
+  if (error) throw error;
 
-    return (await hydrateTemplates([data as unknown as EmailTemplateRow]))[0];
+  return (await hydrateTemplates([data as unknown as EmailTemplateRow]))[0];
 }
 
 export async function updateEmailTemplateServer(data: z.input<typeof TemplateUpdateSchema>) {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = TemplateUpdateSchema.parse(data);
-    validateTemplateVariables(validated.eventType, [
-      validated.subject,
-      validated.bodyHtml,
-      validated.bodyText ?? "",
-    ]);
+  const actorId = await requireAdmin(data.accessToken);
+  const validated = TemplateUpdateSchema.parse(data);
+  validateTemplateVariables(validated.eventType, [
+    validated.subject,
+    validated.bodyHtml,
+    validated.bodyText ?? "",
+  ]);
 
-    const variables = EMAIL_TEMPLATE_VARIABLES[validated.eventType].map((variable) => variable.token);
-    const { data: saved, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .upsert(
-        {
-          event_type: validated.eventType,
-          subject: validated.subject,
-          body_html: validated.bodyHtml,
-          body_text: validated.bodyText || null,
-          variables,
-          is_active: validated.isActive,
-          last_modified_at: new Date().toISOString(),
-          last_modified_by: actorId,
-        },
-        { onConflict: "event_type" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
+  const variables = EMAIL_TEMPLATE_VARIABLES[validated.eventType].map((variable) => variable.token);
+  const { data: saved, error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .upsert(
+      {
+        event_type: validated.eventType,
+        subject: validated.subject,
+        body_html: validated.bodyHtml,
+        body_text: validated.bodyText || null,
+        variables,
+        is_active: validated.isActive,
+        last_modified_at: new Date().toISOString(),
+        last_modified_by: actorId,
+      },
+      { onConflict: "event_type" },
+    )
+    .select("*")
+    .single();
+  if (error) throw error;
 
-    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
+  return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
 }
 
 export async function sendTestEmailServer(data: z.input<typeof TestEmailSchema>) {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = TestEmailSchema.parse(data);
-    await ensureDefaultTemplates();
+  const actorId = await requireAdmin(data.accessToken);
+  const validated = TestEmailSchema.parse(data);
+  await ensureDefaultTemplates();
 
-    const { data: template, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .select("*")
-      .eq("event_type", validated.eventType)
-      .single();
-    if (error) throw error;
+  const { data: template, error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .select("*")
+    .eq("event_type", validated.eventType)
+    .single();
+  if (error) throw error;
 
-    const settings = await getAppSettings({ data: { accessToken: validated.accessToken } });
-    const row = template as unknown as EmailTemplateRow;
-    const sample = buildSampleVariables(settings.organization_name, settings.support_email);
-    const subject = renderTemplate(row.subject, sample);
-    const html = renderTemplate(row.body_html, sample);
-    const text = renderTemplate(row.body_text ?? "", sample);
+  const settings = await getAppSettings({ data: { accessToken: validated.accessToken } });
+  const row = template as unknown as EmailTemplateRow;
+  const sample = buildSampleVariables(settings.organization_name, settings.support_email);
+  const subject = renderTemplate(row.subject, sample);
+  const html = renderTemplate(row.body_html, sample);
+  const text = renderTemplate(row.body_text ?? "", sample);
 
-    const delivered = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
-    await sendEmail(validated.recipientEmail, subject, html, text);
+  const delivered = Boolean(
+    process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
+  );
+  await sendEmail(validated.recipientEmail, subject, html, text);
 
-    await supabaseAdmin.from("activity_log").insert({
-      type: "sys",
-      actor_id: actorId,
-      message: delivered
-        ? `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${process.env.SMTP_HOST}.`
-        : `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. SMTP non configurato.`,
-    });
+  await supabaseAdmin.from("activity_log").insert({
+    type: "sys",
+    actor_id: actorId,
+    message: delivered
+      ? `Test email template "${validated.eventType}" inviato a ${validated.recipientEmail} via SMTP ${process.env.SMTP_HOST}.`
+      : `Test email template "${validated.eventType}" preparato per ${validated.recipientEmail}. SMTP non configurato.`,
+  });
 
-    return { ok: true, delivered, subject };
+  return { ok: true, delivered, subject };
 }
 
 export async function createDefaultEmailTemplateServer(data: z.input<typeof CreateTemplateSchema>) {
-    const actorId = await requireAdmin(data.accessToken);
-    const validated = CreateTemplateSchema.parse(data);
+  const actorId = await requireAdmin(data.accessToken);
+  const validated = CreateTemplateSchema.parse(data);
 
-    const defaults = defaultTemplates();
-    const defaultTemplate = defaults.find((t) => t.event_type === validated.eventType);
-    if (!defaultTemplate) {
-      throw new Response(`Template di default non trovato per ${validated.eventType}`, { status: 404 });
-    }
+  const defaults = defaultTemplates();
+  const defaultTemplate = defaults.find((t) => t.event_type === validated.eventType);
+  if (!defaultTemplate) {
+    throw new Response(`Template di default non trovato per ${validated.eventType}`, {
+      status: 404,
+    });
+  }
 
-    // Insert or update the template
-    const { data: saved, error } = await supabaseAdmin
-      .from("email_templates" as any)
-      .upsert(
-        {
-          event_type: validated.eventType,
-          subject: defaultTemplate.subject,
-          body_html: defaultTemplate.body_html,
-          body_text: defaultTemplate.body_text,
-          variables: defaultTemplate.variables,
-          is_active: true,
-          last_modified_at: new Date().toISOString(),
-          last_modified_by: actorId,
-        },
-        { onConflict: "event_type" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
+  // Insert or update the template
+  const { data: saved, error } = await supabaseAdmin
+    .from("email_templates" as any)
+    .upsert(
+      {
+        event_type: validated.eventType,
+        subject: defaultTemplate.subject,
+        body_html: defaultTemplate.body_html,
+        body_text: defaultTemplate.body_text,
+        variables: defaultTemplate.variables,
+        is_active: true,
+        last_modified_at: new Date().toISOString(),
+        last_modified_by: actorId,
+      },
+      { onConflict: "event_type" },
+    )
+    .select("*")
+    .single();
+  if (error) throw error;
 
-    return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
+  return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
 }
 
 export async function resetEmailTemplateServer(data: z.input<typeof ResetTemplateSchema>) {

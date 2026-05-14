@@ -6,7 +6,12 @@ import { Check, X, Shield, User } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { validateOAuthRequest, grantConsent, denyConsent, type OAuthValidationResult } from "@/lib/oauth-consent";
+import {
+  validateOAuthRequest,
+  grantConsent,
+  denyConsent,
+  type OAuthValidationResult,
+} from "@/lib/oauth-consent";
 import { getScopeLabel, getScopeDescription } from "@/lib/oauth-scopes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,9 +150,7 @@ function OAuthConsentPage() {
             <Shield className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">PCReady</CardTitle>
-          <CardDescription>
-            Autorizzazione richiesta da un'applicazione esterna
-          </CardDescription>
+          <CardDescription>Autorizzazione richiesta da un'applicazione esterna</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -155,9 +158,7 @@ function OAuthConsentPage() {
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <h3 className="font-semibold text-lg">{validation.client.name}</h3>
             {validation.client.description && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {validation.client.description}
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">{validation.client.description}</p>
             )}
           </div>
 
@@ -203,11 +204,7 @@ function OAuthConsentPage() {
             >
               {denying ? "Annullamento..." : "Nega"}
             </Button>
-            <Button
-              onClick={handleGrant}
-              disabled={denying || granting}
-              className="flex-1"
-            >
+            <Button onClick={handleGrant} disabled={denying || granting} className="flex-1">
               {granting ? "Autorizzazione..." : "Autorizza"}
             </Button>
           </div>

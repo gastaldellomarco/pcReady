@@ -23,11 +23,15 @@ export default function AutomationWizard({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [trigger, setTrigger] = useState<TriggerDef | null>(initial?.trigger_definition ?? null);
-  const [conditions, setConditions] = useState<ConditionDef[]>(initial?.conditions_definition ?? []);
+  const [conditions, setConditions] = useState<ConditionDef[]>(
+    initial?.conditions_definition ?? [],
+  );
   const [actions, setActions] = useState<ActionDef[]>(initial?.actions_definition ?? []);
   const [schedule, setSchedule] = useState<any>(initial?.schedule_definition ?? null);
   const [changeNote, setChangeNote] = useState(initial?.changeNote ?? "");
-  const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>({});
+  const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>(
+    {},
+  );
 
   function validateCurrent(currentStep: number): { ok: boolean; message?: string } {
     // step-specific validation
@@ -36,7 +40,8 @@ export default function AutomationWizard({
       return { ok: true };
     }
     if (currentStep === 2) {
-      if (!actions || actions.length === 0) return { ok: false, message: "Almeno un'azione è richiesta" };
+      if (!actions || actions.length === 0)
+        return { ok: false, message: "Almeno un'azione è richiesta" };
       return { ok: true };
     }
     // default: allow
@@ -97,7 +102,13 @@ export default function AutomationWizard({
         )}
         {step === 1 && (
           <div>
-            <ConditionsStep value={conditions} onChange={(v) => { setConditions(v); setErrors((e) => ({ ...e, general: undefined })); }} />
+            <ConditionsStep
+              value={conditions}
+              onChange={(v) => {
+                setConditions(v);
+                setErrors((e) => ({ ...e, general: undefined }));
+              }}
+            />
           </div>
         )}
         {step === 2 && (
@@ -140,8 +151,14 @@ export default function AutomationWizard({
       </div>
 
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onCancel}>Annulla</Button>
-        {step > 0 && <Button variant="ghost" onClick={handlePrev}>Indietro</Button>}
+        <Button variant="secondary" onClick={onCancel}>
+          Annulla
+        </Button>
+        {step > 0 && (
+          <Button variant="ghost" onClick={handlePrev}>
+            Indietro
+          </Button>
+        )}
         {step < 4 && <Button onClick={handleNext}>Avanti</Button>}
         {step === 4 && <Button onClick={handleSave}>Salva</Button>}
       </div>

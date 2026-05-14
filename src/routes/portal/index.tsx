@@ -49,9 +49,22 @@ function PortalLoginPage() {
         </p>
       </div>
       <form onSubmit={submit} className="space-y-4 rounded-lg border bg-card p-4">
-        <input className="pc-input w-full" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nome@azienda.it" required />
-        <Button type="submit" className="w-full" disabled={busy}>{busy ? "Invio..." : "Invia magic link"}</Button>
-        {sent && <p className="text-sm text-muted-foreground">Se l'email è abilitata, riceverai a breve il link di accesso.</p>}
+        <input
+          className="pc-input w-full"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="nome@azienda.it"
+          required
+        />
+        <Button type="submit" className="w-full" disabled={busy}>
+          {busy ? "Invio..." : "Invia magic link"}
+        </Button>
+        {sent && (
+          <p className="text-sm text-muted-foreground">
+            Se l'email è abilitata, riceverai a breve il link di accesso.
+          </p>
+        )}
       </form>
     </div>
   );

@@ -250,10 +250,7 @@ function ProfilePage() {
   if (loadError) {
     return (
       <div className="mx-auto w-full max-w-5xl">
-        <PageFetchError
-          message={loadError}
-          onRetry={() => setProfileReloadToken((n) => n + 1)}
-        />
+        <PageFetchError message={loadError} onRetry={() => setProfileReloadToken((n) => n + 1)} />
       </div>
     );
   }

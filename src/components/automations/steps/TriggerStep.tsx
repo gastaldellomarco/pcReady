@@ -1,5 +1,10 @@
-
-export default function TriggerStep({ value, onChange }: { value: any; onChange: (v: any) => void }) {
+export default function TriggerStep({
+  value,
+  onChange,
+}: {
+  value: any;
+  onChange: (v: any) => void;
+}) {
   return (
     <div>
       <h3 className="text-lg font-semibold">Trigger</h3>
@@ -25,7 +30,9 @@ export default function TriggerStep({ value, onChange }: { value: any; onChange:
           <input
             className="mt-1 rounded-md border px-2 py-1 w-full"
             value={value.config?.cron ?? ""}
-            onChange={(e) => onChange({ ...value, config: { ...(value.config || {}), cron: e.target.value } })}
+            onChange={(e) =>
+              onChange({ ...value, config: { ...(value.config || {}), cron: e.target.value } })
+            }
             placeholder="es. 0 8 * * *"
           />
         </div>

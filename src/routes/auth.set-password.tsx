@@ -24,7 +24,10 @@ export const Route = createFileRoute("/auth/set-password")({
   component: SetPasswordPage,
   errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "var(--bg2)" }}>
+    <div
+      className="flex min-h-screen items-center justify-center px-4"
+      style={{ background: "var(--bg2)" }}
+    >
       <div className="w-full max-w-md">
         <LoadingSkeleton />
       </div>

@@ -14,24 +14,41 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
   const navigate = useNavigate();
 
   if (!rows.length) {
-    return <div className="text-center text-text3 py-6">Nessun dato tecnico nel periodo selezionato.</div>;
+    return (
+      <div className="text-center text-text3 py-6">
+        Nessun dato tecnico nel periodo selezionato.
+      </div>
+    );
   }
 
   return (
     <div className="flex gap-3 overflow-x-auto lg:flex-wrap">
       {rows.map((row) => {
-        const pct = row.assigned ? Math.round((row.completed / Math.max(1, row.assigned)) * 100) : 0;
+        const pct = row.assigned
+          ? Math.round((row.completed / Math.max(1, row.assigned)) * 100)
+          : 0;
         return (
           <div
             key={row.technician_id ?? "unassigned"}
             className="pc-card p-3 min-w-[220px] flex-shrink-0 cursor-pointer"
-            onClick={() => navigate({ to: "/_app/tickets", search: { technician: row.technician_id } } as any)}
+            onClick={() =>
+              navigate({ to: "/_app/tickets", search: { technician: row.technician_id } } as any)
+            }
           >
             <div className="flex items-center gap-3">
-              <Avatar className="w-9 h-9">{(row.full_name || "").split(" ").map((p) => p[0]).join("").slice(0,2).toUpperCase()}</Avatar>
+              <Avatar className="w-9 h-9">
+                {(row.full_name || "")
+                  .split(" ")
+                  .map((p) => p[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </Avatar>
               <div className="flex-1">
                 <div className="font-semibold text-sm">{row.full_name}</div>
-                <div className="text-xs text-text3">Assegnati: {row.assigned} • Completati: {row.completed}</div>
+                <div className="text-xs text-text3">
+                  Assegnati: {row.assigned} • Completati: {row.completed}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-text3">Tempo medio</div>
@@ -49,7 +66,11 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
 
             <div className="mt-3">
               <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(row.assigned)}>
-                {row.assigned >= 6 ? "Sovraccarico" : row.assigned >= 3 ? "Carico elevato" : "Carico normale"}
+                {row.assigned >= 6
+                  ? "Sovraccarico"
+                  : row.assigned >= 3
+                    ? "Carico elevato"
+                    : "Carico normale"}
               </span>
             </div>
           </div>

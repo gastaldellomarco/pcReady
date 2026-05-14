@@ -92,7 +92,9 @@ function InventoryPage() {
   useEffect(() => {
     if (!session?.access_token) return;
     loadSettings({ data: { accessToken: session.access_token } })
-      .then((settings) => setOsOptions(settings.os_options.length ? settings.os_options : OS_OPTIONS))
+      .then((settings) =>
+        setOsOptions(settings.os_options.length ? settings.os_options : OS_OPTIONS),
+      )
       .catch(() => setOsOptions(OS_OPTIONS));
   }, [loadSettings, session?.access_token]);
 
@@ -137,10 +139,9 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da esportare");
     setPdfBusy("download");
     try {
-      const settings =
-        session?.access_token
-          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-          : null;
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
       const org = settings?.organization_name;
       await downloadPdf(
         <InventoryPdf rows={pdfRows()} organizationName={org} />,
@@ -158,10 +159,9 @@ function InventoryPage() {
     if (!data.length) return toast.error("Nessun dispositivo da visualizzare");
     setPdfBusy("preview");
     try {
-      const settings =
-        session?.access_token
-          ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-          : null;
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
       const org = settings?.organization_name;
       await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
@@ -201,7 +201,7 @@ function InventoryPage() {
         return;
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Errore ricerca dispositivo');
+      toast.error(err instanceof Error ? err.message : "Errore ricerca dispositivo");
       return;
     }
 
@@ -351,7 +351,10 @@ function InventoryPage() {
                       style={{ borderColor: "var(--border)" }}
                       onClick={() => openDeviceDetail(r.id)}
                     >
-                      <td className="px-[14px] py-[10px]" onClick={(event) => event.stopPropagation()}>
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <input
                           type="checkbox"
                           aria-label={`Seleziona ${r.serial || r.id}`}
@@ -375,7 +378,10 @@ function InventoryPage() {
                       <td className="px-[14px] py-[10px] text-[11px] text-text3">
                         {fmtDate(r.updated_at)}
                       </td>
-                      <td className="px-[14px] py-[10px]" onClick={(event) => event.stopPropagation()}>
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <button
                           className="pc-btn-icon"
                           title="QR dispositivo"
@@ -425,7 +431,7 @@ function InventoryPage() {
         onClose={() => setImportOpen(false)}
         onImported={() => {
           setSelectedIds(new Set());
-          qc.invalidateQueries({ queryKey: ['inventory'] });
+          qc.invalidateQueries({ queryKey: ["inventory"] });
         }}
       />
       <BarcodeScanner

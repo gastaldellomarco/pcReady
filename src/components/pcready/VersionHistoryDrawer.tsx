@@ -18,7 +18,13 @@ interface VersionHistoryDrawerProps {
   onRestored?: () => void;
 }
 
-export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRestored }: VersionHistoryDrawerProps) {
+export function VersionHistoryDrawer({
+  entityType,
+  entityId,
+  open,
+  onClose,
+  onRestored,
+}: VersionHistoryDrawerProps) {
   const { profile } = useAuth();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,17 +33,22 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRe
   const [restoringVersion, setRestoringVersion] = useState<Version | null>(null);
   const [authors, setAuthors] = useState<Record<string, string>>({});
 
-  const formatAuthor = useCallback((authorId: string | null) => {
-    if (!authorId) return "Sistema";
-    return authors[authorId] || authorId;
-  }, [authors]);
+  const formatAuthor = useCallback(
+    (authorId: string | null) => {
+      if (!authorId) return "Sistema";
+      return authors[authorId] || authorId;
+    },
+    [authors],
+  );
 
   const loadVersions = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getVersions(entityType, entityId);
       setVersions(data);
-      const userIds = Array.from(new Set(data.map((version) => version.created_by).filter(Boolean))) as string[];
+      const userIds = Array.from(
+        new Set(data.map((version) => version.created_by).filter(Boolean)),
+      ) as string[];
       if (userIds.length) {
         const { data: profiles } = await supabase
           .from("profiles")
@@ -66,9 +77,9 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRe
   }, [open, entityId, loadVersions]);
 
   function toggleVersionSelection(version: Version) {
-    setSelectedVersions(prev => {
-      if (prev.find(v => v.id === version.id)) {
-        return prev.filter(v => v.id !== version.id);
+    setSelectedVersions((prev) => {
+      if (prev.find((v) => v.id === version.id)) {
+        return prev.filter((v) => v.id !== version.id);
       } else if (prev.length < 2) {
         return [...prev, version];
       }
@@ -130,18 +141,19 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRe
                 </div>
               ) : (
                 versions.map((version) => (
-                  <div
-                    key={version.id}
-                    className="border rounded-lg p-4 space-y-3"
-                  >
+                  <div key={version.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">v{version.version_number}</Badge>
                         <Badge
                           variant={
-                            version.operation === "create" ? "default" :
-                            version.operation === "update" ? "secondary" :
-                            version.operation === "restore" ? "destructive" : "outline"
+                            version.operation === "create"
+                              ? "default"
+                              : version.operation === "update"
+                                ? "secondary"
+                                : version.operation === "restore"
+                                  ? "destructive"
+                                  : "outline"
                           }
                         >
                           {version.operation}
@@ -149,7 +161,7 @@ export function VersionHistoryDrawer({ entityType, entityId, open, onClose, onRe
                       </div>
                       <input
                         type="checkbox"
-                        checked={selectedVersions.some(v => v.id === version.id)}
+                        checked={selectedVersions.some((v) => v.id === version.id)}
                         onChange={() => toggleVersionSelection(version)}
                         className="rounded"
                       />

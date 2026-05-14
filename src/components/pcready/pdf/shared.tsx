@@ -185,7 +185,8 @@ export function BrandedPage({
     dateStyle: "long",
     timeStyle: "short",
   });
-  const org = organizationName || (globalThis as any).__APP_SETTINGS__?.organization_name || "PCReady";
+  const org =
+    organizationName || (globalThis as any).__APP_SETTINGS__?.organization_name || "PCReady";
   return (
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.header} fixed>
@@ -206,7 +207,9 @@ export function BrandedPage({
       </View>
       {children}
       <View style={styles.footer} fixed>
-        <Text>{org} - {title}</Text>
+        <Text>
+          {org} - {title}
+        </Text>
         <Text
           style={styles.pageNumber}
           render={({ pageNumber, totalPages }) => `Pagina ${pageNumber} di ${totalPages}`}

@@ -43,7 +43,10 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
                 </div>
                 <div className="space-y-1.5">
                   {(log.actions_executed ?? []).map((action, index) => (
-                    <div key={`${action.action}-${index}`} className="rounded-md bg-background p-2 text-xs">
+                    <div
+                      key={`${action.action}-${index}`}
+                      className="rounded-md bg-background p-2 text-xs"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{action.action}</span>
                         <span
@@ -75,13 +78,7 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
   );
 }
 
-export function RunStatusBadge({
-  status,
-  isDryRun,
-}: {
-  status: RunLogStatus;
-  isDryRun?: boolean;
-}) {
+export function RunStatusBadge({ status, isDryRun }: { status: RunLogStatus; isDryRun?: boolean }) {
   const Icon =
     status === "error"
       ? AlertCircle

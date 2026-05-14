@@ -151,7 +151,9 @@ export const validateTechnicianDeviceLimit = createServerFn({ method: "POST" })
 
     if (error) throw error;
 
-    const { data: settingsRows } = await supabaseAdmin.from("app_settings" as any).select("key, value");
+    const { data: settingsRows } = await supabaseAdmin
+      .from("app_settings" as any)
+      .select("key, value");
     const settings = mergeAppSettingsRows((settingsRows ?? []) as unknown as AppSettingRow[]);
     const max = settings.max_devices_per_technician ?? DEFAULT_SETTINGS.max_devices_per_technician;
     const current = typeof count === "number" ? count : Array.isArray(data) ? data.length : 0;
@@ -181,7 +183,10 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     const merged = mergeAppSettingsRows(rows);
     const parsedWip = merged.wip_limits ?? DEFAULT_WIP_LIMITS;
     const result = WipLimitsSchema.safeParse(parsedWip);
-    return { wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS, archive_after_days: merged.archive_after_days ?? 7 };
+    return {
+      wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS,
+      archive_after_days: merged.archive_after_days ?? 7,
+    };
   });
 
 export const updateAppSettings = createServerFn({ method: "POST" })

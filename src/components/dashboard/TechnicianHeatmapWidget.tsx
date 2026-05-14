@@ -68,8 +68,12 @@ export default function TechnicianHeatmapWidget() {
           <div className="text-sm text-text3">{weekLabel}</div>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setWeekOffset((w) => w - 1)}>{"<"}</Button>
-          <Button size="sm" onClick={() => setWeekOffset((w) => w + 1)}>{">"}</Button>
+          <Button size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+            {"<"}
+          </Button>
+          <Button size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
+            {">"}
+          </Button>
           <div className="text-sm text-text3">{technicians.length} tecnici</div>
         </div>
       </CardHeader>
@@ -82,16 +86,24 @@ export default function TechnicianHeatmapWidget() {
               <div className="grid grid-cols-8 gap-2 items-center mb-2">
                 <div />
                 {days.map((d) => (
-                  <div key={d} className="text-xs text-text3 text-center">{d}</div>
+                  <div key={d} className="text-xs text-text3 text-center">
+                    {d}
+                  </div>
                 ))}
               </div>
 
               <div className="flex flex-col gap-2">
                 {technicians.map((t: any) => (
                   <div key={t.id} className="grid grid-cols-8 gap-2 items-center p-2 pc-card">
-                    <div className="font-semibold text-sm">{t.initials} {" "}{t.name}</div>
+                    <div className="font-semibold text-sm">
+                      {t.initials} {t.name}
+                    </div>
                     {t.counts.map((c: number, i: number) => (
-                      <div key={i} className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`} title={`${c} ticket chiusi`}>
+                      <div
+                        key={i}
+                        className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`}
+                        title={`${c} ticket chiusi`}
+                      >
                         <div className="text-sm">{c || ""}</div>
                       </div>
                     ))}

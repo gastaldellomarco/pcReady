@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { Theme } from "@/lib/theme";
-import {
-  applyTheme,
-  getStoredTheme,
-  saveTheme,
-  resolveTheme,
-} from "@/lib/theme";
+import { applyTheme, getStoredTheme, saveTheme, resolveTheme } from "@/lib/theme";
 import { ThemeContext, type ThemeContextValue } from "./ThemeContext";
 
 interface ThemeProviderProps {
@@ -36,15 +31,12 @@ export function ThemeProvider({
   });
 
   // Apply theme when it changes
-  const setTheme = useCallback(
-    (newTheme: Theme) => {
-      setThemeState(newTheme);
-      applyTheme(newTheme);
-      saveTheme(newTheme);
-      setResolvedTheme(resolveTheme(newTheme));
-    },
-    []
-  );
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    applyTheme(newTheme);
+    saveTheme(newTheme);
+    setResolvedTheme(resolveTheme(newTheme));
+  }, []);
 
   // Initialize theme on mount (prevents hydration mismatch)
   useEffect(() => {
@@ -59,7 +51,7 @@ export function ThemeProvider({
     if (!enableSystem || theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    
+
     const handleChange = () => {
       const newResolved = resolveTheme("system");
       applyTheme("system");
@@ -77,9 +69,5 @@ export function ThemeProvider({
     isDark: resolvedTheme === "dark",
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

@@ -12,7 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createDefaultEmailTemplate, listEmailTemplates, sendTestEmail, updateEmailTemplate } from "@/lib/email-templates";
+import {
+  createDefaultEmailTemplate,
+  listEmailTemplates,
+  sendTestEmail,
+  updateEmailTemplate,
+} from "@/lib/email-templates";
 import {
   EMAIL_EVENT_LABELS,
   EMAIL_EVENT_TYPES,
@@ -180,9 +185,7 @@ export function EmailTemplateSection({
           />
         ) : (
           <div className="text-center py-8 space-y-4">
-            <p className="text-muted-foreground">
-              Nessun template trovato per questo evento.
-            </p>
+            <p className="text-muted-foreground">Nessun template trovato per questo evento.</p>
             <Button onClick={handleCreateDefault} disabled={saving}>
               {saving ? "Creazione..." : "Crea template di default"}
             </Button>

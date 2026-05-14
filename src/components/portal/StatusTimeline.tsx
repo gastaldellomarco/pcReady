@@ -27,13 +27,13 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
 
   // Sort by date ascending to show timeline from oldest to newest
   const sortedHistory = [...history].sort(
-    (a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime()
+    (a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime(),
   );
 
   // Determine which statuses have been completed based on history
   const completedStatuses = new Set<TicketStatus>();
   const reachedStatuses = new Set<TicketStatus>();
-  
+
   for (const item of sortedHistory) {
     reachedStatuses.add(item.to_status);
     if (item.from_status) {
@@ -51,18 +51,18 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
       <div className="relative">
         {/* Vertical line */}
         <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-border" />
-        
+
         <ol className="space-y-4">
           {sortedHistory.map((item, index) => {
             const toMeta = STATUS_META[item.to_status];
             const fromMeta = item.from_status ? STATUS_META[item.from_status] : null;
             const isLatest = index === sortedHistory.length - 1;
             const isInitial = item.from_status === null;
-            
+
             return (
               <li key={item.id} className="relative flex items-start gap-3">
                 {/* Status dot */}
-                <div 
+                <div
                   className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isLatest ? "ring-2 ring-offset-1 ring-primary" : ""
                   }`}
@@ -71,18 +71,13 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
                     boxShadow: isLatest ? `0 0 0 4px ${toMeta.color}33` : undefined,
                   }}
                 >
-                  <span className="text-white text-xs font-bold">
-                    {index + 1}
-                  </span>
+                  <span className="text-white text-xs font-bold">{index + 1}</span>
                 </div>
-                
+
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span 
-                      className="text-sm font-semibold"
-                      style={{ color: toMeta.color }}
-                    >
+                    <span className="text-sm font-semibold" style={{ color: toMeta.color }}>
                       {toMeta.label}
                     </span>
                     {isInitial && (
@@ -94,14 +89,12 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Transition info */}
                   {fromMeta && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Da: {fromMeta.label}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Da: {fromMeta.label}</p>
                   )}
-                  
+
                   {/* Timestamp and actor */}
                   <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                     <span>{formatDateTime(item.changed_at)}</span>
@@ -112,7 +105,7 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Optional note */}
                   {item.note && (
                     <p className="text-xs text-muted-foreground mt-1 italic">
@@ -142,8 +135,8 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
                     isCurrent
                       ? "bg-primary text-primary-foreground"
                       : isCompleted
-                      ? "text-white"
-                      : "bg-muted text-muted-foreground"
+                        ? "text-white"
+                        : "bg-muted text-muted-foreground"
                   }`}
                   style={
                     isCurrent || isCompleted

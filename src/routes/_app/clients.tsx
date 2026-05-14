@@ -272,7 +272,8 @@ function ClientsPage() {
   }, [routeSearch.tab]);
 
   useEffect(() => {
-    if (!routeSearch.clientId || clients.some((client) => client.id === routeSearch.clientId)) return;
+    if (!routeSearch.clientId || clients.some((client) => client.id === routeSearch.clientId))
+      return;
     let cancelled = false;
     supabase
       .from("clients")
@@ -321,22 +322,37 @@ function ClientsPage() {
   }, [selectedId, clients, clientForm, contactsQuery.data]);
 
   const selected = clients.find((c) => c.id === selectedId) || null;
-  const stats = (statsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientStats>;
+  const stats = (statsQuery.data ?? {}) as Record<
+    string,
+    import("@/lib/queries/clients").ClientStats
+  >;
   const selectedStats = selected?.id
-    ? stats[selected.id] ?? { openTickets: 0, devices: 0, contacts: contacts.length, portalActive: false }
+    ? (stats[selected.id] ?? {
+        openTickets: 0,
+        devices: 0,
+        contacts: contacts.length,
+        portalActive: false,
+      })
     : { openTickets: 0, devices: 0, contacts: contacts.length, portalActive: false };
   const portalAccess = (portalAccessQuery.data ?? {}) as Record<string, boolean>;
   const tickets = ((ticketsQuery.data ?? []) as TicketRow[]).slice().sort(compareTickets);
   const devices = (devicesQuery.data ?? []) as DeviceRow[];
   const displayedClients = clients.filter((client) => {
-    const clientStats = stats[client.id] ?? { openTickets: 0, devices: 0, contacts: 0, portalActive: false };
+    const clientStats = stats[client.id] ?? {
+      openTickets: 0,
+      devices: 0,
+      contacts: 0,
+      portalActive: false,
+    };
     if (listFilter === "openTickets") return clientStats.openTickets > 0;
-    if (listFilter === "portalActive") return Boolean(client.portal_enabled) || clientStats.portalActive;
+    if (listFilter === "portalActive")
+      return Boolean(client.portal_enabled) || clientStats.portalActive;
     return true;
   });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const listLoading = listQuery.isLoading;
-  const allPageSelected = displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
+  const allPageSelected =
+    displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
 
   async function loadContacts(clientId: string) {
     const { data, error } = await supabase
@@ -474,7 +490,11 @@ function ClientsPage() {
         notes: clean(values.notes || ""),
       };
       if (editingContactId) {
-        await updateContactMut.mutateAsync({ id: editingContactId, clientId: selectedId, payload: base });
+        await updateContactMut.mutateAsync({
+          id: editingContactId,
+          clientId: selectedId,
+          payload: base,
+        });
         toast.success("Referente aggiornato");
       } else {
         await createContactMut.mutateAsync({ clientId: selectedId, payload: base });
@@ -506,7 +526,7 @@ function ClientsPage() {
         data: { accessToken: session.access_token, contactId: contact.id, ttlHours: 24 },
       });
       setPortalLink(result);
-      void qc.invalidateQueries({ queryKey: ['clients'] });
+      void qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Link portale generato");
     } catch (error) {
       toast.error(errorMessage(error, "Errore generazione link portale"));
@@ -534,7 +554,7 @@ function ClientsPage() {
       const result = await revokePortalLink({
         data: { accessToken: session.access_token, contactId: contact.id },
       });
-      void qc.invalidateQueries({ queryKey: ['clients'] });
+      void qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success(
         result.revokedCount
           ? `${result.revokedCount} link portale revocati`
@@ -628,9 +648,18 @@ function ClientsPage() {
             </span>
           </div>
           {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between rounded-md px-3 py-2" style={{ background: "var(--surface2)" }}>
+            <div
+              className="flex items-center justify-between rounded-md px-3 py-2"
+              style={{ background: "var(--surface2)" }}
+            >
               <span className="text-xs text-text2">{selectedIds.size} selezionati</span>
-              <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "bulkClients", ids: Array.from(selectedIds) })}>
+              <button
+                className="pc-btn pc-btn-ghost pc-btn-xs"
+                disabled={!canDelete}
+                onClick={() =>
+                  setDestructiveAction({ type: "bulkClients", ids: Array.from(selectedIds) })
+                }
+              >
                 <Trash2 className="w-3 h-3" /> Elimina
               </button>
             </div>
@@ -660,7 +689,10 @@ function ClientsPage() {
                     }}
                     onClick={() => {
                       setSelectedId(client.id);
-                      void navigate({ to: "/clients", search: { clientId: client.id, tab: undefined } });
+                      void navigate({
+                        to: "/clients",
+                        search: { clientId: client.id, tab: undefined },
+                      });
                     }}
                   >
                     <div className="flex items-start gap-2">
@@ -675,7 +707,10 @@ function ClientsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[13px] font-bold">{name}</div>
                         <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
-                          {client.vat_number || client.email || client.phone || "Anagrafica da completare"}
+                          {client.vat_number ||
+                            client.email ||
+                            client.phone ||
+                            "Anagrafica da completare"}
                         </div>
                       </div>
                     </div>
@@ -705,12 +740,25 @@ function ClientsPage() {
             </>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t px-3 py-2" style={{ borderColor: "var(--border)" }}>
-          <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+        <div
+          className="flex items-center justify-end gap-2 border-t px-3 py-2"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
             Precedente
           </button>
-          <span className="font-mono text-xs text-text3">Pagina {page + 1} di {pageCount}</span>
-          <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={page + 1 >= pageCount} onClick={() => setPage((p) => p + 1)}>
+          <span className="font-mono text-xs text-text3">
+            Pagina {page + 1} di {pageCount}
+          </span>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={page + 1 >= pageCount}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Successiva
           </button>
         </div>
@@ -726,16 +774,31 @@ function ClientsPage() {
                     {clientInitials(selected)}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="truncate text-lg font-bold">{selected.company_name || selected.name}</h2>
+                    <h2 className="truncate text-lg font-bold">
+                      {selected.company_name || selected.name}
+                    </h2>
                     <div className="mt-1 truncate text-sm text-text3">
-                      {[selected.email, selected.phone].filter(Boolean).join(" · ") || "Contatti cliente non compilati"}
+                      {[selected.email, selected.phone].filter(Boolean).join(" · ") ||
+                        "Contatti cliente non compilati"}
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <HeaderCounter label="ticket aperti" value={selectedStats.openTickets} onClick={() => setActiveTab("tickets")} />
-                  <HeaderCounter label="dispositivi" value={selectedStats.devices} onClick={() => setActiveTab("devices")} />
-                  <HeaderCounter label="referenti" value={selectedStats.contacts || contacts.length} onClick={() => setActiveTab("contacts")} />
+                  <HeaderCounter
+                    label="ticket aperti"
+                    value={selectedStats.openTickets}
+                    onClick={() => setActiveTab("tickets")}
+                  />
+                  <HeaderCounter
+                    label="dispositivi"
+                    value={selectedStats.devices}
+                    onClick={() => setActiveTab("devices")}
+                  />
+                  <HeaderCounter
+                    label="referenti"
+                    value={selectedStats.contacts || contacts.length}
+                    onClick={() => setActiveTab("contacts")}
+                  />
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5 border-b-0">
@@ -764,10 +827,18 @@ function ClientsPage() {
             {activeTab === "info" && (
               <div className="pc-card-body">
                 <div className="mb-4 flex flex-wrap justify-end gap-2">
-                  <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "client", client: selected })}>
+                  <button
+                    className="pc-btn pc-btn-ghost pc-btn-sm"
+                    disabled={!canDelete}
+                    onClick={() => setDestructiveAction({ type: "client", client: selected })}
+                  >
                     <Trash2 className="w-3 h-3" /> Elimina
                   </button>
-                  <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !canEdit} onClick={onSaveClient}>
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    disabled={busy || !canEdit}
+                    onClick={onSaveClient}
+                  >
                     <Save className="w-3 h-3" /> Salva cliente
                   </button>
                 </div>
@@ -775,7 +846,9 @@ function ClientsPage() {
                   <Field label="Ragione sociale *">
                     <input className="pc-input" {...clientForm.register("company_name")} />
                     {clientForm.formState.errors.company_name && (
-                      <p className="mt-1 text-sm text-destructive">{clientForm.formState.errors.company_name.message}</p>
+                      <p className="mt-1 text-sm text-destructive">
+                        {clientForm.formState.errors.company_name.message}
+                      </p>
                     )}
                   </Field>
                   <Field label="P.IVA">
@@ -791,12 +864,24 @@ function ClientsPage() {
                     <input className="pc-input" {...clientForm.register("phone")} />
                   </Field>
                   <Field label="Sito web">
-                    <input className="pc-input" type="url" placeholder="https://azienda.it" {...clientForm.register("website_url")} />
+                    <input
+                      className="pc-input"
+                      type="url"
+                      placeholder="https://azienda.it"
+                      {...clientForm.register("website_url")}
+                    />
                     {clientForm.formState.errors.website_url && (
-                      <p className="mt-1 text-sm text-destructive">{clientForm.formState.errors.website_url.message}</p>
+                      <p className="mt-1 text-sm text-destructive">
+                        {clientForm.formState.errors.website_url.message}
+                      </p>
                     )}
                     {selected.website_url && (
-                      <a className="mt-1 inline-flex text-xs font-semibold text-accent" href={selected.website_url} target="_blank" rel="noreferrer">
+                      <a
+                        className="mt-1 inline-flex text-xs font-semibold text-accent"
+                        href={selected.website_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         Apri sito web
                       </a>
                     )}
@@ -806,7 +891,10 @@ function ClientsPage() {
                   </Field>
                   <div className="md:col-span-2">
                     <Field label="Note">
-                      <textarea className="pc-input min-h-[92px]" {...clientForm.register("notes")} />
+                      <textarea
+                        className="pc-input min-h-[92px]"
+                        {...clientForm.register("notes")}
+                      />
                     </Field>
                   </div>
                 </div>
@@ -818,10 +906,18 @@ function ClientsPage() {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm text-text3">{contacts.length} referenti registrati</div>
                   <div className="flex flex-wrap gap-2">
-                    <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!canEdit} onClick={() => setContactImportOpen(true)}>
+                    <button
+                      className="pc-btn pc-btn-ghost pc-btn-sm"
+                      disabled={!canEdit}
+                      onClick={() => setContactImportOpen(true)}
+                    >
                       <FileUp className="w-3 h-3" /> Importa da CSV
                     </button>
-                    <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={!canEdit} onClick={openNewContactModal}>
+                    <button
+                      className="pc-btn pc-btn-primary pc-btn-sm"
+                      disabled={!canEdit}
+                      onClick={openNewContactModal}
+                    >
                       <Plus className="w-3 h-3" /> Nuovo referente
                     </button>
                   </div>
@@ -831,7 +927,9 @@ function ClientsPage() {
                   headers={["Nome", "Ruolo", "Reparto", "Email", "Telefono", "Portale", "Azioni"]}
                   rows={contacts.map((contact) => [
                     <span className="inline-flex items-center gap-1 font-semibold">
-                      {contact.is_primary && <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />}
+                      {contact.is_primary && (
+                        <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />
+                      )}
                       {contactLabel(contact)}
                     </span>,
                     contact.job_title || "-",
@@ -840,18 +938,36 @@ function ClientsPage() {
                     contact.phone || "-",
                     <PortalBadge active={!!portalAccess[contact.id]} />,
                     <div className="flex flex-wrap justify-end gap-1">
-                      <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => openEditContactModal(contact)}>
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-xs"
+                        onClick={() => openEditContactModal(contact)}
+                      >
                         <Pencil className="h-3 w-3" /> Modifica
                       </button>
-                      <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || portalBusyContactId === contact.id} onClick={() => generateContactPortalLink(contact)}>
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-xs"
+                        disabled={!canManagePortalAccess || portalBusyContactId === contact.id}
+                        onClick={() => generateContactPortalLink(contact)}
+                      >
                         <Link2 className="h-3 w-3" /> Link
                       </button>
                       {portalAccess[contact.id] && (
-                        <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canManagePortalAccess || portalRevokingContactId === contact.id} onClick={() => setDestructiveAction({ type: "revokePortal", contact })}>
+                        <button
+                          className="pc-btn pc-btn-ghost pc-btn-xs"
+                          disabled={
+                            !canManagePortalAccess || portalRevokingContactId === contact.id
+                          }
+                          onClick={() => setDestructiveAction({ type: "revokePortal", contact })}
+                        >
                           Revoca
                         </button>
                       )}
-                      <button className="pc-btn-icon" disabled={!canDelete} onClick={() => setDestructiveAction({ type: "contact", contact })} title="Elimina referente">
+                      <button
+                        className="pc-btn-icon"
+                        disabled={!canDelete}
+                        onClick={() => setDestructiveAction({ type: "contact", contact })}
+                        title="Elimina referente"
+                      >
                         <Trash2 className="h-3 w-3" />
                       </button>
                     </div>,
@@ -870,10 +986,17 @@ function ClientsPage() {
                 </div>
                 <ResponsiveTable
                   empty="Nessun ticket per questo cliente."
-                  emptyAction={<button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openCreate}><Plus className="w-3 h-3" /> Crea primo ticket</button>}
+                  emptyAction={
+                    <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openCreate}>
+                      <Plus className="w-3 h-3" /> Crea primo ticket
+                    </button>
+                  }
                   headers={["ID", "Titolo", "Stato", "Priorita", "Assegnatario", "Apertura"]}
                   rows={tickets.map((ticket) => [
-                    <button className="font-mono text-[12px] font-semibold text-accent" onClick={() => openTicketDetail(ticket.id)}>
+                    <button
+                      className="font-mono text-[12px] font-semibold text-accent"
+                      onClick={() => openTicketDetail(ticket.id)}
+                    >
                       {ticket.ticket_code}
                     </button>,
                     ticket.software || ticket.requester || "-",
@@ -890,16 +1013,29 @@ function ClientsPage() {
               <div className="pc-card-body">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <DeviceSummary devices={devices} />
-                  <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => openAddDevice()}>
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    onClick={() => openAddDevice()}
+                  >
                     <Plus className="w-3 h-3" /> Aggiungi dispositivo
                   </button>
                 </div>
                 <ResponsiveTable
                   empty="Nessun dispositivo per questo cliente."
-                  emptyAction={<button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => openAddDevice()}><Plus className="w-3 h-3" /> Aggiungi primo dispositivo</button>}
+                  emptyAction={
+                    <button
+                      className="pc-btn pc-btn-primary pc-btn-sm"
+                      onClick={() => openAddDevice()}
+                    >
+                      <Plus className="w-3 h-3" /> Aggiungi primo dispositivo
+                    </button>
+                  }
                   headers={["Modello", "Seriale", "OS", "Stato", "Assegnato a", "Inserito"]}
                   rows={devices.map((device) => [
-                    <button className="font-semibold text-accent" onClick={() => openDeviceDetail(device.id)}>
+                    <button
+                      className="font-semibold text-accent"
+                      onClick={() => openDeviceDetail(device.id)}
+                    >
                       {device.model}
                     </button>,
                     <span className="font-mono text-[12px]">{device.serial || "-"}</span>,
@@ -917,9 +1053,15 @@ function ClientsPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div className="pc-card-title">Nuovo cliente</div>
-                <p className="mt-1 text-sm text-text3">Compila l'anagrafica per creare una nuova scheda cliente.</p>
+                <p className="mt-1 text-sm text-text3">
+                  Compila l'anagrafica per creare una nuova scheda cliente.
+                </p>
               </div>
-              <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !canEdit} onClick={onSaveClient}>
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                disabled={busy || !canEdit}
+                onClick={onSaveClient}
+              >
                 <Save className="w-3 h-3" /> Salva cliente
               </button>
             </div>
@@ -940,9 +1082,16 @@ function ClientsPage() {
                 <input className="pc-input" {...clientForm.register("phone")} />
               </Field>
               <Field label="Sito web">
-                <input className="pc-input" type="url" placeholder="https://azienda.it" {...clientForm.register("website_url")} />
+                <input
+                  className="pc-input"
+                  type="url"
+                  placeholder="https://azienda.it"
+                  {...clientForm.register("website_url")}
+                />
                 {clientForm.formState.errors.website_url && (
-                  <p className="mt-1 text-sm text-destructive">{clientForm.formState.errors.website_url.message}</p>
+                  <p className="mt-1 text-sm text-destructive">
+                    {clientForm.formState.errors.website_url.message}
+                  </p>
                 )}
               </Field>
               <Field label="Indirizzo">
@@ -1046,7 +1195,6 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
   };
 }
 
-
 function ContactModal({
   open,
   title,
@@ -1084,7 +1232,9 @@ function ContactModal({
         <Field label="Nome e cognome *">
           <input className="pc-input" {...form.register("full_name")} />
           {form.formState.errors.full_name && (
-            <p className="mt-1 text-sm text-destructive">{form.formState.errors.full_name.message}</p>
+            <p className="mt-1 text-sm text-destructive">
+              {form.formState.errors.full_name.message}
+            </p>
           )}
         </Field>
         <Field label="Email">
@@ -1122,7 +1272,12 @@ function PortalLinkModal({
   onClose,
   onCopy,
 }: {
-  portalLink: { contactName: string; clientName: string; loginUrl: string; expiresAt: string } | null;
+  portalLink: {
+    contactName: string;
+    clientName: string;
+    loginUrl: string;
+    expiresAt: string;
+  } | null;
   copied: boolean;
   onClose: () => void;
   onCopy: () => void;
@@ -1167,15 +1322,21 @@ function PortalLinkModal({
               {portalLink.loginUrl}
             </div>
           </div>
-          <div className="rounded-md border px-3 py-2 text-[12.5px] text-text2" style={{ borderColor: "var(--border)" }}>
-            Scade il <span className="font-semibold text-text">{formatPortalExpiry(portalLink.expiresAt)}</span>
+          <div
+            className="rounded-md border px-3 py-2 text-[12.5px] text-text2"
+            style={{ borderColor: "var(--border)" }}
+          >
+            Scade il{" "}
+            <span className="font-semibold text-text">
+              {formatPortalExpiry(portalLink.expiresAt)}
+            </span>
           </div>
           <div
             className="rounded-md border px-3 py-2 text-[12.5px]"
             style={{ borderColor: "var(--warn)", background: "rgba(239, 152, 39, .08)" }}
           >
-            Condividi questo link direttamente con il cliente. Chiunque lo riceva potra'
-            accedere al portale come questo referente fino alla scadenza o alla revoca.
+            Condividi questo link direttamente con il cliente. Chiunque lo riceva potra' accedere al
+            portale come questo referente fino alla scadenza o alla revoca.
           </div>
         </div>
       )}
@@ -1183,7 +1344,15 @@ function PortalLinkModal({
   );
 }
 
-function SmallMetric({ icon, label, tone }: { icon: React.ReactNode; label: string; tone: "danger" | "muted" }) {
+function SmallMetric({
+  icon,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  tone: "danger" | "muted";
+}) {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
@@ -1198,7 +1367,15 @@ function SmallMetric({ icon, label, tone }: { icon: React.ReactNode; label: stri
   );
 }
 
-function HeaderCounter({ value, label, onClick }: { value: number; label: string; onClick: () => void }) {
+function HeaderCounter({
+  value,
+  label,
+  onClick,
+}: {
+  value: number;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -1225,7 +1402,10 @@ function ResponsiveTable({
 }) {
   if (!rows.length) {
     return (
-      <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-md border text-center" style={{ borderColor: "var(--border)" }}>
+      <div
+        className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-md border text-center"
+        style={{ borderColor: "var(--border)" }}
+      >
         <div className="text-sm text-text3">{empty}</div>
         {emptyAction}
       </div>
@@ -1237,7 +1417,10 @@ function ResponsiveTable({
         <thead style={{ background: "var(--surface2)" }}>
           <tr>
             {headers.map((header) => (
-              <th key={header} className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+              <th
+                key={header}
+                className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+              >
                 {header}
               </th>
             ))}
@@ -1283,12 +1466,24 @@ function StatusPill({ value }: { value: string }) {
     archived: { label: "Archiviato", color: "var(--text3)", bg: "var(--surface2)" },
   };
   const meta = map[value] ?? { label: value, color: "var(--text3)", bg: "var(--surface2)" };
-  return <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ color: meta.color, background: meta.bg }}>{meta.label}</span>;
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+      style={{ color: meta.color, background: meta.bg }}
+    >
+      {meta.label}
+    </span>
+  );
 }
 
 function PriorityPill({ value }: { value: string }) {
-  const label = value === "high" ? "Alta" : value === "med" ? "Media" : value === "low" ? "Bassa" : value;
-  return <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10.5px] font-bold text-text3">{label}</span>;
+  const label =
+    value === "high" ? "Alta" : value === "med" ? "Media" : value === "low" ? "Bassa" : value;
+  return (
+    <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10.5px] font-bold text-text3">
+      {label}
+    </span>
+  );
 }
 
 function DeviceStatusPill({ status }: { status: DeviceRow["status"] }) {
@@ -1299,17 +1494,41 @@ function DeviceStatusPill({ status }: { status: DeviceRow["status"] }) {
     retired: ["Dismesso", "var(--text3)", "var(--surface2)"],
   } as const;
   const [label, color, bg] = map[status] ?? map.available;
-  return <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ color, background: bg }}>{label}</span>;
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+      style={{ color, background: bg }}
+    >
+      {label}
+    </span>
+  );
 }
 
 function DeviceSummary({ devices }: { devices: DeviceRow[] }) {
-  const count = (status: DeviceRow["status"]) => devices.filter((device) => device.status === status).length;
+  const count = (status: DeviceRow["status"]) =>
+    devices.filter((device) => device.status === status).length;
   return (
     <div className="flex flex-wrap gap-1.5 text-[11px]">
-      <SmallMetric tone="muted" icon={<HardDrive className="h-3 w-3" />} label={`Disponibili: ${count("available")}`} />
-      <SmallMetric tone="muted" icon={<HardDrive className="h-3 w-3" />} label={`Assegnati: ${count("assigned")}`} />
-      <SmallMetric tone="muted" icon={<HardDrive className="h-3 w-3" />} label={`Manutenzione: ${count("maintenance")}`} />
-      <SmallMetric tone="muted" icon={<HardDrive className="h-3 w-3" />} label={`Dismessi: ${count("retired")}`} />
+      <SmallMetric
+        tone="muted"
+        icon={<HardDrive className="h-3 w-3" />}
+        label={`Disponibili: ${count("available")}`}
+      />
+      <SmallMetric
+        tone="muted"
+        icon={<HardDrive className="h-3 w-3" />}
+        label={`Assegnati: ${count("assigned")}`}
+      />
+      <SmallMetric
+        tone="muted"
+        icon={<HardDrive className="h-3 w-3" />}
+        label={`Manutenzione: ${count("maintenance")}`}
+      />
+      <SmallMetric
+        tone="muted"
+        icon={<HardDrive className="h-3 w-3" />}
+        label={`Dismessi: ${count("retired")}`}
+      />
     </div>
   );
 }
@@ -1452,7 +1671,15 @@ function ImportContactsCsvDialog({
   function downloadTemplate() {
     downloadCsv(
       [
-        ["nome", "cognome", "email", "telefono", "ruolo_aziendale", "reparto", "referente_principale"],
+        [
+          "nome",
+          "cognome",
+          "email",
+          "telefono",
+          "ruolo_aziendale",
+          "reparto",
+          "referente_principale",
+        ],
         ["Mario", "Rossi", "mario@azienda.it", "0123456789", "IT Manager", "IT", "true"],
       ],
       "template-referenti-pcready.csv",
@@ -1489,7 +1716,11 @@ function ImportContactsCsvDialog({
             Chiudi
           </button>
           {step === 2 && (
-            <button className="pc-btn pc-btn-primary" onClick={confirmImport} disabled={busy || !stats.valid}>
+            <button
+              className="pc-btn pc-btn-primary"
+              onClick={confirmImport}
+              disabled={busy || !stats.valid}
+            >
               Importa righe valide
             </button>
           )}
@@ -1507,10 +1738,19 @@ function ImportContactsCsvDialog({
               <div>
                 <div className="text-sm font-semibold">Carica file .csv</div>
                 <div className="text-xs text-text3">
-                  {busy ? "Lettura in corso..." : fileName || "nome,cognome,email,telefono,ruolo_aziendale,reparto,referente_principale"}
+                  {busy
+                    ? "Lettura in corso..."
+                    : fileName ||
+                      "nome,cognome,email,telefono,ruolo_aziendale,reparto,referente_principale"}
                 </div>
               </div>
-              <input type="file" accept=".csv,text/csv" className="hidden" disabled={busy} onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                disabled={busy}
+                onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
+              />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
               <Download className="w-3 h-3" /> Scarica template CSV
@@ -1528,24 +1768,39 @@ function ImportContactsCsvDialog({
                 <SummaryBox label="Errori" value={stats.errors} />
                 <SummaryBox label="Righe" value={rows.length} />
               </div>
-              <select className="pc-input w-auto text-xs" value={duplicateMode} onChange={(event) => applyDuplicateMode(event.target.value as ContactDuplicateMode)}>
+              <select
+                className="pc-input w-auto text-xs"
+                value={duplicateMode}
+                onChange={(event) => applyDuplicateMode(event.target.value as ContactDuplicateMode)}
+              >
                 <option value="ask">Duplicati: chiedi</option>
                 <option value="skip">Duplicati: salta</option>
                 <option value="overwrite">Duplicati: sovrascrivi</option>
               </select>
             </div>
-            <div className="max-h-[360px] overflow-auto rounded-md border" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="max-h-[360px] overflow-auto rounded-md border"
+              style={{ borderColor: "var(--border)" }}
+            >
               <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "var(--surface2)" }}>
-                    {["Riga", "Nome", "Email", "Ruolo", "Reparto", "Azione", "Validazione"].map((h) => (
-                      <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">{h}</th>
-                    ))}
+                    {["Riga", "Nome", "Email", "Ruolo", "Reparto", "Azione", "Validazione"].map(
+                      (h) => (
+                        <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={`${row.rowNumber}-${row.email}-${row.full_name}`} className="border-t" style={{ borderColor: "var(--border)" }}>
+                    <tr
+                      key={`${row.rowNumber}-${row.email}-${row.full_name}`}
+                      className="border-t"
+                      style={{ borderColor: "var(--border)" }}
+                    >
                       <td className="px-3 py-2 font-mono">{row.rowNumber}</td>
                       <td className="px-3 py-2">{row.full_name || "-"}</td>
                       <td className="px-3 py-2">{row.email || "-"}</td>
@@ -1560,7 +1815,10 @@ function ImportContactsCsvDialog({
                               setRows((current) =>
                                 current.map((item) =>
                                   item.rowNumber === row.rowNumber
-                                    ? { ...item, action: event.target.value as ContactImportRow["action"] }
+                                    ? {
+                                        ...item,
+                                        action: event.target.value as ContactImportRow["action"],
+                                      }
                                     : item,
                                 ),
                               )
@@ -1573,7 +1831,11 @@ function ImportContactsCsvDialog({
                           row.action
                         )}
                       </td>
-                      <td className={row.errors.length ? "px-3 py-2 text-destructive" : "px-3 py-2 text-text3"}>
+                      <td
+                        className={
+                          row.errors.length ? "px-3 py-2 text-destructive" : "px-3 py-2 text-text3"
+                        }
+                      >
                         {row.errors.join(", ") || (row.existingId ? "Email gia' presente" : "OK")}
                       </td>
                     </tr>
@@ -1597,9 +1859,14 @@ function ImportContactsCsvDialog({
               <div className="text-sm text-text2">Import in corso...</div>
             )}
             {result?.errors.length ? (
-              <div className="rounded-md border p-3 text-xs text-destructive" style={{ borderColor: "var(--border)" }}>
+              <div
+                className="rounded-md border p-3 text-xs text-destructive"
+                style={{ borderColor: "var(--border)" }}
+              >
                 {result.errors.map((error) => (
-                  <div key={`${error.rowNumber}-${error.name}`}>Riga {error.rowNumber} ({error.name || "-"}): {error.error}</div>
+                  <div key={`${error.rowNumber}-${error.name}`}>
+                    Riga {error.rowNumber} ({error.name || "-"}): {error.error}
+                  </div>
                 ))}
               </div>
             ) : result ? (
@@ -2093,7 +2360,7 @@ function buildContactImportPreview(
       [first, last].filter(Boolean).join(" ");
     const email = pickCsvValue(record.values, ["email", "mail"]);
     const emailKey = normalizeKey(email);
-    const existingId = emailKey ? existingByEmail.get(emailKey) ?? null : null;
+    const existingId = emailKey ? (existingByEmail.get(emailKey) ?? null) : null;
     const row: ContactImportRow = {
       rowNumber: record.rowNumber,
       full_name: fullName,
@@ -2101,9 +2368,12 @@ function buildContactImportPreview(
       phone: pickCsvValue(record.values, ["telefono", "phone", "tel"]),
       job_title: pickCsvValue(record.values, ["ruolo_aziendale", "ruolo", "role", "job_title"]),
       department: pickCsvValue(record.values, ["reparto", "department"]),
-      is_primary: parseCsvBoolean(pickCsvValue(record.values, ["referente_principale", "principale", "is_primary"])),
+      is_primary: parseCsvBoolean(
+        pickCsvValue(record.values, ["referente_principale", "principale", "is_primary"]),
+      ),
       existingId,
-      action: existingId && duplicateMode !== "overwrite" ? "skip" : existingId ? "update" : "insert",
+      action:
+        existingId && duplicateMode !== "overwrite" ? "skip" : existingId ? "update" : "insert",
       errors: [],
     };
 
@@ -2128,7 +2398,10 @@ async function importContactsFromPreview(clientId: string, rows: ContactImportRo
 
     try {
       if (row.is_primary) {
-        await supabase.from("client_contacts").update({ is_primary: false }).eq("client_id", clientId);
+        await supabase
+          .from("client_contacts")
+          .update({ is_primary: false })
+          .eq("client_id", clientId);
       }
       const payload = {
         client_id: clientId,

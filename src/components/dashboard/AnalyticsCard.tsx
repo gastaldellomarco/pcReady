@@ -31,10 +31,18 @@ export function AnalyticsCard({
             <div className="text-[11px] text-text3">{periodLabel}</div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onDownloadCsv} disabled={!analytics || loading}>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              onClick={onDownloadCsv}
+              disabled={!analytics || loading}
+            >
               CSV
             </button>
-            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={onDownloadPdf} disabled={!analytics || loading}>
+            <button
+              className="pc-btn pc-btn-primary pc-btn-sm"
+              onClick={onDownloadPdf}
+              disabled={!analytics || loading}
+            >
               Scarica Report
             </button>
           </div>
@@ -70,9 +78,23 @@ export function AnalyticsCard({
                   <LineChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                    <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value}g`} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatAvgDays(Number(value))} />} />
-                    <Line type="monotone" dataKey="avg_days" stroke="var(--color-avg_days)" strokeWidth={2} dot />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}g`}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent formatter={(value) => formatAvgDays(Number(value))} />
+                      }
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="avg_days"
+                      stroke="var(--color-avg_days)"
+                      strokeWidth={2}
+                      dot
+                    />
                   </LineChart>
                 </ChartContainer>
               </div>
@@ -90,7 +112,9 @@ export function AnalyticsCard({
           <span className="text-[11px] text-text3 font-mono">{technicians.length} tecnici</span>
         </div>
         {loading ? (
-          <div className="pc-card-body"><AnalyticsSkeleton /></div>
+          <div className="pc-card-body">
+            <AnalyticsSkeleton />
+          </div>
         ) : (
           <div className="pc-card-body">
             <TechnicianRadarWidget />

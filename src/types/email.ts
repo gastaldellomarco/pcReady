@@ -36,7 +36,10 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
 
-export const DEFAULT_TEMPLATES: Record<EmailEventType, { subject: string; body_html: string; body_text: string }> = {
+export const DEFAULT_TEMPLATES: Record<
+  EmailEventType,
+  { subject: string; body_html: string; body_text: string }
+> = {
   invite: {
     subject: "[{{organization_name}}] Sei stato invitato",
     body_html:

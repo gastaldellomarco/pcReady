@@ -19,15 +19,27 @@ export function PriorityLabel({ p }: { p: TicketPriority }) {
 
 export function TicketTypeBadge({ type }: { type: TicketType }) {
   const meta = TICKET_TYPE_META[type];
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.cls}`}>{meta.label}</span>;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.cls}`}>
+      {meta.label}
+    </span>
+  );
 }
 
-export function AssigneeChip({ initials, name }: { initials?: string | null; name?: string | null }) {
+export function AssigneeChip({
+  initials,
+  name,
+}: {
+  initials?: string | null;
+  name?: string | null;
+}) {
   if (!initials || !name) return <span className="text-text3 text-xs">—</span>;
   const c = avatarColors(initials);
   return (
     <span className="pc-chip">
-      <span className="pc-chip-ava" style={{ background: c.bg, color: c.fg }}>{initials}</span>
+      <span className="pc-chip-ava" style={{ background: c.bg, color: c.fg }}>
+        {initials}
+      </span>
       {name}
     </span>
   );

@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 // Ensure a safe global fallback so accidental bare references don't crash rendering
 try {
-  (globalThis as any).organizationName = (globalThis as any).__APP_SETTINGS__?.organization_name ?? "PCReady";
+  (globalThis as any).organizationName =
+    (globalThis as any).__APP_SETTINGS__?.organization_name ?? "PCReady";
 } catch {
   // Ignore environments where globalThis is not writable.
 }
@@ -199,7 +200,7 @@ function AppLayout() {
       })
       .catch(() => {});
   }, [loadSettings, session?.access_token]);
-  
+
   useEffect(() => {
     const titleKey = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
     const currentPageTitle = titleKey ? PAGE_TITLES[titleKey] : "PCReady";
@@ -457,7 +458,9 @@ function SidebarContent({
               <Sun className="w-4 h-4" />
               <span>Chiaro</span>
               {theme === "light" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                  ✓
+                </span>
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -468,7 +471,9 @@ function SidebarContent({
               <Moon className="w-4 h-4" />
               <span>Scuro</span>
               {theme === "dark" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                  ✓
+                </span>
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -479,7 +484,9 @@ function SidebarContent({
               <Monitor className="w-4 h-4" />
               <span>Sistema</span>
               {theme === "system" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>✓</span>
+                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                  ✓
+                </span>
               )}
             </DropdownMenuItem>
           </DropdownMenuContent>

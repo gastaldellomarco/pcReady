@@ -32,7 +32,13 @@ interface AssignmentRow {
   unassigned_at: string | null;
   assigned_by: string | null;
   notes: string | null;
-  ticket?: { id: string; ticket_code: string; status: string; priority: string; client: string } | null;
+  ticket?: {
+    id: string;
+    ticket_code: string;
+    status: string;
+    priority: string;
+    client: string;
+  } | null;
 }
 
 interface TicketRow {
@@ -167,7 +173,9 @@ export function DeviceDetailModal() {
 
       const histRes = await supabase
         .from("ticket_device_assignment_history")
-        .select("id, ticket_id, assignment_id, action, occurred_at, actor_id, changed_fields, notes")
+        .select(
+          "id, ticket_id, assignment_id, action, occurred_at, actor_id, changed_fields, notes",
+        )
         .eq("device_id", deviceId)
         .order("occurred_at", { ascending: false });
 
@@ -358,8 +366,8 @@ export function DeviceDetailModal() {
       >
         <div className="pc-label">Cronologia operativa (unica timeline)</div>
         <p className="text-[11px] text-text3 mt-1 mb-3">
-          Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività dai
-          ticket collegati provengono dal log attività; manutenzioni come ticket di tipo
+          Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività
+          dai ticket collegati provengono dal log attività; manutenzioni come ticket di tipo
           &quot;Manutenzione&quot; o stato dispositivo in manutenzione.
         </p>
         <div className="relative max-h-[min(420px,50vh)] overflow-y-auto pl-1">
@@ -385,9 +393,13 @@ export function DeviceDetailModal() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[12px] text-text2 mt-0.5 whitespace-pre-wrap">{item.detail}</div>
+                  <div className="text-[12px] text-text2 mt-0.5 whitespace-pre-wrap">
+                    {item.detail}
+                  </div>
                   {item.operatorLabel && (
-                    <div className="mt-1 text-[11px] text-text3">Operatore: {item.operatorLabel}</div>
+                    <div className="mt-1 text-[11px] text-text3">
+                      Operatore: {item.operatorLabel}
+                    </div>
                   )}
                   {item.ticketId && (
                     <button
@@ -402,7 +414,9 @@ export function DeviceDetailModal() {
               </div>
             ))}
             {!timeline.length && (
-              <div className="text-[12.5px] text-text3 py-4 pl-5">Nessun evento nella cronologia.</div>
+              <div className="text-[12.5px] text-text3 py-4 pl-5">
+                Nessun evento nella cronologia.
+              </div>
             )}
           </div>
         </div>
@@ -428,7 +442,9 @@ export function DeviceDetailModal() {
               >
                 <span className="font-semibold">{ticket.ticket_code}</span>
                 <span className="text-text2">{ticket.client}</span>
-                <span className="text-text3">{STATUS_META[ticket.status as keyof typeof STATUS_META]?.label ?? ticket.status}</span>
+                <span className="text-text3">
+                  {STATUS_META[ticket.status as keyof typeof STATUS_META]?.label ?? ticket.status}
+                </span>
                 <span className="text-text3 text-[12px]">
                   {TICKET_TYPE_LABEL[ticket.ticket_type as TicketType] ?? ticket.ticket_type}
                 </span>
@@ -490,7 +506,9 @@ function buildDeviceTimeline(input: {
   const updatedMs = new Date(device.updated_at).getTime();
   if (updatedMs - createdMs > 2000) {
     const noteExcerpt =
-      device.notes && device.notes.length > 160 ? `${device.notes.slice(0, 160)}…` : device.notes || "";
+      device.notes && device.notes.length > 160
+        ? `${device.notes.slice(0, 160)}…`
+        : device.notes || "";
     items.push({
       id: `device-meta-${device.id}-${device.updated_at}`,
       at: device.updated_at,
@@ -545,7 +563,8 @@ function buildDeviceTimeline(input: {
       (a) =>
         a.ticket_id === ticket.id &&
         /creato/i.test(a.message) &&
-        Math.abs(new Date(a.created_at).getTime() - new Date(ticket.created_at).getTime()) < 120_000,
+        Math.abs(new Date(a.created_at).getTime() - new Date(ticket.created_at).getTime()) <
+          120_000,
     );
     if (!hasCreationLog) {
       const tlabel = TICKET_TYPE_LABEL[ticket.ticket_type as TicketType] ?? ticket.ticket_type;
@@ -617,9 +636,17 @@ function historyTitle(action: string) {
 
 function historyDetail(entry: HistoryRow, ticketCodeById: Map<string, string>) {
   const code = entry.ticket_id ? ticketCodeById.get(entry.ticket_id) : null;
-  const ticketPart = code ? `Ticket ${code}` : entry.ticket_id ? `Ticket ${entry.ticket_id.slice(0, 8)}…` : "Ticket";
+  const ticketPart = code
+    ? `Ticket ${code}`
+    : entry.ticket_id
+      ? `Ticket ${entry.ticket_id.slice(0, 8)}…`
+      : "Ticket";
 
-  if (entry.action === "replaced" && entry.changed_fields && typeof entry.changed_fields === "object") {
+  if (
+    entry.action === "replaced" &&
+    entry.changed_fields &&
+    typeof entry.changed_fields === "object"
+  ) {
     const cf = entry.changed_fields as { from?: string; to?: string };
     const from = cf.from?.slice(0, 8) ?? "?";
     const to = cf.to?.slice(0, 8) ?? "?";

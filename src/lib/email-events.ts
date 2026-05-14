@@ -35,7 +35,8 @@ export const sendTicketAssignedEmail = createServerFn({ method: "POST" })
 
     const common = await getEmailCommonVariables(assigneeId, assigneeEmail);
     const ticketRow = ticket as any;
-    const title = ticketRow.model || ticketRow.device?.model || ticketRow.notes || ticketRow.ticket_code;
+    const title =
+      ticketRow.model || ticketRow.device?.model || ticketRow.notes || ticketRow.ticket_code;
 
     await sendEmailEvent({
       eventType: "ticket_assigned",
@@ -69,7 +70,11 @@ export const sendChecklistCompletedEmail = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (error) throw error;
-    const ticketRow = ticket as { id: string; ticket_code: string; assignee_id: string | null } | null;
+    const ticketRow = ticket as {
+      id: string;
+      ticket_code: string;
+      assignee_id: string | null;
+    } | null;
     if (!ticketRow?.assignee_id) return { skipped: true };
 
     const assigneeId = ticketRow.assignee_id;

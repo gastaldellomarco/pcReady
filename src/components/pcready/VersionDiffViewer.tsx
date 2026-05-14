@@ -55,7 +55,13 @@ function ValueBlock({ value, tone }: { value: unknown; tone: "old" | "new" | "ne
   );
 }
 
-export function VersionDiffViewer({ version1, version2, authorNames = {}, open, onClose }: VersionDiffViewerProps) {
+export function VersionDiffViewer({
+  version1,
+  version2,
+  authorNames = {},
+  open,
+  onClose,
+}: VersionDiffViewerProps) {
   const isComparison = !!version2;
   const diff = version2 ? compareVersions(version1, version2) : null;
   const authorLabel = (id: string | null) => (id ? authorNames[id] || id : "Sistema");
@@ -77,11 +83,17 @@ export function VersionDiffViewer({ version1, version2, authorNames = {}, open, 
               <div className="border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge>v{version1.version_number}</Badge>
-                  <Badge variant={
-                    version1.operation === "create" ? "default" :
-                    version1.operation === "update" ? "secondary" :
-                    version1.operation === "restore" ? "destructive" : "outline"
-                  }>
+                  <Badge
+                    variant={
+                      version1.operation === "create"
+                        ? "default"
+                        : version1.operation === "update"
+                          ? "secondary"
+                          : version1.operation === "restore"
+                            ? "destructive"
+                            : "outline"
+                    }
+                  >
                     {version1.operation}
                   </Badge>
                 </div>
@@ -95,9 +107,7 @@ export function VersionDiffViewer({ version1, version2, authorNames = {}, open, 
                     <span>{new Date(version1.created_at).toLocaleString()}</span>
                   </div>
                   {version1.change_note && (
-                    <div className="mt-2 p-2 bg-muted rounded text-sm">
-                      {version1.change_note}
-                    </div>
+                    <div className="mt-2 p-2 bg-muted rounded text-sm">{version1.change_note}</div>
                   )}
                 </div>
               </div>
@@ -106,11 +116,17 @@ export function VersionDiffViewer({ version1, version2, authorNames = {}, open, 
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge>v{version2.version_number}</Badge>
-                    <Badge variant={
-                      version2.operation === "create" ? "default" :
-                      version2.operation === "update" ? "secondary" :
-                      version2.operation === "restore" ? "destructive" : "outline"
-                    }>
+                    <Badge
+                      variant={
+                        version2.operation === "create"
+                          ? "default"
+                          : version2.operation === "update"
+                            ? "secondary"
+                            : version2.operation === "restore"
+                              ? "destructive"
+                              : "outline"
+                      }
+                    >
                       {version2.operation}
                     </Badge>
                   </div>
@@ -166,8 +182,11 @@ export function VersionDiffViewer({ version1, version2, authorNames = {}, open, 
                     <h3 className="font-semibold mb-3 text-green-600">Campi Aggiunti</h3>
                     <div className="space-y-2">
                       {Object.entries(diff.added).map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded">
-                          <span className="font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                        <div
+                          key={key}
+                          className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded"
+                        >
+                          <span className="font-medium capitalize">{key.replace(/_/g, " ")}</span>
                           <span className="text-sm">{String(value)}</span>
                         </div>
                       ))}
@@ -181,8 +200,11 @@ export function VersionDiffViewer({ version1, version2, authorNames = {}, open, 
                     <h3 className="font-semibold mb-3 text-red-600">Campi Rimossi</h3>
                     <div className="space-y-2">
                       {Object.entries(diff.removed).map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded">
-                          <span className="font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                        <div
+                          key={key}
+                          className="flex justify-between items-center p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded"
+                        >
+                          <span className="font-medium capitalize">{key.replace(/_/g, " ")}</span>
                           <span className="text-sm">{String(value)}</span>
                         </div>
                       ))}

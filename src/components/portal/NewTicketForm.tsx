@@ -30,31 +30,53 @@ export function NewTicketForm({ token, categories }: { token: string; categories
     <form onSubmit={submit} className="space-y-4 rounded-lg border bg-card p-4">
       <div>
         <label className="text-sm font-medium">Titolo</label>
-        <input className="pc-input mt-1 w-full" value={title} onChange={(event) => setTitle(event.target.value)} required />
+        <input
+          className="pc-input mt-1 w-full"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          required
+        />
       </div>
       <div>
         <label className="text-sm font-medium">Descrizione</label>
-        <textarea className="pc-input mt-1 min-h-32 w-full" value={description} onChange={(event) => setDescription(event.target.value)} required />
+        <textarea
+          className="pc-input mt-1 min-h-32 w-full"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          required
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="text-sm font-medium">Categoria</label>
-          <select className="pc-input mt-1 w-full" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <select
+            className="pc-input mt-1 w-full"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+          >
             {(categories.length ? categories : ["Assistenza tecnica"]).map((item) => (
-              <option key={item} value={item}>{item}</option>
+              <option key={item} value={item}>
+                {item}
+              </option>
             ))}
           </select>
         </div>
         <div>
           <label className="text-sm font-medium">Urgenza</label>
-          <select className="pc-input mt-1 w-full" value={urgency} onChange={(event) => setUrgency(event.target.value as "low" | "normal" | "high")}>
+          <select
+            className="pc-input mt-1 w-full"
+            value={urgency}
+            onChange={(event) => setUrgency(event.target.value as "low" | "normal" | "high")}
+          >
             <option value="low">Bassa</option>
             <option value="normal">Normale</option>
             <option value="high">Alta</option>
           </select>
         </div>
       </div>
-      <Button type="submit" disabled={busy}>{busy ? "Apertura..." : "Apri ticket"}</Button>
+      <Button type="submit" disabled={busy}>
+        {busy ? "Apertura..." : "Apri ticket"}
+      </Button>
     </form>
   );
 }

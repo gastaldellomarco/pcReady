@@ -1,5 +1,10 @@
-
-export default function ScheduleStep({ value, onChange }: { value: any; onChange: (v: any) => void }) {
+export default function ScheduleStep({
+  value,
+  onChange,
+}: {
+  value: any;
+  onChange: (v: any) => void;
+}) {
   return (
     <div>
       <h3 className="text-lg font-semibold">Schedule</h3>
@@ -7,7 +12,11 @@ export default function ScheduleStep({ value, onChange }: { value: any; onChange
 
       <div className="mt-3">
         <label className="text-sm">Tipo</label>
-        <select className="ml-2 rounded-md border px-2 py-1" value={value?.type ?? "none"} onChange={(e) => onChange({ type: e.target.value })}>
+        <select
+          className="ml-2 rounded-md border px-2 py-1"
+          value={value?.type ?? "none"}
+          onChange={(e) => onChange({ type: e.target.value })}
+        >
           <option value="none">Nessuna</option>
           <option value="cron">Cron</option>
           <option value="interval">Intervallo</option>
@@ -17,7 +26,11 @@ export default function ScheduleStep({ value, onChange }: { value: any; onChange
       {value?.type === "cron" && (
         <div className="mt-3">
           <label className="text-sm">Expression</label>
-          <input className="block mt-1 rounded-md border px-2 py-1 w-full" value={value?.cron ?? ""} onChange={(e) => onChange({ ...value, cron: e.target.value })} />
+          <input
+            className="block mt-1 rounded-md border px-2 py-1 w-full"
+            value={value?.cron ?? ""}
+            onChange={(e) => onChange({ ...value, cron: e.target.value })}
+          />
         </div>
       )}
     </div>

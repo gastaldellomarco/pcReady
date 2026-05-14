@@ -140,7 +140,7 @@ function KanbanPage() {
     try {
       await updateTicket.mutateAsync({ id, patch: { status, assignee_id: nextAssigneeId } });
     } catch (err: any) {
-      toast.error(err?.message || 'Errore aggiornamento ticket');
+      toast.error(err?.message || "Errore aggiornamento ticket");
       setRows((rs) => rs.map((r) => (r.id === id ? card : r)));
       return;
     }
@@ -151,19 +151,29 @@ function KanbanPage() {
         to_status: status,
         changed_by: user!.id,
         changed_at: new Date().toISOString(),
-        note: nextAssigneeId !== card.assignee_id ? `Assegnato a ${nextAssignee?.full_name || "Non assegnato"}` : null,
+        note:
+          nextAssigneeId !== card.assignee_id
+            ? `Assegnato a ${nextAssignee?.full_name || "Non assegnato"}`
+            : null,
       });
     }
 
     // Trigger completion workflow when status changes to 'completed'
     if (status === "completed" && card.status !== "completed" && session?.access_token) {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
-      void completeTicketServer({ data: { ticketId: id, changedBy: user!.id, accessToken: session.access_token } }).catch((err) => {
+      void completeTicketServer({
+        data: { ticketId: id, changedBy: user!.id, accessToken: session.access_token },
+      }).catch((err) => {
         console.error("Failed to complete ticket:", err);
         toast.error("Ticket completato, ma errore invio email/verbale");
       });
     }
-    await (activityQueries.insertActivity as any)({ type: 'user', message: `${card.ticket_code}: stato → "${STATUS_META[status].label}" (kanban)`, ticket_id: card.id, actor_id: user!.id });
+    await (activityQueries.insertActivity as any)({
+      type: "user",
+      message: `${card.ticket_code}: stato → "${STATUS_META[status].label}" (kanban)`,
+      ticket_id: card.id,
+      actor_id: user!.id,
+    });
     if (nextAssigneeId && session?.access_token) {
       await notify({
         data: {
@@ -180,9 +190,11 @@ function KanbanPage() {
       });
     }
     if (nextAssigneeId && nextAssigneeId !== card.assignee_id) {
-      void sendAssignedEmail({ data: { ticketId: card.id, assigneeId: nextAssigneeId } }).catch((err) => {
-        console.error("Failed to send ticket assigned email:", err);
-      });
+      void sendAssignedEmail({ data: { ticketId: card.id, assigneeId: nextAssigneeId } }).catch(
+        (err) => {
+          console.error("Failed to send ticket assigned email:", err);
+        },
+      );
     }
     toast.success(
       nextAssigneeId !== card.assignee_id
@@ -239,7 +251,9 @@ function KanbanPage() {
         </Select>
 
         <span className="ml-auto text-xs text-text3 font-mono flex items-center gap-2">
-          {ticketsLoading ? <span className="text-[10px] uppercase tracking-wide">Sincronizzazione…</span> : null}
+          {ticketsLoading ? (
+            <span className="text-[10px] uppercase tracking-wide">Sincronizzazione…</span>
+          ) : null}
           {filteredRows.length} di {rows.length} ticket
         </span>
         <button

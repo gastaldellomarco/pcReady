@@ -52,7 +52,11 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
         </DialogHeader>
         <div className="space-y-4">
           <Button onClick={handleRunDryRun} disabled={!rule || running}>
-            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
+            {running ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FlaskConical className="h-4 w-4" />
+            )}
             Simula esecuzione
           </Button>
           {!result && (
@@ -77,7 +81,8 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
 }
 
 function DryRunStepCard({ step }: { step: DryRunStep }) {
-  const Icon = step.result === "pass" ? CheckCircle : step.result === "skip" ? MinusCircle : XCircle;
+  const Icon =
+    step.result === "pass" ? CheckCircle : step.result === "skip" ? MinusCircle : XCircle;
   return (
     <div
       className={cn(

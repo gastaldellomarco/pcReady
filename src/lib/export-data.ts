@@ -52,7 +52,10 @@ export const exportAllData = createServerFn({ method: "GET" })
 function toCsv(rows: Record<string, unknown>[]) {
   if (!rows.length) return "";
   const columns = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
-  return [columns.map(csvCell).join(","), ...rows.map((row) => columns.map((key) => csvCell(row[key])).join(","))].join("\n");
+  return [
+    columns.map(csvCell).join(","),
+    ...rows.map((row) => columns.map((key) => csvCell(row[key])).join(",")),
+  ].join("\n");
 }
 
 function csvCell(value: unknown) {

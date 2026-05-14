@@ -71,19 +71,25 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-md bg-muted p-1">
             <button
-              className={"px-3 py-1 text-sm " + (period === "today" ? "font-semibold" : "text-text3")}
+              className={
+                "px-3 py-1 text-sm " + (period === "today" ? "font-semibold" : "text-text3")
+              }
               onClick={() => setPeriod("today")}
             >
               Oggi
             </button>
             <button
-              className={"px-3 py-1 text-sm " + (period === "week" ? "font-semibold" : "text-text3")}
+              className={
+                "px-3 py-1 text-sm " + (period === "week" ? "font-semibold" : "text-text3")
+              }
               onClick={() => setPeriod("week")}
             >
               Settimana
             </button>
             <button
-              className={"px-3 py-1 text-sm " + (period === "month" ? "font-semibold" : "text-text3")}
+              className={
+                "px-3 py-1 text-sm " + (period === "month" ? "font-semibold" : "text-text3")
+              }
               onClick={() => setPeriod("month")}
             >
               Mese
@@ -104,7 +110,9 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               <div
                 key={t.id}
                 className="min-w-[220px] pc-card p-3 cursor-pointer flex-shrink-0"
-                onClick={() => navigate({ to: "/_app/tickets", search: { technician: t.id } } as any)}
+                onClick={() =>
+                  navigate({ to: "/_app/tickets", search: { technician: t.id } } as any)
+                }
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="w-9 h-9">{t.initials}</Avatar>
@@ -124,19 +132,33 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
                     <div>Completati: {t.completed}</div>
                   </div>
 
-                  <div className="mt-2 text-xs text-text3">Tempo medio: {formatDuration(t.avg_resolution_ms)}</div>
+                  <div className="mt-2 text-xs text-text3">
+                    Tempo medio: {formatDuration(t.avg_resolution_ms)}
+                  </div>
 
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-xs text-text3">
                       <div>Tasso completamento</div>
-                      <div className="text-sm font-semibold">{t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0}%</div>
+                      <div className="text-sm font-semibold">
+                        {t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0}
+                        %
+                      </div>
                     </div>
-                    <Progress value={t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0} className="mt-1" />
+                    <Progress
+                      value={
+                        t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0
+                      }
+                      className="mt-1"
+                    />
                   </div>
 
                   <div className="mt-3">
                     <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(t.assigned)}>
-                      {t.assigned >= 10 ? "Sovraccarico" : t.assigned >= 5 ? "Carico elevato" : "Carico normale"}
+                      {t.assigned >= 10
+                        ? "Sovraccarico"
+                        : t.assigned >= 5
+                          ? "Carico elevato"
+                          : "Carico normale"}
                     </span>
                   </div>
                 </div>
