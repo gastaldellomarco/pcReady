@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+import { PageErrorBoundary } from "@/components/page-states";
 import { Monitor } from "lucide-react";
 
 export function PortalLayout() {
@@ -25,7 +26,9 @@ export function PortalLayout() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Outlet />
+        <PageErrorBoundary variant="portal">
+          <Outlet />
+        </PageErrorBoundary>
       </main>
     </div>
   );

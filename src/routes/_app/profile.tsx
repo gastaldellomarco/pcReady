@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { errorMessage, ListSkeleton, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Camera, KeyRound, Save, Shield, UserRound } from "lucide-react";
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/_app/profile")({
     ],
   }),
   component: ProfilePage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -75,6 +76,8 @@ function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<ProfileTab>(searchToTab(search.tab));
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [profileReloadToken, setProfileReloadToken] = useState(0);
   const [saving, setSaving] = useState<"personal" | "security" | "notifications" | "avatar" | null>(
     null,
   );
@@ -102,6 +105,7 @@ function ProfilePage() {
   useEffect(() => {
     if (!session?.access_token) return;
     setLoading(true);
+    setLoadError(null);
     loadProfile({ data: { accessToken: session.access_token } })
       .then((data) => {
         setProfile(data);
@@ -121,9 +125,9 @@ function ProfilePage() {
           notify_mentions: data.notify_mentions,
         });
       })
-      .catch((error) => toast.error(errorMessage(error, "Impossibile caricare il profilo")))
+      .catch((error) => setLoadError(errorMessage(error, "Impossibile caricare il profilo")))
       .finally(() => setLoading(false));
-  }, [session?.access_token, loadProfile]);
+  }, [session?.access_token, loadProfile, profileReloadToken]);
 
   const initials = useMemo(() => {
     const name = personal.display_name || authProfile?.full_name || profile?.email || "U";
@@ -243,8 +247,36 @@ function ProfilePage() {
     }
   }
 
-  if (loading) return <div className="text-sm text-text3">Caricamento profilo...</div>;
-  if (!profile) return <div className="text-sm text-text3">Profilo non disponibile</div>;
+  if (loadError) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <PageFetchError
+          message={loadError}
+          onRetry={() => setProfileReloadToken((n) => n + 1)}
+        />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto w-full max-w-5xl space-y-4">
+        <div className="h-10 max-w-full rounded-md bg-muted animate-pulse sm:w-80" />
+        <ListSkeleton rows={4} variant="app" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <PageFetchError
+          message="Profilo non disponibile."
+          onRetry={() => setProfileReloadToken((n) => n + 1)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
@@ -478,8 +510,4 @@ function searchToTab(tab?: string): ProfileTab {
   if (tab === "security") return "security";
   if (tab === "notifications" || tab === "settings") return "notifications";
   return "personal";
-}
-
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
 }

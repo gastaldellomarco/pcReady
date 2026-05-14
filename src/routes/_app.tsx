@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { PageErrorBoundary } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -57,7 +58,7 @@ import {
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -322,7 +323,9 @@ function AppLayout() {
           </div>
         </header>
         <main className="flex-1 px-7 py-6 pc-anim-in">
-          <Outlet />
+          <PageErrorBoundary variant="app">
+            <Outlet />
+          </PageErrorBoundary>
         </main>
       </div>
       <CreateTicketModal />

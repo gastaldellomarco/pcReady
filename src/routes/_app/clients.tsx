@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ListSkeleton } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/_app/clients")({
     ],
   }),
   component: ClientsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -341,6 +342,7 @@ function ClientsPage() {
     return true;
   });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listLoading = listQuery.isLoading;
   const allPageSelected = displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
 
   async function loadContacts(clientId: string) {
@@ -676,61 +678,72 @@ function ClientsPage() {
           )}
         </div>
         <div className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3">
-          {displayedClients.map((client) => {
-            const clientStats = stats[client.id] ?? { openTickets: 0, devices: 0, contacts: 0, portalActive: false };
-            const name = client.company_name || client.name;
-            return (
-              <button
-                key={client.id}
-                type="button"
-                className="w-full rounded-md border p-3 text-left transition-colors hover:bg-surface2"
-                style={{
-                  borderColor: client.id === selectedId ? "var(--accent)" : "var(--border)",
-                  background: client.id === selectedId ? "var(--accent2)" : "var(--surface)",
-                }}
+          {listLoading ? (
+            <ListSkeleton rows={8} variant="app" className="gap-2" />
+          ) : (
+            <>
+              {displayedClients.map((client) => {
+                const clientStats = stats[client.id] ?? {
+                  openTickets: 0,
+                  devices: 0,
+                  contacts: 0,
+                  portalActive: false,
+                };
+                const name = client.company_name || client.name;
+                return (
+                  <button
+                    key={client.id}
+                    type="button"
+                    className="w-full rounded-md border p-3 text-left transition-colors hover:bg-surface2"
+                    style={{
+                      borderColor: client.id === selectedId ? "var(--accent)" : "var(--border)",
+                      background: client.id === selectedId ? "var(--accent2)" : "var(--surface)",
+                    }}
                     onClick={() => {
                       setSelectedId(client.id);
                       void navigate({ to: "/clients", search: { clientId: client.id, tab: undefined } });
                     }}
-              >
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    aria-label={`Seleziona ${name}`}
-                    checked={selectedIds.has(client.id)}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) => toggleSelected(client.id, event.target.checked)}
-                  />
-                  <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-text3" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-bold">{name}</div>
-                    <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
-                      {client.vat_number || client.email || client.phone || "Anagrafica da completare"}
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        aria-label={`Seleziona ${name}`}
+                        checked={selectedIds.has(client.id)}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => toggleSelected(client.id, event.target.checked)}
+                      />
+                      <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-text3" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-bold">{name}</div>
+                        <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
+                          {client.vat_number || client.email || client.phone || "Anagrafica da completare"}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <SmallMetric
-                    tone={clientStats.openTickets > 0 ? "danger" : "muted"}
-                    icon={<Ticket className="h-3 w-3" />}
-                    label={`${clientStats.openTickets} ticket`}
-                  />
-                  <SmallMetric
-                    tone="muted"
-                    icon={<HardDrive className="h-3 w-3" />}
-                    label={`${clientStats.devices} dispositivi`}
-                  />
-                  <SmallMetric
-                    tone="muted"
-                    icon={<Users className="h-3 w-3" />}
-                    label={`${clientStats.contacts} referenti`}
-                  />
-                </div>
-              </button>
-            );
-          })}
-          {!displayedClients.length && (
-            <div className="py-8 text-center text-sm text-text3">Nessun cliente trovato</div>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <SmallMetric
+                        tone={clientStats.openTickets > 0 ? "danger" : "muted"}
+                        icon={<Ticket className="h-3 w-3" />}
+                        label={`${clientStats.openTickets} ticket`}
+                      />
+                      <SmallMetric
+                        tone="muted"
+                        icon={<HardDrive className="h-3 w-3" />}
+                        label={`${clientStats.devices} dispositivi`}
+                      />
+                      <SmallMetric
+                        tone="muted"
+                        icon={<Users className="h-3 w-3" />}
+                        label={`${clientStats.contacts} referenti`}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+              {!displayedClients.length && (
+                <div className="py-8 text-center text-sm text-text3">Nessun cliente trovato</div>
+              )}
+            </>
           )}
         </div>
         <div className="flex items-center justify-end gap-2 border-t px-3 py-2" style={{ borderColor: "var(--border)" }}>

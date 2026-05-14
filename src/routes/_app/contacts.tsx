@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_app/contacts")({
     ],
   }),
   component: ContactsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

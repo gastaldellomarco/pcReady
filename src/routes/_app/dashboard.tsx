@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_app/dashboard")({
     ],
   }),
   component: DashboardPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

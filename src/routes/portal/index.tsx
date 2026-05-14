@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -7,6 +8,8 @@ import { requestPortalLogin } from "@/lib/portal-auth";
 
 export const Route = createFileRoute("/portal/")({
   component: PortalLoginPage,
+  errorComponent: (props) => <RouteError {...props} />,
+  pendingComponent: () => <LoadingSkeleton variant="portal" />,
 });
 
 function PortalLoginPage() {

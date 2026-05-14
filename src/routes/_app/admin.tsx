@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { TableSkeletonRows } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -94,7 +95,7 @@ export const Route = createFileRoute("/_app/admin")({
     ],
   }),
   component: AdminUsersPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -859,14 +860,9 @@ function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {loadingRows && (
-                <tr>
-                  <td colSpan={8} className="text-center py-10 text-text3 text-sm">
-                    Caricamento utenti...
-                  </td>
-                </tr>
-              )}
-              {!loadingRows &&
+              {loadingRows ? (
+                <TableSkeletonRows rows={10} columns={8} cellClassName="px-[14px] py-[10px]" />
+              ) : (
                 filtered.map((row) => (
                   <tr
                     key={row.id}
@@ -955,7 +951,7 @@ function AdminUsersPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               {!loadingRows && !(filtered ?? []).length && (
                 <tr>
                   <td colSpan={8} className="text-center py-10 text-text3 text-sm">

@@ -10,6 +10,6 @@ export const Route = createFileRoute("/_app/tickets_/archive")({
     ],
   }),
   component: TicketsArchivePage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });

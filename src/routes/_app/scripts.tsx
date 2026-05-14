@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_app/scripts")({
     ],
   }),
   component: ScriptsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

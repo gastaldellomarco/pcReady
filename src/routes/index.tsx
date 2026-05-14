@@ -1,16 +1,21 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  errorComponent: (props) => <RouteError {...props} />,
+  pendingComponent: () => <LoadingSkeleton />,
 });
 
 function Index() {
   const { session, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-text3 text-sm">Caricamento…</div>
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="w-full max-w-lg">
+          <LoadingSkeleton variant="app" />
+        </div>
       </div>
     );
   }

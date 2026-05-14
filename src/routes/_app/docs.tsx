@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/docs")({
     ],
   }),
   component: ApiDocsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

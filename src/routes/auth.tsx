@@ -5,6 +5,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -20,6 +21,14 @@ export const Route = createFileRoute("/auth")({
     ],
   }),
   component: AuthPage,
+  errorComponent: (props) => <RouteError {...props} />,
+  pendingComponent: () => (
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "var(--bg2)" }}>
+      <div className="w-full max-w-md">
+        <LoadingSkeleton />
+      </div>
+    </div>
+  ),
 });
 
 function errorMessage(error: unknown, fallback: string) {

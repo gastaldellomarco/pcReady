@@ -24,7 +24,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_app/oauth/consent")({
   validateSearch: searchSchema,
   component: OAuthConsentPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CheckCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/_app/notifications")({
     ],
   }),
   component: NotificationsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -53,10 +54,12 @@ function NotificationsPage() {
   const [view, setView] = useState<"all" | "unread">("all");
   const [type, setType] = useState<"all" | NotificationType>("all");
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await loadNotifications({
         data: {
@@ -71,15 +74,15 @@ function NotificationsPage() {
       setRows(result.rows);
       setTotal(result.total);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossibile caricare notifiche");
+      setLoadError(error instanceof Error ? error.message : "Impossibile caricare notifiche");
     } finally {
       setLoading(false);
     }
-  }
+  }, [session?.access_token, page, view, type, loadNotifications]);
 
   useEffect(() => {
     void load();
-  }, [session?.access_token, page, view, type]);
+  }, [load]);
 
   useEffect(() => {
     setPage(0);
@@ -126,6 +129,9 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+      {loadError && (
+        <PageFetchError message={loadError} onRetry={() => void load()} />
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={view} onValueChange={(value) => setView(value as "all" | "unread")}>
           <SelectTrigger className="w-40">
@@ -166,7 +172,9 @@ function NotificationsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {loading && (
-            <div className="px-4 py-8 text-center text-sm text-text3">Caricamento...</div>
+            <div className="px-4 py-4">
+              <ListSkeleton rows={6} variant="app" />
+            </div>
           )}
           {!loading &&
             rows.map((notification) => {
@@ -203,8 +211,12 @@ function NotificationsPage() {
               );
             })}
           {!loading && !rows.length && (
-            <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-              Nessuna notifica trovata
+            <div className="px-4 py-6">
+              <PageEmptyState
+                className="border-0 shadow-none bg-transparent"
+                title="Nessuna notifica"
+                description="Non ci sono elementi che corrispondono ai filtri selezionati."
+              />
             </div>
           )}
         </CardContent>

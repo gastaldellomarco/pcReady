@@ -51,7 +51,7 @@ import { createVersion } from "@/lib/versioning";
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
   component: AutomationsPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

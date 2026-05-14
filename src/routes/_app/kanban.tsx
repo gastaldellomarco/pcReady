@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_app/kanban")({
     ],
   }),
   component: KanbanPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 

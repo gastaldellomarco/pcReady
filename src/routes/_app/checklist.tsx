@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { errorMessage, ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/checklist";
@@ -16,7 +17,7 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 export const Route = createFileRoute("/_app/checklist")({
   head: () => ({ meta: [{ title: "Checklist — PCReady" }, { name: "description", content: "Crea e gestisci checklist personalizzate per la preparazione PC." }] }),
   component: ChecklistPage,
-  errorComponent: ({ error }) => <RouteError error={error} />,
+  errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
@@ -132,6 +133,15 @@ function ChecklistPage() {
 
   const current = templates.find(t => t.id === active);
 
+  if (listQuery.isError) {
+    return (
+      <PageFetchError
+        message={errorMessage(listQuery.error, "Impossibile caricare le checklist")}
+        onRetry={() => void listQuery.refetch()}
+      />
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
       <div className="pc-card">
@@ -144,11 +154,13 @@ function ChecklistPage() {
           )}
         </div>
         <div className="pc-card-body flex flex-col gap-1.5">
-          {loading && <div className="text-text3 text-sm py-4 text-center">Caricamento…</div>}
+          {loading && <ListSkeleton rows={5} variant="app" className="gap-1.5" />}
           {!loading && !templates.length && (
-            <div className="text-text3 text-[12.5px] py-6 px-2 text-center leading-relaxed">
-              Nessun modello.<br/>Creane uno per iniziare.
-            </div>
+            <PageEmptyState
+              className="border-0 shadow-none bg-transparent p-4"
+              title="Nessun modello checklist"
+              description="Creane uno con il pulsante Nuovo in alto per iniziare."
+            />
           )}
           {templates.map(t => {
             const on = t.id === active;
