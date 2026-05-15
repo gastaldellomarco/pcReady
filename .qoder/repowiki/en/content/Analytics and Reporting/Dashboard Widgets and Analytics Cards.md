@@ -9,8 +9,13 @@
 - [TechnicianRadarWidget.tsx](file://src/components/dashboard/TechnicianRadarWidget.tsx)
 - [TechnicianKpiTable.tsx](file://src/components/dashboard/TechnicianKpiTable.tsx)
 - [CriticalEventsWidget.tsx](file://src/components/dashboard/CriticalEventsWidget.tsx)
+- [OverdueTicketsWidget.tsx](file://src/components/dashboard/OverdueTicketsWidget.tsx)
+- [TeamActivityWidget.tsx](file://src/components/dashboard/TeamActivityWidget.tsx)
+- [WidgetSettingsPanel.tsx](file://src/components/dashboard/WidgetSettingsPanel.tsx)
+- [widget-registry.ts](file://src/components/dashboard/widget-registry.ts)
 - [analytics-format.ts](file://src/components/dashboard/analytics-format.ts)
 - [useDashboardData.ts](file://src/hooks/useDashboardData.ts)
+- [useDashboardLayout.ts](file://src/hooks/useDashboardLayout.ts)
 - [dashboard-analytics.ts](file://src/lib/dashboard-analytics.ts)
 - [dashboard-helpers.ts](file://src/lib/dashboard-helpers.ts)
 - [dashboard.tsx](file://src/routes/_app/dashboard.tsx)
@@ -24,10 +29,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added new CriticalEventsWidget component for displaying recent critical security events
-- Enhanced dashboard filtering logic to exclude retired devices and archived/ready tickets from calculations
-- Updated dashboard snapshot logic to properly filter out devices with status 'retired' and exclude tickets with status 'archived' or 'ready' from metrics
-- Integrated CriticalEventsWidget into the main dashboard layout
+- Added new OverdueTicketsWidget for monitoring SLA violations and overdue tickets
+- Added new TeamActivityWidget for displaying team performance metrics and technician activity
+- Added new WidgetSettingsPanel for drag-and-drop widget management and customization
+- Enhanced dashboard layout system with persistent widget configurations using useDashboardLayout hook
+- Updated widget registry with new widget types and default configurations
+- Integrated new widgets into the main dashboard layout system
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -43,15 +50,16 @@
 
 ## Introduction
 This document explains the dashboard widgets and analytics cards component suite used by administrators to monitor ticket trends, technician performance, and operational KPIs. It covers:
-- Widget implementations: ticket statistics cards, technician performance widgets, heatmap visualization, radar charts, KPI tables, and critical events monitoring
-- Data structures powering rendering: AnalyticsCard props, DashboardStatWidgets configuration, and TechnicianStatsWidget data formatting
+- Widget implementations: ticket statistics cards, technician performance widgets, heatmap visualization, radar charts, KPI tables, critical events monitoring, overdue tickets tracking, and team activity visualization
+- Data structures powering rendering: AnalyticsCard props, DashboardStatWidgets configuration, TechnicianStatsWidget data formatting, and new widget registry system
 - Widget lifecycle, data fetching patterns, and real-time updates
 - Integration between server functions and client components for dynamic data binding
+- Persistent widget configurations and drag-and-drop customization
 - Responsive design patterns and mobile optimization
 - Performance considerations for concurrent widget updates and refresh strategies
 
 ## Project Structure
-The dashboard widgets live under the dashboard folder and integrate with reusable UI primitives and hooks. The main application route composes these widgets into a cohesive dashboard, including the new CriticalEventsWidget for security monitoring.
+The dashboard widgets live under the dashboard folder and integrate with reusable UI primitives, hooks, and a new widget management system. The main application route composes these widgets into a cohesive dashboard, including the new OverdueTicketsWidget, TeamActivityWidget, and WidgetSettingsPanel for enhanced customization.
 
 ```mermaid
 graph TB
@@ -66,7 +74,13 @@ THW["TechnicianHeatmapWidget.tsx"]
 TRW["TechnicianRadarWidget.tsx"]
 TKPIT["TechnicianKpiTable.tsx"]
 CEW["CriticalEventsWidget.tsx"]
-AF["analytics-format.ts"]
+OTW["OverdueTicketsWidget.tsx"]
+TAW["TeamActivityWidget.tsx"]
+WSP["WidgetSettingsPanel.tsx"]
+end
+subgraph "Widget Management"
+WR["widget-registry.ts"]
+UDL["useDashboardLayout.ts"]
 end
 subgraph "Hooks"
 UDD["useDashboardData.ts"]
@@ -89,6 +103,8 @@ R --> DSW
 R --> THW
 R --> TKPIT
 R --> CEW
+R --> OTW
+R --> TAW
 AC --> TRW
 AC --> AF
 DSW --> CARD
@@ -96,6 +112,8 @@ DSW --> CHART
 TSW --> DA
 THW --> DA
 TRW --> DA
+UDL --> WR
+WSP --> WR
 UDD --> DA
 UDD --> DH
 UDD --> S
@@ -106,8 +124,11 @@ AL --> SA
 **Diagram sources**
 - [dashboard.tsx:26](file://src/routes/_app/dashboard.tsx#L26)
 - [dashboard.tsx:514-517](file://src/routes/_app/dashboard.tsx#L514-L517)
-- [CriticalEventsWidget.tsx:1-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L1-L92)
-- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
+- [OverdueTicketsWidget.tsx:1-121](file://src/components/dashboard/OverdueTicketsWidget.tsx#L1-L121)
+- [TeamActivityWidget.tsx:1-129](file://src/components/dashboard/TeamActivityWidget.tsx#L1-L129)
+- [WidgetSettingsPanel.tsx:1-147](file://src/components/dashboard/WidgetSettingsPanel.tsx#L1-L147)
+- [widget-registry.ts:1-57](file://src/components/dashboard/widget-registry.ts#L1-L57)
+- [useDashboardLayout.ts:1-104](file://src/hooks/useDashboardLayout.ts#L1-L104)
 
 **Section sources**
 - [dashboard.tsx:92-447](file://src/routes/_app/dashboard.tsx#L92-L447)
@@ -122,10 +143,15 @@ AL --> SA
 - TechnicianRadarWidget: Displays normalized performance metrics (volume, speed, completion, responsiveness, reliability) for one or all technicians.
 - TechnicianKpiTable: Compact table view of technician KPIs with click-to-filter behavior.
 - CriticalEventsWidget: Displays recent critical security events with automatic refresh capabilities.
+- OverdueTicketsWidget: Monitors SLA violations and overdue tickets with threshold-based filtering and detailed ticket information.
+- TeamActivityWidget: Shows team performance metrics including active technicians, workload distribution, and completion rates.
+- WidgetSettingsPanel: Drag-and-drop interface for managing widget visibility, ordering, and customization.
+- widget-registry: Centralized widget definitions, types, and default configurations.
 - analytics-format: Utility for consistent formatting of time durations.
 - useDashboardData: Central hook orchestrating snapshot fetching, real-time subscriptions, analytics computation, and date-range handling.
+- useDashboardLayout: Manages persistent widget configurations with drag-and-drop reordering and visibility controls.
 
-**Updated** Added CriticalEventsWidget for security monitoring and enhanced filtering logic for retired devices and archived/ready tickets.
+**Updated** Added new OverdueTicketsWidget, TeamActivityWidget, WidgetSettingsPanel, and enhanced dashboard layout system with persistent widget configurations.
 
 **Section sources**
 - [AnalyticsCard.tsx:14-138](file://src/components/dashboard/AnalyticsCard.tsx#L14-L138)
@@ -135,25 +161,37 @@ AL --> SA
 - [TechnicianRadarWidget.tsx:21-183](file://src/components/dashboard/TechnicianRadarWidget.tsx#L21-L183)
 - [TechnicianKpiTable.tsx:13-81](file://src/components/dashboard/TechnicianKpiTable.tsx#L13-L81)
 - [CriticalEventsWidget.tsx:9-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L92)
+- [OverdueTicketsWidget.tsx:10-121](file://src/components/dashboard/OverdueTicketsWidget.tsx#L10-L121)
+- [TeamActivityWidget.tsx:11-129](file://src/components/dashboard/TeamActivityWidget.tsx#L11-L129)
+- [WidgetSettingsPanel.tsx:79-147](file://src/components/dashboard/WidgetSettingsPanel.tsx#L79-L147)
+- [widget-registry.ts:1-57](file://src/components/dashboard/widget-registry.ts#L1-L57)
 - [analytics-format.ts:1-6](file://src/components/dashboard/analytics-format.ts#L1-L6)
 - [useDashboardData.ts:19-158](file://src/hooks/useDashboardData.ts#L19-L158)
+- [useDashboardLayout.ts:14-103](file://src/hooks/useDashboardLayout.ts#L14-L103)
 
 ## Architecture Overview
-The dashboard composes multiple widgets that share a common data flow:
+The dashboard composes multiple widgets that share a common data flow with enhanced management capabilities:
 - Route initializes state and passes props to widgets
 - useDashboardData loads a dashboard snapshot and subscribes to real-time changes
+- useDashboardLayout manages persistent widget configurations with drag-and-drop reordering
 - Server functions compute analytics and KPIs server-side for correctness and performance
 - Widgets render charts and tables using shared UI components
+- WidgetSettingsPanel provides interactive customization through drag-and-drop interface
+- OverdueTicketsWidget and TeamActivityWidget provide specialized monitoring capabilities
 - CriticalEventsWidget provides security monitoring through dedicated audit log queries
 
 ```mermaid
 sequenceDiagram
 participant Route as "Route : dashboard.tsx"
 participant Hook as "Hook : useDashboardData.ts"
+participant LayoutHook as "Hook : useDashboardLayout.ts"
 participant Supabase as "Supabase Client"
 participant ServerFn as "Server Fn : dashboard-analytics.ts"
 participant AuditLog as "Server Fn : audit-log.ts"
 participant Widgets as "Widgets"
+Route->>LayoutHook : manage widget layout
+LayoutHook->>Supabase : persist layout preferences
+Supabase-->>LayoutHook : save/load layout
 Route->>Hook : initialize with accessToken, callbacks
 Hook->>Supabase : subscribe to postgres_changes (tickets, devices, clients, logs, assignments)
 Supabase-->>Hook : change events
@@ -169,6 +207,7 @@ Widgets-->>Route : export actions (CSV/PDF)
 **Diagram sources**
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:93-123](file://src/hooks/useDashboardData.ts#L93-L123)
+- [useDashboardLayout.ts:22-37](file://src/hooks/useDashboardLayout.ts#L22-L37)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 - [client.ts:1-40](file://src/integrations/supabase/client.ts#L1-L40)
@@ -371,19 +410,108 @@ Refresh --> Load
 - [CriticalEventsWidget.tsx:9-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L92)
 - [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 
-### Enhanced Dashboard Filtering Logic
-- **Retired Devices Filtering**: Dashboard snapshot logic now excludes devices with status 'retired' from calculations, ensuring they don't skew inventory metrics.
-- **Archived/Ready Tickets Filtering**: Ticket calculations exclude tickets with status 'archived' or 'ready' from open/closed metrics, providing more accurate operational insights.
-- **Server-Side Implementation**: Filtering logic is implemented in both client-side dashboard queries and server-side analytics functions for consistency.
+### OverdueTicketsWidget
+- Purpose: Monitor SLA violations and overdue tickets with threshold-based filtering and detailed ticket information.
+- Features:
+  - Threshold-based filtering (default 5 days)
+  - Displays ticket code, client, device model, status, assignee, and days open
+  - Color-coded severity indicators (red for >10 days, orange for >5 days)
+  - Click-to-open ticket detail functionality
+  - Manual refresh capability with loading states
+  - Empty state messaging when no overdue tickets exist
 
-**Updated** Enhanced filtering logic to improve data accuracy and remove non-operational items from metrics.
+```mermaid
+flowchart TD
+Init(["Init OverdueTicketsWidget"]) --> CheckToken{"accessToken?"}
+CheckToken --> |No| Idle["Idle"]
+CheckToken --> |Yes| Load["Call getOverdueTickets(accessToken, thresholdDays: 5)"]
+Load --> Loading["Set loading=true"]
+Loading --> Success["Set tickets[], loading=false"]
+Success --> Render["Render ticket table with overdue indicators"]
+Render --> Refresh["Refresh button triggers reload"]
+Refresh --> Load
+```
+
+**Diagram sources**
+- [OverdueTicketsWidget.tsx:16-32](file://src/components/dashboard/OverdueTicketsWidget.tsx#L16-L32)
+- [dashboard-analytics.ts:346-387](file://src/lib/dashboard-analytics.ts#L346-L387)
 
 **Section sources**
-- [dashboard.tsx:254-259](file://src/routes/_app/dashboard.tsx#L254-L259)
-- [dashboard.tsx:289](file://src/routes/_app/dashboard.tsx#L289)
-- [dashboard.tsx:298](file://src/routes/_app/dashboard.tsx#L298)
-- [dashboard.tsx:112-114](file://src/routes/_app/dashboard.tsx#L112-L114)
-- [dashboard.tsx:115-118](file://src/routes/_app/dashboard.tsx#L115-L118)
+- [OverdueTicketsWidget.tsx:10-121](file://src/components/dashboard/OverdueTicketsWidget.tsx#L10-L121)
+- [dashboard-analytics.ts:333-387](file://src/lib/dashboard-analytics.ts#L333-L387)
+
+### TeamActivityWidget
+- Purpose: Display team performance metrics including active technicians, workload distribution, and completion rates.
+- Features:
+  - Period selection (today, week, month) with tabbed interface
+  - Active technician counter showing current workload
+  - Progress bars for completion rates
+  - Color-coded workload indicators (high, medium, low)
+  - Click-to-filter functionality for technician-specific views
+  - Loading skeletons for improved UX during data fetch
+
+```mermaid
+flowchart TD
+Init(["Init TeamActivityWidget"]) --> CheckToken{"accessToken?"}
+CheckToken --> |No| Idle["Idle"]
+CheckToken --> |Yes| Load["Call getTechnicianStats(accessToken, period)"]
+Load --> Loading["Set loading=true"]
+Loading --> Success["Set rows[], loading=false"]
+Success --> Render["Render team activity cards with progress bars"]
+Render --> PeriodChange["Period change triggers reload"]
+PeriodChange --> Load
+```
+
+**Diagram sources**
+- [TeamActivityWidget.tsx:19-35](file://src/components/dashboard/TeamActivityWidget.tsx#L19-L35)
+- [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
+
+**Section sources**
+- [TeamActivityWidget.tsx:11-129](file://src/components/dashboard/TeamActivityWidget.tsx#L11-L129)
+- [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
+
+### WidgetSettingsPanel
+- Purpose: Provide drag-and-drop interface for managing widget visibility, ordering, and customization.
+- Features:
+  - Drag-and-drop reordering using @dnd-kit library
+  - Visibility toggle for each widget
+  - Persistent layout configuration across sessions
+  - Slide-out panel interface with backdrop overlay
+  - Keyboard accessibility support
+  - Real-time preview of layout changes
+
+```mermaid
+flowchart TD
+Open(["Open Settings Panel"]) --> LoadLayout["Load current layout from storage"]
+LoadLayout --> RenderList["Render draggable widget list"]
+RenderList --> Drag["User drags widget to reorder"]
+Drag --> UpdateOrder["Update widget order"]
+UpdateOrder --> Save["Persist layout to server"]
+Save --> Close["Close panel"]
+Close --> End(["Done"])
+```
+
+**Diagram sources**
+- [WidgetSettingsPanel.tsx:84-146](file://src/components/dashboard/WidgetSettingsPanel.tsx#L84-L146)
+- [useDashboardLayout.ts:40-77](file://src/hooks/useDashboardLayout.ts#L40-L77)
+
+**Section sources**
+- [WidgetSettingsPanel.tsx:79-147](file://src/components/dashboard/WidgetSettingsPanel.tsx#L79-L147)
+- [useDashboardLayout.ts:14-103](file://src/hooks/useDashboardLayout.ts#L14-L103)
+
+### Enhanced Dashboard Layout System
+- **Persistent Widget Configurations**: useDashboardLayout hook manages user-specific widget layouts with automatic persistence to server storage.
+- **Drag-and-Drop Interface**: WidgetSettingsPanel provides intuitive drag-and-drop reordering using @dnd-kit library.
+- **Widget Registry**: Centralized widget definitions with types, labels, descriptions, and default visibility.
+- **Default Layout Creation**: Automatic creation of sensible default widget arrangements with hidden advanced widgets by default.
+- **Real-time Layout Updates**: Changes are immediately reflected in the dashboard and persisted to the server.
+
+**Updated** Enhanced dashboard layout system with persistent widget configurations and drag-and-drop management.
+
+**Section sources**
+- [useDashboardLayout.ts:14-103](file://src/hooks/useDashboardLayout.ts#L14-L103)
+- [widget-registry.ts:1-57](file://src/components/dashboard/widget-registry.ts#L1-L57)
+- [WidgetSettingsPanel.tsx:79-147](file://src/components/dashboard/WidgetSettingsPanel.tsx#L79-L147)
 
 ### Data Structures and Widget Rendering
 
@@ -435,27 +563,65 @@ Refresh --> Load
 - [CriticalEventsWidget.tsx:9-11](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L11)
 - [audit-log.ts:6-23](file://src/lib/audit-log.ts#L6-L23)
 
+#### OverdueTicketsWidget props and data model
+- Props: accessToken (via auth context), thresholdDays (optional)
+- Data model: OverdueTicketRow with ticket details, assignee information, and days calculation
+- Threshold-based filtering for SLA violations
+
+**Section sources**
+- [OverdueTicketsWidget.tsx:10-121](file://src/components/dashboard/OverdueTicketsWidget.tsx#L10-L121)
+- [dashboard-analytics.ts:333-387](file://src/lib/dashboard-analytics.ts#L333-L387)
+
+#### TeamActivityWidget props and data model
+- Props: period (today, week, month), navigate function for technician filtering
+- Data model: TechnicianKpi with assigned, completed, pending counts and completion percentages
+- Workload severity classification (high, medium, low)
+
+**Section sources**
+- [TeamActivityWidget.tsx:9-129](file://src/components/dashboard/TeamActivityWidget.tsx#L9-L129)
+- [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
+
+#### WidgetRegistry and Layout System
+- WidgetId: Union type of all available widget identifiers
+- WidgetEntry: Widget definition with id, label, and description
+- WidgetLayoutItem: Individual widget configuration with order and visibility
+- DashboardLayout: Complete layout configuration with widget array
+- Default layout creation with hidden advanced widgets
+
+**Section sources**
+- [widget-registry.ts:1-57](file://src/components/dashboard/widget-registry.ts#L1-L57)
+- [useDashboardLayout.ts:14-103](file://src/hooks/useDashboardLayout.ts#L14-L103)
+
 ## Dependency Analysis
-- Route depends on useDashboardData for analytics and snapshot data
+- Route depends on useDashboardData for analytics and snapshot data, and useDashboardLayout for widget management
 - Widgets depend on shared UI components (card.tsx, chart.tsx)
 - Server functions in dashboard-analytics.ts encapsulate analytics computations and are invoked via TanStack server functions
 - CriticalEventsWidget depends on audit-log.ts server functions for security event data
+- OverdueTicketsWidget and TeamActivityWidget depend on dashboard-analytics.ts for specialized metrics
+- WidgetSettingsPanel depends on widget-registry.ts for widget definitions and useDashboardLayout.ts for layout management
 - Real-time updates are handled via Supabase channels subscribed in useDashboardData
 
 ```mermaid
 graph LR
 Route["routes/_app/dashboard.tsx"] --> Hook["hooks/useDashboardData.ts"]
+Route --> LayoutHook["hooks/useDashboardLayout.ts"]
 Hook --> LibDA["lib/dashboard-analytics.ts"]
+LayoutHook --> Registry["components/dashboard/widget-registry.ts"]
+LayoutHook --> Supabase["integrations/supabase/client.ts"]
 Hook --> Helpers["lib/dashboard-helpers.ts"]
-Hook --> Supabase["integrations/supabase/client.ts"]
 LibDA --> SupabaseServer["integrations/supabase/client.server.ts"]
 Widgets["dashboard/*"] --> UI["components/ui/*"]
 AuditLog["lib/audit-log.ts"] --> SupabaseServer
+OverdueWidget["OverdueTicketsWidget.tsx"] --> LibDA
+TeamWidget["TeamActivityWidget.tsx"] --> LibDA
+SettingsPanel["WidgetSettingsPanel.tsx"] --> Registry
+SettingsPanel --> LayoutHook
 ```
 
 **Diagram sources**
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:93-123](file://src/hooks/useDashboardData.ts#L93-L123)
+- [useDashboardLayout.ts:22-37](file://src/hooks/useDashboardLayout.ts#L22-L37)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 - [client.ts:1-40](file://src/integrations/supabase/client.ts#L1-L40)
@@ -464,6 +630,7 @@ AuditLog["lib/audit-log.ts"] --> SupabaseServer
 **Section sources**
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:93-123](file://src/hooks/useDashboardData.ts#L93-L123)
+- [useDashboardLayout.ts:22-37](file://src/hooks/useDashboardLayout.ts#L22-L37)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 
 ## Performance Considerations
@@ -473,8 +640,11 @@ AuditLog["lib/audit-log.ts"] --> SupabaseServer
 - Server-side aggregation: dashboard-analytics.ts computes aggregates server-side, reducing client CPU and network overhead.
 - Debounced exports: CSV/PDF generation is triggered from the route and leverages server-provided settings for PDF metadata.
 - CriticalEventsWidget caching: Events are cached locally and refreshed on demand to minimize server requests.
+- Widget layout persistence: useDashboardLayout minimizes server calls by batching layout updates and using optimistic UI updates.
+- Drag-and-drop performance: WidgetSettingsPanel uses efficient sorting algorithms and debounced persistence to maintain smooth interactions.
+- OverdueTicketsWidget optimization: Threshold-based filtering reduces data transfer and improves rendering performance for large datasets.
 
-**Updated** Added CriticalEventsWidget caching strategy and enhanced filtering logic performance considerations.
+**Updated** Added performance considerations for new widgets and enhanced layout system.
 
 ## Troubleshooting Guide
 - Authentication failures: Server functions validate access tokens; ensure session access_token is present before invoking server functions.
@@ -482,20 +652,27 @@ AuditLog["lib/audit-log.ts"] --> SupabaseServer
 - Widget shows skeleton or empty state: Check analytics loading flags and handle null analytics gracefully in widgets.
 - Export failures: Confirm onDownloadPdf handler resolves app settings and that the report component receives required props.
 - CriticalEventsWidget issues: Ensure user has admin privileges as getCriticalEvents requires admin authentication.
+- OverdueTicketsWidget anomalies: Verify thresholdDays parameter and status filtering for in-progress and pending tickets.
+- TeamActivityWidget issues: Check period parameter validation and ensure technician profiles exist for assignable roles.
+- WidgetSettingsPanel problems: Verify drag-and-drop initialization and ensure widget IDs match registry definitions.
+- Layout persistence failures: Check server function responses and ensure user profile has proper permissions for layout storage.
 - Filtering anomalies: Verify that retired devices and archived/ready tickets are properly excluded from calculations.
 
-**Updated** Added troubleshooting guidance for CriticalEventsWidget and enhanced filtering logic.
+**Updated** Added troubleshooting guidance for new widgets and enhanced layout system.
 
 **Section sources**
 - [dashboard-analytics.ts:36-42](file://src/lib/dashboard-analytics.ts#L36-L42)
 - [useDashboardData.ts:74-80](file://src/hooks/useDashboardData.ts#L74-L80)
 - [dashboard.tsx:170-189](file://src/routes/_app/dashboard.tsx#L170-L189)
 - [audit-log.ts:226-229](file://src/lib/audit-log.ts#L226-L229)
+- [OverdueTicketsWidget.tsx:16-32](file://src/components/dashboard/OverdueTicketsWidget.tsx#L16-L32)
+- [TeamActivityWidget.tsx:19-35](file://src/components/dashboard/TeamActivityWidget.tsx#L19-L35)
+- [useDashboardLayout.ts:40-48](file://src/hooks/useDashboardLayout.ts#L40-L48)
 
 ## Conclusion
-The dashboard widgets and analytics cards provide a comprehensive, real-time view of ticketing and technician performance. They leverage a clean separation of concerns: server functions for accurate analytics, a central hook for data orchestration, and reusable UI components for consistent rendering. The addition of CriticalEventsWidget enhances security monitoring capabilities, while enhanced filtering logic improves data accuracy by excluding non-operational items. Administrators benefit from responsive, interactive widgets with security insights, while developers can extend or customize widgets with confidence in the underlying architecture.
+The dashboard widgets and analytics cards provide a comprehensive, real-time view of ticketing and technician performance with enhanced customization capabilities. They leverage a clean separation of concerns: server functions for accurate analytics, a central hook for data orchestration, and reusable UI components for consistent rendering. The addition of OverdueTicketsWidget and TeamActivityWidget enhances operational monitoring capabilities, while the new WidgetSettingsPanel provides intuitive drag-and-drop customization. The enhanced dashboard layout system with persistent widget configurations allows administrators to tailor their dashboard experience to specific needs. The useDashboardLayout hook ensures that user preferences are preserved across sessions, while the widget-registry system maintains consistency across the application. Administrators benefit from responsive, interactive widgets with security insights, SLA monitoring, and team performance tracking, while developers can extend or customize widgets with confidence in the underlying architecture.
 
-**Updated** Enhanced conclusion to reflect new CriticalEventsWidget and improved filtering capabilities.
+**Updated** Enhanced conclusion to reflect new OverdueTicketsWidget, TeamActivityWidget, WidgetSettingsPanel, and improved layout management capabilities.
 
 ## Appendices
 
@@ -504,12 +681,15 @@ The dashboard widgets and analytics cards provide a comprehensive, real-time vie
 - Horizontal scrolling: Heatmap and KPI table containers enable horizontal scrolling for narrow viewports.
 - Typography scaling: Widget titles and subtitles adapt to screen sizes; tooltips and legends remain readable.
 - Mobile breakpoint: A dedicated hook detects small screens to adjust behavior where needed.
+- Touch-friendly interfaces: WidgetSettingsPanel provides optimal touch targets and gestures for mobile devices.
+- Performance optimization: New widgets are designed with mobile performance in mind, using efficient rendering and minimal resource usage.
 
 **Section sources**
 - [dashboard.tsx:94-144](file://src/routes/_app/dashboard.tsx#L94-L144)
 - [TechnicianHeatmapWidget.tsx:84-114](file://src/components/dashboard/TechnicianHeatmapWidget.tsx#L84-L114)
 - [TechnicianKpiTable.tsx:24-81](file://src/components/dashboard/TechnicianKpiTable.tsx#L24-L81)
 - [use-mobile.tsx:1-19](file://src/hooks/use-mobile.tsx#L1-L19)
+- [WidgetSettingsPanel.tsx:102-146](file://src/components/dashboard/WidgetSettingsPanel.tsx#L102-L146)
 
 ### Widget Usage Examples (paths only)
 - AnalyticsCard usage in route:
@@ -524,5 +704,11 @@ The dashboard widgets and analytics cards provide a comprehensive, real-time vie
   - [dashboard.tsx:396-444](file://src/routes/_app/dashboard.tsx#L396-L444)
 - CriticalEventsWidget:
   - [dashboard.tsx:514-517](file://src/routes/_app/dashboard.tsx#L514-L517)
+- OverdueTicketsWidget:
+  - [dashboard.tsx:446-470](file://src/routes/_app/dashboard.tsx#L446-L470)
+- TeamActivityWidget:
+  - [dashboard.tsx:472-512](file://src/routes/_app/dashboard.tsx#L472-L512)
+- WidgetSettingsPanel:
+  - [dashboard.tsx:519-521](file://src/routes/_app/dashboard.tsx#L519-L521)
 
-**Updated** Added CriticalEventsWidget usage example.
+**Updated** Added usage examples for new widgets and settings panel.

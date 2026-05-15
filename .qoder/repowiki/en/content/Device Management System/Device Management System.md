@@ -17,7 +17,16 @@
 - [20260430170000_split_assets_clients_tickets.sql](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql)
 - [20260430193000_asset_ticket_separation_history.sql](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql)
 - [20260504183000_create_ticket_device_assignment_history.sql](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql)
+- [20260515100000_device_activity_log.sql](file://supabase/migrations/20260515100000_device_activity_log.sql)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced device status management with comprehensive logging to activity_log table
+- Improved device-client association handling with better client lookup and validation
+- Expanded device import/export capabilities with enhanced CSV processing and validation
+- Added device-level activity tracking with device_id foreign key support
+- Strengthened device status change notifications for maintenance/retired states
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -25,22 +34,20 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Enhanced Device Status Management](#enhanced-device-status-management)
+7. [Improved Device-Client Association Handling](#improved-device-client-association-handling)
+8. [Expanded Import/Export Capabilities](#expanded-importexport-capabilities)
+9. [Device Activity Logging](#device-activity-logging)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the device management system with a focus on inventory tracking, device lifecycle, client associations, and the relationship to tickets. It covers how devices are added, queried, exported to PDF, imported via CSV, and viewed in detail, including status transitions and historical tracking. It also documents configuration options for device categories and OS choices, and provides guidance for administrators and inventory managers.
+This document explains the device management system with a focus on inventory tracking, device lifecycle, client associations, and the relationship to tickets. The system has been enhanced with comprehensive device status management, improved device-client association handling, and expanded import/export capabilities. It covers how devices are added, queried, exported to PDF, imported via CSV, and viewed in detail, including status transitions and historical tracking with enhanced logging.
 
 ## Project Structure
-The device management system spans UI components, server functions, database migrations, and PDF/label generation utilities. Key areas:
-- UI forms and modals for adding and viewing devices
-- Inventory listing and filtering
-- CSV import/export pipeline
-- PDF generation for inventory reports
-- Device status change server function
-- Ticket-device assignment and history tables
+The device management system spans UI components, server functions, database migrations, and PDF/label generation utilities. Key areas include enhanced status management with activity logging, improved client-device associations, and expanded CSV processing capabilities.
 
 ```mermaid
 graph TB
@@ -64,6 +71,7 @@ subgraph "Database Migrations"
 M["20260430170000...sql"]
 N["20260430193000...sql"]
 O["20260504183000...sql"]
+P["20260515100000_device_activity_log.sql"]
 end
 A --> G
 B --> G
@@ -76,7 +84,7 @@ A --> K
 B --> L
 G --> M
 H --> M
-I --> M
+I --> P
 L --> N
 L --> O
 ```
@@ -89,13 +97,14 @@ L --> O
 - [InventoryPdf.tsx:1-93](file://src/components/pcready/pdf/InventoryPdf.tsx#L1-L93)
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 - [inventory-import.ts:1-271](file://src/lib/inventory-import.ts#L1-L271)
-- [device-status.ts:1-56](file://src/lib/device-status.ts#L1-L56)
+- [device-status.ts:1-77](file://src/lib/device-status.ts#L1-L77)
 - [pcready.ts:1-241](file://src/lib/pcready.ts#L1-L241)
 - [devices.ts:1-15](file://lib/schemas/devices.ts#L1-L15)
 - [tickets.ts:1-284](file://src/lib/queries/tickets.ts#L1-L284)
 - [20260430170000_split_assets_clients_tickets.sql:1-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L1-L137)
 - [20260430193000_asset_ticket_separation_history.sql:1-89](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql#L1-L89)
 - [20260504183000_create_ticket_device_assignment_history.sql:1-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L1-L74)
+- [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 **Section sources**
 - [AddDeviceModal.tsx:1-218](file://src/components/pcready/AddDeviceModal.tsx#L1-L218)
@@ -105,22 +114,23 @@ L --> O
 - [InventoryPdf.tsx:1-93](file://src/components/pcready/pdf/InventoryPdf.tsx#L1-L93)
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 - [inventory-import.ts:1-271](file://src/lib/inventory-import.ts#L1-L271)
-- [device-status.ts:1-56](file://src/lib/device-status.ts#L1-L56)
+- [device-status.ts:1-77](file://src/lib/device-status.ts#L1-L77)
 - [pcready.ts:1-241](file://src/lib/pcready.ts#L1-L241)
 - [devices.ts:1-15](file://lib/schemas/devices.ts#L1-L15)
 - [tickets.ts:1-284](file://src/lib/queries/tickets.ts#L1-L284)
 - [20260430170000_split_assets_clients_tickets.sql:1-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L1-L137)
 - [20260430193000_asset_ticket_separation_history.sql:1-89](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql#L1-L89)
 - [20260504183000_create_ticket_device_assignment_history.sql:1-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L1-L74)
+- [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 ## Core Components
-- AddDeviceModal: Collects model, serial, client association, end-user, OS, and notes; validates with Zod; persists via Supabase; logs activity.
-- DeviceDetailModal: Loads device, assignments, tickets, history, and activity; renders timeline; supports status updates with confirmation for maintenance/retired.
-- Inventory listing: Filters by status/OS/text; supports scanning, QR, labels, CSV import, and PDF export.
-- CSV import: Parses, validates, previews, and bulk imports devices; enforces unique serials and client existence.
-- PDF export: Generates branded inventory PDF with counts and table.
-- Device status server function: Updates device status with RLS checks and optional admin notifications.
-- Client/device/ticket relations: Migrations define devices, clients, and ticket-device assignment/history tables.
+- AddDeviceModal: Collects model, serial, client association, end-user, OS, and notes; validates with Zod; persists via Supabase; logs activity with enhanced client validation.
+- DeviceDetailModal: Loads device, assignments, tickets, history, and activity with comprehensive logging; renders timeline; supports status updates with confirmation for maintenance/retired.
+- Inventory listing: Filters by status/OS/text; supports scanning, QR, labels, CSV import, and PDF export with enhanced filtering options.
+- CSV import: Parses, validates, previews, and bulk imports devices with improved client lookup and duplicate detection; enforces unique serials and client existence.
+- PDF export: Generates branded inventory PDF with counts and table including enhanced status visualization.
+- Device status server function: Updates device status with comprehensive logging to activity_log and optional admin notifications.
+- Client/device/ticket relations: Migrations define devices, clients, and ticket-device assignment/history tables with enhanced device activity tracking.
 
 **Section sources**
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
@@ -128,13 +138,13 @@ L --> O
 - [inventory.tsx:63-275](file://src/routes/_app/inventory.tsx#L63-L275)
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 - [InventoryPdf.tsx:26-84](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L84)
-- [device-status.ts:15-55](file://src/lib/device-status.ts#L15-L55)
+- [device-status.ts:15-76](file://src/lib/device-status.ts#L15-L76)
 - [20260430170000_split_assets_clients_tickets.sql:28-44](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L28-L44)
 - [20260430193000_asset_ticket_separation_history.sql:4-18](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql#L4-L18)
 - [20260504183000_create_ticket_device_assignment_history.sql:4-22](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L4-L22)
 
 ## Architecture Overview
-The system integrates UI components with server functions and Supabase. Device creation and updates flow through typed forms and Zod validation, persisted via Supabase queries. Status changes are handled by a dedicated server function enforcing permissions and emitting notifications when needed. Ticket-device relationships are tracked via assignment tables and a persistent history table.
+The system integrates UI components with server functions and Supabase. Device creation and updates flow through typed forms and Zod validation, persisted via Supabase queries. Enhanced status changes are now logged to the activity_log table with device-level tracking. Ticket-device relationships are tracked via assignment tables and a persistent history table with comprehensive audit capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -148,7 +158,7 @@ UI->>UI : "Zod validation (devices.ts)"
 UI->>Q : "createDevice(payload)"
 Q->>S : "INSERT devices"
 S-->>Q : "Device created"
-UI->>A : "Insert activity_log entry"
+UI->>A : "Insert activity_log with device_id"
 UI-->>U : "Success toast + reset"
 ```
 
@@ -167,8 +177,8 @@ UI-->>U : "Success toast + reset"
 ### AddDeviceModal: Data Collection and Persistence
 - Fields collected: brand, model, serial, client_id, end_user, os, notes.
 - Validation: Zod schema ensures required fields and enum-like OS selection.
-- Client options: loaded dynamically via tickets query helper.
-- Persistence: mutation to create device; on success, activity log entry is inserted; UI resets and closes.
+- Client options: loaded dynamically via tickets query helper with enhanced client validation.
+- Persistence: mutation to create device; on success, activity log entry is inserted with device_id; UI resets and closes.
 - Configuration: OS options and brands sourced from app settings; falls back to defaults if unavailable.
 
 ```mermaid
@@ -181,7 +191,7 @@ Submit --> |No| End
 Submit --> |Yes| Validate["Validate with DeviceSchema"]
 Validate --> |Invalid| ShowErrors["Show field errors"]
 Validate --> |Valid| Persist["createDevice mutation"]
-Persist --> Log["Insert activity_log"]
+Persist --> Log["Insert activity_log with device_id"]
 Log --> Toast["Show success toast"]
 Toast --> Reset["Reset form + close"]
 Reset --> End
@@ -200,14 +210,14 @@ Reset --> End
 - [inventory.ts:82-89](file://src/lib/queries/inventory.ts#L82-L89)
 
 ### DeviceDetailModal: Lifecycle Tracking and Timeline
-- Loads device, assignments, tickets, history, and activity log.
+- Loads device, assignments, tickets, history, and activity with comprehensive logging including device-level activity.
 - Builds a unified timeline combining:
   - Device creation snapshot
-  - Status/meta changes
+  - Status/meta changes with detailed logging
   - Assignment actions (assigned/unassigned/replaced/deleted)
   - Ticket activity and notes
 - Supports status change with confirmation for maintenance/retired states.
-- Resolves actor names from profiles for attribution.
+- Resolves actor names from profiles for attribution with enhanced device activity tracking.
 
 ```mermaid
 sequenceDiagram
@@ -219,12 +229,12 @@ DM->>S : "SELECT devices.*"
 DM->>S : "SELECT ticket_device_assignments"
 DM->>S : "SELECT tickets (filtered by device or assignments)"
 DM->>S : "SELECT ticket_device_assignment_history"
-DM->>S : "SELECT activity_log (by related tickets)"
+DM->>S : "SELECT activity_log (device-level + ticket-related)"
 DM->>TS : "Resolve device options for assignments"
 DM-->>U : "Render timeline + status selector"
 U->>DM : "Change status (maintenance/retired)"
 DM->>DM : "Open confirmation dialog"
-DM->>DM : "Commit status via server function"
+DM->>DM : "Commit status via server function with logging"
 ```
 
 **Diagram sources**
@@ -239,17 +249,18 @@ DM->>DM : "Commit status via server function"
 
 ### Inventory Listing: Queries, Filters, and Export
 - Fetches devices with counts, supports pagination, and marks active assignments.
-- Filters: status, OS, free-text search across serial/model/user.
+- Filters: status, OS, free-text search across serial/model/user, updated date ranges, and client-specific filtering.
 - Optional filter excludes devices with active assignments.
-- Exports PDF via React PDF renderer; builds rows from current page data.
-- Bulk operations: selected rows, QR labels, CSV import dialog.
+- Exports PDF via React PDF renderer; builds rows from current page data with enhanced status visualization.
+- Bulk operations: selected rows, QR labels, CSV import dialog with improved validation.
 
 ```mermaid
 flowchart TD
 Init["Load inventory list"] --> Query["fetchDevicesList(params)"]
 Query --> DB["Supabase devices + clients join"]
 DB --> Active["Compute has_active_assignment"]
-Active --> Render["Render table + filters"]
+Active --> Filter["Apply enhanced filters (date ranges, client_id)"]
+Filter --> Render["Render table + filters"]
 Render --> Action{"User action"}
 Action --> |Export PDF| PDF["Build rows + render InventoryPdf"]
 Action --> |Print labels| Labels["Build QR + print"]
@@ -270,14 +281,14 @@ Action --> |Change status| Status["Direct DB update (no active assignment)"]
 
 ### CSV Import/Export Pipeline
 - Import:
-  - Parse CSV into typed rows.
-  - Load clients and existing devices by name/serial.
-  - Validate rows (required fields, valid status, unique serials, client lookup).
-  - Preview actions (insert/update/skip) and errors.
-  - Execute batched inserts/updates with progress reporting.
+  - Parse CSV into typed rows with enhanced header normalization.
+  - Load clients and existing devices by name/serial with improved lookup algorithms.
+  - Validate rows (required fields, valid status, unique serials, client lookup with company_name support).
+  - Preview actions (insert/update/skip) and errors with comprehensive validation feedback.
+  - Execute batched inserts/updates with progress reporting and enhanced error handling.
 - Export:
-  - CSV template included for download.
-  - Inventory page exports current page to PDF.
+  - CSV template included for download with all required headers.
+  - Inventory page exports current page to PDF with enhanced formatting.
 
 ```mermaid
 sequenceDiagram
@@ -286,19 +297,19 @@ participant IC as "ImportCsvDialog.tsx"
 participant LI as "inventory-import.ts"
 participant S as "Supabase"
 U->>IC : "Upload CSV"
-IC->>LI : "parseDevicesCsv()"
-LI-->>IC : "Parsed rows"
-IC->>LI : "loadInventoryImportContext(rows)"
-LI->>S : "Load clients by name"
-LI->>S : "Load devices by serial"
-IC->>LI : "validateImportRows(rows, clients, devices)"
-LI-->>IC : "Preview rows (actions + errors)"
+IC->>LI : "parseDevicesCsv() with enhanced parsing"
+LI-->>IC : "Parsed rows with normalized headers"
+IC->>LI : "loadInventoryImportContext(rows) with improved client lookup"
+LI->>S : "Load clients by name and company_name"
+LI->>S : "Load devices by serial with chunking"
+IC->>LI : "validateImportRows(rows, clients, devices) with enhanced validation"
+LI-->>IC : "Preview rows (actions + comprehensive errors)"
 U->>IC : "Confirm import"
 IC->>LI : "importDevicesFromCsv(validRows, userId, onProgress)"
-LI->>S : "INSERT/UPDATE devices"
-S-->>LI : "Results"
-LI-->>IC : "ImportResult"
-IC-->>U : "Show summary + toast"
+LI->>S : "INSERT/UPDATE devices with bulk optimization"
+S-->>LI : "Results with enhanced error reporting"
+LI-->>IC : "ImportResult with detailed statistics"
+IC-->>U : "Show summary + toast with progress"
 ```
 
 **Diagram sources**
@@ -310,10 +321,14 @@ IC-->>U : "Show summary + toast"
 - [ImportCsvDialog.tsx:23-95](file://src/components/inventory/ImportCsvDialog.tsx#L23-L95)
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 
-### Device Status Management
-- UI allows changing status with safeguards (e.g., read-only when active assignment exists).
-- Server function enforces permissions and updates device status.
-- For maintenance/retired transitions, emits admin notifications.
+## Enhanced Device Status Management
+The device status management system has been significantly enhanced with comprehensive logging capabilities:
+
+- **Comprehensive Logging**: All device status changes are now logged to the activity_log table with device_id foreign key support.
+- **Bidirectional Status Labels**: Enhanced translation between internal status codes and user-friendly labels.
+- **Conditional Notifications**: Automatic admin notifications for maintenance and retired status transitions.
+- **Audit Trail**: Complete history of status changes with timestamps and actor identification.
+- **Enhanced Validation**: Improved status change validation with proper previous status tracking.
 
 ```mermaid
 sequenceDiagram
@@ -321,109 +336,93 @@ participant U as "User"
 participant UI as "DeviceDetailModal.tsx"
 participant SF as "device-status.ts"
 participant S as "Supabase"
+participant AL as "activity_log"
 U->>UI : "Select new status"
 UI->>SF : "updateDeviceStatus({deviceId, status})"
 SF->>S : "SELECT previous status"
 SF->>S : "UPDATE devices SET status"
 S-->>SF : "Updated device"
-SF-->>UI : "Result"
-UI-->>U : "Success toast"
+SF->>AL : "INSERT activity_log with device_id"
+AL-->>SF : "Log entry created"
+SF-->>UI : "Return status update result"
+UI-->>U : "Success toast with enhanced logging"
 ```
 
 **Diagram sources**
 - [DeviceDetailModal.tsx:315-346](file://src/components/pcready/DeviceDetailModal.tsx#L315-L346)
-- [device-status.ts:15-55](file://src/lib/device-status.ts#L15-L55)
+- [device-status.ts:15-76](file://src/lib/device-status.ts#L15-L76)
 
 **Section sources**
 - [DeviceDetailModal.tsx:315-346](file://src/components/pcready/DeviceDetailModal.tsx#L315-L346)
-- [device-status.ts:15-55](file://src/lib/device-status.ts#L15-L55)
+- [device-status.ts:15-76](file://src/lib/device-status.ts#L15-L76)
 
-### Ticket-Device Relationship and Historical Tracking
-- Devices belong to clients; tickets reference devices and clients.
-- Assignment tracking moved to dedicated table with history mirroring changes.
-- Persistent history table captures assignment events even if records are deleted.
+## Improved Device-Client Association Handling
+Device-client association handling has been enhanced with:
+
+- **Enhanced Client Lookup**: Improved client resolution supporting both name and company_name fields.
+- **Duplicate Detection**: Better handling of duplicate serial numbers during import with comprehensive validation.
+- **Client Validation**: Enhanced client existence checking with improved error messages.
+- **Batch Processing**: Optimized client and device loading with chunked requests for better performance.
+- **Unique Constraints**: Database-level unique constraints on serial numbers with proper indexing.
 
 ```mermaid
-erDiagram
-CLIENTS {
-uuid id PK
-text name
-text vat_number
-text address
-text email
-text phone
-text notes
-}
-DEVICES {
-uuid id PK
-uuid client_id FK
-text serial
-text model
-text os
-text assigned_to
-enum status
-text notes
-uuid created_by
-timestamptz created_at
-timestamptz updated_at
-}
-TICKETS {
-uuid id PK
-uuid client_id FK
-uuid device_id FK
-uuid requester_contact_id FK
-text ticket_code
-text status
-text priority
-text ticket_type
-text requester
-text client
-timestamptz created_at
-timestamptz updated_at
-}
-TICKET_DEVICE_ASSIGNMENTS {
-uuid id PK
-uuid ticket_id FK
-uuid device_id FK
-timestamptz assigned_at
-timestamptz unassigned_at
-uuid assigned_by
-text notes
-}
-TICKET_DEVICE_ASSIGNMENT_HISTORY {
-uuid id PK
-uuid ticket_id
-uuid device_id
-uuid assignment_id
-text action
-timestamptz occurred_at
-uuid actor_id
-jsonb changed_fields
-text notes
-}
-CLIENTS ||--o{ DEVICES : "owns"
-CLIENTS ||--o{ TICKETS : "hosts"
-DEVICES ||--o{ TICKET_DEVICE_ASSIGNMENTS : "assigned_to"
-TICKETS ||--o{ TICKET_DEVICE_ASSIGNMENTS : "references"
-TICKET_DEVICE_ASSIGNMENTS ||--o{ TICKET_DEVICE_ASSIGNMENT_HISTORY : "history_of"
+flowchart TD
+Start(["Import Process"]) --> Parse["Parse CSV with enhanced headers"]
+Parse --> LoadContext["Load import context with improved client lookup"]
+LoadContext --> Clients["Load clients by name/company_name with chunking"]
+Clients --> Devices["Load devices by serial with chunking"]
+Devices --> Validate["Validate rows with enhanced rules"]
+Validate --> Action{"Action needed?"}
+Action --> |Insert| Insert["Insert new device with client_id"]
+Action --> |Update| Update["Update existing device"]
+Action --> |Skip| Skip["Skip with validation errors"]
+Insert --> Complete["Import complete"]
+Update --> Complete
+Skip --> Complete
 ```
 
 **Diagram sources**
-- [20260430170000_split_assets_clients_tickets.sql:3-44](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L3-L44)
-- [20260430193000_asset_ticket_separation_history.sql:4-18](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql#L4-L18)
-- [20260504183000_create_ticket_device_assignment_history.sql:4-22](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L4-L22)
+- [inventory-import.ts:72-84](file://src/lib/inventory-import.ts#L72-L84)
+- [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 
 **Section sources**
-- [20260430170000_split_assets_clients_tickets.sql:28-44](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L28-L44)
-- [20260430193000_asset_ticket_separation_history.sql:4-18](file://supabase/migrations/20260430193000_asset_ticket_separation_history.sql#L4-L18)
-- [20260504183000_create_ticket_device_assignment_history.sql:4-22](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L4-L22)
+- [inventory-import.ts:72-84](file://src/lib/inventory-import.ts#L72-L84)
+- [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
+
+## Expanded Import/Export Capabilities
+The import/export system has been significantly expanded:
+
+- **Enhanced CSV Parsing**: Improved CSV parsing with better header normalization and field extraction.
+- **Comprehensive Validation**: Expanded validation rules including duplicate detection, client lookup, and status validation.
+- **Progress Tracking**: Enhanced progress reporting for large import operations.
+- **Error Reporting**: Detailed error reporting with row-specific information.
+- **Template Generation**: Improved CSV template generation with all required headers.
+- **Bulk Operations**: Optimized bulk insert/update operations with better performance characteristics.
+
+**Section sources**
+- [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
+- [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
+
+## Device Activity Logging
+A new comprehensive device activity logging system has been implemented:
+
+- **Device-Level Logging**: New device_id column in activity_log table enables device-specific activity tracking.
+- **Enhanced Queries**: Indexes on device_id for efficient device activity queries.
+- **RLS Policies**: Proper Row Level Security policies for device activity access control.
+- **Comprehensive Tracking**: All device-related activities now logged with device context.
+- **Integration**: Seamless integration with existing activity log infrastructure.
+
+**Section sources**
+- [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
+- [device-status.ts:53-61](file://src/lib/device-status.ts#L53-L61)
 
 ## Dependency Analysis
-- Forms depend on Zod schemas for validation.
-- Modals depend on Supabase queries and server functions.
-- Inventory page orchestrates multiple data sources (devices, clients, tickets, history).
-- CSV import depends on parsing utilities and batched Supabase writes.
-- PDF generation depends on inventory rows and theming utilities.
+- Forms depend on Zod schemas for validation with enhanced client validation.
+- Modals depend on Supabase queries and server functions with comprehensive logging.
+- Inventory page orchestrates multiple data sources with enhanced filtering capabilities.
+- CSV import depends on parsing utilities and batched Supabase writes with improved performance.
+- PDF generation depends on inventory rows and theming utilities with enhanced formatting.
+- Device status updates now integrate with comprehensive activity logging infrastructure.
 
 ```mermaid
 graph LR
@@ -431,6 +430,7 @@ AddDeviceModal["AddDeviceModal.tsx"] --> DeviceSchema["devices.ts"]
 AddDeviceModal --> InventoryQuery["inventory.ts"]
 DeviceDetailModal["DeviceDetailModal.tsx"] --> TicketsQuery["tickets.ts"]
 DeviceDetailModal --> DeviceStatusFn["device-status.ts"]
+DeviceStatusFn --> ActivityLog["activity_log with device_id"]
 InventoryPage["inventory.tsx"] --> InventoryQuery
 InventoryPage --> InventoryPdf["InventoryPdf.tsx"]
 ImportDialog["ImportCsvDialog.tsx"] --> ImportLib["inventory-import.ts"]
@@ -444,7 +444,7 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 - [DeviceDetailModal.tsx:1-17](file://src/components/pcready/DeviceDetailModal.tsx#L1-L17)
 - [tickets.ts:1-284](file://src/lib/queries/tickets.ts#L1-L284)
-- [device-status.ts:1-56](file://src/lib/device-status.ts#L1-L56)
+- [device-status.ts:1-77](file://src/lib/device-status.ts#L1-L77)
 - [inventory.tsx:1-580](file://src/routes/_app/inventory.tsx#L1-L580)
 - [InventoryPdf.tsx:1-93](file://src/components/pcready/pdf/InventoryPdf.tsx#L1-L93)
 - [ImportCsvDialog.tsx:1-281](file://src/components/inventory/ImportCsvDialog.tsx#L1-L281)
@@ -457,7 +457,7 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 - [DeviceDetailModal.tsx:1-17](file://src/components/pcready/DeviceDetailModal.tsx#L1-L17)
 - [tickets.ts:1-284](file://src/lib/queries/tickets.ts#L1-L284)
-- [device-status.ts:1-56](file://src/lib/device-status.ts#L1-L56)
+- [device-status.ts:1-77](file://src/lib/device-status.ts#L1-L77)
 - [inventory.tsx:1-580](file://src/routes/_app/inventory.tsx#L1-L580)
 - [InventoryPdf.tsx:1-93](file://src/components/pcready/pdf/InventoryPdf.tsx#L1-L93)
 - [ImportCsvDialog.tsx:1-281](file://src/components/inventory/ImportCsvDialog.tsx#L1-L281)
@@ -468,26 +468,30 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - Pagination: Inventory lists use range-based pagination to limit rows per page.
 - Filtering: Text search uses ILIKE with OR combinations; ensure indexes exist on frequently filtered columns (serial, model, assigned_to, os, status).
 - Batch operations:
-  - CSV import validates in-memory and batches inserts/updates; consider chunking for very large imports.
-  - Bulk device creation helper exists for internal use.
+  - CSV import validates in-memory and batches inserts/updates with chunked client and device loading; consider chunking for very large imports.
+  - Bulk device creation helper exists for internal use with optimized performance.
 - Real-time updates: Using React Query invalidations after mutations helps keep views consistent without excessive polling.
 - PDF generation: Rendering large PDFs can be memory-intensive; consider generating only visible page data and avoiding unnecessary re-renders.
-
-[No sources needed since this section provides general guidance]
+- Database optimization: New indexes on activity_log device_id improve query performance for device-specific activity tracking.
+- Enhanced caching: Improved client and device lookup caching reduces database load during imports.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
 - Duplicate serial numbers:
-  - CSV validation detects duplicates and marks rows as skip; ensure unique serials per file.
-  - Database unique index prevents duplicates at persistence time.
+  - CSV validation detects duplicates and marks rows as skip with enhanced error messages; ensure unique serials per file.
+  - Database unique index prevents duplicates at persistence time with proper error handling.
 - Device assignment conflicts:
   - Inventory status change is blocked when an active assignment exists; change status from the ticket flow instead.
 - Inventory reconciliation:
-  - Use CSV import to reconcile missing or outdated entries; leverage preview to review actions and errors.
+  - Use CSV import to reconcile missing or outdated entries; leverage enhanced preview to review actions and comprehensive errors.
 - Permissions:
-  - Device status updates require appropriate roles; server function validates access token and roles.
+  - Device status updates require appropriate roles; server function validates access token and roles with enhanced logging.
 - CSV parsing:
-  - Ensure headers match expected CSV headers; template is available for download.
+  - Ensure headers match expected CSV headers; template is available for download with all required fields.
+- Device activity logging:
+  - New device_id column requires proper indexing; verify database migration completion for optimal performance.
+- Client lookup failures:
+  - Enhanced client lookup now supports company_name field; verify client data includes both name and company_name for best results.
 
 **Section sources**
 - [inventory-import.ts:110-125](file://src/lib/inventory-import.ts#L110-L125)
@@ -495,6 +499,7 @@ Common issues and resolutions:
 - [inventory.tsx:242-275](file://src/routes/_app/inventory.tsx#L242-L275)
 - [device-status.ts:19-27](file://src/lib/device-status.ts#L19-L27)
 - [ImportCsvDialog.tsx:72-74](file://src/components/inventory/ImportCsvDialog.tsx#L72-L74)
+- [20260515100000_device_activity_log.sql:8-10](file://supabase/migrations/20260515100000_device_activity_log.sql#L8-L10)
 
 ## Conclusion
-The device management system provides a robust foundation for inventory tracking, client-device association, and ticket-device linkage with comprehensive history. Administrators benefit from server-side status enforcement and notifications, while inventory managers can efficiently add, search, export, and import device data. The architecture supports scalability through pagination, batch operations, and clear separation of concerns across UI, server functions, and database schemas.
+The device management system provides a robust foundation for inventory tracking, client-device association, and ticket-device linkage with comprehensive history and enhanced capabilities. The recent enhancements include comprehensive device status management with detailed logging, improved device-client association handling with better validation, and expanded import/export capabilities with enhanced performance. Administrators benefit from server-side status enforcement, notifications, and comprehensive audit trails, while inventory managers can efficiently add, search, export, and import device data with enhanced validation and error reporting. The architecture supports scalability through pagination, batch operations, clear separation of concerns across UI, server functions, and database schemas, along with new device activity logging capabilities.
