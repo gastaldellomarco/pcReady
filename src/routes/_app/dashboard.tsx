@@ -100,6 +100,7 @@ function DashboardPage() {
           accent="var(--accent)"
           sub="totali"
           icon={<Boxes className="w-5 h-5" />}
+          href="/tickets"
         />
         <DashboardStatCard
           label="Dispositivi totali"
@@ -107,6 +108,7 @@ function DashboardPage() {
           accent="var(--accent2)"
           sub="totali"
           icon={<Boxes className="w-5 h-5" />}
+          href="/inventory"
         />
         <DashboardStatCard
           label="Clienti attivi"
@@ -114,6 +116,7 @@ function DashboardPage() {
           accent="var(--purple)"
           sub="nel periodo"
           icon={<TrendingUp className="w-5 h-5" />}
+          href="/clients"
         />
         <DashboardStatCard
           label="In lavorazione"
@@ -132,6 +135,7 @@ function DashboardPage() {
           sub="nel periodo"
           valueColor="var(--success)"
           icon={<CircleCheck className="w-5 h-5" />}
+          href="/tickets?status=ready"
         />
         <DashboardStatCard
           label="In attesa"
@@ -364,11 +368,13 @@ function DashboardPage() {
           <div className="pc-card-body">
             <div className="flex gap-4 items-center lg:items-stretch">
               <div className="flex-shrink-0 flex items-center justify-center px-2">
-                <DashboardDonut
-                  data={Object.entries(counts).map(([s, n]) => ({ status: s as TicketStatus, n }))}
-                  total={total}
-                  hideLegend={true}
-                />
+                <Link to="/kanban" className="block hover:opacity-85 transition-opacity">
+                  <DashboardDonut
+                    data={Object.entries(counts).map(([s, n]) => ({ status: s as TicketStatus, n }))}
+                    total={total}
+                    hideLegend={true}
+                  />
+                </Link>
               </div>
               <div className="flex-1 flex items-center">
                 <div className="w-full">
@@ -376,9 +382,11 @@ function DashboardPage() {
                     {Object.entries(counts)
                       .map(([s, n]) => ({ status: s as TicketStatus, n }))
                       .map((d) => (
-                        <div
+                        <Link
                           key={d.status}
-                          className="flex items-center justify-between text-[12px]"
+                          to="/tickets"
+                          search={{ status: d.status }}
+                          className="flex items-center justify-between text-[12px] hover:bg-[var(--surface2)] rounded px-1 -mx-1 transition-colors"
                         >
                           <div className="flex items-center gap-2">
                             <span
@@ -388,7 +396,7 @@ function DashboardPage() {
                             <span className="text-text2">{STATUS_META[d.status].label}</span>
                           </div>
                           <div className="font-mono text-text3">{d.n}</div>
-                        </div>
+                        </Link>
                       ))}
                   </div>
                   <div className="text-sm text-text3 mt-3">{total} ticket totali</div>

@@ -8,17 +8,26 @@
 - [TechnicianHeatmapWidget.tsx](file://src/components/dashboard/TechnicianHeatmapWidget.tsx)
 - [TechnicianRadarWidget.tsx](file://src/components/dashboard/TechnicianRadarWidget.tsx)
 - [TechnicianKpiTable.tsx](file://src/components/dashboard/TechnicianKpiTable.tsx)
+- [CriticalEventsWidget.tsx](file://src/components/dashboard/CriticalEventsWidget.tsx)
 - [analytics-format.ts](file://src/components/dashboard/analytics-format.ts)
 - [useDashboardData.ts](file://src/hooks/useDashboardData.ts)
 - [dashboard-analytics.ts](file://src/lib/dashboard-analytics.ts)
 - [dashboard-helpers.ts](file://src/lib/dashboard-helpers.ts)
 - [dashboard.tsx](file://src/routes/_app/dashboard.tsx)
+- [audit-log.ts](file://src/lib/audit-log.ts)
 - [card.tsx](file://src/components/ui/card.tsx)
 - [chart.tsx](file://src/components/ui/chart.tsx)
 - [use-mobile.tsx](file://src/hooks/use-mobile.tsx)
 - [client.ts](file://src/integrations/supabase/client.ts)
 - [client.server.ts](file://src/integrations/supabase/client.server.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new CriticalEventsWidget component for displaying recent critical security events
+- Enhanced dashboard filtering logic to exclude retired devices and archived/ready tickets from calculations
+- Updated dashboard snapshot logic to properly filter out devices with status 'retired' and exclude tickets with status 'archived' or 'ready' from metrics
+- Integrated CriticalEventsWidget into the main dashboard layout
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -34,7 +43,7 @@
 
 ## Introduction
 This document explains the dashboard widgets and analytics cards component suite used by administrators to monitor ticket trends, technician performance, and operational KPIs. It covers:
-- Widget implementations: ticket statistics cards, technician performance widgets, heatmap visualization, radar charts, and KPI tables
+- Widget implementations: ticket statistics cards, technician performance widgets, heatmap visualization, radar charts, KPI tables, and critical events monitoring
 - Data structures powering rendering: AnalyticsCard props, DashboardStatWidgets configuration, and TechnicianStatsWidget data formatting
 - Widget lifecycle, data fetching patterns, and real-time updates
 - Integration between server functions and client components for dynamic data binding
@@ -42,7 +51,7 @@ This document explains the dashboard widgets and analytics cards component suite
 - Performance considerations for concurrent widget updates and refresh strategies
 
 ## Project Structure
-The dashboard widgets live under the dashboard folder and integrate with reusable UI primitives and hooks. The main application route composes these widgets into a cohesive dashboard.
+The dashboard widgets live under the dashboard folder and integrate with reusable UI primitives and hooks. The main application route composes these widgets into a cohesive dashboard, including the new CriticalEventsWidget for security monitoring.
 
 ```mermaid
 graph TB
@@ -56,6 +65,7 @@ TSW["TechnicianStatsWidget.tsx"]
 THW["TechnicianHeatmapWidget.tsx"]
 TRW["TechnicianRadarWidget.tsx"]
 TKPIT["TechnicianKpiTable.tsx"]
+CEW["CriticalEventsWidget.tsx"]
 AF["analytics-format.ts"]
 end
 subgraph "Hooks"
@@ -64,6 +74,7 @@ end
 subgraph "Lib"
 DA["dashboard-analytics.ts"]
 DH["dashboard-helpers.ts"]
+AL["audit-log.ts"]
 end
 subgraph "UI"
 CARD["card.tsx"]
@@ -77,6 +88,7 @@ R --> AC
 R --> DSW
 R --> THW
 R --> TKPIT
+R --> CEW
 AC --> TRW
 AC --> AF
 DSW --> CARD
@@ -88,24 +100,14 @@ UDD --> DA
 UDD --> DH
 UDD --> S
 DA --> SA
+AL --> SA
 ```
 
 **Diagram sources**
-- [dashboard.tsx:34-44](file://src/routes/_app/dashboard.tsx#L34-L44)
-- [AnalyticsCard.tsx:1-149](file://src/components/dashboard/AnalyticsCard.tsx#L1-L149)
-- [DashboardStatWidgets.tsx:1-264](file://src/components/dashboard/DashboardStatWidgets.tsx#L1-L264)
-- [TechnicianStatsWidget.tsx:1-173](file://src/components/dashboard/TechnicianStatsWidget.tsx#L1-L173)
-- [TechnicianHeatmapWidget.tsx:1-120](file://src/components/dashboard/TechnicianHeatmapWidget.tsx#L1-L120)
-- [TechnicianRadarWidget.tsx:1-184](file://src/components/dashboard/TechnicianRadarWidget.tsx#L1-L184)
-- [TechnicianKpiTable.tsx:1-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L1-L82)
-- [analytics-format.ts:1-6](file://src/components/dashboard/analytics-format.ts#L1-L6)
-- [useDashboardData.ts:1-159](file://src/hooks/useDashboardData.ts#L1-L159)
-- [dashboard-analytics.ts:1-559](file://src/lib/dashboard-analytics.ts#L1-L559)
-- [dashboard-helpers.ts:1-72](file://src/lib/dashboard-helpers.ts#L1-L72)
-- [card.tsx:1-56](file://src/components/ui/card.tsx#L1-L56)
-- [chart.tsx:1-332](file://src/components/ui/chart.tsx#L1-L332)
-- [client.ts:1-40](file://src/integrations/supabase/client.ts#L1-L40)
-- [client.server.ts:31-41](file://src/integrations/supabase/client.server.ts#L31-L41)
+- [dashboard.tsx:26](file://src/routes/_app/dashboard.tsx#L26)
+- [dashboard.tsx:514-517](file://src/routes/_app/dashboard.tsx#L514-L517)
+- [CriticalEventsWidget.tsx:1-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L1-L92)
+- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 
 **Section sources**
 - [dashboard.tsx:92-447](file://src/routes/_app/dashboard.tsx#L92-L447)
@@ -119,8 +121,11 @@ DA --> SA
 - TechnicianHeatmapWidget: Shows weekly ticket closure counts per technician with color-coded tiles.
 - TechnicianRadarWidget: Displays normalized performance metrics (volume, speed, completion, responsiveness, reliability) for one or all technicians.
 - TechnicianKpiTable: Compact table view of technician KPIs with click-to-filter behavior.
+- CriticalEventsWidget: Displays recent critical security events with automatic refresh capabilities.
 - analytics-format: Utility for consistent formatting of time durations.
 - useDashboardData: Central hook orchestrating snapshot fetching, real-time subscriptions, analytics computation, and date-range handling.
+
+**Updated** Added CriticalEventsWidget for security monitoring and enhanced filtering logic for retired devices and archived/ready tickets.
 
 **Section sources**
 - [AnalyticsCard.tsx:14-138](file://src/components/dashboard/AnalyticsCard.tsx#L14-L138)
@@ -129,6 +134,7 @@ DA --> SA
 - [TechnicianHeatmapWidget.tsx:25-119](file://src/components/dashboard/TechnicianHeatmapWidget.tsx#L25-L119)
 - [TechnicianRadarWidget.tsx:21-183](file://src/components/dashboard/TechnicianRadarWidget.tsx#L21-L183)
 - [TechnicianKpiTable.tsx:13-81](file://src/components/dashboard/TechnicianKpiTable.tsx#L13-L81)
+- [CriticalEventsWidget.tsx:9-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L92)
 - [analytics-format.ts:1-6](file://src/components/dashboard/analytics-format.ts#L1-L6)
 - [useDashboardData.ts:19-158](file://src/hooks/useDashboardData.ts#L19-L158)
 
@@ -138,6 +144,7 @@ The dashboard composes multiple widgets that share a common data flow:
 - useDashboardData loads a dashboard snapshot and subscribes to real-time changes
 - Server functions compute analytics and KPIs server-side for correctness and performance
 - Widgets render charts and tables using shared UI components
+- CriticalEventsWidget provides security monitoring through dedicated audit log queries
 
 ```mermaid
 sequenceDiagram
@@ -145,6 +152,7 @@ participant Route as "Route : dashboard.tsx"
 participant Hook as "Hook : useDashboardData.ts"
 participant Supabase as "Supabase Client"
 participant ServerFn as "Server Fn : dashboard-analytics.ts"
+participant AuditLog as "Server Fn : audit-log.ts"
 participant Widgets as "Widgets"
 Route->>Hook : initialize with accessToken, callbacks
 Hook->>Supabase : subscribe to postgres_changes (tickets, devices, clients, logs, assignments)
@@ -152,7 +160,8 @@ Supabase-->>Hook : change events
 Hook->>Hook : refetch snapshot
 Hook->>ServerFn : getDashboardAnalytics(dateFrom, dateTo)
 ServerFn-->>Hook : DashboardAnalytics
-Hook-->>Route : analytics, loading, range, periodLabel
+Hook->>AuditLog : getCriticalEvents(accessToken, limit)
+AuditLog-->>Route : CriticalEvents[]
 Route->>Widgets : pass props (analytics, loading, handlers)
 Widgets-->>Route : export actions (CSV/PDF)
 ```
@@ -161,6 +170,7 @@ Widgets-->>Route : export actions (CSV/PDF)
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:93-123](file://src/hooks/useDashboardData.ts#L93-L123)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
+- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 - [client.ts:1-40](file://src/integrations/supabase/client.ts#L1-L40)
 
 ## Detailed Component Analysis
@@ -332,6 +342,49 @@ Widget-->>Widget : render radar chart (single/all)
 **Section sources**
 - [TechnicianKpiTable.tsx:13-81](file://src/components/dashboard/TechnicianKpiTable.tsx#L13-L81)
 
+### CriticalEventsWidget
+- Purpose: Display recent critical security events with automatic refresh capabilities.
+- Features:
+  - Fetches critical events from audit log with severity level "critical"
+  - Automatic loading and refresh functionality
+  - Displays event count badge when events are present
+  - Shows loading states and empty state messaging
+  - Links to admin audit log for full details
+
+```mermaid
+flowchart TD
+Init(["Init CriticalEventsWidget"]) --> CheckToken{"accessToken?"}
+CheckToken --> |No| Idle["Idle"]
+CheckToken --> |Yes| Load["Call getCriticalEvents(accessToken, limit: 5)"]
+Load --> Loading["Set loading=true"]
+Loading --> Success["Set events[], loading=false"]
+Success --> Render["Render event list"]
+Render --> Refresh["Refresh button triggers reload"]
+Refresh --> Load
+```
+
+**Diagram sources**
+- [CriticalEventsWidget.tsx:13-25](file://src/components/dashboard/CriticalEventsWidget.tsx#L13-L25)
+- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
+
+**Section sources**
+- [CriticalEventsWidget.tsx:9-92](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L92)
+- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
+
+### Enhanced Dashboard Filtering Logic
+- **Retired Devices Filtering**: Dashboard snapshot logic now excludes devices with status 'retired' from calculations, ensuring they don't skew inventory metrics.
+- **Archived/Ready Tickets Filtering**: Ticket calculations exclude tickets with status 'archived' or 'ready' from open/closed metrics, providing more accurate operational insights.
+- **Server-Side Implementation**: Filtering logic is implemented in both client-side dashboard queries and server-side analytics functions for consistency.
+
+**Updated** Enhanced filtering logic to improve data accuracy and remove non-operational items from metrics.
+
+**Section sources**
+- [dashboard.tsx:254-259](file://src/routes/_app/dashboard.tsx#L254-L259)
+- [dashboard.tsx:289](file://src/routes/_app/dashboard.tsx#L289)
+- [dashboard.tsx:298](file://src/routes/_app/dashboard.tsx#L298)
+- [dashboard.tsx:112-114](file://src/routes/_app/dashboard.tsx#L112-L114)
+- [dashboard.tsx:115-118](file://src/routes/_app/dashboard.tsx#L115-L118)
+
 ### Data Structures and Widget Rendering
 
 #### AnalyticsCard props
@@ -373,10 +426,20 @@ Widget-->>Widget : render radar chart (single/all)
 **Section sources**
 - [dashboard-analytics.ts:20-28](file://src/lib/dashboard-analytics.ts#L20-L28)
 
+#### CriticalEventsWidget props
+- accessToken: string | undefined
+- Events: ActivityLogEntry[] (critical severity events)
+- Loading state management for asynchronous data fetching
+
+**Section sources**
+- [CriticalEventsWidget.tsx:9-11](file://src/components/dashboard/CriticalEventsWidget.tsx#L9-L11)
+- [audit-log.ts:6-23](file://src/lib/audit-log.ts#L6-L23)
+
 ## Dependency Analysis
 - Route depends on useDashboardData for analytics and snapshot data
 - Widgets depend on shared UI components (card.tsx, chart.tsx)
 - Server functions in dashboard-analytics.ts encapsulate analytics computations and are invoked via TanStack server functions
+- CriticalEventsWidget depends on audit-log.ts server functions for security event data
 - Real-time updates are handled via Supabase channels subscribed in useDashboardData
 
 ```mermaid
@@ -387,12 +450,14 @@ Hook --> Helpers["lib/dashboard-helpers.ts"]
 Hook --> Supabase["integrations/supabase/client.ts"]
 LibDA --> SupabaseServer["integrations/supabase/client.server.ts"]
 Widgets["dashboard/*"] --> UI["components/ui/*"]
+AuditLog["lib/audit-log.ts"] --> SupabaseServer
 ```
 
 **Diagram sources**
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:93-123](file://src/hooks/useDashboardData.ts#L93-L123)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
+- [audit-log.ts:226-269](file://src/lib/audit-log.ts#L226-L269)
 - [client.ts:1-40](file://src/integrations/supabase/client.ts#L1-L40)
 - [client.server.ts:31-41](file://src/integrations/supabase/client.server.ts#L31-L41)
 
@@ -407,24 +472,30 @@ Widgets["dashboard/*"] --> UI["components/ui/*"]
 - Efficient chart rendering: Recharts components are wrapped in ResponsiveContainer; avoid unnecessary re-renders by passing memoized data and avoiding inline object/function props.
 - Server-side aggregation: dashboard-analytics.ts computes aggregates server-side, reducing client CPU and network overhead.
 - Debounced exports: CSV/PDF generation is triggered from the route and leverages server-provided settings for PDF metadata.
+- CriticalEventsWidget caching: Events are cached locally and refreshed on demand to minimize server requests.
 
-[No sources needed since this section provides general guidance]
+**Updated** Added CriticalEventsWidget caching strategy and enhanced filtering logic performance considerations.
 
 ## Troubleshooting Guide
 - Authentication failures: Server functions validate access tokens; ensure session access_token is present before invoking server functions.
 - Real-time updates not appearing: Verify Supabase publication and replica identity settings; confirm channel subscription and removal on unmount.
 - Widget shows skeleton or empty state: Check analytics loading flags and handle null analytics gracefully in widgets.
 - Export failures: Confirm onDownloadPdf handler resolves app settings and that the report component receives required props.
+- CriticalEventsWidget issues: Ensure user has admin privileges as getCriticalEvents requires admin authentication.
+- Filtering anomalies: Verify that retired devices and archived/ready tickets are properly excluded from calculations.
+
+**Updated** Added troubleshooting guidance for CriticalEventsWidget and enhanced filtering logic.
 
 **Section sources**
 - [dashboard-analytics.ts:36-42](file://src/lib/dashboard-analytics.ts#L36-L42)
 - [useDashboardData.ts:74-80](file://src/hooks/useDashboardData.ts#L74-L80)
 - [dashboard.tsx:170-189](file://src/routes/_app/dashboard.tsx#L170-L189)
+- [audit-log.ts:226-229](file://src/lib/audit-log.ts#L226-L229)
 
 ## Conclusion
-The dashboard widgets and analytics cards provide a comprehensive, real-time view of ticketing and technician performance. They leverage a clean separation of concerns: server functions for accurate analytics, a central hook for data orchestration, and reusable UI components for consistent rendering. Administrators benefit from responsive, interactive widgets, while developers can extend or customize widgets with confidence in the underlying architecture.
+The dashboard widgets and analytics cards provide a comprehensive, real-time view of ticketing and technician performance. They leverage a clean separation of concerns: server functions for accurate analytics, a central hook for data orchestration, and reusable UI components for consistent rendering. The addition of CriticalEventsWidget enhances security monitoring capabilities, while enhanced filtering logic improves data accuracy by excluding non-operational items. Administrators benefit from responsive, interactive widgets with security insights, while developers can extend or customize widgets with confidence in the underlying architecture.
 
-[No sources needed since this section summarizes without analyzing specific files]
+**Updated** Enhanced conclusion to reflect new CriticalEventsWidget and improved filtering capabilities.
 
 ## Appendices
 
@@ -451,3 +522,7 @@ The dashboard widgets and analytics cards provide a comprehensive, real-time vie
   - [dashboard.tsx:393-394](file://src/routes/_app/dashboard.tsx#L393-L394)
 - KPI table:
   - [dashboard.tsx:396-444](file://src/routes/_app/dashboard.tsx#L396-L444)
+- CriticalEventsWidget:
+  - [dashboard.tsx:514-517](file://src/routes/_app/dashboard.tsx#L514-L517)
+
+**Updated** Added CriticalEventsWidget usage example.

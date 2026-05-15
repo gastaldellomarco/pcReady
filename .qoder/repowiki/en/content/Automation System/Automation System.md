@@ -22,419 +22,405 @@
 - [20260504123000_create_automation_flows.sql](file://supabase/migrations/20260504123000_create_automation_flows.sql)
 - [20260507133000_automation_run_logs.sql](file://supabase/migrations/20260507133000_automation_run_logs.sql)
 - [20260515160000_automation_runs_view.sql](file://supabase/migrations/20260515160000_automation_runs_view.sql)
+- [20260504153000_migrate_automation_rules_to_flows.sql](file://supabase/migrations/20260504153000_migrate_automation_rules_to_flows.sql)
+- [20260504163000_add_automation_flow_columns.sql](file://supabase/migrations/20260504163000_add_automation_flow_columns.sql)
+- [20260504160000_validate_automation_flows.sql](file://supabase/migrations/20260504160000_validate_automation_flows.sql)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive wizard-based rule management with five-step process
-- Enhanced rule cards with improved UI/UX and health monitoring
-- Implemented global logging panel for system-wide automation monitoring
-- Added advanced dry-run testing capabilities with step-by-step visualization
-- Introduced KPI dashboard components for automation performance tracking
-- Updated trigger types to include checklist completion and enhanced scheduling options
+- Enhanced automation system with dual-mode design approach combining guided five-step Wizard with advanced visual builder powered by React Flow
+- Added comprehensive validation and inline error handling throughout both editors
+- Implemented sophisticated UI improvements with type-safe validation and enhanced notifications
+- Seamless mode switching between wizard and visual builder with shared flow migration pipeline
+- Enhanced action configurations with type-safe validation and improved error reporting
+- Improved notifications with type safety and better user feedback mechanisms
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Project Structure](#project-structure)
-3. [Core Components](#core-components)
-4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Wizard-Based Rule Management](#wizard-based-rule-management)
-7. [Enhanced Monitoring and Dashboard](#enhanced-monitoring-and-dashboard)
-8. [Dependency Analysis](#dependency-analysis)
-9. [Performance Considerations](#performance-considerations)
-10. [Troubleshooting Guide](#troubleshooting-guide)
-11. [Conclusion](#conclusion)
-12. [Appendices](#appendices)
+2. [Dual-Mode Design Architecture](#dual-mode-design-architecture)
+3. [Project Structure](#project-structure)
+4. [Core Components](#core-components)
+5. [Architecture Overview](#architecture-overview)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Enhanced Validation and Error Handling](#enhanced-validation-and-error-handling)
+8. [Wizard-Based Rule Management](#wizard-based-rule-management)
+9. [Advanced Visual Builder](#advanced-visual-builder)
+10. [Enhanced Monitoring and Dashboard](#enhanced-monitoring-and-dashboard)
+11. [Flow Migration Pipeline](#flow-migration-pipeline)
+12. [Dependency Analysis](#dependency-analysis)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
+16. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive automation system that powers rule-based workflow automation. The system has undergone a major overhaul featuring a wizard-based rule management interface, enhanced dashboard components, advanced monitoring capabilities, and improved UI/UX. It covers how triggers and actions are configured through an intuitive five-step wizard, how the flow builder and enhanced rule cards work, supported trigger and action types, run management and monitoring, and operational guidance for administrators and developers.
+This document explains the comprehensive automation system that powers rule-based workflow automation with a dual-mode design approach. The system has undergone a major enhancement featuring both a guided five-step Wizard interface and an advanced visual builder powered by React Flow. The new architecture combines the accessibility of guided configuration with the flexibility of visual flow design, providing administrators with multiple pathways to create complex automation rules while maintaining type safety and comprehensive validation.
 
-## Project Structure
-The automation system spans frontend UI components, backend server functions, and Supabase database schemas with significant enhancements:
-- Frontend:
-  - Five-step wizard for designing automation rules with trigger selection, conditions, actions, scheduling, and review
-  - Enhanced rule cards with health monitoring, summary previews, and expanded detail panels
-  - Global logging panel for system-wide automation monitoring and filtering
-  - Advanced dry-run testing with step-by-step visualization
-  - KPI dashboard components for performance tracking
-  - Hooks for listing, creating, updating, toggling, duplicating, archiving, and running automations
-  - Types for rules, run logs, and activity logs
-- Backend:
-  - Server functions to list run logs, run automations now, compute stats, and execute flows
-  - Execution engine that evaluates conditions, executes actions, and persists logs
-  - Validation schemas for action configurations
-- Database:
-  - Tables and views for automation flows and run logs
+## Dual-Mode Design Architecture
+The enhanced automation system now operates with two complementary editing modes:
+
+**Mode 1: Guided Five-Step Wizard**
+- Intuitive step-by-step configuration process
+- Built-in validation at each step
+- Inline error handling with immediate user feedback
+- Type-safe validation schemas for all configuration fields
+- Seamless integration with the visual builder
+
+**Mode 2: Advanced Visual Builder (React Flow)**
+- Drag-and-drop flow construction interface
+- Real-time validation with visual indicators
+- Comprehensive error handling and recovery mechanisms
+- Type-safe action configurations with runtime validation
+- Enhanced notification system with detailed error reporting
 
 ```mermaid
 graph TB
-subgraph "Frontend - Enhanced UI"
-UI_Wizard["Five-Step Automation Wizard<br/>Trigger → Conditions → Actions → Schedule → Review"]
-UI_RuleCards["Enhanced Rule Cards<br/>Health Monitoring, Summary, Logs Panel"]
-UI_GlobalLogs["Global Run Logs Panel<br/>System-wide Monitoring & Filtering"]
-UI_DryRun["Advanced Dry-Run Testing<br/>Step-by-Step Visualization"]
-UI_KPI["KPI Dashboard Components<br/>Performance Tracking"]
+subgraph "Dual-Mode Architecture"
+Wizard["Guided Five-Step Wizard<br/>Step 1-5 Configuration<br/>Inline Validation<br/>Type Safety"]
+VisualBuilder["Advanced Visual Builder<br/>React Flow Integration<br/>Drag-and-Drop Interface<br/>Real-time Validation"]
+Migration["Flow Migration Pipeline<br/>Legacy to Modern<br/>Structured Data Transformation"]
 end
-subgraph "Backend"
-Srv_API["Server Functions<br/>listAutomationRunLogs, runAutomationNow,<br/>executeAutomationFlow, getAutomationRunStats"]
-Srv_Exec["Execution Engine<br/>extractGraphExecutionBlocks,<br/>executeConditionBlock, executeAction,<br/>saveAutomationRun"]
-Srv_Schemas["Action Config Schemas"]
+subgraph "Shared Infrastructure"
+Validation["Comprehensive Validation<br/>Type-Safe Schemas<br/>Inline Error Handling"]
+Notifications["Enhanced Notifications<br/>Type Safety<br/>User Feedback"]
 end
-subgraph "Database"
-DB_Flows["automation_flows"]
-DB_Logs["automation_run_logs"]
-DB_Views["automation_runs (view)"]
-end
-UI_Wizard --> UI_RuleCards
-UI_RuleCards --> UI_GlobalLogs
-UI_DryRun --> Srv_API
-Srv_API --> Srv_Exec
-Srv_Exec --> DB_Flows
-Srv_Exec --> DB_Logs
-DB_Views --> Srv_API
+Wizard --> Validation
+VisualBuilder --> Validation
+Validation --> Notifications
+Migration --> Wizard
+Migration --> VisualBuilder
 ```
 
 **Diagram sources**
-- [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
-- [AutomationRuleCard.tsx:65-145](file://src/components/automations/AutomationRuleCard.tsx#L65-L145)
-- [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
-- [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
-- [AutomationKpiCard.tsx:4-51](file://src/components/automations/AutomationKpiCard.tsx#L4-L51)
+- [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
 
 **Section sources**
-- [index.ts:1-7](file://src/components/automations/index.ts#L1-L7)
-- [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
-- [automation-runs.ts:1-211](file://src/lib/automation-runs.ts#L1-L211)
-- [automation-runs.server.ts:1-800](file://src/lib/automation-runs.server.ts#L1-L800)
-- [automation.ts:1-72](file://src/types/automation.ts#L1-L72)
+- [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+
+## Project Structure
+The automation system now features a dual-mode architecture with enhanced validation and error handling:
+
+**Frontend Components:**
+- **Dual-Mode Editor Interface:** Seamlessly switches between Wizard and Visual Builder
+- **Enhanced Wizard Interface:** Five-step guided configuration with comprehensive validation
+- **Advanced Visual Builder:** React Flow-powered drag-and-drop flow construction
+- **Type-Safe Validation:** Comprehensive schema validation with inline error handling
+- **Improved Notifications:** Enhanced toast notifications with type safety
+- **Flow Migration Pipeline:** Automatic conversion from legacy rules to modern format
+
+**Backend Infrastructure:**
+- **Server Functions:** Secure endpoints for manual runs, dry runs, and statistics
+- **Execution Engine:** Robust flow execution with comprehensive logging
+- **Database Schema:** Enhanced automation_flows with structured validation
+- **Migration System:** Legacy rule conversion with preserved metadata
+
+**Validation and Error Handling:**
+- **Inline Validation:** Real-time field validation with immediate feedback
+- **Type-Safe Schemas:** Zod-based validation for all automation components
+- **Error Recovery:** Graceful error handling with user-friendly messages
+- **Progressive Enhancement:** Validation improves as users progress through steps
+
+**Section sources**
+- [index.ts:1-6](file://src/components/automations/index.ts#L1-L6)
+- [useAutomationRules.ts:165-186](file://src/hooks/useAutomationRules.ts#L165-L186)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
 
 ## Core Components
-- **Enhanced AutomationRule and related types** define persisted rules, flow definitions, and metadata with wizard snapshots.
-- **Five-Step Wizard Interface** constructs flows through intuitive step-by-step configuration:
-  - Step 1: Trigger selection with comprehensive event types
-  - Step 2: Optional conditions with logical operators
-  - Step 3: Action configuration with multiple automation types
-  - Step 4: Scheduling options (cron and interval)
-  - Step 5: Review and validation before saving
-- **Enhanced Rule Cards** provide comprehensive rule management with:
-  - Health status indicators (healthy, degraded, error)
-  - Summary previews extracted from wizard metadata
-  - Expanded detail panels with statistics and logs
-  - Quick action buttons for editing, running, testing, and managing rules
-- **Global Logging Panel** offers system-wide monitoring with:
-  - Real-time log viewing across all automation rules
-  - Advanced filtering by rule, status, and date range
-  - Export capabilities and detailed execution insights
-- **Advanced Dry-Run Testing** provides step-by-step execution visualization
-- **KPI Dashboard Components** enable performance tracking and monitoring
-- Hooks orchestrate CRUD operations, run execution, and statistics
-- Server functions expose secure endpoints for manual runs, dry runs, and stats
-- Execution engine evaluates conditions, executes actions, and persists logs
+The enhanced automation system consists of several interconnected components working together:
 
-Key type definitions:
-- AutomationRule: fields include identifiers, lifecycle flags, versioning, timestamps, and enhanced flow_definition with wizard metadata
-- AutomationRunLog: fields capture run status, duration, trigger payload, executed actions, and error messages
-- ActivityLog: generic audit log entries for automation and other system events
+**Dual-Mode Editor System:**
+- **Mode Switching:** Seamless transition between guided Wizard and visual builder
+- **Shared State Management:** Consistent data flow across both editing modes
+- **Flow Migration:** Automatic conversion of legacy rules to modern format
+- **Validation Integration:** Unified validation system supporting both modes
+
+**Enhanced Validation Framework:**
+- **Type-Safe Schemas:** Zod-based validation for all automation components
+- **Inline Error Handling:** Real-time validation with immediate user feedback
+- **Progressive Validation:** Validation intensity increases with complexity
+- **Error Recovery:** Graceful handling of validation failures
+
+**Advanced Flow Construction:**
+- **React Flow Integration:** Professional-grade flow visualization and interaction
+- **Drag-and-Drop Interface:** Intuitive node placement and connection
+- **Real-time Validation:** Continuous validation during flow construction
+- **Visual Feedback:** Clear indicators for valid and invalid configurations
+
+**Enhanced Monitoring and Notifications:**
+- **Type-Safe Notifications:** Improved toast notifications with better error reporting
+- **Comprehensive Logging:** Detailed execution tracking and error reporting
+- **Health Monitoring:** Real-time status tracking and performance metrics
+- **User Feedback:** Clear, actionable error messages and success confirmations
 
 **Section sources**
-- [automation.ts:23-72](file://src/types/automation.ts#L23-L72)
-- [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
-- [AutomationRuleCard.tsx:65-145](file://src/components/automations/AutomationRuleCard.tsx#L65-L145)
-- [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [automation.ts:47-72](file://src/types/automation.ts#L47-L72)
 
 ## Architecture Overview
-The automation system follows an enhanced flow-based architecture with wizard-based rule management:
-- **Enhanced Triggers** initiate flows (ticket creation, status change, checklist completion, scheduled execution, manual triggers)
-- **Conditional Logic** branches the flow based on payload evaluation with logical operators
-- **Multi-Type Actions** perform side effects (update ticket status, send email, create notifications, assign tickets, update device status)
-- **Comprehensive Monitoring** captures execution results, health status, and error details with real-time dashboard integration
+The enhanced automation system follows a dual-mode architecture with comprehensive validation and error handling:
 
 ```mermaid
 sequenceDiagram
 participant Admin as "Administrator"
-participant Wizard as "Five-Step Wizard"
-participant Card as "Enhanced Rule Card"
-participant Hook as "useAutomationRules"
-participant API as "Server Functions"
-participant Exec as "Execution Engine"
-participant DB as "Supabase"
-Admin->>Wizard : Start New Automation Rule
-Wizard->>Wizard : Step 1-5 Configuration
-Wizard->>Hook : Save flow definition with wizard metadata
-Hook->>API : POST runAutomationNow (manual run)
-API->>Exec : executeAutomationFlow(flowId, trigger, input)
-Exec->>DB : Load flow definition with wizard snapshot
-Exec->>Exec : Extract blocks, evaluate conditions
-Exec->>DB : Execute actions (update status, send email, etc.)
-Exec->>DB : saveAutomationRun(...)
-DB-->>Exec : Insert run log
-Exec-->>API : Return run log
-API-->>Hook : Return run log
-Hook-->>Card : Update health status and statistics
-Card-->>Admin : Display enhanced rule card with logs
+participant ModeSwitch as "Mode Switcher"
+participant Wizard as "Enhanced Wizard"
+participant Builder as "Visual Builder"
+participant Validator as "Validation System"
+participant DB as "Supabase Database"
+Admin->>ModeSwitch : Select Editing Mode
+ModeSwitch->>Wizard : Open Guided Wizard
+ModeSwitch->>Builder : Open Visual Builder
+Wizard->>Validator : Validate Step 1
+Validator-->>Wizard : Inline Validation Result
+Wizard->>Wizard : Step 2 Configuration
+Wizard->>Validator : Validate Step 2
+Validator-->>Wizard : Inline Validation Result
+Builder->>Validator : Validate Flow
+Validator-->>Builder : Real-time Validation
+Builder->>DB : Save Flow Definition
+Wizard->>DB : Save Wizard Flow
+DB-->>Admin : Confirmation with Type Safety
 ```
 
 **Diagram sources**
-- [AutomationWizard.tsx:83-97](file://src/components/automations/AutomationWizard.tsx#L83-L97)
-- [useAutomationRules.ts:318-349](file://src/hooks/useAutomationRules.ts#L318-L349)
-- [automation-runs.ts:94-108](file://src/lib/automation-runs.ts#L94-L108)
-- [automation-runs.server.ts:59-207](file://src/lib/automation-runs.server.ts#L59-L207)
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+- [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
 ## Detailed Component Analysis
 
-### Enhanced Flow Definition and Wizard Interface
-The wizard interface provides a comprehensive five-step process for constructing automation flows:
-- **Step 1: Trigger Selection** - Choose from ticket creation, ticket updates, checklist completion, scheduled execution, or manual triggers
-- **Step 2: Conditions** - Add optional logical conditions with operators like equals, not equals, greater than, less than, contains, starts with, ends with, priority checks, and tag searches
-- **Step 3: Actions** - Configure multiple action types including email sending, ticket status updates, notifications, device status changes, and ticket assignment
-- **Step 4: Scheduling** - Set up cron expressions or interval-based schedules for automated execution
-- **Step 5: Review** - Preview and validate the complete rule configuration before saving
+### Enhanced Flow Definition and Dual-Mode Interface
+The dual-mode system provides comprehensive flow definition capabilities through both guided and visual approaches:
 
-The wizard generates a flow_definition with embedded wizard metadata for traceability and enhanced rule management.
+**Guided Wizard Interface:**
+- **Step 1: Trigger Selection** - Comprehensive trigger types with validation
+- **Step 2: Conditions** - Logical operators with type-safe validation
+- **Step 3: Actions** - Multiple action types with configuration schemas
+- **Step 4: Scheduling** - Cron expressions with format validation
+- **Step 5: Review** - Comprehensive validation and error reporting
 
-```mermaid
-flowchart TD
-Start(["Open Five-Step Wizard"]) --> Step1["Step 1: Trigger Selection"]
-Step1 --> Step2["Step 2: Add Conditions"]
-Step2 --> Step3["Step 3: Configure Actions"]
-Step3 --> Step4["Step 4: Set Schedule"]
-Step4 --> Step5["Step 5: Review & Save"]
-Step5 --> Generate["Generate Flow Definition<br/>with Wizard Metadata"]
-Generate --> Store["Store in automation_flows<br/>with enhanced metadata"]
-```
+**Visual Builder Interface:**
+- **React Flow Integration** - Professional-grade flow construction
+- **Drag-and-Drop Nodes** - Trigger, condition, and action nodes
+- **Real-time Validation** - Continuous validation during construction
+- **Visual Error Indicators** - Clear feedback for invalid configurations
+- **Type-Safe Configurations** - Schema validation for all node properties
 
-**Diagram sources**
-- [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
-- [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
-- [ConditionsStep.tsx:8-18](file://src/components/automations/steps/ConditionsStep.tsx#L8-L18)
-- [ActionsStep.tsx:7-27](file://src/components/automations/steps/ActionsStep.tsx#L7-L27)
-- [ScheduleStep.tsx:1-39](file://src/components/automations/steps/ScheduleStep.tsx#L1-L39)
-
-**Section sources**
-- [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
-- [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
-- [ConditionsStep.tsx:8-18](file://src/components/automations/steps/ConditionsStep.tsx#L8-L18)
-- [ActionsStep.tsx:7-27](file://src/components/automations/steps/ActionsStep.tsx#L7-L27)
-- [ScheduleStep.tsx:1-39](file://src/components/automations/steps/ScheduleStep.tsx#L1-L39)
-- [ReviewStep.tsx:28-42](file://src/components/automations/steps/ReviewStep.tsx#L28-L42)
-
-### Enhanced Rule Cards with Health Monitoring
-The enhanced rule cards provide comprehensive rule management and monitoring capabilities:
-- **Health Status Indicators** - Visual indicators showing healthy, degraded, or error states
-- **Summary Previews** - Extracted from wizard metadata showing trigger type, condition count, and action types
-- **Statistics Display** - Success/error counts, execution totals, and last run timestamps
-- **Expanded Detail Panels** - Access to detailed logs, statistics, and rule configuration
-- **Quick Action Buttons** - Edit, run, test, duplicate, archive, version history, and delete operations
+**Flow Migration Pipeline:**
+- **Legacy Detection** - Automatic identification of old rule formats
+- **Structured Conversion** - Transformation to modern flow_definition format
+- **Metadata Preservation** - Retention of important rule information
+- **Validation Integration** - Post-conversion validation and cleanup
 
 ```mermaid
 flowchart TD
-Card["Enhanced Rule Card"] --> Health["Health Status Indicator"]
-Card --> Summary["Summary Preview<br/>(Trigger/Conditions/Actions)"]
-Card --> Stats["Statistics Display<br/>(Success/Error Counts)"]
-Card --> Actions["Quick Action Buttons"]
-Card --> Expand["Expandable Detail Panel"]
-Expand --> Logs["Detailed Logs View"]
-Expand --> Versions["Version History"]
+Start(["Select Editing Mode"]) --> Wizard["Guided Wizard<br/>Step-by-Step Validation"]
+Start --> Builder["Visual Builder<br/>React Flow Interface"]
+Wizard --> ValidateWizard["Inline Validation<br/>Type-Safe Schemas"]
+Builder --> ValidateBuilder["Real-time Validation<br/>Visual Feedback"]
+ValidateWizard --> SaveWizard["Save Wizard Flow"]
+ValidateBuilder --> SaveBuilder["Save Visual Flow"]
+SaveWizard --> Migrate["Flow Migration Pipeline"]
+SaveBuilder --> Migrate
+Migrate --> Final["Structured Flow Definition<br/>Enhanced Metadata"]
 ```
 
 **Diagram sources**
-- [AutomationRuleCard.tsx:65-145](file://src/components/automations/AutomationRuleCard.tsx#L65-L145)
-- [AutomationRuleCard.tsx:284-295](file://src/components/automations/AutomationRuleCard.tsx#L284-L295)
+- [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [useAutomationRules.ts:194-236](file://src/hooks/useAutomationRules.ts#L194-L236)
 
 **Section sources**
-- [AutomationRuleCard.tsx:65-145](file://src/components/automations/AutomationRuleCard.tsx#L65-L145)
-- [AutomationRuleCard.tsx:284-295](file://src/components/automations/AutomationRuleCard.tsx#L284-L295)
+- [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [useAutomationRules.ts:194-236](file://src/hooks/useAutomationRules.ts#L194-L236)
 
-### Global Logging Panel for System-Wide Monitoring
-The global logging panel provides comprehensive monitoring across all automation rules:
-- **System-Wide Log Viewing** - View execution logs from all automation rules in a single interface
-- **Advanced Filtering** - Filter by rule, status (success, error, dry-run, skipped), and date range
-- **Detailed Execution Insights** - View trigger payloads, execution details, and action results
-- **Export Capabilities** - Export logs to CSV for analysis and reporting
-- **Real-Time Updates** - Refresh functionality to see latest execution results
+### Enhanced Validation and Error Handling System
+The system now features comprehensive validation and error handling across both editing modes:
 
-```mermaid
-flowchart TD
-Panel["Global Run Logs Panel"] --> Filters["Advanced Filters<br/>(Rule, Status, Date Range)"]
-Panel --> Table["Execution Log Table<br/>(Rule, Trigger, Timestamp, Status)"]
-Panel --> Details["Expandable Details<br/>(Trigger Payload, Actions, Errors)"]
-Panel --> Export["Export to CSV"]
-Panel --> Refresh["Real-Time Refresh"]
-```
+**Inline Validation:**
+- **Real-time Field Validation** - Immediate feedback for form inputs
+- **Type-Safe Schemas** - Zod-based validation for all configuration fields
+- **Progressive Validation Intensity** - More rigorous validation as complexity increases
+- **User-Friendly Error Messages** - Clear, actionable feedback for validation failures
 
-**Diagram sources**
-- [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
-- [GlobalRunLogsPanel.tsx:126-261](file://src/components/automations/GlobalRunLogsPanel.tsx#L126-L261)
+**Error Recovery Mechanisms:**
+- **Graceful Degradation** - System continues functioning despite validation errors
+- **Automatic Error Correction** - Intelligent suggestions for fixing common mistakes
+- **Undo/Redo Integration** - Validation errors don't prevent normal application operations
+- **Persistent Error States** - Clear indication of validation failures in UI
 
-**Section sources**
-- [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
-- [GlobalRunLogsPanel.tsx:126-261](file://src/components/automations/GlobalRunLogsPanel.tsx#L126-L261)
-
-### Advanced Dry-Run Testing with Step-by-Step Visualization
-The enhanced dry-run testing provides comprehensive execution simulation:
-- **Step-by-Step Execution** - Visualize trigger evaluation, condition checking, and action execution
-- **Status Indicators** - Pass/skip/error indicators for each execution step
-- **Detailed Results** - View action results, errors, and execution details
-- **Interactive Testing** - Test automation rules before deployment with confidence
-
-```mermaid
-flowchart TD
-DryRun["Dry-Run Dialog"] --> Trigger["Trigger Evaluation"]
-Trigger --> Conditions["Condition Checking"]
-Conditions --> Actions["Action Execution"]
-Actions --> Results["Step-by-Step Results"]
-Results --> Summary["Overall Summary"]
-```
-
-**Diagram sources**
-- [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
-- [DryRunDialog.tsx:85-112](file://src/components/automations/DryRunDialog.tsx#L85-L112)
+**Enhanced Notification System:**
+- **Type-Safe Toast Notifications** - Improved error reporting and success messages
+- **Context-Aware Messaging** - Notifications tailored to specific error scenarios
+- **Actionable Feedback** - Clear next steps for resolving validation issues
+- **Consistent User Experience** - Unified notification system across both modes
 
 **Section sources**
-- [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
-- [DryRunDialog.tsx:85-112](file://src/components/automations/DryRunDialog.tsx#L85-L112)
+- [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
+
+### Advanced Visual Builder with React Flow
+The visual builder provides a professional-grade interface for complex flow construction:
+
+**React Flow Integration:**
+- **Professional Flow Visualization** - High-performance flow rendering and interaction
+- **Drag-and-Drop Interface** - Intuitive node placement and connection
+- **Real-time Validation** - Continuous validation during flow construction
+- **Visual Error Indicators** - Clear feedback for invalid configurations
+
+**Node Types and Configurations:**
+- **Trigger Nodes** - Event-based flow initiation with configuration options
+- **Condition Nodes** - Logical branching with multiple comparison operators
+- **Action Nodes** - Side effects with comprehensive configuration schemas
+- **Delay Nodes** - Time-based processing with configurable units
+
+**Enhanced User Experience:**
+- **Visual Feedback** - Clear indicators for valid and invalid configurations
+- **Intelligent Node Placement** - Strategic positioning for optimal flow readability
+- **Connection Validation** - Real-time validation of node connections
+- **Responsive Design** - Adapts to different screen sizes and orientations
+
+**Section sources**
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [AutomationBuilder.tsx:196-275](file://src/components/pcready/automation/AutomationBuilder.tsx#L196-L275)
+- [AutomationBuilder.tsx:421-466](file://src/components/pcready/automation/AutomationBuilder.tsx#L421-L466)
 
 ### Enhanced Action Types and Configurations
-The system supports comprehensive action types with enhanced configuration options:
-- **Email Actions** - Send emails with recipient, subject, body, and HTML support
-- **Ticket Operations** - Update ticket status, assign tickets, and manage ticket lifecycle
-- **Notification Systems** - Create in-app notifications with customizable types, titles, and links
-- **Device Management** - Update device statuses and track asset lifecycle
-- **Conditional Logic** - Actions can be configured to work with trigger-provided IDs or manual inputs
+The system supports comprehensive action types with enhanced configuration options and validation:
 
-Each action type includes comprehensive configuration schemas validated before execution, with support for dynamic field resolution from trigger payloads.
+**Email Actions:**
+- **Recipient Configuration** - Dynamic recipient resolution from trigger payloads
+- **Subject and Body Templates** - Support for variable substitution
+- **HTML Content Support** - Rich text formatting capabilities
+- **Attachment Handling** - File attachment support with validation
+
+**Ticket Operations:**
+- **Status Updates** - Automated ticket status changes with validation
+- **Assignment Management** - Technician assignment with conflict detection
+- **Priority Adjustments** - Priority level modifications with business rules
+- **Tag Management** - Automatic tag assignment based on conditions
+
+**Notification Systems:**
+- **In-App Notifications** - Real-time user notifications with customization
+- **Type-Safe Notification Types** - Enum-based notification categorization
+- **Targeted Delivery** - User-specific notification routing
+- **Delivery Preferences** - Respect user notification preferences
+
+**Device Management:**
+- **Status Updates** - Asset lifecycle tracking with validation
+- **Maintenance Scheduling** - Preventive maintenance automation
+- **Location Tracking** - Geographic asset management
+- **Lifecycle Events** - Automated asset retirement and replacement
 
 **Section sources**
 - [ActionsStep.tsx:29-44](file://src/components/automations/steps/ActionsStep.tsx#L29-L44)
 - [ActionsStep.tsx:112-281](file://src/components/automations/steps/ActionsStep.tsx#L112-L281)
+- [AutomationBuilder.tsx:233-275](file://src/components/pcready/automation/AutomationBuilder.tsx#L233-L275)
 
-### Enhanced Run Management and Monitoring
-The enhanced monitoring system provides comprehensive execution tracking:
-- **Manual Runs and Dry Runs** - Initiated via wizard interface with step-by-step feedback
-- **Health Monitoring** - Real-time health status tracking with automatic status indicators
-- **Statistics Computation** - Automated computation of success/error rates and performance metrics
-- **Enhanced Logging** - Structured action results, error details, and execution timelines
-- **Dashboard Integration** - KPI components for performance tracking and trend analysis
+## Enhanced Validation and Error Handling
 
-```mermaid
-sequenceDiagram
-participant Admin as "Administrator"
-participant Card as "Enhanced Rule Card"
-participant Hook as "useAutomationRules"
-participant API as "listAutomationRunLogs"
-participant DB as "automation_run_logs"
-Admin->>Card : View Rule Details
-Card->>Hook : Toggle logs for rule
-Hook->>API : POST listAutomationRunLogs(automationId)
-API->>DB : SELECT * WHERE automation_id ORDER BY triggered_at DESC LIMIT 20
-DB-->>API : Rows with enhanced metadata
-API-->>Hook : Parsed run logs with health status
-Hook-->>Card : Render enhanced run history
-Card-->>Admin : Display health indicators and statistics
-```
+### Comprehensive Validation Framework
+The enhanced system implements a multi-layered validation approach:
 
-**Diagram sources**
-- [useAutomationRules.ts:300-316](file://src/hooks/useAutomationRules.ts#L300-L316)
-- [automation-runs.ts:77-92](file://src/lib/automation-runs.ts#L77-L92)
-- [AutomationRuleCard.tsx:40-63](file://src/components/automations/AutomationRuleCard.tsx#L40-L63)
+**Schema-Based Validation:**
+- **Zod Integration** - Type-safe validation for all automation components
+- **Runtime Validation** - Real-time validation during user interaction
+- **Compile-Time Safety** - TypeScript integration for development-time validation
+- **Recursive Validation** - Deep validation of nested configuration objects
+
+**Inline Error Handling:**
+- **Immediate Feedback** - Real-time validation with instant user feedback
+- **Contextual Help** - Helpful error messages with suggested solutions
+- **Visual Indicators** - Clear visual cues for validation status
+- **Progressive Disclosure** - Validation complexity matches user expertise level
+
+**Error Recovery and Resilience:**
+- **Graceful Degradation** - System continues functioning despite validation errors
+- **Automatic Recovery** - Intelligent suggestions for fixing common mistakes
+- **State Persistence** - User progress preserved even with validation failures
+- **Undo Integration** - Validation errors don't prevent normal application operations
 
 **Section sources**
-- [useAutomationRules.ts:300-316](file://src/hooks/useAutomationRules.ts#L300-L316)
-- [automation-runs.ts:77-92](file://src/lib/automation-runs.ts#L77-L92)
-- [automation-runs.ts:144-210](file://src/lib/automation-runs.ts#L144-L210)
-- [AutomationRuleCard.tsx:40-63](file://src/components/automations/AutomationRuleCard.tsx#L40-L63)
+- [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
+- [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
-### Database Schema and Views
-The database schema supports the enhanced automation system:
-- **automation_flows**: Stores rule metadata, flow_definition with wizard snapshots, and enhanced metadata
-- **automation_run_logs**: Stores execution results with enhanced status tracking and detailed action results
-- **automation_runs**: Enhanced view with comprehensive run information for reporting and monitoring
+### Enhanced Notification System
+The notification system has been significantly improved with type safety and better user experience:
 
-```mermaid
-erDiagram
-AUTOMATION_FLOWS {
-uuid id PK
-string name
-string description
-string category
-boolean active
-int version
-timestamptz updated_at
-jsonb flow_definition
-timestamptz last_run_at
-}
-AUTOMATION_RUN_LOGS {
-uuid id PK
-uuid automation_id FK
-timestamptz triggered_at
-string triggered_by
-enum status
-int duration_ms
-jsonb trigger_payload
-jsonb actions_executed
-string error_message
-boolean is_dry_run
-}
-AUTOMATION_RUNS {
-uuid id
-uuid automation_id
-timestamptz triggered_at
-string triggered_by
-enum status
-int duration_ms
-boolean is_dry_run
-}
-AUTOMATION_FLOWS ||--o{ AUTOMATION_RUN_LOGS : "has runs"
-```
+**Type-Safe Notifications:**
+- **Enum-Based Types** - Strongly typed notification categories
+- **Schema Validation** - Runtime validation of notification parameters
+- **Consistent Formatting** - Unified notification presentation across the system
+- **Accessibility Support** - Screen reader compatibility and keyboard navigation
 
-**Diagram sources**
-- [20260504123000_create_automation_flows.sql](file://supabase/migrations/20260504123000_create_automation_flows.sql)
-- [20260507133000_automation_run_logs.sql](file://supabase/migrations/20260507133000_automation_run_logs.sql)
-- [20260515160000_automation_runs_view.sql](file://supabase/migrations/20260515160000_automation_runs_view.sql)
+**Enhanced User Feedback:**
+- **Actionable Messages** - Clear, specific guidance for error resolution
+- **Contextual Information** - Relevant details for understanding validation failures
+- **Progressive Disclosure** - Appropriate level of detail based on user expertise
+- **Consistent Tone** - Professional, helpful communication style
+
+**Integration with Validation:**
+- **Validation Error Notifications** - Direct correlation between validation failures and user feedback
+- **Success Confirmation** - Clear acknowledgment of successful validations
+- **Progress Tracking** - Visual indicators for multi-step validation processes
+- **Error Aggregation** - Consolidation of multiple validation errors into manageable groups
 
 **Section sources**
-- [20260504123000_create_automation_flows.sql](file://supabase/migrations/20260504123000_create_automation_flows.sql)
-- [20260507133000_automation_run_logs.sql](file://supabase/migrations/20260507133000_automation_run_logs.sql)
-- [20260515160000_automation_runs_view.sql](file://supabase/migrations/20260515160000_automation_runs_view.sql)
+- [automation.ts:47-72](file://src/types/automation.ts#L47-L72)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
 ## Wizard-Based Rule Management
 
-### Five-Step Process Overview
-The wizard interface guides users through a structured five-step process for creating automation rules:
+### Five-Step Process with Enhanced Validation
+The wizard interface now provides comprehensive validation at each step:
 
-**Step 1: Trigger Selection**
-- Choose from comprehensive trigger types: ticket creation, ticket updates, checklist completion, scheduled execution, or manual triggers
-- Each trigger type includes contextual help and configuration options
-- Scheduled triggers support cron expressions for precise timing control
+**Step 1: Trigger Selection with Validation**
+- **Comprehensive Trigger Types** - Ticket creation, updates, checklist completion, scheduled execution, manual triggers
+- **Contextual Validation** - Trigger-specific validation rules and constraints
+- **Helpful Guidance** - Contextual help and examples for each trigger type
+- **Cron Expression Validation** - Real-time validation for scheduled triggers
 
-**Step 2: Conditions Configuration**
-- Add optional logical conditions using various comparison operators
-- Supports field-based comparisons, priority checks, and tag-based filtering
-- Conditions can be reordered and logically combined for complex rule logic
+**Step 2: Conditions Configuration with Type Safety**
+- **Logical Operators** - Comprehensive comparison operators with validation
+- **Field-Based Comparisons** - Dynamic field resolution with type checking
+- **Priority and Tag Filtering** - Specialized validation for priority and tag operations
+- **Condition Reordering** - Validation of logical flow integrity
 
-**Step 3: Action Configuration**
-- Configure multiple action types with comprehensive parameter sets
-- Actions automatically resolve IDs from trigger payloads when available
-- Supports both immediate execution and deferred operations
+**Step 3: Action Configuration with Schema Validation**
+- **Multiple Action Types** - Email, status updates, notifications, device management
+- **Dynamic Configuration** - Action-specific validation schemas
+- **ID Resolution Validation** - Automatic ID resolution with validation
+- **Action Chaining** - Validation of action sequence and dependencies
 
-**Step 4: Scheduling Setup**
-- Configure optional scheduling for recurring automation execution
-- Supports cron expressions for precise timing control
-- Includes interval-based scheduling for regular execution intervals
+**Step 4: Scheduling Setup with Format Validation**
+- **Cron Expression Validation** - Standard cron format validation
+- **Interval-Based Scheduling** - Validation of time-based scheduling parameters
+- **Time Zone Awareness** - Proper handling of time zone considerations
+- **Conflict Detection** - Prevention of overlapping scheduling conflicts
 
-**Step 5: Review and Validation**
-- Comprehensive preview of the complete rule configuration
-- Automatic validation of required fields and logical consistency
-- Change notes for version tracking and audit trail
+**Step 5: Review and Validation with Comprehensive Checks**
+- **Complete Rule Validation** - End-to-end validation of the entire automation rule
+- **Change Tracking** - Version history and change impact analysis
+- **Performance Impact Assessment** - Validation of rule complexity and performance implications
+- **Security Validation** - Validation of rule security implications
 
 ```mermaid
 flowchart TD
-Wizard["Five-Step Wizard"] --> Step1["Trigger Selection<br/>(Ticket, Checklist, Scheduled, Manual)"]
-Wizard --> Step2["Conditions<br/>(Logical Operators, Field Comparisons)"]
-Wizard --> Step3["Actions<br/>(Email, Status Updates, Notifications)"]
-Wizard --> Step4["Scheduling<br/>(Cron, Interval)"]
-Wizard --> Step5["Review & Validation<br/>(Preview, Save, Change Notes)"]
+Wizard["Enhanced Wizard Interface"] --> Step1["Trigger Selection<br/>With Validation<br/>Type Safety"]
+Wizard --> Step2["Conditions<br/>Logical Operators<br/>Field Validation"]
+Wizard --> Step3["Actions<br/>Schema Validation<br/>ID Resolution"]
+Wizard --> Step4["Scheduling<br/>Format Validation<br/>Conflict Detection"]
+Wizard --> Step5["Review & Validation<br/>Comprehensive Checks<br/>Security Assessment"]
 ```
 
 **Diagram sources**
@@ -453,38 +439,106 @@ Wizard --> Step5["Review & Validation<br/>(Preview, Save, Change Notes)"]
 - [ReviewStep.tsx:94-191](file://src/components/automations/steps/ReviewStep.tsx#L94-L191)
 
 ### Wizard Metadata and Traceability
-The wizard generates comprehensive metadata for each rule:
-- **Wizard Snapshot** - Complete configuration captured at creation time
-- **Summary Generation** - Automatic rule summaries for quick identification
-- **Change Tracking** - Version numbers and change notes for audit purposes
-- **Configuration Validation** - Built-in validation during the wizard process
+The wizard generates comprehensive metadata with enhanced validation:
+
+**Wizard Snapshot Generation:**
+- **Complete Configuration Capture** - Full rule configuration at creation time
+- **Validation Metadata** - Recording of validation results and error states
+- **Change Tracking** - Version numbers and change notes for audit trails
+- **Performance Metrics** - Initial performance assessment and recommendations
+
+**Enhanced Summary Generation:**
+- **Automated Rule Summaries** - Natural language descriptions of rule intent
+- **Validation Status Indicators** - Clear indication of validation success/failure
+- **Complexity Assessment** - Rule complexity scoring for performance optimization
+- **Security Classification** - Security risk assessment for rule operations
 
 **Section sources**
 - [AutomationWizard.tsx:83-97](file://src/components/automations/AutomationWizard.tsx#L83-L97)
 - [ReviewStep.tsx:94-102](file://src/components/automations/steps/ReviewStep.tsx#L94-L102)
 
+## Advanced Visual Builder
+
+### React Flow Integration and Enhanced Features
+The visual builder provides a professional-grade interface for complex flow construction:
+
+**React Flow Integration:**
+- **High-Performance Rendering** - Optimized flow visualization and interaction
+- **Professional Node Types** - Trigger, condition, and action node implementations
+- **Intelligent Layout Algorithms** - Automatic flow arrangement for optimal readability
+- **Responsive Interaction** - Smooth zoom, pan, and node manipulation experiences
+
+**Enhanced Node Configuration:**
+- **Trigger Node Configuration** - Event-based flow initiation with validation
+- **Condition Node Configuration** - Logical branching with operator selection
+- **Action Node Configuration** - Side effect configuration with schema validation
+- **Delay Node Configuration** - Time-based processing with unit selection
+
+**Real-time Validation and Feedback:**
+- **Continuous Validation** - Real-time validation during flow construction
+- **Visual Error Indicators** - Clear feedback for invalid configurations
+- **Connection Validation** - Validation of node connections and flow integrity
+- **Performance Monitoring** - Real-time performance impact assessment
+
+**Section sources**
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [AutomationBuilder.tsx:196-275](file://src/components/pcready/automation/AutomationBuilder.tsx#L196-L275)
+- [AutomationBuilder.tsx:421-466](file://src/components/pcready/automation/AutomationBuilder.tsx#L421-L466)
+
+### Visual Flow Construction and Management
+The visual builder enables intuitive flow construction with comprehensive management features:
+
+**Flow Construction:**
+- **Drag-and-Drop Interface** - Intuitive node placement and connection
+- **Smart Node Placement** - Strategic positioning for optimal flow readability
+- **Connection Validation** - Real-time validation of node connections
+- **Flow Validation** - End-to-end validation of constructed flows
+
+**Flow Management:**
+- **Version Control Integration** - Automatic versioning of flow changes
+- **Change Tracking** - Detailed audit trail of flow modifications
+- **Rollback Capability** - Ability to revert to previous flow versions
+- **Export Functionality** - Flow export for backup and migration purposes
+
+**Enhanced User Experience:**
+- **Visual Feedback** - Clear indicators for valid and invalid configurations
+- **Contextual Help** - Helpful guidance for complex flow construction
+- **Performance Optimization** - Suggestions for improving flow performance
+- **Accessibility Support** - Keyboard navigation and screen reader compatibility
+
+**Section sources**
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [AutomationBuilder.tsx:491-520](file://src/components/pcready/automation/AutomationBuilder.tsx#L491-L520)
+
 ## Enhanced Monitoring and Dashboard
 
 ### Health Monitoring and Status Indicators
-The enhanced monitoring system provides comprehensive health tracking:
-- **Real-Time Health Status** - Automatic calculation of rule health based on execution patterns
-- **Visual Indicators** - Color-coded badges showing healthy, degraded, or error states
-- **Performance Metrics** - Success rates, error rates, and execution timing analysis
-- **Trend Analysis** - Historical performance tracking for optimization
+The enhanced monitoring system provides comprehensive health tracking with type safety:
 
-### KPI Dashboard Components
-The system includes specialized KPI components for performance tracking:
+**Real-Time Health Status:**
+- **Automated Health Calculation** - Dynamic health status based on execution patterns
+- **Visual Health Indicators** - Color-coded badges with clear status representation
+- **Performance Metrics Collection** - Success rates, error rates, and execution timing
+- **Trend Analysis** - Historical performance tracking for optimization insights
+
+**Type-Safe Monitoring:**
+- **Enum-Based Status Values** - Strongly typed status representations
+- **Schema Validation** - Runtime validation of monitoring data
+- **Consistent Metric Reporting** - Unified format for all performance metrics
+- **Accessible Monitoring** - Screen reader compatibility for monitoring interfaces
+
+**Enhanced Dashboard Components:**
 - **Automated Value Display** - Clean, readable displays for key performance metrics
-- **Trend Indicators** - Visual indicators showing performance improvements or declines
-- **Color-Coded Status** - Green for positive trends, red for negative trends, neutral for stable
-- **Flexible Configuration** - Support for various metric types and display formats
+- **Trend Visualization** - Graphical representation of performance trends
+- **Color-Coded Status Indicators** - Visual indicators for system health
+- **Customizable Metrics** - Flexible configuration of monitoring metrics
 
 ```mermaid
 flowchart TD
-Health["Health Monitoring"] --> Status["Status Indicators<br/>(Healthy, Degraded, Error)"]
-Health --> Metrics["Performance Metrics<br/>(Success/Error Rates, Timing)"]
-Metrics --> KPI["KPI Dashboard Components<br/>(Automated Value Display, Trends)"]
-KPI --> Alerts["Performance Alerts<br/>(Threshold-based Notifications)"]
+Health["Health Monitoring"] --> Status["Type-Safe Status Indicators<br/>Visual Health Representation"]
+Health --> Metrics["Performance Metrics<br/>Success/Error Rates, Timing"]
+Metrics --> Dashboard["Enhanced Dashboard Components<br/>Automated Value Display, Trends"]
+Dashboard --> Alerts["Performance Alerts<br/>Threshold-based Notifications"]
 ```
 
 **Diagram sources**
@@ -496,161 +550,304 @@ KPI --> Alerts["Performance Alerts<br/>(Threshold-based Notifications)"]
 - [AutomationKpiCard.tsx:4-51](file://src/components/automations/AutomationKpiCard.tsx#L4-L51)
 
 ### Global Monitoring and Filtering
-The global logging panel provides enterprise-level monitoring capabilities:
-- **System-Wide Visibility** - View all automation rule executions in a unified interface
-- **Advanced Filtering** - Filter by rule, status, date range, and execution type
-- **Export Functionality** - Export execution logs for analysis and compliance
-- **Real-Time Updates** - Automatic refresh to show latest execution results
-- **Detailed Execution Analysis** - View trigger payloads, action results, and error details
+The global logging panel provides enterprise-level monitoring with enhanced filtering:
+
+**System-Wide Visibility:**
+- **Unified Execution View** - Single interface for all automation rule executions
+- **Advanced Filtering Capabilities** - Multi-dimensional filtering by rule, status, and date
+- **Export Functionality** - CSV export for external analysis and reporting
+- **Real-Time Updates** - Automatic refresh with latest execution results
+
+**Enhanced Filtering Options:**
+- **Rule-Based Filtering** - Filter by specific automation rules or rule categories
+- **Status-Based Filtering** - Filter by execution status (success, error, dry-run, skipped)
+- **Temporal Filtering** - Date range filtering for historical analysis
+- **Execution Type Filtering** - Filter by manual vs automated execution types
+
+**Detailed Execution Analysis:**
+- **Trigger Payload Inspection** - Detailed examination of trigger data and context
+- **Action Result Analysis** - Comprehensive analysis of executed actions and outcomes
+- **Error Detail Examination** - Deep dive into error causes and resolution strategies
+- **Performance Timeline Analysis** - Temporal analysis of execution performance
 
 **Section sources**
 - [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
 - [GlobalRunLogsPanel.tsx:126-261](file://src/components/automations/GlobalRunLogsPanel.tsx#L126-L261)
 
-## Dependency Analysis
-The enhanced automation system maintains clear dependency relationships:
-- **UI Components** depend on hooks for data fetching and mutations
-- **Wizard Interface** coordinates step-by-step configuration with validation
-- **Rule Cards** integrate with monitoring systems for health status display
-- **Global Logs Panel** provides centralized monitoring across all rules
-- **Hooks** depend on server functions for run execution and stats
-- **Server Functions** depend on the execution engine and database access
-- **Execution Engine** depends on action schemas and external services (email, notifications)
+## Flow Migration Pipeline
+
+### Legacy Rule Conversion and Modernization
+The flow migration pipeline provides seamless conversion from legacy automation rules to the modern format:
+
+**Legacy Detection and Analysis:**
+- **Automatic Legacy Rule Detection** - Identification of old-style automation rules
+- **Compatibility Assessment** - Analysis of legacy rule compatibility with modern format
+- **Risk Evaluation** - Assessment of migration risks and potential issues
+- **Impact Analysis** - Evaluation of migration impact on system performance
+
+**Structured Conversion Process:**
+- **Legacy Data Extraction** - Extraction of relevant data from legacy rule formats
+- **Modern Format Transformation** - Conversion to structured flow_definition format
+- **Metadata Preservation** - Retention of important rule metadata and history
+- **Validation Integration** - Post-conversion validation and cleanup
+
+**Migration Validation and Quality Assurance:**
+- **Conversion Validation** - Verification that legacy rules convert correctly
+- **Functionality Preservation** - Ensuring migrated rules maintain original behavior
+- **Performance Optimization** - Improving performance of migrated rules
+- **Error Handling** - Comprehensive error handling during migration process
+
+**Post-Migration Support:**
+- **Legacy Rule Archiving** - Safe storage of original legacy rules for reference
+- **Migration Tracking** - Detailed tracking of all migration activities
+- **Rollback Capability** - Ability to revert migrations if issues arise
+- **Performance Monitoring** - Ongoing monitoring of migrated rule performance
 
 ```mermaid
-graph LR
-UI["Enhanced UI Components"] --> Wizard["Five-Step Wizard"]
-UI --> Cards["Enhanced Rule Cards"]
-UI --> Logs["Global Logs Panel"]
-UI --> KPI["KPI Dashboard"]
-Wizard --> Hooks["useAutomationRules"]
-Cards --> Hooks
-Logs --> Hooks
-KPI --> Hooks
-Hooks --> API["Server Functions"]
-API --> Exec["Execution Engine"]
-Exec --> DB["Supabase"]
-Exec --> Schemas["Action Config Schemas"]
+flowchart TD
+Legacy["Legacy Automation Rules"] --> Detect["Automatic Detection<br/>Compatibility Assessment"]
+Detect --> Transform["Structured Transformation<br/>Modern Format Conversion"]
+Transform --> Validate["Migration Validation<br/>Quality Assurance"]
+Validate --> Deploy["Deploy Migrated Rules<br/>Enhanced Performance"]
+Deploy --> Monitor["Post-Migration Monitoring<br/>Performance Tracking"]
 ```
 
 **Diagram sources**
-- [AutomationWizard.tsx:1-261](file://src/components/automations/AutomationWizard.tsx#L1-L261)
-- [AutomationRuleCard.tsx:1-299](file://src/components/automations/AutomationRuleCard.tsx#L1-L299)
-- [GlobalRunLogsPanel.tsx:1-300](file://src/components/automations/GlobalRunLogsPanel.tsx#L1-L300)
-- [AutomationKpiCard.tsx:1-52](file://src/components/automations/AutomationKpiCard.tsx#L1-L52)
-- [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
-- [automation-runs.ts:1-211](file://src/lib/automation-runs.ts#L1-L211)
-- [automation-runs.server.ts:1-800](file://src/lib/automation-runs.server.ts#L1-L800)
+- [20260504153000_migrate_automation_rules_to_flows.sql:8-54](file://supabase/migrations/20260504153000_migrate_automation_rules_to_flows.sql#L8-L54)
+- [20260504163000_add_automation_flow_columns.sql:14-37](file://supabase/migrations/20260504163000_add_automation_flow_columns.sql#L14-L37)
 
 **Section sources**
-- [AutomationWizard.tsx:1-261](file://src/components/automations/AutomationWizard.tsx#L1-L261)
-- [AutomationRuleCard.tsx:1-299](file://src/components/automations/AutomationRuleCard.tsx#L1-L299)
-- [GlobalRunLogsPanel.tsx:1-300](file://src/components/automations/GlobalRunLogsPanel.tsx#L1-L300)
-- [AutomationKpiCard.tsx:1-52](file://src/components/automations/AutomationKpiCard.tsx#L1-L52)
-- [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
-- [automation-runs.ts:1-211](file://src/lib/automation-runs.ts#L1-L211)
-- [automation-runs.server.ts:1-800](file://src/lib/automation-runs.server.ts#L1-L800)
+- [20260504153000_migrate_automation_rules_to_flows.sql:8-54](file://supabase/migrations/20260504153000_migrate_automation_rules_to_flows.sql#L8-L54)
+- [20260504163000_add_automation_flow_columns.sql:14-37](file://supabase/migrations/20260504163000_add_automation_flow_columns.sql#L14-L37)
+- [20260504160000_validate_automation_flows.sql:6-39](file://supabase/migrations/20260504160000_validate_automation_flows.sql#L6-L39)
+
+## Dependency Analysis
+The enhanced automation system maintains clear dependency relationships with improved validation and error handling:
+
+**Dual-Mode Architecture Dependencies:**
+- **Mode Switching Logic** - Seamless transition between wizard and visual builder
+- **Shared Validation System** - Unified validation across both editing modes
+- **Flow Migration Pipeline** - Automatic conversion between legacy and modern formats
+- **Type-Safe Communication** - Consistent data exchange between components
+
+**Enhanced Component Dependencies:**
+- **Validation Framework** - Comprehensive validation for all automation components
+- **Error Handling System** - Robust error handling with user-friendly feedback
+- **Notification Infrastructure** - Enhanced toast notifications with type safety
+- **Flow Construction Tools** - Professional-grade flow building capabilities
+
+**Database and Server Dependencies:**
+- **Structured Data Storage** - Enhanced automation_flows with validation support
+- **Server-Side Validation** - Database-level validation for data integrity
+- **Migration Infrastructure** - Support for legacy rule conversion and modernization
+- **Performance Monitoring** - Comprehensive execution tracking and analysis
+
+```mermaid
+graph LR
+ModeSwitch["Mode Switching Logic"] --> Wizard["Enhanced Wizard"]
+ModeSwitch --> Builder["Advanced Visual Builder"]
+Wizard --> Validation["Enhanced Validation System"]
+Builder --> Validation
+Validation --> Notifications["Type-Safe Notifications"]
+Validation --> DB["Enhanced Database Schema"]
+DB --> Server["Server-Side Validation"]
+Server --> Migration["Flow Migration Pipeline"]
+```
+
+**Diagram sources**
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+- [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
+
+**Section sources**
+- [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+- [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
+- [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
+- [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
 
 ## Performance Considerations
-The enhanced automation system includes several performance optimizations:
-- **Efficient Rule Loading** - Wizard metadata enables faster rule loading and rendering
-- **Optimized Monitoring Queries** - Global logs panel uses efficient filtering and pagination
-- **Health Status Caching** - Rule cards cache health status to reduce API calls
-- **Lazy Loading** - Expanded detail panels load on demand to improve initial page performance
-- **Minimal Branching** - Wizard interface encourages simple rule designs for better performance
-- **Dry-Run Optimization** - Step-by-step dry-run testing helps identify performance issues early
-- **Archival Strategy** - Inactive rules can be archived to reduce query volume on automation_flows
+The enhanced automation system includes several performance optimizations with validation and error handling:
 
-## Troubleshooting Guide
-Enhanced troubleshooting capabilities address common automation issues:
+**Dual-Mode Performance Optimization:**
+- **Lazy Loading** - Visual builder loads only when needed
+- **Efficient Validation** - Optimized validation algorithms for real-time feedback
+- **Memory Management** - Efficient memory usage for both editing modes
+- **Responsive Interfaces** - Fast response times for user interactions
 
-**Enhanced Automation Conflicts**
-- **Cause**: Multiple rules targeting the same event or resource
-- **Resolution**: Use wizard's validation features and global logs panel to identify conflicts
-- **Prevention**: Leverage rule categorization and scheduling to avoid overlap
+**Enhanced Validation Performance:**
+- **Debounced Validation** - Validation requests are debounced to reduce server load
+- **Client-Side Validation** - Heavy validation performed locally for immediate feedback
+- **Selective Validation** - Validation intensity adjusted based on user expertise
+- **Caching Strategies** - Validation results cached for repeated use
 
-**Execution Failures**
-- **Cause**: Invalid action configuration, missing IDs in payload, or external service errors
-- **Resolution**: Use dry-run testing for step-by-step failure analysis
-- **Monitoring**: Global logs panel provides detailed error information and execution traces
+**Database and Server Performance:**
+- **Optimized Queries** - Efficient database queries for rule loading and execution
+- **Batch Operations** - Batch processing for multiple rule operations
+- **Index Optimization** - Database indexes optimized for automation queries
+- **Connection Pooling** - Efficient database connection management
 
-**Performance Bottlenecks**
-- **Cause**: Complex conditions, deep action chains, or inefficient scheduling
-- **Resolution**: Use health monitoring to identify slow-running rules
-- **Optimization**: Simplify wizard configurations, leverage caching, and optimize action sequences
-
-**Dry-Run Discrepancies**
-- **Cause**: Differences between simulation and actual execution environments
-- **Resolution**: Use advanced dry-run testing with step-by-step visualization
-- **Validation**: Test with realistic trigger payloads and edge cases
-
-**Enhanced Debugging Techniques**
-- **Wizard Validation**: Use built-in validation to catch configuration errors early
-- **Global Logs Panel**: Filter and analyze execution logs across all rules
-- **Health Monitoring**: Track rule performance trends and identify degradation
-- **KPI Dashboards**: Monitor key performance indicators for system-wide health
-- **Change Tracking**: Use version history to identify when issues were introduced
+**Monitoring and Analytics:**
+- **Performance Metrics Collection** - Comprehensive performance tracking
+- **Usage Pattern Analysis** - Analysis of user interaction patterns
+- **Resource Usage Monitoring** - Real-time monitoring of system resources
+- **Capacity Planning** - Predictive capacity planning based on usage patterns
 
 **Section sources**
-- [useAutomationRules.ts:300-349](file://src/hooks/useAutomationRules.ts#L300-L349)
-- [automation-runs.ts:144-210](file://src/lib/automation-runs.ts#L144-L210)
-- [automation-runs.server.ts:198-225](file://src/lib/automation-runs.server.ts#L198-L225)
-- [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
-- [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
+- [useAutomationRules.ts:165-186](file://src/hooks/useAutomationRules.ts#L165-L186)
+- [AutomationBuilder.tsx:44-75](file://src/components/pcready/automation/AutomationBuilder.tsx#L44-L75)
+- [automation.ts:47-72](file://src/types/automation.ts#L47-L72)
+
+## Troubleshooting Guide
+Enhanced troubleshooting capabilities address common automation issues with comprehensive validation and error handling:
+
+**Dual-Mode Configuration Issues:**
+- **Mode Switching Problems** - Issues with transitioning between wizard and visual builder
+- **Validation Conflicts** - Conflicts between validation in different modes
+- **Data Synchronization** - Ensuring consistent data between editing modes
+- **Migration Failures** - Issues with converting legacy rules to modern format
+
+**Enhanced Validation and Error Handling Issues:**
+- **Validation Performance** - Slow validation responses or excessive validation
+- **Error Message Clarity** - Unclear or unhelpful error messages
+- **Error Recovery** - Difficulty recovering from validation failures
+- **Type Safety Violations** - Runtime type errors in validation system
+
+**Visual Builder Specific Issues:**
+- **React Flow Performance** - Slow rendering or interaction in visual builder
+- **Node Configuration Errors** - Issues with node configuration and validation
+- **Connection Problems** - Difficulties connecting nodes or validating connections
+- **Layout Issues** - Problems with flow layout and node positioning
+
+**Database and Server Issues:**
+- **Migration Failures** - Issues with legacy rule conversion process
+- **Validation Database Issues** - Problems with server-side validation
+- **Performance Degradation** - Slow performance with large numbers of rules
+- **Data Integrity Issues** - Problems with rule data consistency
+
+**Enhanced Debugging Techniques:**
+- **Dual-Mode Debugging** - Debugging techniques for both editing modes
+- **Validation Debugging** - Techniques for debugging validation failures
+- **Performance Profiling** - Tools for profiling system performance
+- **Error Analysis** - Methods for analyzing and resolving complex errors
+
+**Section sources**
+- [useAutomationRules.ts:165-186](file://src/hooks/useAutomationRules.ts#L165-L186)
+- [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [automation.ts:47-72](file://src/types/automation.ts#L47-L72)
 
 ## Conclusion
-The enhanced automation system provides a comprehensive, enterprise-grade solution for rule-based workflow automation. The five-step wizard interface simplifies complex automation rule creation, while enhanced monitoring capabilities provide deep visibility into system performance. The global logging panel, health monitoring, and KPI dashboards enable effective oversight and optimization. Administrators benefit from intuitive rule management interfaces, while developers gain powerful extension points for custom actions and integrations. The system's robust execution engine ensures reliable logging and monitoring, supporting both day-to-day operations and strategic automation initiatives.
+The enhanced automation system provides a comprehensive, enterprise-grade solution for rule-based workflow automation with a dual-mode design approach. The combination of guided five-step Wizard and advanced visual builder powered by React Flow offers administrators multiple pathways to create complex automation rules while maintaining type safety and comprehensive validation. The system's robust validation framework, enhanced error handling, and improved user experience make it suitable for both novice users and advanced automation specialists. The flow migration pipeline ensures seamless transition from legacy systems, while the enhanced monitoring capabilities provide deep visibility into system performance. The dual-mode architecture, comprehensive validation, and improved error handling represent significant advances in automation system design and implementation.
 
 ## Appendices
 
-### Enhanced Trigger Types
-The wizard interface supports comprehensive trigger types:
-- **Ticket Created** - When new tickets are opened
-- **Ticket Updated** - When existing tickets are modified
-- **Checklist Completed** - When preparation checklists are finished
-- **Scheduled Execution** - Cron-based timed execution
-- **Manual Trigger** - Human-initiated execution
+### Enhanced Trigger Types with Validation
+The wizard interface supports comprehensive trigger types with enhanced validation:
 
-These triggers are presented through an intuitive card-based interface with visual indicators and configuration options.
+**Ticket-Based Triggers:**
+- **Ticket Created** - Validation of ticket creation events and payload structure
+- **Ticket Updated** - Validation of ticket modification events and change tracking
+- **Priority-Based Triggers** - Validation of priority change events and business rules
+
+**Event-Based Triggers:**
+- **Checklist Completion** - Validation of checklist completion events and completion criteria
+- **Scheduled Execution** - Comprehensive cron expression validation and format checking
+- **Manual Triggers** - Validation of manual trigger initiation and security considerations
+
+**Enhanced Configuration Validation:**
+- **Cron Expression Validation** - Real-time validation of scheduled trigger expressions
+- **Payload Validation** - Validation of trigger payload structure and required fields
+- **Business Rule Validation** - Validation against organizational business rules and constraints
 
 **Section sources**
 - [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
 - [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
 
-### Enhanced Action Types and Configuration
-The wizard supports comprehensive action types with detailed configuration:
-- **Email Actions** - Recipient, subject, body, HTML support
-- **Ticket Operations** - Status updates, assignment management
-- **Notification Systems** - In-app notifications with customizable types
-- **Device Management** - Status updates and lifecycle tracking
-- **Conditional Processing** - Automatic ID resolution from trigger payloads
+### Enhanced Action Types and Configuration with Type Safety
+The wizard supports comprehensive action types with detailed configuration and type-safe validation:
 
-Each action type includes comprehensive configuration schemas validated during the wizard process.
+**Email Actions with Validation:**
+- **Recipient Validation** - Validation of email addresses and dynamic recipient resolution
+- **Template Validation** - Validation of email templates and variable substitution
+- **Content Validation** - Validation of email content and formatting requirements
+
+**Ticket Operations with Business Rules:**
+- **Status Update Validation** - Validation against allowed status transitions and business rules
+- **Assignment Validation** - Validation of technician assignments and capacity constraints
+- **Priority Adjustment Validation** - Validation of priority changes and escalation rules
+
+**Notification Systems with Type Safety:**
+- **Notification Type Validation** - Enum-based validation of notification categories
+- **Target Validation** - Validation of notification recipients and delivery preferences
+- **Content Validation** - Validation of notification content and formatting
+
+**Device Management with Lifecycle Validation:**
+- **Status Update Validation** - Validation of device status changes and lifecycle rules
+- **Maintenance Scheduling Validation** - Validation of maintenance schedules and preventive care
+- **Asset Tracking Validation** - Validation of asset location and ownership changes
 
 **Section sources**
 - [ActionsStep.tsx:29-44](file://src/components/automations/steps/ActionsStep.tsx#L29-L44)
 - [ActionsStep.tsx:112-281](file://src/components/automations/steps/ActionsStep.tsx#L112-L281)
 
-### Enhanced Configuration Options
-The wizard-based system provides comprehensive configuration options:
-- **Rule Metadata** - Name, description, category, active status, version tracking
-- **Flow Definition** - Enhanced with wizard snapshots, validation, and summary generation
-- **Action Configurations** - Strict schemas for each action type with validation
-- **Scheduling Options** - Cron expressions and interval-based scheduling
-- **Change Tracking** - Version numbers and change notes for audit trails
+### Enhanced Configuration Options with Validation
+The dual-mode system provides comprehensive configuration options with enhanced validation:
+
+**Rule Metadata with Type Safety:**
+- **Name Validation** - Validation of rule names and uniqueness constraints
+- **Description Validation** - Validation of rule descriptions and character limits
+- **Category Validation** - Validation of rule categories and taxonomy
+- **Active Status Validation** - Validation of rule activation and deactivation
+
+**Flow Definition with Structured Validation:**
+- **Wizard Metadata Validation** - Validation of wizard-generated metadata and summaries
+- **Flow Structure Validation** - Validation of flow definition structure and integrity
+- **Node Configuration Validation** - Validation of individual node configurations
+- **Edge Configuration Validation** - Validation of flow connections and dependencies
+
+**Action Configurations with Schema Validation:**
+- **Action Type Validation** - Validation of action types and availability
+- **Parameter Validation** - Validation of action parameters and constraints
+- **Dependency Validation** - Validation of action dependencies and prerequisites
+- **Security Validation** - Validation of action security implications
+
+**Scheduling Options with Format Validation:**
+- **Cron Expression Validation** - Comprehensive validation of cron expressions
+- **Interval Validation** - Validation of time-based scheduling parameters
+- **Time Zone Validation** - Validation of time zone considerations and conversions
+- **Conflict Detection** - Validation of scheduling conflicts and overlaps
 
 **Section sources**
 - [automation.ts:23-36](file://src/types/automation.ts#L23-L36)
 - [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
 - [AutomationWizard.tsx:83-97](file://src/components/automations/AutomationWizard.tsx#L83-L97)
 
-### Enhanced Relationships Between Rules, Workflows, and Events
-The enhanced system maintains clear relationships between automation components:
-- **Rules** are stored in automation_flows with wizard metadata and enhanced tracking
-- **Ticket/Device Events** feed trigger payloads that drive flow execution
-- **Global Logs** connect executions to rules with comprehensive audit trails
-- **Health Monitoring** tracks rule performance and system-wide automation health
-- **KPI Dashboards** provide performance insights and trend analysis
+### Enhanced Relationships Between Modes, Flows, and Events
+The enhanced system maintains clear relationships between automation components across both editing modes:
+
+**Mode Integration Relationships:**
+- **Wizard to Visual Builder** - Seamless data transfer and validation between modes
+- **Shared Validation Logic** - Unified validation system across both editing modes
+- **Flow Migration** - Automatic conversion between wizard and visual builder formats
+- **State Synchronization** - Consistent state management across mode transitions
+
+**Rule and Flow Relationships:**
+- **Rule Storage** - Enhanced automation_flows table with structured validation
+- **Flow Definition** - Modern flow_definition format with comprehensive metadata
+- **Execution Tracking** - Comprehensive execution logs with detailed analysis
+- **Health Monitoring** - Real-time performance tracking and system health
+
+**Event and Trigger Relationships:**
+- **Ticket Events** - Integration with ticket creation and update events
+- **Device Events** - Integration with device assignment and status change events
+- **Checklist Events** - Integration with checklist completion and preparation events
+- **Scheduled Events** - Integration with cron-based and interval-based execution
+
+**Enhanced Monitoring and Analytics:**
+- **Global Logs** - System-wide execution tracking and analysis
+- **Health Metrics** - Performance indicators and system health monitoring
+- **KPI Dashboards** - Performance tracking and trend analysis
+- **Audit Trails** - Comprehensive change tracking and compliance reporting
 
 **Section sources**
 - [automations.ts:1-179](file://src/lib/queries/automations.ts#L1-L179)
