@@ -3,6 +3,13 @@ import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import TechnicianRadarWidget from "./TechnicianRadarWidget";
 import { formatAvgDays } from "./analytics-format";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, FileDown, FileText } from "lucide-react";
 
 interface AnalyticsCardProps {
   analytics: DashboardAnalytics | null;
@@ -30,22 +37,27 @@ export function AnalyticsCard({
             <span className="pc-card-title">Report Mensile</span>
             <div className="text-[11px] text-text3">{periodLabel}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="pc-btn pc-btn-ghost pc-btn-sm"
-              onClick={onDownloadCsv}
-              disabled={!analytics || loading}
-            >
-              CSV
-            </button>
-            <button
-              className="pc-btn pc-btn-primary pc-btn-sm"
-              onClick={onDownloadPdf}
-              disabled={!analytics || loading}
-            >
-              Scarica Report
-            </button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+                disabled={!analytics || loading}
+              >
+                Esporta
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onDownloadCsv} disabled={!analytics || loading}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Esporta CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDownloadPdf} disabled={!analytics || loading}>
+                <FileText className="mr-2 h-4 w-4" />
+                Report Mensile PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="pc-card-body flex flex-col gap-5">
           {loading ? (
