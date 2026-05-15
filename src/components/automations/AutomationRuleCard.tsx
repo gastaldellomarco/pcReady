@@ -3,9 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -23,11 +30,17 @@ import {
   AlertCircle,
   AlertTriangle,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { AutomationDetailTabs } from "@/components/automations/AutomationDetailTabs";
 import type { AutomationRule } from "@/types/automation";
 import type { AutomationRunLog, AutomationRunStats, HealthStatus } from "@/lib/automation-runs";
 import { getRuleTriggerType, TRIGGER_TYPE_LABELS } from "@/hooks/useAutomationRules";
+import {
+  computeRiskLevel,
+  checkCompleteness,
+  RISK_LEVEL_CONFIG,
+} from "@/lib/automations/automation-guardrails";
 
 const TRIGGER_COLORS: Record<string, string> = {
   ticket_created: "bg-blue-100 text-blue-800 border-transparent",
@@ -105,6 +118,9 @@ export function AutomationRuleCard({
   const triggerLabel = TRIGGER_TYPE_LABELS[triggerType] ?? triggerType;
   const health = stats?.health ?? "never_run";
   const totalExecutions = (stats?.success ?? 0) + (stats?.error ?? 0);
+  const riskLevel = computeRiskLevel(rule);
+  const completeness = checkCompleteness(rule);
+  const riskCfg = RISK_LEVEL_CONFIG[riskLevel];
 
   // Extract summary from wizard
   const wizard = rule.flow_definition?.meta?.wizard;
@@ -173,6 +189,34 @@ export function AutomationRuleCard({
           <Badge className={cn("text-[10px] uppercase", TRIGGER_COLORS[triggerType] ?? TRIGGER_COLORS.manual)}>
             {triggerLabel}
           </Badge>
+          {/* Risk Level Badge */}
+          <Badge
+            className={cn("text-[10px] uppercase border-transparent", riskCfg.bg, riskCfg.color)}
+          >
+            <ShieldAlert className="mr-0.5 h-3 w-3" />
+            {riskCfg.label}
+          </Badge>
+          {/* Incomplete Warning */}
+          {!completeness.complete && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 cursor-help">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Incompleta</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs max-w-[200px]">
+                  <p className="font-medium mb-1">Regola incompleta:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {completeness.missing.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {totalExecutions > 0 && (
             <ErrorIndicator health={health} />
           )}
@@ -181,16 +225,29 @@ export function AutomationRuleCard({
               <Pencil className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Modifica</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRunNow}
-              disabled={!isAdmin || running}
-              className="gap-1"
-            >
-              <Play className="h-3.5 w-3.5" />
-              {running ? "..." : "Esegui"}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onRunNow}
+                      disabled={!isAdmin || running || !completeness.complete}
+                      className="gap-1"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      {running ? "..." : "Esegui"}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!completeness.complete && (
+                  <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                    <p>Completa la configurazione della regola prima di eseguirla.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" disabled={!isAdmin}>
@@ -206,6 +263,7 @@ export function AutomationRuleCard({
                   <Copy className="mr-2 h-4 w-4" />
                   Duplica
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onArchive}>
                   <Archive className="mr-2 h-4 w-4" />
                   Archivia
@@ -214,6 +272,7 @@ export function AutomationRuleCard({
                   <Clock className="mr-2 h-4 w-4" />
                   Versioni
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onDelete} className="text-red-600">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Elimina

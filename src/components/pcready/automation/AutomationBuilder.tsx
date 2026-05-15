@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import automationsQueries from "@/lib/queries/automations";
 import type { Json } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import {
+  validateFlowGraph,
+  summarizeErrors,
+  groupErrorsBySection,
+  getSectionLabel,
+} from "@/lib/automations/flow-validation";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -39,6 +45,9 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Array<{ path: string; message: string }>
+  >([]);
   const idRef = useRef(1);
 
   useEffect(() => {
@@ -125,6 +134,28 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
         setLoading(false);
         return;
       }
+
+      // Validate graph structure
+      const validation = validateFlowGraph(nodes, edges);
+      setValidationErrors(validation.errors.map((e) => ({ path: e.path, message: e.message })));
+      if (!validation.valid) {
+        const sections = groupErrorsBySection(validation.errors);
+        const lines: string[] = [];
+        for (const [section, errs] of Object.entries(sections)) {
+          const label = getSectionLabel(section);
+          for (const err of errs) {
+            lines.push(`- ${label}: ${err.message}`);
+          }
+        }
+        const summary = summarizeErrors(validation.errors);
+        toast.error(`Validazione fallita (${summary}):\n${lines.join("\n")}`, {
+          duration: 8000,
+          richColors: true,
+        });
+        setLoading(false);
+        return;
+      }
+
       const flowDef = JSON.parse(JSON.stringify({ nodes, edges })) as Json;
       if (initialFlow && initialFlow.id) {
         await updateAutomationMut.mutateAsync({
@@ -489,6 +520,20 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
             </div>
 
             <div className="pt-4 flex gap-2">
+              {validationErrors.length > 0 && (
+                <div className="mb-3 w-full space-y-1">
+                  <p className="text-xs font-semibold text-red-600">
+                    Errori di validazione:
+                  </p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {validationErrors.map((err, i) => (
+                      <li key={i} className="text-xs text-red-500">
+                        {err.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <Button variant="outline" onClick={onCancel} disabled={loading}>
                 Annulla
               </Button>

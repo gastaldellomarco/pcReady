@@ -10,6 +10,8 @@ import {
 import { Plus, ScrollText, Search, ArrowUpDown } from "lucide-react";
 import AutomationWizard from "@/components/automations/AutomationWizard";
 import { DryRunDialog } from "@/components/automations/DryRunDialog";
+import { RunConfirmDialog } from "@/components/automations/RunConfirmDialog";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { AutomationRuleCard } from "@/components/automations/AutomationRuleCard";
@@ -63,6 +65,16 @@ function AutomationsPage() {
     duplicateRule,
     deleteRule,
     archiveRule,
+    confirmDeleteRuleAction,
+    cancelDeleteRule,
+    confirmArchiveRuleAction,
+    cancelArchiveRule,
+    confirmRunRuleAction,
+    cancelRunRule,
+    confirmRunLoading,
+    confirmDeleteRule,
+    confirmArchiveRule,
+    confirmRunRule,
     toggleLogs,
     runRule,
     triggerTypeFilter,
@@ -341,6 +353,45 @@ function AutomationsPage() {
         rule={dryRunRule}
         onOpenChange={setDryRunDialogOpen}
       />
+
+      {/* Delete Confirmation */}
+      <DestructiveConfirmDialog
+        open={!!confirmDeleteRule}
+        title="Elimina automazione"
+        description={
+          confirmDeleteRule
+            ? `Sei sicuro di voler eliminare definitivamente "${confirmDeleteRule.name}"? Questa azione non può essere annullata.`
+            : ""
+        }
+        confirmLabel="Elimina"
+        onOpenChange={() => void cancelDeleteRule()}
+        onConfirm={() => void confirmDeleteRuleAction()}
+      />
+
+      {/* Archive Confirmation */}
+      <DestructiveConfirmDialog
+        open={!!confirmArchiveRule}
+        title="Archivia automazione"
+        description={
+          confirmArchiveRule
+            ? `Archiviare "${confirmArchiveRule.name}"? L'automazione verrà disattivata e nascosta dall'elenco principale. Puoi sempre ripristinarla dalle versioni.`
+            : ""
+        }
+        confirmLabel="Archivia"
+        loadingLabel="Archiviazione in corso..."
+        onOpenChange={() => void cancelArchiveRule()}
+        onConfirm={() => void confirmArchiveRuleAction()}
+      />
+
+      {/* Run Confirmation */}
+      <RunConfirmDialog
+        open={!!confirmRunRule}
+        rule={confirmRunRule}
+        onOpenChange={() => void cancelRunRule()}
+        onConfirm={() => void confirmRunRuleAction()}
+        loading={confirmRunLoading}
+      />
+
       <VersionHistoryDrawer
         entityType="automation_flows"
         entityId={versionHistoryRuleId || ""}

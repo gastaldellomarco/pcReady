@@ -25,6 +25,12 @@ import {
 } from "@/lib/automation-runs";
 import { randomUUID } from "@/lib/random-uuid";
 import { createVersion } from "@/lib/versioning";
+import {
+  validateWizardPayload,
+  summarizeErrors,
+  groupErrorsBySection,
+  getSectionLabel,
+} from "@/lib/automations/flow-validation";
 
 function ruleLifecycleStatus(rule: AutomationRule): string {
   const meta = rule.flow_definition?.meta ?? {};
@@ -81,7 +87,14 @@ export function useAutomationRules() {
   const [loadingLogsRuleId, setLoadingLogsRuleId] = useState<string | null>(null);
   const [dryRunRule, setDryRunRule] = useState<AutomationRule | null>(null);
   const [dryRunDialogOpen, setDryRunDialogOpen] = useState(false);
-  const [runningRuleId, setRunningRuleId] = useState<string | null>(null);
+  const [_runningRuleId, _setRunningRuleId] = useState<string | null>(null);
+  const runningRuleId = _runningRuleId;
+
+  // Confirmation dialog states
+  const [confirmDeleteRule, setConfirmDeleteRule] = useState<AutomationRule | null>(null);
+  const [confirmArchiveRule, setConfirmArchiveRule] = useState<AutomationRule | null>(null);
+  const [confirmRunRule, setConfirmRunRule] = useState<AutomationRule | null>(null);
+  const [confirmRunLoading, setConfirmRunLoading] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -198,6 +211,27 @@ export function useAutomationRules() {
 
   async function saveWizardFlow(flow: WizardFlowPayload) {
     if (!isAdmin) return toast.error("Solo amministratori");
+
+    // Validate flow before saving
+    const validation = validateWizardPayload(flow);
+    if (!validation.valid) {
+      const sections = groupErrorsBySection(validation.errors);
+      // Build detailed error message
+      const lines: string[] = [];
+      for (const [section, errs] of Object.entries(sections)) {
+        const label = getSectionLabel(section);
+        for (const err of errs) {
+          lines.push(`- ${label}: ${err.message}`);
+        }
+      }
+      const summary = summarizeErrors(validation.errors);
+      toast.error(`Validazione fallita (${summary}):\n${lines.join("\n")}`, {
+        duration: 8000,
+        richColors: true,
+      });
+      return;
+    }
+
     function uid() {
       return randomUUID();
     }
@@ -330,21 +364,36 @@ export function useAutomationRules() {
 
   async function deleteRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
+    setConfirmDeleteRule(rule);
+  }
+
+  async function confirmDeleteRuleAction() {
+    if (!confirmDeleteRule) return;
     try {
-      await deleteMut.mutateAsync(rule.id);
+      await deleteMut.mutateAsync(confirmDeleteRule.id);
+      setConfirmDeleteRule(null);
       toast.success("Automazione eliminata");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore eliminazione");
     }
   }
 
+  async function cancelDeleteRule() {
+    setConfirmDeleteRule(null);
+  }
+
   async function archiveRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
+    setConfirmArchiveRule(rule);
+  }
+
+  async function confirmArchiveRuleAction() {
+    if (!confirmArchiveRule) return;
     try {
       const { data: fdata } = await supabase
         .from("automation_flows")
         .select("flow_definition")
-        .eq("id", rule.id)
+        .eq("id", confirmArchiveRule.id)
         .single();
       const fd: AutomationFlowDefinition =
         (fdata?.flow_definition as AutomationFlowDefinition) ?? {};
@@ -352,22 +401,27 @@ export function useAutomationRules() {
       meta.archived = true;
       meta.archived_at = new Date().toISOString();
       fd.meta = meta;
-      await archiveMut.mutateAsync({ id: rule.id, fd });
+      await archiveMut.mutateAsync({ id: confirmArchiveRule.id, fd });
       await createVersion(
         "automation_flows",
-        rule.id,
-        { ...rule, active: false, flow_definition: fd },
+        confirmArchiveRule.id,
+        { ...confirmArchiveRule, active: false, flow_definition: fd },
         {
-          active: { from: rule.active, to: false },
-          flow_definition: { from: rule.flow_definition, to: fd },
+          active: { from: confirmArchiveRule.active, to: false },
+          flow_definition: { from: confirmArchiveRule.flow_definition, to: fd },
         },
         "Automazione archiviata",
         "update",
       );
+      setConfirmArchiveRule(null);
       toast.success("Automazione archiviata");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore archivio");
     }
+  }
+
+  async function cancelArchiveRule() {
+    setConfirmArchiveRule(null);
   }
 
   async function toggleLogs(rule: AutomationRule) {
@@ -395,30 +449,41 @@ export function useAutomationRules() {
       setDryRunDialogOpen(true);
       return;
     }
-    setRunningRuleId(rule.id);
+    // Open confirmation dialog for real runs
+    setConfirmRunRule(rule);
+  }
+
+  async function confirmRunRuleAction() {
+    if (!confirmRunRule || !session?.access_token) return;
+    setConfirmRunLoading(true);
     try {
       const log = await executeRun({
         data: {
           accessToken: session.access_token,
-          automationId: rule.id,
-          isDryRun,
-          triggerPayload: { source: isDryRun ? "manual_dry_run" : "manual_run" },
+          automationId: confirmRunRule.id,
+          isDryRun: false,
+          triggerPayload: { source: "manual_run" },
         },
       });
       const runLog = AutomationRunLogSchema.parse(log);
       setLogsByRule((current) => {
-        const prev = Array.isArray(current[rule.id]) ? current[rule.id] : [];
-        return { ...current, [rule.id]: [runLog, ...prev].slice(0, 20) };
+        const prev = Array.isArray(current[confirmRunRule.id]) ? current[confirmRunRule.id] : [];
+        return { ...current, [confirmRunRule.id]: [runLog, ...prev].slice(0, 20) };
       });
-      setLogsOpenRuleId(rule.id);
+      setLogsOpenRuleId(confirmRunRule.id);
       await loadStats();
       await listQuery.refetch();
-      toast.success(isDryRun ? "Dry-run completato" : "Run manuale completata");
+      setConfirmRunRule(null);
+      toast.success("Run manuale completata");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Run non riuscita");
     } finally {
-      setRunningRuleId(null);
+      setConfirmRunLoading(false);
     }
+  }
+
+  async function cancelRunRule() {
+    setConfirmRunRule(null);
   }
 
   // NEW: global logs
@@ -560,6 +625,13 @@ export function useAutomationRules() {
     dryRunDialogOpen,
     setDryRunDialogOpen,
     runningRuleId,
+    // Confirmation states
+    confirmDeleteRule,
+    setConfirmDeleteRule,
+    confirmArchiveRule,
+    setConfirmArchiveRule,
+    confirmRunRule,
+    confirmRunLoading,
     builderOpen,
     setBuilderOpen,
     categoryFilter,
@@ -585,9 +657,15 @@ export function useAutomationRules() {
     saveWizardFlow,
     duplicateRule,
     deleteRule,
+    confirmDeleteRuleAction,
+    cancelDeleteRule,
     archiveRule,
+    confirmArchiveRuleAction,
+    cancelArchiveRule,
     toggleLogs,
     runRule,
+    confirmRunRuleAction,
+    cancelRunRule,
     toggleRule,
     // NEW exports
     triggerTypeFilter,

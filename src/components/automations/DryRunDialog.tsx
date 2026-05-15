@@ -1,4 +1,4 @@
-import { CheckCircle, FlaskConical, Loader2, MinusCircle, XCircle } from "lucide-react";
+import { CheckCircle, FlaskConical, Loader2, MinusCircle, XCircle, Ban } from "lucide-react";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { AutomationRule } from "@/types/automation";
@@ -6,6 +6,8 @@ import { executeDryRun, type DryRunResult, type DryRunStep } from "@/lib/automat
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -43,21 +45,45 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl border-blue-200">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5" />
-            Dry Run{rule?.name ? `: ${rule.name}` : ""}
+            <FlaskConical className="h-5 w-5 text-blue-600" />
+            Test (Dry-Run)
+            {rule?.name && (
+              <>
+                <span className="text-muted-foreground font-normal">:</span>
+                <span className="font-normal">{rule.name}</span>
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Clear dry-run indicator */}
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <Ban className="h-5 w-5 shrink-0 text-blue-600" />
+          <div>
+            <Badge className="bg-blue-600 text-white text-[10px] uppercase border-transparent mb-1">
+              Simulazione — nessuna azione reale
+            </Badge>
+            <p className="text-xs text-blue-700">
+              Questa esecuzione simulata mostra il percorso che l&apos;automazione seguirebbe
+              senza applicare modifiche reali. Ideale per verificare la configurazione prima
+              di un&apos;esecuzione effettiva.
+            </p>
+          </div>
+        </div>
+
+        <Separator />
+
         <div className="space-y-4">
-          <Button onClick={handleRunDryRun} disabled={!rule || running}>
+          <Button variant="outline" onClick={handleRunDryRun} disabled={!rule || running} className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50">
             {running ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <FlaskConical className="h-4 w-4" />
             )}
-            Simula esecuzione
+            Simula esecuzione (dry-run)
           </Button>
           {!result && (
             <div className="py-6 text-center text-sm text-text3">

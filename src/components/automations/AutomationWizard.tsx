@@ -14,6 +14,11 @@ import type {
   ScheduleDef,
   WizardFlowPayload,
 } from "@/types/automation";
+import {
+  validateWizardPayload,
+  groupErrorsBySection,
+  getSectionLabel,
+} from "@/lib/automations/flow-validation";
 
 const STEPS = [
   { label: "Trigger", description: "Evento scatenante" },
@@ -50,6 +55,21 @@ export default function AutomationWizard({
   const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>(
     {},
   );
+
+  // Compute inline validation for ReviewStep
+  const flowPreview = {
+    name,
+    description,
+    category,
+    trigger_definition: trigger,
+    conditions_definition: conditions,
+    actions_definition: actions,
+    schedule_definition: schedule,
+    summary: generateSummary(),
+    version: initial?.version ?? 1,
+    changeNote,
+  };
+  const validation = step === 4 ? validateWizardPayload(flowPreview) : null;
 
   function validateCurrent(currentStep: number): { ok: boolean; message?: string } {
     if (currentStep === 0) {
@@ -211,6 +231,47 @@ export default function AutomationWizard({
             onChangeDescription={setDescription}
             onChangeCategory={(v) => setCategory(v || null)}
           />
+        )}
+
+        {/* Inline validation errors */}
+        {step === 4 && validation && !validation.valid && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-1.5">
+            <p className="text-sm font-semibold text-red-700">
+              Correggi i seguenti errori prima di salvare:
+            </p>
+            {Object.entries(groupErrorsBySection(validation.errors)).map(([section, errs]) => (
+              <div key={section}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-red-600 mt-2">
+                  {getSectionLabel(section)}
+                </p>
+                <ul className="mt-0.5 list-disc list-inside space-y-0.5">
+                  {errs
+                    .filter((e) => e.severity === "error")
+                    .map((err, i) => (
+                      <li key={i} className="text-xs text-red-600">
+                        {err.message}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Inline warnings */}
+        {step === 4 && validation && validation.errors.some((e) => e.severity === "warning") && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1.5">
+            <p className="text-sm font-semibold text-amber-700">Avvisi:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {validation.errors
+                .filter((e) => e.severity === "warning")
+                .map((err, i) => (
+                  <li key={i} className="text-xs text-amber-600">
+                    {err.message}
+                  </li>
+                ))}
+            </ul>
+          </div>
         )}
         {step === 4 && (
           <div>
