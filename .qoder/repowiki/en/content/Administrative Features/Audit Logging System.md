@@ -8,25 +8,22 @@
 - [audit-log.ts](file://src/lib/audit-log.ts)
 - [audit-log-actions.ts](file://src/lib/audit-log-actions.ts)
 - [admin-users.server.ts](file://src/lib/admin-users.server.ts)
-- [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql)
 - [20260511151100_extend_activity_log.sql](file://supabase/migrations/20260511151100_extend_activity_log.sql)
-- [20260512160100_create_activity_log_dedup_view.sql](file://supabase/migrations/20260512160100_create_activity_log_dedup_view.sql)
 - [20260515160100_update_activity_log_dedup_view.sql](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql)
-- [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql)
-- [20260505000000_patch_idempotent.sql](file://supabase/migrations/20260505000000_patch_idempotent.sql)
+- [20260512160100_create_activity_log_dedup_view.sql](file://supabase/migrations/20260512160100_create_activity_log_dedup_view.sql)
+- [20260515170000_audit_log_retention_archived.sql](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Complete transformation of AdminAuditTab from basic activity log viewer to enterprise-grade audit management interface
-- Added dual-view interface with table and timeline modes
-- Implemented real-time KPI cards showing events, weekly trends, and recent errors
-- Enhanced filtering capabilities with advanced search, user dropdowns, entity types, outcomes, and date presets
-- Added timeline visualization with grouped daily entries
-- Integrated change diff display for detailed modifications
-- Added PDF export functionality with branded reports
-- Enhanced action categorization with comprehensive badge system
-- Improved user experience with expandable rows and detailed metadata display
+- Enhanced AdminAuditTab with real-time KPI cards showing events, weekly trends, and recent errors
+- Added comprehensive PDF export functionality with branded reports and filter summaries
+- Implemented dual-view interface system with table and timeline modes
+- Enhanced advanced filtering capabilities with user dropdowns, action types, entity types, outcomes, and date presets
+- Added timeline visualization with grouped daily entries and interactive expandable rows
+- Integrated change diff display for detailed modifications with side-by-side comparison
+- Enhanced action categorization with comprehensive badge system and severity indicators
+- Improved user experience with responsive design, pagination controls, and export options
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -40,11 +37,12 @@
 9. [Real-time Metrics and KPI Cards](#real-time-metrics-and-kpi-cards)
 10. [Change Diff Visualization](#change-diff-visualization)
 11. [PDF Export Functionality](#pdf-export-functionality)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
-16. [Appendices](#appendices)
+12. [Log Retention and Data Lifecycle](#log-retention-and-data-lifecycle)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
 This document describes the enhanced audit logging system that tracks administrative and system activities for compliance, monitoring, and security purposes. The system has been transformed from a basic activity log viewer into an enterprise-grade audit management interface featuring dual-view modes, real-time metrics, advanced filtering, timeline visualization, change diff display, and comprehensive export capabilities. It covers how audit log entries are created, stored, and retrieved, how actions are categorized, and how the enhanced admin interface enables sophisticated filtering, searching, pagination, and exporting of logs with multiple export formats.
@@ -58,6 +56,7 @@ The audit logging system spans frontend React components and hooks, backend serv
 - **Security**: admin-users.server.ts enforces admin-only access
 - **PDF Generation**: AuditLogReportPdf.tsx creates branded PDF reports
 - **Database**: migrations define the activity_log table, extended columns, indexes, and enhanced deduplication view
+- **Retention**: archived_logs table for future archive storage and retention policies
 
 ```mermaid
 graph TB
@@ -76,6 +75,7 @@ TBL["activity_log table<br/>Extended Columns<br/>Enhanced Indexes"]
 EXT["Extended Columns:<br/>action_type, entity_type,<br/>entity_id, old_value,<br/>new_value, ip_address,<br/>severity, session_id"]
 IDX["Enhanced Indexes:<br/>action_type, entity_type+entity_id,<br/>severity, session_id"]
 V["activity_log_dedup view<br/>Enhanced with Extended Columns"]
+ARCH["archived_logs table<br/>Retention & Archive Storage"]
 RLS["RLS policies<br/>Enhanced Security"]
 end
 UI --> Hook
@@ -88,6 +88,7 @@ V --> TBL
 TBL --> RLS
 TBL --> EXT
 TBL --> IDX
+ARCH --> RLS
 ```
 
 **Diagram sources**
@@ -98,6 +99,7 @@ TBL --> IDX
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:1-28](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L1-L28)
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
 
 **Section sources**
 - [AdminAuditTab.tsx:1-651](file://src/components/admin/AdminAuditTab.tsx#L1-L651)
@@ -107,6 +109,7 @@ TBL --> IDX
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:1-28](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L1-L28)
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
 
 ## Core Components
 - **Enhanced ActivityLogEntry**: Defines the comprehensive shape of log entries with extended columns for action types, entities, values, and metadata
@@ -115,8 +118,10 @@ TBL --> IDX
 - **useAdminAudit Hook**: Manages dual-view states, real-time metrics, advanced filtering, pagination, and export functionality
 - **AdminAuditTab Component**: Enterprise-grade UI with dual-view interface, KPI cards, timeline visualization, and comprehensive filtering
 - **DiffView Component**: Visualizes changes with side-by-side comparison of old and new values
-- **AuditLogReportPdf**: Generates branded PDF reports with comprehensive log data
+- **AuditLogReportPdf**: Generates branded PDF reports with comprehensive log data and filter summaries
 - **Action Constants**: Comprehensive AUDIT_ACTIONS enumeration covering all system entities and operations
+- **Timeline Groups**: Organizes audit entries by date for timeline visualization
+- **Date Preset System**: Provides quick date range selection with Today, Yesterday, Last 7 Days, and Last 30 Days
 
 **Section sources**
 - [audit-log.ts:6-23](file://src/lib/audit-log.ts#L6-L23)
@@ -132,6 +137,8 @@ TBL --> IDX
 - [AdminAuditTab.tsx:74-86](file://src/components/admin/AdminAuditTab.tsx#L74-L86)
 - [AdminAuditTab.tsx:90-129](file://src/components/admin/AdminAuditTab.tsx#L90-L129)
 - [audit-log-actions.ts:1-28](file://src/lib/audit-log-actions.ts#L1-L28)
+- [useAdminAudit.ts:261-276](file://src/hooks/useAdminAudit.ts#L261-L276)
+- [useAdminAudit.ts:141-186](file://src/hooks/useAdminAudit.ts#L141-L186)
 
 ## Architecture Overview
 The enhanced audit logging architecture provides enterprise-grade functionality with real-time metrics, dual-view interfaces, and comprehensive export capabilities:
@@ -202,6 +209,7 @@ The activity_log table now captures comprehensive audit information with enhance
 - **Extended fields**: action_type, entity_type, entity_id, old_value (JSONB), new_value (JSONB), ip_address, severity, session_id
 - **Enhanced indexes**: action_type, (entity_type, entity_id), severity, session_id
 - **Enhanced deduplication view**: activity_log_dedup with extended columns and improved deduplication logic
+- **Archived logs**: Future archive storage with retention policies and RLS security
 
 ```mermaid
 erDiagram
@@ -229,21 +237,39 @@ text initials
 TICKET {
 uuid id PK
 }
+ARCHIVED_LOGS {
+uuid id PK
+text type
+text action_type
+text entity_type
+text entity_id
+jsonb old_value
+jsonb new_value
+text ip_address
+text severity
+text session_id
+text message
+uuid ticket_id FK
+uuid actor_id FK
+timestamptz created_at
+timestamptz archived_at
+text archive_reason
+}
 ACTIVITY_LOG ||--o{ PROFILE : "actor_id"
 ACTIVITY_LOG ||--o{ TICKET : "ticket_id"
+ARCHIVED_LOGS ||--o{ PROFILE : "actor_id"
+ARCHIVED_LOGS ||--o{ TICKET : "ticket_id"
 ```
 
 **Diagram sources**
-- [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:258-266](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L258-L266)
-- [20260511151100_extend_activity_log.sql:1-9](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L9)
+- [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:7-27](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L7-L27)
+- [20260515170000_audit_log_retention_archived.sql:9-26](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L9-L26)
 
 **Section sources**
-- [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:258-283](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L258-L283)
 - [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:1-28](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L1-L28)
-- [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:34-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L34-L38)
-- [20260505000000_patch_idempotent.sql:41-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L41-L62)
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
 
 ### Enhanced Log Entry Creation and Retrieval
 - **Creation**: The system writes to activity_log with comprehensive extended attributes including action_type, entity_type, entity_id, old_value, new_value, ip_address, severity, and session_id for detailed change tracking
@@ -316,6 +342,7 @@ Hook-->>Admin : "CSV download complete"
 - **Comprehensive Action Types**: Enhanced AUDIT_ACTIONS enumeration covering tickets, devices, clients, users, settings, OAuth clients, automation, and portal links
 - **Action Categorization**: Advanced badge system with color-coded categories (creation, deletion, modification, access, error)
 - **Entity Labeling**: Comprehensive entity type mapping for tickets, clients, devices, users, technicians, automation, system, OAuth, settings, and email templates
+- **Severity Indicators**: Color-coded severity badges with appropriate icons (info, warning, critical)
 
 ```mermaid
 classDiagram
@@ -380,6 +407,8 @@ The AdminAuditTab has been completely transformed into an enterprise-grade audit
 - **Export Options**: CSV and PDF export with comprehensive data formatting
 - **Real-time Updates**: Automatic refresh capability with loading states
 - **Responsive Design**: Mobile-friendly interface with appropriate spacing and typography
+- **View Mode Persistence**: State management for table vs timeline modes
+- **Pagination Controls**: Dedicated pagination with page size selection and navigation
 
 **Section sources**
 - [AdminAuditTab.tsx:269-651](file://src/components/admin/AdminAuditTab.tsx#L269-L651)
@@ -395,6 +424,7 @@ The enhanced filtering system provides comprehensive search capabilities:
 - **Date Range Filtering**: Precise date range selection with automatic time normalization
 - **Search Field**: Advanced search across actor names and messages with debounced input
 - **Reset Functionality**: One-click filter reset with visual feedback
+- **Date Preset System**: Quick selection of common date ranges with visual highlighting
 
 ```mermaid
 flowchart TD
@@ -565,6 +595,42 @@ Export --> Download
 - [AuditLogReportPdf.tsx:10-88](file://src/components/admin/AuditLogReportPdf.tsx#L10-L88)
 - [useAdminAudit.ts:214-253](file://src/hooks/useAdminAudit.ts#L214-L253)
 
+## Log Retention and Data Lifecycle
+The system includes comprehensive retention and archival capabilities:
+
+### Retention Settings
+- **Configuration**: App settings for log retention period (default 365 days)
+- **Archival Strategy**: Future-proofing with archived_logs table for long-term storage
+- **Security**: Row Level Security (RLS) policies for archived data access control
+
+### Archived Logs Table
+- **Schema**: Mirrors activity_log with additional archive metadata
+- **Indexes**: Optimized indexes for efficient querying and archiving
+- **Policies**: Admin-only access to archived data with proper authorization checks
+
+### Data Lifecycle Management
+- **Automatic Archival**: Process for moving old logs to archived storage
+- **Cleanup Operations**: Scheduled jobs for removing expired logs
+- **Compliance**: Support for regulatory retention requirements
+
+```mermaid
+flowchart TD
+Retention["Retention Settings<br/>- App configuration<br/>- Default 365 days<br/>- Configurable policy"]
+Archive["Archived Logs<br/>- Separate table<br/>- RLS enabled<br/>- Admin access only"]
+Lifecycle["Data Lifecycle<br/>- Active logs<br/>- Archival process<br/>- Cleanup operations<br/>- Compliance support"]
+Retention --> Archive
+Archive --> Lifecycle
+Lifecycle --> Retention
+```
+
+**Diagram sources**
+- [20260515170000_audit_log_retention_archived.sql:4-6](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L4-L6)
+- [20260515170000_audit_log_retention_archived.sql:9-26](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L9-L26)
+- [20260515170000_audit_log_retention_archived.sql:32-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L32-L41)
+
+**Section sources**
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
+
 ## Dependency Analysis
 The enhanced audit system maintains low coupling while providing comprehensive functionality:
 
@@ -581,11 +647,10 @@ SRV --> SEC["admin-users.server.ts<br/>Access Control"]
 SRV --> DIFF["DiffView.tsx<br/>Change Visualization"]
 SRV --> PDF["AuditLogReportPdf.tsx<br/>PDF Generation"]
 SRV --> DB["Enhanced activity_log + dedup view<br/>Extended Columns & Indexes"]
-DB --> MIG1["20260429202127...sql<br/>Base Schema"]
-DB --> MIG2["20260511151100...sql<br/>Extended Columns"]
-DB --> MIG3["20260515160100...sql<br/>Enhanced Dedup View"]
-DB --> MIG4["20260429202148_...sql<br/>Additional Enhancements"]
-DB --> MIG5["20260505000000...sql<br/>Patch Enhancements"]
+DB --> MIG1["20260511151100...sql<br/>Extended Columns"]
+DB --> MIG2["20260515160100...sql<br/>Enhanced Dedup View"]
+DB --> MIG3["20260515170000...sql<br/>Retention & Archive"]
+DB --> MIG4["20260512160100...sql<br/>Initial Dedup View"]
 ```
 
 **Diagram sources**
@@ -594,11 +659,10 @@ DB --> MIG5["20260505000000...sql<br/>Patch Enhancements"]
 - [audit-log.ts:1-367](file://src/lib/audit-log.ts#L1-L367)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [AuditLogReportPdf.tsx:1-89](file://src/components/admin/AuditLogReportPdf.tsx#L1-L89)
-- [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:258-283](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L258-L283)
 - [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:1-28](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L1-L28)
-- [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:34-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L34-L38)
-- [20260505000000_patch_idempotent.sql:41-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L41-L62)
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
+- [20260512160100_create_activity_log_dedup_view.sql:1-17](file://supabase/migrations/20260512160100_create_activity_log_dedup_view.sql#L1-L17)
 
 **Section sources**
 - [AdminAuditTab.tsx:1-651](file://src/components/admin/AdminAuditTab.tsx#L1-L651)
@@ -606,11 +670,10 @@ DB --> MIG5["20260505000000...sql<br/>Patch Enhancements"]
 - [audit-log.ts:1-367](file://src/lib/audit-log.ts#L1-L367)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [AuditLogReportPdf.tsx:1-89](file://src/components/admin/AuditLogReportPdf.tsx#L1-L89)
-- [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:258-283](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L258-L283)
 - [20260511151100_extend_activity_log.sql:1-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L26)
 - [20260515160100_update_activity_log_dedup_view.sql:1-28](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L1-L28)
-- [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:34-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L34-L38)
-- [20260505000000_patch_idempotent.sql:41-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L41-L62)
+- [20260515170000_audit_log_retention_archived.sql:1-41](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L1-L41)
+- [20260512160100_create_activity_log_dedup_view.sql:1-17](file://supabase/migrations/20260512160100_create_activity_log_dedup_view.sql#L1-L17)
 
 ## Performance Considerations
 The enhanced system maintains optimal performance through several optimizations:
@@ -622,12 +685,30 @@ The enhanced system maintains optimal performance through several optimizations:
 - **Real-time Metrics**: Efficient KPI calculations with separate queries for different time periods
 - **Export Optimization**: Efficient CSV and PDF generation with proper deduplication
 - **Memory Management**: Proper cleanup of timers and references in hooks
+- **Query Optimization**: Use of DISTINCT ON and date_trunc for efficient deduplication
 
 **Section sources**
 - [20260515160100_update_activity_log_dedup_view.sql:7-27](file://supabase/migrations/20260515160100_update_activity_log_dedup_view.sql#L7-L27)
 - [20260511151100_extend_activity_log.sql:22-26](file://supabase/migrations/20260511151100_extend_activity_log.sql#L22-L26)
 - [audit-log.ts:74-88](file://src/lib/audit-log.ts#L74-L88)
 - [useAdminAudit.ts:127-139](file://src/hooks/useAdminAudit.ts#L127-L139)
+
+## Security Considerations
+The enhanced audit system maintains strong security controls:
+
+- **Access Control**: requireAdmin function validates admin privileges via Supabase auth
+- **Role-Based Access**: Has_role RPC function ensures only administrators can access audit data
+- **Data Protection**: Sensitive information like session IDs and IP addresses are properly handled
+- **Export Security**: All exports are filtered through admin validation to prevent unauthorized access
+- **RLS Policies**: Row Level Security enforced on archived logs for additional protection
+- **Audit Trail Integrity**: Immutable log entries with timestamps and unique identifiers
+
+**Section sources**
+- [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
+- [audit-log.ts:49-164](file://src/lib/audit-log.ts#L49-L164)
+- [audit-log.ts:271-366](file://src/lib/audit-log.ts#L271-L366)
+- [useAdminAudit.ts:74-85](file://src/hooks/useAdminAudit.ts#L74-L85)
+- [useAdminAudit.ts:197-253](file://src/hooks/useAdminAudit.ts#L197-L253)
 
 ## Troubleshooting Guide
 The enhanced system provides comprehensive troubleshooting capabilities:
@@ -639,6 +720,8 @@ The enhanced system provides comprehensive troubleshooting capabilities:
 - **View Mode Issues**: Verify view mode state persistence and proper component re-rendering
 - **KPI Loading**: Monitor KPI loading states and handle silent failures gracefully
 - **PDF Generation**: Check PDF element creation and download integration for proper error handling
+- **Timeline Grouping**: Verify date grouping logic and locale-specific date formatting
+- **Real-time Updates**: Check timer cleanup and proper state management for loading states
 
 **Section sources**
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
@@ -646,9 +729,10 @@ The enhanced system provides comprehensive troubleshooting capabilities:
 - [audit-log.ts:271-366](file://src/lib/audit-log.ts#L271-L366)
 - [useAdminAudit.ts:74-85](file://src/hooks/useAdminAudit.ts#L74-L85)
 - [useAdminAudit.ts:197-253](file://src/hooks/useAdminAudit.ts#L197-L253)
+- [useAdminAudit.ts:261-276](file://src/hooks/useAdminAudit.ts#L261-L276)
 
 ## Conclusion
-The enhanced audit logging system provides a comprehensive enterprise-grade solution for tracking administrative and system activities. The transformation from a basic activity log viewer to an advanced audit management interface includes dual-view modes, real-time metrics, advanced filtering, timeline visualization, change diff display, and comprehensive export capabilities. The system maintains strong security controls, flexible filtering, and robust export functionality while providing an intuitive user experience. Its modular design with enhanced components, hooks, server functions, and database improvements enables maintainability, scalability, and enterprise-level audit capabilities.
+The enhanced audit logging system provides a comprehensive enterprise-grade solution for tracking administrative and system activities. The transformation from a basic activity log viewer to an advanced audit management interface includes dual-view modes, real-time metrics, advanced filtering, timeline visualization, change diff display, and comprehensive export capabilities. The system maintains strong security controls, flexible filtering, and robust export functionality while providing an intuitive user experience. Its modular design with enhanced components, hooks, server functions, and database improvements enables maintainability, scalability, and enterprise-level audit capabilities. The addition of retention policies and archival capabilities ensures compliance with data lifecycle requirements while maintaining system performance and security.
 
 ## Appendices
 
@@ -666,8 +750,18 @@ The enhanced audit logging system provides a comprehensive enterprise-grade solu
 - **IP Address**: Client IP address for security context
 - **Session ID**: Session identifier for correlation and analysis
 
+### Security and Compliance Features
+- **Tamper Prevention**: Immutable log entries with unique identifiers and timestamps
+- **Access Control**: Role-based permissions with admin-only access
+- **Data Retention**: Configurable retention policies with automated cleanup
+- **Archival Storage**: Secure long-term storage for compliance requirements
+- **Export Controls**: Admin-validated exports with proper authentication
+- **Audit Trail Integrity**: Comprehensive tracking of all administrative actions
+
 **Section sources**
 - [audit-log.ts:6-23](file://src/lib/audit-log.ts#L6-L23)
 - [audit-log.ts:138-154](file://src/lib/audit-log.ts#L138-L154)
 - [20260511151100_extend_activity_log.sql:1-9](file://supabase/migrations/20260511151100_extend_activity_log.sql#L1-L9)
 - [AdminAuditTab.tsx:28-38](file://src/components/admin/AdminAuditTab.tsx#L28-L38)
+- [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
+- [20260515170000_audit_log_retention_archived.sql:4-6](file://supabase/migrations/20260515170000_audit_log_retention_archived.sql#L4-L6)

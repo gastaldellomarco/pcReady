@@ -25,6 +25,7 @@ function formatFieldName(key: string) {
     language: "Linguaggio",
     name: "Nome",
     structure: "Struttura",
+    type: "Tipo",
     summary: "Riepilogo",
     version: "Versione",
   };

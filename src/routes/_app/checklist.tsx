@@ -10,8 +10,27 @@ import { useEffect, useState } from "react";
 import queries from "@/lib/queries/checklist";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
-import { DEFAULT_STRUCTURE, type ChecklistStructure } from "@/lib/pcready";
-import { Plus, Trash2, Star, StarOff, Check, X, Pencil, History } from "lucide-react";
+import { DEFAULT_STRUCTURE, type ChecklistItemDef, type ChecklistStructure } from "@/lib/pcready";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Plus, Trash2, Star, StarOff, Check, X, Pencil, History,
+  Copy, Eye, EyeOff, GripVertical, Asterisk, Type, Hash,
+} from "lucide-react";
 import { toast } from "sonner";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
@@ -106,6 +125,27 @@ function ChecklistPage() {
       );
     }
     toast.success("Modello impostato come predefinito");
+  }
+
+  async function duplicate(t: Template) {
+    if (!canEdit) return toast.error("Permessi insufficienti");
+    const payload = {
+      name: "Copia di " + t.name,
+      description: t.description || "",
+      structure: t.structure as unknown as Json,
+      created_by: user!.id,
+    };
+    const data = await createMut.mutateAsync(payload);
+    await createVersion(
+      "checklist_templates",
+      data.id,
+      data as unknown as Record<string, unknown>,
+      undefined,
+      "Modello checklist duplicato",
+      "create",
+    );
+    setActive(data.id);
+    toast.success("Modello duplicato");
   }
 
   async function remove(id: string) {
@@ -232,6 +272,7 @@ function ChecklistPage() {
           onDelete={() => setDeleteTemplateTarget(current)}
           onOpenVersions={() => setVersionHistoryOpen(true)}
           onSetDefault={() => setDefault(current.id)}
+          onDuplicate={() => duplicate(current)}
         />
       ) : (
         <div className="pc-card flex items-center justify-center min-h-[400px]">
@@ -272,6 +313,7 @@ function TemplateEditor({
   onDelete,
   onSetDefault,
   onOpenVersions,
+  onDuplicate,
 }: {
   template: Template;
   canEdit: boolean;
@@ -280,6 +322,7 @@ function TemplateEditor({
   onDelete: () => void;
   onSetDefault: () => void;
   onOpenVersions: () => void;
+  onDuplicate: () => void;
 }) {
   const [name, setName] = useState(template.name);
   const [desc, setDesc] = useState(template.description || "");
@@ -290,12 +333,19 @@ function TemplateEditor({
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [tabLabel, setTabLabel] = useState("");
   const [deleteSectionKey, setDeleteSectionKey] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   useEffect(() => {
     setName(template.name);
     setDesc(template.description || "");
     setStruct(template.structure || {});
     setActiveTab(Object.keys(template.structure || {})[0] || "");
+    setPreviewMode(false);
   }, [template.id]);
 
   function persist(s: ChecklistStructure, changeNote = "Struttura checklist aggiornata") {
@@ -309,7 +359,6 @@ function TemplateEditor({
       { ...struct, [key]: { label: "Nuova sezione", items: [] } },
       "Sezione checklist aggiunta",
     );
-
     setActiveTab(key);
   }
   function renameTab(key: string, label: string) {
@@ -319,7 +368,6 @@ function TemplateEditor({
     const c = { ...struct };
     delete c[key];
     persist(c, "Sezione checklist rimossa");
-
     setActiveTab(Object.keys(c)[0] || "");
   }
   function addItem() {
@@ -334,10 +382,104 @@ function TemplateEditor({
       "Voce checklist aggiornata",
     );
   }
+  function updateItemType(id: string, type: "checkbox" | "text" | "number") {
+    const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, type } : i));
+    persist(
+      { ...struct, [activeTab]: { ...struct[activeTab], items } },
+      "Tipo voce modificato",
+    );
+  }
+  function updateItemRequired(id: string, required: boolean) {
+    const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, required } : i));
+    persist(
+      { ...struct, [activeTab]: { ...struct[activeTab], items } },
+      required ? "Voce impostata come obbligatoria" : "Voce impostata come opzionale",
+    );
+  }
   function removeItem(id: string) {
     const items = struct[activeTab].items.filter((i) => i.id !== id);
     persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist rimossa");
   }
+
+  // -- Drag & drop -----------------------------------------------------------
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeStr = String(active.id);
+    const overStr = String(over.id);
+
+    function parseDragId(id: string): [string, string] {
+      const idx = id.indexOf(":");
+      return [id.slice(0, idx), id.slice(idx + 1)];
+    }
+
+    // Dropped on a section tab (cross-section move to end)
+    if (overStr.startsWith("section:")) {
+      const targetSection = overStr.slice(8);
+      const [srcSec, itemId] = parseDragId(activeStr);
+      if (!struct[srcSec] || !struct[targetSection] || srcSec === targetSection) return;
+      const srcItems = [...struct[srcSec].items];
+      const idx = srcItems.findIndex((i) => i.id === itemId);
+      if (idx === -1) return;
+      const [moved] = srcItems.splice(idx, 1);
+      const tgtItems = [...struct[targetSection].items];
+      tgtItems.push(moved);
+      persist(
+        {
+          ...struct,
+          [srcSec]: { ...struct[srcSec], items: srcItems },
+          [targetSection]: { ...struct[targetSection], items: tgtItems },
+        },
+        "Voce spostata tra sezioni",
+      );
+      return;
+    }
+
+    // Dropped on another item
+    const [srcSec, itemId] = parseDragId(activeStr);
+    const [tgtSec, targetItemId] = parseDragId(overStr);
+
+    if (srcSec === tgtSec) {
+      // Same section - reorder
+      const items = [...struct[srcSec].items];
+      const oldIdx = items.findIndex((i) => i.id === itemId);
+      const newIdx = items.findIndex((i) => i.id === targetItemId);
+      if (oldIdx === -1 || newIdx === -1) return;
+      const reordered = arrayMove(items, oldIdx, newIdx);
+      persist(
+        { ...struct, [srcSec]: { ...struct[srcSec], items: reordered } },
+        "Voce checklist riordinata",
+      );
+    } else {
+      // Different section - move before target
+      const srcItems = [...struct[srcSec].items];
+      const srcIdx = srcItems.findIndex((i) => i.id === itemId);
+      if (srcIdx === -1) return;
+      const [moved] = srcItems.splice(srcIdx, 1);
+      const tgtItems = [...struct[tgtSec].items];
+      const tgtIdx = tgtItems.findIndex((i) => i.id === targetItemId);
+      if (tgtIdx >= 0) tgtItems.splice(tgtIdx, 0, moved);
+      else tgtItems.push(moved);
+      persist(
+        {
+          ...struct,
+          [srcSec]: { ...struct[srcSec], items: srcItems },
+          [tgtSec]: { ...struct[tgtSec], items: tgtItems },
+        },
+        "Voce spostata tra sezioni",
+      );
+    }
+  }
+
+  const itemIds = activeTab && struct[activeTab]
+    ? struct[activeTab].items.map((it) => `${activeTab}:${it.id}`)
+    : [];
 
   return (
     <>
@@ -351,6 +493,28 @@ function TemplateEditor({
             onBlur={() => name !== template.name && onUpdate({ name }, "Nome checklist aggiornato")}
           />
           <div className="ml-auto flex items-center gap-2">
+            {/* Preview toggle */}
+            {canEdit && (
+              <button
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+                onClick={() => setPreviewMode((p) => !p)}
+                title={previewMode ? "Torna a modifica" : "Anteprima"}
+              >
+                {previewMode ? (
+                  <><EyeOff className="w-3 h-3" /> Modifica</>
+                ) : (
+                  <><Eye className="w-3 h-3" /> Anteprima</>
+                )}
+              </button>
+            )}
+
+            {/* Duplicate */}
+            {canEdit && (
+              <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onDuplicate}>
+                <Copy className="w-3 h-3" /> Duplica
+              </button>
+            )}
+
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onOpenVersions}>
               <History className="w-3 h-3" /> Versioni
             </button>
@@ -433,7 +597,7 @@ function TemplateEditor({
                     <button
                       onClick={() => setActiveTab(k)}
                       onDoubleClick={() => {
-                        if (canEdit) {
+                        if (canEdit && !previewMode) {
                           setEditingTab(k);
                           setTabLabel(struct[k].label);
                         }
@@ -453,7 +617,7 @@ function TemplateEditor({
                 </div>
               );
             })}
-            {canEdit && (
+            {canEdit && !previewMode && (
               <button
                 onClick={addTab}
                 className="px-2.5 py-2 text-text3 hover:text-accent"
@@ -472,7 +636,7 @@ function TemplateEditor({
                 <span className="text-[11px] text-text3 uppercase tracking-wider">
                   Voci della sezione
                 </span>
-                {canEdit && (
+                {canEdit && !previewMode && (
                   <button
                     className="pc-btn pc-btn-ghost pc-btn-sm ml-auto"
                     onClick={() => {
@@ -483,7 +647,7 @@ function TemplateEditor({
                     <Pencil className="w-3 h-3" /> Rinomina
                   </button>
                 )}
-                {canEdit && Object.keys(struct).length > 1 && (
+                {canEdit && !previewMode && Object.keys(struct).length > 1 && (
                   <button
                     className="pc-btn pc-btn-danger pc-btn-sm"
                     onClick={() => setDeleteSectionKey(activeTab)}
@@ -492,34 +656,55 @@ function TemplateEditor({
                   </button>
                 )}
               </div>
-              {struct[activeTab].items.map((it) => (
-                <div
-                  key={it.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-[7px]"
-                  style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
-                >
-                  <span
-                    className="w-[17px] h-[17px] rounded flex-shrink-0"
-                    style={{ border: "1.5px solid var(--border2)" }}
-                  />
-                  <input
-                    className="flex-1 bg-transparent outline-none text-[13px]"
-                    value={it.text}
-                    disabled={!canEdit}
-                    onChange={(e) => updateItem(it.id, e.target.value)}
-                  />
-                  {canEdit && (
-                    <button
-                      className="pc-btn-icon"
-                      onClick={() => removeItem(it.id)}
-                      title="Rimuovi"
+
+              {/* DnD Context for sortable items */}
+              <DndContext
+                sensors={sensors}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                  {struct[activeTab].items.map((it) => (
+                    <SortableChecklistItem
+                      key={it.id}
+                      item={it}
+                      sectionKey={activeTab}
+                      canEdit={canEdit}
+                      previewMode={previewMode}
+                      onUpdate={updateItem}
+                      onRemove={removeItem}
+                      onTypeChange={updateItemType}
+                      onRequiredChange={updateItemRequired}
+                    />
+                  ))}
+                </SortableContext>
+
+                <DragOverlay>
+                  {activeDragId ? (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2 rounded-[7px] opacity-80"
+                      style={{
+                        background: "var(--surface2)",
+                        border: "1px solid var(--accent)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      }}
                     >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {canEdit && (
+                      <GripVertical className="w-3 h-3 text-text3" />
+                      <span className="text-[13px]">
+                        {(() => {
+                          const [sec, itId] = activeDragId.includes(":")
+                            ? [activeDragId.split(":")[0], activeDragId.split(":")[1]]
+                            : [activeTab, activeDragId];
+                          const found = struct[sec]?.items.find((i) => i.id === itId);
+                          return found?.text || "Voce";
+                        })()}
+                      </span>
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+
+              {canEdit && !previewMode && (
                 <button
                   onClick={addItem}
                   className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[7px] text-[12px] text-text3 hover:text-accent transition-colors"
@@ -528,8 +713,10 @@ function TemplateEditor({
                   <Plus className="w-3.5 h-3.5" /> Aggiungi voce
                 </button>
               )}
-              {!struct[activeTab].items.length && !canEdit && (
-                <div className="text-center py-6 text-text3 text-[12px]">Nessuna voce</div>
+              {!struct[activeTab].items.length && (
+                <div className="text-center py-6 text-text3 text-[12px]">
+                  {previewMode ? "Nessuna voce" : "Nessuna voce. Aggiungine una con il pulsante sopra."}
+                </div>
               )}
             </>
           )}
@@ -551,5 +738,140 @@ function TemplateEditor({
         }}
       />
     </>
+  );
+}
+
+// --- Sortable checklist item row ------------------------------------------
+function SortableChecklistItem({
+  item,
+  sectionKey,
+  canEdit,
+  previewMode,
+  onUpdate,
+  onRemove,
+  onTypeChange,
+  onRequiredChange,
+}: {
+  item: ChecklistItemDef;
+  sectionKey: string;
+  canEdit: boolean;
+  previewMode: boolean;
+  onUpdate: (id: string, text: string) => void;
+  onRemove: (id: string) => void;
+  onTypeChange: (id: string, type: "checkbox" | "text" | "number") => void;
+  onRequiredChange: (id: string, required: boolean) => void;
+}) {
+  const dndId = `${sectionKey}:${item.id}`;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: dndId });
+
+  const inEdit = canEdit && !previewMode;
+  const itemType = item.type || "checkbox";
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        background: "var(--surface2)",
+        border: "1px solid var(--border)",
+      }}
+      className="flex items-center gap-2 px-3 py-2 rounded-[7px]"
+    >
+      {/* Drag handle */}
+      {inEdit && (
+        <button
+          className="pc-btn-icon cursor-grab"
+          {...attributes}
+          {...listeners}
+          title="Trascina per riordinare"
+        >
+          <GripVertical className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Type icon */}
+      {itemType === "checkbox" && (
+        <span
+          className="w-[17px] h-[17px] rounded flex-shrink-0"
+          style={{ border: "1.5px solid var(--border2)" }}
+        />
+      )}
+      {itemType === "text" && <Type className="w-3.5 h-3.5 text-text3 flex-shrink-0" />}
+      {itemType === "number" && <Hash className="w-3.5 h-3.5 text-text3 flex-shrink-0" />}
+
+      {/* Item text or preview input */}
+      {inEdit ? (
+        <input
+          className="flex-1 bg-transparent outline-none text-[13px]"
+          value={item.text}
+          onChange={(e) => onUpdate(item.id, e.target.value)}
+        />
+      ) : itemType === "checkbox" ? (
+        <span className="flex-1 text-[13px]">{item.text}</span>
+      ) : itemType === "text" ? (
+        <div className="flex-1 flex items-center">
+          <input
+            className="w-full bg-transparent outline-none text-[13px] border-b border-dashed border-border2 px-1 pb-0.5"
+            placeholder="Inserisci testo..."
+            disabled
+            value=""
+          />
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center">
+          <input
+            className="bg-transparent outline-none text-[13px] border-b border-dashed border-border2 px-1 pb-0.5 max-w-[100px]"
+            placeholder="0"
+            disabled
+            value=""
+          />
+        </div>
+      )}
+
+      {/* Required badge (preview) */}
+      {!inEdit && item.required && (
+        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title="Obbligatoria">*</span>
+      )}
+
+      {/* Required toggle (edit) */}
+      {inEdit && (
+        <button
+          className={`pc-btn-icon ${item.required ? "text-red-500" : "opacity-30"}`}
+          onClick={() => onRequiredChange(item.id, !item.required)}
+          title={item.required ? "Obbligatoria" : "Non obbligatoria"}
+        >
+          <Asterisk className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Type selector (edit) */}
+      {inEdit && (
+        <select
+          className="pc-input !py-0 !text-[11px] w-[90px] flex-shrink-0"
+          value={itemType}
+          onChange={(e) => onTypeChange(item.id, e.target.value as "checkbox" | "text" | "number")}
+        >
+          <option value="checkbox">Checkbox</option>
+          <option value="text">Testo</option>
+          <option value="number">Numero</option>
+        </select>
+      )}
+
+      {/* Remove button */}
+      {inEdit && (
+        <button className="pc-btn-icon flex-shrink-0" onClick={() => onRemove(item.id)} title="Rimuovi">
+          <Trash2 className="w-3 h-3" />
+        </button>
+      )}
+    </div>
   );
 }

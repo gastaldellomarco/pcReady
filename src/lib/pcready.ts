@@ -111,6 +111,8 @@ export const CHECKLIST_TABS: { key: ChecklistKey; label: string }[] = [
 export interface ChecklistItemDef {
   id: string;
   text: string;
+  type?: "checkbox" | "text" | "number";
+  required?: boolean;
 }
 export interface ChecklistTabDef {
   label: string;

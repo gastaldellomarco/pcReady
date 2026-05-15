@@ -6,6 +6,8 @@ import { DEFAULT_STRUCTURE } from "@/lib/pcready";
 export const ChecklistItemDefSchema = z.object({
   id: z.string(),
   text: z.string(),
+  type: z.enum(["checkbox", "text", "number"]).optional(),
+  required: z.boolean().optional(),
 });
 
 /** Tab/sezione della checklist. */
