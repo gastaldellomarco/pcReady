@@ -1,4 +1,5 @@
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
+import type { TriggerDef, ConditionDef, ActionDef, ScheduleDef } from "@/types/automation";
 
 export default function ReviewStep({
   name,
@@ -15,10 +16,10 @@ export default function ReviewStep({
 }: {
   name: string;
   description: string | null;
-  trigger: any;
-  conditions: any[];
-  actions: any[];
-  schedule: any;
+  trigger: TriggerDef | null;
+  conditions: ConditionDef[];
+  actions: ActionDef[];
+  schedule: ScheduleDef | null;
   summary: string;
   category?: string | null;
   onChangeName: (s: string) => void;

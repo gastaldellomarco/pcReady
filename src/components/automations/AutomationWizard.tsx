@@ -7,10 +7,13 @@ import ConditionsStep from "./steps/ConditionsStep";
 import ActionsStep from "./steps/ActionsStep";
 import ScheduleStep from "./steps/ScheduleStep";
 import ReviewStep from "./steps/ReviewStep";
-
-export type TriggerDef = { type: string; config?: Record<string, any> };
-export type ConditionDef = { id: string; type: string; config?: Record<string, any> };
-export type ActionDef = { id: string; type: string; config?: Record<string, any> };
+import type {
+  TriggerDef,
+  ConditionDef,
+  ActionDef,
+  ScheduleDef,
+  WizardFlowPayload,
+} from "@/types/automation";
 
 const STEPS = [
   { label: "Trigger", description: "Evento scatenante" },
@@ -26,9 +29,9 @@ export default function AutomationWizard({
   onSave,
   onTest,
 }: {
-  initial?: any;
+  initial?: WizardFlowPayload & { version?: number };
   onCancel: () => void;
-  onSave: (flow: any) => void;
+  onSave: (flow: WizardFlowPayload) => void;
   onTest?: () => void;
 }) {
   const [step, setStep] = useState(0);
@@ -40,7 +43,9 @@ export default function AutomationWizard({
     initial?.conditions_definition ?? [],
   );
   const [actions, setActions] = useState<ActionDef[]>(initial?.actions_definition ?? []);
-  const [schedule, setSchedule] = useState<any>(initial?.schedule_definition ?? null);
+  const [schedule, setSchedule] = useState<ScheduleDef | null>(
+    initial?.schedule_definition ?? null,
+  );
   const [changeNote, setChangeNote] = useState(initial?.changeNote ?? "");
   const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>(
     {},

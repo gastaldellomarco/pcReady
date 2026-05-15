@@ -31,23 +31,11 @@ export function AutomationDetailTabs({
   logsOpen: boolean;
   onToggleLogs: () => void;
 }) {
-  const wizard = rule.flow_definition?.meta?.wizard as Record<string, unknown> | undefined;
-  const triggerDef = wizard?.trigger_definition as
-    | { type?: string; config?: Record<string, unknown> }
-    | undefined;
-  const conditionsDef = (wizard?.conditions_definition ?? []) as {
-    type?: string;
-    config?: Record<string, unknown>;
-    id?: string;
-  }[];
-  const actionsDef = (wizard?.actions_definition ?? []) as {
-    type?: string;
-    config?: Record<string, unknown>;
-    id?: string;
-  }[];
-  const scheduleDef = wizard?.schedule_definition as
-    | { type?: string; cron?: string }
-    | undefined;
+  const wizard = rule.flow_definition?.meta?.wizard;
+  const triggerDef = wizard?.trigger_definition;
+  const conditionsDef = wizard?.conditions_definition ?? [];
+  const actionsDef = wizard?.actions_definition ?? [];
+  const scheduleDef = wizard?.schedule_definition;
 
   const actionLabels: Record<string, string> = {
     send_email: "Invia email",

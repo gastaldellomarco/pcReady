@@ -1,4 +1,5 @@
 import { NOTIFICATION_TYPES } from "@/lib/notifications";
+import type { ActionDef, ActionType } from "@/types/automation";
 
 function uid(prefix = "a") {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -47,8 +48,8 @@ export default function ActionsStep({
   value,
   onChange,
 }: {
-  value: any[];
-  onChange: (v: any[]) => void;
+  value: ActionDef[];
+  onChange: (v: ActionDef[]) => void;
 }) {
   const addAction = () => {
     onChange([
@@ -65,7 +66,7 @@ export default function ActionsStep({
     );
   }
 
-  function setType(id: string, type: string) {
+  function setType(id: string, type: ActionType) {
     onChange(
       (value || []).map((c) =>
         c.id === id ? { ...c, type, config: defaultConfigForType(type) } : c,
@@ -95,7 +96,7 @@ export default function ActionsStep({
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={a.type}
-                onChange={(e) => setType(a.id, e.target.value)}
+                onChange={(e) => setType(a.id, e.target.value as ActionType)}
                 className="rounded-md border px-2 py-1 text-sm"
               >
                 {ACTION_TYPES.map((opt) => (

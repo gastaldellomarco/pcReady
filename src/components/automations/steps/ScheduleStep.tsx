@@ -1,9 +1,11 @@
+import type { ScheduleDef } from "@/types/automation";
+
 export default function ScheduleStep({
   value,
   onChange,
 }: {
-  value: any;
-  onChange: (v: any) => void;
+  value: ScheduleDef | null;
+  onChange: (v: ScheduleDef) => void;
 }) {
   return (
     <div>
@@ -15,7 +17,7 @@ export default function ScheduleStep({
         <select
           className="ml-2 rounded-md border px-2 py-1"
           value={value?.type ?? "none"}
-          onChange={(e) => onChange({ type: e.target.value })}
+          onChange={(e) => onChange({ type: e.target.value as ScheduleDef["type"] })}
         >
           <option value="none">Nessuna</option>
           <option value="cron">Cron</option>

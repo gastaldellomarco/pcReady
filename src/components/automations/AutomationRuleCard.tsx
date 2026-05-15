@@ -107,20 +107,10 @@ export function AutomationRuleCard({
   const totalExecutions = (stats?.success ?? 0) + (stats?.error ?? 0);
 
   // Extract summary from wizard
-  const wizard = rule.flow_definition?.meta?.wizard as
-    | Record<string, unknown>
-    | undefined;
-  const triggerDef = wizard?.trigger_definition as
-    | { type?: string; config?: Record<string, unknown> }
-    | undefined;
-  const conditionsDef = (wizard?.conditions_definition ?? []) as {
-    type?: string;
-    config?: Record<string, unknown>;
-  }[];
-  const actionsDef = (wizard?.actions_definition ?? []) as {
-    type?: string;
-    config?: Record<string, unknown>;
-  }[];
+  const wizard = rule.flow_definition?.meta?.wizard;
+  const triggerDef = wizard?.trigger_definition;
+  const conditionsDef = wizard?.conditions_definition ?? [];
+  const actionsDef = wizard?.actions_definition ?? [];
 
   const actionLabels: Record<string, string> = {
     send_email: "Invia email",

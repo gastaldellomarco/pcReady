@@ -14,6 +14,44 @@ import type {
   HealthStatus,
   RunLogStatus,
 } from "@/lib/automation-runs";
+import type {
+  AutomationFlow,
+} from "@/types/automation";
+
+// ─── Block Types for execution pipeline ───────────────────────────────
+
+/** A single action record extracted from flow config or wizard. */
+interface FlowAction {
+  id?: string;
+  type?: string;
+  action?: string;
+  label?: string;
+  config?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  force_error?: unknown;
+}
+
+/** A dry-run / execution block from the flow graph. */
+interface DryRunBlock {
+  id?: string;
+  type?: "trigger" | "condition" | "action" | string;
+  label?: string;
+  name?: string;
+  action?: string;
+  field?: string;
+  condition?: string;
+  expression?: string;
+  config?: Record<string, unknown>;
+  data?: {
+    type?: string;
+    label?: string;
+    config?: Record<string, unknown>;
+    actionType?: string;
+  };
+  result?: unknown;
+  expected_result?: unknown;
+  force_error?: unknown;
+}
 
 export { supabaseAdmin };
 
@@ -276,7 +314,7 @@ export function computeHealth(logs: Pick<AutomationRunLog, "status">[]): HealthS
   return "degraded";
 }
 
-function extractActions(flow: any) {
+function extractActions(flow: Partial<AutomationFlow>): FlowAction[] {
   const fromColumn = Array.isArray(flow.actions_definition) ? flow.actions_definition : null;
   if (fromColumn?.length) return fromColumn;
 
@@ -298,7 +336,10 @@ type GraphExecutionBlock =
   | { kind: "condition"; node: any }
   | { kind: "action"; action: any };
 
-function extractGraphExecutionBlocks(flow: any, triggerPayload: Record<string, any>) {
+function extractGraphExecutionBlocks(
+  flow: Partial<AutomationFlow>,
+  triggerPayload: Record<string, unknown>,
+): GraphExecutionBlock[] {
   const nodes = Array.isArray(flow.flow_definition?.nodes) ? flow.flow_definition.nodes : [];
   const edges = Array.isArray(flow.flow_definition?.edges) ? flow.flow_definition.edges : [];
   if (!nodes.some((node: any) => node.data?.type === "condition" || node.type === "condition")) {
@@ -311,7 +352,7 @@ function extractGraphExecutionBlocks(flow: any, triggerPayload: Record<string, a
     nodes[0];
   const blocks: GraphExecutionBlock[] = [];
   const visited = new Set<string>();
-  let current = trigger;
+  let current: any = trigger;
 
   while (current && !visited.has(String(current.id))) {
     visited.add(String(current.id));
@@ -403,11 +444,17 @@ function getPath(source: Record<string, any>, path: string) {
   return path.split(".").reduce<any>((current, key) => current?.[key], source);
 }
 
-function extractDryRunBlocks(flow: any) {
-  const blocks: any[] = [];
-  const trigger =
+function extractDryRunBlocks(flow: Partial<AutomationFlow>): DryRunBlock[] {
+  const blocks: DryRunBlock[] = [];
+  const triggerDef =
     flow.trigger_definition || flow.flow_definition?.meta?.wizard?.trigger_definition || null;
-  if (trigger) blocks.push({ type: "trigger", ...trigger });
+  if (triggerDef) {
+    blocks.push({
+      ...triggerDef,
+      type: "trigger" as const,
+      label: triggerDef.type,
+    });
+  }
 
   const wizardConditions = flow.flow_definition?.meta?.wizard?.conditions_definition;
   if (Array.isArray(wizardConditions)) {
@@ -425,7 +472,7 @@ function extractDryRunBlocks(flow: any) {
   return blocks;
 }
 
-function simulateBlock(block: any, index: number): DryRunStep {
+function simulateBlock(block: DryRunBlock, index: number): DryRunStep {
   const type = normalizeBlockType(block);
   const label = String(
     block.label || block.name || block.action || block.type || block.data?.label || type,
@@ -473,7 +520,7 @@ function simulateBlock(block: any, index: number): DryRunStep {
   };
 }
 
-function normalizeBlockType(block: any): DryRunStep["type"] {
+function normalizeBlockType(block: DryRunBlock): DryRunStep["type"] {
   if (block.type === "trigger" || block.type === "condition" || block.type === "action") {
     return block.type;
   }
@@ -487,7 +534,7 @@ function normalizeBlockType(block: any): DryRunStep["type"] {
   return "action";
 }
 
-function simulateAction(action: any, index: number): ActionResult {
+function simulateAction(action: FlowAction, index: number): ActionResult {
   const actionName = String(
     action.label || action.type || action.action || action.data?.label || `Action ${index + 1}`,
   );
@@ -988,10 +1035,10 @@ async function webhookAction(
 }
 
 async function executeAction(
-  action: any,
+  action: FlowAction,
   index: number,
   triggeredBy: string,
-  triggerPayload: Record<string, any>,
+  triggerPayload: Record<string, unknown>,
 ): Promise<ActionResult> {
   const rawType = String(
     action.type || action.action || action.data?.label || `action_${index + 1}`,
@@ -1001,7 +1048,7 @@ async function executeAction(
   const actionId = action.id ? String(action.id) : undefined;
   const config = action.config ?? action.data?.config ?? {};
 
-  if (config.force_error || action.force_error) {
+  if ((config as Record<string, unknown>).force_error || action.force_error) {
     return {
       action: actionLabel,
       blockId: actionId,

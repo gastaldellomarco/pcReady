@@ -8,6 +8,11 @@ import {
   AutomationRuleSchema,
   AutomationRunLogSchema,
   type AutomationRule,
+  type AutomationFlow,
+  type AutomationFlowDefinition,
+  type WizardFlowPayload,
+  type ActionDef,
+  type FlowDefinitionMeta,
 } from "@/types/automation";
 import {
   getAutomationRunStats,
@@ -83,7 +88,13 @@ export function useAutomationRules() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
-  const [AutomationBuilderComp, setAutomationBuilderComp] = useState<any>(null);
+  const [AutomationBuilderComp, setAutomationBuilderComp] = useState<
+    React.ComponentType<{
+      initialFlow?: { id: string } | undefined;
+      onSave?: () => void;
+      onCancel?: () => void;
+    }> | null
+  >(null);
   const [guidedMode, setGuidedMode] = useState(true);
   const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
 
@@ -114,7 +125,7 @@ export function useAutomationRules() {
     useDuplicateAutomation,
     useArchiveAutomation,
     useToggleAutomation,
-  } = queries as any;
+  } = queries;
   const listQuery = useAutomationFlows();
   const createMut = useCreateAutomation();
   const updateMut = useUpdateAutomation();
@@ -185,15 +196,15 @@ export function useAutomationRules() {
     };
   }, [builderOpen, AutomationBuilderComp]);
 
-  async function saveWizardFlow(flow: any) {
+  async function saveWizardFlow(flow: WizardFlowPayload) {
     if (!isAdmin) return toast.error("Solo amministratori");
     function uid() {
       return randomUUID();
     }
 
-    function buildFlowDefinition(flowObj: any) {
+    function buildFlowDefinition(flowObj: WizardFlowPayload) {
       const triggerId = `trigger-${uid()}`;
-      const actionNodes = (flowObj.actions_definition || []).map((a: any, idx: number) => ({
+      const actionNodes = (flowObj.actions_definition || []).map((a: ActionDef, idx: number) => ({
         id: `action-${uid()}`,
         type: "action",
         data: { label: a.type, config: a.config },
@@ -208,12 +219,12 @@ export function useAutomationRules() {
         },
         ...actionNodes,
       ];
-      const edges = actionNodes.map((an: any) => ({
+      const edges = actionNodes.map((an: { id: string }) => ({
         id: `e-${triggerId}-${an.id}`,
         source: triggerId,
         target: an.id,
       }));
-      const meta = {
+      const meta: FlowDefinitionMeta = {
         wizard: flowObj,
         summary: flowObj.summary,
         migrated_at: new Date().toISOString(),
@@ -224,30 +235,30 @@ export function useAutomationRules() {
     const { data: currentUserData } = await supabase.auth.getUser();
     const currentUserId = currentUserData?.user?.id ?? null;
 
-    const payload = {
+    const payload: Partial<AutomationFlow> = {
       name: flow.name || "Nuova automazione",
-      description: flow.description || null,
-      category: flow.category || null,
+      description: flow.description ?? null,
+      category: flow.category ?? null,
       active: false,
       version: (editingRule?.version ?? 0) + 1,
       flow_definition: buildFlowDefinition(flow),
       created_by: currentUserId,
       updated_by: currentUserId,
-    } as any;
+    };
 
     try {
       if (editingRule) {
-        const previousSnapshot = editingRule as unknown as Record<string, unknown>;
-        const data = await updateMut.mutateAsync({ id: editingRule.id, payload });
+        const previousSnapshot = editingRule;
+        const data = await updateMut.mutateAsync({ id: editingRule.id, payload: payload as Partial<AutomationFlow> });
         await createVersion(
           "automation_flows",
           editingRule.id,
           data as unknown as Record<string, unknown>,
           {
-            name: { from: previousSnapshot.name, to: payload.name },
-            description: { from: previousSnapshot.description, to: payload.description },
-            category: { from: previousSnapshot.category, to: payload.category },
-            version: { from: previousSnapshot.version, to: payload.version },
+            name: { from: previousSnapshot.name, to: payload.name ?? "" },
+            description: { from: previousSnapshot.description, to: payload.description ?? null },
+            category: { from: previousSnapshot.category, to: payload.category ?? null },
+            version: { from: previousSnapshot.version, to: payload.version ?? 1 },
             flow_definition: {
               from: previousSnapshot.flow_definition,
               to: payload.flow_definition,
@@ -272,13 +283,17 @@ export function useAutomationRules() {
       setBuilderOpen(false);
     } catch (err) {
       console.error("Save wizard flow failed:", err);
-      const e = err as any;
       const userMsg =
-        e && typeof e === "object" && (e.message || e.error || e.details)
-          ? e.message || e.error || e.details
+        err && typeof err === "object" && err !== null
+          ? String(
+              (err as Record<string, unknown>).message ||
+                (err as Record<string, unknown>).error ||
+                (err as Record<string, unknown>).details ||
+                "",
+            )
           : err instanceof Error
             ? err.message
-            : JSON.stringify(err);
+            : String(err);
       toast.error(userMsg || "Errore salvataggio");
     }
   }
@@ -331,9 +346,11 @@ export function useAutomationRules() {
         .select("flow_definition")
         .eq("id", rule.id)
         .single();
-      const fd: any = fdata?.flow_definition ?? {};
-      const meta: any = fd.meta ?? {};
+      const fd: AutomationFlowDefinition =
+        (fdata?.flow_definition as AutomationFlowDefinition) ?? {};
+      const meta: FlowDefinitionMeta = (fd.meta as FlowDefinitionMeta) ?? {};
       meta.archived = true;
+      meta.archived_at = new Date().toISOString();
       fd.meta = meta;
       await archiveMut.mutateAsync({ id: rule.id, fd });
       await createVersion(

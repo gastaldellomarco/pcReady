@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Ticket, ClipboardCheck, Clock, MousePointerClick } from "lucide-react";
+import type { TriggerDef } from "@/types/automation";
 
 const TRIGGER_OPTIONS = [
   {
@@ -48,8 +49,8 @@ export default function TriggerStep({
   value,
   onChange,
 }: {
-  value: any;
-  onChange: (v: any) => void;
+  value: TriggerDef | null;
+  onChange: (v: TriggerDef) => void;
 }) {
   return (
     <div>
@@ -66,7 +67,7 @@ export default function TriggerStep({
             <button
               key={opt.value}
               type="button"
-              onClick={() => onChange({ type: opt.value, config: {} })}
+              onClick={() => onChange({ type: opt.value as TriggerDef["type"], config: {} })}
               className={cn(
                 "flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all",
                 isSelected
@@ -107,7 +108,7 @@ export default function TriggerStep({
           <label className="text-sm font-medium">Espressione Cron</label>
           <input
             className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
-            value={value.config?.cron ?? ""}
+            value={(value.config?.cron as string) ?? ""}
             onChange={(e) =>
               onChange({
                 ...value,

@@ -13,6 +13,7 @@ import { DryRunDialog } from "@/components/automations/DryRunDialog";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { AutomationRuleCard } from "@/components/automations/AutomationRuleCard";
+import type { WizardFlowPayload } from "@/types/automation";
 import { AutomationKpiHeader } from "@/components/automations/AutomationKpiHeader";
 import { GlobalRunLogsPanel } from "@/components/automations/GlobalRunLogsPanel";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
@@ -305,10 +306,10 @@ function AutomationsPage() {
               <AutomationWizard
                 initial={
                   editingRule
-                    ? {
+                    ? ({
                         ...editingRule,
                         ...(editingRule.flow_definition?.meta?.wizard ?? {}),
-                      }
+                      } as WizardFlowPayload & { version?: number })
                     : undefined
                 }
                 onSave={saveWizardFlow}

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Plus, X, ArrowUp, ArrowDown } from "lucide-react";
+import type { ConditionDef, ConditionType } from "@/types/automation";
 
 function uid(prefix = "c") {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -21,8 +22,8 @@ export default function ConditionsStep({
   value,
   onChange,
 }: {
-  value: any[];
-  onChange: (v: any[]) => void;
+  value: ConditionDef[];
+  onChange: (v: ConditionDef[]) => void;
 }) {
   const addCondition = () => {
     onChange([
@@ -31,7 +32,7 @@ export default function ConditionsStep({
     ]);
   };
 
-  function update(id: string, patch: any) {
+  function update(id: string, patch: Partial<ConditionDef>) {
     onChange((value || []).map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
 
@@ -84,7 +85,7 @@ export default function ConditionsStep({
             >
               <select
                 value={c.type}
-                onChange={(e) => update(c.id, { type: e.target.value })}
+                onChange={(e) => update(c.id, { type: e.target.value as ConditionType })}
                 className="rounded-md border border-border px-2 py-1.5 text-xs bg-background"
               >
                 {OPERATORS.map((op) => (

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { AutomationRule, AutomationFlow, AutomationFlowDefinition } from "@/types/automation";
 
 export async function fetchAutomationFlows() {
   const { data, error } = await supabase
@@ -9,7 +10,7 @@ export async function fetchAutomationFlows() {
     )
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as any[];
+  return (data ?? []) as unknown as AutomationRule[];
 }
 
 export function useAutomationFlows() {
@@ -34,10 +35,10 @@ export function useAutomationFlowDefinition(id: string | null) {
   });
 }
 
-async function createAutomation(payload: Record<string, any>) {
+async function createAutomation(payload: Partial<AutomationFlow>) {
   const { data, error } = await supabase
     .from("automation_flows")
-    .insert(payload as any)
+    .insert(payload as never)
     .select(
       "id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary",
     )
@@ -46,10 +47,10 @@ async function createAutomation(payload: Record<string, any>) {
   return data;
 }
 
-async function updateAutomation(id: string, payload: Record<string, any>) {
+async function updateAutomation(id: string, payload: Partial<AutomationFlow>) {
   const { data, error } = await supabase
     .from("automation_flows")
-    .update(payload as any)
+    .update(payload as never)
     .eq("id", id)
     .select(
       "id, name, description, category, active, version, updated_at, flow_definition, last_run_at, summary",
@@ -88,10 +89,10 @@ async function duplicateAutomation(id: string, name: string) {
   return data?.id;
 }
 
-async function archiveAutomation(id: string, fd: any) {
+async function archiveAutomation(id: string, fd: AutomationFlowDefinition) {
   const { error } = await supabase
     .from("automation_flows")
-    .update({ active: false, flow_definition: fd })
+    .update({ active: false, flow_definition: fd as never })
     .eq("id", id);
   if (error) throw error;
   return true;
@@ -111,7 +112,7 @@ async function toggleAutomationActive(id: string, active: boolean) {
 export function useCreateAutomation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Record<string, any>) => createAutomation(payload),
+    mutationFn: (payload: Partial<AutomationFlow>) => createAutomation(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["automation_flows"] }),
   });
 }
@@ -119,7 +120,7 @@ export function useCreateAutomation() {
 export function useUpdateAutomation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Record<string, any> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<AutomationFlow> }) =>
       updateAutomation(id, payload),
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: ["automation_flows"] });
@@ -147,7 +148,7 @@ export function useDuplicateAutomation() {
 export function useArchiveAutomation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, fd }: { id: string; fd: any }) => archiveAutomation(id, fd),
+    mutationFn: ({ id, fd }: { id: string; fd: AutomationFlowDefinition }) => archiveAutomation(id, fd),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["automation_flows"] }),
   });
 }
