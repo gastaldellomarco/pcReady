@@ -43,12 +43,41 @@ const TIMEZONES = [
 ];
 
 const NOTIFICATION_FIELDS = [
-  ["notify_ticket_assigned", "Ticket assegnati"],
-  ["notify_ticket_status_changed", "Cambio stato ticket"],
-  ["notify_automation_failed", "Automazioni fallite"],
-  ["notify_device_status_changed", "Cambio stato dispositivi"],
-  ["notify_checklist_completed", "Checklist completate"],
-  ["notify_mentions", "Menzioni"],
+  {
+    key: "notify_ticket_assigned" as const,
+    emailKey: "email_notify_ticket_assigned" as const,
+    label: "Ticket assegnati",
+  },
+  {
+    key: "notify_ticket_status_changed" as const,
+    emailKey: "email_notify_ticket_status_changed" as const,
+    label: "Cambio stato ticket",
+  },
+  {
+    key: "notify_ticket_completed" as const,
+    emailKey: "email_notify_ticket_completed" as const,
+    label: "Ticket completati",
+  },
+  {
+    key: "notify_automation_failed" as const,
+    emailKey: "email_notify_automation_failed" as const,
+    label: "Automazioni fallite",
+  },
+  {
+    key: "notify_device_status_changed" as const,
+    emailKey: "email_notify_device_status_changed" as const,
+    label: "Cambio stato dispositivi",
+  },
+  {
+    key: "notify_checklist_completed" as const,
+    emailKey: "email_notify_checklist_completed" as const,
+    label: "Checklist completate",
+  },
+  {
+    key: "notify_mentions" as const,
+    emailKey: "email_notify_mentions" as const,
+    label: "Menzioni",
+  },
 ] as const;
 
 export const Route = createFileRoute("/_app/profile")({
@@ -95,6 +124,16 @@ function ProfilePage() {
     notify_device_status_changed: true,
     notify_checklist_completed: true,
     notify_mentions: true,
+    notify_ticket_completed: true,
+    email_notify_ticket_assigned: true,
+    email_notify_ticket_status_changed: true,
+    email_notify_ticket_completed: true,
+    email_notify_automation_failed: true,
+    email_notify_device_status_changed: true,
+    email_notify_checklist_completed: true,
+    email_notify_mentions: true,
+    notification_digest: "immediate",
+    webhook_url: "",
   });
   const [password, setPassword] = useState({ next: "", confirm: "" });
 
@@ -123,6 +162,16 @@ function ProfilePage() {
           notify_device_status_changed: data.notify_device_status_changed,
           notify_checklist_completed: data.notify_checklist_completed,
           notify_mentions: data.notify_mentions,
+          notify_ticket_completed: data.notify_ticket_completed,
+          email_notify_ticket_assigned: data.email_notify_ticket_assigned,
+          email_notify_ticket_status_changed: data.email_notify_ticket_status_changed,
+          email_notify_ticket_completed: data.email_notify_ticket_completed,
+          email_notify_automation_failed: data.email_notify_automation_failed,
+          email_notify_device_status_changed: data.email_notify_device_status_changed,
+          email_notify_checklist_completed: data.email_notify_checklist_completed,
+          email_notify_mentions: data.email_notify_mentions,
+          notification_digest: data.notification_digest,
+          webhook_url: data.webhook_url || "",
         });
       })
       .catch((error) => setLoadError(errorMessage(error, "Impossibile caricare il profilo")))
@@ -236,7 +285,7 @@ function ProfilePage() {
       await saveProfile({
         data: {
           accessToken: session.access_token,
-          profile: notifications,
+          profile: notifications as any,
         },
       });
       toast.success("Preferenze notifiche salvate");
@@ -452,41 +501,155 @@ function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="mt-5">
-          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle>Notifiche</CardTitle>
-              <CardDescription>
-                Preferenze personali usate dal sistema notifiche in-app.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-3">
-                {NOTIFICATION_FIELDS.map(([key, label]) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between rounded-md border px-3 py-2"
-                  >
-                    <Label htmlFor={key}>{label}</Label>
-                    <Switch
-                      id={key}
-                      checked={notifications[key]}
-                      onCheckedChange={(checked) =>
-                        setNotifications((current) => ({ ...current, [key]: checked }))
-                      }
-                    />
+          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Preferenze notifiche</CardTitle>
+                <CardDescription>
+                  Scegli per quali eventi ricevere notifiche e attraverso quali canali.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Eventi</h4>
+                  <div className="rounded-md border">
+                    <div
+                      className="grid grid-cols-[1fr_80px_80px] gap-4 px-3 py-2 border-b text-xs font-medium text-text3 uppercase tracking-wider"
+                      style={{ background: "var(--surface2)" }}
+                    >
+                      <span>Evento</span>
+                      <span className="text-center">In-app</span>
+                      <span className="text-center">Email</span>
+                    </div>
+                    {NOTIFICATION_FIELDS.map((field) => (
+                      <div
+                        key={field.key}
+                        className="grid grid-cols-[1fr_80px_80px] gap-4 items-center px-3 py-2.5 border-b last:border-0"
+                      >
+                        <Label htmlFor={field.key} className="text-sm cursor-pointer">
+                          {field.label}
+                        </Label>
+                        <div className="flex justify-center">
+                          <Switch
+                            id={field.key}
+                            checked={notifications[field.key]}
+                            onCheckedChange={(checked) =>
+                              setNotifications((current) => ({
+                                ...current,
+                                [field.key]: checked,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex justify-center">
+                          <Switch
+                            id={field.emailKey}
+                            checked={notifications[field.emailKey]}
+                            onCheckedChange={(checked) =>
+                              setNotifications((current) => ({
+                                ...current,
+                                [field.emailKey]: checked,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                Issue collegata: notifiche in-app real-time con inbox, badge e preferenze utente
-                #57.
-              </div>
-              <Button onClick={submitNotifications} disabled={saving === "notifications"}>
-                <Save className="mr-2 h-4 w-4" />
-                {saving === "notifications" ? "Salvataggio..." : "Salva preferenze"}
-              </Button>
-            </CardContent>
-          </Card>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Frequenza digest</h4>
+                  <Select
+                    value={notifications.notification_digest}
+                    onValueChange={(value) =>
+                      setNotifications((current) => ({
+                        ...current,
+                        notification_digest: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="immediate">Immediata</SelectItem>
+                      <SelectItem value="15min">Ogni 15 minuti</SelectItem>
+                      <SelectItem value="hourly">Ogni ora</SelectItem>
+                      <SelectItem value="daily">Giornaliera</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-text3 mt-1.5">
+                    Raggruppa le notifiche e inviale secondo la frequenza scelta.
+                  </p>
+                </div>
+
+                <Button onClick={submitNotifications} disabled={saving === "notifications"}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving === "notifications" ? "Salvataggio..." : "Salva preferenze"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Canali di notifica</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-text3 uppercase tracking-wider">Email</Label>
+                    <p className="text-sm mt-0.5">{profile.email}</p>
+                    <p className="text-xs text-text3">Già configurata nel profilo.</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="webhook_url" className="text-xs text-text3 uppercase tracking-wider">
+                      Webhook URL
+                    </Label>
+                    <Input
+                      id="webhook_url"
+                      value={notifications.webhook_url}
+                      onChange={(event) =>
+                        setNotifications((current) => ({
+                          ...current,
+                          webhook_url: event.target.value,
+                        }))
+                      }
+                      placeholder="https://hooks.example.com/notify"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-text3 mt-1">
+                      Opzionale. Le notifiche verranno inviate anche via webhook.
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-text3 uppercase tracking-wider">
+                      Notifiche push (browser)
+                    </Label>
+                    <p className="text-sm mt-0.5 text-text2">
+                      Supportate dal browser tramite notifiche in-app.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Ultimo invio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {profile.last_notification_sent_at ? (
+                    <p className="text-sm">{fmtDateTime(profile.last_notification_sent_at)}</p>
+                  ) : (
+                    <p className="text-sm text-text3">Nessuna notifica inviata.</p>
+                  )}
+                  <p className="text-xs text-text3 mt-1">
+                    Data e ora dell'ultima notifica inviata.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

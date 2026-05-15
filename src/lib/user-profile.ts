@@ -17,6 +17,17 @@ export interface UserProfile {
   notify_device_status_changed: boolean;
   notify_checklist_completed: boolean;
   notify_mentions: boolean;
+  notify_ticket_completed: boolean;
+  email_notify_ticket_assigned: boolean;
+  email_notify_ticket_status_changed: boolean;
+  email_notify_ticket_completed: boolean;
+  email_notify_automation_failed: boolean;
+  email_notify_device_status_changed: boolean;
+  email_notify_checklist_completed: boolean;
+  email_notify_mentions: boolean;
+  notification_digest: string;
+  webhook_url: string | null;
+  last_notification_sent_at: string | null;
   password_set: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -46,6 +57,16 @@ const ProfileUpdateSchema = z.object({
   notify_device_status_changed: z.boolean().optional(),
   notify_checklist_completed: z.boolean().optional(),
   notify_mentions: z.boolean().optional(),
+  notify_ticket_completed: z.boolean().optional(),
+  email_notify_ticket_assigned: z.boolean().optional(),
+  email_notify_ticket_status_changed: z.boolean().optional(),
+  email_notify_ticket_completed: z.boolean().optional(),
+  email_notify_automation_failed: z.boolean().optional(),
+  email_notify_device_status_changed: z.boolean().optional(),
+  email_notify_checklist_completed: z.boolean().optional(),
+  email_notify_mentions: z.boolean().optional(),
+  notification_digest: z.enum(["immediate", "15min", "hourly", "daily"]).optional(),
+  webhook_url: z.string().trim().max(500).nullable().optional(),
 });
 
 const ChangePasswordSchema = z.object({
@@ -123,6 +144,17 @@ export const getMyProfile = createServerFn({ method: "GET" })
       notify_device_status_changed: row.notify_device_status_changed ?? true,
       notify_checklist_completed: row.notify_checklist_completed ?? true,
       notify_mentions: row.notify_mentions ?? true,
+      notify_ticket_completed: row.notify_ticket_completed ?? true,
+      email_notify_ticket_assigned: row.email_notify_ticket_assigned ?? true,
+      email_notify_ticket_status_changed: row.email_notify_ticket_status_changed ?? true,
+      email_notify_ticket_completed: row.email_notify_ticket_completed ?? true,
+      email_notify_automation_failed: row.email_notify_automation_failed ?? true,
+      email_notify_device_status_changed: row.email_notify_device_status_changed ?? true,
+      email_notify_checklist_completed: row.email_notify_checklist_completed ?? true,
+      email_notify_mentions: row.email_notify_mentions ?? true,
+      notification_digest: row.notification_digest ?? "immediate",
+      webhook_url: row.webhook_url ?? null,
+      last_notification_sent_at: row.last_notification_sent_at ?? null,
       preferred_theme: (row.preferred_theme as Theme) ?? "system",
       password_set: row.password_set ?? true,
       created_at: row.created_at ?? null,
@@ -144,7 +176,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("user_profiles")
       .upsert(
-        { id: user.id, ...validated, updated_at: new Date().toISOString() },
+        { id: user.id, ...validated, updated_at: new Date().toISOString() } as any,
         { onConflict: "id" },
       );
 
