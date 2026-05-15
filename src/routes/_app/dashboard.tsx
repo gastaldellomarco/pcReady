@@ -235,7 +235,12 @@ function DashboardPage() {
               <div className="flex-1">
                 <DashboardAreaSpark
                   data={computeDailyCounts(
-                    tickets.filter((tt) => !tt.device),
+                    tickets.filter(
+                      (tt) =>
+                        !tt.device &&
+                        (tt.status as string) !== "archived" &&
+                        tt.status !== "ready",
+                    ),
                     "created_at",
                     range.days,
                   )}

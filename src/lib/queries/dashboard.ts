@@ -109,8 +109,13 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
 
   const assignedIds = new Set(assignments.map((r) => r.device_id));
   const recentDevices = devices.slice(0, 6);
-  const devicesWithoutTicket = devices.filter((dev) => !assignedIds.has(dev.id));
-  const ticketsWithoutDeviceCount = tickets.filter((tt) => !tt.device).length;
+  const devicesWithoutTicket = devices.filter(
+    (dev) => !assignedIds.has(dev.id) && dev.status !== "retired",
+  );
+  const ticketsWithoutDeviceCount = tickets.filter(
+    (tt) =>
+      !tt.device && (tt.status as string) !== "archived" && tt.status !== "ready",
+  ).length;
   const activeClients = new Set(tickets.map((tt) => tt.client).filter(Boolean));
 
   return {
