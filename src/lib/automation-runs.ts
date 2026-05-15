@@ -91,6 +91,45 @@ export const listAutomationRunLogs = createServerFn({ method: "POST" })
     return (rows ?? []) as unknown as AutomationRunLog[];
   });
 
+const GlobalLogsAuthedSchema = AuthedSchema.extend({
+  automationId: z.string().uuid().optional(),
+  status: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+});
+
+export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof GlobalLogsAuthedSchema>) => data)
+  .handler(async ({ data }) => {
+    const input = GlobalLogsAuthedSchema.parse(data);
+    const { requireAutomationRunnerUser, supabaseAdmin } =
+      await import("./automation-runs.server");
+    await requireAutomationRunnerUser(input.accessToken);
+
+    let query = supabaseAdmin
+      .from("automation_run_logs" as any)
+      .select("*, automation_flows!inner(name)")
+      .order("triggered_at", { ascending: false })
+      .limit(200);
+
+    if (input.automationId) {
+      query = query.eq("automation_id", input.automationId);
+    }
+    if (input.status) {
+      query = query.eq("status", input.status);
+    }
+    if (input.dateFrom) {
+      query = query.gte("triggered_at", input.dateFrom);
+    }
+    if (input.dateTo) {
+      query = query.lte("triggered_at", input.dateTo);
+    }
+
+    const { data: rows, error } = await query;
+    if (error) throw error;
+    return (rows ?? []) as unknown as (AutomationRunLog & { automation_flows?: { name: string } })[];
+  });
+
 export const runAutomationNow = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof RunInputSchema>) => data)
   .handler(async ({ data }) => {

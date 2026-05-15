@@ -1,16 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, ScrollText, Search, ArrowUpDown } from "lucide-react";
 import AutomationWizard from "@/components/automations/AutomationWizard";
 import { DryRunDialog } from "@/components/automations/DryRunDialog";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { AutomationRuleCard } from "@/components/automations/AutomationRuleCard";
-import { AutomationKpiCard } from "@/components/automations/AutomationKpiCard";
+import { AutomationKpiHeader } from "@/components/automations/AutomationKpiHeader";
+import { GlobalRunLogsPanel } from "@/components/automations/GlobalRunLogsPanel";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
+import { TRIGGER_TYPE_OPTIONS } from "@/hooks/useAutomationRules";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
@@ -34,12 +40,10 @@ function AutomationsPage() {
     runningRuleId,
     builderOpen,
     setBuilderOpen,
-    categoryFilter,
-    setCategoryFilter,
-    statusFilter,
-    setStatusFilter,
     searchQuery,
     setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
     expandedRuleId,
     setExpandedRuleId,
     editingRule,
@@ -60,143 +64,216 @@ function AutomationsPage() {
     archiveRule,
     toggleLogs,
     runRule,
+    triggerTypeFilter,
+    setTriggerTypeFilter,
+    errorFilter,
+    setErrorFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+    globalLogsOpen,
+    setGlobalLogsOpen,
+    globalLogs,
+    globalLogsLoading,
+    globalLogsFilter,
+    setGlobalLogsFilter,
+    loadGlobalLogs,
+    exportLogsCsv,
   } = useAutomationRules();
 
+  // Quick filter pills config
+  const errorFilterOptions = [
+    { value: "all" as const, label: "Tutte" },
+    { value: "active" as const, label: "Attive" },
+    { value: "inactive" as const, label: "Inattive" },
+    { value: "errors" as const, label: "Con errori" },
+  ];
+
+  const sortOptions = [
+    { value: "created" as const, label: "Data creazione" },
+    { value: "name" as const, label: "Nome" },
+    { value: "last_run" as const, label: "Ultima esecuzione" },
+    { value: "executions" as const, label: "N. esecuzioni" },
+  ];
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-      <div className="pc-card">
-        <div className="pc-card-hd flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <span className="pc-card-title">Regole automatiche</span>
-            <p className="text-sm text-text3 mt-1">
-              Gestisci le condizioni, le azioni e le categorie delle regole.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="bg-slate-100 text-slate-800 border-transparent">
-              {rules.filter((r) => r.active).length}/{rules.length} attive
-            </Badge>
-            <select
-              className="rounded-md border px-2 py-1 text-sm"
-              value={categoryFilter ?? ""}
-              onChange={(e) => setCategoryFilter(e.target.value || null)}
-            >
-              <option value="">Tutte le categorie</option>
-              {AUTOMATION_CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <select
-              className="rounded-md border px-2 py-1 text-sm"
-              value={statusFilter ?? ""}
-              onChange={(e) => setStatusFilter(e.target.value || null)}
-            >
-              <option value="">Tutti gli stati</option>
-              <option value="draft">Draft</option>
-              <option value="validated">Validated</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="archived">Archived</option>
-            </select>
-            <input
-              placeholder="Cerca..."
-              className="rounded-md border px-2 py-1 text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button variant="secondary" size="sm" onClick={openCreateDialog} disabled={!isAdmin}>
-              <Plus className="h-4 w-4" />
-              Aggiungi regola
-            </Button>
-          </div>
+    <div className="space-y-5">
+      {/* KPI Header */}
+      <AutomationKpiHeader rules={rules} kpis={kpis} />
+
+      {/* Search + Filters Bar */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface2 p-3">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text3" />
+          <input
+            placeholder="Cerca regola..."
+            className="w-full rounded-md border border-border pl-8 pr-3 py-1.5 text-sm bg-background"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 px-5 pt-4 md:grid-cols-4">
-          <AutomationKpiCard
-            label="Automazioni attive"
-            value={kpis?.activeAutomations ?? rules.filter((r) => r.active).length}
-          />
-          <AutomationKpiCard
-            label="Run oggi"
-            value={`${kpis?.runsToday ?? 0} (${kpis?.successToday ?? 0}/${kpis?.errorToday ?? 0})`}
-          />
-          <AutomationKpiCard label="Successo 7 giorni" value={`${kpis?.successRate7d ?? 100}%`} />
-          <AutomationKpiCard label="Errori recenti" value={kpis?.automationsWithRecentErrors ?? 0} />
+        {/* Quick filters */}
+        <div className="flex items-center gap-1">
+          {errorFilterOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setErrorFilter(opt.value)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                errorFilter === opt.value
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-surface3 text-text3 hover:bg-surface3/70"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
-        <div className="pc-card-body space-y-3">
-          {loadingRules && <div className="text-sm text-text3">Caricamento regole...</div>}
-          {!loadingRules && rules.length === 0 && (
-            <div className="text-sm text-text3">Nessuna regola disponibile.</div>
-          )}
-          {!loadingRules &&
-            filteredRules.map((rule) => (
-              <AutomationRuleCard
-                key={rule.id}
-                rule={rule}
-                isAdmin={isAdmin}
-                expanded={expandedRuleId === rule.id}
-                stats={(runStats ?? {})[rule.id]}
-                logsOpen={logsOpenRuleId === rule.id}
-                logs={logsByRule[rule.id] ?? []}
-                logsLoading={loadingLogsRuleId === rule.id}
-                running={runningRuleId === rule.id}
-                onToggle={() => void toggleRule(rule)}
-                onEdit={() => openEditDialog(rule)}
-                onToggleLogs={() => void toggleLogs(rule)}
-                onOpenVersions={() => setVersionHistoryRuleId(rule.id)}
-                onRunNow={() => void runRule(rule, false)}
-                onDryRun={() => void runRule(rule, true)}
-                onDuplicate={() => void duplicateRule(rule)}
-                onDelete={() => void deleteRule(rule)}
-                onArchive={() => void archiveRule(rule)}
-                onExpandToggle={() =>
-                  setExpandedRuleId((current) => (current === rule.id ? null : rule.id))
-                }
-              />
+        {/* Trigger type filter */}
+        <select
+          className="rounded-md border border-border px-2 py-1.5 text-xs bg-background"
+          value={triggerTypeFilter}
+          onChange={(e) => setTriggerTypeFilter(e.target.value)}
+        >
+          {TRIGGER_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1">
+          <ArrowUpDown className="h-3.5 w-3.5 text-text3" />
+          <select
+            className="rounded-md border border-border px-2 py-1.5 text-xs bg-background"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          >
+            {sortOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            className="rounded-md border border-border px-1.5 py-1.5 text-xs bg-background hover:bg-surface3"
+            title={sortOrder === "asc" ? "Ascendente" : "Discendente"}
+          >
+            {sortOrder === "asc" ? "\u2191" : "\u2193"}
+          </button>
+        </div>
+
+        {/* Category filter */}
+        <select
+          className="rounded-md border border-border px-2 py-1.5 text-xs bg-background"
+          value={categoryFilter ?? ""}
+          onChange={(e) => setCategoryFilter(e.target.value || null)}
+        >
+          <option value="">Tutte le categorie</option>
+          {AUTOMATION_CATEGORY_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setGlobalLogsOpen(!globalLogsOpen)}
+            className="gap-1.5"
+          >
+            <ScrollText className="h-4 w-4" />
+            Log
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={openCreateDialog}
+            disabled={!isAdmin}
+            className="gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            Nuova regola
+          </Button>
         </div>
       </div>
 
-      <div className="pc-card">
-        <div className="pc-card-hd flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <span className="pc-card-title">Automation Builder</span>
-            <p className="text-sm text-text3 mt-1">
-              Crea e modifica workflow visuali a blocchi. Usa blocchi predefiniti per trigger,
-              condizioni e azioni.
-            </p>
+      {/* Rules list */}
+      <div className="space-y-3">
+        {loadingRules && (
+          <div className="py-8 text-center text-sm text-text3">
+            Caricamento regole...
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setBuilderOpen(true)}
-              disabled={!isAdmin}
-            >
-              <Plus className="h-4 w-4" />
-              Apri builder
-            </Button>
+        )}
+        {!loadingRules && filteredRules.length === 0 && (
+          <div className="py-8 text-center text-sm text-text3">
+            Nessuna regola trovata.{searchQuery ? ' Prova a modificare la ricerca.' : ''}
           </div>
-        </div>
-
-        <div className="pc-card-body">
-          <div className="text-sm text-text3">
-            Apri il builder per costruire automazioni a blocchi.
-          </div>
-        </div>
+        )}
+        {!loadingRules &&
+          filteredRules.map((rule) => (
+            <AutomationRuleCard
+              key={rule.id}
+              rule={rule}
+              isAdmin={isAdmin}
+              expanded={expandedRuleId === rule.id}
+              stats={(runStats ?? {})[rule.id]}
+              logsOpen={logsOpenRuleId === rule.id}
+              logs={logsByRule[rule.id] ?? []}
+              logsLoading={loadingLogsRuleId === rule.id}
+              running={runningRuleId === rule.id}
+              onToggle={() => void toggleRule(rule)}
+              onEdit={() => openEditDialog(rule)}
+              onExpandToggle={() =>
+                setExpandedRuleId((current) => (current === rule.id ? null : rule.id))
+              }
+              onToggleLogs={() => void toggleLogs(rule)}
+              onOpenVersions={() => setVersionHistoryRuleId(rule.id)}
+              onRunNow={() => void runRule(rule, false)}
+              onDryRun={() => void runRule(rule, true)}
+              onDuplicate={() => void duplicateRule(rule)}
+              onDelete={() => void deleteRule(rule)}
+              onArchive={() => void archiveRule(rule)}
+            />
+          ))}
       </div>
 
+      {/* Global Logs Panel */}
+      {globalLogsOpen && (
+        <GlobalRunLogsPanel
+          logs={globalLogs}
+          loading={globalLogsLoading}
+          rules={rules}
+          filters={globalLogsFilter}
+          onFilterChange={setGlobalLogsFilter}
+          onRefresh={() => void loadGlobalLogs()}
+          onExportCsv={exportLogsCsv}
+        />
+      )}
+
+      {/* Builder/Wizard Dialog */}
       <Dialog open={builderOpen} onOpenChange={setBuilderOpen}>
-        <DialogContent className="max-w-6xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingRule ? "Modifica automazione" : "Nuova automazione"}</DialogTitle>
+            <DialogTitle>
+              {editingRule ? "Modifica automazione" : "Nuova automazione"}
+            </DialogTitle>
           </DialogHeader>
           <div className="p-2 flex gap-2 items-center">
             <label
-              className={`cursor-pointer px-2 py-1 rounded ${guidedMode ? "bg-slate-100" : ""}`}
+              className={`cursor-pointer px-2 py-1 rounded ${
+                guidedMode ? "bg-slate-100" : ""
+              }`}
             >
               <input
                 type="radio"
@@ -205,10 +282,12 @@ function AutomationsPage() {
                 onChange={() => setGuidedMode(true)}
                 className="sr-only"
               />{" "}
-              Modalità guidata
+              Modalita guidata
             </label>
             <label
-              className={`cursor-pointer px-2 py-1 rounded ${!guidedMode ? "bg-slate-100" : ""}`}
+              className={`cursor-pointer px-2 py-1 rounded ${
+                !guidedMode ? "bg-slate-100" : ""
+              }`}
             >
               <input
                 type="radio"
@@ -217,7 +296,7 @@ function AutomationsPage() {
                 onChange={() => setGuidedMode(false)}
                 className="sr-only"
               />{" "}
-              Modalità avanzata
+              Modalita avanzata
             </label>
           </div>
 
@@ -226,11 +305,19 @@ function AutomationsPage() {
               <AutomationWizard
                 initial={
                   editingRule
-                    ? { ...editingRule, ...(editingRule.flow_definition?.wizard ?? {}) }
+                    ? {
+                        ...editingRule,
+                        ...(editingRule.flow_definition?.meta?.wizard ?? {}),
+                      }
                     : undefined
                 }
                 onSave={saveWizardFlow}
                 onCancel={() => setBuilderOpen(false)}
+                onTest={
+                  editingRule
+                    ? () => void runRule(editingRule, true)
+                    : undefined
+                }
               />
             </div>
           ) : AutomationBuilderComp ? (
@@ -247,7 +334,12 @@ function AutomationsPage() {
           )}
         </DialogContent>
       </Dialog>
-      <DryRunDialog open={dryRunDialogOpen} rule={dryRunRule} onOpenChange={setDryRunDialogOpen} />
+
+      <DryRunDialog
+        open={dryRunDialogOpen}
+        rule={dryRunRule}
+        onOpenChange={setDryRunDialogOpen}
+      />
       <VersionHistoryDrawer
         entityType="automation_flows"
         entityId={versionHistoryRuleId || ""}

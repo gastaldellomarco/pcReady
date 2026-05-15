@@ -1,13 +1,17 @@
+import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
+
 export default function ReviewStep({
   name,
   description,
   trigger,
-  conditions: _conditions,
+  conditions,
   actions,
   schedule,
   summary,
+  category,
   onChangeName,
   onChangeDescription,
+  onChangeCategory,
 }: {
   name: string;
   description: string | null;
@@ -16,58 +20,173 @@ export default function ReviewStep({
   actions: any[];
   schedule: any;
   summary: string;
+  category?: string | null;
   onChangeName: (s: string) => void;
   onChangeDescription: (s: string) => void;
+  onChangeCategory?: (s: string) => void;
 }) {
+  const triggerLabels: Record<string, string> = {
+    ticket_created: "Ticket creato",
+    ticket_updated: "Ticket aggiornato",
+    checklist_completed: "Checklist completata",
+    scheduled: "Schedulato",
+    manual: "Manuale",
+  };
+
+  const actionLabels: Record<string, string> = {
+    send_email: "Invia email",
+    update_ticket_status: "Aggiorna stato ticket",
+    create_notification: "Notifica in-app",
+    update_device_status: "Aggiorna stato dispositivo",
+    assign_ticket: "Assegna ticket",
+  };
+
   return (
     <div>
-      <h3 className="text-lg font-semibold">Review & Publish</h3>
-      <p className="text-sm text-text3">Controlla la regola e pubblicala.</p>
+      <h3 className="text-lg font-semibold">Riepilogo</h3>
+      <p className="text-sm text-text3">
+        Verifica la configurazione della regola prima di salvarla.
+      </p>
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-4 space-y-4">
+        {/* Name */}
         <div>
-          <label className="text-sm">Nome</label>
+          <label className="text-sm font-medium">Nome regola</label>
           <input
-            className="block w-full mt-1 rounded-md border px-2 py-1"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             value={name}
             onChange={(e) => onChangeName(e.target.value)}
+            placeholder="Assegna un nome alla regola"
           />
         </div>
+
+        {/* Description */}
         <div>
-          <label className="text-sm">Descrizione</label>
-          <input
-            className="block w-full mt-1 rounded-md border px-2 py-1"
+          <label className="text-sm font-medium">Descrizione</label>
+          <textarea
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
+            rows={2}
             value={description ?? ""}
             onChange={(e) => onChangeDescription(e.target.value)}
+            placeholder="Descrivi brevemente cosa fa questa regola"
           />
         </div>
 
-        <div className="rounded border p-3">
-          <div className="text-sm font-medium">Summary</div>
-          <div className="text-sm text-text3 mt-1">{summary}</div>
+        {/* Category */}
+        {onChangeCategory && (
+          <div>
+            <label className="text-sm font-medium">Categoria</label>
+            <select
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
+              value={category ?? ""}
+              onChange={(e) => onChangeCategory(e.target.value)}
+            >
+              <option value="">Nessuna categoria</option>
+              {AUTOMATION_CATEGORY_OPTIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Summary preview card */}
+        <div className="rounded-xl border-2 border-accent/20 bg-accent/5 p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-accent">
+            Anteprima regola
+          </div>
+          <div className="mt-2 text-sm font-medium">
+            {summary || "Configurazione incompleta"}
+          </div>
         </div>
 
-        <div className="rounded border p-3">
-          <div className="text-sm font-medium">Trigger</div>
-          <div className="text-sm text-text3 mt-1">{trigger?.type}</div>
+        {/* Trigger */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+            Trigger
+          </div>
+          <p className="mt-1 text-sm text-blue-800">
+            {trigger?.type
+              ? triggerLabels[trigger.type] ?? trigger.type
+              : "Non configurato"}
+          </p>
+          {trigger?.config &&
+            Object.keys(trigger.config).length > 0 && (
+              <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
+                {JSON.stringify(trigger.config, null, 2)}
+              </pre>
+            )}
         </div>
 
-        <div className="rounded border p-3">
-          <div className="text-sm font-medium">Azioni</div>
-          <ul className="text-sm text-text3 mt-1 list-disc pl-5">
-            {actions.map((a) => (
-              <li key={a.id}>{a.type}</li>
-            ))}
-          </ul>
-        </div>
-
-        {schedule && (
-          <div className="rounded border p-3">
-            <div className="text-sm font-medium">Schedule</div>
-            <div className="text-sm text-text3 mt-1">
-              {schedule.type}
-              {schedule.cron ? ` - ${schedule.cron}` : ""}
+        {/* Conditions */}
+        {conditions && conditions.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+              Condizioni ({conditions.length})
             </div>
+            <ul className="mt-1 space-y-1">
+              {conditions.map((c, i) => (
+                <li key={c.id ?? i} className="text-sm text-amber-800">
+                  {c.type === "field_equals" &&
+                    `Campo "${c.config?.field ?? ""}" = "${c.config?.value ?? ""}"`}
+                  {c.type === "field_not_equals" &&
+                    `Campo "${c.config?.field ?? ""}" != "${c.config?.value ?? ""}"`}
+                  {c.type === "field_greater_than" &&
+                    `Campo "${c.config?.field ?? ""}" > "${c.config?.value ?? ""}"`}
+                  {c.type === "field_less_than" &&
+                    `Campo "${c.config?.field ?? ""}" < "${c.config?.value ?? ""}"`}
+                  {c.type === "field_contains" &&
+                    `Campo "${c.config?.field ?? ""}" contiene "${c.config?.value ?? ""}"`}
+                  {c.type === "field_starts_with" &&
+                    `Campo "${c.config?.field ?? ""}" inizia con "${c.config?.value ?? ""}"`}
+                  {c.type === "field_ends_with" &&
+                    `Campo "${c.config?.field ?? ""}" finisce con "${c.config?.value ?? ""}"`}
+                  {c.type === "priority_high" && "Priorita alta"}
+                  {c.type === "tag_contains" &&
+                    `Tag contiene "${c.config?.value ?? ""}"`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Actions */}
+        {actions && actions.length > 0 && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+              Azioni ({actions.length})
+            </div>
+            <ul className="mt-1 space-y-1.5">
+              {actions.map((a, i) => (
+                <li key={a.id ?? i} className="text-sm text-emerald-800">
+                  <span className="font-semibold">
+                    {actionLabels[a.type ?? ""] ?? a.type}
+                  </span>
+                  {a.config && Object.keys(a.config).length > 0 && (
+                    <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-emerald-100/50 p-1.5 text-[11px] font-mono text-emerald-800">
+                      {JSON.stringify(a.config, null, 2)}
+                    </pre>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Schedule */}
+        {schedule && schedule.type && schedule.type !== "none" && (
+          <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">
+              Schedule
+            </div>
+            <p className="mt-1 text-sm text-purple-800">
+              {schedule.type === "cron"
+                ? `Cron: ${schedule.cron ?? "-"}`
+                : schedule.type === "interval"
+                  ? `Intervallo: ogni ${schedule.interval ?? "?"}`
+                  : schedule.type}
+            </p>
           </div>
         )}
       </div>

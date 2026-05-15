@@ -1,3 +1,49 @@
+import { cn } from "@/lib/utils";
+import { Ticket, ClipboardCheck, Clock, MousePointerClick } from "lucide-react";
+
+const TRIGGER_OPTIONS = [
+  {
+    value: "ticket_created",
+    label: "Ticket creato",
+    description: "Quando un nuovo ticket viene aperto",
+    icon: Ticket,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 border-blue-200",
+  },
+  {
+    value: "ticket_updated",
+    label: "Ticket aggiornato",
+    description: "Quando un ticket esistente viene modificato",
+    icon: Ticket,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50 border-indigo-200",
+  },
+  {
+    value: "checklist_completed",
+    label: "Checklist completata",
+    description: "Quando una checklist di preparazione viene completata",
+    icon: ClipboardCheck,
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-50 border-cyan-200",
+  },
+  {
+    value: "scheduled",
+    label: "Schedulato",
+    description: "Esecuzione pianificata con espressione cron",
+    icon: Clock,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50 border-purple-200",
+  },
+  {
+    value: "manual",
+    label: "Manuale",
+    description: "Eseguita solo manualmente o da un trigger esterno",
+    icon: MousePointerClick,
+    color: "text-slate-600",
+    bgColor: "bg-slate-50 border-slate-200",
+  },
+];
+
 export default function TriggerStep({
   value,
   onChange,
@@ -8,33 +54,71 @@ export default function TriggerStep({
   return (
     <div>
       <h3 className="text-lg font-semibold">Trigger</h3>
-      <p className="text-sm text-text3">Scegli il tipo di trigger e configura le opzioni.</p>
+      <p className="text-sm text-text3">
+        Scegli l&apos;evento che attivera questa regola di automazione.
+      </p>
 
-      <div className="mt-3 flex items-center gap-2">
-        <select
-          className="rounded-md border px-2 py-1"
-          value={value?.type ?? ""}
-          onChange={(e) => onChange({ type: e.target.value, config: {} })}
-        >
-          <option value="">-- Seleziona trigger --</option>
-          <option value="ticket_created">Ticket creato</option>
-          <option value="ticket_updated">Ticket aggiornato</option>
-          <option value="checklist_completed">Checklist completata</option>
-          <option value="scheduled">Scheduled</option>
-        </select>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {TRIGGER_OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+          const isSelected = value?.type === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange({ type: opt.value, config: {} })}
+              className={cn(
+                "flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all",
+                isSelected
+                  ? `${opt.bgColor} ${opt.color} border-current shadow-sm`
+                  : "border-border bg-background hover:border-accent/40 hover:bg-accent/5",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                  isSelected ? `${opt.bgColor}` : "bg-surface2",
+                )}
+              >
+                <Icon
+                  className={cn("h-5 w-5", isSelected ? opt.color : "text-text3")}
+                />
+              </div>
+              <div className="min-w-0">
+                <div
+                  className={cn(
+                    "text-sm font-semibold",
+                    isSelected ? opt.color : "text-foreground",
+                  )}
+                >
+                  {opt.label}
+                </div>
+                <div className="mt-0.5 text-xs text-text3 leading-relaxed">
+                  {opt.description}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {value?.type === "scheduled" && (
-        <div className="mt-3">
-          <label className="text-sm">Cron/Expression</label>
+        <div className="mt-4">
+          <label className="text-sm font-medium">Espressione Cron</label>
           <input
-            className="mt-1 rounded-md border px-2 py-1 w-full"
+            className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             value={value.config?.cron ?? ""}
             onChange={(e) =>
-              onChange({ ...value, config: { ...(value.config || {}), cron: e.target.value } })
+              onChange({
+                ...value,
+                config: { ...(value.config || {}), cron: e.target.value },
+              })
             }
-            placeholder="es. 0 8 * * *"
+            placeholder="es. 0 8 * * * (ogni giorno alle 8:00)"
           />
+          <p className="mt-1 text-xs text-text3">
+            Formato standard cron a 5 campi: minuto ora giorno mese giorno-settimana
+          </p>
         </div>
       )}
     </div>

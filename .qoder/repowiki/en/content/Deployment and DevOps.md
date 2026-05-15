@@ -13,7 +13,19 @@
 - [bump.sh](file://scripts/bump.sh)
 - [validate-migrations.mjs](file://scripts/validate-migrations.mjs)
 - [BACKUP.md](file://docs/BACKUP.md)
+- [20260430154500_ticket_code_sequence_trigger.sql](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql)
+- [20260430143000_admin_user_management_rls.sql](file://supabase/migrations/20260430143000_admin_user_management_rls.sql)
+- [seed.sql](file://supabase/seed.sql)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated CI workflow to use Node.js 20 and Bun 1.3.13 with frozen lockfile
+- Enhanced deploy workflow with explicit Node.js 22 requirement and improved secret validation
+- Updated release workflow to use Node.js 22 and Bun 1.3.13 with semantic versioning
+- Added comprehensive Supabase migration validation and database seeding documentation
+- Expanded backup and disaster recovery procedures with manual export capabilities
+- Enhanced troubleshooting section with specific error scenarios and resolutions
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -28,7 +40,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document describes PCReady’s production deployment and DevOps practices. It covers CI/CD via GitHub Actions, environment configuration, Cloudflare Workers deployment with Wrangler, Supabase database and RLS requirements, optional containerization and Kubernetes patterns, monitoring and logging approaches, backup and disaster recovery, security considerations, troubleshooting, and release management with version tagging.
+This document describes PCReady's production deployment and DevOps practices. It covers CI/CD via GitHub Actions, environment configuration, Cloudflare Workers deployment with Wrangler, Supabase database and RLS requirements, optional containerization and Kubernetes patterns, monitoring and logging approaches, backup and disaster recovery, security considerations, troubleshooting, and release management with version tagging.
 
 ## Project Structure
 PCReady is a frontend-heavy application built with React, TypeScript, TanStack Router/Start, Vite, and Supabase. The runtime is deployed to Cloudflare Workers using Wrangler. CI/CD is implemented with GitHub Actions workflows. Supabase manages the Postgres database, migrations, and Row Level Security (RLS) policies. The repository includes:
@@ -54,6 +66,7 @@ subgraph "Supabase"
 PG["PostgreSQL Database"]
 MIG["Migrations"]
 RLS["RLS Policies"]
+SEED["Seed Data"]
 end
 GH --> CF
 WJ --> CF
@@ -61,6 +74,7 @@ GH --> PG
 ST --> PG
 MIG --> PG
 RLS --> PG
+SEED --> PG
 PKG --> GH
 DOC --> GH
 ```
@@ -89,6 +103,7 @@ DOC --> GH
 - Supabase:
   - Project configuration and migrations under supabase/migrations
   - RLS policies and triggers enforced by migrations
+  - Seed data for email templates and initial configuration
 - Release management:
   - Version bumping script and migration validation
   - Automated GitHub Releases with changelogs
@@ -131,15 +146,15 @@ Note over GH,CF : Secrets validated before deployment
 Purpose: Gate pull requests with quality checks and build verification.
 - Triggers: Pull requests to main and develop
 - Steps:
-  - Setup Node.js and Bun
-  - Install dependencies with lockfile
+  - Setup Node.js 20 and Bun 1.3.13
+  - Install dependencies with frozen lockfile
   - Typecheck, lint, migration validation, and build
 - Environment: Exposes Supabase keys for migration checks and build-time validation
 
 ```mermaid
 flowchart TD
-Start(["PR opened"]) --> Setup["Setup Node.js and Bun"]
-Setup --> Install["Install dependencies"]
+Start(["PR opened"]) --> Setup["Setup Node.js 20 and Bun 1.3.13"]
+Setup --> Install["Install dependencies with frozen lockfile"]
 Install --> Quality["Typecheck + Lint + Migrations Check + Build"]
 Quality --> Pass{"All checks pass?"}
 Pass --> |Yes| Ready["Ready for review"]
@@ -156,14 +171,14 @@ Pass --> |No| Fail["Fail PR checks"]
 Purpose: Ensure database state is current before running tests.
 - Triggers: Pushes to main/develop and pull requests
 - Steps:
-  - Setup Node.js and Bun
+  - Setup Node.js 20 and Bun 1.3.13
   - Install dependencies
   - Resolve Supabase DB host IP and push migrations
   - Run test suite
 
 ```mermaid
 flowchart TD
-TStart(["Push/Pull Request"]) --> TSetup["Setup Node.js and Bun"]
+TStart(["Push/Pull Request"]) --> TSetup["Setup Node.js 20 and Bun 1.3.13"]
 TSetup --> TInstall["Install dependencies"]
 TInstall --> TResolve["Resolve Supabase DB host IPv4"]
 TResolve --> TPush["supabase db push"]
@@ -181,7 +196,7 @@ TTest --> TEnd(["Tests complete"])
 Purpose: Deploy the built application to Cloudflare Workers on main branch pushes.
 - Triggers: Pushes to main
 - Steps:
-  - Setup Node.js and Bun
+  - Setup Node.js 22 and Bun 1.3.13
   - Install dependencies and build
   - Validate required secrets (Cloudflare API token and Supabase DB URL)
   - Deploy using Wrangler
@@ -193,7 +208,7 @@ participant GA as "GitHub Actions"
 participant CF as "Cloudflare Workers"
 participant SB as "Supabase"
 Repo->>GA : Push to main
-GA->>GA : Setup Node.js/Bun + Install + Build
+GA->>GA : Setup Node.js 22 + Bun 1.3.13 + Install + Build
 GA->>GA : Validate secrets (CLOUDFLARE_API_TOKEN, SUPABASE_DB_URL)
 GA->>CF : wrangler deploy
 CF-->>GA : Deployment result
@@ -262,8 +277,9 @@ class WranglerConfig {
 ### Supabase Configuration and Migrations
 Purpose: Manage database schema, policies, and data consistency.
 - Project identifier configured
-- Migrations stored under supabase/migrations
+- Migrations stored under supabase/migrations with strict validation
 - Validation script enforces naming, emptiness, merge conflict markers, and dollar-quoted blocks balance
+- Seed data provides initial email templates and configuration
 - README documents migration requirements and client behavior expectations
 
 ```mermaid
@@ -273,7 +289,8 @@ Plan --> Validate["Run migration validation"]
 Validate --> Valid{"Valid?"}
 Valid --> |Yes| Apply["Apply to Supabase (CI/CD or locally)"]
 Valid --> |No| Fix["Fix migration issues"]
-Apply --> Test["Run tests with migrations applied"]
+Apply --> Seed["Apply seed data"]
+Seed --> Test["Run tests with migrations applied"]
 Test --> Deploy["Deploy to production"]
 ```
 
@@ -281,11 +298,13 @@ Test --> Deploy["Deploy to production"]
 - [config.toml:1-1](file://supabase/config.toml#L1-L1)
 - [validate-migrations.mjs:1-43](file://scripts/validate-migrations.mjs#L1-L43)
 - [README.md:104-111](file://README.md#L104-L111)
+- [seed.sql:1-44](file://supabase/seed.sql#L1-L44)
 
 **Section sources**
 - [config.toml:1-1](file://supabase/config.toml#L1-L1)
 - [validate-migrations.mjs:1-43](file://scripts/validate-migrations.mjs#L1-L43)
 - [README.md:104-111](file://README.md#L104-L111)
+- [seed.sql:1-44](file://supabase/seed.sql#L1-L44)
 
 ### Environment Configuration Management
 - Local development uses Bun and environment variables for Supabase client/server keys
@@ -308,14 +327,10 @@ Key environment variables observed in workflows:
 - No Docker/Kubernetes manifests are present in the repository
 - Recommendation: For Kubernetes, define a minimal container image with built assets and expose a health check endpoint; mount configuration via ConfigMaps/Secrets; use a Deployment with readiness/liveness probes; and a Service/Ingress for exposure
 
-[No sources needed since this section provides general guidance]
-
 ### Monitoring and Logging
 - Error tracking: Integrate an external error tracking service (e.g., Sentry) in the application entrypoint
 - Performance monitoring: Use a CDN-level analytics solution (e.g., Cloudflare Analytics) and application-level metrics via a telemetry library
 - User analytics: Track page views and key events; ensure compliance with privacy regulations
-
-[No sources needed since this section provides general guidance]
 
 ### Backup and Disaster Recovery
 - Supabase-managed backups: Daily automated backups, PITR on higher tiers, WAL replication, and geo-redundant storage
@@ -332,8 +347,6 @@ Key environment variables observed in workflows:
 - Access control: Enforce Supabase RLS policies; restrict Cloudflare Worker access to necessary APIs; rotate tokens regularly
 - SSL/TLS: Cloudflare terminates TLS at the edge; ensure backend APIs use HTTPS; configure appropriate headers and security policies
 - Least privilege: Limit Supabase service role usage; prefer client credentials for user-facing operations
-
-[No sources needed since this section provides general guidance]
 
 ### Troubleshooting Guide
 Common deployment issues and resolutions:
@@ -384,6 +397,7 @@ WranglerCfg["wrangler.jsonc"] --> Workers
 PKG["package.json"] --> CI
 PKG --> TestW
 PKG --> DeployW
+Seed["supabase/seed.sql"] --> Supabase
 ```
 
 **Diagram sources**
@@ -393,6 +407,7 @@ PKG --> DeployW
 - [config.toml:1-1](file://supabase/config.toml#L1-L1)
 - [wrangler.jsonc:1-8](file://wrangler.jsonc#L1-L8)
 - [package.json:1-110](file://package.json#L1-L110)
+- [seed.sql:1-44](file://supabase/seed.sql#L1-L44)
 
 **Section sources**
 - [ci.yml:1-32](file://.github/workflows/ci.yml#L1-L32)
@@ -407,8 +422,6 @@ PKG --> DeployW
 - Minimize Worker bundle size; enable compression and cache headers
 - Use Supabase query optimization and indexes; avoid N+1 queries
 - Monitor Worker execution time and cold starts; consider warm-up strategies if needed
-
-[No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
 - CI fails on migration validation:
@@ -426,7 +439,7 @@ PKG --> DeployW
 - [deploy.yml:34-46](file://.github/workflows/deploy.yml#L34-L46)
 
 ## Conclusion
-PCReady’s deployment pipeline leverages GitHub Actions for CI/CD, Supabase for database operations, and Cloudflare Workers for hosting. The workflows enforce quality gates, validate migrations, and automate releases. For production hardening, complement the existing setup with robust error tracking, performance monitoring, and security best practices. Disaster recovery relies on Supabase-managed backups with manual export capabilities for audits.
+PCReady's deployment pipeline leverages GitHub Actions for CI/CD, Supabase for database operations, and Cloudflare Workers for hosting. The workflows enforce quality gates, validate migrations, and automate releases. For production hardening, complement the existing setup with robust error tracking, performance monitoring, and security best practices. Disaster recovery relies on Supabase-managed backups with manual export capabilities for audits.
 
 ## Appendices
 
@@ -446,3 +459,29 @@ PCReady’s deployment pipeline leverages GitHub Actions for CI/CD, Supabase for
 - [ci.yml:10-16](file://.github/workflows/ci.yml#L10-L16)
 - [test.yml:11-17](file://.github/workflows/test.yml#L11-L17)
 - [deploy.yml:10-16](file://.github/workflows/deploy.yml#L10-L16)
+
+### Appendix B: Supabase Migration Examples
+Key migration patterns and examples:
+
+**Ticket Code Generation**
+- Uses PostgreSQL sequences and triggers for unique ticket codes
+- Prevents race conditions in concurrent insert operations
+- Generates codes in format PCT-NNNNN
+
+**Admin RLS Policies**
+- Enforces role-based access control for admin users
+- Provides selective read/update permissions based on user roles
+- Uses custom has_role function for role checking
+
+**Section sources**
+- [20260430154500_ticket_code_sequence_trigger.sql:1-42](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql#L1-L42)
+- [20260430143000_admin_user_management_rls.sql:1-13](file://supabase/migrations/20260430143000_admin_user_management_rls.sql#L1-L13)
+
+### Appendix C: Database Seeding
+Initial data setup for development and testing:
+- Email templates for user invitations, password resets, and notifications
+- Predefined email template variables and content
+- Idempotent seed operations with conflict handling
+
+**Section sources**
+- [seed.sql:1-44](file://supabase/seed.sql#L1-L44)

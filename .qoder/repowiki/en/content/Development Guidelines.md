@@ -23,6 +23,18 @@
 - [supabase/migrations/20260514182000_realtime_ticket_device_assignments.sql](file://supabase/migrations/20260514182000_realtime_ticket_device_assignments.sql)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced code style and formatting guidelines with specific ESLint and Prettier configurations
+- Expanded TypeScript usage patterns and type safety practices with strict compiler options
+- Added comprehensive component development patterns including prop interfaces and state management
+- Updated state management best practices with React hooks and custom hooks documentation
+- Improved database and real-time patterns with Supabase integration details
+- Added architectural patterns documentation covering Server Functions Pattern and Repository Pattern
+- Enhanced testing strategies with Vitest configuration and coverage thresholds
+- Updated debugging and profiling techniques with linting and type-checking workflows
+- Expanded accessibility, security, and internationalization considerations
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -40,13 +52,13 @@
 14. [State Management Best Practices](#state-management-best-practices)
 15. [Database and Real-Time Patterns](#database-and-real-time-patterns)
 16. [Architectural Patterns](#architectural-patterns)
-17. [Code Organization Principles](#code-organization-principics)
+17. [Code Organization Principles](#code-organization-principles)
 18. [Accessibility, Security, and Internationalization](#accessibility-security-and-internationalization)
 19. [Code Review and Contribution Workflows](#code-review-and-contribution-workflows)
 20. [Conclusion](#conclusion)
 
 ## Introduction
-This document defines PCReady’s development guidelines and best practices. It consolidates code style, TypeScript usage, component patterns, state management, performance optimization, architecture, testing, debugging, accessibility, security, and internationalization guidance. These practices are grounded in the repository’s existing tooling (ESLint, Prettier, TypeScript, Vitest), frameworks (TanStack Router/Start, React Query), and integrations (Supabase).
+This document defines PCReady's development guidelines and best practices. It consolidates code style, TypeScript usage, component patterns, state management, performance optimization, architecture, testing, debugging, accessibility, security, and internationalization guidance. These practices are grounded in the repository's existing tooling (ESLint, Prettier, TypeScript, Vitest), frameworks (TanStack Router/Start, React Query), and integrations (Supabase).
 
 ## Project Structure
 The project follows a feature-centric, layered structure:
@@ -495,7 +507,5 @@ D --> E["UI Re-render"]
 - Document breaking changes and migration steps in PR descriptions
 - Use conventional commit messages and follow branch naming conventions
 
-[No sources needed since this section provides general guidance]
-
 ## Conclusion
-These guidelines consolidate PCReady’s current practices around code quality, type safety, component design, state management, real-time updates, and testing. Adhering to them ensures consistency, reliability, and maintainability across the codebase.
+These guidelines consolidate PCReady's current practices around code quality, type safety, component design, state management, real-time updates, and testing. Adhering to them ensures consistency, reliability, and maintainability across the codebase.
