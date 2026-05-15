@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -9,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, FileDown, FileText } from "lucide-react";
+import { ChevronDown, FileDown, FileText, BarChart3, LineChart as LineChartIcon } from "lucide-react";
 
 interface AnalyticsCardProps {
   analytics: DashboardAnalytics | null;
@@ -19,6 +20,8 @@ interface AnalyticsCardProps {
   onDownloadCsv: () => void;
 }
 
+type ChartStyle = "bar" | "line";
+
 export function AnalyticsCard({
   analytics,
   loading,
@@ -26,6 +29,7 @@ export function AnalyticsCard({
   onDownloadPdf,
   onDownloadCsv,
 }: AnalyticsCardProps) {
+  const [chartType, setChartType] = useState<ChartStyle>("bar");
   const monthly = analytics?.ticketsByMonth ?? [];
   const technicians = analytics?.technicianKpi ?? [];
 
@@ -37,27 +41,47 @@ export function AnalyticsCard({
             <span className="pc-card-title">Report Mensile</span>
             <div className="text-[11px] text-text3">{periodLabel}</div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 rounded-md bg-muted p-0.5">
               <button
-                className="pc-btn pc-btn-ghost pc-btn-sm"
-                disabled={!analytics || loading}
+                className={`p-1 rounded ${chartType === "bar" ? "bg-white dark:bg-surface3 shadow-sm" : "text-text3 hover:text-text2"}`}
+                onClick={() => setChartType("bar")}
+                title="Grafico a barre"
+                aria-label="Grafico a barre"
               >
-                Esporta
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <BarChart3 className="w-3.5 h-3.5" />
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onDownloadCsv} disabled={!analytics || loading}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Esporta CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDownloadPdf} disabled={!analytics || loading}>
-                <FileText className="mr-2 h-4 w-4" />
-                Report Mensile PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <button
+                className={`p-1 rounded ${chartType === "line" ? "bg-white dark:bg-surface3 shadow-sm" : "text-text3 hover:text-text2"}`}
+                onClick={() => setChartType("line")}
+                title="Grafico a linee"
+                aria-label="Grafico a linee"
+              >
+                <LineChartIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="pc-btn pc-btn-ghost pc-btn-sm"
+                  disabled={!analytics || loading}
+                >
+                  Esporta
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onDownloadCsv} disabled={!analytics || loading}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Esporta CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDownloadPdf} disabled={!analytics || loading}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Report Mensile PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="pc-card-body flex flex-col gap-5">
           {loading ? (
@@ -71,14 +95,37 @@ export function AnalyticsCard({
                 }}
                 className="h-[250px] w-full"
               >
-                <BarChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                  <YAxis tickLine={false} axisLine={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="opened" fill="var(--color-opened)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="closed" fill="var(--color-closed)" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                {chartType === "bar" ? (
+                  <BarChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="opened" fill="var(--color-opened)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="closed" fill="var(--color-closed)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                ) : (
+                  <LineChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="monotone"
+                      dataKey="opened"
+                      stroke="var(--color-opened)"
+                      strokeWidth={2}
+                      dot
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="closed"
+                      stroke="var(--color-closed)"
+                      strokeWidth={2}
+                      dot
+                    />
+                  </LineChart>
+                )}
               </ChartContainer>
 
               <div>

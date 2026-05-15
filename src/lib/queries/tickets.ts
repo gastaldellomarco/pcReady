@@ -167,7 +167,7 @@ export async function fetchTicketsList(params: TicketsListParams) {
   let query = supabase
     .from("tickets")
     .select(
-      "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+      "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
       { count: "exact" },
     )
     .not("status", "eq", "archived" as any);

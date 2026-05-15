@@ -330,6 +330,62 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     return { weekStart: start.toISOString(), weekEnd: end.toISOString(), technicians: out };
   });
 
+export interface OverdueTicketRow {
+  id: string;
+  ticket_code: string;
+  status: string;
+  priority: string;
+  client: string | null;
+  model: string | null;
+  assignee_name: string | null;
+  created_at: string;
+  updated_at: string | null;
+  days_open: number;
+}
+
+export const getOverdueTickets = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string; thresholdDays?: number }) => data)
+  .handler(async ({ data }): Promise<OverdueTicketRow[]> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
+
+    const thresholdDays = data.thresholdDays ?? 5;
+    const cutoff = new Date(Date.now() - thresholdDays * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: tickets, error } = await supabaseAdmin
+      .from("tickets")
+      .select(`
+        id,
+        ticket_code,
+        status,
+        priority,
+        client,
+        model,
+        created_at,
+        updated_at,
+        assignee:assignee_id(full_name)
+      `)
+      .in("status", ["in-progress", "pending"] as any)
+      .lt("updated_at", cutoff)
+      .order("updated_at", { ascending: true });
+
+    if (error) throw error;
+
+    return ((tickets ?? []) as any[]).map((t: any) => ({
+      id: t.id,
+      ticket_code: t.ticket_code,
+      status: t.status,
+      priority: t.priority,
+      client: t.client ?? null,
+      model: t.model ?? null,
+      assignee_name: t.assignee?.full_name ?? null,
+      created_at: t.created_at,
+      updated_at: t.updated_at,
+      days_open: Math.round((Date.now() - new Date(t.created_at).getTime()) / (1000 * 3600 * 24)),
+    }));
+  });
+
 export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
   .inputValidator((data: any) => {
     return data;

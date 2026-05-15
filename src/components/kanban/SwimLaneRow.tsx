@@ -4,11 +4,17 @@ import { cn } from "@/lib/utils";
 import { openTicketDetail } from "@/lib/use-detail";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { SwimLaneCard } from "./SwimLaneView";
+import { Clock } from "lucide-react";
 
 interface SwimLaneRowProps {
   technician: TechnicianOption | null;
   cards: SwimLaneCard[];
+  totalLaneCards: number;
   statuses: TicketStatus[];
+  visibleStatuses: TicketStatus[];
+  collapsedColumns: Set<TicketStatus>;
+  compactView: boolean;
+  onToggleCollapseColumn: (status: TicketStatus) => void;
   canEdit: boolean;
   dragId: string | null;
   overCell: string | null;
@@ -22,7 +28,12 @@ interface SwimLaneRowProps {
 export function SwimLaneRow({
   technician,
   cards,
+  totalLaneCards,
   statuses,
+  visibleStatuses,
+  collapsedColumns,
+  compactView,
+  onToggleCollapseColumn,
   canEdit,
   dragId,
   overCell,
@@ -41,13 +52,41 @@ export function SwimLaneRow({
         className="sticky left-0 z-10 w-44 min-w-44 px-3 py-3 text-left align-top"
         style={{ background: "var(--surface)" }}
       >
-        {technician ? (
-          <AssigneeChip initials={technician.initials} name={technician.full_name} />
-        ) : (
-          <UnassignedBadge />
-        )}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            {technician ? (
+              <AssigneeChip initials={technician.initials} name={technician.full_name} />
+            ) : (
+              <UnassignedBadge />
+            )}
+          </div>
+          <span className="text-[10px] font-mono text-text3 whitespace-nowrap">
+            {totalLaneCards}
+          </span>
+        </div>
       </th>
       {statuses.map((status) => {
+        const isHidden = collapsedColumns.has(status) || (compactView && !visibleStatuses.includes(status));
+        if (isHidden) {
+          return (
+            <td key={status} className="min-w-[48px] w-[48px] p-0 align-top">
+              <div className="flex min-h-[112px] items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => onToggleCollapseColumn(status)}
+                  className="flex flex-col items-center gap-0.5 cursor-pointer"
+                  title={`Espandi ${STATUS_META[status].label}`}
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: STATUS_META[status].color }}
+                  />
+                </button>
+              </div>
+            </td>
+          );
+        }
+
         const cellId = `${laneId}:${status}`;
         const items = cards.filter((card) => card.status === status);
         const isOver = overCell === cellId;
@@ -100,6 +139,38 @@ export function SwimLaneRow({
   );
 }
 
+function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
+  if (!updatedAt) return null;
+  try {
+    const d = new Date(updatedAt);
+    if (Number.isNaN(d.getTime())) return null;
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    let label: string;
+    if (hours < 1) label = `${minutes}m`;
+    else if (hours < 24) label = `${hours}h`;
+    else {
+      const days = Math.floor(hours / 24);
+      label = `${days}g`;
+    }
+
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono"
+        title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}
+      >
+        <Clock className="h-2.5 w-2.5" />
+        {label}
+      </span>
+    );
+  } catch {
+    return null;
+  }
+}
+
 function TicketCard({
   card,
   canEdit,
@@ -134,11 +205,16 @@ function TicketCard({
         {card.device?.model || "Nessun asset"}
       </div>
       <div className="mb-2 text-[11px] text-text3">{card.client}</div>
-      {card.assignee ? (
-        <AssigneeChip initials={card.assignee.initials} name={card.assignee.full_name} />
-      ) : (
-        <UnassignedBadge />
-      )}
+      <div className="flex items-center justify-between">
+        <div>
+          {card.assignee ? (
+            <AssigneeChip initials={card.assignee.initials} name={card.assignee.full_name} />
+          ) : (
+            <UnassignedBadge />
+          )}
+        </div>
+        <TimeInColumnLabel updatedAt={card.updated_at} />
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { CalendarDays } from "lucide-react";
 
 type DateRangePickerProps = {
@@ -6,27 +7,54 @@ type DateRangePickerProps = {
   onChange: (from: string, to: string) => void;
 };
 
-const PRESETS = [
-  { label: "7g", days: 7 },
-  { label: "30g", days: 30 },
-  { label: "3m", days: 90 },
-  { label: "6m", days: 180 },
-] as const;
+type QuickPreset = "today" | "7days" | "30days" | "custom";
 
 export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
-  function applyPreset(days: number) {
-    onChange(subtractDays(days), today());
+  const activePreset = useMemo<QuickPreset>(() => {
+    if (from === today() && to === today()) return "today";
+    if (from === subtractDays(6) && to === today()) return "7days";
+    if (from === subtractDays(29) && to === today()) return "30days";
+    return "custom";
+  }, [from, to]);
+
+  const [preset, setPreset] = useState<QuickPreset>(activePreset);
+
+  function applyPreset(p: QuickPreset) {
+    setPreset(p);
+    switch (p) {
+      case "today":
+        onChange(today(), today());
+        break;
+      case "7days":
+        onChange(subtractDays(6), today());
+        break;
+      case "30days":
+        onChange(subtractDays(29), today());
+        break;
+      case "custom":
+        // keep current values when switching to custom
+        break;
+    }
   }
 
   function handleFromChange(value: string) {
     if (!value || value > to) return;
+    setPreset("custom");
     onChange(value, to);
   }
 
   function handleToChange(value: string) {
     if (!value || value < from) return;
+    setPreset("custom");
     onChange(from, value);
   }
+
+  const presets: { key: QuickPreset; label: string }[] = [
+    { key: "today", label: "Oggi" },
+    { key: "7days", label: "7 giorni" },
+    { key: "30days", label: "30 giorni" },
+    { key: "custom", label: "Personalizzato" },
+  ];
 
   return (
     <div
@@ -36,42 +64,44 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
     >
       <CalendarDays className="h-4 w-4 text-text3" aria-hidden="true" />
       <div className="flex items-center gap-1">
-        {PRESETS.map((preset) => {
-          const active = isPresetActive(from, to, preset.days);
+        {presets.map((p) => {
+          const active = preset === p.key;
           return (
             <button
-              key={preset.days}
+              key={p.key}
               type="button"
               className={`pc-btn pc-btn-xs ${active ? "pc-btn-primary" : "pc-btn-ghost"}`}
-              onClick={() => applyPreset(preset.days)}
+              onClick={() => applyPreset(p.key)}
               aria-pressed={active}
             >
-              {preset.label}
+              {p.label}
             </button>
           );
         })}
       </div>
-      <div className="flex items-center gap-1.5">
-        <input
-          className="pc-input pc-input-sm w-[136px]"
-          type="date"
-          value={from}
-          max={to}
-          aria-label="Data inizio"
-          onChange={(event) => handleFromChange(event.target.value)}
-        />
-        <span className="text-[12px] text-text3" aria-hidden="true">
-          -
-        </span>
-        <input
-          className="pc-input pc-input-sm w-[136px]"
-          type="date"
-          value={to}
-          min={from}
-          aria-label="Data fine"
-          onChange={(event) => handleToChange(event.target.value)}
-        />
-      </div>
+      {preset === "custom" && (
+        <div className="flex items-center gap-1.5">
+          <input
+            className="pc-input pc-input-sm w-[136px]"
+            type="date"
+            value={from}
+            max={to}
+            aria-label="Data inizio"
+            onChange={(event) => handleFromChange(event.target.value)}
+          />
+          <span className="text-[12px] text-text3" aria-hidden="true">
+            -
+          </span>
+          <input
+            className="pc-input pc-input-sm w-[136px]"
+            type="date"
+            value={to}
+            min={from}
+            aria-label="Data fine"
+            onChange={(event) => handleToChange(event.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -88,8 +118,4 @@ function subtractDays(days: number) {
 
 function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
-}
-
-function isPresetActive(from: string, to: string, days: number) {
-  return from === subtractDays(days) && to === today();
 }

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Theme } from "./theme";
+import type { DashboardLayout } from "@/components/dashboard/widget-registry";
 
 export interface UserProfile {
   id: string;
@@ -203,6 +204,43 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         user_metadata: { ...user.user_metadata, full_name: validated.display_name },
       });
       if (authError) throw authError;
+    }
+
+    return { success: true };
+  });
+
+export const getMyDashboardLayout = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }): Promise<DashboardLayout | null> => {
+    const user = await getAuthedUser(accessToken);
+
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("user_profiles")
+      .select("dashboard_layout")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[getMyDashboardLayout] failed:", error);
+      throw error;
+    }
+
+    return (row?.dashboard_layout as DashboardLayout | null) ?? null;
+  });
+
+export const updateMyDashboardLayout = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken: string; layout: DashboardLayout }) => data)
+  .handler(async ({ data: { accessToken, layout } }) => {
+    const user = await getAuthedUser(accessToken);
+
+    const { error } = await (supabaseAdmin as any)
+      .from("user_profiles")
+      .update({ dashboard_layout: layout, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[updateMyDashboardLayout] failed:", error);
+      throw error;
     }
 
     return { success: true };

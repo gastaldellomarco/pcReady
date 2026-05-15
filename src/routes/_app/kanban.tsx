@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { fetchTicketsList } from "@/lib/queries/tickets";
 import queries from "@/lib/queries/tickets";
@@ -24,7 +24,7 @@ import { DEFAULT_WIP_LIMITS, getKanbanAppSettings, type WipLimits } from "@/lib/
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { createNotification } from "@/lib/notifications";
 import { sendTicketAssignedEmail } from "@/lib/email-events";
-import { Rows3 } from "lucide-react";
+import { Rows3, ChevronDown, ChevronRight, LayoutList, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/kanban")({
@@ -46,6 +46,7 @@ interface Card {
   status: TicketStatus;
   priority: TicketPriority;
   assignee_id: string | null;
+  updated_at?: string | null;
   device?: { model: string; serial: string | null } | null;
   assignee?: { id: string; full_name: string; initials: string } | null;
   completed_at?: string | null;
@@ -72,6 +73,25 @@ function KanbanPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TicketStatus | null>(null);
   const [overCell, setOverCell] = useState<string | null>(null);
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<TicketStatus>>(new Set());
+  const [compactView, setCompactView] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(KANBAN_VIEW_MODE_KEY + ":compact") === "true";
+  });
+
+  const toggleCollapseColumn = useCallback((status: TicketStatus) => {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(KANBAN_VIEW_MODE_KEY + ":compact", String(compactView));
+  }, [compactView]);
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "columns";
     return window.localStorage.getItem(KANBAN_VIEW_MODE_KEY) === "swimlanes"
@@ -217,6 +237,17 @@ function KanbanPage() {
     });
   }, [filterAssignee, filterPriority, profile?.id, rows]);
 
+  // Filter visible statuses based on compact view and collapsed state
+  const visibleStatuses = useMemo(() => {
+    if (compactView) {
+      return KANBAN_STATUSES.filter((s) => {
+        const count = filteredRows.filter((r) => r.status === s).length;
+        return count > 0;
+      });
+    }
+    return KANBAN_STATUSES.filter((s) => !collapsedColumns.has(s));
+  }, [compactView, collapsedColumns, filteredRows]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -250,6 +281,19 @@ function KanbanPage() {
           </SelectContent>
         </Select>
 
+        <button
+          type="button"
+          className={cn(
+            "pc-btn pc-btn-sm",
+            compactView ? "pc-btn-primary" : "pc-btn-ghost",
+          )}
+          onClick={() => setCompactView((prev) => !prev)}
+          title="Vista compatta — nascondi colonne vuote"
+        >
+          <LayoutList className="h-3.5 w-3.5" />
+          Compatta
+        </button>
+
         <span className="ml-auto text-xs text-text3 font-mono flex items-center gap-2">
           {ticketsLoading ? (
             <span className="text-[10px] uppercase tracking-wide">Sincronizzazione…</span>
@@ -275,6 +319,10 @@ function KanbanPage() {
           technicians={Array.isArray(technicians) ? technicians : []}
           wipLimits={wipLimits ?? DEFAULT_WIP_LIMITS}
           statuses={KANBAN_STATUSES}
+          visibleStatuses={visibleStatuses}
+          collapsedColumns={collapsedColumns}
+          compactView={compactView}
+          onToggleCollapseColumn={toggleCollapseColumn}
           canEdit={canEdit}
           dragId={dragId}
           overCell={overCell}
@@ -291,6 +339,29 @@ function KanbanPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {KANBAN_STATUSES.map((s) => {
+            const isHidden = collapsedColumns.has(s);
+            if (isHidden && !compactView) {
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleCollapseColumn(s)}
+                  className="flex flex-col items-center justify-center gap-1 py-4 rounded-xl border border-dashed border-border hover:border-text3 transition-all cursor-pointer"
+                  title={`Espandi ${STATUS_META[s].label}`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ background: STATUS_META[s].color }}
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text3">
+                    {STATUS_META[s].label}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-text3" />
+                  <span className="text-[10px] font-mono text-text3">(0&nbsp;ticket)</span>
+                </button>
+              );
+            }
+
             let items = filteredRows.filter((r) => r.status === s);
             if (s === "completed") {
               try {
@@ -304,6 +375,7 @@ function KanbanPage() {
             const count = items.length;
             const limit = (wipLimits ?? DEFAULT_WIP_LIMITS)[s];
             const isOverLimit = limit > 0 && count > limit;
+            const wipPct = limit > 0 ? (count / limit) * 100 : 0;
             const isOver = overCol === s;
             return (
               <div
@@ -325,24 +397,37 @@ function KanbanPage() {
                 }}
               >
                 <div className="flex items-center gap-2 px-1">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ background: STATUS_META[s].color }}
-                  />
-                  <span className="text-[12px] font-bold uppercase tracking-wider">
-                    {STATUS_META[s].label}
-                  </span>
-                  <span
-                    className={cn(
-                      "ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full border",
-                      isOverLimit
-                        ? "bg-red-100 text-red-700 border-red-200"
-                        : "text-text3 border-border",
-                    )}
-                    style={isOverLimit ? undefined : { background: "var(--surface3)" }}
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapseColumn(s)}
+                    className="flex items-center gap-1 text-left"
                   >
-                    {count}/{limit}
-                  </span>
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ background: STATUS_META[s].color }}
+                    />
+                    <span className="text-[12px] font-bold uppercase tracking-wider">
+                      {STATUS_META[s].label}
+                    </span>
+                    {!count && !compactView ? (
+                      <ChevronDown className="h-3 w-3 text-text3 ml-0.5" />
+                    ) : null}
+                  </button>
+                  {limit > 0 ? (
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <WipProgressBar pct={wipPct} />
+                      <span
+                        className={cn(
+                          "text-[10px] font-mono",
+                          isOverLimit ? "text-red-600 font-bold" : "text-text3",
+                        )}
+                      >
+                        {count}/{limit}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="ml-auto text-[10px] font-mono text-text3">{count}</span>
+                  )}
                 </div>
 
                 <div
@@ -380,11 +465,16 @@ function KanbanPage() {
                         {c.device?.model || "Nessun asset"}
                       </div>
                       <div className="text-[11px] text-text3 mb-2">{c.client}</div>
-                      {c.assignee ? (
-                        <AssigneeChip initials={c.assignee.initials} name={c.assignee.full_name} />
-                      ) : (
-                        <UnassignedBadge />
-                      )}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {c.assignee ? (
+                            <AssigneeChip initials={c.assignee.initials} name={c.assignee.full_name} />
+                          ) : (
+                            <UnassignedBadge />
+                          )}
+                        </div>
+                        <TimeInColumnLabel updatedAt={c.updated_at} />
+                      </div>
                     </div>
                   ))}
 
@@ -416,4 +506,50 @@ function UnassignedBadge() {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+/** WIP progress bar with color thresholds: green <70%, yellow 70-90%, red >=90% */
+function WipProgressBar({ pct }: { pct: number }) {
+  const color =
+    pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
+  const bgColor =
+    pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
+  return (
+    <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
+      <div
+        className="h-full rounded-full transition-all duration-300"
+        style={{ width: `${Math.min(pct, 100)}%`, background: color }}
+      />
+    </div>
+  );
+}
+
+/** Shows how long a ticket has been in its current status column */
+function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
+  if (!updatedAt) return null;
+  try {
+    const d = new Date(updatedAt);
+    if (Number.isNaN(d.getTime())) return null;
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    let label: string;
+    if (hours < 1) label = `${minutes}m`;
+    else if (hours < 24) label = `${hours}h`;
+    else {
+      const days = Math.floor(hours / 24);
+      label = `${days}g`;
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono" title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}>
+        <Clock className="h-2.5 w-2.5" />
+        {label}
+      </span>
+    );
+  } catch {
+    return null;
+  }
 }
