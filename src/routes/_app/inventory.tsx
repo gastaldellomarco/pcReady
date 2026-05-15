@@ -10,7 +10,7 @@ import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, FileDown, Eye, QrCode, Upload, ScanLine, Printer } from "lucide-react";
+import { Plus, FileDown, Eye, QrCode, Upload, ScanLine, Printer, TicketPlus, ClipboardList, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
@@ -20,6 +20,16 @@ import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDownloadFileName } from "@/lib/downloads";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
@@ -61,7 +71,7 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
 const PAGE_SIZE = 50;
 
 function InventoryPage() {
-  const { openAddDevice } = useTickets();
+  const { openAddDevice, openCreate } = useTickets();
   const qc = useQueryClient();
   const { session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
@@ -83,6 +93,12 @@ function InventoryPage() {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("filter") === "without_ticket";
   });
+  const [updatedBeforeDays, setUpdatedBeforeDays] = useState<number | null>(null);
+  const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
+  const [bulkClientOpen, setBulkClientOpen] = useState(false);
+  const [bulkTargetStatus, setBulkTargetStatus] = useState<DeviceStatus>("available");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkTargetClientName, setBulkTargetClientName] = useState("");
   const { useInventoryList } = queries as any;
   const listQuery = useInventoryList({
     status: fs || undefined,
@@ -91,6 +107,9 @@ function InventoryPage() {
     page,
     pageSize: PAGE_SIZE,
     withoutTicket: withoutTicketFilter,
+    updatedBefore: updatedBeforeDays
+      ? new Date(Date.now() - updatedBeforeDays * 24 * 60 * 60 * 1000).toISOString()
+      : undefined,
   });
 
   useEffect(() => {
@@ -274,6 +293,90 @@ function InventoryPage() {
     }
   }
 
+  async function handleBulkStatusChange() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    setBulkBusy(true);
+    let success = 0;
+    let fail = 0;
+    for (const deviceId of ids) {
+      try {
+        const { error } = await supabase
+          .from("devices")
+          .update({ status: bulkTargetStatus })
+          .eq("id", deviceId);
+        if (error) throw error;
+        success++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    setBulkStatusOpen(false);
+    setSelectedIds(new Set());
+    void qc.invalidateQueries({ queryKey: ["inventory"] });
+    toast.success(`${success} dispositivi aggiornati${fail ? `, ${fail} errori` : ""}`);
+  }
+
+  async function handleBulkAssignClient() {
+    const ids = [...selectedIds];
+    if (!ids.length || !bulkTargetClientName) return;
+    setBulkBusy(true);
+    let success = 0;
+    let fail = 0;
+    for (const deviceId of ids) {
+      try {
+        const { error } = await supabase
+          .from("devices")
+          .update({ assigned_to: bulkTargetClientName })
+          .eq("id", deviceId);
+        if (error) throw error;
+        success++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    setBulkClientOpen(false);
+    setBulkTargetClientName("");
+    setSelectedIds(new Set());
+    void qc.invalidateQueries({ queryKey: ["inventory"] });
+    toast.success(`${success} dispositivi aggiornati${fail ? `, ${fail} errori` : ""}`);
+  }
+
+  async function exportSelectedPdf() {
+    if (!selectedRows.length) return toast.error("Nessun dispositivo selezionato");
+    setPdfBusy("download");
+    try {
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
+      const org = settings?.organization_name;
+      await downloadPdf(
+        <InventoryPdf rows={selectedRows.map(toPdfRow)} organizationName={org} />,
+        buildDownloadFileName("pcready-inventario-selezionati", "pdf", { dated: true }),
+      );
+      toast.success("PDF esportato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore esportazione PDF"));
+    } finally {
+      setPdfBusy(null);
+    }
+  }
+
+  function toPdfRow(r: Row): DevicePdfRow {
+    return {
+      id: r.id,
+      serial: r.serial,
+      model: r.model,
+      os: r.os,
+      status: r.status,
+      client: r.client?.name || "-",
+      assigned_to: r.assigned_to,
+      updated_at: r.updated_at,
+    };
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2 items-center">
@@ -305,6 +408,19 @@ function InventoryPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
+        <select
+          className="pc-input max-w-[210px]"
+          value={updatedBeforeDays ?? ""}
+          onChange={(e) =>
+            setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)
+          }
+        >
+          <option value="">Tutte le date</option>
+          <option value="7">Non aggiornati da &gt; 7 giorni</option>
+          <option value="14">Non aggiornati da &gt; 14 giorni</option>
+          <option value="30">Non aggiornati da &gt; 30 giorni</option>
+          <option value="60">Non aggiornati da &gt; 60 giorni</option>
+        </select>
         <span className="ml-auto self-center text-xs text-text3 font-mono">
           {total
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
@@ -341,6 +457,56 @@ function InventoryPage() {
           <Plus className="w-3 h-3" /> Aggiungi dispositivo
         </button>
       </div>
+      {selectedIds.size > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg"
+          style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+        >
+          <span className="text-[12px] font-semibold text-text3 font-mono mr-1">
+            {selectedIds.size} selezionat{" "}
+            {data.length > selectedIds.size ? (
+              <button
+                className="text-accent hover:underline text-[11px] ml-1"
+                onClick={() => setSelectedIds(new Set(data.map((r) => r.id)))}
+              >
+                Seleziona pagina
+              </button>
+            ) : null}
+          </span>
+          <div className="flex-1" />
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={bulkBusy}
+            onClick={() => setBulkStatusOpen(true)}
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            Cambia stato
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={!!pdfBusy}
+            onClick={exportSelectedPdf}
+          >
+            <FileDown className="h-3 w-3" />
+            Esporta PDF
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={bulkBusy}
+            onClick={() => setBulkClientOpen(true)}
+          >
+            <ClipboardList className="h-3 w-3" />
+            Assegna utente
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm text-destructive"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="h-3 w-3" />
+            Deseleziona
+          </button>
+        </div>
+      )}
       {listQuery.isError ? (
         <PageFetchError
           message="Impossibile caricare l\'inventario. Controlla la connessione e riprova."
@@ -429,21 +595,34 @@ function InventoryPage() {
                         </td>
                         <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
                         <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                        <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                        <td className="px-[14px] py-[10px] text-[11px] text-text3" title={r.updated_at}>
                           {fmtDate(r.updated_at)}
                         </td>
                         <td
                           className="px-[14px] py-[10px]"
                           onClick={(event) => event.stopPropagation()}
                         >
-                          <button
-                            className="pc-btn-icon"
-                            title="QR dispositivo"
-                            aria-label={`QR ${r.serial || r.id}`}
-                            onClick={() => setQrDevice(toQrDevice(r))}
-                          >
-                            <QrCode className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="pc-btn-icon"
+                              title="Crea ticket con questo dispositivo"
+                              aria-label={`Crea ticket per ${r.serial || r.id}`}
+                              onClick={() => {
+                                openDeviceDetail(r.id);
+                                setTimeout(() => openCreate(), 200);
+                              }}
+                            >
+                              <TicketPlus className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              className="pc-btn-icon"
+                              title="QR dispositivo"
+                              aria-label={`QR ${r.serial || r.id}`}
+                              onClick={() => setQrDevice(toQrDevice(r))}
+                            >
+                              <QrCode className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -494,6 +673,71 @@ function InventoryPage() {
         onClose={() => setScannerOpen(false)}
         onDetected={(code) => void handleDetected(code)}
       />
+
+      <AlertDialog open={bulkStatusOpen} onOpenChange={(open) => {
+        setBulkStatusOpen(open);
+        if (!open) setBulkTargetStatus("available");
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cambia stato in blocco</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedIds.size} dispositivi selezionati. Scegli il nuovo stato:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <select
+            className="pc-input w-full"
+            value={bulkTargetStatus}
+            onChange={(e) => setBulkTargetStatus(e.target.value as DeviceStatus)}
+          >
+            {Object.entries(DEVICE_STATUS_META).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={bulkBusy}
+              onClick={handleBulkStatusChange}
+            >
+              {bulkBusy ? "Aggiornamento..." : `Applica a ${selectedIds.size} dispositivi`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkClientOpen} onOpenChange={(open) => {
+        setBulkClientOpen(open);
+        if (!open) setBulkTargetClientName("");
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Assegna utente in blocco</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedIds.size} dispositivi selezionati. Inserisci il nome utente da assegnare (anagrafica):
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            className="pc-input w-full"
+            placeholder="Nome utente (es. Mario Rossi)"
+            value={bulkTargetClientName}
+            onChange={(e) => setBulkTargetClientName(e.target.value)}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={bulkBusy || !bulkTargetClientName.trim()}
+              onClick={handleBulkAssignClient}
+            >
+              {bulkBusy ? "Aggiornamento..." : `Applica a ${selectedIds.size} dispositivi`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

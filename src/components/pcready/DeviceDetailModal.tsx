@@ -14,6 +14,7 @@ import {
 } from "@/lib/pcready";
 import { useAuth } from "@/lib/auth-context";
 import { updateDeviceStatus } from "@/lib/device-status";
+import { useTickets } from "@/lib/use-tickets";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TicketPlus, Save } from "lucide-react";
 
 interface DeviceRow {
   id: string;
@@ -129,6 +131,10 @@ export function DeviceDetailModal() {
   const [statusSaving, setStatusSaving] = useState(false);
   const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<DeviceInventoryStatus | null>(null);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const { openCreate } = useTickets();
 
   useEffect(() => {
     if (!id) {
@@ -238,6 +244,26 @@ export function DeviceDetailModal() {
         }
       }
 
+      // Also load device-level activity (status changes, etc.)
+      const deviceLogRes = await (supabase as any)
+        .from("activity_log")
+        .select("id, created_at, message, ticket_id, actor_id, type")
+        .eq("device_id", deviceId)
+        .order("created_at", { ascending: false });
+      if (!cancelled && !deviceLogRes.error && deviceLogRes.data) {
+        // Merge device logs with ticket logs, avoiding duplicates by id
+        const existingIds = new Set(logRows.map((r) => r.id));
+        for (const row of deviceLogRes.data as ActivityRow[]) {
+          if (!existingIds.has(row.id)) {
+            logRows.push(row);
+            existingIds.add(row.id);
+          }
+        }
+        logRows.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+      }
+
       if (cancelled) return;
       setActivities(logRows);
 
@@ -331,6 +357,25 @@ export function DeviceDetailModal() {
       setStatusSaving(false);
       setConfirmStatusOpen(false);
       setPendingStatus(null);
+    }
+  }
+
+  async function saveNotes() {
+    if (!d || !session?.access_token) return;
+    setSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from("devices")
+        .update({ notes: notesDraft || null })
+        .eq("id", d.id);
+      if (error) throw error;
+      setD({ ...d, notes: notesDraft || null });
+      setEditingNotes(false);
+      toast.success("Note tecniche aggiornate");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore salvataggio note");
+    } finally {
+      setSavingNotes(false);
     }
   }
 
@@ -436,13 +481,55 @@ export function DeviceDetailModal() {
         </div>
       )}
 
-      {d.notes && (
-        <div
-          className="mb-4 p-3 rounded-lg"
+      {d.notes !== undefined && (
+        <div className="flex items-start justify-between gap-2 mb-4 p-3 rounded-lg"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
-          <div className="pc-label">Note tecniche (stato attuale)</div>
-          <div className="text-[12.5px] text-text2 whitespace-pre-wrap mt-1">{d.notes}</div>
+          <div className="flex-1 min-w-0">
+            <div className="pc-label mb-1">Note tecniche</div>
+            {editingNotes ? (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  className="pc-input w-full min-h-[80px] text-[12.5px]"
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  placeholder="Inserisci note tecniche sul dispositivo..."
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    disabled={savingNotes}
+                    onClick={saveNotes}
+                  >
+                    <Save className="h-3 w-3" />
+                    {savingNotes ? "Salvataggio..." : "Salva"}
+                  </button>
+                  <button
+                    className="pc-btn pc-btn-ghost pc-btn-sm"
+                    onClick={() => {
+                      setEditingNotes(false);
+                      setNotesDraft(d?.notes ?? "");
+                    }}
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="text-[12.5px] text-text2 whitespace-pre-wrap cursor-pointer hover:bg-background/50 rounded px-1 -mx-1 py-1"
+                onClick={() => {
+                  if (!canEdit) return;
+                  setNotesDraft(d?.notes ?? "");
+                  setEditingNotes(true);
+                }}
+              >
+                {d.notes || (
+                  <span className="text-text3 italic">Nessuna nota tecnica{canEdit ? " — clicca per aggiungere" : ""}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -577,7 +664,23 @@ export function DeviceDetailModal() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        {d ? (
+          <button
+            className="pc-btn pc-btn-primary pc-btn-sm"
+            type="button"
+            onClick={() => {
+              close();
+              // Small delay to let modal close before opening create dialog
+              setTimeout(() => openCreate(), 150);
+            }}
+          >
+            <TicketPlus className="h-3.5 w-3.5" />
+            Crea ticket con questo dispositivo
+          </button>
+        ) : (
+          <div />
+        )}
         <button className="pc-btn pc-btn-ghost" type="button" onClick={close}>
           Chiudi
         </button>

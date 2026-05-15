@@ -8,6 +8,9 @@ export type DevicesListParams = {
   page?: number;
   pageSize?: number;
   withoutTicket?: boolean;
+  updatedBefore?: string;
+  updatedAfter?: string;
+  client_id?: string;
 };
 
 export async function fetchAssignedDeviceIds() {
@@ -44,6 +47,16 @@ export async function fetchDevicesList(params: DevicesListParams) {
     query = query.not("id", "in", `(${assignedIds.map((id) => `'${id}'`).join(",")})`);
   }
 
+  if (params.updatedBefore) {
+    query = query.lt("updated_at", params.updatedBefore);
+  }
+  if (params.updatedAfter) {
+    query = query.gt("updated_at", params.updatedAfter);
+  }
+  if (params.client_id) {
+    query = query.eq("client_id", params.client_id as any);
+  }
+
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
   const rows = (data ?? []).map((row: Record<string, unknown>) => ({
@@ -63,6 +76,9 @@ export function useInventoryList(params: DevicesListParams) {
       params.page ?? 0,
       params.pageSize ?? 50,
       params.withoutTicket ? "without" : "",
+      params.updatedBefore || "",
+      params.updatedAfter || "",
+      params.client_id || "",
     ],
     queryFn: () => fetchDevicesList(params),
     placeholderData: (previousData) => previousData,
