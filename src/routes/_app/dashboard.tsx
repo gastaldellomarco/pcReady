@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { PageErrorBoundary } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useMemo } from "react";
 import { useTickets } from "@/lib/use-tickets";
@@ -158,36 +159,38 @@ function DashboardPage() {
         />
       </div>
 
-      <Suspense
-        fallback={
-          <div className="pc-card pc-card-body text-sm text-text3">Caricamento analytics...</div>
-        }
-      >
-        <AnalyticsCard
-          analytics={analytics}
-          loading={analyticsLoading}
-          periodLabel={periodLabel}
-          onDownloadPdf={async () => {
-            if (!analytics) return;
-            const settings = session?.access_token
-              ? await loadSettings({ data: { accessToken: session.access_token } }).catch(
-                  () => null,
-                )
-              : null;
-            const org = settings?.organization_name;
-            await downloadPdf(
-              <AnalyticsReportPdf
-                analytics={analytics}
-                periodLabel={periodLabel}
-                organizationName={org}
-                priorityCounts={priorityCounts}
-              />,
-              buildDownloadFileName("pcready-dashboard-report", "pdf", { dated: true }),
-            );
-          }}
-          onDownloadCsv={() => analytics && downloadAnalyticsCsv(analytics)}
-        />
-      </Suspense>
+      <PageErrorBoundary>
+        <Suspense
+          fallback={
+            <div className="pc-card pc-card-body text-sm text-text3">Caricamento analytics...</div>
+          }
+        >
+          <AnalyticsCard
+            analytics={analytics}
+            loading={analyticsLoading}
+            periodLabel={periodLabel}
+            onDownloadPdf={async () => {
+              if (!analytics) return;
+              const settings = session?.access_token
+                ? await loadSettings({ data: { accessToken: session.access_token } }).catch(
+                    () => null,
+                  )
+                : null;
+              const org = settings?.organization_name;
+              await downloadPdf(
+                <AnalyticsReportPdf
+                  analytics={analytics}
+                  periodLabel={periodLabel}
+                  organizationName={org}
+                  priorityCounts={priorityCounts}
+                />,
+                buildDownloadFileName("pcready-dashboard-report", "pdf", { dated: true }),
+              );
+            }}
+            onDownloadCsv={() => analytics && downloadAnalyticsCsv(analytics)}
+          />
+        </Suspense>
+      </PageErrorBoundary>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         <div className="pc-card">

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ListSkeleton } from "@/components/page-states";
+import { ListSkeleton, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -667,7 +667,12 @@ function ClientsPage() {
           )}
         </div>
         <div className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3">
-          {listLoading ? (
+          {listQuery.isError ? (
+            <PageFetchError
+              message="Impossibile caricare i clienti. Controlla la connessione e riprova."
+              onRetry={() => listQuery.refetch()}
+            />
+          ) : listLoading ? (
             <ListSkeleton rows={8} variant="app" className="gap-2" />
           ) : (
             <>

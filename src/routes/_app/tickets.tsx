@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TableSkeletonRows } from "@/components/page-states";
+import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -288,89 +288,96 @@ function TicketsPage() {
         </button>
       </div>
 
-      <div className="pc-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                {[
-                  "ID",
-                  "Modello",
-                  "Seriale",
-                  "Cliente",
-                  "Richiedente",
-                  "Priorita",
-                  "Stato",
-                  "Tipo",
-                  "Assegnatario",
-                  "Creato",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {listLoading ? (
-                <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
-              ) : (
-                <>
-                  {data.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                      style={{ borderColor: "var(--border)" }}
-                      onClick={() => openTicketDetail(t.id)}
+      {listQuery.isError ? (
+        <PageFetchError
+          message="Impossibile caricare i ticket. Controlla la connessione e riprova."
+          onRetry={() => listQuery.refetch()}
+        />
+      ) : (
+        <div className="pc-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  {[
+                    "ID",
+                    "Modello",
+                    "Seriale",
+                    "Cliente",
+                    "Richiedente",
+                    "Priorita",
+                    "Stato",
+                    "Tipo",
+                    "Assegnatario",
+                    "Creato",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
                     >
-                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                        {t.ticket_code}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">{ticketModel(t)}</td>
-                      <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                        {ticketSerial(t) || "-"}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">{ticketClient(t)}</td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">{t.requester}</td>
-                      <td className="px-[14px] py-[10px]">
-                        <PriorityLabel p={t.priority} />
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <StatusBadge status={t.status} />
-                        </div>
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <TicketTypeBadge type={t.ticket_type} />
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <AssigneeChip
-                          initials={t.assignee?.initials}
-                          name={t.assignee?.full_name}
-                        />
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[11px] text-text3">
-                        {fmtDate(t.created_at)}
-                      </td>
-                    </tr>
+                      {h}
+                    </th>
                   ))}
-                  {!data.length && (
-                    <tr>
-                      <td colSpan={10} className="text-center py-10 text-text3 text-sm">
-                        Nessun ticket
-                      </td>
-                    </tr>
-                  )}
-                </>
-              )}
-            </tbody>
-          </table>
+                </tr>
+              </thead>
+              <tbody>
+                {listLoading ? (
+                  <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
+                ) : (
+                  <>
+                    {data.map((t) => (
+                      <tr
+                        key={t.id}
+                        className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openTicketDetail(t.id)}
+                      >
+                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                          {t.ticket_code}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">{ticketModel(t)}</td>
+                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                          {ticketSerial(t) || "-"}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">{ticketClient(t)}</td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">{t.requester}</td>
+                        <td className="px-[14px] py-[10px]">
+                          <PriorityLabel p={t.priority} />
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <StatusBadge status={t.status} />
+                          </div>
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <TicketTypeBadge type={t.ticket_type} />
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <AssigneeChip
+                            initials={t.assignee?.initials}
+                            name={t.assignee?.full_name}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                          {fmtDate(t.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                    {!data.length && (
+                      <tr>
+                        <td colSpan={10} className="text-center py-10 text-text3 text-sm">
+                          Nessun ticket
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex items-center justify-end gap-2">
         <button
           className="pc-btn pc-btn-ghost pc-btn-sm"

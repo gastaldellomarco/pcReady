@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TableSkeletonRows } from "@/components/page-states";
+import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -341,119 +341,126 @@ function InventoryPage() {
           <Plus className="w-3 h-3" /> Aggiungi dispositivo
         </button>
       </div>
-      <div className="pc-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th
-                  className="w-10 px-[14px] py-[9px] text-left border-b"
-                  style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                >
-                  <input
-                    type="checkbox"
-                    aria-label="Seleziona pagina"
-                    checked={allPageSelected}
-                    onChange={(event) => togglePageSelected(event.target.checked)}
-                  />
-                </th>
-                {[
-                  "ID",
-                  "Seriale",
-                  "Modello",
-                  "OS",
-                  "Stato",
-                  "Cliente",
-                  "Utente",
-                  "Aggiornato",
-                  "Azioni",
-                ].map((h) => (
+      {listQuery.isError ? (
+        <PageFetchError
+          message="Impossibile caricare l\'inventario. Controlla la connessione e riprova."
+          onRetry={() => listQuery.refetch()}
+        />
+      ) : (
+        <div className="pc-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
                   <th
-                    key={h}
-                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                    className="w-10 px-[14px] py-[9px] text-left border-b"
                     style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
                   >
-                    {h}
+                    <input
+                      type="checkbox"
+                      aria-label="Seleziona pagina"
+                      checked={allPageSelected}
+                      onChange={(event) => togglePageSelected(event.target.checked)}
+                    />
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {listLoading ? (
-                <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
-              ) : (
-                <>
-                  {data.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="border-b hover:bg-surface2 transition-colors cursor-pointer"
-                      style={{ borderColor: "var(--border)" }}
-                      onClick={() => openDeviceDetail(r.id)}
+                  {[
+                    "ID",
+                    "Seriale",
+                    "Modello",
+                    "OS",
+                    "Stato",
+                    "Cliente",
+                    "Utente",
+                    "Aggiornato",
+                    "Azioni",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
                     >
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          aria-label={`Seleziona ${r.serial || r.id}`}
-                          checked={selectedIds.has(r.id)}
-                          onChange={(event) => toggleSelected(r.id, event.target.checked)}
-                        />
-                      </td>
-                      <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                        {r.id.slice(0, 8)}
-                      </td>
-                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                        {r.serial || "-"}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
-                      <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "-"}</td>
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <DeviceStatusBadge
-                          deviceId={r.id}
-                          status={r.status}
-                          hasActiveAssignment={!!r.has_active_assignment}
-                          saving={statusSavingId === r.id}
-                          onStatusChange={handleStatusChange}
-                        />
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
-                      <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                      <td className="px-[14px] py-[10px] text-[11px] text-text3">
-                        {fmtDate(r.updated_at)}
-                      </td>
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <button
-                          className="pc-btn-icon"
-                          title="QR dispositivo"
-                          aria-label={`QR ${r.serial || r.id}`}
-                          onClick={() => setQrDevice(toQrDevice(r))}
-                        >
-                          <QrCode className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </tr>
+                      {h}
+                    </th>
                   ))}
-                  {!data.length && (
-                    <tr>
-                      <td colSpan={10} className="text-center py-12 text-text3 text-sm">
-                        Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
-                      </td>
-                    </tr>
-                  )}
-                </>
-              )}
-            </tbody>
-          </table>
+                </tr>
+              </thead>
+              <tbody>
+                {listLoading ? (
+                  <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
+                ) : (
+                  <>
+                    {data.map((r) => (
+                      <tr
+                        key={r.id}
+                        className="border-b hover:bg-surface2 transition-colors cursor-pointer"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openDeviceDetail(r.id)}
+                      >
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            aria-label={`Seleziona ${r.serial || r.id}`}
+                            checked={selectedIds.has(r.id)}
+                            onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                          {r.id.slice(0, 8)}
+                        </td>
+                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                          {r.serial || "-"}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "-"}</td>
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <DeviceStatusBadge
+                            deviceId={r.id}
+                            status={r.status}
+                            hasActiveAssignment={!!r.has_active_assignment}
+                            saving={statusSavingId === r.id}
+                            onStatusChange={handleStatusChange}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
+                        <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
+                        <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                          {fmtDate(r.updated_at)}
+                        </td>
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            className="pc-btn-icon"
+                            title="QR dispositivo"
+                            aria-label={`QR ${r.serial || r.id}`}
+                            onClick={() => setQrDevice(toQrDevice(r))}
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {!data.length && (
+                      <tr>
+                        <td colSpan={10} className="text-center py-12 text-text3 text-sm">
+                          Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex items-center justify-end gap-2">
         <button
           className="pc-btn pc-btn-ghost pc-btn-sm"
