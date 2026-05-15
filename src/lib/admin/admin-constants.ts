@@ -11,6 +11,12 @@ export const ADMIN_WIP_LIMIT_FIELDS = [
   ["archived", "Archiviato"],
 ] as const;
 
+export const ADMIN_SLA_LIMIT_FIELDS = [
+  ["high", "Priorita alta"],
+  ["med", "Priorita media"],
+  ["low", "Priorita bassa"],
+] as const;
+
 export function isAppRole(value: string): value is AppRole {
   return value === "admin" || value === "tech" || value === "viewer";
 }

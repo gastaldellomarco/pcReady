@@ -140,9 +140,24 @@ export type TicketsListParams = {
   priority?: string;
   ticket_type?: string;
   client_id?: string;
+  assignee_id?: string;
   q?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: "created_at" | "priority" | "status";
+  sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
+};
+
+const PRIORITY_ORDER: Record<string, number> = { high: 0, med: 1, low: 2 };
+const STATUS_ORDER: Record<string, number> = {
+  pending: 0,
+  "in-progress": 1,
+  testing: 2,
+  ready: 3,
+  completed: 4,
+  archived: 5,
 };
 
 export async function fetchTicketsList(params: TicketsListParams) {
@@ -155,20 +170,45 @@ export async function fetchTicketsList(params: TicketsListParams) {
       "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
       { count: "exact" },
     )
-    .not("status", "eq", "archived" as any)
-    .order("created_at", { ascending: false });
+    .not("status", "eq", "archived" as any);
+
+  // Apply dynamic sorting
+  const sortBy = params.sortBy ?? "created_at";
+  const sortDir = params.sortDir ?? "desc";
+  if (sortBy === "priority") {
+    // Sort by priority field directly — we'll re-sort client-side for custom order
+    query = query.order("priority", { ascending: sortDir === "asc" });
+  } else if (sortBy === "status") {
+    query = query.order("status", { ascending: sortDir === "asc" });
+  } else {
+    query = query.order("created_at", { ascending: sortDir === "asc" });
+  }
 
   if (params.status && params.status !== "archived")
     query = query.eq("status", params.status as any);
   if (params.priority) query = query.eq("priority", params.priority as any);
   if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
   if (params.client_id) query = query.eq("client_id", params.client_id as any);
+  if (params.assignee_id) query = query.eq("assignee_id", params.assignee_id as any);
+  if (params.dateFrom) query = query.gte("created_at", params.dateFrom);
+  if (params.dateTo) query = query.lte("created_at", params.dateTo + "T23:59:59.999Z");
   const q = (params.q || "").trim().replace(/[,%]/g, "");
   if (q) query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
 
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
-  return { data: (data ?? []) as any[], count: count ?? 0 };
+
+  // Client-side sort for priority if needed
+  let result = (data ?? []) as any[];
+  if (sortBy === "priority") {
+    const dir = sortDir === "asc" ? 1 : -1;
+    result.sort((a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir);
+  } else if (sortBy === "status") {
+    const dir = sortDir === "asc" ? 1 : -1;
+    result.sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
+  }
+
+  return { data: result, count: count ?? 0 };
 }
 
 export function useTicketsList(params: TicketsListParams) {
@@ -179,7 +219,12 @@ export function useTicketsList(params: TicketsListParams) {
       params.priority || "",
       params.ticket_type || "",
       params.client_id || "",
+      params.assignee_id || "",
       params.q || "",
+      params.dateFrom || "",
+      params.dateTo || "",
+      params.sortBy ?? "created_at",
+      params.sortDir ?? "desc",
       params.page ?? 0,
       params.pageSize ?? 50,
     ],

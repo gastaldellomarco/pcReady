@@ -8,6 +8,15 @@ export type TicketStatus =
 export type TicketPriority = "high" | "med" | "low";
 export type TicketType = "device" | "support" | "maintenance" | "other";
 
+// SLA limits in hours per priority
+export type SlaLimits = Record<TicketPriority, number>;
+
+export const DEFAULT_SLA_LIMITS: SlaLimits = {
+  high: 4,
+  med: 24,
+  low: 72,
+};
+
 export const STATUS_META: Record<
   TicketStatus,
   { label: string; cls: string; next: TicketStatus | null; color: string }
@@ -239,6 +248,42 @@ Set-MpPreference -DisableRealtimeMonitoring $false
 
 Write-Host "✔ Preparazione completata. Riavvio consigliato."
 `;
+}
+
+export function computeSlaStatus(
+  createdAt: string | Date,
+  priority: TicketPriority,
+  slaLimits?: SlaLimits,
+): { status: "ok" | "warning" | "overdue"; limitHours: number } {
+  const limits = slaLimits ?? DEFAULT_SLA_LIMITS;
+  const limitHours = limits[priority];
+  const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const now = new Date();
+  const elapsedHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+
+  if (elapsedHours > limitHours) {
+    return { status: "overdue", limitHours };
+  }
+  if (elapsedHours > limitHours * 0.75) {
+    return { status: "warning", limitHours };
+  }
+  return { status: "ok", limitHours };
+}
+
+export function formatOpenDuration(s?: string | Date | null): string {
+  if (!s) return "-";
+  const d = typeof s === "string" ? new Date(s) : s;
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "-";
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours < 1) return `${minutes}m`;
+  if (hours < 24) return `${hours}h ${minutes}m`;
+  const days = Math.floor(hours / 24);
+  const remHours = hours % 24;
+  return `${days}g ${remHours}h`;
 }
 
 export function timeAgo(s?: string | Date | null): string {

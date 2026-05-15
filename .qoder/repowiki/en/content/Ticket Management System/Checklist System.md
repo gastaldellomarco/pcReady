@@ -8,7 +8,6 @@
 - [checklist.ts](file://src/lib/queries/checklist.ts)
 - [TicketDetailModal.tsx](file://src/components/pcready/TicketDetailModal.tsx)
 - [tickets.ts](file://src/lib/tickets.ts)
-- [tickets.ts](file://src/lib/queries/tickets.ts)
 - [20260430122321_995fb77a-a5a2-416b-9987-e00e5e34060b.sql](file://supabase/migrations/20260430122321_995fb77a-a5a2-416b-9987-e00e5e34060b.sql)
 - [20260511190100_add_completed_enum.sql](file://supabase/migrations/20260511190100_add_completed_enum.sql)
 - [20260511194000_add_archived_enum.sql](file://supabase/migrations/20260511194000_add_archived_enum.sql)
@@ -16,12 +15,13 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive drag-and-drop reordering system for checklist items and sections
-- Enhanced checklist item types with checkbox, text, and number options
+- Enhanced with comprehensive drag-and-drop reordering system using @dnd-kit for intuitive item management
+- Expanded checklist item types with checkbox, text, and number options for diverse task requirements
 - Introduced preview mode for template viewing without editing capabilities
-- Added duplicate template functionality for template copying
-- Updated UI components with improved item rendering and type indicators
+- Added duplicate template functionality for efficient template reuse
+- Improved UI components with type-specific icons (checkbox, text, number) and enhanced visual feedback
 - Enhanced validation rules to support new item types and required fields
+- Added comprehensive error handling and user experience improvements
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -36,7 +36,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the checklist system used for PC preparation tickets. It covers the checklist structure definition, the template system with configurable structures and defaults, completion tracking with per-item status and overall progress, persistence using JSON fields in the tickets table, and integration with ticket creation and status transitions. The system now features a comprehensive drag-and-drop reordering system, enhanced checklist item types (checkbox/text/number), preview mode, duplicate template functionality, and improved UI components for managing customizable checklists.
+This document explains the enhanced checklist system used for PC preparation tickets. The system now features a comprehensive drag-and-drop reordering system using @dnd-kit, expanded checklist item types (checkbox/text/number), preview mode, duplicate template functionality, and improved UI components with type-specific icons. It covers the checklist structure definition, the template system with configurable structures and defaults, completion tracking with per-item status and overall progress, persistence using JSON fields in the tickets table, and integration with ticket creation and status transitions.
 
 ## Project Structure
 The checklist system spans frontend UI, backend queries, typed schemas, and database migrations:
@@ -54,6 +54,8 @@ UI["TicketDetailModal.tsx"]
 Editor["checklist.tsx"]
 Sortable["SortableChecklistItem"]
 DnD["@dnd-kit Integration"]
+Preview["Preview Mode"]
+Duplicate["Duplicate Template"]
 end
 subgraph "Libraries"
 Types["checklist-structure.ts"]
@@ -71,6 +73,8 @@ Editor --> QChecklist
 Editor --> PCReady
 Editor --> Sortable
 Editor --> DnD
+Editor --> Preview
+Editor --> Duplicate
 QChecklist --> Supabase
 QTix --> Supabase
 Types --> PCReady
@@ -110,6 +114,10 @@ Types --> PCReady
 - Drag-and-drop system:
   - Comprehensive reordering within sections and moving between sections.
   - Visual feedback during drag operations with overlay support.
+- Enhanced item types:
+  - Checkbox: Simple yes/no tasks with visual checkmark.
+  - Text: Free-form text input with placeholder guidance.
+  - Number: Numeric input with validation support.
 
 **Section sources**
 - [checklist-structure.ts:5-29](file://src/types/checklist-structure.ts#L5-L29)
@@ -125,6 +133,8 @@ The system separates concerns across types, UI, and persistence with enhanced dr
 - The ticket detail UI loads either a persisted template or the default structure, tracks per-item completion, and advances ticket status automatically upon section completion.
 - Progress is computed client-side and persisted as JSON in the tickets table.
 - Drag-and-drop reordering provides intuitive item management with visual feedback.
+- Preview mode allows users to view templates without editing capabilities.
+- Duplicate functionality enables efficient template reuse.
 
 ```mermaid
 sequenceDiagram
@@ -132,6 +142,8 @@ participant Tech as "Technician"
 participant UI as "TicketDetailModal.tsx"
 participant Editor as "checklist.tsx"
 participant DnD as "@dnd-kit"
+participant Preview as "Preview Mode"
+participant Duplicate as "Duplicate Template"
 participant Q as "queries/tickets.ts"
 participant DB as "Supabase"
 Tech->>UI : Click item to mark complete
@@ -150,6 +162,11 @@ Tech->>Editor : Drag item to reorder
 Editor->>DnD : Handle drag events
 DnD->>Editor : Reorder items
 Editor->>Q : Persist updated structure
+Tech->>Editor : Toggle preview mode
+Editor->>Preview : Switch to preview view
+Tech->>Editor : Duplicate template
+Editor->>Duplicate : Create template copy
+Duplicate->>Q : Persist new template
 ```
 
 **Diagram sources**
@@ -431,6 +448,19 @@ CheckSection --> |No| Wait["Wait for more actions"]
 - [checklist.tsx:267-556](file://src/routes/_app/checklist.tsx#L267-L556)
 - [TicketDetailModal.tsx:302-361](file://src/components/pcready/TicketDetailModal.tsx#L302-L361)
 
+### Enhanced Item Type System and Visual Feedback
+- **Checkbox Items**: Simple boolean completion with visual checkmark indicator.
+- **Text Items**: Free-form text input with placeholder guidance and preview mode support.
+- **Number Items**: Numeric input with validation support and preview mode display.
+- **Type Icons**: Visual indicators showing item type (checkbox, text, number) for quick identification.
+- **Required Fields**: Visual asterisk indicator for mandatory items in preview mode.
+
+**Section sources**
+- [checklist-structure.ts:9](file://src/types/checklist-structure.ts#L9)
+- [pcready.ts:114](file://src/lib/pcready.ts#L114)
+- [checklist.tsx:802-809](file://src/routes/_app/checklist.tsx#L802-L809)
+- [checklist.tsx:818-838](file://src/routes/_app/checklist.tsx#L818-L838)
+
 ## Dependency Analysis
 - Types depend on Zod for validation and on pcready's default structure with enhanced item type support.
 - Editor depends on queries for checklist templates, @dnd-kit for drag-and-drop functionality, and on pcready for default structure.
@@ -470,6 +500,8 @@ QTix --> DB
 - Progress calculations are O(n) per tab and O(n) overall; keep tab/item counts reasonable for responsive UI.
 - Drag-and-drop operations use efficient array manipulation with @dnd-kit for smooth performance.
 - Use optimistic updates for item toggles and invalidate queries afterward to maintain consistency.
+- Preview mode reduces DOM complexity by disabling interactive elements.
+- Duplicate operations create new template instances without modifying existing data.
 
 ## Troubleshooting Guide
 - Template validation errors:
@@ -514,9 +546,16 @@ QTix --> DB
   - Section sources
     - [checklist-structure.ts:9](file://src/types/checklist-structure.ts#L9)
     - [pcready.ts:114](file://src/lib/pcready.ts#L114)
+- Preview mode issues:
+  - Symptom: Preview mode not working or items still clickable.
+  - Cause: Preview state not properly managed or edit controls not disabled.
+  - Resolution: Verify previewMode state is set and edit controls are conditionally rendered.
+  - Section sources
+    - [checklist.tsx:336](file://src/routes/_app/checklist.tsx#L336)
+    - [checklist.tsx:744-878](file://src/routes/_app/checklist.tsx#L744-L878)
 
 ## Conclusion
-The checklist system has been significantly enhanced with comprehensive drag-and-drop reordering, multiple item types, preview mode, and duplicate functionality. The system combines a flexible template engine with robust progress tracking and seamless integration into the ticket lifecycle. Templates are validated and persisted as JSONB, while tickets store both the current completion state and an optional structure override. The enhanced UI enables easy authoring and completion with intuitive drag-and-drop operations, automatic status advancement, and notifications. Adhering to the defined schemas and migrations ensures reliable operation across environments.
+The checklist system has been significantly enhanced with comprehensive drag-and-drop reordering, multiple item types, preview mode, and duplicate functionality. The system combines a flexible template engine with robust progress tracking and seamless integration into the ticket lifecycle. Templates are validated and persisted as JSONB, while tickets store both the current completion state and an optional structure override. The enhanced UI enables easy authoring and completion with intuitive drag-and-drop operations, automatic status advancement, and notifications. The addition of preview mode allows users to view templates without editing capabilities, while duplicate functionality enables efficient template reuse. Adhering to the defined schemas and migrations ensures reliable operation across environments.
 
 ## Appendices
 - Example references to code locations:
@@ -529,3 +568,6 @@ The checklist system has been significantly enhanced with comprehensive drag-and
   - Ticket detail completion and auto-advance: [TicketDetailModal.tsx:115-149](file://src/components/pcready/TicketDetailModal.tsx#L115-L149), [TicketDetailModal.tsx:151-199](file://src/components/pcready/TicketDetailModal.tsx#L151-L199)
   - Progress computation: [pcready.ts:128-144](file://src/lib/pcready.ts#L128-L144)
   - Database schema: [20260430122321_995fb77a-a5a2-416b-9987-e00e5e34060b.sql:1-39](file://supabase/migrations/20260430122321_995fb77a-a5a2-416b-9987-e00e5e34060b.sql#L1-L39)
+  - Preview mode implementation: [checklist.tsx:336](file://src/routes/_app/checklist.tsx#L336), [checklist.tsx:496-509](file://src/routes/_app/checklist.tsx#L496-L509)
+  - Item type icons: [checklist.tsx:802-809](file://src/routes/_app/checklist.tsx#L802-L809)
+  - Required field indicators: [checklist.tsx:840-844](file://src/routes/_app/checklist.tsx#L840-L844)

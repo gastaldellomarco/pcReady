@@ -16,9 +16,12 @@
 - [ScheduleStep.tsx](file://src/components/automations/steps/ScheduleStep.tsx)
 - [ReviewStep.tsx](file://src/components/automations/steps/ReviewStep.tsx)
 - [AutomationRuleCard.tsx](file://src/components/automations/AutomationRuleCard.tsx)
+- [RunConfirmDialog.tsx](file://src/components/automations/RunConfirmDialog.tsx)
 - [GlobalRunLogsPanel.tsx](file://src/components/automations/GlobalRunLogsPanel.tsx)
 - [DryRunDialog.tsx](file://src/components/automations/DryRunDialog.tsx)
 - [AutomationKpiCard.tsx](file://src/components/automations/AutomationKpiCard.tsx)
+- [automation-guardrails.ts](file://src/lib/automations/automation-guardrails.ts)
+- [flow-validation.ts](file://src/lib/automations/flow-validation.ts)
 - [20260504123000_create_automation_flows.sql](file://supabase/migrations/20260504123000_create_automation_flows.sql)
 - [20260507133000_automation_run_logs.sql](file://supabase/migrations/20260507133000_automation_run_logs.sql)
 - [20260515160000_automation_runs_view.sql](file://supabase/migrations/20260515160000_automation_runs_view.sql)
@@ -29,12 +32,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced automation system with dual-mode design approach combining guided five-step Wizard with advanced visual builder powered by React Flow
-- Added comprehensive validation and inline error handling throughout both editors
-- Implemented sophisticated UI improvements with type-safe validation and enhanced notifications
-- Seamless mode switching between wizard and visual builder with shared flow migration pipeline
-- Enhanced action configurations with type-safe validation and improved error reporting
-- Improved notifications with type safety and better user feedback mechanisms
+- Added comprehensive automation guardrails module with risk assessment, validation system, and enhanced UI components
+- Integrated RunConfirmDialog for safe automation execution with risk evaluation
+- Enhanced AutomationRuleCard with risk indicators and completeness warnings
+- Improved AutomationWizard with inline validation and comprehensive error reporting
+- Added server-side validation for automation flows with structured column support
+- Implemented enhanced flow validation system with action requirements and trigger-action coherence checks
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,27 +47,30 @@
 5. [Architecture Overview](#architecture-overview)
 6. [Detailed Component Analysis](#detailed-component-analysis)
 7. [Enhanced Validation and Error Handling](#enhanced-validation-and-error-handling)
-8. [Wizard-Based Rule Management](#wizard-based-rule-management)
-9. [Advanced Visual Builder](#advanced-visual-builder)
-10. [Enhanced Monitoring and Dashboard](#enhanced-monitoring-and-dashboard)
-11. [Flow Migration Pipeline](#flow-migration-pipeline)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
-16. [Appendices](#appendices)
+8. [Automation Guardrails Module](#automation-guardrails-module)
+9. [Wizard-Based Rule Management](#wizard-based-rule-management)
+10. [Advanced Visual Builder](#advanced-visual-builder)
+11. [Enhanced Monitoring and Dashboard](#enhanced-monitoring-and-dashboard)
+12. [Flow Migration Pipeline](#flow-migration-pipeline)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
 This document explains the comprehensive automation system that powers rule-based workflow automation with a dual-mode design approach. The system has undergone a major enhancement featuring both a guided five-step Wizard interface and an advanced visual builder powered by React Flow. The new architecture combines the accessibility of guided configuration with the flexibility of visual flow design, providing administrators with multiple pathways to create complex automation rules while maintaining type safety and comprehensive validation.
+
+**Updated** Enhanced with comprehensive automation guardrails module featuring risk assessment, validation system, and improved UI components for safer automation execution.
 
 ## Dual-Mode Design Architecture
 The enhanced automation system now operates with two complementary editing modes:
 
 **Mode 1: Guided Five-Step Wizard**
 - Intuitive step-by-step configuration process
-- Built-in validation at each step
-- Inline error handling with immediate user feedback
-- Type-safe validation schemas for all configuration fields
+- Built-in validation at each step with inline error handling
+- Comprehensive validation system with type-safe schemas
+- Real-time risk assessment and completeness checking
 - Seamless integration with the visual builder
 
 **Mode 2: Advanced Visual Builder (React Flow)**
@@ -77,25 +83,27 @@ The enhanced automation system now operates with two complementary editing modes
 ```mermaid
 graph TB
 subgraph "Dual-Mode Architecture"
-Wizard["Guided Five-Step Wizard<br/>Step 1-5 Configuration<br/>Inline Validation<br/>Type Safety"]
+Wizard["Guided Five-Step Wizard<br/>Step 1-5 Configuration<br/>Inline Validation<br/>Risk Assessment"]
 VisualBuilder["Advanced Visual Builder<br/>React Flow Integration<br/>Drag-and-Drop Interface<br/>Real-time Validation"]
-Migration["Flow Migration Pipeline<br/>Legacy to Modern<br/>Structured Data Transformation"]
+Guardrails["Automation Guardrails<br/>Risk Assessment<br/>Validation System<br/>Safety Controls"]
 end
 subgraph "Shared Infrastructure"
 Validation["Comprehensive Validation<br/>Type-Safe Schemas<br/>Inline Error Handling"]
 Notifications["Enhanced Notifications<br/>Type Safety<br/>User Feedback"]
+GuardrailsUI["Guardrails UI Components<br/>RunConfirmDialog<br/>Risk Indicators<br/>Completeness Warnings"]
 end
 Wizard --> Validation
 VisualBuilder --> Validation
-Validation --> Notifications
-Migration --> Wizard
-Migration --> VisualBuilder
+Validation --> Guardrails
+Guardrails --> GuardrailsUI
+GuardrailsUI --> Notifications
 ```
 
 **Diagram sources**
 - [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
 - [AutomationBuilder.tsx:31-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L31-L152)
 - [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
+- [automation-guardrails.ts:1-192](file://src/lib/automations/automation-guardrails.ts#L1-L192)
 
 **Section sources**
 - [AutomationWizard.tsx:23-60](file://src/components/automations/AutomationWizard.tsx#L23-L60)
@@ -109,6 +117,9 @@ The automation system now features a dual-mode architecture with enhanced valida
 - **Dual-Mode Editor Interface:** Seamlessly switches between Wizard and Visual Builder
 - **Enhanced Wizard Interface:** Five-step guided configuration with comprehensive validation
 - **Advanced Visual Builder:** React Flow-powered drag-and-drop flow construction
+- **Automation Guardrails Module:** Risk assessment, validation system, and safety controls
+- **RunConfirmDialog:** Enhanced execution confirmation with risk evaluation
+- **Enhanced AutomationRuleCard:** Risk indicators and completeness warnings
 - **Type-Safe Validation:** Comprehensive schema validation with inline error handling
 - **Improved Notifications:** Enhanced toast notifications with type safety
 - **Flow Migration Pipeline:** Automatic conversion from legacy rules to modern format
@@ -118,12 +129,14 @@ The automation system now features a dual-mode architecture with enhanced valida
 - **Execution Engine:** Robust flow execution with comprehensive logging
 - **Database Schema:** Enhanced automation_flows with structured validation
 - **Migration System:** Legacy rule conversion with preserved metadata
+- **Server-Side Validation:** PostgreSQL triggers for data integrity
 
 **Validation and Error Handling:**
-- **Inline Validation:** Real-time field validation with immediate feedback
+- **Inline Validation:** Real-time field validation with immediate user feedback
 - **Type-Safe Schemas:** Zod-based validation for all automation components
 - **Error Recovery:** Graceful error handling with user-friendly messages
 - **Progressive Enhancement:** Validation improves as users progress through steps
+- **Risk Assessment:** Comprehensive risk evaluation for automation execution
 
 **Section sources**
 - [index.ts:1-6](file://src/components/automations/index.ts#L1-L6)
@@ -145,6 +158,15 @@ The enhanced automation system consists of several interconnected components wor
 - **Inline Error Handling:** Real-time validation with immediate user feedback
 - **Progressive Validation:** Validation intensity increases with complexity
 - **Error Recovery:** Graceful handling of validation failures
+- **Action Requirements:** Comprehensive validation of action configurations
+- **Trigger-Action Coherence:** Validation of logical flow relationships
+
+**Automation Guardrails System:**
+- **Risk Assessment:** Comprehensive risk evaluation for automation rules
+- **Completeness Checking:** Validation of required fields and configurations
+- **Impact Analysis:** Human-readable descriptions of automation effects
+- **Side Effect Warnings:** Notification of external system impacts
+- **Execution Safety:** Controlled automation execution with risk mitigation
 
 **Advanced Flow Construction:**
 - **React Flow Integration:** Professional-grade flow visualization and interaction
@@ -172,6 +194,7 @@ participant Admin as "Administrator"
 participant ModeSwitch as "Mode Switcher"
 participant Wizard as "Enhanced Wizard"
 participant Builder as "Visual Builder"
+participant Guardrails as "Automation Guardrails"
 participant Validator as "Validation System"
 participant DB as "Supabase Database"
 Admin->>ModeSwitch : Select Editing Mode
@@ -179,13 +202,18 @@ ModeSwitch->>Wizard : Open Guided Wizard
 ModeSwitch->>Builder : Open Visual Builder
 Wizard->>Validator : Validate Step 1
 Validator-->>Wizard : Inline Validation Result
+Wizard->>Guardrails : Risk Assessment
+Guardrails-->>Wizard : Risk Evaluation
 Wizard->>Wizard : Step 2 Configuration
 Wizard->>Validator : Validate Step 2
 Validator-->>Wizard : Inline Validation Result
 Builder->>Validator : Validate Flow
 Validator-->>Builder : Real-time Validation
+Builder->>Guardrails : Risk Assessment
+Guardrails-->>Builder : Risk Evaluation
 Builder->>DB : Save Flow Definition
 Wizard->>DB : Save Wizard Flow
+DB->>DB : Server-Side Validation
 DB-->>Admin : Confirmation with Type Safety
 ```
 
@@ -193,6 +221,7 @@ DB-->>Admin : Confirmation with Type Safety
 - [useAutomationRules.ts:87](file://src/hooks/useAutomationRules.ts#L87)
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
+- [automation-guardrails.ts:51-67](file://src/lib/automations/automation-guardrails.ts#L51-L67)
 
 ## Detailed Component Analysis
 
@@ -204,7 +233,7 @@ The dual-mode system provides comprehensive flow definition capabilities through
 - **Step 2: Conditions** - Logical operators with type-safe validation
 - **Step 3: Actions** - Multiple action types with configuration schemas
 - **Step 4: Scheduling** - Cron expressions with format validation
-- **Step 5: Review** - Comprehensive validation and error reporting
+- **Step 5: Review** - Comprehensive validation and error reporting with risk assessment
 
 **Visual Builder Interface:**
 - **React Flow Integration** - Professional-grade flow construction
@@ -221,21 +250,24 @@ The dual-mode system provides comprehensive flow definition capabilities through
 
 ```mermaid
 flowchart TD
-Start(["Select Editing Mode"]) --> Wizard["Guided Wizard<br/>Step-by-Step Validation"]
-Start --> Builder["Visual Builder<br/>React Flow Interface"]
-Wizard --> ValidateWizard["Inline Validation<br/>Type-Safe Schemas"]
-Builder --> ValidateBuilder["Real-time Validation<br/>Visual Feedback"]
-ValidateWizard --> SaveWizard["Save Wizard Flow"]
-ValidateBuilder --> SaveBuilder["Save Visual Flow"]
-SaveWizard --> Migrate["Flow Migration Pipeline"]
+Start(["Select Editing Mode"]) --> Wizard["Guided Wizard<br/>Step-by-Step Validation<br/>Risk Assessment"]
+Start --> Builder["Visual Builder<br/>React Flow Interface<br/>Real-time Validation"]
+Wizard --> ValidateWizard["Inline Validation<br/>Type-Safe Schemas<br/>Risk Evaluation"]
+Builder --> ValidateBuilder["Real-time Validation<br/>Visual Feedback<br/>Risk Assessment"]
+ValidateWizard --> Guardrails["Guardrails Integration<br/>Completeness Check<br/>Impact Analysis"]
+ValidateBuilder --> Guardrails
+Guardrails --> SaveWizard["Save Wizard Flow"]
+Guardrails --> SaveBuilder["Save Visual Flow"]
+SaveWizard --> Migrate["Flow Migration Pipeline<br/>Structured Flow Definition<br/>Enhanced Metadata"]
 SaveBuilder --> Migrate
-Migrate --> Final["Structured Flow Definition<br/>Enhanced Metadata"]
+Migrate --> Final["Final Validation<br/>Server-Side Validation<br/>Type Safety"]
 ```
 
 **Diagram sources**
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 - [useAutomationRules.ts:194-236](file://src/hooks/useAutomationRules.ts#L194-L236)
+- [automation-guardrails.ts:72-110](file://src/lib/automations/automation-guardrails.ts#L72-L110)
 
 **Section sources**
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
@@ -267,6 +299,39 @@ The system now features comprehensive validation and error handling across both 
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 - [automation.ts:4-19](file://src/types/automation.ts#L4-L19)
+
+### Automation Guardrails Module
+The new automation guardrails module provides comprehensive risk assessment and safety controls:
+
+**Risk Assessment System:**
+- **Risk Level Computation** - Evaluates automation actions to determine risk levels
+- **Action Risk Mapping** - Maps action types to risk categories (low, medium, high, critical)
+- **Scheduled Risk Detection** - Identifies high-risk actions in scheduled automations
+- **Comprehensive Coverage** - Includes all supported action types and their risk profiles
+
+**Completeness Validation:**
+- **Required Field Checking** - Validates presence of essential configuration fields
+- **Trigger Validation** - Ensures trigger configuration is complete
+- **Action Validation** - Verifies all action configurations have required parameters
+- **Condition Validation** - Checks conditional logic completeness
+- **Schedule Validation** - Validates scheduling configurations
+
+**Impact Analysis:**
+- **Human-Readable Descriptions** - Provides clear explanations of automation effects
+- **Trigger Impact** - Describes when and how automations will trigger
+- **Action Impact** - Details specific actions and their parameters
+- **External Side Effects** - Warns about impacts on external systems
+
+**Guardrails UI Integration:**
+- **RunConfirmDialog** - Enhanced execution confirmation with risk evaluation
+- **Risk Indicators** - Visual risk badges in AutomationRuleCard
+- **Completeness Warnings** - Tooltip warnings for incomplete rules
+- **Safety Controls** - Disabled execution for incomplete or high-risk rules
+
+**Section sources**
+- [automation-guardrails.ts:1-192](file://src/lib/automations/automation-guardrails.ts#L1-L192)
+- [RunConfirmDialog.tsx:1-171](file://src/components/automations/RunConfirmDialog.tsx#L1-L171)
+- [AutomationRuleCard.tsx:192-219](file://src/components/automations/AutomationRuleCard.tsx#L192-L219)
 
 ### Advanced Visual Builder with React Flow
 The visual builder provides a professional-grade interface for complex flow construction:
@@ -379,6 +444,81 @@ The notification system has been significantly improved with type safety and bet
 - [automation.ts:47-72](file://src/types/automation.ts#L47-L72)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
+## Automation Guardrails Module
+
+### Risk Assessment and Safety Controls
+The automation guardrails module provides comprehensive safety controls for automation execution:
+
+**Risk Level Computation:**
+- **Action-Based Risk Scoring** - Evaluates each action type against predefined risk levels
+- **Scheduled Risk Detection** - Identifies high-risk actions in scheduled automations
+- **Critical Risk Flagging** - Flags automations with critical risk levels
+- **Risk Level Configuration** - Customizable risk level definitions with styling
+
+**Completeness Validation:**
+- **Required Field Checking** - Validates essential configuration fields are present
+- **Trigger Completeness** - Ensures trigger configuration is complete and valid
+- **Action Completeness** - Verifies all action configurations have required parameters
+- **Condition Completeness** - Checks conditional logic has proper values
+- **Schedule Completeness** - Validates scheduling configurations
+
+**Impact Analysis and Side Effects:**
+- **Human-Readable Impact Descriptions** - Clear explanations of automation effects
+- **Trigger Impact Analysis** - Describes when and how automations will trigger
+- **Action Impact Analysis** - Details specific actions and their parameters
+- **External Side Effects** - Warns about impacts on external systems and services
+
+**Guardrails UI Components:**
+- **RunConfirmDialog** - Enhanced execution confirmation with risk evaluation
+- **Risk Indicators** - Visual risk badges in AutomationRuleCard
+- **Completeness Warnings** - Tooltip warnings for incomplete rules
+- **Safety Controls** - Disabled execution for incomplete or high-risk rules
+
+```mermaid
+flowchart TD
+Guardrails["Automation Guardrails"] --> RiskAssessment["Risk Assessment<br/>Compute Risk Levels<br/>Action Mapping"]
+Guardrails --> Completeness["Completeness Validation<br/>Required Fields<br/>Configuration Checks"]
+Guardrails --> ImpactAnalysis["Impact Analysis<br/>Human-Readable Descriptions<br/>Side Effects"]
+RiskAssessment --> RunConfirm["RunConfirmDialog<br/>Risk Evaluation<br/>Execution Safety"]
+Completeness --> RuleCard["AutomationRuleCard<br/>Risk Indicators<br/>Completeness Warnings"]
+ImpactAnalysis --> RuleCard
+RunConfirm --> SafetyControls["Safety Controls<br/>Disabled Execution<br/>Risk Mitigation"]
+```
+
+**Diagram sources**
+- [automation-guardrails.ts:51-67](file://src/lib/automations/automation-guardrails.ts#L51-L67)
+- [automation-guardrails.ts:72-110](file://src/lib/automations/automation-guardrails.ts#L72-L110)
+- [automation-guardrails.ts:115-144](file://src/lib/automations/automation-guardrails.ts#L115-L144)
+- [RunConfirmDialog.tsx:40-46](file://src/components/automations/RunConfirmDialog.tsx#L40-L46)
+
+**Section sources**
+- [automation-guardrails.ts:1-192](file://src/lib/automations/automation-guardrails.ts#L1-L192)
+- [RunConfirmDialog.tsx:1-171](file://src/components/automations/RunConfirmDialog.tsx#L1-L171)
+- [AutomationRuleCard.tsx:192-219](file://src/components/automations/AutomationRuleCard.tsx#L192-L219)
+
+### RunConfirmDialog Implementation
+The RunConfirmDialog provides enhanced execution confirmation with comprehensive risk evaluation:
+
+**Risk Level Display:**
+- **Visual Risk Indicators** - Color-coded risk badges with descriptive labels
+- **Risk Level Configuration** - Styling and messaging for each risk level
+- **Critical Risk Warnings** - Special handling for critical risk automations
+- **High Risk Destructive Buttons** - Destructive styling for high-risk executions
+
+**Completeness Validation:**
+- **Rule Completeness Check** - Prevents execution of incomplete rules
+- **Missing Configuration Warnings** - Detailed explanations of missing requirements
+- **Execution Blocking** - Disables execution until all requirements are met
+
+**Impact Preview and Side Effects:**
+- **Impact Description Display** - Human-readable descriptions of automation effects
+- **Side Effect Warnings** - Notifications about external system impacts
+- **Action Parameter Display** - Shows action parameters and their values
+
+**Section sources**
+- [RunConfirmDialog.tsx:40-171](file://src/components/automations/RunConfirmDialog.tsx#L40-L171)
+- [automation-guardrails.ts:163-192](file://src/lib/automations/automation-guardrails.ts#L163-L192)
+
 ## Wizard-Based Rule Management
 
 ### Five-Step Process with Enhanced Validation
@@ -413,6 +553,7 @@ The wizard interface now provides comprehensive validation at each step:
 - **Change Tracking** - Version history and change impact analysis
 - **Performance Impact Assessment** - Validation of rule complexity and performance implications
 - **Security Validation** - Validation of rule security implications
+- **Risk Assessment Integration** - Comprehensive risk evaluation and safety checks
 
 ```mermaid
 flowchart TD
@@ -420,7 +561,7 @@ Wizard["Enhanced Wizard Interface"] --> Step1["Trigger Selection<br/>With Valida
 Wizard --> Step2["Conditions<br/>Logical Operators<br/>Field Validation"]
 Wizard --> Step3["Actions<br/>Schema Validation<br/>ID Resolution"]
 Wizard --> Step4["Scheduling<br/>Format Validation<br/>Conflict Detection"]
-Wizard --> Step5["Review & Validation<br/>Comprehensive Checks<br/>Security Assessment"]
+Wizard --> Step5["Review & Validation<br/>Comprehensive Checks<br/>Security Assessment<br/>Risk Evaluation"]
 ```
 
 **Diagram sources**
@@ -437,6 +578,32 @@ Wizard --> Step5["Review & Validation<br/>Comprehensive Checks<br/>Security Asse
 - [ActionsStep.tsx:7-27](file://src/components/automations/steps/ActionsStep.tsx#L7-L27)
 - [ScheduleStep.tsx:14-23](file://src/components/automations/steps/ScheduleStep.tsx#L14-L23)
 - [ReviewStep.tsx:94-191](file://src/components/automations/steps/ReviewStep.tsx#L94-L191)
+
+### Enhanced Inline Validation System
+The wizard now features comprehensive inline validation with error grouping and user feedback:
+
+**Inline Validation Implementation:**
+- **Real-time Validation** - Validation triggered as users complete each step
+- **Error Grouping** - Errors grouped by section for organized presentation
+- **Section Labels** - Human-readable labels for validation sections
+- **Severity Differentiation** - Clear distinction between errors and warnings
+
+**Error Presentation:**
+- **Error Display** - Red error boxes with specific error messages
+- **Warning Display** - Amber warning boxes with advisory messages
+- **Actionable Feedback** - Clear guidance for resolving validation issues
+- **Progressive Disclosure** - Validation complexity increases with step progression
+
+**Integration with Guardrails:**
+- **Risk Assessment** - Comprehensive risk evaluation during review step
+- **Completeness Checking** - Validation of required configuration fields
+- **Impact Analysis** - Display of automation effects and side effects
+- **Safety Controls** - Disabled execution for incomplete or risky rules
+
+**Section sources**
+- [AutomationWizard.tsx:237-275](file://src/components/automations/AutomationWizard.tsx#L237-L275)
+- [flow-validation.ts:87-146](file://src/lib/automations/flow-validation.ts#L87-L146)
+- [flow-validation.ts:526-561](file://src/lib/automations/flow-validation.ts#L526-L561)
 
 ### Wizard Metadata and Traceability
 The wizard generates comprehensive metadata with enhanced validation:
@@ -635,6 +802,7 @@ The enhanced automation system maintains clear dependency relationships with imp
 - **Error Handling System** - Robust error handling with user-friendly feedback
 - **Notification Infrastructure** - Enhanced toast notifications with type safety
 - **Flow Construction Tools** - Professional-grade flow building capabilities
+- **Guardrails Module** - Risk assessment and safety control integration
 
 **Database and Server Dependencies:**
 - **Structured Data Storage** - Enhanced automation_flows with validation support
@@ -648,7 +816,8 @@ ModeSwitch["Mode Switching Logic"] --> Wizard["Enhanced Wizard"]
 ModeSwitch --> Builder["Advanced Visual Builder"]
 Wizard --> Validation["Enhanced Validation System"]
 Builder --> Validation
-Validation --> Notifications["Type-Safe Notifications"]
+Validation --> Guardrails["Automation Guardrails"]
+Guardrails --> Notifications["Type-Safe Notifications"]
 Validation --> DB["Enhanced Database Schema"]
 DB --> Server["Server-Side Validation"]
 Server --> Migration["Flow Migration Pipeline"]
@@ -686,6 +855,7 @@ The enhanced automation system includes several performance optimizations with v
 - **Batch Operations** - Batch processing for multiple rule operations
 - **Index Optimization** - Database indexes optimized for automation queries
 - **Connection Pooling** - Efficient database connection management
+- **Server-Side Validation** - PostgreSQL triggers for efficient data integrity checks
 
 **Monitoring and Analytics:**
 - **Performance Metrics Collection** - Comprehensive performance tracking
@@ -713,6 +883,12 @@ Enhanced troubleshooting capabilities address common automation issues with comp
 - **Error Recovery** - Difficulty recovering from validation failures
 - **Type Safety Violations** - Runtime type errors in validation system
 
+**Guardrails and Safety Issues:**
+- **Risk Assessment Errors** - Incorrect risk level computation or evaluation
+- **Completeness Validation Failures** - Missing required fields or configurations
+- **Guardrails UI Problems** - Issues with RunConfirmDialog or risk indicators
+- **Safety Control Failures** - Unexpected execution of risky automations
+
 **Visual Builder Specific Issues:**
 - **React Flow Performance** - Slow rendering or interaction in visual builder
 - **Node Configuration Errors** - Issues with node configuration and validation
@@ -728,6 +904,7 @@ Enhanced troubleshooting capabilities address common automation issues with comp
 **Enhanced Debugging Techniques:**
 - **Dual-Mode Debugging** - Debugging techniques for both editing modes
 - **Validation Debugging** - Techniques for debugging validation failures
+- **Guardrails Debugging** - Methods for debugging risk assessment and safety controls
 - **Performance Profiling** - Tools for profiling system performance
 - **Error Analysis** - Methods for analyzing and resolving complex errors
 
@@ -738,6 +915,8 @@ Enhanced troubleshooting capabilities address common automation issues with comp
 
 ## Conclusion
 The enhanced automation system provides a comprehensive, enterprise-grade solution for rule-based workflow automation with a dual-mode design approach. The combination of guided five-step Wizard and advanced visual builder powered by React Flow offers administrators multiple pathways to create complex automation rules while maintaining type safety and comprehensive validation. The system's robust validation framework, enhanced error handling, and improved user experience make it suitable for both novice users and advanced automation specialists. The flow migration pipeline ensures seamless transition from legacy systems, while the enhanced monitoring capabilities provide deep visibility into system performance. The dual-mode architecture, comprehensive validation, and improved error handling represent significant advances in automation system design and implementation.
+
+**Updated** The addition of the automation guardrails module with risk assessment, validation system, and enhanced UI components provides unprecedented safety and control for automation execution, making the system suitable for production environments with strict governance requirements.
 
 ## Appendices
 
@@ -848,6 +1027,12 @@ The enhanced system maintains clear relationships between automation components 
 - **Health Metrics** - Performance indicators and system health monitoring
 - **KPI Dashboards** - Performance tracking and trend analysis
 - **Audit Trails** - Comprehensive change tracking and compliance reporting
+
+**Guardrails Integration:**
+- **Risk Assessment** - Comprehensive risk evaluation for all automation rules
+- **Safety Controls** - Controlled execution with risk mitigation strategies
+- **Completeness Validation** - Validation of required configuration fields
+- **Impact Analysis** - Human-readable descriptions of automation effects
 
 **Section sources**
 - [automations.ts:1-179](file://src/lib/queries/automations.ts#L1-L179)

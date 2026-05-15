@@ -40,6 +40,11 @@ describe("app settings", () => {
         completed: 0,
         archived: 0,
       },
+      sla_limits: {
+        high: 4,
+        med: 24,
+        low: 72,
+      },
       os_options: ["Windows 11 Pro", "Debian 12"],
       device_brands: ["Dell", "Framework"],
       ticket_categories: ["Preparazione"],
@@ -65,6 +70,11 @@ describe("app settings", () => {
           ready: 20,
           completed: 0,
           archived: 0,
+        },
+        sla_limits: {
+          high: 4,
+          med: 24,
+          low: 72,
         },
         os_options: ["Windows 11 Pro"],
         device_brands: ["Dell"],

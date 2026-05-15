@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
-import { OS_OPTIONS, type TicketStatus } from "@/lib/pcready";
+import { OS_OPTIONS, type TicketStatus, type SlaLimits, DEFAULT_SLA_LIMITS } from "@/lib/pcready";
 
 export type WipLimits = Record<TicketStatus, number>;
 
@@ -23,6 +23,7 @@ export type AppSettings = {
   admin_approval_required: boolean;
   support_email: string;
   wip_limits: WipLimits;
+  sla_limits: SlaLimits;
   archive_after_days: number;
   log_retention_days: number;
   os_options: string[];
@@ -38,6 +39,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   admin_approval_required: true,
   support_email: "",
   wip_limits: DEFAULT_WIP_LIMITS,
+  sla_limits: DEFAULT_SLA_LIMITS,
   os_options: [...OS_OPTIONS],
   device_brands: ["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "Microsoft"],
   ticket_categories: [],
@@ -54,6 +56,12 @@ const WipLimitsSchema = z.object({
   ready: z.number().int().min(0).max(999),
   completed: z.number().int().min(0).max(999),
   archived: z.number().int().min(0).max(999),
+});
+
+const SlaLimitsSchema = z.object({
+  high: z.number().int().min(1).max(999),
+  med: z.number().int().min(1).max(999),
+  low: z.number().int().min(1).max(999),
 });
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);
@@ -86,6 +94,7 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
         "os_options",
         "device_brands",
         "ticket_categories",
+        "sla_limits",
       ]);
 
     if (error) throw error;
@@ -98,6 +107,7 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
       os_options: settings.os_options,
       device_brands: settings.device_brands,
       ticket_categories: settings.ticket_categories,
+      sla_limits: settings.sla_limits,
     };
   });
 
@@ -236,6 +246,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
     ...DEFAULT_SETTINGS,
     ...settings,
     wip_limits: { ...DEFAULT_WIP_LIMITS, ...(settings.wip_limits || {}) },
+    sla_limits: { ...DEFAULT_SLA_LIMITS, ...(settings.sla_limits || {}) },
     os_options: settings.os_options ?? DEFAULT_SETTINGS.os_options,
     device_brands: settings.device_brands ?? DEFAULT_SETTINGS.device_brands,
     ticket_categories: settings.ticket_categories ?? DEFAULT_SETTINGS.ticket_categories,
@@ -256,6 +267,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
         .transform((val) => val.toLowerCase().trim())
         .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
       wip_limits: WipLimitsSchema,
+      sla_limits: SlaLimitsSchema,
       archive_after_days: z.number().int().min(0).max(365),
       log_retention_days: z.number().int().min(30).max(730),
       os_options: StringListSchema,

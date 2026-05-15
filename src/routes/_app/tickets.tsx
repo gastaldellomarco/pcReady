@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
 import { loadClientOptions, useTicketsList } from "@/lib/queries/tickets";
+import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
 import {
@@ -16,6 +17,11 @@ import {
   PRIORITY_LABEL,
   TICKET_TYPE_LABEL,
   fmtDate,
+  fmtDateTime,
+  formatOpenDuration,
+  computeSlaStatus,
+  type SlaLimits,
+  DEFAULT_SLA_LIMITS,
 } from "@/lib/pcready";
 import {
   StatusBadge,
@@ -24,7 +30,7 @@ import {
   TicketTypeBadge,
 } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
-import { Eye, FileDown } from "lucide-react";
+import { Eye, FileDown, ArrowUpDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 import { getPublicAppSettings } from "@/lib/app-settings";
@@ -56,6 +62,7 @@ interface Row {
   priority: TicketPriority;
   status: TicketStatus;
   created_at: string;
+  assignee_id: string | null;
   client_ref?: { name: string } | null;
   device?: { model: string; serial: string | null; os: string | null } | null;
   assignee?: { full_name: string; initials: string } | null;
@@ -74,15 +81,28 @@ function TicketsPage() {
   const [fp, setFp] = useState("");
   const [ft, setFt] = useState("");
   const [fc, setFc] = useState("");
+  const [fa, setFa] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState<"created_at" | "priority" | "status">("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [slaLimits, setSlaLimits] = useState<SlaLimits>(DEFAULT_SLA_LIMITS);
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
   const [hasUpdates, setHasUpdates] = useState(false);
   const loadSettings = useServerFn(getPublicAppSettings);
+  const loadTechnicians = useServerFn(listTechnicians);
   const listQuery = useTicketsList({
     status: fs || undefined,
     priority: fp || undefined,
     ticket_type: ft || undefined,
     client_id: fc || undefined,
+    assignee_id: fa || undefined,
     q: search || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    sortBy,
+    sortDir,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -107,7 +127,7 @@ function TicketsPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [fs, fp, ft, fc, search]);
+  }, [fs, fp, ft, fc, fa, dateFrom, dateTo, sortBy, sortDir, search]);
 
   useEffect(() => {
     const channel = supabase
@@ -120,6 +140,26 @@ function TicketsPage() {
       void supabase.removeChannel(channel);
     };
   }, []);
+
+  // Load technicians list for assignee filter
+  useEffect(() => {
+    if (session?.access_token) {
+      loadTechnicians({ data: { accessToken: session.access_token } })
+        .then(setTechnicians)
+        .catch(() => {});
+    }
+  }, [session?.access_token, loadTechnicians]);
+
+  // Load SLA limits from public settings
+  useEffect(() => {
+    if (session?.access_token) {
+      loadSettings({ data: { accessToken: session.access_token } })
+        .then((settings) => {
+          if (settings?.sla_limits) setSlaLimits(settings.sla_limits);
+        })
+        .catch(() => {});
+    }
+  }, [session?.access_token, loadSettings]);
 
   const data = rows;
   const listLoading = listQuery.isLoading;
@@ -267,6 +307,32 @@ function TicketsPage() {
             setSelectedClient(option);
           }}
         />
+        <input
+          type="date"
+          className="pc-input max-w-[155px]"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          title="Data inizio"
+        />
+        <input
+          type="date"
+          className="pc-input max-w-[155px]"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          title="Data fine"
+        />
+        <select
+          className="pc-input max-w-[180px]"
+          value={fa}
+          onChange={(e) => setFa(e.target.value)}
+        >
+          <option value="">Tutti i tecnici</option>
+          {technicians.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.full_name}
+            </option>
+          ))}
+        </select>
         <span className="ml-auto text-xs text-text3 font-mono">
           {total
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
@@ -300,23 +366,52 @@ function TicketsPage() {
               <thead>
                 <tr>
                   {[
-                    "ID",
-                    "Modello",
-                    "Seriale",
-                    "Cliente",
-                    "Richiedente",
-                    "Priorita",
-                    "Stato",
-                    "Tipo",
-                    "Assegnatario",
-                    "Creato",
+                    { key: "id", label: "ID", sortable: false },
+                    { key: "model", label: "Modello", sortable: false },
+                    { key: "serial", label: "Seriale", sortable: false },
+                    { key: "client", label: "Cliente", sortable: false },
+                    { key: "requester", label: "Richiedente", sortable: false },
+                    { key: "priority", label: "Priorita", sortable: true },
+                    { key: "status", label: "Stato", sortable: true },
+                    { key: "type", label: "Tipo", sortable: false },
+                    { key: "assignee", label: "Assegnatario", sortable: false },
+                    { key: "created_at", label: "Creato", sortable: true },
+                    { key: "time_open", label: "Tempo aperto", sortable: false },
                   ].map((h) => (
                     <th
-                      key={h}
-                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                      key={h.key}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b select-none"
+                      style={{
+                        background: "var(--surface2)",
+                        borderColor: "var(--border)",
+                        cursor: h.sortable ? "pointer" : undefined,
+                      }}
+                      onClick={
+                        h.sortable
+                          ? () => {
+                              const col = h.key as "created_at" | "priority" | "status";
+                              if (sortBy === col) {
+                                setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+                              } else {
+                                setSortBy(col);
+                                setSortDir("desc");
+                              }
+                            }
+                          : undefined
+                      }
                     >
-                      {h}
+                      <span className="inline-flex items-center gap-1">
+                        {h.label}
+                        {h.sortable && sortBy === h.key ? (
+                          sortDir === "desc" ? (
+                            <span className="text-[10px]">&#9660;</span>
+                          ) : (
+                            <span className="text-[10px]">&#9650;</span>
+                          )
+                        ) : h.sortable ? (
+                          <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />
+                        ) : null}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -359,14 +454,24 @@ function TicketsPage() {
                             name={t.assignee?.full_name}
                           />
                         </td>
-                        <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                        <td
+                          className="px-[14px] py-[10px] text-[11px] text-text3"
+                          title={fmtDateTime(t.created_at)}
+                        >
                           {fmtDate(t.created_at)}
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <TimeOpenBadge
+                            created_at={t.created_at}
+                            priority={t.priority}
+                            slaLimits={slaLimits}
+                          />
                         </td>
                       </tr>
                     ))}
                     {!data.length && (
                       <tr>
-                        <td colSpan={10} className="text-center py-10 text-text3 text-sm">
+                        <td colSpan={11} className="text-center py-10 text-text3 text-sm">
                           Nessun ticket
                         </td>
                       </tr>
@@ -398,6 +503,52 @@ function TicketsPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+function TimeOpenBadge({
+  created_at,
+  priority,
+  slaLimits,
+}: {
+  created_at: string;
+  priority: TicketPriority;
+  slaLimits?: SlaLimits;
+}) {
+  const sla = computeSlaStatus(created_at, priority, slaLimits);
+  const created = new Date(created_at);
+  const hoursOpen = (Date.now() - created.getTime()) / (1000 * 60 * 60);
+
+  let bg: string;
+  let fg: string;
+  let label: string;
+  if (sla.status === "overdue") {
+    bg = "#FEE2E2";
+    fg = "#991B1B";
+    label = "SLA scaduto";
+  } else if (hoursOpen > 72) {
+    bg = "#FEF2F2";
+    fg = "#DC2626";
+    label = "> 3gg";
+  } else if (hoursOpen > 24) {
+    bg = "#FEF3C7";
+    fg = "#92400E";
+    label = "1-3gg";
+  } else {
+    bg = "#D1FAE5";
+    fg = "#065F46";
+    label = "< 24h";
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
+      style={{ background: bg, color: fg }}
+      title={`Creato: ${fmtDateTime(created_at)}`}
+    >
+      {formatOpenDuration(created_at)}
+      <span className="opacity-70">({label})</span>
+    </span>
   );
 }
 

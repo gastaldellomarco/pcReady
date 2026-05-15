@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
 import { TagListEditor } from "@/components/admin/TagListEditor";
 import { BackupMetric } from "@/components/admin/BackupMetric";
-import { ADMIN_WIP_LIMIT_FIELDS } from "@/lib/admin/admin-constants";
+import { ADMIN_WIP_LIMIT_FIELDS, ADMIN_SLA_LIMIT_FIELDS } from "@/lib/admin/admin-constants";
 import { useAuth } from "@/lib/auth-context";
 import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 
@@ -268,6 +268,42 @@ export function AdminSettingsTab() {
                             Numero di giorni dopo il completamento per spostare il ticket in
                             archivio. 0 = mai.
                           </p>
+                        </div>
+
+                        <div className="space-y-3 rounded-lg border p-4 mt-4">
+                          <div>
+                            <h3 className="font-medium">Limiti SLA (ore)</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Tempo massimo per priority prima che un ticket sia considerato in
+                              violazione SLA.
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {ADMIN_SLA_LIMIT_FIELDS.map(([priority, label]) => (
+                              <div key={priority}>
+                                <Label
+                                  htmlFor={`sla_${priority}`}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  {label}
+                                </Label>
+                                <Input
+                                  id={`sla_${priority}`}
+                                  type="number"
+                                  min={1}
+                                  max={999}
+                                  {...(settingsForm.register as any)(`sla_limits.${priority}`)}
+                                />
+                                {(settingsForm.formState.errors as any).sla_limits?.[priority] && (
+                                  <p className="text-sm text-destructive mt-1">
+                                    {String(
+                                      (settingsForm.formState.errors as any).sla_limits?.[priority]?.message,
+                                    )}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
