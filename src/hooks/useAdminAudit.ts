@@ -26,8 +26,10 @@ export function useAdminAudit(args: {
   accessToken: string | undefined;
   isAdmin: boolean;
   auditPageSize?: number;
+  initialFilters?: AuditLogFilters;
+  onFiltersChange?: (filters: AuditLogFilters) => void;
 }) {
-  const { accessToken, isAdmin, auditPageSize: initialPageSize = 25 } = args;
+  const { accessToken, isAdmin, auditPageSize: initialPageSize = 25, initialFilters: initFilters, onFiltersChange } = args;
   const loadAuditLog = useServerFn(getAuditLog);
   const exportAudit = useServerFn(exportAuditLog);
   const loadKpi = useServerFn(getAuditLogKpi);
@@ -115,6 +117,7 @@ export function useAdminAudit(args: {
         setAuditTotal(data.total);
         setAuditPage(page);
         setAuditFilters(filters);
+        onFiltersChange?.(filters);
       } catch (error) {
         toast.error(getAdminErrorMessage(error, "Impossibile caricare il log di audit"));
       } finally {
@@ -188,11 +191,11 @@ export function useAdminAudit(args: {
   useEffect(() => {
     if (!initialLoadDone.current && accessToken && isAdmin) {
       initialLoadDone.current = true;
-      void loadAudit();
+      void loadAudit(1, initFilters || {});
       void fetchKpi();
       void fetchUsers();
     }
-  }, [accessToken, isAdmin, loadAudit, fetchKpi, fetchUsers]);
+  }, [accessToken, isAdmin, loadAudit, fetchKpi, fetchUsers, initFilters]);
 
   async function handleExportCsv() {
     if (!accessToken) return;

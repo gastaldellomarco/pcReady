@@ -9,6 +9,19 @@ import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
 
 export const Route = createFileRoute("/_app/admin")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+    // Audit filters
+    auditActionType: typeof search.auditActionType === "string" ? search.auditActionType : undefined,
+    auditUser: typeof search.auditUser === "string" ? search.auditUser : undefined,
+    auditEntityType: typeof search.auditEntityType === "string" ? search.auditEntityType : undefined,
+    auditOutcome: typeof search.auditOutcome === "string" ? search.auditOutcome : undefined,
+    auditDateFrom: typeof search.auditDateFrom === "string" ? search.auditDateFrom : undefined,
+    auditDateTo: typeof search.auditDateTo === "string" ? search.auditDateTo : undefined,
+    auditSearch: typeof search.auditSearch === "string" ? search.auditSearch : undefined,
+    auditPage: typeof search.auditPage === "string" ? Number(search.auditPage) : undefined,
+    auditPreset: typeof search.auditPreset === "string" ? search.auditPreset : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Admin Utenti - PCReady" },
@@ -23,6 +36,7 @@ export const Route = createFileRoute("/_app/admin")({
 function AdminUsersPage() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/dashboard", replace: true });
@@ -43,7 +57,9 @@ function AdminUsersPage() {
       <AdminUsersTab />
       <AdminSettingsTab />
       <AdminOAuthTab />
-      <AdminAuditTab />
+      <AdminAuditTab searchParams={search} />
     </Tabs>
   );
 }
+
+

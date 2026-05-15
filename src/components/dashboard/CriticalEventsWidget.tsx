@@ -79,6 +79,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
             ))}
             <Link
               to="/admin"
+              search={{} as any}
               className="flex items-center justify-center gap-1 text-[11px] text-accent hover:underline mt-1"
             >
               Vedi tutti i log <ArrowRight className="w-3 h-3" />

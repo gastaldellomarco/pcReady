@@ -364,3 +364,82 @@ export const exportAuditLog = createServerFn({ method: "GET" })
       filename: buildDownloadFileName("pcready-audit-log", "csv", { dated: true }),
     };
   });
+
+// ---- Audit Presets ----
+
+export type AuditPreset = {
+  id: string;
+  name: string;
+  filters: AuditLogFilters;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export const listAuditPresets = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }) => {
+    const userId = await requireAdmin(accessToken);
+
+    const { data, error } = await supabaseAdmin
+      .from("audit_presets" as any)
+      .select("id, name, filters, user_id, created_at, updated_at")
+      .eq("user_id", userId)
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []) as unknown as AuditPreset[];
+  });
+
+export const saveAuditPreset = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { accessToken: string; name: string; filters: AuditLogFilters }) => data,
+  )
+  .handler(async ({ data: { accessToken, name, filters } }) => {
+    const userId = await requireAdmin(accessToken);
+
+    const { data: existing } = await supabaseAdmin
+      .from("audit_presets" as any)
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", name)
+      .maybeSingle();
+
+    if (existing) {
+      const { data, error } = await supabaseAdmin
+        .from("audit_presets" as any)
+        .update({ filters: filters as any, updated_at: new Date().toISOString() })
+        .eq("id", (existing as any).id)
+        .select("id, name, filters, user_id, created_at, updated_at")
+        .single();
+
+      if (error) throw error;
+      return data as unknown as AuditPreset;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("audit_presets" as any)
+      .insert({ name, filters: filters as any, user_id: userId })
+      .select("id, name, filters, user_id, created_at, updated_at")
+      .single();
+
+    if (error) throw error;
+    return data as unknown as AuditPreset;
+  });
+
+export const deleteAuditPreset = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken: string; presetId: string }) => data)
+  .handler(async ({ data: { accessToken, presetId } }) => {
+    const userId = await requireAdmin(accessToken);
+
+    const { error } = await supabaseAdmin
+      .from("audit_presets" as any)
+      .delete()
+      .eq("id", presetId)
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    return { ok: true };
+  });

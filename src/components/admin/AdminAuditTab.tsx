@@ -1,8 +1,12 @@
-﻿import { useState } from "react";
-import { FileText, Search, Download, ChevronDown, ChevronRight, Info, AlertTriangle, XCircle, RefreshCw, Clock, AlertCircle, Calendar, RotateCcw } from "lucide-react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FileText, Search, Download, ChevronDown, ChevronRight, Info, AlertTriangle, XCircle, RefreshCw, Clock, AlertCircle, Calendar, RotateCcw, Bookmark, BookmarkCheck, Trash2, Save, Link2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
 import {
   Table,
@@ -16,12 +20,77 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { useAdminAudit, type DatePreset } from "@/hooks/useAdminAudit";
-import type { ActivityLogEntry } from "@/lib/audit-log";
+import type { ActivityLogEntry, AuditLogFilters } from "@/lib/audit-log";
+import {
+  listAuditPresets,
+  saveAuditPreset,
+  deleteAuditPreset,
+  type AuditPreset,
+} from "@/lib/audit-log";
+import { Route } from "@/routes/_app/admin";
+import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
+
+// Represents the shape of the search params validated by the admin route
+type AdminSearch = {
+  tab?: string;
+  auditActionType?: string;
+  auditUser?: string;
+  auditEntityType?: string;
+  auditOutcome?: string;
+  auditDateFrom?: string;
+  auditDateTo?: string;
+  auditSearch?: string;
+  auditPage?: number;
+  auditPreset?: string;
+};
+
+// ---- URL <-> Filters helpers ----
+
+function filtersToSearchParams(filters: AuditLogFilters): Partial<AdminSearch> {
+  const params: Partial<AdminSearch> = {};
+  if (filters.actionType) params.auditActionType = filters.actionType;
+  if (filters.user) params.auditUser = filters.user;
+  if (filters.entityType) params.auditEntityType = filters.entityType;
+  if (filters.outcome) params.auditOutcome = filters.outcome;
+  if (filters.search) params.auditSearch = filters.search;
+  if (filters.dateFrom) params.auditDateFrom = filters.dateFrom.slice(0, 10);
+  if (filters.dateTo) params.auditDateTo = filters.dateTo.slice(0, 10);
+  return params;
+}
+
+function searchParamsToFilters(search: Record<string, unknown>): AuditLogFilters {
+  const filters: AuditLogFilters = {};
+  if (search.auditActionType) filters.actionType = String(search.auditActionType);
+  if (search.auditUser) filters.user = String(search.auditUser);
+  if (search.auditEntityType) filters.entityType = String(search.auditEntityType);
+  if (search.auditOutcome) filters.outcome = String(search.auditOutcome);
+  if (search.auditSearch) filters.search = String(search.auditSearch);
+  if (search.auditDateFrom) filters.dateFrom = String(search.auditDateFrom) + "T00:00:00.000Z";
+  if (search.auditDateTo) filters.dateTo = String(search.auditDateTo) + "T23:59:59.999Z";
+  return filters;
+}
+
+function shallowEqual(a: AuditLogFilters, b: AuditLogFilters): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if ((a as any)[key] !== (b as any)[key]) return false;
+  }
+  return true;
+}
 
 // ---- Helpers ----
 
@@ -266,9 +335,32 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
 
 // ---- Main Component ----
 
-export function AdminAuditTab() {
+export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, unknown> }) {
   const { session, isAdmin } = useAuth();
   const accessToken = session?.access_token;
+  const navigate = useNavigate();
+  const routeSearch = Route.useSearch();
+
+ // Convert URL search params to AuditLogFilters (memoized to avoid infinite loops)
+  // Falls back to localStorage "last used view" when no URL params are present
+  const urlFilters = useMemo(() => {
+    const fromUrl = searchParamsToFilters(searchParams || {});
+    const hasAuditParams = Object.keys(searchParams || {}).some((k) => k.startsWith("audit"));
+    if (!hasAuditParams) {
+      try {
+        const saved = localStorage.getItem("pcready_audit_last_filters");
+        if (saved) {
+          const parsed = JSON.parse(saved) as AuditLogFilters;
+          if (Object.keys(parsed).length > 0) return parsed;
+        }
+      } catch { /* ignore */ }
+    }
+    return fromUrl;
+  }, [searchParams]);
+
+  // Ref to prevent URL -> data loop when we are the ones updating the URL
+  const syncingToUrl = useRef(false);
+
   const {
     auditEntries,
     auditTotal,
@@ -291,10 +383,166 @@ export function AdminAuditTab() {
     resetFilters,
     getTimelineGroups,
     setAuditPageSize,
-  } = useAdminAudit({ accessToken, isAdmin });
+  } = useAdminAudit({
+    accessToken,
+    isAdmin,
+    initialFilters: urlFilters,
+    onFiltersChange: (filters) => {
+      syncingToUrl.current = true;
+      navigate({
+        search: { ...routeSearch, ...filtersToSearchParams(filters), auditPreset: undefined } as any,
+        replace: true,
+      });
+      // Persist last filters to localStorage for restoring later
+      try {
+        localStorage.setItem("pcready_audit_last_filters", JSON.stringify(filters));
+      } catch { /* ignore */ }
+      setTimeout(() => {
+        syncingToUrl.current = false;
+      }, 0);
+    },
+  });
+
+  // ---- Presets state ----
+  const [presets, setPresets] = useState<AuditPreset[]>([]);
+  const [loadingPresets, setLoadingPresets] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [activePresetId, setActivePresetId] = useState<string | undefined>(
+    typeof routeSearch.auditPreset === "string" ? routeSearch.auditPreset : undefined,
+  );
+
+  const loadPresetsFn = useServerFn(listAuditPresets);
+  const savePresetFn = useServerFn(saveAuditPreset);
+  const deletePresetFn = useServerFn(deleteAuditPreset);
+
+  // Load presets on mount
+  const loadPresets = useCallback(async () => {
+    if (!accessToken) return;
+    setLoadingPresets(true);
+    try {
+      const data = await loadPresetsFn({ data: { accessToken } });
+      setPresets(data);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingPresets(false);
+    }
+  }, [accessToken, loadPresetsFn]);
+
+  useEffect(() => {
+    if (accessToken && isAdmin) {
+      void loadPresets();
+    }
+  }, [accessToken, isAdmin, loadPresets]);
+
+  // Apply a preset
+  const applyPreset = useCallback(
+    (preset: AuditPreset) => {
+      setActivePresetId(preset.id);
+      const filters = preset.filters as AuditLogFilters;
+      syncingToUrl.current = true;
+      navigate({
+        search: { ...routeSearch, ...filtersToSearchParams(filters), auditPreset: preset.name } as any,
+        replace: true,
+      });
+      setTimeout(() => {
+        syncingToUrl.current = false;
+      }, 0);
+      loadAudit(1, filters);
+    },
+    [loadAudit, navigate],
+  );
+
+  // Save current filters as a preset
+  const handleSavePreset = useCallback(async () => {
+    if (!accessToken || !presetName.trim()) return;
+    try {
+      const saved = await savePresetFn({
+        data: { accessToken, name: presetName.trim(), filters: auditFilters },
+      });
+      await loadPresets();
+      setActivePresetId(saved.id);
+      setSaveDialogOpen(false);
+      setPresetName("");
+      toast.success(`Vista "${saved.name}" salvata`);
+      // Update URL with preset name
+      syncingToUrl.current = true;
+      navigate({
+        search: { ...routeSearch, auditPreset: saved.name } as any,
+        replace: true,
+      });
+      setTimeout(() => {
+        syncingToUrl.current = false;
+      }, 0);
+    } catch (error) {
+      toast.error(getAdminErrorMessage(error, "Salvataggio vista non riuscito"));
+    }
+  }, [accessToken, presetName, auditFilters, loadPresets, savePresetFn, navigate]);
+
+  // Delete a preset
+  const handleDeletePreset = useCallback(
+    async (presetId: string) => {
+      if (!accessToken) return;
+      try {
+        await deletePresetFn({ data: { accessToken, presetId } });
+        await loadPresets();
+        if (activePresetId === presetId) {
+          setActivePresetId(undefined);
+          syncingToUrl.current = true;
+          const { auditPreset: _, ...rest } = routeSearch;
+          navigate({
+            search: rest as any,
+            replace: true,
+          });
+          setTimeout(() => {
+            syncingToUrl.current = false;
+          }, 0);
+        }
+        toast.success("Vista eliminata");
+      } catch (error: unknown) {
+        toast.error(getAdminErrorMessage(error, "Eliminazione vista non riuscita"));
+      }
+    },
+    [accessToken, activePresetId, loadPresets, deletePresetFn, navigate],
+  );
+
+  // Copy permalink to clipboard
+  const copyPermalink = useCallback(() => {
+    const url = new URL(window.location.href);
+    // Keep only audit-related params
+    const auditParams = filtersToSearchParams(auditFilters) as Record<string, unknown>;
+    for (const key of Object.keys(auditParams)) {
+      const val = auditParams[key];
+      if (val != null) url.searchParams.set(key, String(val));
+    }
+    // Remove non-audit params
+    for (const key of Array.from(url.searchParams.keys())) {
+      if (!key.startsWith("audit") && key !== "tab") {
+        url.searchParams.delete(key);
+      }
+    }
+    navigator.clipboard.writeText(url.toString()).then(
+      () => toast.success("Permalink copiato")
+    ).catch(
+      () => toast.error("Impossibile copiare il permalink")
+    );
+  }, [auditFilters]);
+
+  // React to URL changes from browser back/forward
+  useEffect(() => {
+    if (syncingToUrl.current) return;
+    const newUrlFilters = searchParamsToFilters(searchParams || {});
+    if (!shallowEqual(newUrlFilters, auditFilters)) {
+      loadAudit(1, newUrlFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState(
+    typeof routeSearch.auditSearch === "string" ? routeSearch.auditSearch : "",
+  );
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value);
@@ -310,7 +558,7 @@ export function AdminAuditTab() {
   const timelineGroups = getTimelineGroups();
 
   // Date preset buttons
-  const presets: { label: string; value: DatePreset }[] = [
+  const datePresetOptions: { label: string; value: DatePreset }[] = [
     { label: "Oggi", value: "today" },
     { label: "Ieri", value: "yesterday" },
     { label: "7gg", value: "last7" },
@@ -499,7 +747,7 @@ export function AdminAuditTab() {
 
               {/* Date presets */}
               <div className="flex gap-1">
-                {presets.map((p) => (
+                {datePresetOptions.map((p) => (
                   <button
                     key={p.value}
                     onClick={() => applyDatePreset(p.value)}
@@ -519,6 +767,62 @@ export function AdminAuditTab() {
               <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-xs">
                 <RotateCcw className="h-3 w-3" />
                 Azzera
+              </Button>
+
+              {/* Presets dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    {activePresetId ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+                    {activePresetId ? presets.find(p => p.id === activePresetId)?.name ?? "Viste" : "Viste"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  {loadingPresets ? (
+                    <DropdownMenuItem disabled>Caricamento...</DropdownMenuItem>
+                  ) : presets.length === 0 ? (
+                    <DropdownMenuItem disabled>Nessuna vista salvata</DropdownMenuItem>
+                  ) : (
+                    presets.map((preset) => (
+                      <DropdownMenuItem
+                        key={preset.id}
+                        onClick={() => applyPreset(preset)}
+                        className={cn(
+                          "flex items-center justify-between",
+                          activePresetId === preset.id && "font-semibold text-accent",
+                        )}
+                      >
+                        <span>{preset.name}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePreset(preset.id);
+                          }}
+                          className="ml-2 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-text3 hover:text-red-600"
+                          title="Elimina vista"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSaveDialogOpen(true)}>
+                    <Save className="mr-2 h-3.5 w-3.5" />
+                    Salva vista corrente
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Copy permalink */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={copyPermalink}
+                className="gap-1 text-xs"
+                title="Copia permalink con i filtri attuali"
+              >
+                <Link2 className="h-3 w-3" />
               </Button>
             </div>
 
@@ -645,6 +949,45 @@ export function AdminAuditTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Save Preset Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Salva vista filtrata</DialogTitle>
+            <DialogDescription>
+              Assegna un nome alla configurazione di filtri corrente per poterla riutilizzare in seguito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="preset-name" className="text-sm font-medium">
+              Nome vista
+            </Label>
+            <Input
+              id="preset-name"
+              placeholder="Es: Ticket creati oggi, Errori critici..."
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              className="mt-1.5"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleSavePreset();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleSavePreset} disabled={!presetName.trim()}>
+              <Save className="mr-2 h-4 w-4" />
+              Salva
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TabsContent>
   );
 }
