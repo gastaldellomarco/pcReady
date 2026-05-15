@@ -13,6 +13,7 @@ try {
 import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { useAuth, type AuthProfile } from "@/lib/auth-context";
 import { useTheme } from "@/hooks/use-theme";
+import { useAdminAuditBadge } from "@/hooks/useAdminAuditBadge";
 import { avatarColors } from "@/lib/pcready";
 import {
   LayoutGrid,
@@ -177,6 +178,7 @@ function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
+  const adminErrorCount = useAdminAuditBadge(session?.access_token, profile?.role === "admin");
   const route = useRouterState({ select: (s) => s.location.pathname });
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const loadSettings = useServerFn(getPublicAppSettings);
@@ -250,6 +252,7 @@ function AppLayout() {
       avatarColor={avc}
       route={route}
       pendingCount={pendingCount}
+      adminErrorCount={adminErrorCount}
       navigationGroups={navigationGroups}
       theme={theme}
       isDark={isDark}
@@ -341,6 +344,7 @@ interface SidebarContentProps {
   avatarColor: { bg: string; fg: string };
   route: string;
   pendingCount: number;
+  adminErrorCount: number;
   navigationGroups: readonly ResolvedNavigationGroup[];
   theme: "light" | "dark" | "system";
   isDark: boolean;
@@ -354,6 +358,7 @@ function SidebarContent({
   avatarColor,
   route,
   pendingCount,
+  adminErrorCount,
   navigationGroups,
   theme,
   isDark: _isDark,
@@ -403,17 +408,23 @@ function SidebarContent({
       <nav className="flex-1 overflow-y-auto px-[10px] py-[14px]">
         {navigationGroups.map((group) => (
           <NavSection key={group.id} label={group.label}>
-            {group.items.map((item) => (
-              <NavLinkItem
-                key={item.to}
-                to={item.to}
-                label={item.label}
-                icon={item.icon}
-                active={route.startsWith(item.to)}
-                badge={resolveNavigationBadge(item, pendingCount)}
-                onClick={onNavigate}
-              />
-            ))}
+            {group.items.map((item) => {
+              const itemBadge =
+                item.to === "/admin"
+                  ? adminErrorCount
+                  : resolveNavigationBadge(item, pendingCount);
+              return (
+                <NavLinkItem
+                  key={item.to}
+                  to={item.to}
+                  label={item.label}
+                  icon={item.icon}
+                  active={route.startsWith(item.to)}
+                  badge={itemBadge}
+                  onClick={onNavigate}
+                />
+              );
+            })}
           </NavSection>
         ))}
       </nav>

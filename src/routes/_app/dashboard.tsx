@@ -23,6 +23,7 @@ import { downloadPdf } from "@/components/pcready/pdf/export";
 import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { buildDownloadFileName } from "@/lib/downloads";
+import { CriticalEventsWidget } from "@/components/dashboard/CriticalEventsWidget";
 import {
   TrendingUp,
   Activity,
@@ -444,6 +445,11 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Critical events widget */}
+      <div className="grid grid-cols-1 gap-[18px]">
+        <CriticalEventsWidget accessToken={session?.access_token} />
       </div>
     </div>
   );

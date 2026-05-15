@@ -13,6 +13,9 @@ export const AppSettingsSchema = z.object({
   self_registration_enabled: z.boolean(),
   admin_approval_required: z.boolean(),
   support_email: optionalTrimmed(),
+  log_retention_days: z
+    .union([z.number().int().min(30), z.string().regex(/^[0-9]+$/)])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val)),
 });
 
 export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;

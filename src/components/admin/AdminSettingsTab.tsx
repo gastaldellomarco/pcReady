@@ -290,6 +290,37 @@ export function AdminSettingsTab() {
                           Richiedi approvazione admin per nuovi account
                         </Label>
                       </div>
+
+                      {/* Log Retention */}
+                      <div className="space-y-3 rounded-lg border p-4 mt-4">
+                        <div>
+                          <h3 className="font-medium">Retention Log di Audit</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Configura per quanti giorni mantenere i log di attivita prima dell&apos;archiviazione automatica.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <select
+                            className="pc-input max-w-[200px]"
+                            value={String((settingsForm.watch as any)("log_retention_days") ?? 365)}
+                            onChange={(e) =>
+                              (settingsForm.setValue as any)("log_retention_days", Number(e.target.value))
+                            }
+                          >
+                            <option value="90">90 giorni (3 mesi)</option>
+                            <option value="180">180 giorni (6 mesi)</option>
+                            <option value="365">365 giorni (1 anno)</option>
+                            <option value="730">730 giorni (2 anni)</option>
+                          </select>
+                          <span className="text-xs text-muted-foreground">
+                            I log piu vecchi verranno spostati nell&apos;archivio
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <DatabaseBackup className="h-3 w-3" />
+                          <span>Log archiviati disponibili in sola lettura nella sezione Log</span>
+                        </div>
+                      </div>
                     </div>
 
                     <Button

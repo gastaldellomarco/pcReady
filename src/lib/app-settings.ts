@@ -24,6 +24,7 @@ export type AppSettings = {
   support_email: string;
   wip_limits: WipLimits;
   archive_after_days: number;
+  log_retention_days: number;
   os_options: string[];
   device_brands: string[];
   ticket_categories: string[];
@@ -41,6 +42,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   device_brands: ["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "Microsoft"],
   ticket_categories: [],
   archive_after_days: 7,
+  log_retention_days: 365,
 };
 
 type AppSettingRow = { key: string; value: unknown };
@@ -238,6 +240,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
     device_brands: settings.device_brands ?? DEFAULT_SETTINGS.device_brands,
     ticket_categories: settings.ticket_categories ?? DEFAULT_SETTINGS.ticket_categories,
     archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
+    log_retention_days: settings.log_retention_days ?? DEFAULT_SETTINGS.log_retention_days,
   };
 
   return z
@@ -254,6 +257,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
         .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
       wip_limits: WipLimitsSchema,
       archive_after_days: z.number().int().min(0).max(365),
+      log_retention_days: z.number().int().min(30).max(730),
       os_options: StringListSchema,
       device_brands: StringListSchema,
       ticket_categories: StringListSchema,

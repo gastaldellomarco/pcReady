@@ -43,7 +43,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
       os_options: [],
       device_brands: [],
       ticket_categories: [],
-    },
+    } as any,
   });
 
   const loadAppSettings = useCallback(async () => {
@@ -83,7 +83,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
       os_options: settings?.os_options ?? [],
       device_brands: settings?.device_brands ?? [],
       ticket_categories: settings?.ticket_categories ?? [],
-    });
+    } as any);
   }, [settings, settingsForm]);
 
   async function submitSettings(values: z.input<typeof AppSettingsSchema>) {
@@ -106,6 +106,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
           archived: Number(values.wip_limits.archived ?? 0),
         },
         archive_after_days: Number(values.archive_after_days ?? 7),
+        log_retention_days: Number((values as any).log_retention_days ?? 365),
         os_options: values.os_options ?? [],
         device_brands: values.device_brands ?? [],
         ticket_categories: values.ticket_categories ?? [],

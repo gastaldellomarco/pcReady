@@ -26,6 +26,7 @@ describe("app settings", () => {
   it("normalizes and validates updated settings", () => {
     const settings = validateAppSettingsInput({
       organization_name: "PCReady",
+      log_retention_days: 90,
       default_timezone: "Europe/Rome",
       max_devices_per_technician: 10,
       self_registration_enabled: false,
@@ -69,6 +70,7 @@ describe("app settings", () => {
         device_brands: ["Dell"],
         ticket_categories: [],
         archive_after_days: 7,
+        log_retention_days: 90,
       }),
     ).toThrow();
   });
