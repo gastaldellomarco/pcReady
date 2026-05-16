@@ -15,15 +15,29 @@ export interface TechnicianKpi {
   assigned: number;
   completed: number;
   avg_days: number | null;
+  sla_total?: number;
+  sla_respected?: number;
+  sla_respected_pct?: number | null;
+}
+
+export interface PriorityResolutionMetric {
+  priority: "high" | "med" | "low";
+  label: string;
+  avg_hours: number | null;
+  completed: number;
 }
 
 export interface DashboardAnalytics {
   ticketsByMonth: DashboardMonthMetric[];
   technicianKpi: TechnicianKpi[];
+  priorityResolution: PriorityResolutionMetric[];
   summary: {
     opened: number;
     closed: number;
     avgDays: number | null;
+    slaRespectedPct: number | null;
+    slaRespected: number;
+    slaTotal: number;
   };
 }
 
@@ -48,7 +62,9 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
       }),
       supabaseAdmin
         .from("tickets")
-        .select("id, created_at, closed_at, status")
+        .select(
+          "id, created_at, closed_at, status, assignee_id, priority, sla_deadline, sla_breached",
+        )
         .gte("created_at", data.dateFrom)
         .lt("created_at", data.dateTo),
       supabaseAdmin
@@ -138,13 +154,47 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
       };
     });
 
-    const technicianKpi = ((technicianRes.data ?? []) as any[]).map((row) => ({
-      technician_id: row.technician_id ?? null,
-      full_name: row.full_name || "Non assegnato",
-      assigned: Number(row.assigned ?? 0),
-      completed: Number(row.completed ?? 0),
-      avg_days: row.avg_days == null ? null : Number(row.avg_days),
-    }));
+    const slaByTechnician = new Map<string | null, { total: number; respected: number }>();
+    const priorityHours = new Map<string, { totalHours: number; completed: number }>();
+    for (const t of ticketsAll) {
+      const closedAt = t.closed_at || archivedDateByTicket.get(t.id) || null;
+      const isClosed = Boolean(closedAt) || t.status === "completed" || t.status === "archived";
+      const hasSla = Boolean(t.sla_deadline);
+      if (hasSla && (isClosed || t.sla_breached)) {
+        const key = t.assignee_id ?? null;
+        const entry = slaByTechnician.get(key) ?? { total: 0, respected: 0 };
+        entry.total += 1;
+        const respected =
+          !t.sla_breached && (!closedAt || new Date(closedAt) <= new Date(t.sla_deadline));
+        if (respected) entry.respected += 1;
+        slaByTechnician.set(key, entry);
+      }
+      if (closedAt && t.priority) {
+        const hours =
+          (new Date(closedAt).getTime() - new Date(t.created_at).getTime()) / (1000 * 3600);
+        if (Number.isFinite(hours) && hours >= 0) {
+          const entry = priorityHours.get(t.priority) ?? { totalHours: 0, completed: 0 };
+          entry.totalHours += hours;
+          entry.completed += 1;
+          priorityHours.set(t.priority, entry);
+        }
+      }
+    }
+
+    const technicianKpi = ((technicianRes.data ?? []) as any[]).map((row) => {
+      const key = row.technician_id ?? null;
+      const sla = slaByTechnician.get(key) ?? { total: 0, respected: 0 };
+      return {
+        technician_id: key,
+        full_name: row.full_name || "Non assegnato",
+        assigned: Number(row.assigned ?? 0),
+        completed: Number(row.completed ?? 0),
+        avg_days: row.avg_days == null ? null : Number(row.avg_days),
+        sla_total: sla.total,
+        sla_respected: sla.respected,
+        sla_respected_pct: sla.total ? Math.round((sla.respected / sla.total) * 100) : null,
+      };
+    });
 
     const opened = ticketsByMonth.reduce((sum, row) => sum + row.opened, 0);
     const closed = ticketsByMonth.reduce((sum, row) => sum + row.closed, 0);
@@ -152,15 +202,42 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
       .map((row) => row.avg_days)
       .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 
+    const slaTotals = Array.from(slaByTechnician.values()).reduce(
+      (acc, row) => ({ total: acc.total + row.total, respected: acc.respected + row.respected }),
+      { total: 0, respected: 0 },
+    );
+    const priorityResolution: PriorityResolutionMetric[] = (
+      [
+        { priority: "high", label: "Alta", avg_hours: null, completed: 0 },
+        { priority: "med", label: "Media", avg_hours: null, completed: 0 },
+        { priority: "low", label: "Bassa", avg_hours: null, completed: 0 },
+      ] satisfies PriorityResolutionMetric[]
+    ).map((row) => {
+      const entry = priorityHours.get(row.priority);
+      return {
+        ...row,
+        completed: entry?.completed ?? 0,
+        avg_hours: entry?.completed
+          ? Number((entry.totalHours / entry.completed).toFixed(1))
+          : null,
+      };
+    });
+
     return {
       ticketsByMonth,
       technicianKpi,
+      priorityResolution,
       summary: {
         opened,
         closed,
         avgDays: avgValues.length
           ? Number((avgValues.reduce((sum, value) => sum + value, 0) / avgValues.length).toFixed(2))
           : null,
+        slaRespectedPct: slaTotals.total
+          ? Math.round((slaTotals.respected / slaTotals.total) * 100)
+          : null,
+        slaRespected: slaTotals.respected,
+        slaTotal: slaTotals.total,
       },
     };
   });
@@ -341,6 +418,8 @@ export interface OverdueTicketRow {
   created_at: string;
   updated_at: string | null;
   days_open: number;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
 }
 
 export const getOverdueTickets = createServerFn({ method: "GET" })
@@ -352,10 +431,12 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
 
     const thresholdDays = data.thresholdDays ?? 5;
     const cutoff = new Date(Date.now() - thresholdDays * 24 * 60 * 60 * 1000).toISOString();
+    const warningCutoff = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
     const { data: tickets, error } = await supabaseAdmin
       .from("tickets")
-      .select(`
+      .select(
+        `
         id,
         ticket_code,
         status,
@@ -364,11 +445,14 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
         model,
         created_at,
         updated_at,
+        sla_deadline,
+        sla_breached,
         assignee:assignee_id(full_name)
-      `)
-      .in("status", ["in-progress", "pending"] as any)
-      .lt("updated_at", cutoff)
-      .order("updated_at", { ascending: true });
+      `,
+      )
+      .in("status", ["in-progress", "pending", "testing", "ready"] as any)
+      .or(`sla_breached.eq.true,sla_deadline.lte.${warningCutoff},updated_at.lt.${cutoff}`)
+      .order("sla_deadline", { ascending: true, nullsFirst: false });
 
     if (error) throw error;
 
@@ -383,6 +467,8 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
       created_at: t.created_at,
       updated_at: t.updated_at,
       days_open: Math.round((Date.now() - new Date(t.created_at).getTime()) / (1000 * 3600 * 24)),
+      sla_deadline: t.sla_deadline ?? null,
+      sla_breached: t.sla_breached ?? null,
     }));
   });
 

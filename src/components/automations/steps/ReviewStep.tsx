@@ -30,6 +30,8 @@ export default function ReviewStep({
     ticket_created: "Ticket creato",
     ticket_updated: "Ticket aggiornato",
     checklist_completed: "Checklist completata",
+    sla_warning: "SLA in scadenza",
+    sla_breached: "SLA violato",
     scheduled: "Schedulato",
     manual: "Manuale",
   };
@@ -97,9 +99,7 @@ export default function ReviewStep({
           <div className="text-xs font-semibold uppercase tracking-wide text-accent">
             Anteprima regola
           </div>
-          <div className="mt-2 text-sm font-medium">
-            {summary || "Configurazione incompleta"}
-          </div>
+          <div className="mt-2 text-sm font-medium">{summary || "Configurazione incompleta"}</div>
         </div>
 
         {/* Trigger */}
@@ -108,16 +108,13 @@ export default function ReviewStep({
             Trigger
           </div>
           <p className="mt-1 text-sm text-blue-800">
-            {trigger?.type
-              ? triggerLabels[trigger.type] ?? trigger.type
-              : "Non configurato"}
+            {trigger?.type ? (triggerLabels[trigger.type] ?? trigger.type) : "Non configurato"}
           </p>
-          {trigger?.config &&
-            Object.keys(trigger.config).length > 0 && (
-              <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
-                {JSON.stringify(trigger.config, null, 2)}
-              </pre>
-            )}
+          {trigger?.config && Object.keys(trigger.config).length > 0 && (
+            <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
+              {JSON.stringify(trigger.config, null, 2)}
+            </pre>
+          )}
         </div>
 
         {/* Conditions */}
@@ -144,8 +141,7 @@ export default function ReviewStep({
                   {c.type === "field_ends_with" &&
                     `Campo "${c.config?.field ?? ""}" finisce con "${c.config?.value ?? ""}"`}
                   {c.type === "priority_high" && "Priorita alta"}
-                  {c.type === "tag_contains" &&
-                    `Tag contiene "${c.config?.value ?? ""}"`}
+                  {c.type === "tag_contains" && `Tag contiene "${c.config?.value ?? ""}"`}
                 </li>
               ))}
             </ul>
@@ -161,9 +157,7 @@ export default function ReviewStep({
             <ul className="mt-1 space-y-1.5">
               {actions.map((a, i) => (
                 <li key={a.id ?? i} className="text-sm text-emerald-800">
-                  <span className="font-semibold">
-                    {actionLabels[a.type ?? ""] ?? a.type}
-                  </span>
+                  <span className="font-semibold">{actionLabels[a.type ?? ""] ?? a.type}</span>
                   {a.config && Object.keys(a.config).length > 0 && (
                     <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-emerald-100/50 p-1.5 text-[11px] font-mono text-emerald-800">
                       {JSON.stringify(a.config, null, 2)}

@@ -6,6 +6,8 @@ export const TRIGGER_TYPES = [
   "ticket_created",
   "ticket_updated",
   "checklist_completed",
+  "sla_warning",
+  "sla_breached",
   "scheduled",
   "manual",
 ] as const;

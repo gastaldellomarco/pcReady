@@ -4,7 +4,7 @@ import { Clock, RefreshCw } from "lucide-react";
 import { getOverdueTickets } from "@/lib/dashboard-analytics";
 import { useAuth } from "@/lib/auth-context";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
-import type { TicketStatus } from "@/lib/pcready";
+import { formatSlaCountdown, type TicketStatus } from "@/lib/pcready";
 import { openTicketDetail } from "@/lib/use-detail";
 
 export function OverdueTicketsWidget() {
@@ -42,11 +42,7 @@ export function OverdueTicketsWidget() {
             </span>
           )}
         </div>
-        <button
-          onClick={load}
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={loading}
-        >
+        <button onClick={load} className="pc-btn pc-btn-ghost pc-btn-sm" disabled={loading}>
           <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
@@ -56,14 +52,14 @@ export function OverdueTicketsWidget() {
         ) : tickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
             <Clock className="w-5 h-5 mx-auto mb-2 opacity-40" />
-            Nessun ticket oltre la soglia SLA (5gg)
+            Nessun ticket SLA violato o in scadenza
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr>
-                  {["ID", "Cliente", "Modello", "Stato", "Assegnatario", "Giorni aperto"].map((h) => (
+                  {["ID", "Cliente", "Modello", "Stato", "Assegnatario", "SLA"].map((h) => (
                     <th
                       key={h}
                       className="text-left px-[10px] py-[7px] text-[10px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -105,7 +101,7 @@ export function OverdueTicketsWidget() {
                         }`}
                       >
                         <Clock className="w-3 h-3" />
-                        {t.days_open}g
+                        {t.sla_deadline ? formatSlaCountdown(t.sla_deadline) : `${t.days_open}g`}
                       </span>
                     </td>
                   </tr>

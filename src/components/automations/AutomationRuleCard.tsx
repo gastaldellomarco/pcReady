@@ -2,12 +2,7 @@ import { timeAgo } from "@/lib/pcready";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +41,8 @@ const TRIGGER_COLORS: Record<string, string> = {
   ticket_created: "bg-blue-100 text-blue-800 border-transparent",
   ticket_updated: "bg-indigo-100 text-indigo-800 border-transparent",
   checklist_completed: "bg-cyan-100 text-cyan-800 border-transparent",
+  sla_warning: "bg-amber-100 text-amber-800 border-transparent",
+  sla_breached: "bg-red-100 text-red-800 border-transparent",
   scheduled: "bg-purple-100 text-purple-800 border-transparent",
   manual: "bg-slate-100 text-slate-700 border-transparent",
 };
@@ -154,9 +151,7 @@ export function AutomationRuleCard({
     <div
       className={cn(
         "rounded-xl border transition-all",
-        expanded
-          ? "border-accent/40 shadow-md"
-          : "border-border shadow-sm hover:shadow-md",
+        expanded ? "border-accent/40 shadow-md" : "border-border shadow-sm hover:shadow-md",
         "bg-surface2",
       )}
     >
@@ -186,7 +181,12 @@ export function AutomationRuleCard({
               <ChevronDown className="h-4 w-4 shrink-0 text-text3" />
             )}
           </button>
-          <Badge className={cn("text-[10px] uppercase", TRIGGER_COLORS[triggerType] ?? TRIGGER_COLORS.manual)}>
+          <Badge
+            className={cn(
+              "text-[10px] uppercase",
+              TRIGGER_COLORS[triggerType] ?? TRIGGER_COLORS.manual,
+            )}
+          >
             {triggerLabel}
           </Badge>
           {/* Risk Level Badge */}
@@ -217,9 +217,7 @@ export function AutomationRuleCard({
               </Tooltip>
             </TooltipProvider>
           )}
-          {totalExecutions > 0 && (
-            <ErrorIndicator health={health} />
-          )}
+          {totalExecutions > 0 && <ErrorIndicator health={health} />}
           <div className="ml-auto flex items-center gap-1.5">
             <Button variant="ghost" size="sm" onClick={onEdit} disabled={!isAdmin}>
               <Pencil className="h-3.5 w-3.5" />
@@ -284,9 +282,7 @@ export function AutomationRuleCard({
 
         {/* Middle row: Summary */}
         {summary && (
-          <div className="mt-2.5 text-sm text-text3 leading-relaxed line-clamp-1">
-            {summary}
-          </div>
+          <div className="mt-2.5 text-sm text-text3 leading-relaxed line-clamp-1">{summary}</div>
         )}
 
         {/* Bottom row: Stats */}
@@ -298,22 +294,16 @@ export function AutomationRuleCard({
             </span>
           )}
           <span>
-            Eseguita{" "}
-            <strong>{totalExecutions}</strong>
+            Eseguita <strong>{totalExecutions}</strong>
             {totalExecutions === 1 ? " volta" : " volte"}
           </span>
-          {stats && (
-            <span className="text-emerald-600">
-              ✓ {stats.success} succ.
-            </span>
-          )}
-          {stats && stats.error > 0 && (
-            <span className="text-red-600">
-              ✗ {stats.error} err.
-            </span>
-          )}
+          {stats && <span className="text-emerald-600">✓ {stats.success} succ.</span>}
+          {stats && stats.error > 0 && <span className="text-red-600">✗ {stats.error} err.</span>}
           {rule.category && (
-            <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-700 border-transparent">
+            <Badge
+              variant="secondary"
+              className="text-[10px] bg-slate-100 text-slate-700 border-transparent"
+            >
               {rule.category}
             </Badge>
           )}

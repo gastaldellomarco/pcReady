@@ -21,7 +21,20 @@ export const AppSettingsSchema = z.object({
     completed: numberInput("Inserisci il limite per Completato"),
     archived: numberInput("Inserisci il limite per Archiviato"),
   }),
+  sla_config: z.object({
+    high: slaPriorityInput(),
+    med: slaPriorityInput(),
+    low: slaPriorityInput(),
+  }),
+  sla_limits: z
+    .object({
+      high: numberInput("Inserisci SLA alta"),
+      med: numberInput("Inserisci SLA media"),
+      low: numberInput("Inserisci SLA bassa"),
+    })
+    .optional(),
   archive_after_days: numberInput("Giorni prima di spostare i ticket completati in archivio"),
+  log_retention_days: numberInput("Giorni retention log"),
   os_options: stringListInput(),
   device_brands: stringListInput(),
   ticket_categories: stringListInput(),
@@ -40,4 +53,11 @@ function numberInput(message: string) {
 
 function stringListInput() {
   return z.array(z.string().trim().min(1)).default([]);
+}
+
+function slaPriorityInput() {
+  return z.object({
+    responseHours: numberInput("Inserisci il tempo di risposta"),
+    resolutionHours: numberInput("Inserisci il tempo di risoluzione"),
+  });
 }

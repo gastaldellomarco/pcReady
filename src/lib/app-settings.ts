@@ -2,7 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-users.server";
-import { OS_OPTIONS, type TicketStatus, type SlaLimits, DEFAULT_SLA_LIMITS } from "@/lib/pcready";
+import {
+  OS_OPTIONS,
+  type TicketStatus,
+  type SlaLimits,
+  type SlaConfig,
+  DEFAULT_SLA_LIMITS,
+  DEFAULT_SLA_CONFIG,
+  slaConfigToLimits,
+} from "@/lib/pcready";
 
 export type WipLimits = Record<TicketStatus, number>;
 
@@ -24,6 +32,7 @@ export type AppSettings = {
   support_email: string;
   wip_limits: WipLimits;
   sla_limits: SlaLimits;
+  sla_config: SlaConfig;
   archive_after_days: number;
   log_retention_days: number;
   os_options: string[];
@@ -40,6 +49,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   support_email: "",
   wip_limits: DEFAULT_WIP_LIMITS,
   sla_limits: DEFAULT_SLA_LIMITS,
+  sla_config: DEFAULT_SLA_CONFIG,
   os_options: [...OS_OPTIONS],
   device_brands: ["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "Microsoft"],
   ticket_categories: [],
@@ -62,6 +72,21 @@ const SlaLimitsSchema = z.object({
   high: z.number().int().min(1).max(999),
   med: z.number().int().min(1).max(999),
   low: z.number().int().min(1).max(999),
+});
+
+const SlaConfigSchema = z.object({
+  high: z.object({
+    responseHours: z.number().int().min(1).max(999),
+    resolutionHours: z.number().int().min(1).max(999),
+  }),
+  med: z.object({
+    responseHours: z.number().int().min(1).max(999),
+    resolutionHours: z.number().int().min(1).max(999),
+  }),
+  low: z.object({
+    responseHours: z.number().int().min(1).max(999),
+    resolutionHours: z.number().int().min(1).max(999),
+  }),
 });
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);
@@ -95,6 +120,7 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
         "device_brands",
         "ticket_categories",
         "sla_limits",
+        "sla_config",
       ]);
 
     if (error) throw error;
@@ -108,6 +134,7 @@ export const getPublicAppSettings = createServerFn({ method: "GET" })
       device_brands: settings.device_brands,
       ticket_categories: settings.ticket_categories,
       sla_limits: settings.sla_limits,
+      sla_config: settings.sla_config,
     };
   });
 
@@ -225,7 +252,9 @@ export const updateAppSettings = createServerFn({ method: "POST" })
 
 export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
   const settings = { ...DEFAULT_SETTINGS };
+  const seenKeys = new Set<string>();
   rows.forEach(({ key, value }) => {
+    seenKeys.add(key);
     if (key in settings) {
       let parsed: unknown = value;
       try {
@@ -237,15 +266,25 @@ export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
     }
   });
 
+  if (!seenKeys.has("sla_config") && seenKeys.has("sla_limits")) {
+    settings.sla_config = {
+      high: { ...DEFAULT_SLA_CONFIG.high, resolutionHours: settings.sla_limits.high },
+      med: { ...DEFAULT_SLA_CONFIG.med, resolutionHours: settings.sla_limits.med },
+      low: { ...DEFAULT_SLA_CONFIG.low, resolutionHours: settings.sla_limits.low },
+    };
+  }
+  settings.sla_limits = slaConfigToLimits(settings.sla_config);
+
   return settings;
 }
 
-export function validateAppSettingsInput(settings: AppSettings): AppSettings {
+export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSettings {
   // Merge incoming settings with defaults so missing optional fields get default values
   const mergedSettings: AppSettings = {
     ...DEFAULT_SETTINGS,
     ...settings,
     wip_limits: { ...DEFAULT_WIP_LIMITS, ...(settings.wip_limits || {}) },
+    sla_config: { ...DEFAULT_SLA_CONFIG, ...(settings.sla_config || {}) },
     sla_limits: { ...DEFAULT_SLA_LIMITS, ...(settings.sla_limits || {}) },
     os_options: settings.os_options ?? DEFAULT_SETTINGS.os_options,
     device_brands: settings.device_brands ?? DEFAULT_SETTINGS.device_brands,
@@ -253,6 +292,8 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
     archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
     log_retention_days: settings.log_retention_days ?? DEFAULT_SETTINGS.log_retention_days,
   };
+
+  mergedSettings.sla_limits = slaConfigToLimits(mergedSettings.sla_config);
 
   return z
     .object({
@@ -268,6 +309,7 @@ export function validateAppSettingsInput(settings: AppSettings): AppSettings {
         .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email non valida"),
       wip_limits: WipLimitsSchema,
       sla_limits: SlaLimitsSchema,
+      sla_config: SlaConfigSchema,
       archive_after_days: z.number().int().min(0).max(365),
       log_retention_days: z.number().int().min(30).max(730),
       os_options: StringListSchema,

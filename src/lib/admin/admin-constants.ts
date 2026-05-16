@@ -17,6 +17,12 @@ export const ADMIN_SLA_LIMIT_FIELDS = [
   ["low", "Priorita bassa"],
 ] as const;
 
+export const ADMIN_SLA_CONFIG_FIELDS = [
+  ["high", "Alta"],
+  ["med", "Media"],
+  ["low", "Bassa"],
+] as const;
+
 export function isAppRole(value: string): value is AppRole {
   return value === "admin" || value === "tech" || value === "viewer";
 }

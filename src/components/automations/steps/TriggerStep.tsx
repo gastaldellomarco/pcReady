@@ -1,5 +1,12 @@
 import { cn } from "@/lib/utils";
-import { Ticket, ClipboardCheck, Clock, MousePointerClick } from "lucide-react";
+import {
+  Ticket,
+  ClipboardCheck,
+  Clock,
+  MousePointerClick,
+  AlertTriangle,
+  Siren,
+} from "lucide-react";
 import type { TriggerDef } from "@/types/automation";
 
 const TRIGGER_OPTIONS = [
@@ -26,6 +33,22 @@ const TRIGGER_OPTIONS = [
     icon: ClipboardCheck,
     color: "text-cyan-600",
     bgColor: "bg-cyan-50 border-cyan-200",
+  },
+  {
+    value: "sla_warning",
+    label: "SLA in scadenza",
+    description: "Quando un ticket si avvicina alla scadenza SLA",
+    icon: AlertTriangle,
+    color: "text-amber-600",
+    bgColor: "bg-amber-50 border-amber-200",
+  },
+  {
+    value: "sla_breached",
+    label: "SLA violato",
+    description: "Quando un ticket supera la scadenza SLA",
+    icon: Siren,
+    color: "text-red-600",
+    bgColor: "bg-red-50 border-red-200",
   },
   {
     value: "scheduled",
@@ -81,9 +104,7 @@ export default function TriggerStep({
                   isSelected ? `${opt.bgColor}` : "bg-surface2",
                 )}
               >
-                <Icon
-                  className={cn("h-5 w-5", isSelected ? opt.color : "text-text3")}
-                />
+                <Icon className={cn("h-5 w-5", isSelected ? opt.color : "text-text3")} />
               </div>
               <div className="min-w-0">
                 <div
@@ -94,9 +115,7 @@ export default function TriggerStep({
                 >
                   {opt.label}
                 </div>
-                <div className="mt-0.5 text-xs text-text3 leading-relaxed">
-                  {opt.description}
-                </div>
+                <div className="mt-0.5 text-xs text-text3 leading-relaxed">{opt.description}</div>
               </div>
             </button>
           );

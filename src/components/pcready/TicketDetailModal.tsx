@@ -17,6 +17,8 @@ import {
   type ChecklistStructure,
   DEFAULT_STRUCTURE,
   structureProgress,
+  computeSlaStatus,
+  formatSlaCountdown,
 } from "@/lib/pcready";
 import { StatusBadge, PriorityLabel, AssigneeChip, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
@@ -43,6 +45,10 @@ interface TicketRow {
   notes: string | null;
   checklist: ChecklistState;
   created_at: string;
+  due_date?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
+  sla_response_at?: string | null;
   device_id: string | null;
   checklist_structure?: ChecklistStructure | null;
   device?: {
@@ -210,6 +216,13 @@ export function TicketDetailModal() {
   }
 
   const meta = STATUS_META[ticket.status];
+  const sla = computeSlaStatus(
+    ticket.created_at,
+    ticket.priority,
+    undefined,
+    ticket.due_date || ticket.sla_deadline,
+    ticket.sla_breached,
+  );
 
   return (
     <Modal
@@ -264,6 +277,30 @@ export function TicketDetailModal() {
           }
         />
         <Info label="Creato" value={fmtDate(ticket.created_at)} />
+        <Info
+          label="SLA"
+          value={
+            <span className="inline-flex flex-col text-xs">
+              <span
+                className={
+                  sla.status === "overdue"
+                    ? "text-red-600 font-semibold"
+                    : sla.status === "warning"
+                      ? "text-amber-600 font-semibold"
+                      : "text-green-600 font-semibold"
+                }
+              >
+                {sla.status === "overdue"
+                  ? "SLA violato"
+                  : sla.status === "warning"
+                    ? "In scadenza"
+                    : "SLA OK"}
+              </span>
+              <span className="font-mono text-text3">{formatSlaCountdown(sla.deadline)}</span>
+            </span>
+          }
+        />
+        <Info label="Prima risposta" value={fmtDateTime(ticket.sla_response_at)} />
         <Info label="OS asset" value={asset.os} />
         <Info label="Software" value={<span className="text-xs">{ticket.software || "-"}</span>} />
       </div>

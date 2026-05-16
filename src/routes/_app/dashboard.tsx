@@ -91,14 +91,8 @@ function DashboardPage() {
     accessToken: session?.access_token,
     setPendingCount,
   });
-  const {
-    visibleWidgets,
-    allWidgets,
-    editMode,
-    setEditMode,
-    reorder,
-    toggleVisibility,
-  } = useDashboardLayout();
+  const { visibleWidgets, allWidgets, editMode, setEditMode, reorder, toggleVisibility } =
+    useDashboardLayout();
 
   const priorityCounts = useMemo(
     () =>
@@ -141,12 +135,29 @@ function DashboardPage() {
       )}
 
       {/* Render widgets in configured order */}
-      {visibleWidgets.map((w) => renderWidget(w.id, {
-        tickets, devices, devicesWithoutTicket, ticketsWithoutDeviceCount,
-        activeClientsCount, dateFrom, setDateFrom, dateTo, setDateTo,
-        analytics, analyticsLoading, dedupLogs, range, periodLabel,
-        counts, total, priorityCounts, loadSettings, session,
-      }))}
+      {visibleWidgets.map((w) =>
+        renderWidget(w.id, {
+          tickets,
+          devices,
+          devicesWithoutTicket,
+          ticketsWithoutDeviceCount,
+          activeClientsCount,
+          dateFrom,
+          setDateFrom,
+          dateTo,
+          setDateTo,
+          analytics,
+          analyticsLoading,
+          dedupLogs,
+          range,
+          periodLabel,
+          counts,
+          total,
+          priorityCounts,
+          loadSettings,
+          session,
+        }),
+      )}
     </div>
   );
 }
@@ -168,7 +179,7 @@ type WidgetContext = {
   periodLabel: string;
   counts: Record<string, number>;
   total: number;
-  priorityCounts: { high: number; med: number; low: number; };
+  priorityCounts: { high: number; med: number; low: number };
   loadSettings: any;
   session: any;
 };
@@ -201,6 +212,19 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             sub="nel periodo"
             icon={<TrendingUp className="w-5 h-5" />}
             href="/clients"
+          />
+          <DashboardStatCard
+            label="SLA rispettati"
+            value={
+              ctx.analytics?.summary?.slaRespectedPct == null
+                ? "n/d"
+                : `${ctx.analytics.summary.slaRespectedPct}%`
+            }
+            accent="var(--success)"
+            sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} nel periodo`}
+            valueColor="var(--success)"
+            icon={<Clock className="w-5 h-5" />}
+            href="/tickets"
           />
           <DashboardStatCard
             label="In lavorazione"
@@ -287,9 +311,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     }),
                   );
                 }}
-                onDownloadCsv={() =>
-                  ctx.analytics && downloadAnalyticsCsv(ctx.analytics)
-                }
+                onDownloadCsv={() => ctx.analytics && downloadAnalyticsCsv(ctx.analytics)}
               />
             </Suspense>
           </PageErrorBoundary>
@@ -308,9 +330,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             </div>
             <div className="pc-card-body">
               <div className="flex items-center gap-3">
-                <div className="text-[22px] font-bold">
-                  {ctx.devicesWithoutTicket.length}
-                </div>
+                <div className="text-[22px] font-bold">{ctx.devicesWithoutTicket.length}</div>
                 <div className="flex-1">
                   <DashboardAreaSpark
                     data={computeDailyCounts(
@@ -342,9 +362,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             </div>
             <div className="pc-card-body">
               <div className="flex items-center gap-3">
-                <div className="text-[22px] font-bold">
-                  {ctx.ticketsWithoutDeviceCount}
-                </div>
+                <div className="text-[22px] font-bold">{ctx.ticketsWithoutDeviceCount}</div>
                 <div className="flex-1">
                   <DashboardAreaSpark
                     data={computeDailyCounts(
@@ -373,12 +391,8 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">
-                Trend: Ticket aperti vs Asset disponibili
-              </span>
-              <span className="text-[11px] text-text3 font-mono">
-                {ctx.periodLabel}
-              </span>
+              <span className="pc-card-title">Trend: Ticket aperti vs Asset disponibili</span>
+              <span className="text-[11px] text-text3 font-mono">{ctx.periodLabel}</span>
             </div>
             <div className="pc-card-body">
               <div className="flex items-center gap-3">
@@ -387,9 +401,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     series={[
                       {
                         data: computeDailyCounts(
-                          ctx.tickets.filter(
-                            (tt: any) => tt.status !== "ready",
-                          ),
+                          ctx.tickets.filter((tt: any) => tt.status !== "ready"),
                           "created_at",
                           ctx.range.days,
                         ),
@@ -398,9 +410,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                       },
                       {
                         data: computeDailyCounts(
-                          ctx.devices.filter(
-                            (d: any) => d.status === "available",
-                          ),
+                          ctx.devices.filter((d: any) => d.status === "available"),
                           "created_at",
                           ctx.range.days,
                         ),
@@ -469,9 +479,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                         <div className="text-[11px] text-text3">{t.client}</div>
                       </td>
                       <td className="px-[14px] py-[10px]">
-                        <StatusBadge
-                          status={t.status as TicketStatus}
-                        />
+                        <StatusBadge status={t.status as TicketStatus} />
                       </td>
                       <td className="px-[14px] py-[10px]">
                         <AssigneeChip
@@ -483,10 +491,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   ))}
                   {!ctx.tickets.length && (
                     <tr>
-                      <td
-                        colSpan={4}
-                        className="text-center py-8 text-text3 text-sm"
-                      >
+                      <td colSpan={4} className="text-center py-8 text-text3 text-sm">
                         Nessun ticket. Creane uno con il pulsante in alto.
                       </td>
                     </tr>
@@ -499,17 +504,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <div className="pc-card dashboard-widget">
             <div className="pc-card-hd">
               <span className="pc-card-title">Distribuzione stati</span>
-              <span className="text-[11px] text-text3 font-mono">
-                {ctx.total} totali
-              </span>
+              <span className="text-[11px] text-text3 font-mono">{ctx.total} totali</span>
             </div>
             <div className="pc-card-body">
               <div className="flex gap-4 items-center lg:items-stretch">
                 <div className="flex-shrink-0 flex items-center justify-center px-2">
-                  <Link
-                    to="/kanban"
-                    className="block hover:opacity-85 transition-opacity"
-                  >
+                  <Link to="/kanban" className="block hover:opacity-85 transition-opacity">
                     <DashboardDonut
                       data={Object.entries(ctx.counts).map(([s, n]) => ({
                         status: s as TicketStatus,
@@ -542,17 +542,13 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                                   background: STATUS_META[d.status].color,
                                 }}
                               />
-                              <span className="text-text2">
-                                {STATUS_META[d.status].label}
-                              </span>
+                              <span className="text-text2">{STATUS_META[d.status].label}</span>
                             </div>
                             <div className="font-mono text-text3">{d.n}</div>
                           </Link>
                         ))}
                     </div>
-                    <div className="text-sm text-text3 mt-3">
-                      {ctx.total} ticket totali
-                    </div>
+                    <div className="text-sm text-text3 mt-3">{ctx.total} ticket totali</div>
                   </div>
                 </div>
               </div>
@@ -589,10 +585,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   >
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                      title={
-                        l.actor?.full_name ??
-                        (l.type === "user" ? "Utente" : "Sistema")
-                      }
+                      title={l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}
                       aria-label={`Azione eseguita da: ${l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}`}
                       style={{
                         background:
@@ -610,11 +603,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                       }}
                     >
                       {l.actor?.initials ??
-                        (l.type === "auto"
-                          ? "A"
-                          : l.type === "user"
-                            ? "U"
-                            : "-")}
+                        (l.type === "auto" ? "A" : l.type === "user" ? "U" : "-")}
                     </span>
                     <span className="flex-1 text-text2">{l.message}</span>
                     <span className="text-[10.5px] text-text3 font-mono whitespace-nowrap">
@@ -623,9 +612,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   </div>
                 ))}
                 {!ctx.dedupLogs.length && (
-                  <div className="text-center text-text3 text-sm py-4">
-                    Nessuna attivita
-                  </div>
+                  <div className="text-center text-text3 text-sm py-4">Nessuna attivita</div>
                 )}
               </div>
             </div>
@@ -654,7 +641,13 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
     case "technician-stats":
       return (
         <div key="technician-stats" className="grid grid-cols-1 gap-[18px]">
-          <Suspense fallback={<div className="pc-card pc-card-body text-sm text-text3">Caricamento statistiche tecnici...</div>}>
+          <Suspense
+            fallback={
+              <div className="pc-card pc-card-body text-sm text-text3">
+                Caricamento statistiche tecnici...
+              </div>
+            }
+          >
             <TechnicianStatsWidgetLazy />
           </Suspense>
         </div>
@@ -663,9 +656,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
     case "critical-events":
       return (
         <div key="critical-events" className="grid grid-cols-1 gap-[18px]">
-          <CriticalEventsWidget
-            accessToken={ctx.session?.access_token}
-          />
+          <CriticalEventsWidget accessToken={ctx.session?.access_token} />
         </div>
       );
 
@@ -673,5 +664,3 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
       return null;
   }
 }
-
-

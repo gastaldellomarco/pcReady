@@ -52,27 +52,34 @@ export function AnalyticsReportPdf({
   ];
 
   const techColumns: PdfColumn<DashboardAnalytics["technicianKpi"][number]>[] = [
-    { key: "name", label: "Tecnico", width: "40%", value: (row) => row.full_name },
+    { key: "name", label: "Tecnico", width: "32%", value: (row) => row.full_name },
     {
       key: "assigned",
       label: "Assegnati",
-      width: "20%",
+      width: "16%",
       mono: true,
       value: (row) => String(row.assigned),
     },
     {
       key: "completed",
       label: "Completati",
-      width: "20%",
+      width: "16%",
       mono: true,
       value: (row) => String(row.completed),
     },
     {
       key: "avg",
       label: "Tempo medio",
-      width: "20%",
+      width: "18%",
       mono: true,
       value: (row) => formatAvgDays(row.avg_days),
+    },
+    {
+      key: "sla",
+      label: "SLA OK",
+      width: "18%",
+      mono: true,
+      value: (row) => (row.sla_respected_pct == null ? "n/d" : `${row.sla_respected_pct}%`),
     },
   ];
 
@@ -92,6 +99,15 @@ export function AnalyticsReportPdf({
               value: formatAvgDays(analytics.summary.avgDays),
               color: pdfPalette.warn,
               helper: "risoluzione ticket",
+            },
+            {
+              label: "SLA rispettati",
+              value:
+                analytics.summary.slaRespectedPct == null
+                  ? "n/d"
+                  : `${analytics.summary.slaRespectedPct}%`,
+              color: pdfPalette.success,
+              helper: `${analytics.summary.slaRespected}/${analytics.summary.slaTotal}`,
             },
           ]}
         />
@@ -124,6 +140,35 @@ export function AnalyticsReportPdf({
         </PdfSection>
         <PdfSection title="Dettaglio mensile" meta={`${analytics.ticketsByMonth.length} periodi`}>
           <PdfTable rows={analytics.ticketsByMonth} columns={monthColumns} />
+        </PdfSection>
+        <PdfSection title="Report SLA" meta="rispetto SLA e tempi per priorita">
+          <ChartGrid>
+            <ChartPanel title="Tempo medio risoluzione per priorita">
+              <HorizontalBars
+                rows={(analytics.priorityResolution ?? []).map((row) => ({
+                  label: row.label,
+                  assigned: row.completed,
+                  completed: row.avg_hours ?? 0,
+                }))}
+              />
+            </ChartPanel>
+            <ChartPanel title="SLA rispettati nel periodo">
+              <DonutChart
+                items={[
+                  {
+                    label: "Rispettati",
+                    value: analytics.summary.slaRespected,
+                    color: pdfPalette.success,
+                  },
+                  {
+                    label: "Violati",
+                    value: Math.max(0, analytics.summary.slaTotal - analytics.summary.slaRespected),
+                    color: pdfPalette.danger,
+                  },
+                ]}
+              />
+            </ChartPanel>
+          </ChartGrid>
         </PdfSection>
         <PdfSection title="Dettaglio tecnici" meta={`${analytics.technicianKpi.length} tecnici`}>
           <PdfTable rows={analytics.technicianKpi} columns={techColumns} />

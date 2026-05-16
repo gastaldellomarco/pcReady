@@ -167,7 +167,7 @@ export async function fetchTicketsList(params: TicketsListParams) {
   let query = supabase
     .from("tickets")
     .select(
-      "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
+      "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
       { count: "exact" },
     )
     .not("status", "eq", "archived" as any);
@@ -199,10 +199,12 @@ export async function fetchTicketsList(params: TicketsListParams) {
   if (error) throw error;
 
   // Client-side sort for priority if needed
-  let result = (data ?? []) as any[];
+  const result = (data ?? []) as any[];
   if (sortBy === "priority") {
     const dir = sortDir === "asc" ? 1 : -1;
-    result.sort((a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir);
+    result.sort(
+      (a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir,
+    );
   } else if (sortBy === "status") {
     const dir = sortDir === "asc" ? 1 : -1;
     result.sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);

@@ -20,6 +20,8 @@ import {
   fmtDateTime,
   formatOpenDuration,
   computeSlaStatus,
+  formatSlaCountdown,
+  slaConfigToLimits,
   type SlaLimits,
   DEFAULT_SLA_LIMITS,
 } from "@/lib/pcready";
@@ -62,6 +64,10 @@ interface Row {
   priority: TicketPriority;
   status: TicketStatus;
   created_at: string;
+  due_date?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
+  sla_response_at?: string | null;
   assignee_id: string | null;
   client_ref?: { name: string } | null;
   device?: { model: string; serial: string | null; os: string | null } | null;
@@ -155,7 +161,8 @@ function TicketsPage() {
     if (session?.access_token) {
       loadSettings({ data: { accessToken: session.access_token } })
         .then((settings) => {
-          if (settings?.sla_limits) setSlaLimits(settings.sla_limits);
+          if (settings?.sla_config) setSlaLimits(slaConfigToLimits(settings.sla_config));
+          else if (settings?.sla_limits) setSlaLimits(settings.sla_limits);
         })
         .catch(() => {});
     }
@@ -376,6 +383,7 @@ function TicketsPage() {
                     { key: "type", label: "Tipo", sortable: false },
                     { key: "assignee", label: "Assegnatario", sortable: false },
                     { key: "created_at", label: "Creato", sortable: true },
+                    { key: "sla", label: "SLA", sortable: false },
                     { key: "time_open", label: "Tempo aperto", sortable: false },
                   ].map((h) => (
                     <th
@@ -418,7 +426,7 @@ function TicketsPage() {
               </thead>
               <tbody>
                 {listLoading ? (
-                  <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
+                  <TableSkeletonRows rows={12} columns={12} cellClassName="px-[14px] py-[10px]" />
                 ) : (
                   <>
                     {data.map((t) => (
@@ -461,6 +469,15 @@ function TicketsPage() {
                           {fmtDate(t.created_at)}
                         </td>
                         <td className="px-[14px] py-[10px]">
+                          <SlaBadge
+                            created_at={t.created_at}
+                            priority={t.priority}
+                            slaLimits={slaLimits}
+                            deadline={t.due_date || t.sla_deadline}
+                            breached={t.sla_breached}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px]">
                           <TimeOpenBadge
                             created_at={t.created_at}
                             priority={t.priority}
@@ -471,7 +488,7 @@ function TicketsPage() {
                     ))}
                     {!data.length && (
                       <tr>
-                        <td colSpan={11} className="text-center py-10 text-text3 text-sm">
+                        <td colSpan={12} className="text-center py-10 text-text3 text-sm">
                           Nessun ticket
                         </td>
                       </tr>
@@ -503,6 +520,39 @@ function TicketsPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+function SlaBadge({
+  created_at,
+  priority,
+  slaLimits,
+  deadline,
+  breached,
+}: {
+  created_at: string;
+  priority: TicketPriority;
+  slaLimits?: SlaLimits;
+  deadline?: string | null;
+  breached?: boolean | null;
+}) {
+  const sla = computeSlaStatus(created_at, priority, slaLimits, deadline, breached);
+  const palette =
+    sla.status === "overdue"
+      ? { bg: "#FEE2E2", fg: "#991B1B", label: "SLA violato" }
+      : sla.status === "warning"
+        ? { bg: "#FEF3C7", fg: "#92400E", label: "In scadenza" }
+        : { bg: "#D1FAE5", fg: "#065F46", label: "SLA OK" };
+
+  return (
+    <span
+      className="inline-flex flex-col gap-0.5 rounded-lg px-2 py-1 text-[11px] font-medium whitespace-nowrap"
+      style={{ background: palette.bg, color: palette.fg }}
+      title={`Deadline SLA: ${fmtDateTime(sla.deadline)}`}
+    >
+      <span className="font-semibold">{palette.label}</span>
+      <span className="font-mono opacity-80">{formatSlaCountdown(sla.deadline)}</span>
+    </span>
   );
 }
 

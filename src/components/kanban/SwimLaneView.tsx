@@ -26,6 +26,10 @@ export interface SwimLaneCard {
   priority: TicketPriority;
   assignee_id: string | null;
   updated_at?: string | null;
+  created_at?: string | null;
+  due_date?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
   device?: { model: string; serial: string | null } | null;
   assignee?: { id: string; full_name: string; initials: string } | null;
 }
@@ -101,7 +105,9 @@ export function SwimLaneView({
                 Tecnico / Stato
               </th>
               {statuses.map((status) => {
-                const isHidden = collapsedColumns.has(status) || (compactView && !visibleStatuses.includes(status));
+                const isHidden =
+                  collapsedColumns.has(status) ||
+                  (compactView && !visibleStatuses.includes(status));
                 if (isHidden) {
                   return (
                     <th

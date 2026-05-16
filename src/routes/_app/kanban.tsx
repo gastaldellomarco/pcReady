@@ -8,7 +8,14 @@ import queries from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
-import { STATUS_META, type TicketPriority, type TicketStatus, PRIORITY_LABEL } from "@/lib/pcready";
+import {
+  STATUS_META,
+  type TicketPriority,
+  type TicketStatus,
+  PRIORITY_LABEL,
+  computeSlaStatus,
+  formatSlaCountdown,
+} from "@/lib/pcready";
 import { openTicketDetail } from "@/lib/use-detail";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
@@ -47,6 +54,10 @@ interface Card {
   priority: TicketPriority;
   assignee_id: string | null;
   updated_at?: string | null;
+  created_at?: string | null;
+  due_date?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
   device?: { model: string; serial: string | null } | null;
   assignee?: { id: string; full_name: string; initials: string } | null;
   completed_at?: string | null;
@@ -283,10 +294,7 @@ function KanbanPage() {
 
         <button
           type="button"
-          className={cn(
-            "pc-btn pc-btn-sm",
-            compactView ? "pc-btn-primary" : "pc-btn-ghost",
-          )}
+          className={cn("pc-btn pc-btn-sm", compactView ? "pc-btn-primary" : "pc-btn-ghost")}
           onClick={() => setCompactView((prev) => !prev)}
           title="Vista compatta — nascondi colonne vuote"
         >
@@ -455,11 +463,19 @@ function KanbanPage() {
                         cursor: canEdit ? "grab" : "pointer",
                         opacity: dragId === c.id ? 0.4 : 1,
                         transform: dragId === c.id ? "scale(0.98)" : undefined,
+                        borderLeft: `4px solid ${slaIndicator(c).color}`,
                       }}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-[10.5px] text-text3">{c.ticket_code}</span>
-                        <PriorityLabel p={c.priority} />
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ background: slaIndicator(c).color }}
+                            title={slaIndicator(c).label}
+                          />
+                          <PriorityLabel p={c.priority} />
+                        </div>
                       </div>
                       <div className="text-[12.5px] font-semibold mb-0.5">
                         {c.device?.model || "Nessun asset"}
@@ -468,12 +484,18 @@ function KanbanPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           {c.assignee ? (
-                            <AssigneeChip initials={c.assignee.initials} name={c.assignee.full_name} />
+                            <AssigneeChip
+                              initials={c.assignee.initials}
+                              name={c.assignee.full_name}
+                            />
                           ) : (
                             <UnassignedBadge />
                           )}
                         </div>
-                        <TimeInColumnLabel updatedAt={c.updated_at} />
+                        <div className="flex flex-col items-end gap-1">
+                          <SlaMiniLabel card={c} />
+                          <TimeInColumnLabel updatedAt={c.updated_at} />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -496,6 +518,36 @@ function KanbanPage() {
   );
 }
 
+function slaIndicator(card: Card) {
+  const sla = computeSlaStatus(
+    card.created_at || card.updated_at || new Date().toISOString(),
+    card.priority,
+    undefined,
+    card.due_date || card.sla_deadline,
+    card.sla_breached,
+  );
+  if (sla.status === "overdue") return { color: "#DC2626", label: "SLA violato" };
+  if (sla.status === "warning") return { color: "#CA8A04", label: "In scadenza" };
+  return { color: "#16A34A", label: "SLA OK" };
+}
+
+function SlaMiniLabel({ card }: { card: Card }) {
+  const indicator = slaIndicator(card);
+  const deadline = card.due_date || card.sla_deadline;
+  return (
+    <span
+      className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
+      style={{
+        background: `${indicator.color}22`,
+        color: indicator.color,
+      }}
+      title={deadline ? formatSlaCountdown(deadline) : indicator.label}
+    >
+      {indicator.label}
+    </span>
+  );
+}
+
 function UnassignedBadge() {
   return (
     <span className="inline-flex items-center w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
@@ -510,10 +562,8 @@ function errorMessage(error: unknown, fallback: string) {
 
 /** WIP progress bar with color thresholds: green <70%, yellow 70-90%, red >=90% */
 function WipProgressBar({ pct }: { pct: number }) {
-  const color =
-    pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
-  const bgColor =
-    pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
+  const color = pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
+  const bgColor = pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
   return (
     <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
       <div
@@ -544,7 +594,10 @@ function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
     }
 
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono" title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}>
+      <span
+        className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono"
+        title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}
+      >
         <Clock className="h-2.5 w-2.5" />
         {label}
       </span>

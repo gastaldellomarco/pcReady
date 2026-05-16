@@ -56,6 +56,8 @@ export const TRIGGER_TYPE_LABELS: Record<string, string> = {
   ticket_created: "Ticket creato",
   ticket_updated: "Ticket aggiornato",
   checklist_completed: "Checklist completata",
+  sla_warning: "SLA in scadenza",
+  sla_breached: "SLA violato",
   scheduled: "Schedulato",
   manual: "Manuale",
 };
@@ -65,6 +67,8 @@ export const TRIGGER_TYPE_OPTIONS = [
   { value: "ticket_created", label: "Ticket creato" },
   { value: "ticket_updated", label: "Ticket aggiornato" },
   { value: "checklist_completed", label: "Checklist completata" },
+  { value: "sla_warning", label: "SLA in scadenza" },
+  { value: "sla_breached", label: "SLA violato" },
   { value: "scheduled", label: "Schedulato" },
   { value: "manual", label: "Manuale" },
 ];
@@ -101,13 +105,11 @@ export function useAutomationRules() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
-  const [AutomationBuilderComp, setAutomationBuilderComp] = useState<
-    React.ComponentType<{
-      initialFlow?: { id: string } | undefined;
-      onSave?: () => void;
-      onCancel?: () => void;
-    }> | null
-  >(null);
+  const [AutomationBuilderComp, setAutomationBuilderComp] = useState<React.ComponentType<{
+    initialFlow?: { id: string } | undefined;
+    onSave?: () => void;
+    onCancel?: () => void;
+  }> | null>(null);
   const [guidedMode, setGuidedMode] = useState(true);
   const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
 
@@ -283,7 +285,10 @@ export function useAutomationRules() {
     try {
       if (editingRule) {
         const previousSnapshot = editingRule;
-        const data = await updateMut.mutateAsync({ id: editingRule.id, payload: payload as Partial<AutomationFlow> });
+        const data = await updateMut.mutateAsync({
+          id: editingRule.id,
+          payload: payload as Partial<AutomationFlow>,
+        });
         await createVersion(
           "automation_flows",
           editingRule.id,
@@ -533,7 +538,9 @@ export function useAutomationRules() {
       "\uFEFF" +
       headers.join(";") +
       "\n" +
-      rows.map((row) => row.map((cell) => `"${(cell ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+      rows
+        .map((row) => row.map((cell) => `"${(cell ?? "").replace(/"/g, '""')}"`).join(";"))
+        .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -545,7 +552,7 @@ export function useAutomationRules() {
   }
 
   const filteredRules = useMemo(() => {
-    let filtered = rules.filter((rule) => {
+    const filtered = rules.filter((rule) => {
       if (categoryFilter && rule.category !== categoryFilter) return false;
       const status = ruleLifecycleStatus(rule);
       if (statusFilter && status !== statusFilter) return false;

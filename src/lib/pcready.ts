@@ -8,14 +8,31 @@ export type TicketStatus =
 export type TicketPriority = "high" | "med" | "low";
 export type TicketType = "device" | "support" | "maintenance" | "other";
 
-// SLA limits in hours per priority
+// SLA limits in hours per priority. `SlaLimits` is kept for backwards compatibility
+// and represents the resolution target. New code should use `SlaConfig`.
 export type SlaLimits = Record<TicketPriority, number>;
+export type SlaPriorityConfig = { responseHours: number; resolutionHours: number };
+export type SlaConfig = Record<TicketPriority, SlaPriorityConfig>;
+
+export const DEFAULT_SLA_CONFIG: SlaConfig = {
+  high: { responseHours: 1, resolutionHours: 4 },
+  med: { responseHours: 4, resolutionHours: 24 },
+  low: { responseHours: 24, resolutionHours: 72 },
+};
 
 export const DEFAULT_SLA_LIMITS: SlaLimits = {
-  high: 4,
-  med: 24,
-  low: 72,
+  high: DEFAULT_SLA_CONFIG.high.resolutionHours,
+  med: DEFAULT_SLA_CONFIG.med.resolutionHours,
+  low: DEFAULT_SLA_CONFIG.low.resolutionHours,
 };
+
+export function slaConfigToLimits(config?: SlaConfig | null): SlaLimits {
+  return {
+    high: config?.high?.resolutionHours ?? DEFAULT_SLA_LIMITS.high,
+    med: config?.med?.resolutionHours ?? DEFAULT_SLA_LIMITS.med,
+    low: config?.low?.resolutionHours ?? DEFAULT_SLA_LIMITS.low,
+  };
+}
 
 export const STATUS_META: Record<
   TicketStatus,
@@ -250,24 +267,49 @@ Write-Host "✔ Preparazione completata. Riavvio consigliato."
 `;
 }
 
+export type SlaStatus = "ok" | "warning" | "overdue";
+
 export function computeSlaStatus(
   createdAt: string | Date,
   priority: TicketPriority,
   slaLimits?: SlaLimits,
-): { status: "ok" | "warning" | "overdue"; limitHours: number } {
+  deadline?: string | Date | null,
+  breached?: boolean | null,
+): { status: SlaStatus; limitHours: number; deadline: Date; remainingMs: number } {
   const limits = slaLimits ?? DEFAULT_SLA_LIMITS;
-  const limitHours = limits[priority];
+  const limitHours = limits[priority] ?? DEFAULT_SLA_LIMITS[priority];
   const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const due = deadline
+    ? typeof deadline === "string"
+      ? new Date(deadline)
+      : deadline
+    : new Date(created.getTime() + limitHours * 60 * 60 * 1000);
   const now = new Date();
-  const elapsedHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+  const totalMs = Math.max(1, due.getTime() - created.getTime());
+  const remainingMs = due.getTime() - now.getTime();
 
-  if (elapsedHours > limitHours) {
-    return { status: "overdue", limitHours };
+  if (breached || remainingMs <= 0) {
+    return { status: "overdue", limitHours, deadline: due, remainingMs };
   }
-  if (elapsedHours > limitHours * 0.75) {
-    return { status: "warning", limitHours };
+  if (remainingMs <= totalMs * 0.2) {
+    return { status: "warning", limitHours, deadline: due, remainingMs };
   }
-  return { status: "ok", limitHours };
+  return { status: "ok", limitHours, deadline: due, remainingMs };
+}
+
+export function formatSlaCountdown(deadline?: string | Date | null): string {
+  if (!deadline) return "SLA non impostato";
+  const due = typeof deadline === "string" ? new Date(deadline) : deadline;
+  if (!(due instanceof Date) || Number.isNaN(due.getTime())) return "SLA non valido";
+  const diffMs = due.getTime() - Date.now();
+  const absMs = Math.abs(diffMs);
+  const totalMinutes = Math.max(0, Math.floor(absMs / (1000 * 60)));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  const parts =
+    days > 0 ? `${days}g ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  return diffMs >= 0 ? `Scade tra ${parts}` : `Scaduto da ${parts}`;
 }
 
 export function formatOpenDuration(s?: string | Date | null): string {

@@ -1,5 +1,10 @@
 import { AssigneeChip, PriorityLabel } from "@/components/pcready/StatusBadge";
-import { STATUS_META, type TicketStatus } from "@/lib/pcready";
+import {
+  STATUS_META,
+  computeSlaStatus,
+  formatSlaCountdown,
+  type TicketStatus,
+} from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import { openTicketDetail } from "@/lib/use-detail";
 import type { TechnicianOption } from "@/lib/technicians";
@@ -66,7 +71,8 @@ export function SwimLaneRow({
         </div>
       </th>
       {statuses.map((status) => {
-        const isHidden = collapsedColumns.has(status) || (compactView && !visibleStatuses.includes(status));
+        const isHidden =
+          collapsedColumns.has(status) || (compactView && !visibleStatuses.includes(status));
         if (isHidden) {
           return (
             <td key={status} className="min-w-[48px] w-[48px] p-0 align-top">
@@ -195,11 +201,19 @@ function TicketCard({
         cursor: canEdit ? "grab" : "pointer",
         opacity: isDragging ? 0.4 : 1,
         transform: isDragging ? "scale(0.98)" : undefined,
+        borderLeft: `4px solid ${slaIndicator(card).color}`,
       }}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="font-mono text-[10.5px] text-text3">{card.ticket_code}</span>
-        <PriorityLabel p={card.priority} />
+        <div className="flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: slaIndicator(card).color }}
+            title={slaIndicator(card).label}
+          />
+          <PriorityLabel p={card.priority} />
+        </div>
       </div>
       <div className="mb-0.5 text-[12.5px] font-semibold">
         {card.device?.model || "Nessun asset"}
@@ -213,9 +227,39 @@ function TicketCard({
             <UnassignedBadge />
           )}
         </div>
-        <TimeInColumnLabel updatedAt={card.updated_at} />
+        <div className="flex flex-col items-end gap-1">
+          <SlaMiniLabel card={card} />
+          <TimeInColumnLabel updatedAt={card.updated_at} />
+        </div>
       </div>
     </div>
+  );
+}
+
+function slaIndicator(card: SwimLaneCard) {
+  const sla = computeSlaStatus(
+    card.created_at || card.updated_at || new Date().toISOString(),
+    card.priority,
+    undefined,
+    card.due_date || card.sla_deadline,
+    card.sla_breached,
+  );
+  if (sla.status === "overdue") return { color: "#DC2626", label: "SLA violato" };
+  if (sla.status === "warning") return { color: "#CA8A04", label: "In scadenza" };
+  return { color: "#16A34A", label: "SLA OK" };
+}
+
+function SlaMiniLabel({ card }: { card: SwimLaneCard }) {
+  const indicator = slaIndicator(card);
+  const deadline = card.due_date || card.sla_deadline;
+  return (
+    <span
+      className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
+      style={{ background: `${indicator.color}22`, color: indicator.color }}
+      title={deadline ? formatSlaCountdown(deadline) : indicator.label}
+    >
+      {indicator.label}
+    </span>
   );
 }
 
