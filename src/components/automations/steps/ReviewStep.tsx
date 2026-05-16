@@ -32,6 +32,8 @@ export default function ReviewStep({
     checklist_completed: "Checklist completata",
     sla_warning: "SLA in scadenza",
     sla_breached: "SLA violato",
+    warranty_expiring_soon: "Garanzia in scadenza",
+    warranty_expired: "Garanzia scaduta",
     scheduled: "Schedulato",
     manual: "Manuale",
   };

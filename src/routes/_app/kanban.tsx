@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { fetchTicketsList } from "@/lib/queries/tickets";
 import queries from "@/lib/queries/tickets";
@@ -17,6 +17,7 @@ import {
   formatSlaCountdown,
 } from "@/lib/pcready";
 import { openTicketDetail } from "@/lib/use-detail";
+import { supabase } from "@/integrations/supabase/client";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
   Select,
@@ -31,6 +32,7 @@ import { DEFAULT_WIP_LIMITS, getKanbanAppSettings, type WipLimits } from "@/lib/
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { createNotification } from "@/lib/notifications";
 import { sendTicketAssignedEmail } from "@/lib/email-events";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { Rows3, ChevronDown, ChevronRight, LayoutList, Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,6 +87,9 @@ function KanbanPage() {
   const [overCol, setOverCol] = useState<TicketStatus | null>(null);
   const [overCell, setOverCell] = useState<string | null>(null);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<TicketStatus>>(new Set());
+  const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirmStatus, setBulkConfirmStatus] = useState<TicketStatus | null>(null);
   const [compactView, setCompactView] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(KANBAN_VIEW_MODE_KEY + ":compact") === "true";
@@ -235,6 +240,86 @@ function KanbanPage() {
     // React Query invalidation handles refreshing lists
   }
 
+  function handleKanbanCardClick(event: MouseEvent, ticketId: string) {
+    if (event.shiftKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedTicketIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(ticketId)) next.delete(ticketId);
+        else next.add(ticketId);
+        return next;
+      });
+      return;
+    }
+    openTicketDetail(ticketId);
+  }
+
+  function selectedKanbanCodesPreview() {
+    const codes = selectedCards.map((ticket) => ticket.ticket_code);
+    const visible = codes.slice(0, 8).join(", ");
+    return codes.length > 8 ? `${visible}, +${codes.length - 8} altri` : visible;
+  }
+
+  function requestKanbanBulkStatus(status: TicketStatus) {
+    if (status === "archived" || status === "completed") {
+      setBulkConfirmStatus(status);
+      return;
+    }
+    void applyKanbanBulkPatch({ status }, `cambio stato a ${STATUS_META[status].label}`);
+  }
+
+  async function applyKanbanBulkPatch(patch: Partial<Card>, actionLabel: string) {
+    if (!canEdit) return toast.error("Permessi insufficienti");
+    const ids = Array.from(selectedTicketIds);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      const previousById = new Map(rows.map((ticket) => [ticket.id, ticket]));
+      const { error } = await supabase
+        .from("tickets")
+        .update(patch as any)
+        .in("id", ids as any);
+      if (error) throw error;
+
+      if (patch.status) {
+        await Promise.all(
+          ids.map((ticketId) =>
+            (queries as any).addTicketStatusHistory(ticketId, {
+              from_status: previousById.get(ticketId)?.status ?? null,
+              to_status: patch.status,
+              changed_by: user!.id,
+              changed_at: new Date().toISOString(),
+              note: `Operazione bulk Kanban: ${actionLabel}`,
+            }),
+          ),
+        );
+      }
+
+      await (activityQueries.insertActivity as any)({
+        type: "user",
+        message: `${actionLabel}: ${ids.length} ticket da Kanban`,
+        actor_id: user!.id,
+        action_type: `bulk_kanban_${actionLabel}`,
+        entity_type: "tickets",
+        entity_id: "bulk",
+        severity: patch.status === "archived" ? "warning" : "info",
+        new_value: { ticket_ids: ids, patch },
+      });
+      setRows((current) =>
+        current.map((ticket) =>
+          selectedTicketIds.has(ticket.id) ? { ...ticket, ...patch } : ticket,
+        ),
+      );
+      setSelectedTicketIds(new Set());
+      toast.success(`${actionLabel}: ${ids.length} ticket aggiornati`);
+    } catch (error) {
+      toast.error(errorMessage(error, "Operazione bulk non riuscita"));
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   const filteredRows = useMemo(() => {
     const baseRows = Array.isArray(rows) ? rows : [];
     return baseRows.filter((row) => {
@@ -247,6 +332,11 @@ function KanbanPage() {
       return matchesAssignee && matchesPriority;
     });
   }, [filterAssignee, filterPriority, profile?.id, rows]);
+
+  const selectedCards = useMemo(
+    () => rows.filter((row) => selectedTicketIds.has(row.id)),
+    [rows, selectedTicketIds],
+  );
 
   // Filter visible statuses based on compact view and collapsed state
   const visibleStatuses = useMemo(() => {
@@ -343,6 +433,8 @@ function KanbanPage() {
           onDragOverCell={setOverCell}
           onDragLeaveCell={(cellId) => setOverCell((cell) => (cell === cellId ? null : cell))}
           onMove={(id, status, assigneeId) => void moveTo(id, status, assigneeId)}
+          selectedCardIds={selectedTicketIds}
+          onCardClick={handleKanbanCardClick}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -457,8 +549,11 @@ function KanbanPage() {
                         setOverCol(null);
                         setOverCell(null);
                       }}
-                      onClick={() => openTicketDetail(c.id)}
-                      className="pc-card text-left p-3 hover:shadow-md transition-all select-none"
+                      onClick={(event) => handleKanbanCardClick(event, c.id)}
+                      className={cn(
+                        "pc-card text-left p-3 hover:shadow-md transition-all select-none",
+                        selectedTicketIds.has(c.id) && "ring-2 ring-accent",
+                      )}
                       style={{
                         cursor: canEdit ? "grab" : "pointer",
                         opacity: dragId === c.id ? 0.4 : 1,
@@ -514,6 +609,112 @@ function KanbanPage() {
           })}
         </div>
       )}
+
+      {selectedCards.length > 0 ? (
+        <div
+          className="fixed bottom-4 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl border px-3 py-2 shadow-lg"
+          style={{ background: "var(--surface1)", borderColor: "var(--border)" }}
+        >
+          <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
+            {selectedCards.length} selezionati
+          </span>
+          <select
+            className="pc-input max-w-[170px]"
+            value=""
+            disabled={bulkBusy || !canEdit}
+            onChange={(event) => {
+              const status = event.target.value as TicketStatus;
+              if (status) requestKanbanBulkStatus(status);
+            }}
+          >
+            <option value="">Cambia stato...</option>
+            {KANBAN_STATUSES.concat("archived").map((status) => (
+              <option key={status} value={status}>
+                {STATUS_META[status].label}
+              </option>
+            ))}
+          </select>
+          <select
+            className="pc-input max-w-[180px]"
+            value=""
+            disabled={bulkBusy || !canEdit}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value)
+                void applyKanbanBulkPatch(
+                  { assignee_id: value === "unassigned" ? null : value },
+                  "riassegnazione bulk",
+                );
+            }}
+          >
+            <option value="">Riassegna...</option>
+            <option value="unassigned">Non assegnato</option>
+            {technicians.map((technician) => (
+              <option key={technician.id} value={technician.id}>
+                {technician.full_name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="pc-input max-w-[170px]"
+            value=""
+            disabled={bulkBusy || !canEdit}
+            onChange={(event) => {
+              const priority = event.target.value as TicketPriority;
+              if (priority)
+                void applyKanbanBulkPatch(
+                  { priority },
+                  `cambio priorita a ${PRIORITY_LABEL[priority]}`,
+                );
+            }}
+          >
+            <option value="">Priorita...</option>
+            {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
+              <option key={priority} value={priority}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="pc-btn pc-btn-danger pc-btn-sm"
+            disabled={bulkBusy || !canEdit}
+            onClick={() => setBulkConfirmStatus("archived")}
+          >
+            Archivia
+          </button>
+          <button
+            type="button"
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={() => setSelectedTicketIds(new Set())}
+          >
+            X Deseleziona
+          </button>
+          <span className="text-[10px] text-text3">Shift+click sulle card per selezionare</span>
+        </div>
+      ) : null}
+
+      <DestructiveConfirmDialog
+        open={!!bulkConfirmStatus}
+        onOpenChange={(open) => !open && setBulkConfirmStatus(null)}
+        title={
+          bulkConfirmStatus === "completed"
+            ? `Stai per completare ${selectedCards.length} ticket`
+            : `Stai per archiviare ${selectedCards.length} ticket`
+        }
+        description={`Operazione bulk Kanban sui ticket: ${selectedKanbanCodesPreview()}`}
+        confirmLabel="Conferma"
+        loadingLabel="Aggiornamento..."
+        onConfirm={async () => {
+          if (!bulkConfirmStatus) return;
+          await applyKanbanBulkPatch(
+            { status: bulkConfirmStatus },
+            bulkConfirmStatus === "completed"
+              ? "completamento bulk"
+              : `cambio stato a ${STATUS_META[bulkConfirmStatus].label}`,
+          );
+        }}
+      />
     </div>
   );
 }

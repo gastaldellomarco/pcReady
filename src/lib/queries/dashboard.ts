@@ -5,11 +5,24 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type DashboardRange = { from: string; to: string };
 
-type ProfilesEmbed = Pick<Database["public"]["Tables"]["profiles"]["Row"], "full_name" | "initials">;
+type ProfilesEmbed = Pick<
+  Database["public"]["Tables"]["profiles"]["Row"],
+  "full_name" | "initials"
+>;
 
 export type DashboardDeviceRow = Pick<
   Database["public"]["Tables"]["devices"]["Row"],
-  "id" | "model" | "serial" | "created_at" | "status" | "client_id" | "assigned_to"
+  | "id"
+  | "model"
+  | "serial"
+  | "created_at"
+  | "status"
+  | "client_id"
+  | "assigned_to"
+  | "purchase_date"
+  | "warranty_expiry_date"
+  | "warranty_type"
+  | "warranty_provider"
 >;
 
 export type DashboardTicketRow = Pick<
@@ -38,6 +51,7 @@ export type DashboardSnapshot = {
   devices: DashboardDeviceRow[];
   recentDevices: DashboardDeviceRow[];
   devicesWithoutTicket: DashboardDeviceRow[];
+  warrantyDevices: DashboardDeviceRow[];
   ticketsWithoutDeviceCount: number;
   activeClientsCount: number;
 };
@@ -57,13 +71,36 @@ async function fetchDevicesInRange(from: string, to: string): Promise<DashboardD
   for (;;) {
     const res = await supabase
       .from("devices")
-      .select("id, model, serial, created_at, status, client_id, assigned_to")
+      .select(
+        "id, model, serial, created_at, status, client_id, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider",
+      )
       .gte("created_at", from)
       .lte("created_at", to)
       .order("created_at", { ascending: false })
       .range(offset, offset + DEVICE_PAGE_SIZE - 1);
     throwIfError("devices", res.error);
     const chunk: DashboardDeviceRow[] = (res.data ?? []) as DashboardDeviceRow[];
+    out.push(...chunk);
+    if (chunk.length < DEVICE_PAGE_SIZE) break;
+    offset += DEVICE_PAGE_SIZE;
+    if (offset >= DEVICE_FETCH_CAP) break;
+  }
+  return out;
+}
+
+async function fetchWarrantyDevices(): Promise<DashboardDeviceRow[]> {
+  const out: DashboardDeviceRow[] = [];
+  let offset = 0;
+  for (;;) {
+    const res = await supabase
+      .from("devices")
+      .select(
+        "id, model, serial, created_at, status, client_id, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider",
+      )
+      .order("warranty_expiry_date", { ascending: true, nullsFirst: false })
+      .range(offset, offset + DEVICE_PAGE_SIZE - 1);
+    throwIfError("devices warranties", res.error);
+    const chunk = (res.data ?? []) as DashboardDeviceRow[];
     out.push(...chunk);
     if (chunk.length < DEVICE_PAGE_SIZE) break;
     offset += DEVICE_PAGE_SIZE;
@@ -101,7 +138,10 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
   throwIfError("activity_log", lRes.error);
   throwIfError("ticket_device_assignments", aRes.error);
 
-  const devices = await fetchDevicesInRange(from, to);
+  const [devices, warrantyDevices] = await Promise.all([
+    fetchDevicesInRange(from, to),
+    fetchWarrantyDevices(),
+  ]);
 
   const tickets: DashboardTicketRow[] = (tRes.data ?? []) as DashboardTicketRow[];
   const logs: DashboardLogRow[] = (lRes.data ?? []) as DashboardLogRow[];
@@ -113,8 +153,7 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
     (dev) => !assignedIds.has(dev.id) && dev.status !== "retired",
   );
   const ticketsWithoutDeviceCount = tickets.filter(
-    (tt) =>
-      !tt.device && (tt.status as string) !== "archived" && tt.status !== "ready",
+    (tt) => !tt.device && (tt.status as string) !== "archived" && tt.status !== "ready",
   ).length;
   const activeClients = new Set(tickets.map((tt) => tt.client).filter(Boolean));
 
@@ -124,6 +163,7 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
     devices,
     recentDevices,
     devicesWithoutTicket,
+    warrantyDevices,
     ticketsWithoutDeviceCount,
     activeClientsCount: activeClients.size,
   };

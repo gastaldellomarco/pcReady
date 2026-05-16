@@ -392,9 +392,14 @@ export type Database = {
           model: string;
           notes: string | null;
           os: string | null;
+          purchase_date: string | null;
           serial: string | null;
           status: Database["public"]["Enums"]["device_status"];
           updated_at: string;
+          warranty_expiry_date: string | null;
+          warranty_notes: string | null;
+          warranty_provider: string | null;
+          warranty_type: string | null;
         };
         Insert: {
           assigned_to?: string | null;
@@ -406,9 +411,14 @@ export type Database = {
           model: string;
           notes?: string | null;
           os?: string | null;
+          purchase_date?: string | null;
           serial?: string | null;
           status?: Database["public"]["Enums"]["device_status"];
           updated_at?: string;
+          warranty_expiry_date?: string | null;
+          warranty_notes?: string | null;
+          warranty_provider?: string | null;
+          warranty_type?: string | null;
         };
         Update: {
           assigned_to?: string | null;
@@ -420,9 +430,14 @@ export type Database = {
           model?: string;
           notes?: string | null;
           os?: string | null;
+          purchase_date?: string | null;
           serial?: string | null;
           status?: Database["public"]["Enums"]["device_status"];
           updated_at?: string;
+          warranty_expiry_date?: string | null;
+          warranty_notes?: string | null;
+          warranty_provider?: string | null;
+          warranty_type?: string | null;
         };
         Relationships: [
           {

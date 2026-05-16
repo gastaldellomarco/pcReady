@@ -28,6 +28,7 @@ export function useDashboardData(args: {
   const [logs, setLogs] = useState<DashboardLogRow[]>([]);
   const [devices, setDevices] = useState<DashboardDeviceRow[]>([]);
   const [devicesWithoutTicket, setDevicesWithoutTicket] = useState<DashboardDeviceRow[]>([]);
+  const [warrantyDevices, setWarrantyDevices] = useState<DashboardDeviceRow[]>([]);
   const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
   const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
   const [dateFrom, setDateFrom] = useState(defaultRange.from);
@@ -85,6 +86,7 @@ export function useDashboardData(args: {
       setLogs(snap.data.logs);
       setDevices(snap.data.devices);
       setDevicesWithoutTicket(snap.data.devicesWithoutTicket);
+      setWarrantyDevices(snap.data.warrantyDevices ?? []);
       setTicketsWithoutDeviceCount(snap.data.ticketsWithoutDeviceCount ?? 0);
       setActiveClientsCount(snap.data.activeClientsCount ?? 0);
     }
@@ -141,6 +143,7 @@ export function useDashboardData(args: {
     logs,
     devices,
     devicesWithoutTicket,
+    warrantyDevices,
     ticketsWithoutDeviceCount,
     activeClientsCount,
     dateFrom,

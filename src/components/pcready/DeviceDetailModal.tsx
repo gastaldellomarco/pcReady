@@ -6,6 +6,7 @@ import { openTicketDetail, useDeviceDetail } from "@/lib/use-detail";
 import {
   DEVICE_STATUS_LABEL,
   fmtDateTime,
+  fmtDate,
   formatDeviceStatus,
   STATUS_META,
   TICKET_TYPE_LABEL,
@@ -34,6 +35,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TicketPlus, Save } from "lucide-react";
+import {
+  daysUntil,
+  getWarrantyStatus,
+  isProbablyUrl,
+  toDateInputValue,
+  warrantyProgress,
+  WARRANTY_STATUS_META,
+  WARRANTY_TYPES,
+  type WarrantyType,
+} from "@/lib/warranty";
 
 interface DeviceRow {
   id: string;
@@ -44,6 +55,11 @@ interface DeviceRow {
   client?: { name: string } | null;
   assigned_to: string | null;
   notes: string | null;
+  purchase_date: string | null;
+  warranty_expiry_date: string | null;
+  warranty_type: string | null;
+  warranty_provider: string | null;
+  warranty_notes: string | null;
   created_at: string;
   created_by: string | null;
   updated_at: string;
@@ -134,6 +150,15 @@ export function DeviceDetailModal() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editingWarranty, setEditingWarranty] = useState(false);
+  const [savingWarranty, setSavingWarranty] = useState(false);
+  const [warrantyDraft, setWarrantyDraft] = useState({
+    purchase_date: "",
+    warranty_expiry_date: "",
+    warranty_type: "standard" as WarrantyType,
+    warranty_provider: "",
+    warranty_notes: "",
+  });
   const { openCreate } = useTickets();
 
   useEffect(() => {
@@ -144,6 +169,7 @@ export function DeviceDetailModal() {
       setHistoryEntries([]);
       setActivities([]);
       setProfileNames({});
+      setEditingWarranty(false);
       setLoading(false);
       return;
     }
@@ -165,7 +191,17 @@ export function DeviceDetailModal() {
         setLoading(false);
         return;
       }
-      setD(devRes.data as DeviceRow | null);
+      const deviceRow = devRes.data as DeviceRow | null;
+      setD(deviceRow);
+      if (deviceRow) {
+        setWarrantyDraft({
+          purchase_date: toDateInputValue(deviceRow.purchase_date),
+          warranty_expiry_date: toDateInputValue(deviceRow.warranty_expiry_date),
+          warranty_type: (deviceRow.warranty_type as WarrantyType) || "standard",
+          warranty_provider: deviceRow.warranty_provider ?? "",
+          warranty_notes: deviceRow.warranty_notes ?? "",
+        });
+      }
 
       const assignRes = await supabase
         .from("ticket_device_assignments")
@@ -259,9 +295,7 @@ export function DeviceDetailModal() {
             existingIds.add(row.id);
           }
         }
-        logRows.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        logRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       }
 
       if (cancelled) return;
@@ -332,6 +366,18 @@ export function DeviceDetailModal() {
   }, [d, tickets, historyEntries, activities, ticketCodeById, profileNames]);
 
   const lastEvent = timeline[0];
+  const warrantyStatus = getWarrantyStatus(d?.warranty_expiry_date);
+  const warrantyMeta = WARRANTY_STATUS_META[warrantyStatus];
+  const warrantyDays = daysUntil(d?.warranty_expiry_date);
+  const warrantyBar = warrantyProgress(d ?? {});
+  const warrantyRemainingText =
+    warrantyDays === null
+      ? "Scadenza non impostata"
+      : warrantyDays < 0
+        ? `Scaduta da ${Math.abs(warrantyDays)} giorni`
+        : warrantyDays === 0
+          ? "Scade oggi"
+          : `Scade tra ${warrantyDays} giorni`;
 
   const resolveName = (uid: string | null | undefined) => {
     if (!uid) return null;
@@ -377,6 +423,41 @@ export function DeviceDetailModal() {
     } finally {
       setSavingNotes(false);
     }
+  }
+
+  async function saveWarranty() {
+    if (!d || !session?.access_token) return;
+    setSavingWarranty(true);
+    try {
+      const payload = {
+        purchase_date: warrantyDraft.purchase_date || null,
+        warranty_expiry_date: warrantyDraft.warranty_expiry_date || null,
+        warranty_type: warrantyDraft.warranty_type || null,
+        warranty_provider: warrantyDraft.warranty_provider.trim() || null,
+        warranty_notes: warrantyDraft.warranty_notes.trim() || null,
+      };
+      const { error } = await supabase.from("devices").update(payload).eq("id", d.id);
+      if (error) throw error;
+      setD({ ...d, ...payload });
+      setEditingWarranty(false);
+      toast.success("Garanzia aggiornata");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore salvataggio garanzia");
+    } finally {
+      setSavingWarranty(false);
+    }
+  }
+
+  function startWarrantyEdit() {
+    if (!d) return;
+    setWarrantyDraft({
+      purchase_date: toDateInputValue(d.purchase_date),
+      warranty_expiry_date: toDateInputValue(d.warranty_expiry_date),
+      warranty_type: (d.warranty_type as WarrantyType) || "standard",
+      warranty_provider: d.warranty_provider ?? "",
+      warranty_notes: d.warranty_notes ?? "",
+    });
+    setEditingWarranty(true);
   }
 
   function onDeviceStatusSelect(value: string) {
@@ -481,8 +562,176 @@ export function DeviceDetailModal() {
         </div>
       )}
 
+      <div
+        className="mb-4 p-3 rounded-lg"
+        style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+      >
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div>
+            <div className="pc-label">Garanzia</div>
+            <div className="mt-1 flex items-center gap-2 text-[12px] text-text2">
+              <span
+                className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                style={{
+                  color: warrantyMeta.color,
+                  background: warrantyMeta.background,
+                  borderColor: warrantyMeta.color,
+                }}
+              >
+                {warrantyMeta.label}
+              </span>
+              <span>{warrantyRemainingText}</span>
+              {warrantyBar.percent !== null ? <span>({warrantyBar.percent}%)</span> : null}
+            </div>
+          </div>
+          {canEdit && !editingWarranty ? (
+            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={startWarrantyEdit}>
+              Rinova garanzia
+            </button>
+          ) : null}
+        </div>
+
+        {editingWarranty ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs">
+              <span className="pc-label">Data acquisto</span>
+              <input
+                type="date"
+                className="pc-input mt-1 w-full"
+                value={warrantyDraft.purchase_date}
+                onChange={(e) => setWarrantyDraft((v) => ({ ...v, purchase_date: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs">
+              <span className="pc-label">Scadenza garanzia</span>
+              <input
+                type="date"
+                className="pc-input mt-1 w-full"
+                value={warrantyDraft.warranty_expiry_date}
+                onChange={(e) =>
+                  setWarrantyDraft((v) => ({ ...v, warranty_expiry_date: e.target.value }))
+                }
+              />
+            </label>
+            <label className="text-xs">
+              <span className="pc-label">Tipo garanzia</span>
+              <select
+                className="pc-input mt-1 w-full"
+                value={warrantyDraft.warranty_type}
+                onChange={(e) =>
+                  setWarrantyDraft((v) => ({ ...v, warranty_type: e.target.value as WarrantyType }))
+                }
+              >
+                {WARRANTY_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="pc-label">Fornitore / URL</span>
+              <input
+                className="pc-input mt-1 w-full"
+                value={warrantyDraft.warranty_provider}
+                onChange={(e) =>
+                  setWarrantyDraft((v) => ({ ...v, warranty_provider: e.target.value }))
+                }
+                placeholder="Dell, HP, rivenditore o https://..."
+              />
+            </label>
+            <label className="text-xs md:col-span-2">
+              <span className="pc-label">Note garanzia / contratto</span>
+              <textarea
+                className="pc-input mt-1 min-h-[70px] w-full"
+                value={warrantyDraft.warranty_notes}
+                onChange={(e) =>
+                  setWarrantyDraft((v) => ({ ...v, warranty_notes: e.target.value }))
+                }
+                placeholder="Numero contratto, condizioni, riferimenti..."
+              />
+            </label>
+            <div className="flex gap-2 md:col-span-2">
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                disabled={savingWarranty}
+                onClick={saveWarranty}
+              >
+                <Save className="h-3 w-3" /> {savingWarranty ? "Salvataggio..." : "Salva garanzia"}
+              </button>
+              <button
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+                onClick={() => setEditingWarranty(false)}
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 text-[12.5px] md:grid-cols-4">
+              <div>
+                <div className="pc-label">Acquisto</div>
+                <div>{d.purchase_date ? fmtDate(d.purchase_date) : "—"}</div>
+              </div>
+              <div>
+                <div className="pc-label">Scadenza</div>
+                <div>{d.warranty_expiry_date ? fmtDate(d.warranty_expiry_date) : "—"}</div>
+              </div>
+              <div>
+                <div className="pc-label">Tipo</div>
+                <div>
+                  {WARRANTY_TYPES.find((type) => type.value === d.warranty_type)?.label ??
+                    d.warranty_type ??
+                    "—"}
+                </div>
+              </div>
+              <div>
+                <div className="pc-label">Fornitore</div>
+                {isProbablyUrl(d.warranty_provider) ? (
+                  <a
+                    className="text-accent hover:underline"
+                    href={d.warranty_provider!}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Link garanzia
+                  </a>
+                ) : (
+                  <div>{d.warranty_provider || "—"}</div>
+                )}
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="mb-1 flex justify-between text-[11px] text-text3">
+                <span>Avanzamento copertura</span>
+                <span>{warrantyRemainingText}</span>
+              </div>
+              <div
+                className="h-2 overflow-hidden rounded-full"
+                style={{ background: "var(--surface3)" }}
+              >
+                <div
+                  className="h-full transition-all"
+                  style={{
+                    width: `${warrantyBar.percent ?? 0}%`,
+                    background: warrantyMeta.color,
+                  }}
+                />
+              </div>
+              {d.warranty_notes ? (
+                <div className="mt-2 text-[12px] text-text2 whitespace-pre-wrap">
+                  {d.warranty_notes}
+                </div>
+              ) : null}
+            </div>
+          </>
+        )}
+      </div>
+
       {d.notes !== undefined && (
-        <div className="flex items-start justify-between gap-2 mb-4 p-3 rounded-lg"
+        <div
+          className="flex items-start justify-between gap-2 mb-4 p-3 rounded-lg"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
           <div className="flex-1 min-w-0">
@@ -525,7 +774,9 @@ export function DeviceDetailModal() {
                 }}
               >
                 {d.notes || (
-                  <span className="text-text3 italic">Nessuna nota tecnica{canEdit ? " — clicca per aggiungere" : ""}</span>
+                  <span className="text-text3 italic">
+                    Nessuna nota tecnica{canEdit ? " — clicca per aggiungere" : ""}
+                  </span>
                 )}
               </div>
             )}
@@ -627,10 +878,13 @@ export function DeviceDetailModal() {
         </div>
       )}
 
-      <AlertDialog open={confirmStatusOpen} onOpenChange={(open) => {
-        setConfirmStatusOpen(open);
-        if (!open) setPendingStatus(null);
-      }}>
+      <AlertDialog
+        open={confirmStatusOpen}
+        onOpenChange={(open) => {
+          setConfirmStatusOpen(open);
+          if (!open) setPendingStatus(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Conferma cambio stato</AlertDialogTitle>

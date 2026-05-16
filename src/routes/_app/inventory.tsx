@@ -10,7 +10,19 @@ import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, FileDown, Eye, QrCode, Upload, ScanLine, Printer, TicketPlus, ClipboardList, CheckCircle2, X } from "lucide-react";
+import {
+  Plus,
+  FileDown,
+  Eye,
+  QrCode,
+  Upload,
+  ScanLine,
+  Printer,
+  TicketPlus,
+  ClipboardList,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
@@ -20,6 +32,12 @@ import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDownloadFileName } from "@/lib/downloads";
+import {
+  daysUntil,
+  getWarrantyStatus,
+  WARRANTY_STATUS_META,
+  type WarrantyFilter,
+} from "@/lib/warranty";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +74,11 @@ interface Row {
   client?: { name: string } | null;
   updated_at: string;
   assigned_to: string | null;
+  purchase_date: string | null;
+  warranty_expiry_date: string | null;
+  warranty_type: string | null;
+  warranty_provider: string | null;
+  warranty_notes: string | null;
   has_active_assignment?: boolean;
 }
 
@@ -94,6 +117,15 @@ function InventoryPage() {
     return new URLSearchParams(window.location.search).get("filter") === "without_ticket";
   });
   const [updatedBeforeDays, setUpdatedBeforeDays] = useState<number | null>(null);
+  const [warrantyFilter, setWarrantyFilter] = useState<WarrantyFilter>(() => {
+    if (typeof window === "undefined") return "all";
+    const value = new URLSearchParams(window.location.search).get(
+      "warranty",
+    ) as WarrantyFilter | null;
+    return value && ["valid", "expiring", "urgent", "expired", "missing"].includes(value)
+      ? value
+      : "all";
+  });
   const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
   const [bulkClientOpen, setBulkClientOpen] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState<DeviceStatus>("available");
@@ -107,6 +139,7 @@ function InventoryPage() {
     page,
     pageSize: PAGE_SIZE,
     withoutTicket: withoutTicketFilter,
+    warrantyStatus: warrantyFilter,
     updatedBefore: updatedBeforeDays
       ? new Date(Date.now() - updatedBeforeDays * 24 * 60 * 60 * 1000).toISOString()
       : undefined,
@@ -137,7 +170,7 @@ function InventoryPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [fs, fos, q]);
+  }, [fs, fos, q, warrantyFilter]);
 
   const data = rows;
   const listLoading = listQuery.isLoading;
@@ -155,6 +188,11 @@ function InventoryPage() {
       client: r.client?.name || "-",
       assigned_to: r.assigned_to,
       updated_at: r.updated_at,
+      purchase_date: r.purchase_date,
+      warranty_expiry_date: r.warranty_expiry_date,
+      warranty_type: r.warranty_type,
+      warranty_provider: r.warranty_provider,
+      warranty_notes: r.warranty_notes,
     }));
   }
 
@@ -374,7 +412,35 @@ function InventoryPage() {
       client: r.client?.name || "-",
       assigned_to: r.assigned_to,
       updated_at: r.updated_at,
+      purchase_date: r.purchase_date,
+      warranty_expiry_date: r.warranty_expiry_date,
+      warranty_type: r.warranty_type,
+      warranty_provider: r.warranty_provider,
+      warranty_notes: r.warranty_notes,
     };
+  }
+
+  async function exportWarrantyPdf() {
+    if (!data.length) return toast.error("Nessun dispositivo da esportare");
+    setPdfBusy("download");
+    try {
+      const settings = session?.access_token
+        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
+        : null;
+      await downloadPdf(
+        <InventoryPdf
+          rows={pdfRows()}
+          organizationName={settings?.organization_name}
+          variant="warranty"
+        />,
+        buildDownloadFileName("pcready-report-garanzie", "pdf", { dated: true }),
+      );
+      toast.success("Report garanzie esportato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore esportazione report garanzie"));
+    } finally {
+      setPdfBusy(null);
+    }
   }
 
   return (
@@ -411,15 +477,25 @@ function InventoryPage() {
         <select
           className="pc-input max-w-[210px]"
           value={updatedBeforeDays ?? ""}
-          onChange={(e) =>
-            setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)
-          }
+          onChange={(e) => setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)}
         >
           <option value="">Tutte le date</option>
           <option value="7">Non aggiornati da &gt; 7 giorni</option>
           <option value="14">Non aggiornati da &gt; 14 giorni</option>
           <option value="30">Non aggiornati da &gt; 30 giorni</option>
           <option value="60">Non aggiornati da &gt; 60 giorni</option>
+        </select>
+        <select
+          className="pc-input max-w-[190px]"
+          value={warrantyFilter}
+          onChange={(e) => setWarrantyFilter(e.target.value as WarrantyFilter)}
+        >
+          <option value="all">Tutte le garanzie</option>
+          <option value="valid">In garanzia</option>
+          <option value="expiring">In scadenza</option>
+          <option value="urgent">Urgente</option>
+          <option value="expired">Scaduta</option>
+          <option value="missing">Senza garanzia</option>
         </select>
         <span className="ml-auto self-center text-xs text-text3 font-mono">
           {total
@@ -436,6 +512,13 @@ function InventoryPage() {
         <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
           {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}
+        </button>
+        <button
+          onClick={exportWarrantyPdf}
+          disabled={!!pdfBusy}
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+        >
+          <FileDown className="w-3 h-3" /> Report garanzie
         </button>
         <button
           onClick={printSelectedLabels}
@@ -535,6 +618,7 @@ function InventoryPage() {
                     "Modello",
                     "OS",
                     "Stato",
+                    "Garanzia",
                     "Cliente",
                     "Utente",
                     "Aggiornato",
@@ -552,7 +636,7 @@ function InventoryPage() {
               </thead>
               <tbody>
                 {listLoading ? (
-                  <TableSkeletonRows rows={12} columns={10} cellClassName="px-[14px] py-[10px]" />
+                  <TableSkeletonRows rows={12} columns={11} cellClassName="px-[14px] py-[10px]" />
                 ) : (
                   <>
                     {data.map((r) => (
@@ -580,7 +664,9 @@ function InventoryPage() {
                           {r.serial || "-"}
                         </td>
                         <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">{r.os || "-"}</td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {r.os || "-"}
+                        </td>
                         <td
                           className="px-[14px] py-[10px]"
                           onClick={(event) => event.stopPropagation()}
@@ -593,9 +679,15 @@ function InventoryPage() {
                             onStatusChange={handleStatusChange}
                           />
                         </td>
+                        <td className="px-[14px] py-[10px]">
+                          <WarrantyBadge expiryDate={r.warranty_expiry_date} />
+                        </td>
                         <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
                         <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                        <td className="px-[14px] py-[10px] text-[11px] text-text3" title={r.updated_at}>
+                        <td
+                          className="px-[14px] py-[10px] text-[11px] text-text3"
+                          title={r.updated_at}
+                        >
                           {fmtDate(r.updated_at)}
                         </td>
                         <td
@@ -628,7 +720,7 @@ function InventoryPage() {
                     ))}
                     {!data.length && (
                       <tr>
-                        <td colSpan={10} className="text-center py-12 text-text3 text-sm">
+                        <td colSpan={11} className="text-center py-12 text-text3 text-sm">
                           Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
                         </td>
                       </tr>
@@ -674,10 +766,13 @@ function InventoryPage() {
         onDetected={(code) => void handleDetected(code)}
       />
 
-      <AlertDialog open={bulkStatusOpen} onOpenChange={(open) => {
-        setBulkStatusOpen(open);
-        if (!open) setBulkTargetStatus("available");
-      }}>
+      <AlertDialog
+        open={bulkStatusOpen}
+        onOpenChange={(open) => {
+          setBulkStatusOpen(open);
+          if (!open) setBulkTargetStatus("available");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cambia stato in blocco</AlertDialogTitle>
@@ -698,26 +793,26 @@ function InventoryPage() {
           </select>
           <AlertDialogFooter>
             <AlertDialogCancel type="button">Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              type="button"
-              disabled={bulkBusy}
-              onClick={handleBulkStatusChange}
-            >
+            <AlertDialogAction type="button" disabled={bulkBusy} onClick={handleBulkStatusChange}>
               {bulkBusy ? "Aggiornamento..." : `Applica a ${selectedIds.size} dispositivi`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={bulkClientOpen} onOpenChange={(open) => {
-        setBulkClientOpen(open);
-        if (!open) setBulkTargetClientName("");
-      }}>
+      <AlertDialog
+        open={bulkClientOpen}
+        onOpenChange={(open) => {
+          setBulkClientOpen(open);
+          if (!open) setBulkTargetClientName("");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Assegna utente in blocco</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedIds.size} dispositivi selezionati. Inserisci il nome utente da assegnare (anagrafica):
+              {selectedIds.size} dispositivi selezionati. Inserisci il nome utente da assegnare
+              (anagrafica):
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
@@ -739,6 +834,32 @@ function InventoryPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function WarrantyBadge({ expiryDate }: { expiryDate: string | null }) {
+  const status = getWarrantyStatus(expiryDate);
+  const meta = WARRANTY_STATUS_META[status];
+  const days = daysUntil(expiryDate);
+  const title =
+    days === null ? "Nessuna scadenza garanzia impostata" : `Scade il ${fmtDate(expiryDate!)}`;
+  const subtitle =
+    days === null
+      ? null
+      : days < 0
+        ? `${Math.abs(days)} gg fa`
+        : days === 0
+          ? "oggi"
+          : `${days} gg`;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+      title={title}
+      style={{ color: meta.color, background: meta.background, borderColor: meta.color }}
+    >
+      {meta.label}
+      {subtitle ? <span className="font-mono opacity-80">· {subtitle}</span> : null}
+    </span>
   );
 }
 

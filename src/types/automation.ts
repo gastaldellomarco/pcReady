@@ -8,6 +8,8 @@ export const TRIGGER_TYPES = [
   "checklist_completed",
   "sla_warning",
   "sla_breached",
+  "warranty_expiring_soon",
+  "warranty_expired",
   "scheduled",
   "manual",
 ] as const;

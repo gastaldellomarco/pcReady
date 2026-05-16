@@ -149,7 +149,8 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
                 <div className="text-xs text-text3">
                   {busy
                     ? "Lettura in corso..."
-                    : fileName || "serial, model, os, status, client_name, notes"}
+                    : fileName ||
+                      "serial, brand, model, os, status, client_name, notes, purchase_date, warranty_expiry_date, warranty_type, warranty_provider"}
                 </div>
               </div>
               <input
@@ -187,6 +188,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
                       "Modello",
                       "Cliente",
                       "Stato",
+                      "Garanzia",
                       "Azione",
                       "Validazione",
                     ].map((h) => (
@@ -208,6 +210,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
                       <td className="px-3 py-2">{row.model || "-"}</td>
                       <td className="px-3 py-2">{row.client_name || "-"}</td>
                       <td className="px-3 py-2">{row.status}</td>
+                      <td className="px-3 py-2">
+                        {row.warranty_expiry_date || row.warranty_type || "-"}
+                      </td>
                       <td className="px-3 py-2">{row.action}</td>
                       <td
                         className={

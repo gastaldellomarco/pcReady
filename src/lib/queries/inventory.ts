@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { WarrantyFilter } from "@/lib/warranty";
 
 export type DevicesListParams = {
   status?: string;
@@ -11,6 +12,7 @@ export type DevicesListParams = {
   updatedBefore?: string;
   updatedAfter?: string;
   client_id?: string;
+  warrantyStatus?: WarrantyFilter;
 };
 
 export async function fetchAssignedDeviceIds() {
@@ -32,7 +34,7 @@ export async function fetchDevicesList(params: DevicesListParams) {
   let query = supabase
     .from("devices")
     .select(
-      "id, serial, model, os, status, client_id, updated_at, assigned_to, client:clients(name)",
+      "id, serial, model, os, status, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, client:clients(name)",
       { count: "exact" },
     )
     .order("updated_at", { ascending: false });
@@ -57,6 +59,20 @@ export async function fetchDevicesList(params: DevicesListParams) {
     query = query.eq("client_id", params.client_id as any);
   }
 
+  const warrantyStatus = params.warrantyStatus;
+  if (warrantyStatus && warrantyStatus !== "all") {
+    const today = new Date().toISOString().slice(0, 10);
+    const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const in90 = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
+    if (warrantyStatus === "missing") query = query.is("warranty_expiry_date", null);
+    if (warrantyStatus === "expired") query = query.lt("warranty_expiry_date", today);
+    if (warrantyStatus === "urgent")
+      query = query.gte("warranty_expiry_date", today).lte("warranty_expiry_date", in30);
+    if (warrantyStatus === "expiring")
+      query = query.gt("warranty_expiry_date", in30).lte("warranty_expiry_date", in90);
+    if (warrantyStatus === "valid") query = query.gt("warranty_expiry_date", in90);
+  }
+
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
   const rows = (data ?? []).map((row: Record<string, unknown>) => ({
@@ -79,6 +95,7 @@ export function useInventoryList(params: DevicesListParams) {
       params.updatedBefore || "",
       params.updatedAfter || "",
       params.client_id || "",
+      params.warrantyStatus || "all",
     ],
     queryFn: () => fetchDevicesList(params),
     placeholderData: (previousData) => previousData,

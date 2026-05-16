@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type MouseEvent } from "react";
 import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
 import type { TechnicianOption } from "@/lib/technicians";
@@ -51,6 +51,8 @@ interface SwimLaneViewProps {
   onDragOverCell: (cellId: string) => void;
   onDragLeaveCell: (cellId: string) => void;
   onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
+  selectedCardIds?: Set<string>;
+  onCardClick?: (event: MouseEvent, id: string) => void;
 }
 
 export function SwimLaneView({
@@ -70,6 +72,8 @@ export function SwimLaneView({
   onDragOverCell,
   onDragLeaveCell,
   onMove,
+  selectedCardIds,
+  onCardClick,
 }: SwimLaneViewProps) {
   const lanes = useMemo(() => {
     const map = new Map<string | null, SwimLaneCard[]>();
@@ -194,6 +198,8 @@ export function SwimLaneView({
                 onDragOverCell={onDragOverCell}
                 onDragLeaveCell={onDragLeaveCell}
                 onMove={onMove}
+                selectedCardIds={selectedCardIds}
+                onCardClick={onCardClick}
               />
             ))}
           </tbody>

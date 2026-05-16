@@ -58,6 +58,8 @@ export const TRIGGER_TYPE_LABELS: Record<string, string> = {
   checklist_completed: "Checklist completata",
   sla_warning: "SLA in scadenza",
   sla_breached: "SLA violato",
+  warranty_expiring_soon: "Garanzia in scadenza",
+  warranty_expired: "Garanzia scaduta",
   scheduled: "Schedulato",
   manual: "Manuale",
 };
@@ -69,6 +71,8 @@ export const TRIGGER_TYPE_OPTIONS = [
   { value: "checklist_completed", label: "Checklist completata" },
   { value: "sla_warning", label: "SLA in scadenza" },
   { value: "sla_breached", label: "SLA violato" },
+  { value: "warranty_expiring_soon", label: "Garanzia in scadenza" },
+  { value: "warranty_expired", label: "Garanzia scaduta" },
   { value: "scheduled", label: "Schedulato" },
   { value: "manual", label: "Manuale" },
 ];

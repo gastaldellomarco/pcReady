@@ -1,26 +1,39 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { WARRANTY_TYPES, type WarrantyType } from "@/lib/warranty";
 
 export type DeviceStatus = Database["public"]["Enums"]["device_status"];
 
 export const DEVICE_STATUSES: DeviceStatus[] = ["available", "assigned", "maintenance", "retired"];
 export const INVENTORY_CSV_HEADERS = [
   "serial",
+  "brand",
   "model",
   "os",
   "status",
   "client_name",
   "notes",
+  "purchase_date",
+  "warranty_expiry_date",
+  "warranty_type",
+  "warranty_provider",
+  "warranty_notes",
 ] as const;
 
 export interface CsvRow {
   rowNumber: number;
   serial: string;
+  brand?: string | null;
   model: string;
   os: string | null;
   status: DeviceStatus;
   client_name: string;
   notes: string | null;
+  purchase_date?: string | null;
+  warranty_expiry_date?: string | null;
+  warranty_type?: WarrantyType | null;
+  warranty_provider?: string | null;
+  warranty_notes?: string | null;
 }
 
 export interface ClientLookup {
@@ -43,7 +56,7 @@ export interface ImportResult {
 }
 
 export function csvTemplate() {
-  return `${INVENTORY_CSV_HEADERS.join(",")}\nABC123,Dell Latitude 5540,Windows 11 Pro,available,Cliente Demo,Prima fornitura`;
+  return `${INVENTORY_CSV_HEADERS.join(",")}\nABC123,Dell,Dell Latitude 5540,Windows 11 Pro,available,Cliente Demo,Prima fornitura,2026-01-15,2029-01-15,standard,Dell Support,Contratto WTY-123`;
 }
 
 export function parseDevicesCsv(text: string): CsvRow[] {
@@ -57,14 +70,21 @@ export function parseDevicesCsv(text: string): CsvRow[] {
     if (record.every((value) => !value.trim())) return [];
     const read = (name: (typeof INVENTORY_CSV_HEADERS)[number]) =>
       record[index.get(name) ?? -1]?.trim() ?? "";
+    const warrantyType = read("warranty_type") || null;
     return {
       rowNumber: offset + 2,
       serial: read("serial"),
+      brand: read("brand") || null,
       model: read("model"),
       os: read("os") || null,
       status: (read("status") || "available") as DeviceStatus,
       client_name: read("client_name"),
       notes: read("notes") || null,
+      purchase_date: read("purchase_date") || null,
+      warranty_expiry_date: read("warranty_expiry_date") || null,
+      warranty_type: warrantyType as WarrantyType | null,
+      warranty_provider: read("warranty_provider") || null,
+      warranty_notes: read("warranty_notes") || null,
     };
   });
 }
@@ -112,6 +132,13 @@ export function validateImportRows(
     if (!row.client_name) errors.push("Cliente obbligatorio");
     if (row.client_name && !client) errors.push("Cliente non trovato");
     if (!DEVICE_STATUSES.includes(row.status)) errors.push("Stato non valido");
+    if (row.purchase_date && !isIsoDate(row.purchase_date))
+      errors.push("Data acquisto non valida (YYYY-MM-DD)");
+    if (row.warranty_expiry_date && !isIsoDate(row.warranty_expiry_date))
+      errors.push("Scadenza garanzia non valida (YYYY-MM-DD)");
+    if (row.warranty_type && !WARRANTY_TYPES.some((type) => type.value === row.warranty_type)) {
+      errors.push("Tipo garanzia non valido");
+    }
     if (serialKey && seenInFile.has(serialKey)) errors.push("Seriale duplicato nel CSV");
     if (serialKey) seenInFile.add(serialKey);
 
@@ -139,10 +166,16 @@ export async function importDevicesFromCsv(
       if (row.existingDeviceId) {
         const update: TablesUpdate<"devices"> = {
           client_id: row.client_id!,
+          brand: row.brand,
           model: row.model,
           os: row.os,
           status: row.status,
           notes: row.notes,
+          purchase_date: row.purchase_date,
+          warranty_expiry_date: row.warranty_expiry_date,
+          warranty_type: row.warranty_type,
+          warranty_provider: row.warranty_provider,
+          warranty_notes: row.warranty_notes,
         };
         const { error } = await supabase
           .from("devices")
@@ -154,10 +187,16 @@ export async function importDevicesFromCsv(
         const insert: TablesInsert<"devices"> = {
           client_id: row.client_id!,
           serial: row.serial,
+          brand: row.brand,
           model: row.model,
           os: row.os,
           status: row.status,
           notes: row.notes,
+          purchase_date: row.purchase_date,
+          warranty_expiry_date: row.warranty_expiry_date,
+          warranty_type: row.warranty_type,
+          warranty_provider: row.warranty_provider,
+          warranty_notes: row.warranty_notes,
           created_by: userId,
         };
         // Use bulk insert helper when importing many rows
@@ -177,6 +216,12 @@ export async function importDevicesFromCsv(
   }
 
   return results;
+}
+
+function isIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function normalizeHeader(value: string) {

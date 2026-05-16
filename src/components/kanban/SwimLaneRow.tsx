@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { AssigneeChip, PriorityLabel } from "@/components/pcready/StatusBadge";
 import {
   STATUS_META,
@@ -28,6 +29,8 @@ interface SwimLaneRowProps {
   onDragOverCell: (cellId: string) => void;
   onDragLeaveCell: (cellId: string) => void;
   onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
+  selectedCardIds?: Set<string>;
+  onCardClick?: (event: MouseEvent, id: string) => void;
 }
 
 export function SwimLaneRow({
@@ -47,6 +50,8 @@ export function SwimLaneRow({
   onDragOverCell,
   onDragLeaveCell,
   onMove,
+  selectedCardIds,
+  onCardClick,
 }: SwimLaneRowProps) {
   const assigneeId = technician?.id ?? null;
   const laneId = assigneeId ?? "unassigned";
@@ -127,6 +132,8 @@ export function SwimLaneRow({
                   isDragging={dragId === card.id}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
+                  selected={!!selectedCardIds?.has(card.id)}
+                  onCardClick={onCardClick}
                 />
               ))}
               {!items.length && (
@@ -183,20 +190,28 @@ function TicketCard({
   isDragging,
   onDragStart,
   onDragEnd,
+  selected,
+  onCardClick,
 }: {
   card: SwimLaneCard;
   canEdit: boolean;
   isDragging: boolean;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
+  selected?: boolean;
+  onCardClick?: (event: MouseEvent, id: string) => void;
 }) {
   return (
     <div
       draggable={canEdit}
       onDragStart={() => onDragStart(card.id)}
       onDragEnd={onDragEnd}
-      onClick={() => openTicketDetail(card.id)}
-      className={cn("pc-card p-3 text-left transition-all hover:shadow-md", "select-none")}
+      onClick={(event) => (onCardClick ? onCardClick(event, card.id) : openTicketDetail(card.id))}
+      className={cn(
+        "pc-card p-3 text-left transition-all hover:shadow-md",
+        "select-none",
+        selected && "ring-2 ring-accent",
+      )}
       style={{
         cursor: canEdit ? "grab" : "pointer",
         opacity: isDragging ? 0.4 : 1,

@@ -6,6 +6,8 @@ import {
   MousePointerClick,
   AlertTriangle,
   Siren,
+  ShieldAlert,
+  ShieldX,
 } from "lucide-react";
 import type { TriggerDef } from "@/types/automation";
 
@@ -48,6 +50,22 @@ const TRIGGER_OPTIONS = [
     description: "Quando un ticket supera la scadenza SLA",
     icon: Siren,
     color: "text-red-600",
+    bgColor: "bg-red-50 border-red-200",
+  },
+  {
+    value: "warranty_expiring_soon",
+    label: "Garanzia in scadenza",
+    description: "Quando una garanzia dispositivo scade entro N giorni",
+    icon: ShieldAlert,
+    color: "text-orange-600",
+    bgColor: "bg-orange-50 border-orange-200",
+  },
+  {
+    value: "warranty_expired",
+    label: "Garanzia scaduta",
+    description: "Quando un dispositivo supera la data di scadenza garanzia",
+    icon: ShieldX,
+    color: "text-red-700",
     bgColor: "bg-red-50 border-red-200",
   },
   {
@@ -121,6 +139,29 @@ export default function TriggerStep({
           );
         })}
       </div>
+
+      {value?.type === "warranty_expiring_soon" && (
+        <div className="mt-4">
+          <label className="text-sm font-medium">Giorni prima della scadenza</label>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
+            value={(value.config?.days as number | string) ?? 30}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                config: { ...(value.config || {}), days: Number(e.target.value || 30) },
+              })
+            }
+            placeholder="30"
+          />
+          <p className="mt-1 text-xs text-text3">
+            Esempio: 30 invia l&apos;alert quando la garanzia scade entro 30 giorni.
+          </p>
+        </div>
+      )}
 
       {value?.type === "scheduled" && (
         <div className="mt-4">

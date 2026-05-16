@@ -43,6 +43,8 @@ const TRIGGER_COLORS: Record<string, string> = {
   checklist_completed: "bg-cyan-100 text-cyan-800 border-transparent",
   sla_warning: "bg-amber-100 text-amber-800 border-transparent",
   sla_breached: "bg-red-100 text-red-800 border-transparent",
+  warranty_expiring_soon: "bg-orange-100 text-orange-800 border-transparent",
+  warranty_expired: "bg-red-100 text-red-900 border-transparent",
   scheduled: "bg-purple-100 text-purple-800 border-transparent",
   manual: "bg-slate-100 text-slate-700 border-transparent",
 };

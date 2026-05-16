@@ -34,7 +34,9 @@ describe("inventory-import", () => {
 
   it("csvTemplate includes headers and sample row", () => {
     const t = csvTemplate();
-    expect(t).toContain("serial,model,os,status,client_name,notes");
+    expect(t).toContain(
+      "serial,brand,model,os,status,client_name,notes,purchase_date,warranty_expiry_date,warranty_type,warranty_provider,warranty_notes",
+    );
     expect(t).toContain("ABC123");
   });
 
@@ -77,12 +79,8 @@ SN2,Model B,,,Beta Spa,
   });
 
   it("validateImportRows flags errors and sets action", () => {
-    const clients: ClientLookup[] = [
-      { id: "c1", name: "Acme Srl", company_name: null },
-    ];
-    const devices: { id: string; serial: string | null }[] = [
-      { id: "d1", serial: "EXIST" },
-    ];
+    const clients: ClientLookup[] = [{ id: "c1", name: "Acme Srl", company_name: null }];
+    const devices: { id: string; serial: string | null }[] = [{ id: "d1", serial: "EXIST" }];
 
     const rows = [
       {

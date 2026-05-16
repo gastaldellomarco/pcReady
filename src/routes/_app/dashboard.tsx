@@ -4,9 +4,9 @@ import { PageErrorBoundary } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useMemo } from "react";
 import { useTickets } from "@/lib/use-tickets";
-import { STATUS_META, type TicketStatus, fmtDateTime } from "@/lib/pcready";
+import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openDeviceDetail, openTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
@@ -29,6 +29,12 @@ import { OverdueTicketsWidget } from "@/components/dashboard/OverdueTicketsWidge
 import { TeamActivityWidget } from "@/components/dashboard/TeamActivityWidget";
 import { WidgetSettingsPanel } from "@/components/dashboard/WidgetSettingsPanel";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
+import {
+  daysUntil,
+  getWarrantyStatus,
+  WARRANTY_STATUS_META,
+  type WarrantyStatus,
+} from "@/lib/warranty";
 import {
   TrendingUp,
   Activity,
@@ -74,6 +80,7 @@ function DashboardPage() {
     tickets,
     devices,
     devicesWithoutTicket,
+    warrantyDevices,
     ticketsWithoutDeviceCount,
     activeClientsCount,
     dateFrom,
@@ -140,6 +147,7 @@ function DashboardPage() {
           tickets,
           devices,
           devicesWithoutTicket,
+          warrantyDevices,
           ticketsWithoutDeviceCount,
           activeClientsCount,
           dateFrom,
@@ -166,6 +174,7 @@ type WidgetContext = {
   tickets: any[];
   devices: any[];
   devicesWithoutTicket: any[];
+  warrantyDevices: any[];
   ticketsWithoutDeviceCount: number;
   activeClientsCount: number;
   dateFrom: string;
@@ -257,6 +266,135 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           />
         </div>
       );
+
+    case "warranty-overview": {
+      const warrantyCounts = warrantySummary(ctx.warrantyDevices);
+      const expiringRows = ctx.warrantyDevices
+        .filter((device) =>
+          ["urgent", "expiring"].includes(getWarrantyStatus(device.warranty_expiry_date)),
+        )
+        .sort((a, b) =>
+          String(a.warranty_expiry_date || "").localeCompare(String(b.warranty_expiry_date || "")),
+        )
+        .slice(0, 8);
+      return (
+        <div key="warranty-overview" className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+          <div className="pc-card lg:col-span-1">
+            <div className="pc-card-hd">
+              <span className="pc-card-title">Garanzie dispositivi</span>
+              <Link
+                to="/inventory"
+                search={() => ({ warranty: "all" }) as any}
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+              >
+                Inventario <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="pc-card-body grid grid-cols-2 gap-2 text-xs">
+              {(
+                [
+                  ["valid", "In garanzia"],
+                  ["expiring", "In scadenza"],
+                  ["urgent", "Urgenti"],
+                  ["expired", "Scadute"],
+                  ["missing", "N/D"],
+                ] as [WarrantyStatus, string][]
+              ).map(([status, label]) => {
+                const meta = WARRANTY_STATUS_META[status];
+                return (
+                  <div
+                    key={status}
+                    className="rounded-lg border px-3 py-2"
+                    style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                  >
+                    <div className="text-[10px] uppercase text-text3">{label}</div>
+                    <div
+                      className="mt-1 font-mono text-lg font-semibold"
+                      style={{ color: meta.color }}
+                    >
+                      {warrantyCounts[status]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="pc-card lg:col-span-2">
+            <div className="pc-card-hd">
+              <span className="pc-card-title">Garanzie in scadenza (prossimi 90 giorni)</span>
+              <span className="text-[11px] text-text3 font-mono">{expiringRows.length}</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    {["Asset", "Scadenza", "Stato", "Fornitore"].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {expiringRows.map((device) => {
+                    const status = getWarrantyStatus(device.warranty_expiry_date);
+                    const meta = WARRANTY_STATUS_META[status];
+                    const days = daysUntil(device.warranty_expiry_date);
+                    return (
+                      <tr
+                        key={device.id}
+                        className="border-b cursor-pointer hover:bg-surface2"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openDeviceDetail(device.id)}
+                      >
+                        <td className="px-[14px] py-[10px] text-[12.5px]">
+                          <span className="font-semibold">{device.model}</span>
+                          <div className="font-mono text-[11px] text-text3">
+                            {device.serial || device.id.slice(0, 8)}
+                          </div>
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px]">
+                          {device.warranty_expiry_date ? fmtDate(device.warranty_expiry_date) : "—"}
+                          <div className="text-[11px] text-text3">
+                            {days == null ? "" : `${days} giorni`}
+                          </div>
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <span
+                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                            style={{
+                              color: meta.color,
+                              background: meta.background,
+                              borderColor: meta.color,
+                            }}
+                          >
+                            {meta.label}
+                          </span>
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {device.warranty_provider || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!expiringRows.length && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-sm text-text3">
+                        Nessuna garanzia in scadenza nei prossimi 90 giorni.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     case "analytics-card":
       return (
@@ -663,4 +801,14 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
     default:
       return null;
   }
+}
+
+function warrantySummary(devices: any[]) {
+  return devices.reduce(
+    (acc, device) => {
+      acc[getWarrantyStatus(device.warranty_expiry_date)] += 1;
+      return acc;
+    },
+    { valid: 0, expiring: 0, urgent: 0, expired: 0, missing: 0 } as Record<WarrantyStatus, number>,
+  );
 }
