@@ -21,6 +21,7 @@ import {
   TicketPlus,
   ClipboardList,
   CheckCircle2,
+  Columns3,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
 import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { Modal } from "@/components/pcready/Modal";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDownloadFileName } from "@/lib/downloads";
@@ -82,6 +84,28 @@ interface Row {
   has_active_assignment?: boolean;
 }
 
+type CompareDevice = Row & {
+  brand: string | null;
+  device_type: string | null;
+  cpu_name: string | null;
+  cpu_frequency_ghz: number | null;
+  cpu_cores: number | null;
+  ram_gb: number | null;
+  ram_type: string | null;
+  ram_frequency_mhz: number | null;
+  storage_type: string | null;
+  storage_capacity_gb: number | null;
+  storage_drive_count: number | null;
+  os_version: string | null;
+  os_architecture: string | null;
+  screen_resolution: string | null;
+  screen_size_inches: number | null;
+  screen_type: string | null;
+  wifi: string | null;
+  ethernet: string | null;
+  bluetooth: string | null;
+};
+
 type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
 
 const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }> = {
@@ -131,6 +155,9 @@ function InventoryPage() {
   const [bulkTargetStatus, setBulkTargetStatus] = useState<DeviceStatus>("available");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkTargetClientName, setBulkTargetClientName] = useState("");
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareBusy, setCompareBusy] = useState(false);
+  const [compareRows, setCompareRows] = useState<CompareDevice[]>([]);
   const { useInventoryList } = queries as any;
   const listQuery = useInventoryList({
     status: fs || undefined,
@@ -356,6 +383,28 @@ function InventoryPage() {
     toast.success(`${success} dispositivi aggiornati${fail ? `, ${fail} errori` : ""}`);
   }
 
+  async function openCompareDevices() {
+    const ids = [...selectedIds];
+    if (ids.length < 2 || ids.length > 3)
+      return toast.error("Seleziona 2 o 3 dispositivi da confrontare");
+    setCompareBusy(true);
+    try {
+      const { data: rows, error } = await supabase
+        .from("devices")
+        .select(
+          "id, serial, brand, model, os, status, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, device_type, cpu_name, cpu_frequency_ghz, cpu_cores, ram_gb, ram_type, ram_frequency_mhz, storage_type, storage_capacity_gb, storage_drive_count, os_version, os_architecture, screen_resolution, screen_size_inches, screen_type, wifi, ethernet, bluetooth, client:clients(name)",
+        )
+        .in("id", ids);
+      if (error) throw error;
+      setCompareRows((rows ?? []) as CompareDevice[]);
+      setCompareOpen(true);
+    } catch (error) {
+      toast.error(errorMessage(error, "Errore confronto dispositivi"));
+    } finally {
+      setCompareBusy(false);
+    }
+  }
+
   async function handleBulkAssignClient() {
     const ids = [...selectedIds];
     if (!ids.length || !bulkTargetClientName) return;
@@ -575,6 +624,14 @@ function InventoryPage() {
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={compareBusy || selectedIds.size < 2 || selectedIds.size > 3}
+            onClick={openCompareDevices}
+          >
+            <Columns3 className="h-3 w-3" />
+            Confronta
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
             disabled={bulkBusy}
             onClick={() => setBulkClientOpen(true)}
           >
@@ -765,6 +822,11 @@ function InventoryPage() {
         onClose={() => setScannerOpen(false)}
         onDetected={(code) => void handleDetected(code)}
       />
+      <CompareDevicesModal
+        open={compareOpen}
+        rows={compareRows}
+        onClose={() => setCompareOpen(false)}
+      />
 
       <AlertDialog
         open={bulkStatusOpen}
@@ -834,6 +896,109 @@ function InventoryPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function CompareDevicesModal({
+  open,
+  rows,
+  onClose,
+}: {
+  open: boolean;
+  rows: CompareDevice[];
+  onClose: () => void;
+}) {
+  const specs: [string, (row: CompareDevice) => string][] = [
+    ["Brand / modello", (row) => `${row.brand || "—"} ${row.model}`.trim()],
+    ["Tipo", (row) => row.device_type || "—"],
+    ["Seriale", (row) => row.serial || "—"],
+    ["Stato", (row) => DEVICE_STATUS_META[row.status]?.label || row.status],
+    ["Cliente", (row) => row.client?.name || "—"],
+    ["CPU", (row) => row.cpu_name || "—"],
+    ["Frequenza CPU", (row) => (row.cpu_frequency_ghz ? `${row.cpu_frequency_ghz} GHz` : "—")],
+    ["Core", (row) => (row.cpu_cores ? String(row.cpu_cores) : "—")],
+    ["RAM", (row) => (row.ram_gb ? `${row.ram_gb} GB ${row.ram_type || ""}`.trim() : "—")],
+    [
+      "Storage",
+      (row) =>
+        row.storage_capacity_gb
+          ? `${row.storage_capacity_gb} GB ${row.storage_type || ""}`.trim()
+          : "—",
+    ],
+    ["Drive", (row) => (row.storage_drive_count ? String(row.storage_drive_count) : "—")],
+    [
+      "OS",
+      (row) => [row.os, row.os_version, row.os_architecture].filter(Boolean).join(" · ") || "—",
+    ],
+    [
+      "Schermo",
+      (row) =>
+        [
+          row.screen_size_inches ? `${row.screen_size_inches}\"` : null,
+          row.screen_resolution,
+          row.screen_type,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "—",
+    ],
+    [
+      "Connettività",
+      (row) => [row.wifi, row.ethernet, row.bluetooth].filter(Boolean).join(" · ") || "—",
+    ],
+    ["Garanzia", (row) => WARRANTY_STATUS_META[getWarrantyStatus(row.warranty_expiry_date)].label],
+  ];
+
+  return (
+    <Modal open={open} onClose={onClose} title="Confronto dispositivi" size="xl">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              <th
+                className="border-b px-3 py-2 text-left text-xs uppercase text-text3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                Specifica
+              </th>
+              {rows.map((row) => (
+                <th
+                  key={row.id}
+                  className="border-b px-3 py-2 text-left"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <button
+                    className="font-semibold text-accent hover:underline"
+                    onClick={() => openDeviceDetail(row.id)}
+                  >
+                    {row.model}
+                  </button>
+                  <div className="font-mono text-[11px] text-text3">
+                    {row.serial || row.id.slice(0, 8)}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {specs.map(([label, value]) => (
+              <tr key={label} className="border-b" style={{ borderColor: "var(--border)" }}>
+                <td className="px-3 py-2 font-semibold text-text3">{label}</td>
+                {rows.map((row) => (
+                  <td key={`${row.id}-${label}`} className="px-3 py-2">
+                    {value(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button className="pc-btn pc-btn-ghost" onClick={onClose}>
+          Chiudi
+        </button>
+      </div>
+    </Modal>
   );
 }
 

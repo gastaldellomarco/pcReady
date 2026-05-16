@@ -1,9 +1,13 @@
-import { MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { MessageSquare, Paperclip, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
 import ticketNotesQueries from "@/lib/queries/ticketNotes";
+import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
+import { uploadTicketAttachment } from "@/lib/queries/ticketAttachments";
+import { TicketAttachments } from "@/components/tickets/TicketAttachments";
 
 const { useTicketNotes, useCreateTicketNote } = ticketNotesQueries as any;
 
@@ -18,13 +22,36 @@ interface TicketNote {
 }
 
 export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChanged?: () => void }) {
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, session } = useAuth();
   const notesQuery = useTicketNotes(ticketId);
   const notes = (notesQuery.data ?? []) as TicketNote[];
   const createNoteMut = useCreateTicketNote();
   const [content, setContent] = useState("");
   const [isInternal, setIsInternal] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const loadTechnicians = useServerFn(listTechnicians);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    loadTechnicians({ data: { accessToken: session.access_token } })
+      .then(setTechnicians)
+      .catch(() => setTechnicians([]));
+  }, [session?.access_token, loadTechnicians]);
+
+  const mentionMatch = content.match(/(^|\s)@([^@\s]*)$/);
+  const mentionQuery = mentionMatch?.[2]?.toLowerCase() ?? "";
+  const mentionSuggestions = useMemo(() => {
+    if (!mentionMatch) return [];
+    return technicians
+      .filter((tech) => tech.full_name.toLowerCase().includes(mentionQuery))
+      .slice(0, 6);
+  }, [mentionMatch, mentionQuery, technicians]);
+
+  function applyMention(tech: TechnicianOption) {
+    setContent((value) => value.replace(/(^|\s)@([^@\s]*)$/, `$1@${tech.full_name} `));
+  }
 
   async function addNote(event: React.FormEvent) {
     event.preventDefault();
@@ -33,13 +60,17 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
     if (!text) return toast.error("Inserisci una nota");
     setSubmitting(true);
     try {
-      await createNoteMut.mutateAsync({
+      const note = await createNoteMut.mutateAsync({
         ticket_id: ticketId,
         author_id: user.id,
         content: text,
         is_internal: isInternal,
       });
+      for (const file of files) {
+        await uploadTicketAttachment({ ticketId, noteId: note?.id, file, uploadedBy: user.id });
+      }
       setContent("");
+      setFiles([]);
       toast.success("Nota aggiunta");
       onChanged?.();
     } catch (err: any) {
@@ -75,8 +106,11 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
         {notesQuery.data?.map((note: any) => (
           <article
             key={note.id}
-            className="rounded-md border bg-background p-3"
-            style={{ borderColor: "var(--border)" }}
+            className="rounded-md border p-3"
+            style={{
+              borderColor: note.is_internal ? "rgba(217,119,6,.35)" : "var(--border)",
+              background: note.is_internal ? "rgba(253, 230, 138, .25)" : "var(--background)",
+            }}
           >
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
@@ -93,18 +127,73 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               </span>
             </div>
             <p className="whitespace-pre-line text-[12.5px] text-text2">{note.content}</p>
+            <div className="mt-2">
+              <TicketAttachments ticketId={ticketId} noteId={note.id} compact />
+            </div>
           </article>
         ))}
       </div>
 
       {canEdit && (
         <form onSubmit={addNote} className="space-y-2">
-          <textarea
-            className="pc-input min-h-20 w-full"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder="Aggiungi aggiornamento interno o nota visibile al cliente..."
-          />
+          <div className="relative">
+            <textarea
+              className="pc-input min-h-20 w-full"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico"
+            />
+            {mentionSuggestions.length > 0 && (
+              <div
+                className="absolute bottom-full left-0 z-10 mb-1 w-64 overflow-hidden rounded-md border bg-background shadow-lg"
+                style={{ borderColor: "var(--border)" }}
+              >
+                {mentionSuggestions.map((tech) => (
+                  <button
+                    key={tech.id}
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] hover:bg-surface2"
+                    onClick={() => applyMention(tech)}
+                  >
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
+                      {tech.initials}
+                    </span>
+                    <span>{tech.full_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer">
+              <Paperclip className="h-3 w-3" /> Allegati nota
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  if (event.target.files)
+                    setFiles((prev) => [...prev, ...Array.from(event.target.files!)]);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+            {files.map((file, index) => (
+              <span
+                key={`${file.name}-${index}`}
+                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px]"
+                style={{ background: "var(--surface3)" }}
+              >
+                {file.name}
+                <button
+                  type="button"
+                  onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <label className="flex items-center gap-2 text-[12px] text-text2">
               <input
@@ -112,7 +201,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
                 checked={!isInternal}
                 onChange={(event) => setIsInternal(!event.target.checked)}
               />
-              Visibile al cliente
+              Pubblica / visibile al cliente
             </label>
             <button type="submit" className="pc-btn pc-btn-primary pc-btn-sm" disabled={submitting}>
               {submitting ? "Salvataggio..." : "Aggiungi nota"}

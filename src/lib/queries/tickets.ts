@@ -115,7 +115,7 @@ export async function fetchTicketAssignments(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
     .from("ticket_device_assignments")
-    .select("id, assigned_at, unassigned_at, notes, device:devices(model, serial)")
+    .select("id, assigned_at, unassigned_at, notes, device:devices(id, model, serial)")
     .eq("ticket_id", id)
     .order("assigned_at", { ascending: false });
   if (error) throw error;
@@ -131,6 +131,17 @@ export async function fetchTicketAssignmentHistory(id: string) {
     )
     .eq("ticket_id", id)
     .order("occurred_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
+
+export async function fetchTicketStatusHistory(id: string) {
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from("ticket_status_history")
+    .select("id, ticket_id, from_status, to_status, changed_at, changed_by, note")
+    .eq("ticket_id", id)
+    .order("changed_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as any[];
 }
@@ -259,6 +270,14 @@ export function useTicketHistoryQuery(id: string | null) {
   });
 }
 
+export function useTicketStatusHistoryQuery(id: string | null) {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "status-history"],
+    queryFn: () => fetchTicketStatusHistory(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useUpdateTicket() {
   const qc = useQueryClient();
   return useMutation({
@@ -318,9 +337,11 @@ export default {
   fetchTicketById,
   fetchTicketAssignments,
   fetchTicketAssignmentHistory,
+  fetchTicketStatusHistory,
   useTicketQuery,
   useTicketAssignmentsQuery,
   useTicketHistoryQuery,
+  useTicketStatusHistoryQuery,
   useUpdateTicket,
   useDeleteTicket,
   fetchTicketsList,
