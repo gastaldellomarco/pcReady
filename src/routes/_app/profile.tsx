@@ -5,13 +5,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Award,
+  BarChart3,
   Camera,
+  Clock,
   Copy,
   KeyRound,
   RefreshCw,
   Save,
   Shield,
   ShieldCheck,
+  TicketCheck,
+  Timer,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +25,9 @@ import { useAuth } from "@/lib/auth-context";
 import {
   changePassword,
   getMyProfile,
+  getMyTechnicianOverview,
   updateMyProfile,
+  type TechnicianProfileOverview,
   type UserProfile,
 } from "@/lib/user-profile";
 import { avatarColors, fmtDateTime } from "@/lib/pcready";
@@ -39,6 +46,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +63,7 @@ import {
   type MfaBackupCodeStatus,
 } from "@/lib/mfa";
 
-type ProfileTab = "personal" | "security" | "notifications";
+type ProfileTab = "personal" | "activity" | "security" | "notifications";
 
 const TIMEZONES = [
   "Europe/Rome",
@@ -125,6 +134,7 @@ function ProfilePage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const loadProfile = useServerFn(getMyProfile);
+  const loadTechnicianOverview = useServerFn(getMyTechnicianOverview);
   const saveProfile = useServerFn(updateMyProfile);
   const savePassword = useServerFn(changePassword);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -132,6 +142,11 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
+  const [technicianOverview, setTechnicianOverview] = useState<TechnicianProfileOverview | null>(
+    null,
+  );
+  const [technicianOverviewLoading, setTechnicianOverviewLoading] = useState(false);
+  const [technicianOverviewError, setTechnicianOverviewError] = useState<string | null>(null);
   const [saving, setSaving] = useState<"personal" | "security" | "notifications" | "avatar" | null>(
     null,
   );
@@ -222,6 +237,18 @@ function ProfilePage() {
       .catch((error) => setLoadError(errorMessage(error, "Impossibile caricare il profilo")))
       .finally(() => setLoading(false));
   }, [session?.access_token, loadProfile, profileReloadToken]);
+
+  useEffect(() => {
+    if (tab !== "activity" || !session?.access_token || technicianOverview) return;
+    setTechnicianOverviewLoading(true);
+    setTechnicianOverviewError(null);
+    loadTechnicianOverview({ data: { accessToken: session.access_token } })
+      .then(setTechnicianOverview)
+      .catch((error) =>
+        setTechnicianOverviewError(errorMessage(error, "Impossibile caricare lo storico tecnico")),
+      )
+      .finally(() => setTechnicianOverviewLoading(false));
+  }, [loadTechnicianOverview, session?.access_token, tab, technicianOverview]);
 
   const initials = useMemo(() => {
     const name = personal.display_name || authProfile?.full_name || profile?.email || "U";
@@ -541,8 +568,9 @@ function ProfilePage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <Tabs value={tab} onValueChange={(value) => setRouteTab(value as ProfileTab)}>
-        <TabsList className="grid w-full grid-cols-3 md:w-[520px]">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:w-[720px]">
           <TabsTrigger value="personal">Dati personali</TabsTrigger>
+          <TabsTrigger value="activity">Storico</TabsTrigger>
           <TabsTrigger value="security">Sicurezza</TabsTrigger>
           <TabsTrigger value="notifications">Notifiche</TabsTrigger>
         </TabsList>
@@ -670,6 +698,18 @@ function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-5">
+          <TechnicianOverviewSection
+            overview={technicianOverview}
+            loading={technicianOverviewLoading}
+            error={technicianOverviewError}
+            onRetry={() => {
+              setTechnicianOverview(null);
+              setTechnicianOverviewError(null);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="security" className="mt-5">
@@ -1132,6 +1172,205 @@ function ProfilePage() {
   );
 }
 
+function TechnicianOverviewSection({
+  overview,
+  loading,
+  error,
+  onRetry,
+}: {
+  overview: TechnicianProfileOverview | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (loading) {
+    return <ListSkeleton rows={5} variant="app" />;
+  }
+
+  if (error) {
+    return <PageFetchError message={error} onRetry={onRetry} />;
+  }
+
+  if (!overview) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-muted-foreground">
+          Apri questa scheda per caricare statistiche personali, interventi e riconoscimenti.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-3">
+        <ProfileStatCard
+          icon={<TicketCheck className="h-5 w-5" />}
+          label="Ticket chiusi"
+          value={overview.stats.closedTickets.toString()}
+        />
+        <ProfileStatCard
+          icon={<Timer className="h-5 w-5" />}
+          label="Tempo medio risoluzione"
+          value={formatHours(overview.stats.averageResolutionHours)}
+        />
+        <ProfileStatCard
+          icon={<Clock className="h-5 w-5" />}
+          label="Ore lavorate"
+          value={`${overview.stats.workedHours}h`}
+        />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Attivita mensile
+            </CardTitle>
+            <CardDescription>Ticket chiusi e ore registrate negli ultimi 6 mesi.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                closedTickets: { label: "Ticket chiusi", color: "hsl(var(--chart-1))" },
+                workedHours: { label: "Ore", color: "hsl(var(--chart-2))" },
+              }}
+              className="h-[260px]"
+            >
+              <BarChart data={overview.monthlyActivity}>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                <YAxis tickLine={false} axisLine={false} width={36} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="closedTickets" fill="var(--color-closedTickets)" radius={4} />
+                <Bar dataKey="workedHours" fill="var(--color-workedHours)" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Badge performance
+            </CardTitle>
+            <CardDescription>Riconoscimenti calcolati sulle tue attivita.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {overview.badges.map((badge) => (
+              <div key={badge.key} className="rounded-lg border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-medium">{badge.label}</div>
+                  <Badge variant={badge.achieved ? "default" : "outline"}>
+                    {badge.achieved ? "Sbloccato" : "In corso"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ticket risolti e chiusi</CardTitle>
+            <CardDescription>Ultimi ticket assegnati a te in stato chiuso.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {overview.closedTickets.length ? (
+              overview.closedTickets.map((ticket) => (
+                <div key={ticket.id} className="rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium">
+                        {ticket.ticket_code} · {ticket.title}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">{ticket.client_name}</div>
+                    </div>
+                    <Badge variant="secondary">{ticket.status}</Badge>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Chiuso: {ticket.closed_at ? fmtDateTime(ticket.closed_at) : "-"}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nessun ticket chiuso assegnato.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Interventi recenti</CardTitle>
+            <CardDescription>
+              Data, cliente e durata delle ultime attivita tracciate.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {overview.recentInterventions.length ? (
+              overview.recentInterventions.map((intervention) => (
+                <div key={intervention.id} className="rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium">
+                        {intervention.ticket_code} · {intervention.title}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {intervention.client_name} · {fmtDateTime(intervention.started_at)}
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      {Math.round((intervention.duration_minutes / 60) * 10) / 10}h
+                    </Badge>
+                  </div>
+                  {intervention.description ? (
+                    <p className="mt-2 text-sm text-muted-foreground">{intervention.description}</p>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nessun intervento tracciato.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function ProfileStatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="rounded-full bg-primary/10 p-3 text-primary">{icon}</div>
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatHours(hours: number | null) {
+  if (hours === null) return "-";
+  if (hours < 24) return `${hours}h`;
+  return `${Math.round((hours / 24) * 10) / 10}g`;
+}
+
 function QrCodeBox({ qrCode }: { qrCode: string }) {
   if (!qrCode)
     return (
@@ -1178,6 +1417,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function searchToTab(tab?: string): ProfileTab {
+  if (tab === "activity" || tab === "history") return "activity";
   if (tab === "security") return "security";
   if (tab === "notifications" || tab === "settings") return "notifications";
   return "personal";

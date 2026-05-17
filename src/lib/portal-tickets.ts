@@ -89,6 +89,20 @@ export const submitPortalTicketFeedback = createServerFn({ method: "POST" })
     );
   });
 
+export const getPortalProfileOverview = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof PortalTokenSchema>) => data)
+  .handler(async ({ data }) => {
+    const { getPortalProfileOverviewServer } = await import("@/lib/portal-tickets.server");
+    return getPortalProfileOverviewServer(PortalTokenSchema.parse(data));
+  });
+
+export const listPortalDocuments = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof PortalTokenSchema>) => data)
+  .handler(async ({ data }) => {
+    const { listPortalDocumentsServer } = await import("@/lib/portal-tickets.server");
+    return listPortalDocumentsServer(PortalTokenSchema.parse(data));
+  });
+
 export const getPortalTicketCategories = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof PortalTokenSchema>) => data)
   .handler(async ({ data }) => {

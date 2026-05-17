@@ -346,6 +346,274 @@ export async function submitPortalTicketFeedbackServer(input: {
   return { success: true };
 }
 
+const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 15;
+
+async function createDocumentSignedUrl(
+  bucket: string,
+  path: string,
+  fileName: string,
+  download: boolean,
+) {
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .createSignedUrl(
+      path,
+      DOCUMENT_SIGNED_URL_TTL_SECONDS,
+      download ? { download: fileName } : undefined,
+    );
+  if (error) {
+    console.error("[portal-documents] signed URL error", { bucket, path, error });
+    return null;
+  }
+  return data?.signedUrl ?? null;
+}
+
+function normalizeDocumentTicket(ticket: any) {
+  return Array.isArray(ticket) ? ticket[0] : ticket;
+}
+
+export async function getPortalProfileOverviewServer(input: { token: string }) {
+  const session = await getPortalSession(input.token);
+  const closedStatuses = ["ready", "completed", "archived"];
+
+  const [requestsResult, interventionsResult, documentsResult, contractsResult] = await Promise.all(
+    [
+      (supabaseAdmin as any)
+        .from("tickets")
+        .select(
+          "id, ticket_code, model, notes, status, priority, created_at, updated_at, closed_at, completed_at, public_notes, assignee:profiles!tickets_assignee_id_fkey(full_name)",
+        )
+        .eq("client_id", session.clientId)
+        .eq("requester_contact_id", session.contactId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      (supabaseAdmin as any)
+        .from("tickets")
+        .select(
+          "id, ticket_code, model, status, created_at, closed_at, completed_at, billable_hours, public_notes, assignee:profiles!tickets_assignee_id_fkey(full_name)",
+        )
+        .eq("client_id", session.clientId)
+        .in("status", closedStatuses)
+        .order("closed_at", { ascending: false, nullsFirst: false })
+        .limit(12),
+      (supabaseAdmin as any)
+        .from("ticket_attachments")
+        .select(
+          "id, file_name, file_size, mime_type, created_at, ticket:tickets!inner(id, ticket_code, model, client_id)",
+        )
+        .eq("ticket.client_id", session.clientId)
+        .order("created_at", { ascending: false })
+        .limit(12),
+      (supabaseAdmin as any)
+        .from("client_contracts")
+        .select(
+          "id, name, status, billing_period, recurring_fee, included_hours, extra_hourly_rate, start_date, end_date, notes",
+        )
+        .eq("client_id", session.clientId)
+        .eq("status", "active")
+        .order("start_date", { ascending: false }),
+    ],
+  );
+
+  if (requestsResult.error) throw requestsResult.error;
+  if (interventionsResult.error) throw interventionsResult.error;
+  if (documentsResult.error) throw documentsResult.error;
+  if (contractsResult.error) throw contractsResult.error;
+
+  const requests = ((requestsResult.data ?? []) as any[]).map((ticket) => ({
+    id: ticket.id,
+    ticket_code: ticket.ticket_code,
+    title: ticket.model || ticket.notes || "Richiesta assistenza",
+    status: ticket.status,
+    status_label: statusLabel(ticket.status),
+    priority: ticket.priority,
+    created_at: ticket.created_at,
+    updated_at: ticket.updated_at,
+    closed_at: ticket.closed_at || ticket.completed_at || null,
+    public_notes: ticket.public_notes ?? null,
+    assignee_name: ticket.assignee?.full_name ?? null,
+  }));
+
+  const interventions = ((interventionsResult.data ?? []) as any[]).map((ticket) => ({
+    id: ticket.id,
+    ticket_code: ticket.ticket_code,
+    title: ticket.model || "Intervento assistenza",
+    status: ticket.status,
+    status_label: statusLabel(ticket.status),
+    date: ticket.closed_at || ticket.completed_at || ticket.created_at,
+    technician: ticket.assignee?.full_name ?? null,
+    duration_hours: Number(ticket.billable_hours ?? 0),
+    report: ticket.public_notes ?? null,
+  }));
+
+  const documents = ((documentsResult.data ?? []) as any[]).map((attachment) => {
+    const ticket = Array.isArray(attachment.ticket) ? attachment.ticket[0] : attachment.ticket;
+    return {
+      id: attachment.id,
+      file_name: attachment.file_name,
+      file_size: attachment.file_size ?? null,
+      mime_type: attachment.mime_type ?? null,
+      created_at: attachment.created_at,
+      ticket_id: ticket?.id ?? null,
+      ticket_code: ticket?.ticket_code ?? null,
+      ticket_title: ticket?.model ?? null,
+    };
+  });
+
+  return {
+    session,
+    stats: {
+      submittedRequests: requests.length,
+      openRequests: requests.filter((ticket) => !closedStatuses.includes(ticket.status)).length,
+      completedInterventions: interventions.length,
+      activeContracts: ((contractsResult.data ?? []) as any[]).length,
+    },
+    requests,
+    interventions,
+    documents,
+    contracts: contractsResult.data ?? [],
+  };
+}
+
+export async function listPortalDocumentsServer(input: { token: string }) {
+  const session = await getPortalSession(input.token);
+
+  const { data: attachments, error: attachmentsError } = await (supabaseAdmin as any)
+    .from("ticket_attachments")
+    .select(
+      "id, storage_bucket, storage_path, file_name, file_size, mime_type, created_at, ticket:tickets!inner(id, ticket_code, model, client_id, status, closed_at, completed_at)",
+    )
+    .eq("ticket.client_id", session.clientId)
+    .order("created_at", { ascending: false });
+
+  if (attachmentsError) {
+    console.error("[portal-documents] attachment query failed", {
+      clientId: session.clientId,
+      error: attachmentsError,
+    });
+    throw new Response("Impossibile caricare i documenti associati al cliente", { status: 500 });
+  }
+
+  const { data: closedTickets, error: ticketsError } = await (supabaseAdmin as any)
+    .from("tickets")
+    .select("id, ticket_code, model, status, closed_at, completed_at, updated_at")
+    .eq("client_id", session.clientId)
+    .in("status", ["ready", "completed", "archived"])
+    .order("closed_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+
+  if (ticketsError) {
+    console.error("[portal-documents] completed ticket query failed", {
+      clientId: session.clientId,
+      error: ticketsError,
+    });
+    throw new Response("Impossibile caricare i report degli interventi", { status: 500 });
+  }
+
+  const attachmentDocuments = await Promise.all(
+    ((attachments ?? []) as any[]).map(async (attachment) => {
+      const ticket = normalizeDocumentTicket(attachment.ticket);
+      const bucket = attachment.storage_bucket || "ticket-documents";
+      return {
+        id: `attachment:${attachment.id}`,
+        type: "attachment" as const,
+        file_name: attachment.file_name,
+        file_size: attachment.file_size ?? null,
+        mime_type: attachment.mime_type ?? null,
+        created_at: attachment.created_at,
+        ticket_id: ticket?.id ?? null,
+        ticket_code: ticket?.ticket_code ?? null,
+        ticket_title: ticket?.model ?? null,
+        status: ticket?.status ?? null,
+        view_url: await createDocumentSignedUrl(
+          bucket,
+          attachment.storage_path,
+          attachment.file_name,
+          false,
+        ),
+        download_url: await createDocumentSignedUrl(
+          bucket,
+          attachment.storage_path,
+          attachment.file_name,
+          true,
+        ),
+      };
+    }),
+  );
+
+  const ticketByCode = new Map(
+    ((closedTickets ?? []) as any[]).map((ticket) => [String(ticket.ticket_code), ticket]),
+  );
+  let completionDocuments: any[] = [];
+  const { data: completionFiles, error: completionError } = await supabaseAdmin.storage
+    .from("ticket-documents")
+    .list("completions", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+
+  if (completionError) {
+    console.error("[portal-documents] completion PDF list failed", {
+      clientId: session.clientId,
+      error: completionError,
+    });
+  } else {
+    completionDocuments = await Promise.all(
+      (completionFiles ?? [])
+        .filter((file) => file.name.toLowerCase().endsWith(".pdf"))
+        .map(async (file) => {
+          const code = [...ticketByCode.keys()].find((ticketCode) =>
+            file.name.startsWith(ticketCode),
+          );
+          if (!code) return null;
+          const ticket = ticketByCode.get(code);
+          const path = `completions/${file.name}`;
+          return {
+            id: `completion:${file.name}`,
+            type: "completion_report" as const,
+            file_name: `Report intervento ${code}.pdf`,
+            file_size: file.metadata?.size ?? null,
+            mime_type: "application/pdf",
+            created_at:
+              file.created_at || ticket.completed_at || ticket.closed_at || ticket.updated_at,
+            ticket_id: ticket.id,
+            ticket_code: ticket.ticket_code,
+            ticket_title: ticket.model || "Intervento completato",
+            status: ticket.status,
+            view_url: await createDocumentSignedUrl(
+              "ticket-documents",
+              path,
+              `Report-${code}.pdf`,
+              false,
+            ),
+            download_url: await createDocumentSignedUrl(
+              "ticket-documents",
+              path,
+              `Report-${code}.pdf`,
+              true,
+            ),
+          };
+        }),
+    ).then((rows) => rows.filter(Boolean));
+  }
+
+  const seen = new Set<string>();
+  const documents = [...attachmentDocuments, ...completionDocuments]
+    .filter((doc) => {
+      const key = `${doc.type}:${doc.ticket_id}:${doc.file_name}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+  return {
+    session,
+    documents,
+    diagnostics: {
+      attachments: attachmentDocuments.length,
+      completionReports: completionDocuments.length,
+    },
+  };
+}
+
 export async function getPortalTicketCategoriesServer(input: { token: string }) {
   await getPortalSession(input.token);
   const { data: rows, error } = await supabaseAdmin

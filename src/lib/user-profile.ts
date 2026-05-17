@@ -45,6 +45,47 @@ export interface UserActivity {
   created_at: string;
 }
 
+export interface TechnicianProfileOverview {
+  stats: {
+    closedTickets: number;
+    averageResolutionHours: number | null;
+    workedHours: number;
+  };
+  closedTickets: Array<{
+    id: string;
+    ticket_code: string;
+    title: string;
+    client_name: string;
+    status: string;
+    priority: string | null;
+    created_at: string;
+    closed_at: string | null;
+    billable_hours: number;
+  }>;
+  recentInterventions: Array<{
+    id: string;
+    ticket_id: string;
+    ticket_code: string;
+    title: string;
+    client_name: string;
+    started_at: string;
+    ended_at: string | null;
+    duration_minutes: number;
+    description: string | null;
+  }>;
+  monthlyActivity: Array<{
+    month: string;
+    closedTickets: number;
+    workedHours: number;
+  }>;
+  badges: Array<{
+    key: string;
+    label: string;
+    description: string;
+    achieved: boolean;
+  }>;
+}
+
 const ProfileUpdateSchema = z.object({
   display_name: z.string().trim().min(1).max(120).optional(),
   avatar_url: z.string().url().max(2048).nullable().optional(),
@@ -166,6 +207,151 @@ export const getMyProfile = createServerFn({ method: "GET" })
     } satisfies UserProfile;
   });
 
+export const getMyTechnicianOverview = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data: { accessToken } }): Promise<TechnicianProfileOverview> => {
+    const user = await getAuthedUser(accessToken);
+    const closedStatuses = ["ready", "completed", "archived"];
+    const since = new Date();
+    since.setMonth(since.getMonth() - 5);
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+
+    const [{ data: closedRows, error: closedError }, { data: timeRows, error: timeError }] =
+      await Promise.all([
+        (supabaseAdmin as any)
+          .from("tickets")
+          .select(
+            "id, ticket_code, model, client, status, priority, created_at, closed_at, completed_at, updated_at, billable_hours, clients:client_id(name, company_name)",
+          )
+          .eq("assignee_id", user.id)
+          .in("status", closedStatuses)
+          .order("closed_at", { ascending: false, nullsFirst: false })
+          .limit(25),
+        (supabaseAdmin as any)
+          .from("ticket_time_entries")
+          .select(
+            "id, ticket_id, started_at, ended_at, duration_minutes, description, ticket:tickets(id, ticket_code, model, client, clients:client_id(name, company_name))",
+          )
+          .eq("user_id", user.id)
+          .order("started_at", { ascending: false })
+          .limit(80),
+      ]);
+
+    if (closedError) throw closedError;
+    if (timeError) throw timeError;
+
+    const closed = ((closedRows ?? []) as any[]).map((ticket) => {
+      const client = Array.isArray(ticket.clients) ? ticket.clients[0] : ticket.clients;
+      return {
+        id: ticket.id,
+        ticket_code: ticket.ticket_code,
+        title: ticket.model || "Ticket assistenza",
+        client_name: client?.company_name || client?.name || ticket.client || "Cliente",
+        status: ticket.status,
+        priority: ticket.priority ?? null,
+        created_at: ticket.created_at,
+        closed_at: ticket.closed_at || ticket.completed_at || ticket.updated_at || null,
+        billable_hours: Number(ticket.billable_hours ?? 0),
+      };
+    });
+
+    const interventions = ((timeRows ?? []) as any[]).map((entry) => {
+      const ticket = Array.isArray(entry.ticket) ? entry.ticket[0] : entry.ticket;
+      const client = Array.isArray(ticket?.clients) ? ticket.clients[0] : ticket?.clients;
+      const fallbackMinutes = entry.ended_at
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(entry.ended_at).getTime() - new Date(entry.started_at).getTime()) / 60000,
+            ),
+          )
+        : 0;
+      return {
+        id: entry.id,
+        ticket_id: entry.ticket_id,
+        ticket_code: ticket?.ticket_code || "-",
+        title: ticket?.model || "Intervento",
+        client_name: client?.company_name || client?.name || ticket?.client || "Cliente",
+        started_at: entry.started_at,
+        ended_at: entry.ended_at ?? null,
+        duration_minutes: Number(entry.duration_minutes ?? fallbackMinutes),
+        description: entry.description ?? null,
+      };
+    });
+
+    const averageResolutionHours = closed.length
+      ? closed.reduce((sum, ticket) => {
+          const start = new Date(ticket.created_at).getTime();
+          const end = new Date(ticket.closed_at || ticket.created_at).getTime();
+          return sum + Math.max(0, end - start) / 36e5;
+        }, 0) / closed.length
+      : null;
+    const workedHours = interventions.reduce(
+      (sum, intervention) => sum + intervention.duration_minutes / 60,
+      0,
+    );
+
+    const months = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(since);
+      date.setMonth(since.getMonth() + index);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      return {
+        key,
+        month: date.toLocaleDateString("it-IT", { month: "short" }),
+        closedTickets: 0,
+        workedHours: 0,
+      };
+    });
+    const monthByKey = new Map(months.map((month) => [month.key, month]));
+    for (const ticket of closed) {
+      const date = new Date(ticket.closed_at || ticket.created_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const bucket = monthByKey.get(key);
+      if (bucket) bucket.closedTickets += 1;
+    }
+    for (const intervention of interventions) {
+      const date = new Date(intervention.started_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const bucket = monthByKey.get(key);
+      if (bucket) bucket.workedHours += Math.round((intervention.duration_minutes / 60) * 10) / 10;
+    }
+
+    const stats = {
+      closedTickets: closed.length,
+      averageResolutionHours:
+        averageResolutionHours === null ? null : Math.round(averageResolutionHours * 10) / 10,
+      workedHours: Math.round(workedHours * 10) / 10,
+    };
+
+    return {
+      stats,
+      closedTickets: closed,
+      recentInterventions: interventions.slice(0, 10),
+      monthlyActivity: months.map(({ key: _key, ...month }) => month),
+      badges: [
+        {
+          key: "closer",
+          label: "Closer affidabile",
+          description: "Almeno 10 ticket chiusi assegnati a te.",
+          achieved: stats.closedTickets >= 10,
+        },
+        {
+          key: "fast-resolver",
+          label: "Risoluzione rapida",
+          description: "Tempo medio di risoluzione sotto 48 ore.",
+          achieved: stats.averageResolutionHours !== null && stats.averageResolutionHours <= 48,
+        },
+        {
+          key: "time-tracker",
+          label: "Tracciamento accurato",
+          description: "Almeno 20 ore lavorate registrate sui ticket.",
+          achieved: stats.workedHours >= 20,
+        },
+      ],
+    };
+  });
+
 export const updateMyProfile = createServerFn({ method: "POST" })
   .inputValidator(
     (data: { accessToken: string; profile: z.input<typeof ProfileUpdateSchema> }) => data,
@@ -176,10 +362,9 @@ export const updateMyProfile = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("user_profiles")
-      .upsert(
-        { id: user.id, ...validated, updated_at: new Date().toISOString() } as any,
-        { onConflict: "id" },
-      );
+      .upsert({ id: user.id, ...validated, updated_at: new Date().toISOString() } as any, {
+        onConflict: "id",
+      });
 
     if (error) {
       console.error("[updateMyProfile] failed to upsert user profile:", {

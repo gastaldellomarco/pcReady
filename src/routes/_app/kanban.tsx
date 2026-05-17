@@ -328,7 +328,12 @@ function KanbanPage() {
     if (status === "completed" && card.status !== "completed" && session?.access_token) {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
       void completeTicketServer({
-        data: { ticketId: id, changedBy: user!.id, accessToken: session.access_token },
+        data: {
+          ticketId: id,
+          changedBy: user!.id,
+          accessToken: session.access_token,
+          template: "customer",
+        },
       }).catch((err) => {
         console.error("Failed to complete ticket:", err);
         toast.error("Ticket completato, ma errore invio email/verbale");

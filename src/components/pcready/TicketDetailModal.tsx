@@ -360,7 +360,12 @@ export function TicketDetailModal() {
     if (next === "completed" && session?.access_token) {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
       void completeTicketServer({
-        data: { ticketId: ticket.id, changedBy: user!.id, accessToken: session.access_token },
+        data: {
+          ticketId: ticket.id,
+          changedBy: user!.id,
+          accessToken: session.access_token,
+          template: "customer",
+        },
       }).catch((err) => {
         console.error("Failed to complete ticket:", err);
         toast.error("Ticket completato, ma errore invio email/verbale");
@@ -371,6 +376,31 @@ export function TicketDetailModal() {
   async function changeAssignee(nextAssigneeId: string) {
     await update({ assignee_id: nextAssigneeId || null } as any);
     toast.success(nextAssigneeId ? "Tecnico riassegnato" : "Assegnazione rimossa");
+  }
+
+  async function exportCompletionPdf(template: "customer" | "technical") {
+    if (!session?.access_token || !user) return toast.error("Sessione non disponibile");
+    try {
+      const { completeTicketServer } = await import("@/lib/ticket-completion");
+      const result = await completeTicketServer({
+        data: {
+          ticketId: ticket.id,
+          changedBy: user.id,
+          accessToken: session.access_token,
+          template,
+          notifyClient: false,
+        },
+      });
+      if (!result.success || !result.pdfUrl)
+        throw new Error(result.error || "Export PDF non riuscito");
+      window.open(result.pdfUrl, "_blank", "noopener,noreferrer");
+      toast.success(
+        template === "customer" ? "Verbale cliente generato" : "Report tecnico generato",
+      );
+    } catch (err) {
+      console.error("Failed to export completion PDF:", err);
+      toast.error(err instanceof Error ? err.message : "Errore export PDF");
+    }
   }
 
   async function changeDevice(nextDeviceId: string | null) {
@@ -654,8 +684,17 @@ export function TicketDetailModal() {
             >
               <Copy className="h-3 w-3" /> Duplica
             </button>
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => window.print()}>
-              <Printer className="h-3 w-3" /> Esporta PDF
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              onClick={() => exportCompletionPdf("customer")}
+            >
+              <Printer className="h-3 w-3" /> PDF cliente
+            </button>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              onClick={() => exportCompletionPdf("technical")}
+            >
+              <Printer className="h-3 w-3" /> PDF tecnico
             </button>
           </div>
         </div>
