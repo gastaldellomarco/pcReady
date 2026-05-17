@@ -33,6 +33,7 @@ import {
   Menu,
   Building2,
   BookOpenText,
+  Euro,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
@@ -106,6 +107,7 @@ const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
       { to: "/scripts", label: "Script", icon: Terminal },
       { to: "/clients", label: "Clienti", icon: Building2 },
       { to: "/contacts", label: "Referenti", icon: UserRound },
+      { to: "/costs", label: "Costi", icon: Euro, requiredRoles: ["admin", "tech"] },
       { to: "/inventory", label: "Inventario", icon: Boxes },
       { to: "/docs", label: "API Docs", icon: BookOpenText, requiredRoles: ["admin", "tech"] },
       { to: "/admin", label: "Admin / Utenti", icon: Users, requiredRoles: ["admin"] },
@@ -165,6 +167,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/scripts": "Script",
   "/clients": "Clienti",
   "/contacts": "Referenti",
+  "/costs": "Costi",
   "/inventory": "Inventario",
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",

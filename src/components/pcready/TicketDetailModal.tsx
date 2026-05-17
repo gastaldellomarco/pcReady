@@ -76,6 +76,13 @@ interface TicketRow {
   sla_deadline?: string | null;
   sla_breached?: boolean | null;
   sla_response_at?: string | null;
+  billable_hours?: number | null;
+  hourly_rate?: number | null;
+  material_cost?: number | null;
+  labor_cost?: number | null;
+  total_cost?: number | null;
+  cost_notes?: string | null;
+  cost_currency?: string | null;
   device_id: string | null;
   model?: string | null;
   checklist_structure?: ChecklistStructure | null;
@@ -127,6 +134,12 @@ export function TicketDetailModal() {
   const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
   const [deviceLoading, setDeviceLoading] = useState(false);
   const [checklistTemplateToAttach, setChecklistTemplateToAttach] = useState("");
+  const [costDraft, setCostDraft] = useState({
+    billable_hours: "0",
+    hourly_rate: "0",
+    material_cost: "0",
+    cost_notes: "",
+  });
 
   const {
     useTicketQuery,
@@ -162,7 +175,15 @@ export function TicketDetailModal() {
 
   useEffect(() => {
     const ticket = ticketQuery.data as TicketRow | null | undefined;
-    if (ticket) setTitleDraft(ticket.model || ticket.device?.model || ticket.ticket_code);
+    if (ticket) {
+      setTitleDraft(ticket.model || ticket.device?.model || ticket.ticket_code);
+      setCostDraft({
+        billable_hours: String(ticket.billable_hours ?? 0),
+        hourly_rate: String(ticket.hourly_rate ?? 0),
+        material_cost: String(ticket.material_cost ?? 0),
+        cost_notes: ticket.cost_notes ?? "",
+      });
+    }
   }, [ticketQuery.data]);
 
   useEffect(() => {
@@ -231,6 +252,23 @@ export function TicketDetailModal() {
       toast.error(message);
       throw err;
     }
+  }
+
+  async function saveCosts() {
+    if (!canEdit) return;
+    const patch = {
+      billable_hours: parseCostNumber(costDraft.billable_hours),
+      hourly_rate: parseCostNumber(costDraft.hourly_rate),
+      material_cost: parseCostNumber(costDraft.material_cost),
+      cost_notes: costDraft.cost_notes.trim() || null,
+    };
+    await update(patch as any);
+    toast.success("Costi ticket aggiornati");
+  }
+
+  function useTrackedHoursAsBillable() {
+    const hours = ((timeSummaryQuery.data?.totalMinutes ?? 0) / 60).toFixed(2);
+    setCostDraft((current) => ({ ...current, billable_hours: hours }));
   }
 
   async function saveTitle() {
@@ -782,6 +820,98 @@ export function TicketDetailModal() {
           <TicketRelations ticketId={ticket.id} />
 
           <TicketTimeTracking ticketId={ticket.id} />
+
+          <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[13px] font-bold">Costi e fatturazione</h3>
+                <p className="text-[11px] text-text3">
+                  Manodopera: {formatMoney(ticket.labor_cost)} · Materiali:{" "}
+                  {formatMoney(ticket.material_cost)} · Totale: {formatMoney(ticket.total_cost)}
+                </p>
+              </div>
+              {canEdit && (
+                <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={saveCosts}>
+                  Salva costi
+                </button>
+              )}
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <label className="text-[12px] font-semibold text-text2">
+                Ore fatturabili
+                <input
+                  className="pc-input mt-1"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  disabled={!canEdit}
+                  value={costDraft.billable_hours}
+                  onChange={(event) =>
+                    setCostDraft((current) => ({ ...current, billable_hours: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="text-[12px] font-semibold text-text2">
+                Tariffa oraria
+                <input
+                  className="pc-input mt-1"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  disabled={!canEdit}
+                  value={costDraft.hourly_rate}
+                  onChange={(event) =>
+                    setCostDraft((current) => ({ ...current, hourly_rate: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="text-[12px] font-semibold text-text2">
+                Materiali / ricambi
+                <input
+                  className="pc-input mt-1"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  disabled={!canEdit}
+                  value={costDraft.material_cost}
+                  onChange={(event) =>
+                    setCostDraft((current) => ({ ...current, material_cost: event.target.value }))
+                  }
+                />
+              </label>
+              <div className="rounded-lg bg-surface2 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-wide text-text3">
+                  Totale stimato
+                </div>
+                <div className="mt-1 text-lg font-bold">
+                  {formatMoney(
+                    parseCostNumber(costDraft.billable_hours) *
+                      parseCostNumber(costDraft.hourly_rate) +
+                      parseCostNumber(costDraft.material_cost),
+                  )}
+                </div>
+                <button
+                  className="mt-2 text-[11px] font-semibold text-accent"
+                  disabled={!canEdit}
+                  onClick={useTrackedHoursAsBillable}
+                >
+                  Usa ore tracciate ({totalWorked})
+                </button>
+              </div>
+            </div>
+            <label className="mt-3 block text-[12px] font-semibold text-text2">
+              Note costi
+              <textarea
+                className="pc-input mt-1 min-h-[70px]"
+                disabled={!canEdit}
+                value={costDraft.cost_notes}
+                onChange={(event) =>
+                  setCostDraft((current) => ({ ...current, cost_notes: event.target.value }))
+                }
+                placeholder="Dettagli materiali, ricambi, accordi di fatturazione..."
+              />
+            </label>
+          </section>
 
           <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -1341,6 +1471,18 @@ function assetInfo(ticket: TicketRow) {
     os: ticket.device?.os || "-",
     assignedTo: ticket.device?.assigned_to || "-",
   };
+}
+
+function parseCostNumber(value: string | number | null | undefined) {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, parsed);
+}
+
+function formatMoney(value: string | number | null | undefined) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(
+    parseCostNumber(value),
+  );
 }
 
 function formatRelativeTime(value: string) {
