@@ -102,6 +102,7 @@ function getActionBadge(actionType: string | null | undefined): { label: string;
   if (actionType.includes("status_changed") || actionType.includes("assigned") || actionType.includes("updated") || actionType.includes("enabled") || actionType.includes("rotated")) return { label: "MODIFICA", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" };
   if (actionType.includes("login") || actionType.includes("logout") || actionType.includes("link_generated") || actionType.includes("link_revoked")) return { label: "ACCESSO", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" };
   if (actionType.includes("failed") || actionType.includes("error")) return { label: "ERRORE", color: "bg-red-200 text-red-900 dark:bg-red-900/60 dark:text-red-200" };
+  if (actionType.includes("bulk")) return { label: "BULK", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" };
 
   return { label: actionType.toUpperCase(), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" };
 }
@@ -275,8 +276,11 @@ function AuditTableRow({ entry, isExpanded, onToggle, index }: { entry: Activity
           {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
         </TableCell>
         <TableCell className="py-3 w-[32px]">{sevIcon}</TableCell>
-        <TableCell className="py-3 whitespace-nowrap w-[110px]">
-          <span className={cn("inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider", badge.color)}>
+        <TableCell className="py-3 whitespace-nowrap w-[110px] overflow-hidden">
+          <span
+            className={cn("inline-block max-w-full truncate align-middle px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider", badge.color)}
+            title={entry.action_type ?? badge.label}
+          >
             {badge.label}
           </span>
         </TableCell>
@@ -316,7 +320,10 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
       <div className="absolute left-[-5px] top-1 w-2 h-2 rounded-full bg-accent" />
       <div className="flex items-start gap-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <span className="text-xs font-mono text-text3 whitespace-nowrap mt-0.5">{time}</span>
-        <span className={cn("inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0", badge.color)}>
+        <span
+          className={cn("inline-block max-w-[140px] truncate px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0", badge.color)}
+          title={entry.action_type ?? badge.label}
+        >
           {badge.label}
         </span>
         <span className="text-sm text-text2 flex-1">

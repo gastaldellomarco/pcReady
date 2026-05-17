@@ -36,6 +36,7 @@ import { Modal } from "@/components/pcready/Modal";
 import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDownloadFileName } from "@/lib/downloads";
+import { pcReadyColors } from "@/lib/design-system";
 import {
   daysUntil,
   getWarrantyStatus,
@@ -124,10 +125,10 @@ type CompareDevice = Row & {
 type DeviceStatus = "available" | "assigned" | "maintenance" | "retired";
 
 const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }> = {
-  available: { label: "Disponibile", color: "#16A34A" },
-  assigned: { label: "Assegnato", color: "#1B4FD8" },
-  maintenance: { label: "Manutenzione", color: "#EF9827" },
-  retired: { label: "Dismesso", color: "#6B7280" },
+  available: { label: "Disponibile", color: pcReadyColors.success },
+  assigned: { label: "Assegnato", color: pcReadyColors.primary },
+  maintenance: { label: "Manutenzione", color: pcReadyColors.warning },
+  retired: { label: "Dismesso", color: pcReadyColors.textSecondary },
 };
 
 const PAGE_SIZE = 50;
@@ -1173,7 +1174,7 @@ function CompareDevicesModal({
       "Schermo",
       (row) =>
         [
-          row.screen_size_inches ? `${row.screen_size_inches}\"` : null,
+          row.screen_size_inches ? `${row.screen_size_inches}"` : null,
           row.screen_resolution,
           row.screen_type,
         ]

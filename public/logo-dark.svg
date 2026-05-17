@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" role="img" aria-label="pcReady dark logo">
+  <rect x="5" y="9" width="42" height="30" rx="7" fill="rgba(255,255,255,0.14)" stroke="#FFFFFF" stroke-width="3.5"/>
+  <path d="M18 25 24 31 36 18" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 44h9M17 49h19" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+  <text x="62" y="36" font-family="Geist, Inter, system-ui, sans-serif" font-size="28" letter-spacing="-1" fill="#FFFFFF">
+    <tspan font-weight="400" opacity="0.72">pc</tspan><tspan font-weight="600">Ready</tspan>
+  </text>
+</svg>

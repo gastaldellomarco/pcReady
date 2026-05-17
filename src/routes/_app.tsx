@@ -52,6 +52,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { AppLogo } from "@/components/brand/AppLogo";
 import {
   AuthErrorScreen,
   AuthLoadingScreen,
@@ -422,31 +423,13 @@ function SidebarContent({
         className="px-[18px] py-[18px] border-b flex items-center gap-[10px]"
         style={{ borderColor: "var(--border)" }}
       >
-        <div
-          className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0"
-          style={{ background: "var(--text)" }}
-        >
-          <svg
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="var(--background)"
-            strokeWidth={1.8}
-            className="w-4 h-4"
-          >
-            <rect x="2" y="2" width="5" height="5" rx="1" />
-            <rect x="9" y="2" width="5" height="5" rx="1" />
-            <rect x="2" y="9" width="5" height="5" rx="1" />
-            <path d="M9 11.5h5M11.5 9v5" />
-          </svg>
-        </div>
-        <div>
+        <AppLogo variant="horizontal" className="shrink-0 text-[18px]" iconClassName="h-8 w-8" />
+        <div className="min-w-0 flex-1">
           <div
-            className="text-[16px] font-bold tracking-tight leading-none"
-            style={{ fontFamily: "var(--font-head)" }}
+            className="truncate text-[10px] text-text3"
+            style={{ fontFamily: "var(--font-mono)" }}
+            title={`v${appVersion}${deploymentLabel ? ` - ${deploymentLabel}` : ""}`}
           >
-            {(globalThis as any).organizationName || "PCReady"}
-          </div>
-          <div className="text-[10px] text-text3 mt-0.5" style={{ fontFamily: "var(--font-mono)" }}>
             v{appVersion}
             {deploymentLabel ? ` - ${deploymentLabel}` : null}
           </div>
@@ -509,39 +492,36 @@ function SidebarContent({
           >
             <DropdownMenuItem
               onClick={() => onSetTheme("light")}
-              className="flex items-center gap-2 cursor-pointer text-[13px]"
-              style={{ color: "var(--text2)" }}
+              className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Sun className="w-4 h-4" />
               <span>Chiaro</span>
               {theme === "light" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
                 </span>
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSetTheme("dark")}
-              className="flex items-center gap-2 cursor-pointer text-[13px]"
-              style={{ color: "var(--text2)" }}
+              className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Moon className="w-4 h-4" />
               <span>Scuro</span>
               {theme === "dark" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
                 </span>
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSetTheme("system")}
-              className="flex items-center gap-2 cursor-pointer text-[13px]"
-              style={{ color: "var(--text2)" }}
+              className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Monitor className="w-4 h-4" />
               <span>Sistema</span>
               {theme === "system" && (
-                <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
+                <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
                 </span>
               )}

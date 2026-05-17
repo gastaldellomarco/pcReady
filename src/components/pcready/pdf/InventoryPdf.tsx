@@ -138,7 +138,7 @@ export function InventoryPdf({
               ? [
                   { label: "In garanzia", value: warrantyCounts.valid, color: pdfPalette.success },
                   { label: "In scadenza", value: warrantyCounts.expiring, color: pdfPalette.warn },
-                  { label: "Urgenti", value: warrantyCounts.urgent, color: "#f97316" },
+                  { label: "Urgenti", value: warrantyCounts.urgent, color: pdfPalette.warn },
                   { label: "Scadute", value: warrantyCounts.expired, color: pdfPalette.danger },
                   { label: "N/D", value: warrantyCounts.missing, color: pdfPalette.muted },
                 ]

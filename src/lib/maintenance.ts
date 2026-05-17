@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { pcReadyColors } from "@/lib/design-system";
 
 export type MaintenanceRecurrence = "once" | "weekly" | "monthly" | "quarterly" | "yearly";
 export type MaintenanceStatus = "scheduled" | "due_soon" | "overdue" | "completed";
@@ -51,10 +52,22 @@ export const MAINTENANCE_STATUS_META: Record<
   MaintenanceStatus,
   { label: string; color: string; background: string }
 > = {
-  scheduled: { label: "Programmata", color: "#1B4FD8", background: "#DBEAFE" },
-  due_soon: { label: "In scadenza", color: "#B45309", background: "#FEF3C7" },
-  overdue: { label: "Scaduta", color: "#B91C1C", background: "#FEE2E2" },
-  completed: { label: "Completata", color: "#15803D", background: "#DCFCE7" },
+  scheduled: {
+    label: "Programmata",
+    color: pcReadyColors.primary,
+    background: pcReadyColors.primaryLight,
+  },
+  due_soon: {
+    label: "In scadenza",
+    color: pcReadyColors.warning,
+    background: pcReadyColors.warningLight,
+  },
+  overdue: { label: "Scaduta", color: pcReadyColors.danger, background: pcReadyColors.dangerLight },
+  completed: {
+    label: "Completata",
+    color: pcReadyColors.success,
+    background: pcReadyColors.successLight,
+  },
 };
 
 const DAY_MS = 86_400_000;

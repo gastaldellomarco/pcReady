@@ -833,7 +833,7 @@ function KanbanPage() {
                         >
                           <div className="grid grid-cols-3 gap-1">
                             <select
-                              className="pc-input h-7 min-w-0 text-[10px]"
+                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
                               value={c.assignee_id ?? "unassigned"}
                               onChange={(event) =>
                                 void moveTo(
@@ -852,7 +852,7 @@ function KanbanPage() {
                               ))}
                             </select>
                             <select
-                              className="pc-input h-7 min-w-0 text-[10px]"
+                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
                               value={c.priority}
                               onChange={(event) =>
                                 void updatePriority(c.id, event.target.value as TicketPriority)
@@ -866,7 +866,7 @@ function KanbanPage() {
                               ))}
                             </select>
                             <select
-                              className="pc-input h-7 min-w-0 text-[10px]"
+                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
                               value={c.status}
                               onChange={(event) =>
                                 void moveTo(c.id, event.target.value as TicketStatus)
@@ -939,7 +939,7 @@ function KanbanPage() {
             {selectedCards.length} selezionati
           </span>
           <select
-            className="pc-input max-w-[170px]"
+            className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
             value=""
             disabled={bulkBusy || !canEdit}
             onChange={(event) => {
@@ -955,7 +955,7 @@ function KanbanPage() {
             ))}
           </select>
           <select
-            className="pc-input max-w-[180px]"
+            className="pc-input h-8 max-w-[180px] px-3 py-0 text-[12px] leading-none"
             value=""
             disabled={bulkBusy || !canEdit}
             onChange={(event) => {
@@ -976,7 +976,7 @@ function KanbanPage() {
             ))}
           </select>
           <select
-            className="pc-input max-w-[170px]"
+            className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
             value=""
             disabled={bulkBusy || !canEdit}
             onChange={(event) => {

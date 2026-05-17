@@ -8,6 +8,7 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "@/lib/pcready";
+import { pcReadyColors } from "@/lib/design-system";
 import { cn } from "@/lib/utils";
 import { openTicketDetail } from "@/lib/use-detail";
 import type { TechnicianOption } from "@/lib/technicians";
@@ -269,7 +270,7 @@ function TicketCard({
         >
           <div className="grid grid-cols-3 gap-1">
             <select
-              className="pc-input h-7 min-w-0 text-[10px]"
+              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
               value={currentAssigneeId ?? "unassigned"}
               onChange={(event) =>
                 onMove(
@@ -288,7 +289,7 @@ function TicketCard({
               ))}
             </select>
             <select
-              className="pc-input h-7 min-w-0 text-[10px]"
+              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
               value={card.priority}
               onChange={(event) =>
                 onPriorityChange?.(card.id, event.target.value as TicketPriority)
@@ -302,7 +303,7 @@ function TicketCard({
               ))}
             </select>
             <select
-              className="pc-input h-7 min-w-0 text-[10px]"
+              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
               value={currentStatus}
               onChange={(event) =>
                 onMove(card.id, event.target.value as TicketStatus, currentAssigneeId)
@@ -352,9 +353,9 @@ function slaIndicator(card: SwimLaneCard) {
     card.due_date || card.sla_deadline,
     card.sla_breached,
   );
-  if (sla.status === "overdue") return { color: "#DC2626", label: "SLA violato" };
-  if (sla.status === "warning") return { color: "#CA8A04", label: "In scadenza" };
-  return { color: "#16A34A", label: "SLA OK" };
+  if (sla.status === "overdue") return { color: pcReadyColors.danger, label: "SLA violato" };
+  if (sla.status === "warning") return { color: pcReadyColors.warning, label: "In scadenza" };
+  return { color: pcReadyColors.success, label: "SLA OK" };
 }
 
 function SlaMiniLabel({ card }: { card: SwimLaneCard }) {

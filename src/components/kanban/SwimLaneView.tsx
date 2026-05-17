@@ -1,13 +1,20 @@
 import { useMemo, type MouseEvent } from "react";
 import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
+import { pcReadyColors } from "@/lib/design-system";
 import type { TechnicianOption } from "@/lib/technicians";
 import { cn } from "@/lib/utils";
 import { SwimLaneRow } from "./SwimLaneRow";
 
 function WipProgressBar({ pct }: { pct: number }) {
-  const color = pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
-  const bgColor = pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
+  const color =
+    pct >= 90 ? pcReadyColors.danger : pct >= 70 ? pcReadyColors.warning : pcReadyColors.success;
+  const bgColor =
+    pct >= 90
+      ? pcReadyColors.dangerLight
+      : pct >= 70
+        ? pcReadyColors.warningLight
+        : pcReadyColors.successLight;
   return (
     <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
       <div
@@ -162,7 +169,7 @@ export function SwimLaneView({
                         className={cn(
                           "ml-auto rounded-full border px-2 py-0.5 font-mono text-[10px]",
                           isOverLimit
-                            ? "border-red-200 bg-red-100 text-red-700"
+                            ? "border-danger/20 bg-danger-light text-danger"
                             : "text-text3 border-border",
                         )}
                         style={isOverLimit ? undefined : { background: "var(--surface3)" }}

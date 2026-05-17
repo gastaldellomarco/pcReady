@@ -575,7 +575,7 @@ export function TicketDetailModal() {
           <div className="flex flex-wrap items-center justify-end gap-2">
             {canEdit ? (
               <select
-                className="pc-input h-8 w-auto text-[12px]"
+                className="pc-input h-8 min-w-[120px] w-auto px-3 py-0 text-[12px] leading-none"
                 value={ticket.status}
                 onChange={(event) => advance(event.target.value as TicketStatus)}
               >
@@ -597,7 +597,7 @@ export function TicketDetailModal() {
               <CheckCircle2 className="h-3 w-3" /> Chiudi ticket
             </button>
             <select
-              className="pc-input h-8 w-auto text-[12px]"
+              className="pc-input h-8 min-w-[150px] w-auto px-3 py-0 text-[12px] leading-none"
               value={ticket.assignee_id ?? ""}
               disabled={!canEdit}
               onChange={(event) => changeAssignee(event.target.value)}

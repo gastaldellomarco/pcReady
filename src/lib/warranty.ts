@@ -1,3 +1,5 @@
+import { pcReadyColors } from "@/lib/design-system";
+
 export type WarrantyType = "standard" | "extended" | "onsite" | "none";
 export type WarrantyStatus = "valid" | "expiring" | "urgent" | "expired" | "missing";
 export type WarrantyFilter = "all" | WarrantyStatus;
@@ -17,12 +19,31 @@ export const WARRANTY_TYPES: { value: WarrantyType; label: string }[] = [
   { value: "none", label: "Nessuna" },
 ];
 
-export const WARRANTY_STATUS_META: Record<WarrantyStatus, { label: string; color: string; background: string }> = {
-  valid: { label: "In garanzia", color: "#15803d", background: "#dcfce7" },
-  expiring: { label: "In scadenza", color: "#a16207", background: "#fef9c3" },
-  urgent: { label: "Urgente", color: "#c2410c", background: "#ffedd5" },
-  expired: { label: "Scaduta", color: "#b91c1c", background: "#fee2e2" },
-  missing: { label: "N/D", color: "#6b7280", background: "#f3f4f6" },
+export const WARRANTY_STATUS_META: Record<
+  WarrantyStatus,
+  { label: string; color: string; background: string }
+> = {
+  valid: {
+    label: "In garanzia",
+    color: pcReadyColors.success,
+    background: pcReadyColors.successLight,
+  },
+  expiring: {
+    label: "In scadenza",
+    color: pcReadyColors.warning,
+    background: pcReadyColors.warningLight,
+  },
+  urgent: {
+    label: "Urgente",
+    color: pcReadyColors.warning,
+    background: pcReadyColors.warningLight,
+  },
+  expired: { label: "Scaduta", color: pcReadyColors.danger, background: pcReadyColors.dangerLight },
+  missing: {
+    label: "N/D",
+    color: pcReadyColors.textSecondary,
+    background: pcReadyColors.slateLight,
+  },
 };
 
 export function todayDateOnly(now = new Date()) {
@@ -60,7 +81,11 @@ export function warrantyProgress(fields: WarrantyFields, now = new Date()) {
   const purchase = parseDateOnly(fields.purchase_date);
   const expiry = parseDateOnly(fields.warranty_expiry_date);
   if (!purchase || !expiry || expiry.getTime() <= purchase.getTime()) {
-    return { percent: null as number | null, elapsedDays: null as number | null, totalDays: null as number | null };
+    return {
+      percent: null as number | null,
+      elapsedDays: null as number | null,
+      totalDays: null as number | null,
+    };
   }
   const today = todayDateOnly(now).getTime();
   const totalMs = expiry.getTime() - purchase.getTime();

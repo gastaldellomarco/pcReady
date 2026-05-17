@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 160" role="img" aria-label="pcReady vertical logo">
+  <g fill="none" transform="translate(54 12)">
+    <rect x="0" y="0" width="72" height="50" rx="11" fill="#DBEAFE" stroke="#2563EB" stroke-width="6"/>
+    <path d="M21 27 32 37 53 15" stroke="#16A34A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30 62h12M22 70h28" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="90" y="125" text-anchor="middle" font-family="Geist, Inter, system-ui, sans-serif" font-size="34" letter-spacing="-1">
+    <tspan fill="#64748B" font-weight="400">pc</tspan><tspan fill="#2563EB" font-weight="600">Ready</tspan>
+  </text>
+</svg>

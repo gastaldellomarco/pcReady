@@ -1,4 +1,4 @@
-import { Circle, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import { Circle, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/stylesheet";
 import { pdfFonts, pdfPalette } from "./theme";
 
@@ -48,23 +48,12 @@ const styles = StyleSheet.create({
   logo: {
     width: 34,
     height: 34,
-    borderRadius: 8,
-    backgroundColor: pdfPalette.accent,
     marginRight: 10,
-    padding: 5,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 3,
-  },
-  logoCell: {
-    width: 7,
-    height: 7,
-    border: `1.5 solid ${pdfPalette.paper}`,
-    borderRadius: 1,
   },
   brand: {
     fontFamily: pdfFonts.bold,
     fontSize: 16,
+    color: pdfPalette.accent,
   },
   subtitle: {
     marginTop: 2,
@@ -325,14 +314,35 @@ export function BrandedPage({
   return (
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.header} fixed>
-        <View style={styles.logo}>
-          <View style={styles.logoCell} />
-          <View style={styles.logoCell} />
-          <View style={styles.logoCell} />
-          <View style={styles.logoCell} />
-        </View>
+        <Svg style={styles.logo} viewBox="0 0 48 48">
+          <Rect
+            x="5"
+            y="8"
+            width="38"
+            height="27"
+            rx="6"
+            fill={pdfPalette.accentSoft}
+            stroke={pdfPalette.accent}
+            strokeWidth="3"
+          />
+          <Path
+            d="M17 22.5 22.2 27.5 32 17"
+            fill="none"
+            stroke={pdfPalette.success}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 39h8M16 43h16"
+            fill="none"
+            stroke={pdfPalette.accent}
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </Svg>
         <View>
-          <Text style={styles.brand}>PCReady</Text>
+          <Text style={styles.brand}>pcReady</Text>
           <Text style={styles.subtitle}>{title}</Text>
           <Text style={styles.orgLine}>{org}</Text>
         </View>
@@ -417,13 +427,19 @@ export function MonthlyBars({
               <View
                 style={[
                   styles.monthBar,
-                  { height: Math.max(3, (row.opened / max) * 86), backgroundColor: pdfPalette.accent },
+                  {
+                    height: Math.max(3, (row.opened / max) * 86),
+                    backgroundColor: pdfPalette.accent,
+                  },
                 ]}
               />
               <View
                 style={[
                   styles.monthBar,
-                  { height: Math.max(3, (row.closed / max) * 86), backgroundColor: pdfPalette.success },
+                  {
+                    height: Math.max(3, (row.closed / max) * 86),
+                    backgroundColor: pdfPalette.success,
+                  },
                 ]}
               />
             </View>
@@ -452,7 +468,7 @@ export function HorizontalBars({
       {rows.slice(0, 8).map((row) => (
         <View key={row.label} style={styles.horizontalRow}>
           <Text style={styles.horizontalLabel}>
-            {row.label}  {row.assigned}/{row.completed}
+            {row.label} {row.assigned}/{row.completed}
           </Text>
           <View style={styles.horizontalTrack}>
             <View
@@ -507,7 +523,12 @@ export function DonutChart({
         <Text style={styles.donutCenter}>{total}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Legend items={items.map((item) => ({ label: `${item.label}: ${item.value}`, color: item.color }))} />
+        <Legend
+          items={items.map((item) => ({
+            label: `${item.label}: ${item.value}`,
+            color: item.color,
+          }))}
+        />
       </View>
     </View>
   );

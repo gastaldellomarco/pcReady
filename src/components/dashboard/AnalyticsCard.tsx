@@ -10,7 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, FileDown, FileText, BarChart3, LineChart as LineChartIcon } from "lucide-react";
+import {
+  ChevronDown,
+  FileDown,
+  FileText,
+  BarChart3,
+  LineChart as LineChartIcon,
+} from "lucide-react";
+import { pcReadyColors } from "@/lib/design-system";
 
 interface AnalyticsCardProps {
   analytics: DashboardAnalytics | null;
@@ -62,10 +69,7 @@ export function AnalyticsCard({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  className="pc-btn pc-btn-ghost pc-btn-sm"
-                  disabled={!analytics || loading}
-                >
+                <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!analytics || loading}>
                   Esporta
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
@@ -90,8 +94,8 @@ export function AnalyticsCard({
             <>
               <ChartContainer
                 config={{
-                  opened: { label: "Aperti", color: "#1B4FD8" },
-                  closed: { label: "Chiusi", color: "#16A34A" },
+                  opened: { label: "Aperti", color: pcReadyColors.primary },
+                  closed: { label: "Chiusi", color: pcReadyColors.success },
                 }}
                 className="h-[250px] w-full"
               >
@@ -131,7 +135,7 @@ export function AnalyticsCard({
               <div>
                 <div className="text-xs font-semibold mb-2">Tempo medio di risoluzione</div>
                 <ChartContainer
-                  config={{ avg_days: { label: "Tempo medio", color: "#EF9827" } }}
+                  config={{ avg_days: { label: "Tempo medio", color: pcReadyColors.warning } }}
                   className="h-[190px] w-full"
                 >
                   <LineChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>

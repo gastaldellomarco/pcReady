@@ -1,3 +1,5 @@
+import { pcReadyColors } from "@/lib/design-system";
+
 export type TicketStatus =
   | "pending"
   | "in-progress"
@@ -38,17 +40,37 @@ export const STATUS_META: Record<
   TicketStatus,
   { label: string; cls: string; next: TicketStatus | null; color: string }
 > = {
-  pending: { label: "In attesa", cls: "pc-badge-pending", next: "in-progress", color: "#EF9827" },
+  pending: {
+    label: "In attesa",
+    cls: "pc-badge-pending",
+    next: "in-progress",
+    color: pcReadyColors.warning,
+  },
   "in-progress": {
     label: "In lavorazione",
     cls: "pc-badge-inprog",
     next: "testing",
-    color: "#1B4FD8",
+    color: pcReadyColors.primary,
   },
-  testing: { label: "Testing", cls: "pc-badge-testing", next: "ready", color: "#7C3AED" },
-  ready: { label: "Pronto", cls: "pc-badge-ready", next: "completed", color: "#16A34A" },
-  completed: { label: "Completato", cls: "pc-badge-completed", next: "archived", color: "#0EA5E9" },
-  archived: { label: "Archiviato", cls: "pc-badge-archived", next: null, color: "#94A3B8" },
+  testing: { label: "Testing", cls: "pc-badge-testing", next: "ready", color: pcReadyColors.info },
+  ready: {
+    label: "Pronto",
+    cls: "pc-badge-ready",
+    next: "completed",
+    color: pcReadyColors.success,
+  },
+  completed: {
+    label: "Completato",
+    cls: "pc-badge-completed",
+    next: "archived",
+    color: pcReadyColors.success,
+  },
+  archived: {
+    label: "Archiviato",
+    cls: "pc-badge-archived",
+    next: null,
+    color: pcReadyColors.textMuted,
+  },
 };
 
 export const PRIORITY_LABEL: Record<TicketPriority, string> = {
@@ -65,14 +87,26 @@ export const TICKET_TYPE_LABEL: Record<TicketType, string> = {
 };
 
 export const TICKET_TYPE_META: Record<TicketType, { label: string; cls: string; color: string }> = {
-  device: { label: TICKET_TYPE_LABEL.device, cls: "pc-ticket-type-device", color: "#1B4FD8" },
-  support: { label: TICKET_TYPE_LABEL.support, cls: "pc-ticket-type-support", color: "#16A34A" },
+  device: {
+    label: TICKET_TYPE_LABEL.device,
+    cls: "pc-ticket-type-device",
+    color: pcReadyColors.primary,
+  },
+  support: {
+    label: TICKET_TYPE_LABEL.support,
+    cls: "pc-ticket-type-support",
+    color: pcReadyColors.success,
+  },
   maintenance: {
     label: TICKET_TYPE_LABEL.maintenance,
     cls: "pc-ticket-type-maintenance",
-    color: "#EF9827",
+    color: pcReadyColors.warning,
   },
-  other: { label: TICKET_TYPE_LABEL.other, cls: "pc-ticket-type-other", color: "#7C3AED" },
+  other: {
+    label: TICKET_TYPE_LABEL.other,
+    cls: "pc-ticket-type-other",
+    color: pcReadyColors.purple,
+  },
 };
 
 /** Stati inventario dispositivi (DB enum device_status). */

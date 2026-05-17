@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTechnicianRadarMetrics } from "@/lib/dashboard-analytics";
 import {
@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import { pcReadyChartColors } from "@/lib/design-system";
 
 function clamp(v: number, a: number, b: number) {
   return Math.max(a, Math.min(b, v));
@@ -32,7 +33,7 @@ export default function TechnicianRadarWidget({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
     try {
@@ -47,11 +48,11 @@ export default function TechnicianRadarWidget({
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo, fetcher, session?.access_token]);
 
   useEffect(() => {
     void load();
-  }, [session?.access_token, dateFrom, dateTo]);
+  }, [load]);
 
   // Ensure selectedId is initialized when rows change (handles cases where load
   // might be called without setting selectedId above)
@@ -104,7 +105,7 @@ export default function TechnicianRadarWidget({
     });
   }, [rows]);
 
-  const palette = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#a28fd0", "#4db6ac"];
+  const palette = pcReadyChartColors;
 
   return (
     <Card className="h-full">
@@ -167,8 +168,8 @@ export default function TechnicianRadarWidget({
                 <Radar
                   name={selected?.full_name ?? "Tecnico"}
                   dataKey="value"
-                  stroke="#8884d8"
-                  fill="#8884d8"
+                  stroke={pcReadyChartColors[0]}
+                  fill={pcReadyChartColors[0]}
                   fillOpacity={0.6}
                 />
                 <Tooltip />

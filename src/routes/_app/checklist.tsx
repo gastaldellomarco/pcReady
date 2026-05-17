@@ -705,7 +705,7 @@ function TemplateEditor({
                 <span className="text-[12px] font-semibold">Assegna sezione a tecnico</span>
                 {canEdit && !previewMode ? (
                   <select
-                    className="pc-input h-8 max-w-[260px] text-[12px]"
+                    className="pc-input h-8 max-w-[260px] py-0 text-[12px] leading-normal"
                     value={struct[activeTab].assigned_to ?? ""}
                     onChange={(event) => updateSectionAssignee(activeTab, event.target.value)}
                   >

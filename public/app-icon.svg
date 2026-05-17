@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="pcReady app icon">
+  <rect width="512" height="512" rx="112" fill="#2563EB"/>
+  <rect x="74" y="104" width="364" height="258" rx="54" fill="#DBEAFE" stroke="#FFFFFF" stroke-width="28"/>
+  <path d="M174 239 231 292 341 174" fill="none" stroke="#16A34A" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M214 407h84M170 449h172" fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
+</svg>

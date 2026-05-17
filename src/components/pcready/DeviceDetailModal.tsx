@@ -58,6 +58,7 @@ import {
   WARRANTY_TYPES,
   type WarrantyType,
 } from "@/lib/warranty";
+import { pcReadyColors } from "@/lib/design-system";
 
 interface DeviceRow {
   id: string;
@@ -1355,10 +1356,10 @@ export function DeviceDetailModal() {
 
 function DeviceStatusPill({ status, large = false }: { status: string; large?: boolean }) {
   const colors: Record<string, { color: string; background: string }> = {
-    available: { color: "#15803d", background: "#dcfce7" },
-    assigned: { color: "#1d4ed8", background: "#dbeafe" },
-    maintenance: { color: "#c2410c", background: "#ffedd5" },
-    retired: { color: "#6b7280", background: "#f3f4f6" },
+    available: { color: pcReadyColors.success, background: pcReadyColors.successLight },
+    assigned: { color: pcReadyColors.primary, background: pcReadyColors.primaryLight },
+    maintenance: { color: pcReadyColors.warning, background: pcReadyColors.warningLight },
+    retired: { color: pcReadyColors.textSecondary, background: pcReadyColors.slateLight },
   };
   const meta = colors[status] ?? { color: "var(--text2)", background: "var(--surface2)" };
   return (
@@ -1571,7 +1572,7 @@ function HardwareTab({
             title="Schermo"
             rows={[
               ["Risoluzione", device.screen_resolution],
-              ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}\"` : null],
+              ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}"` : null],
               ["Tipo", device.screen_type],
             ]}
           />
@@ -1780,15 +1781,15 @@ function computeSystemHealth(device: DeviceRow | null, openTickets: TicketRow[])
   if (hardwareOpen)
     return {
       label: "Critico",
-      color: "#b91c1c",
-      background: "#fee2e2",
+      color: pcReadyColors.danger,
+      background: pcReadyColors.dangerLight,
       description: "Ticket hardware aperti o criticità attive.",
     };
   if ((device?.ram_gb ?? 0) > 0 && (device?.ram_gb ?? 0) < 8)
     return {
       label: "Da aggiornare",
-      color: "#c2410c",
-      background: "#ffedd5",
+      color: pcReadyColors.warning,
+      background: pcReadyColors.warningLight,
       description: "Specifiche sotto soglia configurabile: RAM inferiore a 8GB.",
     };
   if (
@@ -1799,14 +1800,14 @@ function computeSystemHealth(device: DeviceRow | null, openTickets: TicketRow[])
   )
     return {
       label: "Ottimo",
-      color: "#15803d",
-      background: "#dcfce7",
+      color: pcReadyColors.success,
+      background: pcReadyColors.successLight,
       description: "Hardware moderno e nessun ticket hardware recente.",
     };
   return {
     label: "Normale",
-    color: "#1d4ed8",
-    background: "#dbeafe",
+    color: pcReadyColors.primary,
+    background: pcReadyColors.primaryLight,
     description: "Specifiche standard, nessun segnale critico.",
   };
 }
@@ -2015,11 +2016,11 @@ function activityKind(message: string, type: string): TimelineItem["kind"] {
 }
 
 function timelineColor(kind: TimelineItem["kind"]) {
-  if (kind === "assignment") return "#1B4FD8";
-  if (kind === "ticket") return "#7C3AED";
-  if (kind === "maintenance") return "#EF9827";
-  if (kind === "note") return "#6B7280";
-  if (kind === "status") return "#16A34A";
+  if (kind === "assignment") return pcReadyColors.primary;
+  if (kind === "ticket") return pcReadyColors.purple;
+  if (kind === "maintenance") return pcReadyColors.warning;
+  if (kind === "note") return pcReadyColors.textSecondary;
+  if (kind === "status") return pcReadyColors.success;
   return "var(--accent)";
 }
 

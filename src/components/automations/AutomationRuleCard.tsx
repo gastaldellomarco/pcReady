@@ -38,15 +38,15 @@ import {
 } from "@/lib/automations/automation-guardrails";
 
 const TRIGGER_COLORS: Record<string, string> = {
-  ticket_created: "bg-blue-100 text-blue-800 border-transparent",
-  ticket_updated: "bg-indigo-100 text-indigo-800 border-transparent",
-  checklist_completed: "bg-cyan-100 text-cyan-800 border-transparent",
-  sla_warning: "bg-amber-100 text-amber-800 border-transparent",
-  sla_breached: "bg-red-100 text-red-800 border-transparent",
-  warranty_expiring_soon: "bg-orange-100 text-orange-800 border-transparent",
-  warranty_expired: "bg-red-100 text-red-900 border-transparent",
-  scheduled: "bg-purple-100 text-purple-800 border-transparent",
-  manual: "bg-slate-100 text-slate-700 border-transparent",
+  ticket_created: "bg-primary-light text-primary border-transparent",
+  ticket_updated: "bg-primary-light text-primary border-transparent",
+  checklist_completed: "bg-success-light text-success border-transparent",
+  sla_warning: "bg-warning-light text-warning border-transparent",
+  sla_breached: "bg-danger-light text-danger border-transparent",
+  warranty_expiring_soon: "bg-warning-light text-warning border-transparent",
+  warranty_expired: "bg-danger-light text-danger border-transparent",
+  scheduled: "bg-purple-bg text-purple border-transparent",
+  manual: "bg-surface2 text-text-secondary border-transparent",
 };
 
 function ErrorIndicator({ health }: { health: HealthStatus }) {

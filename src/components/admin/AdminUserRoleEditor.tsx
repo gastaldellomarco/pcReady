@@ -46,7 +46,7 @@ export function AdminUserRoleEditor({
         </span>
       ) : (
         <select
-          className="pc-input h-8 min-w-[165px] text-[12px]"
+          className="pc-input h-8 min-w-[165px] py-0 text-[12px] leading-normal"
           value={role}
           disabled={disabled}
           onBlur={() => setIsEditing(false)}

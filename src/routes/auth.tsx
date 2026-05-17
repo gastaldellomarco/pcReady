@@ -16,6 +16,7 @@ import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { toast } from "sonner";
 import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
+import { AppLogo } from "@/components/brand/AppLogo";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -96,35 +97,11 @@ function AuthPage() {
       style={{ background: "var(--bg2)" }}
     >
       <div className="w-full max-w-md pc-anim-in">
-        <div className="flex items-center gap-3 mb-6 justify-center">
-          <div
-            className="w-10 h-10 rounded-[10px] flex items-center justify-center"
-            style={{ background: "var(--text)" }}
-          >
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="var(--background)"
-              strokeWidth={1.8}
-              className="w-5 h-5"
-            >
-              <rect x="2" y="2" width="5" height="5" rx="1" />
-              <rect x="9" y="2" width="5" height="5" rx="1" />
-              <rect x="2" y="9" width="5" height="5" rx="1" />
-              <path d="M9 11.5h5M11.5 9v5" />
-            </svg>
-          </div>
-          <div>
-            <div
-              className="text-xl font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-head)" }}
-            >
-              PCReady
-            </div>
-            <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>
-              v{appVersion}
-              {deploymentLabel ? ` - ${deploymentLabel}` : null}
-            </div>
+        <div className="mb-6 flex flex-col items-center justify-center gap-1 text-center">
+          <AppLogo variant="horizontal" className="text-2xl" iconClassName="h-10 w-10" />
+          <div className="text-[10px] text-text3" style={{ fontFamily: "var(--font-mono)" }}>
+            v{appVersion}
+            {deploymentLabel ? ` - ${deploymentLabel}` : null}
           </div>
         </div>
 
