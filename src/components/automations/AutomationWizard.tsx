@@ -88,7 +88,7 @@ export default function AutomationWizard({
     if (!trigger || actions.length === 0) return "Regola incompleta";
     const triggerLabel = trigger.type;
     const actionLabels = actions.map((a) => a.type).join(" e ");
-    return `Quando \"${triggerLabel}\", esegui ${actionLabels}.`;
+    return `Quando "${triggerLabel}", esegui ${actionLabels}.`;
   }
 
   function handleNext() {
