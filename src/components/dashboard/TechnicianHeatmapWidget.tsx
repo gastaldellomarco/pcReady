@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ export default function TechnicianHeatmapWidget() {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
     try {
@@ -41,13 +41,13 @@ export default function TechnicianHeatmapWidget() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetcher, session?.access_token, weekOffset]);
 
   useEffect(() => {
     void load();
     const t = setInterval(() => void load(), 60000);
     return () => clearInterval(t);
-  }, [session?.access_token, weekOffset]);
+  }, [load]);
 
   const technicians = data?.technicians ?? [];
   const weekStart = data?.weekStart ?? new Date().toISOString();

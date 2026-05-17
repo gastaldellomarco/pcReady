@@ -34,7 +34,7 @@ export function useDashboardLayout() {
         setLayout(createDefaultLayout());
       })
       .finally(() => setLoading(false));
-  }, [session?.access_token]);
+  }, [loadLayout, session?.access_token]);
 
   // Persist layout changes
   const persist = useCallback(
@@ -79,9 +79,7 @@ export function useDashboardLayout() {
   // Ordered and filtered widgets sorted by order, filtered by visible
   const visibleWidgets = useMemo(() => {
     if (!layout) return [];
-    return [...layout.widgets]
-      .filter((w) => w.visible)
-      .sort((a, b) => a.order - b.order);
+    return [...layout.widgets].filter((w) => w.visible).sort((a, b) => a.order - b.order);
   }, [layout]);
 
   // All widgets sorted by order (for edit mode)

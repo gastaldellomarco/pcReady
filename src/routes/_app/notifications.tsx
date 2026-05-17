@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { iconForType, relativeTime } from "@/components/layout/NotificationInbox";
+import { iconForType, relativeTime } from "@/components/layout/notification-utils";
 
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({

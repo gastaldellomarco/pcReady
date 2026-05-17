@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -45,11 +45,65 @@ function TwoFactorChallengePage() {
   const accessToken = session?.access_token;
   const maskedEmail = useMemo(() => user?.email ?? "account", [user?.email]);
 
+  const createChallenge = useCallback(async () => {
+    try {
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      const factor = (factorsData?.totp ?? []).find((item) => item.status === "verified");
+      if (!factor) {
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+      setFactorId(factor.id);
+      const { data, error } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+      if (error) throw error;
+      setChallengeId(data.id);
+    } catch (error) {
+      toast.error(errorMessage(error, "Impossibile avviare la verifica 2FA"));
+    }
+  }, [navigate]);
+
+  const verifyTotp = useCallback(
+    async (value = code) => {
+      if (!accessToken || !factorId || !challengeId || value.length !== 6) return;
+      setBusy(true);
+      try {
+        const { error } = await supabase.auth.mfa.verify({ factorId, challengeId, code: value });
+        if (error) throw error;
+        await logMfaEvent({
+          data: {
+            accessToken,
+            actionType: "mfa_login_totp",
+            message: "Login completato con 2FA TOTP",
+          },
+        });
+        clearChallengeStarted();
+        toast.success("Verifica completata");
+        navigate({ to: "/dashboard", replace: true });
+      } catch (error) {
+        await logMfaEvent({
+          data: {
+            accessToken,
+            actionType: "mfa_verify_failed",
+            message: "Verifica 2FA TOTP fallita",
+            severity: "warning",
+          },
+        }).catch(() => {});
+        setCode("");
+        toast.error(errorMessage(error, "Codice non valido"));
+        await createChallenge();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [accessToken, challengeId, code, createChallenge, factorId, logMfaEvent, navigate],
+  );
+
   useEffect(() => {
     if (!accessToken) return;
     rememberChallengeStarted();
     void createChallenge();
-  }, [accessToken]);
+  }, [accessToken, createChallenge]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -69,60 +123,9 @@ function TwoFactorChallengePage() {
 
   useEffect(() => {
     if (!useBackup && code.length === 6 && !busy) void verifyTotp(code);
-  }, [code, useBackup, busy, factorId, challengeId]);
+  }, [busy, code, useBackup, verifyTotp]);
 
   if (!loading && !session) return <Navigate to="/auth" replace />;
-
-  async function createChallenge() {
-    try {
-      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-      if (factorsError) throw factorsError;
-      const factor = (factorsData?.totp ?? []).find((item) => item.status === "verified");
-      if (!factor) {
-        navigate({ to: "/dashboard", replace: true });
-        return;
-      }
-      setFactorId(factor.id);
-      const { data, error } = await supabase.auth.mfa.challenge({ factorId: factor.id });
-      if (error) throw error;
-      setChallengeId(data.id);
-    } catch (error) {
-      toast.error(errorMessage(error, "Impossibile avviare la verifica 2FA"));
-    }
-  }
-
-  async function verifyTotp(value = code) {
-    if (!accessToken || !factorId || !challengeId || value.length !== 6) return;
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.mfa.verify({ factorId, challengeId, code: value });
-      if (error) throw error;
-      await logMfaEvent({
-        data: {
-          accessToken,
-          actionType: "mfa_login_totp",
-          message: "Login completato con 2FA TOTP",
-        },
-      });
-      clearChallengeStarted();
-      toast.success("Verifica completata");
-      navigate({ to: "/dashboard", replace: true });
-    } catch (error) {
-      await logMfaEvent({
-        data: {
-          accessToken,
-          actionType: "mfa_verify_failed",
-          message: "Verifica 2FA TOTP fallita",
-          severity: "warning",
-        },
-      }).catch(() => {});
-      setCode("");
-      toast.error(errorMessage(error, "Codice non valido"));
-      await createChallenge();
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function verifyBackup() {
     if (!accessToken || !user || backupCode.replace(/\s+/g, "").length < 8) return;

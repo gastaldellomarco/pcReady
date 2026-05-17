@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
@@ -16,7 +16,7 @@ export function TeamActivityWidget() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
     try {
@@ -28,11 +28,11 @@ export function TeamActivityWidget() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetcher, period, session?.access_token]);
 
   useEffect(() => {
     void load();
-  }, [period, session?.access_token]);
+  }, [load]);
 
   const activeCount = rows.filter((r) => r.active).length;
 
@@ -47,9 +47,7 @@ export function TeamActivityWidget() {
       <div className="pc-card-hd">
         <div>
           <span className="pc-card-title">Attivita del team</span>
-          <div className="text-[11px] text-text3">
-            {activeCount} tecnici attivi
-          </div>
+          <div className="text-[11px] text-text3">{activeCount} tecnici attivi</div>
         </div>
         <div className="flex items-center gap-1 rounded-md bg-muted p-0.5">
           {(["today", "week", "month"] as Period[]).map((p) => (
@@ -97,25 +95,16 @@ export function TeamActivityWidget() {
                 <div className="flex items-center gap-2">
                   <div className="w-16">
                     <Progress
-                      value={
-                        t.assigned > 0
-                          ? Math.round((t.completed / t.assigned) * 100)
-                          : 0
-                      }
+                      value={t.assigned > 0 ? Math.round((t.completed / t.assigned) * 100) : 0}
                       className="h-1.5"
                     />
                   </div>
                   <span
                     className={
-                      "px-1.5 py-0.5 rounded text-[10px] font-medium " +
-                      workloadColor(t.assigned)
+                      "px-1.5 py-0.5 rounded text-[10px] font-medium " + workloadColor(t.assigned)
                     }
                   >
-                    {t.assigned >= 10
-                      ? "Alto"
-                      : t.assigned >= 5
-                        ? "Medio"
-                        : "Basso"}
+                    {t.assigned >= 10 ? "Alto" : t.assigned >= 5 ? "Medio" : "Basso"}
                   </span>
                 </div>
               </div>

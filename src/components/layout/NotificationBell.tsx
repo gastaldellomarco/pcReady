@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -27,7 +27,7 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!session?.access_token) return;
     try {
       const [list, count] = await Promise.all([
@@ -43,11 +43,11 @@ export function NotificationBell() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossibile caricare notifiche");
     }
-  }
+  }, [loadNotifications, loadUnread, session?.access_token]);
 
   useEffect(() => {
     void refresh();
-  }, [session?.access_token]);
+  }, [refresh]);
 
   useEffect(() => {
     if (!user?.id) return;

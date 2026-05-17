@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { errorMessage, ListSkeleton, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Award,
@@ -338,12 +338,7 @@ function ProfilePage() {
   );
   const mfaEnabled = !!verifiedMfaFactor;
 
-  useEffect(() => {
-    if (tab !== "security" || !session?.access_token) return;
-    void refreshMfaStatus();
-  }, [tab, session?.access_token]);
-
-  async function refreshMfaStatus() {
+  const refreshMfaStatus = useCallback(async () => {
     if (!session?.access_token) return;
     setMfaLoading(true);
     try {
@@ -359,7 +354,12 @@ function ProfilePage() {
     } finally {
       setMfaLoading(false);
     }
-  }
+  }, [loadBackupStatus, session?.access_token]);
+
+  useEffect(() => {
+    if (tab !== "security" || !session?.access_token) return;
+    void refreshMfaStatus();
+  }, [refreshMfaStatus, session?.access_token, tab]);
 
   async function startMfaSetup() {
     setMfaLoading(true);

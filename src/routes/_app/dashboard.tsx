@@ -16,10 +16,10 @@ import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helper
 import {
   DashboardStatCard,
   DashboardDonut,
-  dashboardDeviceLabel,
   DashboardAreaSpark,
   DashboardAreaSparkMulti,
 } from "@/components/dashboard/DashboardStatWidgets";
+import { dashboardDeviceLabel } from "@/components/dashboard/dashboard-stat-utils";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
 import { downloadPdf } from "@/components/pcready/pdf/export";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/automations";
@@ -154,7 +154,7 @@ export function useAutomationRules() {
   const toggleMut = useToggleAutomation();
   const loadingRules = listQuery.isLoading;
 
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     if (!session?.access_token) return;
     try {
       const data = await loadRunStats({ data: { accessToken: session.access_token } });
@@ -163,7 +163,7 @@ export function useAutomationRules() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore statistiche run");
     }
-  }
+  }, [loadRunStats, session?.access_token]);
 
   useEffect(() => {
     if (listQuery.data) {
@@ -176,7 +176,7 @@ export function useAutomationRules() {
       }
     }
     void loadStats();
-  }, [listQuery.data]);
+  }, [listQuery.data, loadStats]);
 
   async function toggleRule(rule: AutomationRule) {
     if (!isAdmin) return toast.error("Solo amministratori");
@@ -496,7 +496,7 @@ export function useAutomationRules() {
   }
 
   // NEW: global logs
-  async function loadGlobalLogs() {
+  const loadGlobalLogs = useCallback(async () => {
     if (!session?.access_token) return;
     setGlobalLogsLoading(true);
     try {
@@ -515,13 +515,13 @@ export function useAutomationRules() {
     } finally {
       setGlobalLogsLoading(false);
     }
-  }
+  }, [globalLogsFilter, loadAllRunLogs, session?.access_token]);
 
   useEffect(() => {
     if (globalLogsOpen && session?.access_token) {
       void loadGlobalLogs();
     }
-  }, [globalLogsOpen, globalLogsFilter]);
+  }, [globalLogsOpen, loadGlobalLogs, session?.access_token]);
 
   // NEW: export logs CSV
   function exportLogsCsv() {

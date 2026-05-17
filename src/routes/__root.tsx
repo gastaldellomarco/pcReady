@@ -2,7 +2,7 @@ import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-r
 import { MaintenancePage } from "@/components/errors/MaintenancePage";
 import NotFoundPage from "@/components/errors/NotFoundPage";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider } from "@/lib/auth-provider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import QueryProvider from "@/lib/queries/queryClient";
 import { Toaster } from "@/components/ui/sonner";

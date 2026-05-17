@@ -1,5 +1,24 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Search, Download, ChevronDown, ChevronRight, Info, AlertTriangle, XCircle, RefreshCw, Clock, AlertCircle, Calendar, RotateCcw, Bookmark, BookmarkCheck, Trash2, Save, Link2 } from "lucide-react";
+import {
+  FileText,
+  Search,
+  Download,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  Clock,
+  AlertCircle,
+  Calendar,
+  RotateCcw,
+  Bookmark,
+  BookmarkCheck,
+  Trash2,
+  Save,
+  Link2,
+} from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -95,23 +114,72 @@ function shallowEqual(a: AuditLogFilters, b: AuditLogFilters): boolean {
 // ---- Helpers ----
 
 function getActionBadge(actionType: string | null | undefined): { label: string; color: string } {
-  if (!actionType) return { label: "SISTEMA", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" };
+  if (!actionType)
+    return {
+      label: "SISTEMA",
+      color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+    };
 
-  if (actionType.includes("created") || actionType.includes("invited")) return { label: "CREAZIONE", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" };
-  if (actionType.includes("deleted") || actionType.includes("revoked") || actionType.includes("disabled")) return { label: "ELIMINAZIONE", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" };
-  if (actionType.includes("status_changed") || actionType.includes("assigned") || actionType.includes("updated") || actionType.includes("enabled") || actionType.includes("rotated")) return { label: "MODIFICA", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" };
-  if (actionType.includes("login") || actionType.includes("logout") || actionType.includes("link_generated") || actionType.includes("link_revoked")) return { label: "ACCESSO", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" };
-  if (actionType.includes("failed") || actionType.includes("error")) return { label: "ERRORE", color: "bg-red-200 text-red-900 dark:bg-red-900/60 dark:text-red-200" };
-  if (actionType.includes("bulk")) return { label: "BULK", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" };
+  if (actionType.includes("created") || actionType.includes("invited"))
+    return {
+      label: "CREAZIONE",
+      color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    };
+  if (
+    actionType.includes("deleted") ||
+    actionType.includes("revoked") ||
+    actionType.includes("disabled")
+  )
+    return {
+      label: "ELIMINAZIONE",
+      color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    };
+  if (
+    actionType.includes("status_changed") ||
+    actionType.includes("assigned") ||
+    actionType.includes("updated") ||
+    actionType.includes("enabled") ||
+    actionType.includes("rotated")
+  )
+    return {
+      label: "MODIFICA",
+      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+    };
+  if (
+    actionType.includes("login") ||
+    actionType.includes("logout") ||
+    actionType.includes("link_generated") ||
+    actionType.includes("link_revoked")
+  )
+    return {
+      label: "ACCESSO",
+      color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    };
+  if (actionType.includes("failed") || actionType.includes("error"))
+    return {
+      label: "ERRORE",
+      color: "bg-red-200 text-red-900 dark:bg-red-900/60 dark:text-red-200",
+    };
+  if (actionType.includes("bulk"))
+    return {
+      label: "BULK",
+      color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+    };
 
-  return { label: actionType.toUpperCase(), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" };
+  return {
+    label: actionType.toUpperCase(),
+    color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  };
 }
 
 function getSeverityIcon(severity: string | null | undefined) {
   switch (severity) {
-    case "critical": return <XCircle className="h-4 w-4 text-red-500" />;
-    case "warning": return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-    default: return <Info className="h-4 w-4 text-blue-400" />;
+    case "critical":
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    case "warning":
+      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+    default:
+      return <Info className="h-4 w-4 text-blue-400" />;
   }
 }
 
@@ -141,15 +209,33 @@ function formatTimestamp(iso: string): { date: string; time: string } {
 
 // ---- KPI Card ----
 
-function KpiCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent: string }) {
+function KpiCard({
+  label,
+  value,
+  icon,
+  accent,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  accent: string;
+}) {
   return (
-    <div className="rounded-xl border p-4 flex items-center gap-3" style={{ borderColor: "var(--border)" }}>
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${accent}15` }}>
+    <div
+      className="rounded-xl border p-4 flex items-center gap-3"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center"
+        style={{ background: `${accent}15` }}
+      >
         {icon}
       </div>
       <div>
         <div className="text-xs text-text3">{label}</div>
-        <div className="text-xl font-bold" style={{ color: accent }}>{value}</div>
+        <div className="text-xl font-bold" style={{ color: accent }}>
+          {value}
+        </div>
       </div>
     </div>
   );
@@ -162,8 +248,10 @@ function DiffView({ oldValue, newValue }: { oldValue: unknown; newValue: unknown
     return <div className="text-sm text-text3 py-2">Nessun dato modifica disponibile</div>;
   }
 
-  const oldObj = oldValue && typeof oldValue === "object" ? oldValue as Record<string, unknown> : null;
-  const newObj = newValue && typeof newValue === "object" ? newValue as Record<string, unknown> : null;
+  const oldObj =
+    oldValue && typeof oldValue === "object" ? (oldValue as Record<string, unknown>) : null;
+  const newObj =
+    newValue && typeof newValue === "object" ? (newValue as Record<string, unknown>) : null;
   const allKeys = new Set([...Object.keys(oldObj ?? {}), ...Object.keys(newObj ?? {})]);
 
   if (allKeys.size === 0) {
@@ -178,7 +266,9 @@ function DiffView({ oldValue, newValue }: { oldValue: unknown; newValue: unknown
           {Array.from(allKeys).map((key) => (
             <div key={key} className="flex gap-2">
               <span className="font-medium text-text3 w-24 shrink-0">{key}:</span>
-              <span className="text-text2">{oldObj ? String(JSON.stringify(oldObj[key]) ?? "-") : "-"}</span>
+              <span className="text-text2">
+                {oldObj ? String(JSON.stringify(oldObj[key]) ?? "-") : "-"}
+              </span>
             </div>
           ))}
         </div>
@@ -189,7 +279,9 @@ function DiffView({ oldValue, newValue }: { oldValue: unknown; newValue: unknown
           {Array.from(allKeys).map((key) => (
             <div key={key} className="flex gap-2">
               <span className="font-medium text-text3 w-24 shrink-0">{key}:</span>
-              <span className="text-text2">{newObj ? String(JSON.stringify(newObj[key]) ?? "-") : "-"}</span>
+              <span className="text-text2">
+                {newObj ? String(JSON.stringify(newObj[key]) ?? "-") : "-"}
+              </span>
             </div>
           ))}
         </div>
@@ -206,7 +298,9 @@ function RowDetail({ entry }: { entry: ActivityLogEntry }) {
       {/* Diff */}
       {Boolean(entry.old_value || entry.new_value) && (
         <div>
-          <div className="text-xs font-semibold mb-2 text-text3 uppercase tracking-wide">Dettaglio modifica</div>
+          <div className="text-xs font-semibold mb-2 text-text3 uppercase tracking-wide">
+            Dettaglio modifica
+          </div>
           <DiffView oldValue={entry.old_value} newValue={entry.new_value} />
         </div>
       )}
@@ -254,7 +348,17 @@ function RowDetail({ entry }: { entry: ActivityLogEntry }) {
 
 // ---- Audit Row ----
 
-function AuditTableRow({ entry, isExpanded, onToggle, index }: { entry: ActivityLogEntry; isExpanded: boolean; onToggle: () => void; index: number }) {
+function AuditTableRow({
+  entry,
+  isExpanded,
+  onToggle,
+  index,
+}: {
+  entry: ActivityLogEntry;
+  isExpanded: boolean;
+  onToggle: () => void;
+  index: number;
+}) {
   const badge = getActionBadge(entry.action_type);
   const { time } = formatTimestamp(entry.created_at);
   const sevIcon = getSeverityIcon(entry.severity);
@@ -273,12 +377,19 @@ function AuditTableRow({ entry, isExpanded, onToggle, index }: { entry: Activity
         )}
       >
         <TableCell className="py-3 pl-3 w-[24px]">
-          {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+          {isExpanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
         </TableCell>
         <TableCell className="py-3 w-[32px]">{sevIcon}</TableCell>
         <TableCell className="py-3 whitespace-nowrap w-[110px] overflow-hidden">
           <span
-            className={cn("inline-block max-w-full truncate align-middle px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider", badge.color)}
+            className={cn(
+              "inline-block max-w-full truncate align-middle px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+              badge.color,
+            )}
             title={entry.action_type ?? badge.label}
           >
             {badge.label}
@@ -286,15 +397,21 @@ function AuditTableRow({ entry, isExpanded, onToggle, index }: { entry: Activity
         </TableCell>
         <TableCell className="py-3">
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-sm font-medium leading-tight">{entry.actor_name || "Sistema"}</span>
-            <span className="text-xs text-muted-foreground leading-snug line-clamp-2">{entry.message}</span>
+            <span className="text-sm font-medium leading-tight">
+              {entry.actor_name || "Sistema"}
+            </span>
+            <span className="text-xs text-muted-foreground leading-snug line-clamp-2">
+              {entry.message}
+            </span>
           </div>
         </TableCell>
         <TableCell className="py-3 w-[100px]">
           <span className="text-xs text-muted-foreground">{entityLabel}</span>
         </TableCell>
         <TableCell className="py-3 pr-4 w-[65px]">
-          <span className="text-xs text-muted-foreground font-mono tabular-nums whitespace-nowrap">{time}</span>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums whitespace-nowrap">
+            {time}
+          </span>
         </TableCell>
       </TableRow>
       {isExpanded && (
@@ -321,7 +438,10 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
       <div className="flex items-start gap-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <span className="text-xs font-mono text-text3 whitespace-nowrap mt-0.5">{time}</span>
         <span
-          className={cn("inline-block max-w-[140px] truncate px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0", badge.color)}
+          className={cn(
+            "inline-block max-w-[140px] truncate px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0",
+            badge.color,
+          )}
           title={entry.action_type ?? badge.label}
         >
           {badge.label}
@@ -329,7 +449,11 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
         <span className="text-sm text-text2 flex-1">
           <span className="font-medium">{entry.actor_name}</span> — {entry.message}
         </span>
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" />}
+        {expanded ? (
+          <ChevronDown className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" />
+        )}
       </div>
       {expanded && (
         <div className="mt-2 ml-[4.5rem]">
@@ -348,7 +472,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
 
- // Convert URL search params to AuditLogFilters (memoized to avoid infinite loops)
+  // Convert URL search params to AuditLogFilters (memoized to avoid infinite loops)
   // Falls back to localStorage "last used view" when no URL params are present
   const urlFilters = useMemo(() => {
     const fromUrl = searchParamsToFilters(searchParams || {});
@@ -360,13 +484,39 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
           const parsed = JSON.parse(saved) as AuditLogFilters;
           if (Object.keys(parsed).length > 0) return parsed;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     return fromUrl;
   }, [searchParams]);
 
   // Ref to prevent URL -> data loop when we are the ones updating the URL
   const syncingToUrl = useRef(false);
+
+  const handleFiltersChange = useCallback(
+    (filters: AuditLogFilters) => {
+      syncingToUrl.current = true;
+      navigate({
+        search: {
+          ...routeSearch,
+          ...filtersToSearchParams(filters),
+          auditPreset: undefined,
+        } as any,
+        replace: true,
+      });
+      // Persist last filters to localStorage for restoring later
+      try {
+        localStorage.setItem("pcready_audit_last_filters", JSON.stringify(filters));
+      } catch {
+        /* ignore */
+      }
+      setTimeout(() => {
+        syncingToUrl.current = false;
+      }, 0);
+    },
+    [navigate, routeSearch],
+  );
 
   const {
     auditEntries,
@@ -394,20 +544,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
     accessToken,
     isAdmin,
     initialFilters: urlFilters,
-    onFiltersChange: (filters) => {
-      syncingToUrl.current = true;
-      navigate({
-        search: { ...routeSearch, ...filtersToSearchParams(filters), auditPreset: undefined } as any,
-        replace: true,
-      });
-      // Persist last filters to localStorage for restoring later
-      try {
-        localStorage.setItem("pcready_audit_last_filters", JSON.stringify(filters));
-      } catch { /* ignore */ }
-      setTimeout(() => {
-        syncingToUrl.current = false;
-      }, 0);
-    },
+    onFiltersChange: handleFiltersChange,
   });
 
   // ---- Presets state ----
@@ -450,7 +587,11 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
       const filters = preset.filters as AuditLogFilters;
       syncingToUrl.current = true;
       navigate({
-        search: { ...routeSearch, ...filtersToSearchParams(filters), auditPreset: preset.name } as any,
+        search: {
+          ...routeSearch,
+          ...filtersToSearchParams(filters),
+          auditPreset: preset.name,
+        } as any,
         replace: true,
       });
       setTimeout(() => {
@@ -458,7 +599,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
       }, 0);
       loadAudit(1, filters);
     },
-    [loadAudit, navigate],
+    [loadAudit, navigate, routeSearch],
   );
 
   // Save current filters as a preset
@@ -485,7 +626,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
     } catch (error) {
       toast.error(getAdminErrorMessage(error, "Salvataggio vista non riuscito"));
     }
-  }, [accessToken, presetName, auditFilters, loadPresets, savePresetFn, navigate]);
+  }, [accessToken, presetName, auditFilters, loadPresets, savePresetFn, navigate, routeSearch]);
 
   // Delete a preset
   const handleDeletePreset = useCallback(
@@ -511,7 +652,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
         toast.error(getAdminErrorMessage(error, "Eliminazione vista non riuscita"));
       }
     },
-    [accessToken, activePresetId, loadPresets, deletePresetFn, navigate],
+    [accessToken, activePresetId, loadPresets, deletePresetFn, navigate, routeSearch],
   );
 
   // Copy permalink to clipboard
@@ -529,11 +670,10 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
         url.searchParams.delete(key);
       }
     }
-    navigator.clipboard.writeText(url.toString()).then(
-      () => toast.success("Permalink copiato")
-    ).catch(
-      () => toast.error("Impossibile copiare il permalink")
-    );
+    navigator.clipboard
+      .writeText(url.toString())
+      .then(() => toast.success("Permalink copiato"))
+      .catch(() => toast.error("Impossibile copiare il permalink"));
   }, [auditFilters]);
 
   // React to URL changes from browser back/forward
@@ -543,8 +683,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
     if (!shallowEqual(newUrlFilters, auditFilters)) {
       loadAudit(1, newUrlFilters);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [auditFilters, loadAudit, searchParams]);
 
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState(
@@ -635,13 +774,21 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               <div className="flex items-center rounded-lg border border-border overflow-hidden text-xs">
                 <button
                   onClick={() => setViewMode("table")}
-                  className={cn("px-3 py-1.5 font-medium transition-colors", viewMode === "table" ? "bg-accent text-white" : "text-text3 hover:text-text2")}
+                  className={cn(
+                    "px-3 py-1.5 font-medium transition-colors",
+                    viewMode === "table" ? "bg-accent text-white" : "text-text3 hover:text-text2",
+                  )}
                 >
                   Tabella
                 </button>
                 <button
                   onClick={() => setViewMode("timeline")}
-                  className={cn("px-3 py-1.5 font-medium transition-colors", viewMode === "timeline" ? "bg-accent text-white" : "text-text3 hover:text-text2")}
+                  className={cn(
+                    "px-3 py-1.5 font-medium transition-colors",
+                    viewMode === "timeline"
+                      ? "bg-accent text-white"
+                      : "text-text3 hover:text-text2",
+                  )}
                 >
                   Timeline
                 </button>
@@ -667,7 +814,12 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" size="sm" onClick={() => loadAudit(auditPage, auditFilters)} disabled={loadingAudit}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => loadAudit(auditPage, auditFilters)}
+                disabled={loadingAudit}
+              >
                 <RefreshCw className={cn("h-4 w-4", loadingAudit && "animate-spin")} />
               </Button>
             </div>
@@ -696,7 +848,9 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               >
                 <option value="">Tipo azione</option>
                 {actionTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
 
@@ -708,7 +862,9 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               >
                 <option value="">Tutti utenti</option>
                 {userOptions.map((u) => (
-                  <option key={u.actor_name} value={u.actor_name}>{u.actor_name} ({u.count})</option>
+                  <option key={u.actor_name} value={u.actor_name}>
+                    {u.actor_name} ({u.count})
+                  </option>
                 ))}
               </select>
 
@@ -720,7 +876,9 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               >
                 <option value="">Tutte entita</option>
                 {entityTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
 
@@ -740,14 +898,26 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               <Input
                 type="date"
                 value={auditFilters.dateFrom ? auditFilters.dateFrom.slice(0, 10) : ""}
-                onChange={(e) => setFilter("dateFrom", e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+                onChange={(e) =>
+                  setFilter(
+                    "dateFrom",
+                    e.target.value ? new Date(e.target.value).toISOString() : undefined,
+                  )
+                }
                 className="max-w-[140px] text-xs"
                 placeholder="Da"
               />
               <Input
                 type="date"
                 value={auditFilters.dateTo ? auditFilters.dateTo.slice(0, 10) : ""}
-                onChange={(e) => setFilter("dateTo", e.target.value ? new Date(e.target.value + "T23:59:59.999Z").toISOString() : undefined)}
+                onChange={(e) =>
+                  setFilter(
+                    "dateTo",
+                    e.target.value
+                      ? new Date(e.target.value + "T23:59:59.999Z").toISOString()
+                      : undefined,
+                  )
+                }
                 className="max-w-[140px] text-xs"
                 placeholder="A"
               />
@@ -780,8 +950,14 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                    {activePresetId ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
-                    {activePresetId ? presets.find(p => p.id === activePresetId)?.name ?? "Viste" : "Viste"}
+                    {activePresetId ? (
+                      <BookmarkCheck className="h-3.5 w-3.5" />
+                    ) : (
+                      <Bookmark className="h-3.5 w-3.5" />
+                    )}
+                    {activePresetId
+                      ? (presets.find((p) => p.id === activePresetId)?.name ?? "Viste")
+                      : "Viste"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[180px]">
@@ -869,7 +1045,9 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                           index={index}
                           entry={entry}
                           isExpanded={expandedRowId === entry.id}
-                          onToggle={() => setExpandedRowId(expandedRowId === entry.id ? null : entry.id)}
+                          onToggle={() =>
+                            setExpandedRowId(expandedRowId === entry.id ? null : entry.id)
+                          }
                         />
                       ))}
                     </TableBody>
@@ -883,9 +1061,13 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                   {Array.from(timelineGroups.entries()).map(([dateLabel, entries]) => (
                     <div key={dateLabel}>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="text-sm font-semibold text-text2 capitalize">{dateLabel}</div>
+                        <div className="text-sm font-semibold text-text2 capitalize">
+                          {dateLabel}
+                        </div>
                         <div className="h-px flex-1 bg-border" />
-                        <div className="text-[10px] text-text3 font-mono">{entries.length} eventi</div>
+                        <div className="text-[10px] text-text3 font-mono">
+                          {entries.length} eventi
+                        </div>
                       </div>
                       {entries.map((entry) => (
                         <TimelineEntry key={entry.id} entry={entry} />
@@ -963,7 +1145,8 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
           <DialogHeader>
             <DialogTitle>Salva vista filtrata</DialogTitle>
             <DialogDescription>
-              Assegna un nome alla configurazione di filtri corrente per poterla riutilizzare in seguito.
+              Assegna un nome alla configurazione di filtri corrente per poterla riutilizzare in
+              seguito.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

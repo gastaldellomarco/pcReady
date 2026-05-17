@@ -114,9 +114,9 @@ function BundlesPage() {
   const cancelAssignmentMutation = useCancelBundleAssignmentMutation();
   const createPaymentMutation = useCreateBundlePaymentMutation();
 
-  const bundles = bundlesQuery.data ?? [];
-  const assignments = assignmentsQuery.data ?? [];
-  const usageSummaries = usageQuery.data ?? [];
+  const bundles = useMemo(() => bundlesQuery.data ?? [], [bundlesQuery.data]);
+  const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
+  const usageSummaries = useMemo(() => usageQuery.data ?? [], [usageQuery.data]);
 
   const assignmentById = useMemo(() => {
     return new Map(assignments.map((assignment) => [assignment.id, assignment]));

@@ -88,7 +88,7 @@ export default function AutomationWizard({
     if (!trigger || actions.length === 0) return "Regola incompleta";
     const triggerLabel = trigger.type;
     const actionLabels = actions.map((a) => a.type).join(" e ");
-    return `Quando \"${triggerLabel}\", esegui ${actionLabels}.`;
+    return `Quando "${triggerLabel}", esegui ${actionLabels}.`;
   }
 
   function handleNext() {
@@ -141,18 +141,11 @@ export default function AutomationWizard({
                 )}
                 disabled={i > step}
               >
-                {i < step ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  i + 1
-                )}
+                {i < step ? <Check className="h-4 w-4" /> : i + 1}
               </button>
               {i < STEPS.length - 1 && (
                 <div
-                  className={cn(
-                    "mx-2 h-0.5 w-8 sm:w-12",
-                    i < step ? "bg-accent" : "bg-surface3",
-                  )}
+                  className={cn("mx-2 h-0.5 w-8 sm:w-12", i < step ? "bg-accent" : "bg-surface3")}
                 />
               )}
             </div>
@@ -162,10 +155,7 @@ export default function AutomationWizard({
           {STEPS.map((s, i) => (
             <span
               key={s.label}
-              className={cn(
-                "text-[10px] font-medium",
-                i === step ? "text-accent" : "text-text3",
-              )}
+              className={cn("text-[10px] font-medium", i === step ? "text-accent" : "text-text3")}
             >
               {s.label}
             </span>
@@ -184,9 +174,7 @@ export default function AutomationWizard({
                 setErrors((e) => ({ ...e, trigger: undefined }));
               }}
             />
-            {errors.trigger && (
-              <div className="mt-2 text-sm text-rose-600">{errors.trigger}</div>
-            )}
+            {errors.trigger && <div className="mt-2 text-sm text-rose-600">{errors.trigger}</div>}
           </div>
         )}
         {step === 1 && (
@@ -209,14 +197,10 @@ export default function AutomationWizard({
                 setErrors((e) => ({ ...e, actions: undefined }));
               }}
             />
-            {errors.actions && (
-              <div className="mt-2 text-sm text-rose-600">{errors.actions}</div>
-            )}
+            {errors.actions && <div className="mt-2 text-sm text-rose-600">{errors.actions}</div>}
           </div>
         )}
-        {step === 3 && (
-          <ScheduleStep value={schedule} onChange={setSchedule} />
-        )}
+        {step === 3 && <ScheduleStep value={schedule} onChange={setSchedule} />}
         {step === 4 && (
           <ReviewStep
             name={name}

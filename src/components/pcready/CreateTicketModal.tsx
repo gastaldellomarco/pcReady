@@ -193,7 +193,7 @@ export function CreateTicketModal() {
     } else {
       setTicketCategories([]);
     }
-  }, [createOpen]);
+  }, [createOpen, loadSettings, session?.access_token]);
 
   async function submit() {
     if (!canEdit) return toast.error("Permessi insufficienti");

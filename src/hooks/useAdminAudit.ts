@@ -29,7 +29,13 @@ export function useAdminAudit(args: {
   initialFilters?: AuditLogFilters;
   onFiltersChange?: (filters: AuditLogFilters) => void;
 }) {
-  const { accessToken, isAdmin, auditPageSize: initialPageSize = 25, initialFilters: initFilters, onFiltersChange } = args;
+  const {
+    accessToken,
+    isAdmin,
+    auditPageSize: initialPageSize = 25,
+    initialFilters: initFilters,
+    onFiltersChange,
+  } = args;
   const loadAuditLog = useServerFn(getAuditLog);
   const exportAudit = useServerFn(exportAuditLog);
   const loadKpi = useServerFn(getAuditLogKpi);
@@ -124,7 +130,7 @@ export function useAdminAudit(args: {
         setLoadingAudit(false);
       }
     },
-    [accessToken, isAdmin, loadAuditLog, auditPageSize],
+    [accessToken, isAdmin, loadAuditLog, auditPageSize, onFiltersChange],
   );
 
   // Debounced search reload
@@ -227,13 +233,19 @@ export function useAdminAudit(args: {
       if (auditFilters.user) filterParts.push(`utente:${auditFilters.user}`);
       if (auditFilters.entityType) filterParts.push(`entita:${auditFilters.entityType}`);
       if (auditFilters.dateFrom || auditFilters.dateTo) {
-        const from = auditFilters.dateFrom ? new Date(auditFilters.dateFrom).toLocaleDateString("it-IT") : "...";
-        const to = auditFilters.dateTo ? new Date(auditFilters.dateTo).toLocaleDateString("it-IT") : "...";
+        const from = auditFilters.dateFrom
+          ? new Date(auditFilters.dateFrom).toLocaleDateString("it-IT")
+          : "...";
+        const to = auditFilters.dateTo
+          ? new Date(auditFilters.dateTo).toLocaleDateString("it-IT")
+          : "...";
         filterParts.push(`date:${from}-${to}`);
       }
 
       const dateLabel = new Date().toLocaleDateString("it-IT", {
-        day: "2-digit", month: "long", year: "numeric",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
       });
 
       const pdfElement = createElement(AuditLogReportPdf, {

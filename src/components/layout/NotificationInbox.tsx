@@ -1,6 +1,7 @@
-import { Bell, CheckCheck, ExternalLink, Settings, Wrench, Zap } from "lucide-react";
-import type { NotificationRow, NotificationType } from "@/lib/notifications";
+import { CheckCheck, ExternalLink } from "lucide-react";
+import type { NotificationRow } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
+import { iconForType, relativeTime } from "./notification-utils";
 
 interface NotificationInboxProps {
   notifications: NotificationRow[];
@@ -85,22 +86,4 @@ export function NotificationInbox({
       </button>
     </div>
   );
-}
-
-export function iconForType(type: NotificationType) {
-  if (type === "automation_failed") return Zap;
-  if (type === "device_status_changed") return Wrench;
-  if (type === "user_invited") return Settings;
-  return Bell;
-}
-
-export function relativeTime(value: string) {
-  const delta = Date.now() - new Date(value).getTime();
-  const minute = 60_000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  if (delta < minute) return "Ora";
-  if (delta < hour) return `${Math.floor(delta / minute)} min fa`;
-  if (delta < day) return `${Math.floor(delta / hour)} h fa`;
-  return `${Math.floor(delta / day)} g fa`;
 }

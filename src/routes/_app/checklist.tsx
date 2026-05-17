@@ -119,7 +119,7 @@ function ChecklistPage() {
       setTemplates(arr);
       if (!active && arr.length) setActive(arr[0].id);
     }
-  }, [listQuery.isLoading, listQuery.data]);
+  }, [active, listQuery.isLoading, listQuery.data]);
 
   async function createNew() {
     if (!canEdit) return toast.error("Permessi insufficienti");
@@ -378,7 +378,7 @@ function TemplateEditor({
     setStruct(template.structure || {});
     setActiveTab(Object.keys(template.structure || {})[0] || "");
     setPreviewMode(false);
-  }, [template.id]);
+  }, [template.description, template.id, template.name, template.structure]);
 
   function persist(s: ChecklistStructure, changeNote = "Struttura checklist aggiornata") {
     setStruct(s);

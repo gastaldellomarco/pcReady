@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import type { DashboardTicketRow } from "@/lib/queries/dashboard";
+
 import { STATUS_META, type TicketStatus } from "@/lib/pcready";
 
 interface StatCardProps {
@@ -130,11 +130,13 @@ export function DashboardDonut({
   );
 }
 
-export function dashboardDeviceLabel(ticket: DashboardTicketRow) {
-  return ticket.device?.model || "Nessun asset";
-}
-
-export function DashboardAreaSpark({ data, color = "#3b82f6" }: { data: number[]; color?: string }) {
+export function DashboardAreaSpark({
+  data,
+  color = "#3b82f6",
+}: {
+  data: number[];
+  color?: string;
+}) {
   const w = 160;
   const h = 48;
   const max = Math.max(...data, 1);

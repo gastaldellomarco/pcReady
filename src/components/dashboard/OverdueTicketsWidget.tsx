@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Clock, RefreshCw } from "lucide-react";
 import { getOverdueTickets } from "@/lib/dashboard-analytics";
@@ -13,7 +13,7 @@ export function OverdueTicketsWidget() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
     try {
@@ -25,11 +25,11 @@ export function OverdueTicketsWidget() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetcher, session?.access_token]);
 
   useEffect(() => {
     void load();
-  }, [session?.access_token]);
+  }, [load]);
 
   return (
     <div className="pc-card">

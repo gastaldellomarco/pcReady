@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
@@ -19,7 +19,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
     try {
@@ -31,17 +31,17 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetcher, period, session?.access_token]);
 
   useEffect(() => {
     void load();
     const t = setInterval(() => setRefreshKey((k) => k + 1), 30000);
     return () => clearInterval(t);
-  }, [period, session?.access_token]);
+  }, [load]);
 
   useEffect(() => {
     if (refreshKey > 0) void load();
-  }, [refreshKey]);
+  }, [load, refreshKey]);
 
   const activeCount = rows.filter((r) => r.active).length;
 
