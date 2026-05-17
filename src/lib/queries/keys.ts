@@ -9,6 +9,8 @@ export const QUERY_KEYS = {
   inventory: ["inventory"] as const,
   dashboard: ["dashboard"] as const,
   automationFlows: ["automation_flows"] as const,
+  calendarEvents: ["calendar_events"] as const,
+  calendarEvent: (id: string) => ["calendar_events", id] as const,
 } as const;
 
 export type QueryKeys = typeof QUERY_KEYS;

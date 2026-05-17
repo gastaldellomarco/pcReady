@@ -34,6 +34,7 @@ import {
   Building2,
   BookOpenText,
   Euro,
+  CalendarDays,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
@@ -96,6 +97,7 @@ const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
       { to: "/tickets", label: "Ticket PC", icon: Ticket, badge: "pendingTickets" },
       { to: "/kanban", label: "Kanban", title: "Kanban Board", icon: Trello },
+      { to: "/calendar", label: "Calendario", icon: CalendarDays },
     ],
   },
   {
@@ -173,6 +175,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin": "Admin / Utenti",
   "/profile": "Profilo",
   "/notifications": "Notifiche",
+  "/calendar": "Calendario",
 };
 
 function AppLayout() {

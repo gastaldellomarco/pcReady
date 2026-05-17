@@ -33,6 +33,7 @@ import { Route as AppCostsRouteImport } from './routes/_app/costs'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
+import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAutomationsRouteImport } from './routes/_app/automations'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as PortalTicketsIndexRouteImport } from './routes/portal/tickets/index'
@@ -161,6 +162,11 @@ const AppChecklistRoute = AppChecklistRouteImport.update({
   path: '/checklist',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAutomationsRoute = AppAutomationsRouteImport.update({
   id: '/automations',
   path: '/automations',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
+  '/calendar': typeof AppCalendarRoute
   '/checklist': typeof AppChecklistRoute
   '/clients': typeof AppClientsRoute
   '/contacts': typeof AppContactsRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
+  '/calendar': typeof AppCalendarRoute
   '/checklist': typeof AppChecklistRoute
   '/clients': typeof AppClientsRoute
   '/contacts': typeof AppContactsRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/portal': typeof PortalRouteWithChildren
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
+  '/_app/calendar': typeof AppCalendarRoute
   '/_app/checklist': typeof AppChecklistRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/contacts': typeof AppContactsRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/admin'
     | '/automations'
+    | '/calendar'
     | '/checklist'
     | '/clients'
     | '/contacts'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/automations'
+    | '/calendar'
     | '/checklist'
     | '/clients'
     | '/contacts'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/_app/admin'
     | '/_app/automations'
+    | '/_app/calendar'
     | '/_app/checklist'
     | '/_app/clients'
     | '/_app/contacts'
@@ -582,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChecklistRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/automations': {
       id: '/_app/automations'
       path: '/automations'
@@ -644,6 +663,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAutomationsRoute: typeof AppAutomationsRoute
+  AppCalendarRoute: typeof AppCalendarRoute
   AppChecklistRoute: typeof AppChecklistRoute
   AppClientsRoute: typeof AppClientsRoute
   AppContactsRoute: typeof AppContactsRoute
@@ -663,6 +683,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAutomationsRoute: AppAutomationsRoute,
+  AppCalendarRoute: AppCalendarRoute,
   AppChecklistRoute: AppChecklistRoute,
   AppClientsRoute: AppClientsRoute,
   AppContactsRoute: AppContactsRoute,

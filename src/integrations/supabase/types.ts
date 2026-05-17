@@ -333,6 +333,82 @@ export type Database = {
           },
         ];
       };
+      calendar_events: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          start_at: string;
+          end_at: string;
+          all_day: boolean;
+          event_type: string;
+          ticket_id: string | null;
+          assignee_id: string | null;
+          color: string | null;
+          estimated_duration_minutes: number | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          start_at: string;
+          end_at: string;
+          all_day?: boolean;
+          event_type?: string;
+          ticket_id?: string | null;
+          assignee_id?: string | null;
+          color?: string | null;
+          estimated_duration_minutes?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          start_at?: string;
+          end_at?: string;
+          all_day?: boolean;
+          event_type?: string;
+          ticket_id?: string | null;
+          assignee_id?: string | null;
+          color?: string | null;
+          estimated_duration_minutes?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_assignee_id_fkey";
+            columns: ["assignee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       clients: {
         Row: {
           address: string | null;
