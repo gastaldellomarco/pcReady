@@ -26,7 +26,7 @@ import {
 } from "@/lib/pcready";
 import { AssigneeChip, PriorityLabel, StatusBadge, TicketTypeBadge } from "./StatusBadge";
 import { createNotification } from "@/lib/notifications";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/queries/keys";
 import {
   Archive,
@@ -57,6 +57,8 @@ import { parseChecklistStructure } from "@/types/checklist-structure";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
 import checklistQueries, { type TicketChecklistInstanceRow } from "@/lib/queries/checklist";
+import { BundleUsageBar } from "@/components/bundles/BundleBadges";
+import { fetchTicketBundleInfo, formatBundleHours, formatBundleMoney } from "@/lib/bundles";
 
 interface TicketRow {
   id: string;
@@ -83,6 +85,12 @@ interface TicketRow {
   total_cost?: number | null;
   cost_notes?: string | null;
   cost_currency?: string | null;
+  bundle_assignment_id?: string | null;
+  bundle_extra_hours?: number | null;
+  bundle_extra_amount?: number | null;
+  onsite_visit?: boolean | null;
+  sla_response_due_at?: string | null;
+  sla_resolution_due_at?: string | null;
   device_id: string | null;
   model?: string | null;
   checklist_structure?: ChecklistStructure | null;
@@ -159,6 +167,11 @@ export function TicketDetailModal() {
   const addTicketStatusHistory = (queries as any).addTicketStatusHistory as any;
   const qc = useQueryClient();
   const timeSummaryQuery = useTicketTimeSummary(id, user?.id);
+  const bundleInfoQuery = useQuery({
+    queryKey: ["ticket", id, "bundle-info"],
+    queryFn: () => fetchTicketBundleInfo(id as string),
+    enabled: !!id,
+  });
   const checklistTemplatesQuery = (checklistQueries as any).useChecklistTemplates();
   const checklistInstancesQuery = (checklistQueries as any).useTicketChecklistInstances(id);
   const createChecklistInstance = (checklistQueries as any).useCreateTicketChecklistInstance();
@@ -875,6 +888,37 @@ export function TicketDetailModal() {
                 </button>
               )}
             </div>
+            {bundleInfoQuery.data?.assignment?.bundle && (
+              <div
+                className="mb-3 rounded-lg border bg-surface2/40 p-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[12px] font-bold text-text2">
+                      Bundle attivo: {bundleInfoQuery.data.assignment.bundle.name}
+                    </div>
+                    <div className="text-[11px] text-text3">
+                      SLA risposta {bundleInfoQuery.data.assignment.bundle.sla_response_hours}h ·
+                      risoluzione {bundleInfoQuery.data.assignment.bundle.sla_resolution_hours}h ·
+                      extra ticket {formatBundleMoney(Number(ticket.bundle_extra_amount ?? 0))}
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-accent/10 px-2 py-1 text-[11px] font-bold text-accent">
+                    {formatBundleHours(ticket.bundle_extra_hours ?? 0)} extra
+                  </span>
+                </div>
+                <BundleUsageBar
+                  used={bundleInfoQuery.data.usageSummary?.used_hours}
+                  total={
+                    bundleInfoQuery.data.usageSummary?.effective_included_hours ??
+                    bundleInfoQuery.data.assignment.custom_included_hours ??
+                    bundleInfoQuery.data.assignment.bundle.included_hours
+                  }
+                  label="Consumo ore bundle cliente"
+                />
+              </div>
+            )}
             <div className="grid gap-3 md:grid-cols-4">
               <label className="text-[12px] font-semibold text-text2">
                 Ore fatturabili

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { CardGridSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { getPortalDashboard } from "@/lib/portal-tickets";
+import { BundleUsageBar } from "@/components/bundles/BundleBadges";
+import { formatBundleHours, formatBundleMoney } from "@/lib/bundles";
 
 export const Route = createFileRoute("/portal/dashboard")({
   component: PortalDashboardPage,
@@ -74,6 +76,7 @@ function PortalDashboardPage() {
         <Stat label="In lavorazione" value={data.stats.inProgress} />
         <Stat label="Risolti questo mese" value={data.stats.resolvedThisMonth} />
       </div>
+      <PortalBundles bundles={data.activeBundles ?? []} />
       <section className="space-y-3">
         <h2 className="font-semibold">Ticket recenti</h2>
         {!data.recentTickets?.length ? (
@@ -102,6 +105,74 @@ function PortalDashboardPage() {
           <a href="/portal/documents">Scarica documenti</a>
         </Button>
       </div>
+    </div>
+  );
+}
+
+function PortalBundles({ bundles }: { bundles: any[] }) {
+  if (!bundles.length) return null;
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-semibold">Bundle assistenza attivi</h2>
+        <p className="text-sm text-muted-foreground">
+          Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.
+        </p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {bundles.map((assignment) => {
+          const bundle = assignment.bundle ?? {};
+          const usage = assignment.usage ?? {};
+          const includedHours = assignment.custom_included_hours ?? bundle.included_hours ?? null;
+          const remainingHours = usage.remaining_hours ?? null;
+          return (
+            <div key={assignment.id} className="rounded-lg border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold">{bundle.name ?? "Bundle assistenza"}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Canone{" "}
+                    {formatBundleMoney(
+                      assignment.custom_fee ?? bundle.fee ?? 0,
+                      bundle.currency ?? "EUR",
+                    )}{" "}
+                    · SLA risposta{" "}
+                    {assignment.custom_sla_response_hours ?? bundle.sla_response_hours ?? "-"}h
+                  </p>
+                </div>
+                <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold">
+                  {assignment.auto_renew ? "Rinnovo auto" : "Rinnovo manuale"}
+                </span>
+              </div>
+              <div className="mt-4">
+                <BundleUsageBar
+                  used={usage.used_hours ?? 0}
+                  total={includedHours}
+                  label="Ore consumate"
+                />
+              </div>
+              <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                <PortalBundleMetric label="Residue" value={formatBundleHours(remainingHours)} />
+                <PortalBundleMetric
+                  label="Extra"
+                  value={formatBundleMoney(usage.extra_amount ?? 0, bundle.currency ?? "EUR")}
+                />
+                <PortalBundleMetric label="Scadenza" value={assignment.end_date ?? "Nessuna"} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PortalBundleMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-muted/60 p-2">
+      <div className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</div>
+      <div className="mt-1 font-medium">{value}</div>
     </div>
   );
 }

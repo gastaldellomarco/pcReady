@@ -35,6 +35,7 @@ import {
   BookOpenText,
   Euro,
   CalendarDays,
+  Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
@@ -110,6 +111,7 @@ const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
       { to: "/clients", label: "Clienti", icon: Building2 },
       { to: "/contacts", label: "Referenti", icon: UserRound },
       { to: "/costs", label: "Costi", icon: Euro, requiredRoles: ["admin", "tech"] },
+      { to: "/bundles", label: "Bundle", icon: Package, requiredRoles: ["admin", "tech"] },
       { to: "/inventory", label: "Inventario", icon: Boxes },
       { to: "/docs", label: "API Docs", icon: BookOpenText, requiredRoles: ["admin", "tech"] },
       { to: "/admin", label: "Admin / Utenti", icon: Users, requiredRoles: ["admin"] },
@@ -170,6 +172,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/clients": "Clienti",
   "/contacts": "Referenti",
   "/costs": "Costi",
+  "/bundles": "Bundle assistenza",
   "/inventory": "Inventario",
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",

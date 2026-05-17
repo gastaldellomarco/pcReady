@@ -34,6 +34,40 @@ export async function getPortalDashboardServer(input: { token: string }) {
   if (error) throw error;
 
   const rows = (tickets ?? []) as any[];
+
+  const { data: bundleAssignments, error: bundleAssignmentsError } = await supabaseAdmin
+    .from("client_bundle_assignments" as any)
+    .select("*, bundle:assistance_bundles(*)")
+    .eq("client_id", session.clientId)
+    .eq("status", "active")
+    .lte("start_date", new Date().toISOString().slice(0, 10))
+    .order("end_date", { ascending: true, nullsFirst: true });
+  if (bundleAssignmentsError) throw bundleAssignmentsError;
+
+  const assignmentIds = ((bundleAssignments ?? []) as any[]).map((assignment) => assignment.id);
+  const { data: usageSummaries, error: usageSummariesError } = assignmentIds.length
+    ? await supabaseAdmin
+        .from("bundle_assignment_usage_summary" as any)
+        .select("*")
+        .in("client_bundle_assignment_id", assignmentIds)
+    : { data: [], error: null };
+  if (usageSummariesError) throw usageSummariesError;
+  const usageByAssignment = new Map(
+    ((usageSummaries ?? []) as any[]).map((summary) => [
+      summary.client_bundle_assignment_id,
+      summary,
+    ]),
+  );
+  const activeBundles = ((bundleAssignments ?? []) as any[])
+    .filter(
+      (assignment) =>
+        !assignment.end_date || assignment.end_date >= new Date().toISOString().slice(0, 10),
+    )
+    .map((assignment) => ({
+      ...assignment,
+      usage: usageByAssignment.get(assignment.id) ?? null,
+    }));
+
   return {
     session,
     stats: {
@@ -53,6 +87,7 @@ export async function getPortalDashboardServer(input: { token: string }) {
       status_label: statusLabel(ticket.status),
       created_at: ticket.created_at,
     })),
+    activeBundles,
   };
 }
 
