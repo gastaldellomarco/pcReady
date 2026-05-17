@@ -28,6 +28,7 @@ package-lock.json
 .eslintcache
 .nyc_output
 coverage/
+backups/
 
 # Wrangler / Cloudflare
 .wrangler/
