@@ -23,6 +23,10 @@ export const ClientSchema = z.object({
     }, "URL sito web non valido"),
   address: optionalTrimmed(),
   notes: optionalTrimmed(),
+  portal_logo_url: optionalTrimmed(),
+  portal_primary_color: optionalTrimmed(),
+  portal_welcome_message: optionalTrimmed(),
+  portal_name: optionalTrimmed(),
 });
 
 export type ClientInput = z.infer<typeof ClientSchema>;

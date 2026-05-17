@@ -1,3 +1,14 @@
+import { fmtDateTime } from "@/lib/pcready";
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800",
+  "in-progress": "bg-blue-100 text-blue-800",
+  testing: "bg-purple-100 text-purple-800",
+  ready: "bg-emerald-100 text-emerald-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  archived: "bg-slate-100 text-slate-700",
+};
+
 export function TicketCard({ ticket }: { ticket: any }) {
   return (
     <a
@@ -14,9 +25,17 @@ export function TicketCard({ ticket }: { ticket: any }) {
             <p className="mt-2 text-sm text-muted-foreground">{ticket.public_notes}</p>
           )}
         </div>
-        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[ticket.status] || "bg-secondary"}`}
+        >
           {ticket.status_label || ticket.status}
         </span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <span>Priorità: {ticket.priority}</span>
+        {ticket.assignee?.full_name ? <span>Tecnico: {ticket.assignee.full_name}</span> : null}
+        <span>Aperto: {fmtDateTime(ticket.created_at)}</span>
+        {ticket.closed_at ? <span>Chiuso: {fmtDateTime(ticket.closed_at)}</span> : null}
       </div>
     </a>
   );

@@ -13,6 +13,7 @@ import {
 } from "@/lib/pcready";
 
 export type WipLimits = Record<TicketStatus, number>;
+export type KanbanColumnColors = Partial<Record<TicketStatus, string>>;
 
 export const DEFAULT_WIP_LIMITS: WipLimits = {
   pending: 20,
@@ -38,6 +39,7 @@ export type AppSettings = {
   os_options: string[];
   device_brands: string[];
   ticket_categories: string[];
+  kanban_column_colors: KanbanColumnColors;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -55,6 +57,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ticket_categories: [],
   archive_after_days: 7,
   log_retention_days: 365,
+  kanban_column_colors: {},
 };
 
 type AppSettingRow = { key: string; value: unknown };
@@ -90,6 +93,16 @@ const SlaConfigSchema = z.object({
 });
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);
+const KanbanColumnColorsSchema = z
+  .object({
+    pending: z.string().optional(),
+    "in-progress": z.string().optional(),
+    testing: z.string().optional(),
+    ready: z.string().optional(),
+    completed: z.string().optional(),
+    archived: z.string().optional(),
+  })
+  .default({});
 
 export const getAppSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { accessToken: string }) => data)
@@ -213,7 +226,7 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_settings" as any)
       .select("key, value")
-      .in("key", ["wip_limits", "archive_after_days"]);
+      .in("key", ["wip_limits", "archive_after_days", "kanban_column_colors"]);
 
     if (error) throw error;
 
@@ -225,7 +238,31 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     return {
       wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS,
       archive_after_days: merged.archive_after_days ?? 7,
+      kanban_column_colors: merged.kanban_column_colors ?? {},
     };
+  });
+
+export const updateKanbanAppSettings = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      accessToken: string;
+      wip_limits: WipLimits;
+      kanban_column_colors?: KanbanColumnColors;
+    }) => data,
+  )
+  .handler(async ({ data: { accessToken, wip_limits, kanban_column_colors } }) => {
+    const userId = await requireAdmin(accessToken);
+    const parsedWip = WipLimitsSchema.parse(wip_limits);
+    const parsedColors = KanbanColumnColorsSchema.parse(kanban_column_colors ?? {});
+    const updates = [
+      { key: "wip_limits", value: JSON.stringify(parsedWip), updated_by: userId },
+      { key: "kanban_column_colors", value: JSON.stringify(parsedColors), updated_by: userId },
+    ];
+    const { error } = await supabaseAdmin
+      .from("app_settings" as any)
+      .upsert(updates as any, { onConflict: "key" });
+    if (error) throw error;
+    return { wip_limits: parsedWip, kanban_column_colors: parsedColors };
   });
 
 export const updateAppSettings = createServerFn({ method: "POST" })
@@ -291,6 +328,7 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
     ticket_categories: settings.ticket_categories ?? DEFAULT_SETTINGS.ticket_categories,
     archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
     log_retention_days: settings.log_retention_days ?? DEFAULT_SETTINGS.log_retention_days,
+    kanban_column_colors: settings.kanban_column_colors ?? DEFAULT_SETTINGS.kanban_column_colors,
   };
 
   mergedSettings.sla_limits = slaConfigToLimits(mergedSettings.sla_config);
@@ -315,6 +353,7 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
       os_options: StringListSchema,
       device_brands: StringListSchema,
       ticket_categories: StringListSchema,
+      kanban_column_colors: KanbanColumnColorsSchema,
     })
     .parse(mergedSettings);
 }

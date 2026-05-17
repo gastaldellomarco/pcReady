@@ -105,6 +105,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
       os_options: settings?.os_options ?? [],
       device_brands: settings?.device_brands ?? [],
       ticket_categories: settings?.ticket_categories ?? [],
+      kanban_column_colors: settings?.kanban_column_colors ?? {},
     } as any);
   }, [settings, settingsForm]);
 
@@ -151,6 +152,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
         os_options: values.os_options ?? [],
         device_brands: values.device_brands ?? [],
         ticket_categories: values.ticket_categories ?? [],
+        kanban_column_colors: settings?.kanban_column_colors ?? {},
       };
 
       await saveSettings({ data: { accessToken, settings: payload } });

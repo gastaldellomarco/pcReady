@@ -76,6 +76,10 @@ type ClientRow = {
   address: string | null;
   notes: string | null;
   portal_enabled?: boolean;
+  portal_logo_url?: string | null;
+  portal_primary_color?: string | null;
+  portal_welcome_message?: string | null;
+  portal_name?: string | null;
   updated_at: string;
 };
 
@@ -102,6 +106,10 @@ type ClientForm = {
   website_url: string;
   address: string;
   notes: string;
+  portal_logo_url: string;
+  portal_primary_color: string;
+  portal_welcome_message: string;
+  portal_name: string;
 };
 
 type ContactForm = {
@@ -154,6 +162,10 @@ const emptyClient: ClientForm = {
   website_url: "",
   address: "",
   notes: "",
+  portal_logo_url: "",
+  portal_primary_color: "#1B4FD8",
+  portal_welcome_message: "",
+  portal_name: "",
 };
 
 const emptyContact: ContactForm = {
@@ -169,7 +181,7 @@ const emptyContact: ContactForm = {
 const PAGE_SIZE = 50;
 const EXPORT_CHUNK_SIZE = 1000;
 const CLIENT_SELECT =
-  "id, name, company_name, vat_number, fiscal_code, email, phone, website_url, address, notes, updated_at";
+  "id, name, company_name, vat_number, fiscal_code, email, phone, website_url, address, notes, portal_logo_url, portal_primary_color, portal_welcome_message, portal_name, updated_at";
 
 function ClientsPage() {
   const { canEdit, profile, session } = useAuth();
@@ -276,19 +288,18 @@ function ClientsPage() {
     if (!routeSearch.clientId || clients.some((client) => client.id === routeSearch.clientId))
       return;
     let cancelled = false;
-    supabase
+    (supabase as any)
       .from("clients")
       .select(CLIENT_SELECT)
       .eq("id", routeSearch.clientId)
       .maybeSingle()
       .then(({ data, error }) => {
         if (cancelled || error || !data) return;
+        const row = data as ClientRow;
         setClients((current) =>
-          current.some((client) => client.id === data.id)
-            ? current
-            : ([data, ...current] as ClientRow[]),
+          current.some((client) => client.id === row.id) ? current : [row, ...current],
         );
-        setSelectedId(data.id);
+        setSelectedId(row.id);
       });
     return () => {
       cancelled = true;
@@ -388,7 +399,7 @@ function ClientsPage() {
     try {
       const companyName = values.company_name.trim();
       if (selected) {
-        const patch: TablesUpdate<"clients"> = {
+        const patch: TablesUpdate<"clients"> & Record<string, unknown> = {
           name: companyName,
           company_name: companyName,
           vat_number: clean(values.vat_number || ""),
@@ -398,11 +409,15 @@ function ClientsPage() {
           website_url: normalizeOptionalUrl(values.website_url || ""),
           address: clean(values.address || ""),
           notes: clean(values.notes || ""),
+          portal_logo_url: clean(values.portal_logo_url || ""),
+          portal_primary_color: clean(values.portal_primary_color || "") || "#1B4FD8",
+          portal_welcome_message: clean(values.portal_welcome_message || ""),
+          portal_name: clean(values.portal_name || ""),
         };
         await updateClientMut.mutateAsync({ id: selected!.id, payload: patch });
         toast.success("Cliente aggiornato");
       } else {
-        const insert: TablesInsert<"clients"> = {
+        const insert: TablesInsert<"clients"> & Record<string, unknown> = {
           name: companyName,
           company_name: companyName,
           vat_number: clean(values.vat_number || ""),
@@ -412,6 +427,10 @@ function ClientsPage() {
           website_url: normalizeOptionalUrl(values.website_url || ""),
           address: clean(values.address || ""),
           notes: clean(values.notes || ""),
+          portal_logo_url: clean(values.portal_logo_url || ""),
+          portal_primary_color: clean(values.portal_primary_color || "") || "#1B4FD8",
+          portal_welcome_message: clean(values.portal_welcome_message || ""),
+          portal_name: clean(values.portal_name || ""),
         };
         const data = await createClientMut.mutateAsync(insert);
         setSelectedId(data.id);
@@ -902,6 +921,46 @@ function ClientsPage() {
                         {...clientForm.register("notes")}
                       />
                     </Field>
+                  </div>
+                  <div
+                    className="md:col-span-2 mt-2 rounded-lg border p-3"
+                    style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                  >
+                    <div className="mb-3 text-sm font-semibold">Branding portale cliente</div>
+                    <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
+                      <Field label="Nome portale">
+                        <input
+                          className="pc-input"
+                          placeholder="Portale IT - Rossi S.r.l."
+                          {...clientForm.register("portal_name")}
+                        />
+                      </Field>
+                      <Field label="Colore principale">
+                        <input
+                          className="pc-input"
+                          type="color"
+                          {...clientForm.register("portal_primary_color")}
+                        />
+                      </Field>
+                      <Field label="URL logo cliente">
+                        <input
+                          className="pc-input"
+                          placeholder="https://.../logo.png"
+                          {...clientForm.register("portal_logo_url")}
+                        />
+                      </Field>
+                      <Field label="Messaggio di benvenuto">
+                        <input
+                          className="pc-input"
+                          placeholder="Benvenuto nel portale assistenza"
+                          {...clientForm.register("portal_welcome_message")}
+                        />
+                      </Field>
+                    </div>
+                    <p className="mt-2 text-xs text-text3">
+                      Puoi caricare il logo nel bucket pubblico <b>client-portal-branding</b> e
+                      incollare qui l'URL pubblico.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2163,6 +2222,10 @@ function toClientForm(c: ClientRow): ClientForm {
     website_url: c.website_url || "",
     address: c.address || "",
     notes: c.notes || "",
+    portal_logo_url: c.portal_logo_url || "",
+    portal_primary_color: c.portal_primary_color || "#1B4FD8",
+    portal_welcome_message: c.portal_welcome_message || "",
+    portal_name: c.portal_name || "",
   };
 }
 

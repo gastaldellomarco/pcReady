@@ -12,7 +12,8 @@ export type WidgetId =
   | "team-activity"
   | "technician-stats"
   | "critical-events"
-  | "warranty-overview";
+  | "warranty-overview"
+  | "maintenance-overview";
 
 export interface WidgetEntry {
   id: WidgetId;
@@ -85,6 +86,11 @@ export const DASHBOARD_WIDGETS: WidgetEntry[] = [
   },
   { id: "critical-events", label: "Eventi critici", description: "Eventi critici recenti" },
   { id: "warranty-overview", label: "Garanzie", description: "Stati garanzia e scadenze prossime" },
+  {
+    id: "maintenance-overview",
+    label: "Manutenzioni",
+    description: "Prossimi interventi e manutenzioni scadute",
+  },
 ];
 
 export function createDefaultLayout(): DashboardLayout {

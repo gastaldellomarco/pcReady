@@ -143,6 +143,7 @@ export interface ChecklistItemDef {
 export interface ChecklistTabDef {
   label: string;
   items: ChecklistItemDef[];
+  assigned_to?: string | null;
 }
 export type ChecklistStructure = Record<string, ChecklistTabDef>;
 

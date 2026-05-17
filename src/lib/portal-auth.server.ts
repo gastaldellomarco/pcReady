@@ -1,9 +1,16 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 import { sendEmail } from "@/lib/email-templates.server";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+
+export interface PortalBranding {
+  portalName: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  welcomeMessage: string | null;
+}
 
 export interface PortalSessionContext {
   token: string;
@@ -12,7 +19,11 @@ export interface PortalSessionContext {
   contactId: string;
   contactEmail: string;
   contactName: string | null;
+  contactPhone?: string | null;
+  contactRole?: string | null;
+  contactJobTitle?: string | null;
   clientName: string;
+  branding: PortalBranding;
 }
 
 function hashToken(token: string) {
@@ -21,6 +32,33 @@ function hashToken(token: string) {
 
 function portalBaseUrl() {
   return process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000";
+}
+
+function hashPortalPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = pbkdf2Sync(password, salt, 120_000, 32, "sha256").toString("hex");
+  return `pbkdf2_sha256$120000$${salt}$${hash}`;
+}
+
+function verifyPortalPassword(password: string, stored: string | null | undefined) {
+  if (!stored) return false;
+  const [algo, iterationsRaw, salt, hash] = stored.split("$");
+  if (algo !== "pbkdf2_sha256" || !iterationsRaw || !salt || !hash) return false;
+  const iterations = Number(iterationsRaw);
+  if (!Number.isFinite(iterations)) return false;
+  const expected = Buffer.from(hash, "hex");
+  const actual = pbkdf2Sync(password, salt, iterations, expected.length, "sha256");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function clientBranding(client: any): PortalBranding {
+  const clientName = client?.company_name || client?.name || "Cliente";
+  return {
+    portalName: client?.portal_name || `Portale IT - ${clientName}`,
+    logoUrl: client?.portal_logo_url || null,
+    primaryColor: client?.portal_primary_color || "#1B4FD8",
+    welcomeMessage: client?.portal_welcome_message || null,
+  };
 }
 
 function portalLoginUrl(token: string) {
@@ -92,6 +130,63 @@ export async function requestPortalLoginServer(input: { email: string; sendMail?
   }
 
   return { success: true, sent: false, loginUrl, expiresAt };
+}
+
+export async function loginPortalWithPasswordServer(input: { email: string; password: string }) {
+  const email = input.email.trim().toLowerCase();
+  throwIfRateLimited(`password:${email}`, RATE_LIMITER_KEYS.PORTAL_MAGIC_LINK);
+
+  const { data: contact, error } = await supabaseAdmin
+    .from("client_contacts" as any)
+    .select(
+      "id, client_id, full_name, email, portal_password_hash, clients!inner(id, name, company_name, portal_enabled)",
+    )
+    .ilike("email", email)
+    .maybeSingle();
+  if (error) throw error;
+  if (!contact || (contact as any).clients?.portal_enabled === false) {
+    throw new Response("Credenziali non valide", { status: 401 });
+  }
+  if (!verifyPortalPassword(input.password, (contact as any).portal_password_hash)) {
+    throw new Response("Credenziali non valide", { status: 401 });
+  }
+
+  const { token, loginUrl, expiresAt } = await createPortalSession(contact, 24 * 7);
+  return { success: true, token, loginUrl, expiresAt };
+}
+
+export async function updatePortalContactProfileServer(input: {
+  token: string;
+  fullName: string;
+  phone?: string | null;
+  jobTitle?: string | null;
+  password?: string | null;
+}) {
+  const session = await getPortalSession(input.token);
+  const fullName = input.fullName.trim();
+  if (!fullName) throw new Response("Nome e cognome obbligatori", { status: 400 });
+  const [firstName, ...lastParts] = fullName.split(/\s+/);
+  const payload: Record<string, unknown> = {
+    full_name: fullName,
+    first_name: firstName,
+    last_name: lastParts.join(" ") || null,
+    phone: input.phone?.trim() || null,
+    job_title: input.jobTitle?.trim() || null,
+    role: input.jobTitle?.trim() || null,
+  };
+  if (input.password?.trim()) {
+    if (input.password.length < 8)
+      throw new Response("Password minimo 8 caratteri", { status: 400 });
+    payload.portal_password_hash = hashPortalPassword(input.password);
+    payload.portal_password_updated_at = new Date().toISOString();
+  }
+  const { error } = await supabaseAdmin
+    .from("client_contacts" as any)
+    .update(payload)
+    .eq("id", session.contactId)
+    .eq("client_id", session.clientId);
+  if (error) throw error;
+  return { success: true };
 }
 
 export async function generatePortalAccessLinkServer(input: {
@@ -197,7 +292,7 @@ export async function getPortalSession(token: string): Promise<PortalSessionCont
   const { data, error } = await supabaseAdmin
     .from("portal_sessions" as any)
     .select(
-      "id, client_id, contact_id, expires_at, revoked_at, client:clients(id, name, company_name, portal_enabled), contact:client_contacts(id, full_name, email)",
+      "id, client_id, contact_id, expires_at, revoked_at, client:clients(id, name, company_name, portal_enabled, portal_logo_url, portal_primary_color, portal_welcome_message, portal_name), contact:client_contacts(id, full_name, email, phone, role, job_title)",
     )
     .eq("token_hash", hashToken(token))
     .maybeSingle();
@@ -224,7 +319,11 @@ export async function getPortalSession(token: string): Promise<PortalSessionCont
     contactId: (data as any).contact_id,
     contactEmail: (data as any).contact?.email || "",
     contactName: (data as any).contact?.full_name || null,
+    contactPhone: (data as any).contact?.phone || null,
+    contactRole: (data as any).contact?.role || null,
+    contactJobTitle: (data as any).contact?.job_title || null,
     clientName: (data as any).client?.company_name || (data as any).client?.name || "Cliente",
+    branding: clientBranding((data as any).client),
   };
 }
 

@@ -14,6 +14,7 @@ export const ChecklistItemDefSchema = z.object({
 export const ChecklistTabDefSchema = z.object({
   label: z.string(),
   items: z.array(ChecklistItemDefSchema),
+  assigned_to: z.string().uuid().nullable().optional(),
 });
 
 /**

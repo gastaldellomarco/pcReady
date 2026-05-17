@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { PageErrorBoundary } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useTickets } from "@/lib/use-tickets";
 import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcready";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
@@ -30,6 +32,12 @@ import { TeamActivityWidget } from "@/components/dashboard/TeamActivityWidget";
 import { WidgetSettingsPanel } from "@/components/dashboard/WidgetSettingsPanel";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
 import {
+  fetchMaintenanceDashboard,
+  getMaintenanceStatus,
+  MAINTENANCE_STATUS_META,
+  type MaintenanceSchedule,
+} from "@/lib/maintenance";
+import {
   daysUntil,
   getWarrantyStatus,
   WARRANTY_STATUS_META,
@@ -43,6 +51,7 @@ import {
   CircleCheck,
   ArrowRight,
   Settings2,
+  ListChecks as ListChecksIcon,
 } from "lucide-react";
 
 const AnalyticsCard = lazy(() =>
@@ -50,6 +59,113 @@ const AnalyticsCard = lazy(() =>
     default: module.AnalyticsCard,
   })),
 );
+
+type ChecklistDashboardStats = {
+  total: number;
+  completed: number;
+  completedPct: number;
+  avgCompletionLabel: string;
+  topTemplate: { title: string; count: number } | null;
+  topTechnician: { id: string; completed: number; total: number; pct: number } | null;
+};
+
+async function fetchCustomerSatisfactionStats() {
+  const { data, error } = await (supabase as any).from("ticket_feedback").select("rating");
+  if (error) {
+    if (error.code === "42P01") return { average: null as number | null, count: 0 };
+    throw error;
+  }
+  const ratings = ((data ?? []) as Array<{ rating: number }>)
+    .map((row) => row.rating)
+    .filter(Boolean);
+  const average = ratings.length
+    ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
+    : null;
+  return { average, count: ratings.length };
+}
+
+async function fetchChecklistStats(): Promise<ChecklistDashboardStats> {
+  const { data, error } = await (supabase as any)
+    .from("ticket_checklist_instances")
+    .select("title, status, created_at, completed_at, assigned_to");
+  if (error) {
+    if (error.code === "42P01") {
+      return {
+        total: 0,
+        completed: 0,
+        completedPct: 0,
+        avgCompletionLabel: "n/d",
+        topTemplate: null,
+        topTechnician: null,
+      };
+    }
+    throw error;
+  }
+
+  const rows = (data ?? []) as Array<{
+    title: string | null;
+    status: string | null;
+    created_at: string | null;
+    completed_at: string | null;
+    assigned_to: string | null;
+  }>;
+  const total = rows.length;
+  const completedRows = rows.filter((row) => row.status === "completed");
+  const completed = completedRows.length;
+  const completedPct = total ? Math.round((completed / total) * 100) : 0;
+  const durations = completedRows
+    .map((row) => {
+      const start = row.created_at ? new Date(row.created_at).getTime() : NaN;
+      const end = row.completed_at ? new Date(row.completed_at).getTime() : NaN;
+      return Number.isFinite(start) && Number.isFinite(end) && end >= start ? end - start : null;
+    })
+    .filter((value): value is number => value != null);
+  const avgMs = durations.length
+    ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length)
+    : null;
+  const templateCounts = new Map<string, number>();
+  rows.forEach((row) => {
+    const title = row.title || "Checklist";
+    templateCounts.set(title, (templateCounts.get(title) ?? 0) + 1);
+  });
+  const topTemplate =
+    Array.from(templateCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([title, count]) => ({ title, count }))[0] ?? null;
+  const technicianStats = new Map<string, { completed: number; total: number }>();
+  rows.forEach((row) => {
+    if (!row.assigned_to) return;
+    const current = technicianStats.get(row.assigned_to) ?? { completed: 0, total: 0 };
+    current.total += 1;
+    if (row.status === "completed") current.completed += 1;
+    technicianStats.set(row.assigned_to, current);
+  });
+  const topTechnician =
+    Array.from(technicianStats.entries())
+      .map(([id, stat]) => ({
+        id,
+        completed: stat.completed,
+        total: stat.total,
+        pct: stat.total ? Math.round((stat.completed / stat.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.pct - a.pct || b.completed - a.completed)[0] ?? null;
+
+  return {
+    total,
+    completed,
+    completedPct,
+    avgCompletionLabel: avgMs == null ? "n/d" : formatAverageDuration(avgMs),
+    topTemplate,
+    topTechnician,
+  };
+}
+
+function formatAverageDuration(ms: number) {
+  const hours = Math.max(1, Math.round(ms / 36_000) / 100);
+  if (hours < 24) return `${hours.toFixed(hours < 10 ? 1 : 0)}h`;
+  const days = hours / 24;
+  return `${days.toFixed(days < 10 ? 1 : 0)}g`;
+}
 
 const TechnicianStatsWidgetLazy = lazy(() =>
   import("@/components/dashboard/TechnicianStatsWidget").then((module) => ({
@@ -100,6 +216,14 @@ function DashboardPage() {
   });
   const { visibleWidgets, allWidgets, editMode, setEditMode, reorder, toggleVisibility } =
     useDashboardLayout();
+  const checklistStatsQuery = useQuery({
+    queryKey: ["dashboard", "checklist-stats"],
+    queryFn: fetchChecklistStats,
+  });
+  const satisfactionQuery = useQuery({
+    queryKey: ["dashboard", "customer-satisfaction"],
+    queryFn: fetchCustomerSatisfactionStats,
+  });
 
   const priorityCounts = useMemo(
     () =>
@@ -162,6 +286,8 @@ function DashboardPage() {
           counts,
           total,
           priorityCounts,
+          checklistStats: checklistStatsQuery.data ?? null,
+          satisfactionStats: satisfactionQuery.data ?? null,
           loadSettings,
           session,
         }),
@@ -189,6 +315,8 @@ type WidgetContext = {
   counts: Record<string, number>;
   total: number;
   priorityCounts: { high: number; med: number; low: number };
+  checklistStats: ChecklistDashboardStats | null;
+  satisfactionStats: { average: number | null; count: number } | null;
   loadSettings: any;
   session: any;
 };
@@ -263,6 +391,64 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             icon={<Activity className="w-5 h-5" />}
             href={"/tickets?status=pending"}
             highlight
+          />
+          <DashboardStatCard
+            label="Checklist completate"
+            value={ctx.checklistStats ? `${ctx.checklistStats.completedPct}%` : "n/d"}
+            accent="var(--success)"
+            sub={
+              ctx.checklistStats
+                ? `${ctx.checklistStats.completed}/${ctx.checklistStats.total} totali`
+                : "nessun dato"
+            }
+            valueColor="var(--success)"
+            icon={<CircleCheck className="w-5 h-5" />}
+            href="/tickets"
+          />
+          <DashboardStatCard
+            label="Soddisfazione clienti"
+            value={
+              ctx.satisfactionStats?.average == null ? "n/d" : `${ctx.satisfactionStats.average}/5`
+            }
+            accent="var(--success)"
+            sub={ctx.satisfactionStats ? `${ctx.satisfactionStats.count} feedback` : "nessun dato"}
+            valueColor="var(--success)"
+            icon={<CircleCheck className="w-5 h-5" />}
+            href="/tickets"
+          />
+          <DashboardStatCard
+            label="Tempo medio checklist"
+            value={ctx.checklistStats?.avgCompletionLabel ?? "n/d"}
+            accent="var(--accent)"
+            sub="per completamento"
+            icon={<Clock className="w-5 h-5" />}
+            href="/tickets"
+          />
+          <DashboardStatCard
+            label="Template più usato"
+            value={ctx.checklistStats?.topTemplate?.title ?? "n/d"}
+            accent="var(--purple)"
+            sub={
+              ctx.checklistStats?.topTemplate
+                ? `${ctx.checklistStats.topTemplate.count} istanze`
+                : "nessun dato"
+            }
+            icon={<ListChecksIcon className="w-5 h-5" />}
+            href="/checklist"
+          />
+          <DashboardStatCard
+            label="% checklist per tecnico"
+            value={
+              ctx.checklistStats?.topTechnician ? `${ctx.checklistStats.topTechnician.pct}%` : "n/d"
+            }
+            accent="var(--success)"
+            sub={
+              ctx.checklistStats?.topTechnician
+                ? `${ctx.checklistStats.topTechnician.completed}/${ctx.checklistStats.topTechnician.total} completate · ${ctx.checklistStats.topTechnician.id.slice(0, 8)}`
+                : "nessun assegnatario"
+            }
+            icon={<CircleCheck className="w-5 h-5" />}
+            href="/tickets"
           />
         </div>
       );
@@ -395,6 +581,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         </div>
       );
     }
+
+    case "maintenance-overview":
+      return <MaintenanceOverviewWidget key="maintenance-overview" />;
 
     case "analytics-card":
       return (
@@ -801,6 +990,112 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
     default:
       return null;
   }
+}
+
+function MaintenanceOverviewWidget() {
+  const query = useQuery({
+    queryKey: ["dashboard", "maintenance-overview"],
+    queryFn: fetchMaintenanceDashboard,
+  });
+  const upcoming = query.data?.upcoming ?? [];
+  const overdueCount = query.data?.overdueCount ?? 0;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+      <div className="pc-card lg:col-span-2">
+        <div className="pc-card-hd">
+          <span className="pc-card-title">Prossime manutenzioni pianificate</span>
+          <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
+            Calendario <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                {["Intervento", "Dispositivo", "Scadenza", "Stato"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {upcoming.map((item: MaintenanceSchedule) => {
+                const status = getMaintenanceStatus(item);
+                const meta = MAINTENANCE_STATUS_META[status];
+                return (
+                  <tr
+                    key={item.id}
+                    className="border-b cursor-pointer hover:bg-surface2"
+                    style={{ borderColor: "var(--border)" }}
+                    onClick={() => openDeviceDetail(item.device_id)}
+                  >
+                    <td className="px-[14px] py-[10px] text-[12.5px] font-semibold">
+                      {item.title}
+                    </td>
+                    <td className="px-[14px] py-[10px] text-[12px]">
+                      {item.device?.model || "Dispositivo"}
+                      <div className="font-mono text-[11px] text-text3">
+                        {item.device?.serial || item.device_id.slice(0, 8)}
+                      </div>
+                    </td>
+                    <td className="px-[14px] py-[10px] text-[12px]">
+                      {fmtDate(item.next_due_date)}
+                    </td>
+                    <td className="px-[14px] py-[10px]">
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                        style={{
+                          color: meta.color,
+                          background: meta.background,
+                          borderColor: meta.color,
+                        }}
+                      >
+                        {meta.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!upcoming.length && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-sm text-text3">
+                    {query.isLoading
+                      ? "Caricamento manutenzioni..."
+                      : "Nessuna manutenzione pianificata."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="pc-card">
+        <div className="pc-card-hd">
+          <span className="pc-card-title">Scadute non eseguite</span>
+        </div>
+        <div className="pc-card-body">
+          <div
+            className="text-[32px] font-bold"
+            style={{ color: overdueCount ? "#B91C1C" : "var(--success)" }}
+          >
+            {overdueCount}
+          </div>
+          <div className="mt-1 text-xs text-text3">
+            Manutenzioni con prossima scadenza superata e non completate.
+          </div>
+          <Link to="/inventory" className="pc-btn pc-btn-primary pc-btn-sm mt-4">
+            Apri calendario manutenzioni
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function warrantySummary(devices: any[]) {

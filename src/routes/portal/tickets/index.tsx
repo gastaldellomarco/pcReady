@@ -19,6 +19,9 @@ function PortalTicketsPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retryKey, setRetryKey] = useState(0);
+  const [status, setStatus] = useState<"all" | "open" | "in-progress" | "completed">("all");
+  const [q, setQ] = useState("");
+  const [sortBy, setSortBy] = useState<"created_at" | "status" | "priority">("created_at");
 
   const load = useCallback(() => {
     const token = localStorage.getItem("pcready_portal_token") || "";
@@ -28,11 +31,11 @@ function PortalTicketsPage() {
     }
     setLoading(true);
     setError("");
-    listTickets({ data: { token } })
+    listTickets({ data: { token, status, q, sortBy, sortDir: "desc" } })
       .then((result) => setTickets((result.tickets as any[]) || []))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Errore di rete"))
       .finally(() => setLoading(false));
-  }, [listTickets]);
+  }, [listTickets, q, sortBy, status]);
 
   useEffect(() => {
     load();
@@ -69,6 +72,33 @@ function PortalTicketsPage() {
         <Button asChild>
           <a href="/portal/tickets/new">Nuovo ticket</a>
         </Button>
+      </div>
+      <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-3">
+        <input
+          className="pc-input"
+          value={q}
+          onChange={(event) => setQ(event.target.value)}
+          placeholder="Cerca codice o titolo..."
+        />
+        <select
+          className="pc-input"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as typeof status)}
+        >
+          <option value="all">Tutti</option>
+          <option value="open">Aperti</option>
+          <option value="in-progress">In lavorazione</option>
+          <option value="completed">Completati</option>
+        </select>
+        <select
+          className="pc-input"
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+        >
+          <option value="created_at">Ordina per data</option>
+          <option value="status">Ordina per stato</option>
+          <option value="priority">Ordina per priorità</option>
+        </select>
       </div>
       {!tickets.length ? (
         <PageEmptyState

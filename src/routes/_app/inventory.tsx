@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import queries from "@/lib/queries/inventory";
 import { useTickets } from "@/lib/use-tickets";
@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   Columns3,
   X,
+  CalendarDays,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
@@ -40,6 +42,17 @@ import {
   WARRANTY_STATUS_META,
   type WarrantyFilter,
 } from "@/lib/warranty";
+import {
+  MAINTENANCE_RECURRENCE_LABEL,
+  fetchMaintenanceCalendar,
+  fetchTechnicianOptions,
+  getMaintenanceStatus,
+  MAINTENANCE_STATUS_META,
+  todayIsoDate,
+  type MaintenanceSchedule,
+  type MaintenanceStatus,
+  type TechnicianOption,
+} from "@/lib/maintenance";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,6 +95,8 @@ interface Row {
   warranty_provider: string | null;
   warranty_notes: string | null;
   has_active_assignment?: boolean;
+  has_maintenance_due_soon?: boolean;
+  next_maintenance_due_date?: string | null;
 }
 
 type CompareDevice = Row & {
@@ -141,6 +156,8 @@ function InventoryPage() {
     return new URLSearchParams(window.location.search).get("filter") === "without_ticket";
   });
   const [updatedBeforeDays, setUpdatedBeforeDays] = useState<number | null>(null);
+  const [maintenanceDueFilter, setMaintenanceDueFilter] = useState(false);
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [warrantyFilter, setWarrantyFilter] = useState<WarrantyFilter>(() => {
     if (typeof window === "undefined") return "all";
     const value = new URLSearchParams(window.location.search).get(
@@ -167,6 +184,7 @@ function InventoryPage() {
     pageSize: PAGE_SIZE,
     withoutTicket: withoutTicketFilter,
     warrantyStatus: warrantyFilter,
+    maintenanceDueSoon: maintenanceDueFilter,
     updatedBefore: updatedBeforeDays
       ? new Date(Date.now() - updatedBeforeDays * 24 * 60 * 60 * 1000).toISOString()
       : undefined,
@@ -197,7 +215,7 @@ function InventoryPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [fs, fos, q, warrantyFilter]);
+  }, [fs, fos, q, warrantyFilter, maintenanceDueFilter]);
 
   const data = rows;
   const listLoading = listQuery.isLoading;
@@ -546,6 +564,30 @@ function InventoryPage() {
           <option value="expired">Scaduta</option>
           <option value="missing">Senza garanzia</option>
         </select>
+        <button
+          type="button"
+          className={`pc-btn pc-btn-sm ${maintenanceDueFilter ? "pc-btn-primary" : "pc-btn-ghost"}`}
+          onClick={() => setMaintenanceDueFilter((value) => !value)}
+          title="Mostra solo dispositivi con manutenzione in scadenza entro 30 giorni"
+        >
+          <Wrench className="w-3 h-3" /> In scadenza 30g
+        </button>
+        <div className="flex rounded-lg border" style={{ borderColor: "var(--border)" }}>
+          <button
+            type="button"
+            className={`pc-btn pc-btn-sm ${view === "list" ? "pc-btn-primary" : "pc-btn-ghost"}`}
+            onClick={() => setView("list")}
+          >
+            Lista
+          </button>
+          <button
+            type="button"
+            className={`pc-btn pc-btn-sm ${view === "calendar" ? "pc-btn-primary" : "pc-btn-ghost"}`}
+            onClick={() => setView("calendar")}
+          >
+            <CalendarDays className="w-3 h-3" /> Calendario manutenzioni
+          </button>
+        </div>
         <span className="ml-auto self-center text-xs text-text3 font-mono">
           {total
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
@@ -647,7 +689,9 @@ function InventoryPage() {
           </button>
         </div>
       )}
-      {listQuery.isError ? (
+      {view === "calendar" ? (
+        <MaintenanceCalendarView onOpenDevice={openDeviceDetail} />
+      ) : listQuery.isError ? (
         <PageFetchError
           message="Impossibile caricare l\'inventario. Controlla la connessione e riprova."
           onRetry={() => listQuery.refetch()}
@@ -720,7 +764,17 @@ function InventoryPage() {
                         <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
                           {r.serial || "-"}
                         </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">{r.model}</td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">
+                          <div>{r.model}</div>
+                          {r.has_maintenance_due_soon ? (
+                            <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                              <Wrench className="h-3 w-3" /> Manutenzione{" "}
+                              {r.next_maintenance_due_date
+                                ? fmtDate(r.next_maintenance_due_date)
+                                : "in scadenza"}
+                            </div>
+                          ) : null}
+                        </td>
                         <td className="px-[14px] py-[10px] text-[12px] text-text2">
                           {r.os || "-"}
                         </td>
@@ -789,25 +843,27 @@ function InventoryPage() {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-end gap-2">
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-        >
-          Precedente
-        </button>
-        <span className="text-xs text-text3 font-mono">
-          Pagina {page + 1} di {pageCount}
-        </span>
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page + 1 >= pageCount}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Successiva
-        </button>
-      </div>
+      {view === "list" && (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Precedente
+          </button>
+          <span className="text-xs text-text3 font-mono">
+            Pagina {page + 1} di {pageCount}
+          </span>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            disabled={page + 1 >= pageCount}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Successiva
+          </button>
+        </div>
+      )}
       <QrCodeDialog device={qrDevice} onClose={() => setQrDevice(null)} />
       <ImportCsvDialog
         open={importOpen}
@@ -895,6 +951,189 @@ function InventoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: string) => void }) {
+  const [monthStart, setMonthStart] = useState(() => {
+    const date = new Date();
+    date.setDate(1);
+    return date;
+  });
+  const [items, setItems] = useState<MaintenanceSchedule[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [assignedTo, setAssignedTo] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<MaintenanceStatus | "all">("all");
+
+  const from = useMemo(() => monthStart.toISOString().slice(0, 10), [monthStart]);
+  const to = useMemo(() => {
+    const date = new Date(monthStart);
+    date.setMonth(date.getMonth() + 1);
+    date.setDate(0);
+    return date.toISOString().slice(0, 10);
+  }, [monthStart]);
+
+  useEffect(() => {
+    fetchTechnicianOptions()
+      .then(setTechnicians)
+      .catch(() => setTechnicians([]));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchMaintenanceCalendar({
+      from,
+      to,
+      assignedTo: assignedTo || undefined,
+      type: typeFilter.trim() || undefined,
+      status: statusFilter,
+    })
+      .then((rows) => {
+        if (!cancelled) setItems(rows);
+      })
+      .catch((error) =>
+        toast.error(error instanceof Error ? error.message : "Errore calendario manutenzioni"),
+      )
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, assignedTo, typeFilter, statusFilter]);
+
+  const byDay = useMemo(() => {
+    const map = new Map<string, MaintenanceSchedule[]>();
+    items.forEach((item) => {
+      const key = item.next_due_date;
+      const current = map.get(key) ?? [];
+      current.push(item);
+      map.set(key, current);
+    });
+    return map;
+  }, [items]);
+
+  const days = useMemo(() => {
+    const count = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+    return Array.from({ length: count }, (_, index) => {
+      const date = new Date(monthStart);
+      date.setDate(index + 1);
+      return date.toISOString().slice(0, 10);
+    });
+  }, [monthStart]);
+
+  function moveMonth(delta: number) {
+    setMonthStart((current) => {
+      const next = new Date(current);
+      next.setMonth(next.getMonth() + delta);
+      return next;
+    });
+  }
+
+  return (
+    <div className="pc-card overflow-hidden">
+      <div className="pc-card-hd flex-wrap gap-2">
+        <div>
+          <span className="pc-card-title">Calendario manutenzioni</span>
+          <div className="text-xs text-text3">
+            {monthStart.toLocaleDateString("it-IT", { month: "long", year: "numeric" })} ·{" "}
+            {items.length} interventi
+          </div>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => moveMonth(-1)}>
+            Mese prec.
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={() =>
+              setMonthStart(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+            }
+          >
+            Oggi
+          </button>
+          <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => moveMonth(1)}>
+            Mese succ.
+          </button>
+          <select
+            className="pc-input max-w-[190px]"
+            value={assignedTo}
+            onChange={(event) => setAssignedTo(event.target.value)}
+          >
+            <option value="">Tutti i tecnici</option>
+            {technicians.map((tech) => (
+              <option key={tech.id} value={tech.id}>
+                {tech.name}
+              </option>
+            ))}
+          </select>
+          <input
+            className="pc-input max-w-[180px]"
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            placeholder="Tipo manutenzione"
+          />
+          <select
+            className="pc-input max-w-[170px]"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as MaintenanceStatus | "all")}
+          >
+            <option value="all">Tutti gli stati</option>
+            <option value="scheduled">Programmata</option>
+            <option value="due_soon">In scadenza</option>
+            <option value="overdue">Scaduta</option>
+            <option value="completed">Completata</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-7">
+        {days.map((day) => {
+          const dayItems = byDay.get(day) ?? [];
+          const isToday = day === todayIsoDate();
+          return (
+            <div key={day} className="min-h-[132px] bg-background p-2">
+              <div
+                className={`mb-2 text-xs font-semibold ${isToday ? "text-accent" : "text-text3"}`}
+              >
+                {new Date(day).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit" })}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {dayItems.map((item) => {
+                  const status = getMaintenanceStatus(item);
+                  const meta = MAINTENANCE_STATUS_META[status];
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="rounded-md border p-2 text-left text-[11px] hover:bg-surface2"
+                      style={{ borderColor: meta.color, background: meta.background }}
+                      onClick={() => onOpenDevice(item.device_id)}
+                    >
+                      <div className="font-semibold" style={{ color: meta.color }}>
+                        {item.title}
+                      </div>
+                      <div className="text-text2">{item.device?.model || "Dispositivo"}</div>
+                      <div className="font-mono text-text3">
+                        {item.device?.serial || item.device_id.slice(0, 8)}
+                      </div>
+                      <div className="mt-1 text-[10px] text-text3">
+                        {MAINTENANCE_RECURRENCE_LABEL[item.recurrence]}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {loading ? (
+        <div className="p-3 text-center text-sm text-text3">Caricamento calendario...</div>
+      ) : null}
     </div>
   );
 }

@@ -13,6 +13,7 @@ export type DevicesListParams = {
   updatedAfter?: string;
   client_id?: string;
   warrantyStatus?: WarrantyFilter;
+  maintenanceDueSoon?: boolean;
 };
 
 export async function fetchAssignedDeviceIds() {
@@ -30,6 +31,21 @@ export async function fetchDevicesList(params: DevicesListParams) {
 
   const assignedIds = await fetchAssignedDeviceIds();
   const assignedSet = new Set(assignedIds);
+  let dueMaintenanceDeviceIds: string[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  if (params.maintenanceDueSoon) {
+    const { data: dueRows, error: dueError } = await (supabase as any)
+      .from("maintenance_schedules")
+      .select("device_id")
+      .gte("next_due_date", today)
+      .lte("next_due_date", in30Days);
+    if (dueError && dueError.code !== "42P01") throw dueError;
+    dueMaintenanceDeviceIds = [
+      ...new Set(((dueRows ?? []) as Array<{ device_id: string }>).map((row) => row.device_id)),
+    ];
+    if (!dueMaintenanceDeviceIds.length) return { data: [], count: 0 };
+  }
 
   let query = supabase
     .from("devices")
@@ -47,6 +63,9 @@ export async function fetchDevicesList(params: DevicesListParams) {
 
   if (params.withoutTicket && assignedIds.length) {
     query = query.not("id", "in", `(${assignedIds.map((id) => `'${id}'`).join(",")})`);
+  }
+  if (params.maintenanceDueSoon && dueMaintenanceDeviceIds.length) {
+    query = query.in("id", dueMaintenanceDeviceIds as any);
   }
 
   if (params.updatedBefore) {
@@ -75,9 +94,28 @@ export async function fetchDevicesList(params: DevicesListParams) {
 
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
+  const pageIds = ((data ?? []) as Array<{ id: string }>).map((row) => row.id);
+  let dueByDevice = new Map<string, string>();
+  if (pageIds.length) {
+    const { data: dueRows } = await (supabase as any)
+      .from("maintenance_schedules")
+      .select("device_id, next_due_date")
+      .in("device_id", pageIds)
+      .gte("next_due_date", today)
+      .lte("next_due_date", in30Days)
+      .order("next_due_date", { ascending: true });
+    dueByDevice = new Map(
+      ((dueRows ?? []) as Array<{ device_id: string; next_due_date: string }>).map((row) => [
+        row.device_id,
+        row.next_due_date,
+      ]),
+    );
+  }
   const rows = (data ?? []).map((row: Record<string, unknown>) => ({
     ...row,
     has_active_assignment: assignedSet.has(row.id as string),
+    has_maintenance_due_soon: dueByDevice.has(row.id as string),
+    next_maintenance_due_date: dueByDevice.get(row.id as string) ?? null,
   }));
   return { data: rows as any[], count: count ?? 0 };
 }
@@ -96,6 +134,7 @@ export function useInventoryList(params: DevicesListParams) {
       params.updatedAfter || "",
       params.client_id || "",
       params.warrantyStatus || "all",
+      params.maintenanceDueSoon ? "maintenance-due" : "",
     ],
     queryFn: () => fetchDevicesList(params),
     placeholderData: (previousData) => previousData,

@@ -11,6 +11,19 @@ const PortalTokenSchema = z.object({
   token: z.string().min(32),
 });
 
+const PortalPasswordLoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const PortalProfileUpdateSchema = z.object({
+  token: z.string().min(32),
+  fullName: z.string().min(1).max(160),
+  phone: z.string().max(80).nullable().optional(),
+  jobTitle: z.string().max(120).nullable().optional(),
+  password: z.string().max(200).nullable().optional(),
+});
+
 const PortalContactLinkSchema = z.object({
   accessToken: z.string().min(1),
   contactId: z.string().uuid(),
@@ -31,11 +44,25 @@ export const requestPortalLogin = createServerFn({ method: "POST" })
     return requestPortalLoginServer(RequestPortalLoginSchema.parse(data));
   });
 
+export const loginPortalWithPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof PortalPasswordLoginSchema>) => data)
+  .handler(async ({ data }) => {
+    const { loginPortalWithPasswordServer } = await import("@/lib/portal-auth.server");
+    return loginPortalWithPasswordServer(PortalPasswordLoginSchema.parse(data));
+  });
+
 export const validatePortalSession = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof PortalTokenSchema>) => data)
   .handler(async ({ data }) => {
     const { getPortalSession } = await import("@/lib/portal-auth.server");
     return getPortalSession(PortalTokenSchema.parse(data).token);
+  });
+
+export const updatePortalContactProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: z.input<typeof PortalProfileUpdateSchema>) => data)
+  .handler(async ({ data }) => {
+    const { updatePortalContactProfileServer } = await import("@/lib/portal-auth.server");
+    return updatePortalContactProfileServer(PortalProfileUpdateSchema.parse(data));
   });
 
 export const logoutPortalSession = createServerFn({ method: "POST" })

@@ -15,6 +15,8 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalProfileRouteImport } from './routes/portal/profile'
+import { Route as PortalDevicesRouteImport } from './routes/portal/devices'
 import { Route as PortalDashboardRouteImport } from './routes/portal/dashboard'
 import { Route as AuthSetPasswordRouteImport } from './routes/auth.set-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -65,6 +67,16 @@ const IndexRoute = IndexRouteImport.update({
 const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalProfileRoute = PortalProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDevicesRoute = PortalDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
   getParentRoute: () => PortalRoute,
 } as any)
 const PortalDashboardRoute = PortalDashboardRouteImport.update({
@@ -199,6 +211,8 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal/devices': typeof PortalDevicesRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal/': typeof PortalIndexRoute
   '/oauth/consent': typeof AppOauthConsentRoute
   '/tickets/archive': typeof AppTicketsArchiveRoute
@@ -227,6 +241,8 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal/devices': typeof PortalDevicesRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal': typeof PortalIndexRoute
   '/oauth/consent': typeof AppOauthConsentRoute
   '/tickets/archive': typeof AppTicketsArchiveRoute
@@ -258,6 +274,8 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
+  '/portal/devices': typeof PortalDevicesRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal/': typeof PortalIndexRoute
   '/_app/oauth/consent': typeof AppOauthConsentRoute
   '/_app/tickets_/archive': typeof AppTicketsArchiveRoute
@@ -289,6 +307,8 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
+    | '/portal/devices'
+    | '/portal/profile'
     | '/portal/'
     | '/oauth/consent'
     | '/tickets/archive'
@@ -317,6 +337,8 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
+    | '/portal/devices'
+    | '/portal/profile'
     | '/portal'
     | '/oauth/consent'
     | '/tickets/archive'
@@ -347,6 +369,8 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
+    | '/portal/devices'
+    | '/portal/profile'
     | '/portal/'
     | '/_app/oauth/consent'
     | '/_app/tickets_/archive'
@@ -406,6 +430,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/portal/'
       preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/profile': {
+      id: '/portal/profile'
+      path: '/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PortalProfileRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/devices': {
+      id: '/portal/devices'
+      path: '/devices'
+      fullPath: '/portal/devices'
+      preLoaderRoute: typeof PortalDevicesRouteImport
       parentRoute: typeof PortalRoute
     }
     '/portal/dashboard': {
@@ -617,6 +655,8 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface PortalRouteChildren {
   PortalDashboardRoute: typeof PortalDashboardRoute
+  PortalDevicesRoute: typeof PortalDevicesRoute
+  PortalProfileRoute: typeof PortalProfileRoute
   PortalIndexRoute: typeof PortalIndexRoute
   PortalTicketsTicketIdRoute: typeof PortalTicketsTicketIdRoute
   PortalTicketsNewRoute: typeof PortalTicketsNewRoute
@@ -626,6 +666,8 @@ interface PortalRouteChildren {
 
 const PortalRouteChildren: PortalRouteChildren = {
   PortalDashboardRoute: PortalDashboardRoute,
+  PortalDevicesRoute: PortalDevicesRoute,
+  PortalProfileRoute: PortalProfileRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalTicketsTicketIdRoute: PortalTicketsTicketIdRoute,
   PortalTicketsNewRoute: PortalTicketsNewRoute,

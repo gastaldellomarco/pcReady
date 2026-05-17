@@ -4,6 +4,8 @@ import {
   STATUS_META,
   computeSlaStatus,
   formatSlaCountdown,
+  PRIORITY_LABEL,
+  type TicketPriority,
   type TicketStatus,
 } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
@@ -14,6 +16,7 @@ import { Clock } from "lucide-react";
 
 interface SwimLaneRowProps {
   technician: TechnicianOption | null;
+  technicians: TechnicianOption[];
   cards: SwimLaneCard[];
   totalLaneCards: number;
   statuses: TicketStatus[];
@@ -29,12 +32,14 @@ interface SwimLaneRowProps {
   onDragOverCell: (cellId: string) => void;
   onDragLeaveCell: (cellId: string) => void;
   onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
+  onPriorityChange?: (id: string, priority: TicketPriority) => void;
   selectedCardIds?: Set<string>;
   onCardClick?: (event: MouseEvent, id: string) => void;
 }
 
 export function SwimLaneRow({
   technician,
+  technicians,
   cards,
   totalLaneCards,
   statuses,
@@ -50,6 +55,7 @@ export function SwimLaneRow({
   onDragOverCell,
   onDragLeaveCell,
   onMove,
+  onPriorityChange,
   selectedCardIds,
   onCardClick,
 }: SwimLaneRowProps) {
@@ -133,6 +139,13 @@ export function SwimLaneRow({
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
                   selected={!!selectedCardIds?.has(card.id)}
+                  compactView={compactView}
+                  technicians={technicians}
+                  statuses={statuses}
+                  currentAssigneeId={assigneeId}
+                  currentStatus={status}
+                  onMove={onMove}
+                  onPriorityChange={onPriorityChange}
                   onCardClick={onCardClick}
                 />
               ))}
@@ -191,6 +204,13 @@ function TicketCard({
   onDragStart,
   onDragEnd,
   selected,
+  compactView,
+  technicians,
+  statuses,
+  currentAssigneeId,
+  currentStatus,
+  onMove,
+  onPriorityChange,
   onCardClick,
 }: {
   card: SwimLaneCard;
@@ -199,6 +219,13 @@ function TicketCard({
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   selected?: boolean;
+  compactView: boolean;
+  technicians: TechnicianOption[];
+  statuses: TicketStatus[];
+  currentAssigneeId: string | null;
+  currentStatus: TicketStatus;
+  onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
+  onPriorityChange?: (id: string, priority: TicketPriority) => void;
   onCardClick?: (event: MouseEvent, id: string) => void;
 }) {
   return (
@@ -208,7 +235,8 @@ function TicketCard({
       onDragEnd={onDragEnd}
       onClick={(event) => (onCardClick ? onCardClick(event, card.id) : openTicketDetail(card.id))}
       className={cn(
-        "pc-card p-3 text-left transition-all hover:shadow-md",
+        "pc-card group text-left transition-all hover:shadow-md",
+        compactView ? "p-2" : "p-3",
         "select-none",
         selected && "ring-2 ring-accent",
       )}
@@ -230,11 +258,74 @@ function TicketCard({
           <PriorityLabel p={card.priority} />
         </div>
       </div>
-      <div className="mb-0.5 text-[12.5px] font-semibold">
+      <div className={cn("font-semibold", compactView ? "text-[11.5px]" : "mb-0.5 text-[12.5px]")}>
         {card.device?.model || "Nessun asset"}
       </div>
-      <div className="mb-2 text-[11px] text-text3">{card.client}</div>
-      <div className="flex items-center justify-between">
+      {!compactView && <div className="mb-2 text-[11px] text-text3">{card.client}</div>}
+      {canEdit && (
+        <div
+          className="mt-2 hidden grid-cols-1 gap-1 group-hover:grid"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="grid grid-cols-3 gap-1">
+            <select
+              className="pc-input h-7 min-w-0 text-[10px]"
+              value={currentAssigneeId ?? "unassigned"}
+              onChange={(event) =>
+                onMove(
+                  card.id,
+                  currentStatus,
+                  event.target.value === "unassigned" ? null : event.target.value,
+                )
+              }
+              title="Assegna"
+            >
+              <option value="unassigned">Non assegnato</option>
+              {technicians.map((tech) => (
+                <option key={tech.id} value={tech.id}>
+                  {tech.full_name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="pc-input h-7 min-w-0 text-[10px]"
+              value={card.priority}
+              onChange={(event) =>
+                onPriorityChange?.(card.id, event.target.value as TicketPriority)
+              }
+              title="Priorità"
+            >
+              {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
+                <option key={priority} value={priority}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="pc-input h-7 min-w-0 text-[10px]"
+              value={currentStatus}
+              onChange={(event) =>
+                onMove(card.id, event.target.value as TicketStatus, currentAssigneeId)
+              }
+              title="Sposta a"
+            >
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_META[status].label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            className="pc-btn pc-btn-ghost pc-btn-sm h-7"
+            onClick={() => openTicketDetail(card.id)}
+          >
+            Apri dettaglio
+          </button>
+        </div>
+      )}
+      <div className={cn("flex items-center justify-between", compactView ? "mt-2" : "")}>
         <div>
           {card.assignee ? (
             <AssigneeChip initials={card.assignee.initials} name={card.assignee.full_name} />
@@ -242,10 +333,12 @@ function TicketCard({
             <UnassignedBadge />
           )}
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <SlaMiniLabel card={card} />
-          <TimeInColumnLabel updatedAt={card.updated_at} />
-        </div>
+        {!compactView && (
+          <div className="flex flex-col items-end gap-1">
+            <SlaMiniLabel card={card} />
+            <TimeInColumnLabel updatedAt={card.updated_at} />
+          </div>
+        )}
       </div>
     </div>
   );

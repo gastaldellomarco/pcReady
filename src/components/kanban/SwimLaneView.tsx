@@ -51,6 +51,7 @@ interface SwimLaneViewProps {
   onDragOverCell: (cellId: string) => void;
   onDragLeaveCell: (cellId: string) => void;
   onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
+  onPriorityChange?: (id: string, priority: TicketPriority) => void;
   selectedCardIds?: Set<string>;
   onCardClick?: (event: MouseEvent, id: string) => void;
 }
@@ -72,6 +73,7 @@ export function SwimLaneView({
   onDragOverCell,
   onDragLeaveCell,
   onMove,
+  onPriorityChange,
   selectedCardIds,
   onCardClick,
 }: SwimLaneViewProps) {
@@ -183,6 +185,7 @@ export function SwimLaneView({
               <SwimLaneRow
                 key={lane.id}
                 technician={lane.technician}
+                technicians={technicians}
                 cards={lane.cards}
                 totalLaneCards={lane.cards.length}
                 statuses={statuses}
@@ -198,6 +201,7 @@ export function SwimLaneView({
                 onDragOverCell={onDragOverCell}
                 onDragLeaveCell={onDragLeaveCell}
                 onMove={onMove}
+                onPriorityChange={onPriorityChange}
                 selectedCardIds={selectedCardIds}
                 onCardClick={onCardClick}
               />

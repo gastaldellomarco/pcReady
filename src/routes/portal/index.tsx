@@ -3,8 +3,8 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { requestPortalLogin } from "@/lib/portal-auth";
+
+import { loginPortalWithPassword } from "@/lib/portal-auth";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 export const Route = createFileRoute("/portal/")({
@@ -15,10 +15,10 @@ export const Route = createFileRoute("/portal/")({
 
 function PortalLoginPage() {
   const navigate = useNavigate();
-  const requestLogin = useServerFn(requestPortalLogin);
+  const passwordLogin = useServerFn(loginPortalWithPassword);
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
@@ -28,14 +28,15 @@ function PortalLoginPage() {
     }
   }, [navigate]);
 
-  async function submit(event: React.FormEvent) {
+  async function submitPassword(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     try {
-      await requestLogin({ data: { email } });
-      setSent(true);
+      const result = await passwordLogin({ data: { email, password } });
+      localStorage.setItem("pcready_portal_token", result.token);
+      navigate({ to: "/portal/dashboard", replace: true });
     } catch (error) {
-      toast.error(formatServerFnErrorForToast(error, "Errore invio magic link"));
+      toast.error(formatServerFnErrorForToast(error, "Credenziali non valide"));
     } finally {
       setBusy(false);
     }
@@ -46,10 +47,10 @@ function PortalLoginPage() {
       <div className="text-center">
         <h1 className="text-2xl font-bold tracking-tight">Accedi al portale cliente</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Inserisci l'email del referente registrato per ricevere il link di accesso.
+          Inserisci indirizzo email del referente registrato per ricevere il link di accesso.
         </p>
       </div>
-      <form onSubmit={submit} className="space-y-4 rounded-lg border bg-card p-4">
+      <form onSubmit={submitPassword} className="space-y-4 rounded-lg border bg-card p-4">
         <input
           className="pc-input w-full"
           type="email"
@@ -58,14 +59,16 @@ function PortalLoginPage() {
           placeholder="nome@azienda.it"
           required
         />
-        <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? "Invio..." : "Invia magic link"}
-        </Button>
-        {sent && (
-          <p className="text-sm text-muted-foreground">
-            Se l'email è abilitata, riceverai a breve il link di accesso.
-          </p>
-        )}
+        <input
+          className="pc-input w-full"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Password portale"
+        />
+        <button type="submit" className="pc-btn pc-btn-primary w-full" disabled={busy || !password}>
+          {busy ? "Accesso..." : "Accedi con password"}
+        </button>
       </form>
     </div>
   );

@@ -1,10 +1,12 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { StatusTimeline } from "@/components/portal/StatusTimeline";
 import { PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { getPortalTicketDetail } from "@/lib/portal-tickets";
+import { getPortalTicketDetail, submitPortalTicketFeedback } from "@/lib/portal-tickets";
 
 export const Route = createFileRoute("/portal/tickets/$ticketId")({
   component: PortalTicketDetailPage,
@@ -15,10 +17,14 @@ export const Route = createFileRoute("/portal/tickets/$ticketId")({
 function PortalTicketDetailPage() {
   const { ticketId } = useParams({ from: "/portal/tickets/$ticketId" });
   const loadTicket = useServerFn(getPortalTicketDetail);
+  const submitFeedback = useServerFn(submitPortalTicketFeedback);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retryKey, setRetryKey] = useState(0);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
 
   const load = useCallback(() => {
     const token = localStorage.getItem("pcready_portal_token") || "";
@@ -65,6 +71,21 @@ function PortalTicketDetailPage() {
   }
 
   const ticket = data.ticket;
+  const isClosed = ["ready", "completed", "archived"].includes(ticket.status);
+
+  async function saveFeedback() {
+    const token = localStorage.getItem("pcready_portal_token") || "";
+    setFeedbackBusy(true);
+    try {
+      await submitFeedback({ data: { token, ticketId, rating, comment } });
+      toast.success("Grazie per il feedback");
+      setRetryKey((key) => key + 1);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Errore invio feedback");
+    } finally {
+      setFeedbackBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -88,15 +109,69 @@ function PortalTicketDetailPage() {
       </section>
       <section className="rounded-lg border bg-card p-4">
         <h2 className="font-semibold">Note pubbliche del tecnico</h2>
-        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
-          {ticket.public_notes || "Nessuna nota pubblica disponibile."}
-        </p>
+        {ticket.public_notes ? (
+          <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+            {ticket.public_notes}
+          </p>
+        ) : null}
+        {data.publicNotes?.length ? (
+          <div className="mt-3 space-y-3">
+            {data.publicNotes.map((note: any) => (
+              <div key={note.id} className="rounded-md border bg-background p-3 text-sm">
+                <div className="mb-1 text-xs text-muted-foreground">
+                  {note.author?.full_name || "Tecnico"} ·{" "}
+                  {new Date(note.created_at).toLocaleString("it-IT")}
+                </div>
+                <div className="whitespace-pre-line">{note.content}</div>
+              </div>
+            ))}
+          </div>
+        ) : !ticket.public_notes ? (
+          <p className="mt-2 text-sm text-muted-foreground">Nessuna nota pubblica disponibile.</p>
+        ) : null}
       </section>
       <section className="space-y-3">
         <h2 className="font-semibold">Storico stati</h2>
         <StatusTimeline history={data.history} />
       </section>
-      {ticket.status === "ready" && (
+      {isClosed && (
+        <section className="rounded-lg border bg-card p-4">
+          <h2 className="font-semibold">Feedback sul ticket</h2>
+          {data.feedback ? (
+            <div className="mt-2 text-sm text-muted-foreground">
+              Valutazione inviata: {"★".repeat(data.feedback.rating)}
+              {"☆".repeat(5 - data.feedback.rating)}
+              {data.feedback.comment ? (
+                <p className="mt-2 whitespace-pre-line">{data.feedback.comment}</p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <select
+                className="pc-input"
+                value={rating}
+                onChange={(event) => setRating(Number(event.target.value))}
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={value} value={value}>
+                    {value} stelle
+                  </option>
+                ))}
+              </select>
+              <textarea
+                className="pc-input min-h-24 w-full"
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="Commento opzionale"
+              />
+              <Button onClick={() => void saveFeedback()} disabled={feedbackBusy}>
+                {feedbackBusy ? "Invio..." : "Invia feedback"}
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
+      {isClosed && (
         <a className="pc-btn pc-btn-primary" href={`/portal/documents?ticket=${ticket.id}`}>
           Scarica verbale PDF
         </a>

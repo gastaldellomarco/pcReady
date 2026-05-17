@@ -150,7 +150,8 @@ export function CreateTicketModal() {
   const [selectedContact, setSelectedContact] = useState<ContactOpt | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<DeviceOpt | null>(null);
   const [deviceFlow, setDeviceFlow] = useState<DeviceFlow>("existing");
-  const [templateId, setTemplateId] = useState<string>("");
+  const [templateIds, setTemplateIds] = useState<string[]>([]);
+  const [templatePickerId, setTemplatePickerId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     client_id: "",
@@ -182,7 +183,8 @@ export function CreateTicketModal() {
         const arr = (data ?? []) as unknown as TplOpt[];
         setTemplates(arr);
         const def = arr.find((t) => t.is_default) || arr[0];
-        if (def) setTemplateId(def.id);
+        setTemplateIds(def ? [def.id] : []);
+        if (def) setTemplatePickerId(def.id);
       });
     if (session?.access_token) {
       loadSettings({ data: { accessToken: session.access_token } })
@@ -202,7 +204,8 @@ export function CreateTicketModal() {
     if (!session?.access_token) return toast.error("Sessione non valida");
     setBusy(true);
     try {
-      const tpl = templates.find((t) => t.id === templateId);
+      const selectedTemplates = templates.filter((t) => templateIds.includes(t.id));
+      const tpl = selectedTemplates[0];
       const structure = tpl?.structure || DEFAULT_STRUCTURE;
       const client =
         selectedClient?.id === f.client_id ? selectedClient : await fetchClientById(f.client_id);
@@ -234,6 +237,7 @@ export function CreateTicketModal() {
         notes: f.notes || null,
         checklist: {},
         template_id: tpl?.id || null,
+        checklist_template_ids: selectedTemplates.map((template) => template.id),
         checklist_structure: structure as unknown as Json,
       };
       const data = await createTicketFn({
@@ -245,6 +249,33 @@ export function CreateTicketModal() {
         ticket_id: data.id,
         actor_id: user!.id,
       });
+      const sectionAssignees = new Map<string, string[]>();
+      selectedTemplates.forEach((template) => {
+        Object.values(template.structure || {}).forEach((section) => {
+          if (section.assigned_to) {
+            const labels = sectionAssignees.get(section.assigned_to) ?? [];
+            labels.push(`${template.name}: ${section.label}`);
+            sectionAssignees.set(section.assigned_to, labels);
+          }
+        });
+      });
+      await Promise.all(
+        Array.from(sectionAssignees.entries()).map(([userId, labels]) =>
+          notify({
+            data: {
+              accessToken: session.access_token,
+              notification: {
+                userId,
+                type: "checklist_section_assigned",
+                title: `${data.ticket_code}: sezioni checklist assegnate`,
+                body: labels.join(", "),
+                payload: { ticket_id: data.id, ticket_code: data.ticket_code, sections: labels },
+                link: "/tickets",
+              },
+            },
+          }),
+        ),
+      );
       if (f.assignee_id && session?.access_token) {
         // Validate technician device limit for device tickets
         if (f.ticket_type === "device") {
@@ -291,6 +322,9 @@ export function CreateTicketModal() {
       setSelectedContact(null);
       setSelectedDevice(null);
       setDeviceFlow("existing");
+      const def = templates.find((t) => t.is_default) || templates[0];
+      setTemplateIds(def ? [def.id] : []);
+      setTemplatePickerId(def?.id || "");
       closeCreate();
     } catch (e: unknown) {
       toast.error(formatServerFnErrorForToast(e, "Errore creazione"));
@@ -476,20 +510,55 @@ export function CreateTicketModal() {
                 placeholder="Microsoft 365, Adobe CC, VS Code..."
               />
             </Field>
-            <Field label="Modello checklist">
-              <select
-                className="pc-input"
-                value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
-              >
-                {!templates.length && <option value="">— Checklist standard —</option>}
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                    {t.is_default ? "  (predefinito)" : ""}
-                  </option>
-                ))}
-              </select>
+            <Field label="Collega checklist">
+              <div className="flex gap-2">
+                <select
+                  className="pc-input"
+                  value={templatePickerId}
+                  onChange={(e) => setTemplatePickerId(e.target.value)}
+                >
+                  {!templates.length && <option value="">— Nessun template disponibile —</option>}
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                      {t.is_default ? "  (predefinito)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="pc-btn pc-btn-ghost"
+                  disabled={!templatePickerId || templateIds.includes(templatePickerId)}
+                  onClick={() => setTemplateIds((ids) => [...ids, templatePickerId])}
+                >
+                  Aggiungi
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {templateIds.map((id) => {
+                  const template = templates.find((item) => item.id === id);
+                  if (!template) return null;
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px]"
+                      style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                    >
+                      {template.name}
+                      <button
+                        type="button"
+                        className="text-text3 hover:text-danger"
+                        onClick={() => setTemplateIds((ids) => ids.filter((item) => item !== id))}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+                {!templateIds.length && (
+                  <span className="text-[11px] text-text3">Nessuna checklist collegata</span>
+                )}
+              </div>
             </Field>
           </>
         )}

@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cpu, HardDrive, Monitor, Network, QrCode, Save, TicketPlus, Wrench } from "lucide-react";
+import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
 import {
   daysUntil,
   getWarrantyStatus,
@@ -176,7 +177,7 @@ const DEVICE_STATUS_OPTIONS: DeviceInventoryStatus[] = [
   "retired",
 ];
 
-type DeviceDetailTab = "info" | "hardware" | "tickets" | "history";
+type DeviceDetailTab = "info" | "hardware" | "maintenance" | "tickets" | "history";
 
 type HardwareDraft = {
   cpu_name: string;
@@ -687,6 +688,7 @@ export function DeviceDetailModal() {
           [
             ["info", "Informazioni"],
             ["hardware", "Hardware"],
+            ["maintenance", "Manutenzione"],
             ["tickets", `Ticket (${tickets.length})`],
             ["history", "Storico"],
           ] as [DeviceDetailTab, string][]
@@ -1107,6 +1109,19 @@ export function DeviceDetailModal() {
           }}
           onSave={saveHardware}
         />
+      )}
+
+      {activeTab === "maintenance" && (
+        <div
+          className="mb-4 p-3 rounded-lg"
+          style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+        >
+          <MaintenanceSchedulePanel
+            deviceId={d.id}
+            currentUserId={session?.user?.id}
+            canEdit={canEdit}
+          />
+        </div>
       )}
 
       {activeTab === "history" && (

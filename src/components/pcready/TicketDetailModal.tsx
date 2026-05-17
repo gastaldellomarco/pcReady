@@ -16,6 +16,7 @@ import {
   type TicketType,
   fmtDate,
   fmtDateTime,
+  type ChecklistItemDef,
   type ChecklistStructure,
   DEFAULT_STRUCTURE,
   structureProgress,
@@ -55,6 +56,7 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 import { parseChecklistStructure } from "@/types/checklist-structure";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
+import checklistQueries, { type TicketChecklistInstanceRow } from "@/lib/queries/checklist";
 
 interface TicketRow {
   id: string;
@@ -96,10 +98,11 @@ interface AssignmentRow {
   device?: { id?: string; model: string; serial: string | null } | null;
 }
 
-type DetailTab = "detail" | "notes" | "history" | "attachments";
+type DetailTab = "detail" | "checklists" | "notes" | "history" | "attachments";
 
 const DETAIL_TABS: { key: DetailTab; label: string; icon: typeof ListChecks }[] = [
   { key: "detail", label: "Dettaglio", icon: ListChecks },
+  { key: "checklists", label: "Checklist", icon: CheckCircle2 },
   { key: "notes", label: "Note", icon: GitBranch },
   { key: "history", label: "Storico", icon: History },
   { key: "attachments", label: "Allegati", icon: Paperclip },
@@ -107,7 +110,7 @@ const DETAIL_TABS: { key: DetailTab; label: string; icon: typeof ListChecks }[] 
 
 export function TicketDetailModal() {
   const { id, close } = useTicketDetail();
-  const { canEdit, user, session } = useAuth();
+  const { canEdit, user, session, isAdmin } = useAuth();
   const notify = useServerFn(createNotification);
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
   const loadTechnicians = useServerFn(listTechnicians);
@@ -123,6 +126,7 @@ export function TicketDetailModal() {
   const [deviceSearch, setDeviceSearch] = useState("");
   const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
   const [deviceLoading, setDeviceLoading] = useState(false);
+  const [checklistTemplateToAttach, setChecklistTemplateToAttach] = useState("");
 
   const {
     useTicketQuery,
@@ -142,6 +146,15 @@ export function TicketDetailModal() {
   const addTicketStatusHistory = (queries as any).addTicketStatusHistory as any;
   const qc = useQueryClient();
   const timeSummaryQuery = useTicketTimeSummary(id, user?.id);
+  const checklistTemplatesQuery = (checklistQueries as any).useChecklistTemplates();
+  const checklistInstancesQuery = (checklistQueries as any).useTicketChecklistInstances(id);
+  const createChecklistInstance = (checklistQueries as any).useCreateTicketChecklistInstance();
+  const upsertChecklistResponse = (checklistQueries as any).useUpsertTicketChecklistResponse(
+    id || "",
+  );
+  const completeChecklistInstance = (checklistQueries as any).useCompleteTicketChecklistInstance(
+    id || "",
+  );
 
   useEffect(() => {
     if (assignmentsQuery.data) setAssignments(assignmentsQuery.data as AssignmentRow[]);
@@ -327,6 +340,132 @@ export function TicketDetailModal() {
     await update({ device_id: nextDeviceId } as any);
     setDeviceSearch("");
     toast.success(nextDeviceId ? "Dispositivo collegato" : "Dispositivo scollegato");
+  }
+
+  async function attachChecklistTemplate() {
+    if (!canEdit || !user) return toast.error("Permessi insufficienti");
+    if (!checklistTemplateToAttach) return toast.error("Seleziona un template checklist");
+    const template = (checklistTemplatesQuery.data ?? []).find(
+      (item: any) => item.id === checklistTemplateToAttach,
+    );
+    try {
+      const instance = await createChecklistInstance.mutateAsync({
+        ticketId: ticket.id,
+        templateId: checklistTemplateToAttach,
+        assignedTo: ticket.assignee_id,
+      });
+      await insertActivity({
+        type: "user",
+        message: `${ticket.ticket_code}: checklist "${instance.title}" collegata`,
+        ticket_id: ticket.id,
+        actor_id: user.id,
+      });
+      const sectionAssignees = new Map<string, string[]>();
+      Object.values(template?.structure || instance.structure || {}).forEach((section: any) => {
+        const assignedTo = section.assigned_to || instance.section_assignments?.[section.key];
+        if (assignedTo) {
+          const labels = sectionAssignees.get(assignedTo) ?? [];
+          labels.push(`${instance.title}: ${section.label}`);
+          sectionAssignees.set(assignedTo, labels);
+        }
+      });
+      if (session?.access_token) {
+        await Promise.all(
+          Array.from(sectionAssignees.entries()).map(([userId, labels]) =>
+            notify({
+              data: {
+                accessToken: session.access_token,
+                notification: {
+                  userId,
+                  type: "checklist_section_assigned",
+                  title: `${ticket.ticket_code}: sezioni checklist assegnate`,
+                  body: labels.join(", "),
+                  payload: { ticket_id: ticket.id, checklist_instance_id: instance.id },
+                  link: "/tickets",
+                },
+              },
+            }),
+          ),
+        );
+      }
+      setChecklistTemplateToAttach("");
+      toast.success("Checklist collegata al ticket");
+    } catch (err: any) {
+      toast.error(err?.message || "Errore collegamento checklist");
+    }
+  }
+
+  async function saveChecklistResponse(
+    instance: TicketChecklistInstanceRow,
+    sectionKey: string,
+    itemId: string,
+    value: string | null,
+  ) {
+    if (!canEdit || !user) return toast.error("Permessi insufficienti");
+    if (instance.status === "completed") return toast.error("Checklist gia' completata");
+    const assignedTo =
+      instance.section_assignments?.[sectionKey] || instance.structure[sectionKey]?.assigned_to;
+    if (assignedTo && assignedTo !== user.id && !isAdmin) {
+      return toast.error("Questa sezione e' assegnata a un altro tecnico");
+    }
+    try {
+      await upsertChecklistResponse.mutateAsync({
+        instanceId: instance.id,
+        itemKey: `${sectionKey}:${itemId}`,
+        value,
+        compiledBy: user.id,
+      });
+    } catch (err: any) {
+      toast.error(err?.message || "Errore salvataggio risposta");
+    }
+  }
+
+  async function completeChecklist(instance: TicketChecklistInstanceRow) {
+    if (!canEdit || !user) return toast.error("Permessi insufficienti");
+    const progress = computeInstanceProgress(instance);
+    if (progress.requiredMissing > 0) {
+      return toast.error(`Compila prima ${progress.requiredMissing} elementi obbligatori`);
+    }
+    if (!window.confirm("Confermo di aver verificato tutti gli elementi della checklist.")) return;
+    const signatureName =
+      window.prompt("Firma opzionale: nome da mostrare nel report PDF", "") || null;
+    try {
+      const completed = await completeChecklistInstance.mutateAsync({
+        instanceId: instance.id,
+        completedBy: user.id,
+        signatureName,
+      });
+      await insertActivity({
+        type: "user",
+        message: `${ticket.ticket_code}: checklist "${completed.title}" completata`,
+        ticket_id: ticket.id,
+        actor_id: user.id,
+        entity_type: "ticket_checklist_instance",
+        entity_id: completed.id,
+      });
+      if (ticket.assignee_id && session?.access_token) {
+        await notify({
+          data: {
+            accessToken: session.access_token,
+            notification: {
+              userId: ticket.assignee_id,
+              type: "checklist_completed",
+              title: `${ticket.ticket_code}: checklist completata`,
+              body: completed.title,
+              payload: { ticket_id: ticket.id, checklist_instance_id: completed.id },
+              link: "/tickets",
+            },
+          },
+        });
+      }
+      void sendChecklistEmail({
+        data: { ticketId: ticket.id, checklistName: completed.title },
+      }).catch((err) => console.error("Failed to send checklist completed email:", err));
+      qc.invalidateQueries({ queryKey: [...QUERY_KEYS.ticket(ticket.id), "status-history"] });
+      toast.success("Checklist completata");
+    } catch (err: any) {
+      toast.error(err?.message || "Errore completamento checklist");
+    }
   }
 
   async function duplicateTicket() {
@@ -726,6 +865,24 @@ export function TicketDetailModal() {
         </div>
       )}
 
+      {mainTab === "checklists" && (
+        <TicketChecklistPanel
+          ticket={ticket}
+          instances={(checklistInstancesQuery.data ?? []) as TicketChecklistInstanceRow[]}
+          instancesLoading={checklistInstancesQuery.isLoading}
+          templates={(checklistTemplatesQuery.data ?? []) as any[]}
+          selectedTemplateId={checklistTemplateToAttach}
+          onSelectedTemplateIdChange={setChecklistTemplateToAttach}
+          onAttachTemplate={attachChecklistTemplate}
+          onSaveResponse={saveChecklistResponse}
+          onComplete={completeChecklist}
+          technicians={technicians}
+          currentUserId={user?.id ?? null}
+          canEdit={canEdit}
+          isAdmin={isAdmin}
+        />
+      )}
+
       {mainTab === "notes" && (
         <TicketNotes
           ticketId={ticket.id}
@@ -754,6 +911,319 @@ export function TicketDetailModal() {
       />
     </Modal>
   );
+}
+
+function TicketChecklistPanel({
+  ticket,
+  instances,
+  instancesLoading,
+  templates,
+  selectedTemplateId,
+  onSelectedTemplateIdChange,
+  onAttachTemplate,
+  onSaveResponse,
+  onComplete,
+  technicians,
+  currentUserId,
+  canEdit,
+  isAdmin,
+}: {
+  ticket: TicketRow;
+  instances: TicketChecklistInstanceRow[];
+  instancesLoading: boolean;
+  templates: Array<{ id: string; name: string; is_default?: boolean }>;
+  selectedTemplateId: string;
+  onSelectedTemplateIdChange: (value: string) => void;
+  onAttachTemplate: () => void;
+  onSaveResponse: (
+    instance: TicketChecklistInstanceRow,
+    sectionKey: string,
+    itemId: string,
+    value: string | null,
+  ) => void;
+  onComplete: (instance: TicketChecklistInstanceRow) => void;
+  technicians: TechnicianOption[];
+  currentUserId: string | null;
+  canEdit: boolean;
+  isAdmin: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-[13px] font-bold">Checklist collegate</h3>
+            <p className="text-[11px] text-text3">
+              Le checklist vengono istanziate come snapshot indipendente dal template.
+            </p>
+          </div>
+          {canEdit && (
+            <div className="flex min-w-[320px] flex-1 justify-end gap-2">
+              <select
+                className="pc-input max-w-[320px] text-[12px]"
+                value={selectedTemplateId}
+                onChange={(event) => onSelectedTemplateIdChange(event.target.value)}
+              >
+                <option value="">— Collega checklist —</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                    {template.is_default ? " (predefinito)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                disabled={!selectedTemplateId}
+                onClick={onAttachTemplate}
+              >
+                Collega
+              </button>
+            </div>
+          )}
+        </div>
+        {instancesLoading && <div className="text-[12px] text-text3">Caricamento checklist...</div>}
+        {!instancesLoading && !instances.length && (
+          <div
+            className="rounded-lg border p-6 text-center text-[12px] text-text3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            Nessuna checklist collegata a questo ticket.
+          </div>
+        )}
+        <div className="space-y-3">
+          {instances.map((instance) => {
+            const progress = computeInstanceProgress(instance);
+            return (
+              <div
+                key={instance.id}
+                className="rounded-lg border p-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-[13px] font-bold">{instance.title}</h4>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{
+                          background:
+                            instance.status === "completed" ? "var(--success)" : "var(--surface2)",
+                          color: instance.status === "completed" ? "white" : "var(--text3)",
+                        }}
+                      >
+                        {instance.status === "completed"
+                          ? "Completata"
+                          : instance.status === "in_progress"
+                            ? "In corso"
+                            : "Da compilare"}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-text3">
+                      Ticket {ticket.ticket_code} · {progress.done}/{progress.total} elementi ·{" "}
+                      {progress.pct}%
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-2 w-40 overflow-hidden rounded-full"
+                      style={{ background: "var(--surface2)" }}
+                    >
+                      <div
+                        className="h-full rounded-full bg-accent"
+                        style={{ width: `${progress.pct}%` }}
+                      />
+                    </div>
+                    <button
+                      className="pc-btn pc-btn-ghost pc-btn-sm"
+                      onClick={() => window.print()}
+                    >
+                      <Printer className="h-3 w-3" /> Esporta PDF
+                    </button>
+                    {canEdit && instance.status !== "completed" && (
+                      <button
+                        className="pc-btn pc-btn-primary pc-btn-sm"
+                        disabled={progress.requiredMissing > 0}
+                        title={
+                          progress.requiredMissing > 0
+                            ? "Compila prima tutti gli elementi obbligatori"
+                            : "Completa checklist"
+                        }
+                        onClick={() => onComplete(instance)}
+                      >
+                        <CheckCircle2 className="h-3 w-3" /> Completa checklist
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {Object.entries(instance.structure).map(([sectionKey, section]) => {
+                    const assignedTo =
+                      instance.section_assignments?.[sectionKey] || section.assigned_to || null;
+                    const assignedTech = technicians.find((tech) => tech.id === assignedTo);
+                    const sectionLocked = !!assignedTo && assignedTo !== currentUserId && !isAdmin;
+                    const responses = responseMap(instance.responses);
+                    return (
+                      <div
+                        key={sectionKey}
+                        className="rounded-lg border p-3"
+                        style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                      >
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <div className="text-[12.5px] font-bold">{section.label}</div>
+                            <div className="text-[11px] text-text3">
+                              {assignedTech
+                                ? `Assegnata a ${assignedTech.full_name}`
+                                : "Nessun tecnico specifico"}
+                              {sectionLocked ? " · sola lettura per te" : ""}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          {section.items.map((item) => {
+                            const key = `${sectionKey}:${item.id}`;
+                            const response = responses.get(key);
+                            const disabled =
+                              !canEdit || sectionLocked || instance.status === "completed";
+                            return (
+                              <ChecklistResponseInput
+                                key={item.id}
+                                item={item}
+                                value={response?.value ?? ""}
+                                response={response}
+                                disabled={disabled}
+                                compiledByLabel={
+                                  technicians.find((tech) => tech.id === response?.compiled_by)
+                                    ?.full_name
+                                }
+                                onSave={(value) =>
+                                  onSaveResponse(instance, sectionKey, item.id, value)
+                                }
+                              />
+                            );
+                          })}
+                          {!section.items.length && (
+                            <div className="text-[12px] text-text3">
+                              Nessuna voce in questa sezione
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {instance.status === "completed" && (
+                  <div
+                    className="mt-3 rounded-lg border p-2 text-[11px] text-text3"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    Completata {fmtDateTime(instance.completed_at)}
+                    {instance.signature_name ? ` · Firma: ${instance.signature_name}` : ""}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ChecklistResponseInput({
+  item,
+  value,
+  response,
+  disabled,
+  compiledByLabel,
+  onSave,
+}: {
+  item: ChecklistItemDef;
+  value: string;
+  response?: TicketChecklistInstanceRow["responses"][number];
+  disabled: boolean;
+  compiledByLabel?: string;
+  onSave: (value: string | null) => void;
+}) {
+  const itemType = item.type || "checkbox";
+  const done = isResponseComplete(item, value);
+  const commonMeta = response ? (
+    <span className="text-[10.5px] text-text3">
+      salvato da {compiledByLabel || response.compiled_by || "utente"} ·{" "}
+      {fmtDateTime(response.compiled_at)}
+    </span>
+  ) : null;
+
+  if (itemType === "text" || itemType === "number") {
+    return (
+      <label
+        className="block rounded-md border bg-background p-2"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[12px] font-semibold">
+            {item.text} {item.required && <span className="text-red-500">*</span>}
+          </span>
+          {commonMeta}
+        </div>
+        <input
+          className="pc-input"
+          type={itemType === "number" ? "number" : "text"}
+          defaultValue={value}
+          disabled={disabled}
+          onChange={(event) => onSave(event.target.value)}
+          placeholder={itemType === "number" ? "Valore numerico" : "Risposta"}
+        />
+      </label>
+    );
+  }
+
+  return (
+    <label
+      className="flex items-center gap-2 rounded-md border bg-background p-2"
+      style={{ borderColor: "var(--border)", color: done ? "var(--text3)" : "var(--text)" }}
+    >
+      <input
+        type="checkbox"
+        checked={value === "checked"}
+        disabled={disabled}
+        onChange={(event) => onSave(event.target.checked ? "checked" : "unchecked")}
+      />
+      <span className="flex-1 text-[12px]">
+        {item.text} {item.required && <span className="text-red-500">*</span>}
+      </span>
+      {commonMeta}
+    </label>
+  );
+}
+
+function responseMap(responses: TicketChecklistInstanceRow["responses"]) {
+  return new Map(responses.map((response) => [response.item_key, response]));
+}
+
+function isResponseComplete(item: ChecklistItemDef, value?: string | null) {
+  const itemType = item.type || "checkbox";
+  if (itemType === "checkbox") return value === "checked";
+  return !!value?.trim();
+}
+
+function computeInstanceProgress(instance: TicketChecklistInstanceRow) {
+  const responses = responseMap(instance.responses);
+  let done = 0;
+  let total = 0;
+  let requiredMissing = 0;
+  Object.entries(instance.structure).forEach(([sectionKey, section]) => {
+    section.items.forEach((item) => {
+      total += 1;
+      const response = responses.get(`${sectionKey}:${item.id}`);
+      const completed = isResponseComplete(item, response?.value);
+      if (completed) done += 1;
+      if (item.required && !completed) requiredMissing += 1;
+    });
+  });
+  return { done, total, requiredMissing, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 function Info({ label, value }: { label: string; value: React.ReactNode }) {

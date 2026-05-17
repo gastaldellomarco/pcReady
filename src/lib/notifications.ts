@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = [
   "automation_failed",
   "device_status_changed",
   "checklist_completed",
+  "checklist_section_assigned",
   "user_invited",
   "mention",
 ] as const;

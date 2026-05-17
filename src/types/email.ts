@@ -4,7 +4,11 @@ export type EmailEventType =
   | "confirm_account"
   | "ticket_assigned"
   | "checklist_completed"
-  | "ticket_completed";
+  | "ticket_completed"
+  | "portal_ticket_created"
+  | "portal_ticket_status_changed"
+  | "portal_public_note_added"
+  | "portal_ticket_closed_feedback";
 
 export interface EmailTemplateVariable {
   token: string;
@@ -32,6 +36,10 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
   ticket_assigned: "Notifica assegnazione ticket",
   checklist_completed: "Notifica completamento checklist",
   ticket_completed: "Notifica completamento ticket (cliente)",
+  portal_ticket_created: "Portale - ticket aperto",
+  portal_ticket_status_changed: "Portale - cambio stato ticket",
+  portal_public_note_added: "Portale - nota pubblica aggiunta",
+  portal_ticket_closed_feedback: "Portale - ticket chiuso con feedback",
 };
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
@@ -82,6 +90,31 @@ export const DEFAULT_TEMPLATES: Record<
     body_text:
       "Gentile {{client_name}}, il ticket {{ticket_code}} e' stato completato il {{completed_date}}. Tecnico: {{assignee_name}}. Scarica il verbale: {{pdf_link}}. Portale: {{portal_link}}. Cordiali saluti, {{organization_name}}",
   },
+  portal_ticket_created: {
+    subject: "[{{organization_name}}] Ticket {{ticket_code}} ricevuto",
+    body_html:
+      '<h1>Ticket ricevuto</h1><p>Ciao {{contact_name}},</p><p>abbiamo ricevuto la richiesta <strong>{{ticket_code}}</strong>: {{ticket_title}}.</p><p><a href="{{portal_link}}">Apri il portale</a></p>',
+    body_text:
+      "Ciao {{contact_name}}, abbiamo ricevuto la richiesta {{ticket_code}}: {{ticket_title}}. Portale: {{portal_link}}",
+  },
+  portal_ticket_status_changed: {
+    subject: "[{{organization_name}}] Ticket {{ticket_code}} aggiornato",
+    body_html:
+      '<h1>Ticket aggiornato</h1><p>Il ticket <strong>{{ticket_code}}</strong> ora è in stato <strong>{{ticket_status}}</strong>.</p><p><a href="{{portal_link}}">Vedi dettagli</a></p>',
+    body_text: "Il ticket {{ticket_code}} ora è in stato {{ticket_status}}. {{portal_link}}",
+  },
+  portal_public_note_added: {
+    subject: "[{{organization_name}}] Nuova nota sul ticket {{ticket_code}}",
+    body_html:
+      '<h1>Nuova nota</h1><p>{{note_excerpt}}</p><p><a href="{{portal_link}}">Leggi nel portale</a></p>',
+    body_text: "Nuova nota sul ticket {{ticket_code}}: {{note_excerpt}}. {{portal_link}}",
+  },
+  portal_ticket_closed_feedback: {
+    subject: "[{{organization_name}}] Valuta il ticket {{ticket_code}}",
+    body_html:
+      '<h1>Ticket chiuso</h1><p>Aiutaci a migliorare lasciando una valutazione.</p><p><a href="{{feedback_link}}">Lascia feedback</a></p>',
+    body_text: "Ticket {{ticket_code}} chiuso. Lascia feedback: {{feedback_link}}",
+  },
 };
 
 const COMMON_VARIABLES: EmailTemplateVariable[] = [
@@ -125,5 +158,29 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<EmailEventType, EmailTemplateVaria
     { token: "{{completed_date}}", description: "Data di completamento" },
     { token: "{{pdf_link}}", description: "Link per scaricare il verbale PDF" },
     { token: "{{portal_link}}", description: "Link al portale clienti" },
+  ],
+  portal_ticket_created: [
+    ...COMMON_VARIABLES,
+    { token: "{{contact_name}}", description: "Nome referente cliente" },
+    { token: "{{ticket_code}}", description: "Codice ticket" },
+    { token: "{{ticket_title}}", description: "Titolo ticket" },
+    { token: "{{portal_link}}", description: "Link portale" },
+  ],
+  portal_ticket_status_changed: [
+    ...COMMON_VARIABLES,
+    { token: "{{ticket_code}}", description: "Codice ticket" },
+    { token: "{{ticket_status}}", description: "Nuovo stato" },
+    { token: "{{portal_link}}", description: "Link portale" },
+  ],
+  portal_public_note_added: [
+    ...COMMON_VARIABLES,
+    { token: "{{ticket_code}}", description: "Codice ticket" },
+    { token: "{{note_excerpt}}", description: "Estratto nota" },
+    { token: "{{portal_link}}", description: "Link portale" },
+  ],
+  portal_ticket_closed_feedback: [
+    ...COMMON_VARIABLES,
+    { token: "{{ticket_code}}", description: "Codice ticket" },
+    { token: "{{feedback_link}}", description: "Link feedback" },
   ],
 };

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import {
   errorMessage,
@@ -28,8 +29,21 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Plus, Trash2, Star, StarOff, Check, X, Pencil, History,
-  Copy, Eye, EyeOff, GripVertical, Asterisk, Type, Hash,
+  Plus,
+  Trash2,
+  Star,
+  StarOff,
+  Check,
+  X,
+  Pencil,
+  History,
+  Copy,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Asterisk,
+  Type,
+  Hash,
 } from "lucide-react";
 import { toast } from "sonner";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
@@ -60,6 +74,11 @@ interface Template {
   is_default: boolean;
 }
 
+interface TechnicianOption {
+  id: string;
+  full_name: string;
+}
+
 function ChecklistPage() {
   const { user, canEdit, isAdmin } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -67,6 +86,7 @@ function ChecklistPage() {
   const [loading, setLoading] = useState(true);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [deleteTemplateTarget, setDeleteTemplateTarget] = useState<Template | null>(null);
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const {
     useChecklistTemplates,
     useCreateTemplate,
@@ -79,6 +99,17 @@ function ChecklistPage() {
   const updateMut = useUpdateTemplate();
   const deleteMut = useDeleteTemplate();
   const setDefaultMut = useSetDefaultTemplate();
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { data } = await supabase.from("profiles").select("id, full_name").order("full_name");
+        setTechnicians((data ?? []) as TechnicianOption[]);
+      } catch {
+        setTechnicians([]);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (listQuery.isLoading) setLoading(true);
@@ -273,6 +304,7 @@ function ChecklistPage() {
           onOpenVersions={() => setVersionHistoryOpen(true)}
           onSetDefault={() => setDefault(current.id)}
           onDuplicate={() => duplicate(current)}
+          technicians={technicians}
         />
       ) : (
         <div className="pc-card flex items-center justify-center min-h-[400px]">
@@ -314,6 +346,7 @@ function TemplateEditor({
   onSetDefault,
   onOpenVersions,
   onDuplicate,
+  technicians,
 }: {
   template: Template;
   canEdit: boolean;
@@ -323,6 +356,7 @@ function TemplateEditor({
   onSetDefault: () => void;
   onOpenVersions: () => void;
   onDuplicate: () => void;
+  technicians: TechnicianOption[];
 }) {
   const [name, setName] = useState(template.name);
   const [desc, setDesc] = useState(template.description || "");
@@ -336,9 +370,7 @@ function TemplateEditor({
   const [previewMode, setPreviewMode] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
     setName(template.name);
@@ -384,11 +416,15 @@ function TemplateEditor({
   }
   function updateItemType(id: string, type: "checkbox" | "text" | "number") {
     const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, type } : i));
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Tipo voce modificato");
+  }
+  function updateSectionAssignee(key: string, assignedTo: string) {
     persist(
-      { ...struct, [activeTab]: { ...struct[activeTab], items } },
-      "Tipo voce modificato",
+      { ...struct, [key]: { ...struct[key], assigned_to: assignedTo || null } },
+      assignedTo ? "Tecnico assegnato alla sezione" : "Assegnazione sezione rimossa",
     );
   }
+
   function updateItemRequired(id: string, required: boolean) {
     const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, required } : i));
     persist(
@@ -477,9 +513,10 @@ function TemplateEditor({
     }
   }
 
-  const itemIds = activeTab && struct[activeTab]
-    ? struct[activeTab].items.map((it) => `${activeTab}:${it.id}`)
-    : [];
+  const itemIds =
+    activeTab && struct[activeTab]
+      ? struct[activeTab].items.map((it) => `${activeTab}:${it.id}`)
+      : [];
 
   return (
     <>
@@ -501,9 +538,13 @@ function TemplateEditor({
                 title={previewMode ? "Torna a modifica" : "Anteprima"}
               >
                 {previewMode ? (
-                  <><EyeOff className="w-3 h-3" /> Modifica</>
+                  <>
+                    <EyeOff className="w-3 h-3" /> Modifica
+                  </>
                 ) : (
-                  <><Eye className="w-3 h-3" /> Anteprima</>
+                  <>
+                    <Eye className="w-3 h-3" /> Anteprima
+                  </>
                 )}
               </button>
             )}
@@ -657,12 +698,34 @@ function TemplateEditor({
                 )}
               </div>
 
-              {/* DnD Context for sortable items */}
-              <DndContext
-                sensors={sensors}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
+              <div
+                className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border p-2"
+                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
+                <span className="text-[12px] font-semibold">Assegna sezione a tecnico</span>
+                {canEdit && !previewMode ? (
+                  <select
+                    className="pc-input h-8 max-w-[260px] text-[12px]"
+                    value={struct[activeTab].assigned_to ?? ""}
+                    onChange={(event) => updateSectionAssignee(activeTab, event.target.value)}
+                  >
+                    <option value="">— Nessun tecnico specifico —</option>
+                    {technicians.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.full_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-[12px] text-text3">
+                    {technicians.find((tech) => tech.id === struct[activeTab].assigned_to)
+                      ?.full_name || "Nessun tecnico specifico"}
+                  </span>
+                )}
+              </div>
+
+              {/* DnD Context for sortable items */}
+              <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                   {struct[activeTab].items.map((it) => (
                     <SortableChecklistItem
@@ -715,7 +778,9 @@ function TemplateEditor({
               )}
               {!struct[activeTab].items.length && (
                 <div className="text-center py-6 text-text3 text-[12px]">
-                  {previewMode ? "Nessuna voce" : "Nessuna voce. Aggiungine una con il pulsante sopra."}
+                  {previewMode
+                    ? "Nessuna voce"
+                    : "Nessuna voce. Aggiungine una con il pulsante sopra."}
                 </div>
               )}
             </>
@@ -762,14 +827,9 @@ function SortableChecklistItem({
   onRequiredChange: (id: string, required: boolean) => void;
 }) {
   const dndId = `${sectionKey}:${item.id}`;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: dndId });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: dndId,
+  });
 
   const inEdit = canEdit && !previewMode;
   const itemType = item.type || "checkbox";
@@ -839,7 +899,9 @@ function SortableChecklistItem({
 
       {/* Required badge (preview) */}
       {!inEdit && item.required && (
-        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title="Obbligatoria">*</span>
+        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title="Obbligatoria">
+          *
+        </span>
       )}
 
       {/* Required toggle (edit) */}
@@ -868,7 +930,11 @@ function SortableChecklistItem({
 
       {/* Remove button */}
       {inEdit && (
-        <button className="pc-btn-icon flex-shrink-0" onClick={() => onRemove(item.id)} title="Rimuovi">
+        <button
+          className="pc-btn-icon flex-shrink-0"
+          onClick={() => onRemove(item.id)}
+          title="Rimuovi"
+        >
           <Trash2 className="w-3 h-3" />
         </button>
       )}
