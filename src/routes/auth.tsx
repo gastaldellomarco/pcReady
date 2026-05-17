@@ -15,6 +15,7 @@ import { initTheme } from "@/lib/theme";
 import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { toast } from "sonner";
+import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -72,10 +73,16 @@ function AuthPage() {
     setBusy(true);
     try {
       await assertLoginLimit({ data: { email } });
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
       if (error) throw error;
+      const mfaStatus = await getMfaClientStatus(data.user?.id);
       toast.success("Bentornato!");
-      navigate({ to: "/dashboard" });
+      if (mfaStatus.needsChallenge) {
+        rememberChallengeStarted();
+        navigate({ to: "/auth/2fa-challenge" });
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } catch (err: unknown) {
       toast.error(formatServerFnErrorForToast(err, errorMessage(err, "Errore")));
     } finally {

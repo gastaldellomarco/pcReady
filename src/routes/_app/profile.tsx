@@ -3,7 +3,17 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { errorMessage, ListSkeleton, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Camera, KeyRound, Save, Shield, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  Copy,
+  KeyRound,
+  RefreshCw,
+  Save,
+  Shield,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -28,6 +38,21 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  getBackupCodeStatus,
+  logMfaAuditEvent,
+  regenerateBackupCodes,
+  type MfaBackupCodeStatus,
+} from "@/lib/mfa";
 
 type ProfileTab = "personal" | "security" | "notifications";
 
@@ -136,6 +161,26 @@ function ProfilePage() {
     webhook_url: "",
   });
   const [password, setPassword] = useState({ next: "", confirm: "" });
+  const loadBackupStatus = useServerFn(getBackupCodeStatus);
+  const createBackupCodes = useServerFn(regenerateBackupCodes);
+  const logMfaEvent = useServerFn(logMfaAuditEvent);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<any[]>([]);
+  const [backupStatus, setBackupStatus] = useState<MfaBackupCodeStatus | null>(null);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupStep, setSetupStep] = useState<1 | 2 | 3 | 4>(1);
+  const [enrollment, setEnrollment] = useState<{
+    factorId: string;
+    qrCode: string;
+    secret: string;
+    challengeId?: string;
+  } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
+  const [disableDialogOpen, setDisableDialogOpen] = useState(false);
+  const [disableRequiresCode, setDisableRequiresCode] = useState(true);
+  const [disableCode, setDisableCode] = useState("");
 
   useEffect(() => {
     setTab(searchToTab(search.tab));
@@ -258,6 +303,175 @@ function ProfilePage() {
     } finally {
       setSaving(null);
     }
+  }
+
+  const verifiedMfaFactor = useMemo(
+    () => mfaFactors.find((factor) => factor.status === "verified") ?? null,
+    [mfaFactors],
+  );
+  const mfaEnabled = !!verifiedMfaFactor;
+
+  useEffect(() => {
+    if (tab !== "security" || !session?.access_token) return;
+    void refreshMfaStatus();
+  }, [tab, session?.access_token]);
+
+  async function refreshMfaStatus() {
+    if (!session?.access_token) return;
+    setMfaLoading(true);
+    try {
+      const [{ data, error }, status] = await Promise.all([
+        supabase.auth.mfa.listFactors(),
+        loadBackupStatus({ data: { accessToken: session.access_token } }),
+      ]);
+      if (error) throw error;
+      setMfaFactors((data?.totp ?? []) as any[]);
+      setBackupStatus(status);
+    } catch (error) {
+      toast.error(errorMessage(error, "Impossibile caricare lo stato 2FA"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function startMfaSetup() {
+    setMfaLoading(true);
+    setSetupStep(1);
+    setMfaCode("");
+    setBackupCodes([]);
+    setShowBackupCodes(false);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "PCReady",
+      });
+      if (error) throw error;
+      const factorId = data.id;
+      const qrCode = data.totp?.qr_code ?? "";
+      const secret = data.totp?.secret ?? "";
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId,
+      });
+      if (challengeError) throw challengeError;
+      setEnrollment({ factorId, qrCode, secret, challengeId: challengeData.id });
+      setSetupOpen(true);
+    } catch (error) {
+      toast.error(errorMessage(error, "Avvio configurazione 2FA non riuscito"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function verifyMfaSetup() {
+    if (!session?.access_token || !enrollment?.challengeId || mfaCode.length !== 6) return;
+    setMfaLoading(true);
+    try {
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: enrollment.factorId,
+        challengeId: enrollment.challengeId,
+        code: mfaCode,
+      });
+      if (error) throw error;
+      const result = await createBackupCodes({ data: { accessToken: session.access_token } });
+      setBackupCodes(result.codes);
+      await logMfaEvent({
+        data: {
+          accessToken: session.access_token,
+          actionType: "mfa_enabled",
+          message: "Autenticazione a due fattori attivata",
+        },
+      });
+      setSetupStep(3);
+      await refreshMfaStatus();
+      toast.success("2FA verificato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Codice 2FA non valido"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function openDisableMfaDialog() {
+    if (!verifiedMfaFactor) return;
+    setMfaLoading(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error) throw error;
+      setDisableRequiresCode(data.currentLevel !== "aal2");
+      setDisableCode("");
+      setDisableDialogOpen(true);
+    } catch (error) {
+      toast.error(errorMessage(error, "Impossibile preparare la disattivazione 2FA"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function confirmDisableMfa() {
+    if (!session?.access_token || !verifiedMfaFactor) return;
+    const normalizedCode = disableCode.replace(/\D/g, "").slice(0, 6);
+    if (disableRequiresCode && normalizedCode.length !== 6) {
+      toast.error("Inserisci il codice 2FA a 6 cifre");
+      return;
+    }
+
+    setMfaLoading(true);
+    try {
+      if (disableRequiresCode) {
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: verifiedMfaFactor.id,
+        });
+        if (challengeError) throw challengeError;
+
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: verifiedMfaFactor.id,
+          challengeId: challengeData.id,
+          code: normalizedCode,
+        });
+        if (verifyError) throw verifyError;
+      }
+
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: verifiedMfaFactor.id });
+      if (error) throw error;
+      await logMfaEvent({
+        data: {
+          accessToken: session.access_token,
+          actionType: "mfa_disabled",
+          message: "Autenticazione a due fattori disattivata",
+        },
+      });
+      setShowBackupCodes(false);
+      setDisableDialogOpen(false);
+      setDisableCode("");
+      await refreshMfaStatus();
+      toast.success("2FA disattivato");
+    } catch (error) {
+      toast.error(errorMessage(error, "Disattivazione 2FA non riuscita"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function regenerateCodes() {
+    if (!session?.access_token) return;
+    setMfaLoading(true);
+    try {
+      const result = await createBackupCodes({ data: { accessToken: session.access_token } });
+      setBackupCodes(result.codes);
+      setShowBackupCodes(true);
+      await refreshMfaStatus();
+      toast.success("Nuovi codici generati");
+    } catch (error) {
+      toast.error(errorMessage(error, "Rigenerazione codici non riuscita"));
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function copyBackupCodes() {
+    if (!backupCodes.length) return;
+    await navigator.clipboard.writeText(backupCodes.join("\n"));
+    toast.success("Codici copiati negli appunti");
   }
 
   async function submitPassword() {
@@ -459,45 +673,304 @@ function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="security" className="mt-5">
-          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Sicurezza
-              </CardTitle>
-              <CardDescription>
-                Ultimo accesso:{" "}
-                {profile.last_sign_in_at ? fmtDateTime(profile.last_sign_in_at) : "-"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Field label="Nuova password">
-                <Input
-                  type="password"
-                  value={password.next}
-                  onChange={(event) =>
-                    setPassword((current) => ({ ...current, next: event.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Conferma password">
-                <Input
-                  type="password"
-                  value={password.confirm}
-                  onChange={(event) =>
-                    setPassword((current) => ({ ...current, confirm: event.target.value }))
-                  }
-                />
-              </Field>
-              <Button
-                onClick={submitPassword}
-                disabled={saving === "security" || password.next.length < 8 || !password.confirm}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                {saving === "security" ? "Salvataggio..." : "Aggiorna password"}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Sicurezza
+                </CardTitle>
+                <CardDescription>
+                  Ultimo accesso:{" "}
+                  {profile.last_sign_in_at ? fmtDateTime(profile.last_sign_in_at) : "-"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Field label="Nuova password">
+                  <Input
+                    type="password"
+                    value={password.next}
+                    onChange={(event) =>
+                      setPassword((current) => ({ ...current, next: event.target.value }))
+                    }
+                  />
+                </Field>
+                <Field label="Conferma password">
+                  <Input
+                    type="password"
+                    value={password.confirm}
+                    onChange={(event) =>
+                      setPassword((current) => ({ ...current, confirm: event.target.value }))
+                    }
+                  />
+                </Field>
+                <Button
+                  onClick={submitPassword}
+                  disabled={saving === "security" || password.next.length < 8 || !password.confirm}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  {saving === "security" ? "Salvataggio..." : "Aggiorna password"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {mfaEnabled ? (
+                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  ) : (
+                    <Shield className="h-5 w-5" />
+                  )}
+                  Autenticazione a due fattori
+                </CardTitle>
+                <CardDescription>
+                  Aggiungi un secondo livello di sicurezza al tuo account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {mfaEnabled ? (
+                  <>
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-emerald-600" /> 2FA attivo
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Ultimo utilizzo:{" "}
+                            {backupStatus?.last_used_at
+                              ? fmtDateTime(backupStatus.last_used_at)
+                              : "non disponibile"}
+                          </p>
+                        </div>
+                        <Badge className="bg-emerald-600">Attivo</Badge>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">Codici di backup</p>
+                          <p className="text-xs text-muted-foreground">
+                            {backupStatus ? `${backupStatus.remaining}/${backupStatus.total}` : "-"}{" "}
+                            codici rimanenti
+                          </p>
+                        </div>
+                        {backupStatus && backupStatus.remaining < 3 ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <AlertTriangle className="h-3 w-3" /> Pochi codici
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowBackupCodes((v) => !v)}
+                        >
+                          Visualizza codici backup
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={regenerateCodes}
+                          disabled={mfaLoading}
+                        >
+                          <RefreshCw className="mr-2 h-3.5 w-3.5" /> Rigenera
+                        </Button>
+                      </div>
+                      {showBackupCodes && backupCodes.length > 0 ? (
+                        <BackupCodesPanel codes={backupCodes} onCopy={copyBackupCodes} />
+                      ) : showBackupCodes ? (
+                        <p className="text-xs text-muted-foreground">
+                          Per motivi di sicurezza i codici esistenti non sono recuperabili.
+                          Rigenerali per visualizzarne di nuovi.
+                        </p>
+                      ) : null}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={openDisableMfaDialog}
+                      disabled={mfaLoading}
+                    >
+                      Disattiva 2FA
+                    </Button>
+                  </>
+                ) : (
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <div className="font-medium flex items-center gap-2">
+                      <Shield className="h-4 w-4" /> 2FA non attivo
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Proteggi l&apos;accesso con Google Authenticator, Authy, 1Password o app
+                      compatibili TOTP.
+                    </p>
+                    <Button onClick={startMfaSetup} disabled={mfaLoading}>
+                      Attiva 2FA
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Attiva autenticazione a due fattori</DialogTitle>
+                <DialogDescription>Step {setupStep} di 4</DialogDescription>
+              </DialogHeader>
+              {setupStep === 1 && enrollment ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Scansiona il QR code con Google Authenticator, Authy, 1Password o app
+                    compatibile.
+                  </p>
+                  <QrCodeBox qrCode={enrollment.qrCode} />
+                  <div className="rounded-md bg-muted p-3 text-xs break-all">
+                    Secret manuale: <span className="font-mono">{enrollment.secret}</span>
+                  </div>
+                </div>
+              ) : null}
+              {setupStep === 2 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Inserisci il codice a 6 cifre generato dall&apos;app per completare la verifica.
+                  </p>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(event) =>
+                      setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder="123456"
+                    className="text-center text-2xl tracking-[0.5em] font-mono"
+                  />
+                </div>
+              ) : null}
+              {setupStep === 3 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Salva questi 8 codici di backup in un posto sicuro. Ogni codice e monouso e non
+                    potra essere mostrato di nuovo.
+                  </p>
+                  <BackupCodesPanel codes={backupCodes} onCopy={copyBackupCodes} />
+                </div>
+              ) : null}
+              {setupStep === 4 ? (
+                <div className="rounded-lg border p-4 space-y-2 text-center">
+                  <ShieldCheck className="mx-auto h-10 w-10 text-emerald-600" />
+                  <p className="font-medium">2FA attivato correttamente</p>
+                  <p className="text-sm text-muted-foreground">
+                    Dal prossimo login ti verra richiesto un codice temporaneo.
+                  </p>
+                </div>
+              ) : null}
+              <DialogFooter>
+                {setupStep === 1 ? (
+                  <Button onClick={() => setSetupStep(2)}>Ho scansionato il QR code</Button>
+                ) : null}
+                {setupStep === 2 ? (
+                  <Button onClick={verifyMfaSetup} disabled={mfaLoading || mfaCode.length !== 6}>
+                    Verifica codice
+                  </Button>
+                ) : null}
+                {setupStep === 3 ? (
+                  <Button onClick={() => setSetupStep(4)}>Ho salvato i codici</Button>
+                ) : null}
+                {setupStep === 4 ? <Button onClick={() => setSetupOpen(false)}>Fine</Button> : null}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={disableDialogOpen}
+            onOpenChange={(open) => {
+              if (!mfaLoading) {
+                setDisableDialogOpen(open);
+                if (!open) setDisableCode("");
+              }
+            }}
+          >
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Disattiva autenticazione a due fattori</DialogTitle>
+                <DialogDescription>
+                  Questa operazione rimuove il secondo fattore dal tuo account. Potrai riattivarlo
+                  in seguito.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
+                    <div>
+                      <p className="font-medium">Conferma richiesta</p>
+                      <p className="text-muted-foreground">
+                        Disattivando il 2FA, l&apos;accesso tornera a dipendere solo dalla password
+                        e dai codici sessione.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {disableRequiresCode ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="disable-mfa-code">Codice authenticator</Label>
+                    <Input
+                      id="disable-mfa-code"
+                      inputMode="numeric"
+                      autoFocus
+                      maxLength={6}
+                      value={disableCode}
+                      onChange={(event) =>
+                        setDisableCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && disableCode.length === 6) {
+                          event.preventDefault();
+                          void confirmDisableMfa();
+                        }
+                      }}
+                      placeholder="123456"
+                      className="text-center text-2xl tracking-[0.5em] font-mono"
+                      disabled={mfaLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Supabase richiede una sessione AAL2 per rimuovere un fattore verificato:
+                      inserisci il codice TOTP per confermare.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    La sessione corrente e gia verificata come AAL2, quindi non serve inserire un
+                    altro codice.
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDisableDialogOpen(false)}
+                  disabled={mfaLoading}
+                >
+                  Annulla
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={confirmDisableMfa}
+                  disabled={mfaLoading || (disableRequiresCode && disableCode.length !== 6)}
+                >
+                  {mfaLoading ? "Disattivazione..." : "Disattiva 2FA"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="notifications" className="mt-5">
@@ -603,7 +1076,10 @@ function ProfilePage() {
                     <p className="text-xs text-text3">Già configurata nel profilo.</p>
                   </div>
                   <div>
-                    <Label htmlFor="webhook_url" className="text-xs text-text3 uppercase tracking-wider">
+                    <Label
+                      htmlFor="webhook_url"
+                      className="text-xs text-text3 uppercase tracking-wider"
+                    >
                       Webhook URL
                     </Label>
                     <Input
@@ -652,6 +1128,41 @@ function ProfilePage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function QrCodeBox({ qrCode }: { qrCode: string }) {
+  if (!qrCode)
+    return (
+      <div className="rounded-md border p-4 text-sm text-muted-foreground">
+        QR code non disponibile
+      </div>
+    );
+  if (qrCode.trim().startsWith("<svg")) {
+    return (
+      <div
+        className="mx-auto flex w-fit justify-center rounded-lg border bg-white p-4"
+        dangerouslySetInnerHTML={{ __html: qrCode }}
+      />
+    );
+  }
+  return <img src={qrCode} alt="QR code 2FA" className="mx-auto rounded-lg border bg-white p-4" />;
+}
+
+function BackupCodesPanel({ codes, onCopy }: { codes: string[]; onCopy: () => void }) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 rounded-lg border p-3 font-mono text-sm">
+        {codes.map((code) => (
+          <div key={code} className="rounded bg-muted px-2 py-1 text-center">
+            {code}
+          </div>
+        ))}
+      </div>
+      <Button variant="outline" size="sm" onClick={onCopy}>
+        <Copy className="mr-2 h-3.5 w-3.5" /> Copia codici
+      </Button>
     </div>
   );
 }

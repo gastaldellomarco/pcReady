@@ -20,6 +20,7 @@ import { Route as PortalDevicesRouteImport } from './routes/portal/devices'
 import { Route as PortalDashboardRouteImport } from './routes/portal/dashboard'
 import { Route as AuthSetPasswordRouteImport } from './routes/auth.set-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as Auth2faChallengeRouteImport } from './routes/auth.2fa-challenge'
 import { Route as AppTicketsRouteImport } from './routes/_app/tickets'
 import { Route as AppScriptsRouteImport } from './routes/_app/scripts'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -92,6 +93,11 @@ const AuthSetPasswordRoute = AuthSetPasswordRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/callback',
   path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
+const Auth2faChallengeRoute = Auth2faChallengeRouteImport.update({
+  id: '/2fa-challenge',
+  path: '/2fa-challenge',
   getParentRoute: () => AuthRoute,
 } as any)
 const AppTicketsRoute = AppTicketsRouteImport.update({
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/auth/2fa-challenge': typeof Auth2faChallengeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/scripts': typeof AppScriptsRoute
   '/tickets': typeof AppTicketsRoute
+  '/auth/2fa-challenge': typeof Auth2faChallengeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/scripts': typeof AppScriptsRoute
   '/_app/tickets': typeof AppTicketsRoute
+  '/auth/2fa-challenge': typeof Auth2faChallengeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/set-password': typeof AuthSetPasswordRoute
   '/portal/dashboard': typeof PortalDashboardRoute
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scripts'
     | '/tickets'
+    | '/auth/2fa-challenge'
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scripts'
     | '/tickets'
+    | '/auth/2fa-challenge'
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/scripts'
     | '/_app/tickets'
+    | '/auth/2fa-challenge'
     | '/auth/callback'
     | '/auth/set-password'
     | '/portal/dashboard'
@@ -465,6 +477,13 @@ declare module '@tanstack/react-router' {
       path: '/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/2fa-challenge': {
+      id: '/auth/2fa-challenge'
+      path: '/2fa-challenge'
+      fullPath: '/auth/2fa-challenge'
+      preLoaderRoute: typeof Auth2faChallengeRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_app/tickets': {
@@ -642,11 +661,13 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AuthRouteChildren {
+  Auth2faChallengeRoute: typeof Auth2faChallengeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSetPasswordRoute: typeof AuthSetPasswordRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  Auth2faChallengeRoute: Auth2faChallengeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSetPasswordRoute: AuthSetPasswordRoute,
 }

@@ -41,6 +41,7 @@ import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
 import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
 import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { getPublicAppSettings, setClientAppSettings } from "@/lib/app-settings";
+import { getMfaClientStatus } from "@/lib/mfa-client";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -181,6 +182,8 @@ function AppLayout() {
   const adminErrorCount = useAdminAuditBadge(session?.access_token, profile?.role === "admin");
   const route = useRouterState({ select: (s) => s.location.pathname });
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [mfaChecking, setMfaChecking] = useState(false);
+  const [mfaRequiredMessage, setMfaRequiredMessage] = useState<string | null>(null);
   const loadSettings = useServerFn(getPublicAppSettings);
 
   useEffect(() => {
@@ -204,6 +207,46 @@ function AppLayout() {
   }, [loadSettings, session?.access_token]);
 
   useEffect(() => {
+    if (!session || !profile || profile.password_set === false || route.startsWith("/profile"))
+      return;
+    let active = true;
+    setMfaChecking(true);
+    getMfaClientStatus(session.user.id)
+      .then((status) => {
+        if (!active) return;
+        if (status.needsChallenge) {
+          navigate({ to: "/auth/2fa-challenge", replace: true });
+          return;
+        }
+        const settings = (globalThis as any).__APP_SETTINGS__ || {};
+        const required =
+          settings.mfa_require_all_users === true ||
+          (settings.mfa_require_admin_users === true && profile.role === "admin");
+        if (required && !status.enabled) {
+          const graceDays = Number(settings.mfa_grace_period_days ?? 7);
+          const createdAt = new Date(session.user.created_at ?? Date.now()).getTime();
+          const graceEndsAt = createdAt + Math.max(0, graceDays) * 24 * 60 * 60 * 1000;
+          const expired = Date.now() > graceEndsAt;
+          setMfaRequiredMessage(
+            expired
+              ? "Configura il 2FA per sbloccare l'accesso operativo."
+              : "Il 2FA e richiesto dalla policy aziendale: configuralo dal profilo.",
+          );
+          navigate({ to: "/profile", search: () => ({ tab: "security" }) as any, replace: true });
+        } else {
+          setMfaRequiredMessage(null);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setMfaChecking(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [navigate, profile, route, session]);
+
+  useEffect(() => {
     const titleKey = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
     const currentPageTitle = titleKey ? PAGE_TITLES[titleKey] : "PCReady";
     const org = organizationName || "PCReady";
@@ -216,7 +259,7 @@ function AppLayout() {
     }
   }, [loading, navigate, profile, session]);
 
-  if (loading || profileLoading || !session) {
+  if (loading || profileLoading || !session || mfaChecking) {
     return <AuthLoadingScreen />;
   }
 
@@ -326,6 +369,11 @@ function AppLayout() {
           </div>
         </header>
         <main className="flex-1 px-7 py-6 pc-anim-in">
+          {mfaRequiredMessage ? (
+            <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {mfaRequiredMessage}
+            </div>
+          ) : null}
           <PageErrorBoundary variant="app">
             <Outlet />
           </PageErrorBoundary>
@@ -410,9 +458,7 @@ function SidebarContent({
           <NavSection key={group.id} label={group.label}>
             {group.items.map((item) => {
               const itemBadge =
-                item.to === "/admin"
-                  ? adminErrorCount
-                  : resolveNavigationBadge(item, pendingCount);
+                item.to === "/admin" ? adminErrorCount : resolveNavigationBadge(item, pendingCount);
               return (
                 <NavLinkItem
                   key={item.to}

@@ -347,6 +347,69 @@ export function AdminSettingsTab() {
                       </Label>
                     </div>
 
+                    <div className="space-y-4 rounded-lg border p-4 mt-4">
+                      <div>
+                        <h3 className="font-medium flex items-center gap-2">
+                          <Shield className="h-4 w-4" /> Autenticazione a due fattori
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Imposta policy 2FA obbligatorie e periodo di grazia per gli utenti.
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="mfa_require_admin_users"
+                          checked={!!settingsForm.watch("mfa_require_admin_users" as any)}
+                          onCheckedChange={(checked) =>
+                            settingsForm.setValue(
+                              "mfa_require_admin_users" as any,
+                              checked === true,
+                              {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              },
+                            )
+                          }
+                        />
+                        <Label htmlFor="mfa_require_admin_users">
+                          Richiedi 2FA per tutti gli utenti admin
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="mfa_require_all_users"
+                          checked={!!settingsForm.watch("mfa_require_all_users" as any)}
+                          onCheckedChange={(checked) =>
+                            settingsForm.setValue(
+                              "mfa_require_all_users" as any,
+                              checked === true,
+                              {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              },
+                            )
+                          }
+                        />
+                        <Label htmlFor="mfa_require_all_users">
+                          Richiedi 2FA per tutti gli utenti
+                        </Label>
+                      </div>
+                      <div className="max-w-xs">
+                        <Label htmlFor="mfa_grace_period_days">Periodo di grazia (giorni)</Label>
+                        <Input
+                          id="mfa_grace_period_days"
+                          type="number"
+                          min={0}
+                          max={365}
+                          {...settingsForm.register("mfa_grace_period_days" as any)}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Dopo N giorni senza configurazione 2FA, l&apos;accesso operativo viene
+                          bloccato.
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Log Retention */}
                     <div className="space-y-3 rounded-lg border p-4 mt-4">
                       <div>

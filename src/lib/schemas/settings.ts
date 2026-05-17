@@ -38,6 +38,9 @@ export const AppSettingsSchema = z.object({
   os_options: stringListInput(),
   device_brands: stringListInput(),
   ticket_categories: stringListInput(),
+  mfa_require_admin_users: z.boolean().default(false),
+  mfa_require_all_users: z.boolean().default(false),
+  mfa_grace_period_days: numberInput("Giorni di grazia per configurare il 2FA"),
 });
 
 export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;

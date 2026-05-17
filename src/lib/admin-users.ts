@@ -5,6 +5,7 @@ import type { AppRole } from "@/lib/auth-context";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { getMfaPolicyForUser } from "@/lib/mfa";
 
 export interface AdminUserRow {
   id: string;
@@ -16,6 +17,8 @@ export interface AdminUserRow {
   created_at: string;
   last_sign_in_at: string | null;
   invited_at: string | null;
+  mfa_enabled: boolean;
+  mfa_required: boolean;
 }
 
 interface AuthedInput {
@@ -107,31 +110,47 @@ export const listAdminUsers = createServerFn({ method: "POST" })
     const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
     const roleById = new Map((roles ?? []).map((role) => [role.user_id, role.role as AppRole]));
 
-    return authUsers.users.map((user) => {
-      const profile = profileById.get(user.id);
-      const name =
-        profile?.full_name ||
-        user.user_metadata?.full_name ||
-        user.email?.split("@")[0] ||
-        "Utente";
-      const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
+    return Promise.all(
+      authUsers.users.map(async (user) => {
+        const profile = profileById.get(user.id);
+        const name =
+          profile?.full_name ||
+          user.user_metadata?.full_name ||
+          user.email?.split("@")[0] ||
+          "Utente";
+        const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
+        const role = roleById.get(user.id) ?? "viewer";
+        const factors = await (supabaseAdmin.auth.admin as any).mfa
+          ?.listFactors({ userId: user.id })
+          .catch(() => ({ data: null }));
+        const mfaEnabled = !!(factors?.data?.totp ?? []).some(
+          (factor: any) => factor.status === "verified",
+        );
+        const policy = await getMfaPolicyForUser(user.id, user.created_at ?? null).catch(() => ({
+          required: false,
+        }));
 
-      return {
-        id: user.id,
-        email: user.email ?? null,
-        full_name: name,
-        initials: profile?.initials || normalizeInitials(name),
-        role: roleById.get(user.id) ?? "viewer",
-        status: !user.email_confirmed_at
-          ? "invited"
-          : bannedUntil && bannedUntil > new Date()
-            ? "disabled"
-            : "active",
-        created_at: user.created_at ?? profile?.created_at ?? new Date().toISOString(),
-        last_sign_in_at: user.last_sign_in_at ?? null,
-        invited_at: !user.email_confirmed_at ? (user.invited_at ?? user.created_at ?? null) : null,
-      } satisfies AdminUserRow;
-    });
+        return {
+          id: user.id,
+          email: user.email ?? null,
+          full_name: name,
+          initials: profile?.initials || normalizeInitials(name),
+          role,
+          status: !user.email_confirmed_at
+            ? "invited"
+            : bannedUntil && bannedUntil > new Date()
+              ? "disabled"
+              : "active",
+          created_at: user.created_at ?? profile?.created_at ?? new Date().toISOString(),
+          last_sign_in_at: user.last_sign_in_at ?? null,
+          invited_at: !user.email_confirmed_at
+            ? (user.invited_at ?? user.created_at ?? null)
+            : null,
+          mfa_enabled: mfaEnabled,
+          mfa_required: !!policy.required,
+        } satisfies AdminUserRow;
+      }),
+    );
   });
 
 export const updateAdminUser = createServerFn({ method: "POST" })
