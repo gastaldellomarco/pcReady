@@ -901,15 +901,30 @@ function SlaBadge({
   const sla = computeSlaStatus(created_at, priority, slaLimits, deadline, breached);
   const palette =
     sla.status === "overdue"
-      ? { bg: "#FEE2E2", fg: "#991B1B", label: "SLA violato" }
+      ? {
+          bg: "color-mix(in oklab, var(--danger) 22%, transparent)",
+          fg: "var(--danger)",
+          border: "color-mix(in oklab, var(--danger) 45%, transparent)",
+          label: "SLA violato",
+        }
       : sla.status === "warning"
-        ? { bg: "#FEF3C7", fg: "#92400E", label: "In scadenza" }
-        : { bg: "#D1FAE5", fg: "#065F46", label: "SLA OK" };
+        ? {
+            bg: "color-mix(in oklab, var(--warning) 22%, transparent)",
+            fg: "var(--warning)",
+            border: "color-mix(in oklab, var(--warning) 45%, transparent)",
+            label: "In scadenza",
+          }
+        : {
+            bg: "color-mix(in oklab, var(--success) 22%, transparent)",
+            fg: "var(--success)",
+            border: "color-mix(in oklab, var(--success) 45%, transparent)",
+            label: "SLA OK",
+          };
 
   return (
     <span
-      className="inline-flex flex-col gap-0.5 rounded-lg px-2 py-1 text-[11px] font-medium whitespace-nowrap"
-      style={{ background: palette.bg, color: palette.fg }}
+      className="inline-flex flex-col gap-0.5 rounded-lg border px-2 py-1 text-[11px] font-medium whitespace-nowrap"
+      style={{ background: palette.bg, borderColor: palette.border, color: palette.fg }}
       title={`Deadline SLA: ${fmtDateTime(sla.deadline)}`}
     >
       <span className="font-semibold">{palette.label}</span>
@@ -933,29 +948,38 @@ function TimeOpenBadge({
 
   let bg: string;
   let fg: string;
+  let border: string;
   let label: string;
   if (sla.status === "overdue") {
-    bg = "#FEE2E2";
-    fg = "#991B1B";
+    bg = "color-mix(in oklab, var(--danger) 22%, transparent)";
+    fg = "var(--danger)";
+    border = "color-mix(in oklab, var(--danger) 45%, transparent)";
     label = "SLA scaduto";
   } else if (hoursOpen > 72) {
-    bg = "#FEF2F2";
-    fg = "#DC2626";
+    bg = "color-mix(in oklab, var(--danger) 22%, transparent)";
+    fg = "var(--danger)";
+    border = "color-mix(in oklab, var(--danger) 45%, transparent)";
     label = "> 3gg";
   } else if (hoursOpen > 24) {
-    bg = "#FEF3C7";
-    fg = "#92400E";
+    bg = "color-mix(in oklab, var(--warning) 22%, transparent)";
+    fg = "var(--warning)";
+    border = "color-mix(in oklab, var(--warning) 45%, transparent)";
     label = "1-3gg";
   } else {
-    bg = "#D1FAE5";
-    fg = "#065F46";
+    bg = "color-mix(in oklab, var(--success) 22%, transparent)";
+    fg = "var(--success)";
+    border = "color-mix(in oklab, var(--success) 45%, transparent)";
     label = "< 24h";
   }
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
-      style={{ background: bg, color: fg }}
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
+      style={{
+        background: bg,
+        borderColor: border,
+        color: fg,
+      }}
       title={`Creato: ${fmtDateTime(created_at)}`}
     >
       {formatOpenDuration(created_at)}

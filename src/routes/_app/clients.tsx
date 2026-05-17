@@ -1420,10 +1420,15 @@ function SmallMetric({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold"
       style={{
-        background: tone === "danger" ? "rgba(220, 38, 38, .12)" : "var(--surface2)",
-        color: tone === "danger" ? "#b91c1c" : "var(--text3)",
+        background:
+          tone === "danger"
+            ? "color-mix(in oklab, var(--danger) 22%, transparent)"
+            : "var(--surface2)",
+        borderColor:
+          tone === "danger" ? "color-mix(in oklab, var(--danger) 45%, transparent)" : "transparent",
+        color: tone === "danger" ? "var(--danger)" : "var(--text3)",
       }}
     >
       {icon}
