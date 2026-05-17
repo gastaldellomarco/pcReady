@@ -32,7 +32,7 @@ import {
   TicketTypeBadge,
 } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
-import { Eye, FileDown, ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Columns3, Eye, FileDown } from "lucide-react";
 import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 import { getPublicAppSettings } from "@/lib/app-settings";
@@ -78,6 +78,54 @@ interface Row {
 
 const PAGE_SIZE = 50;
 type BulkConfirmAction = { type: "archive" } | { type: "status"; status: TicketStatus };
+type TicketTableView = "compact" | "extended";
+type TicketColumnKey =
+  | "id"
+  | "model"
+  | "serial"
+  | "client"
+  | "requester"
+  | "priority"
+  | "status"
+  | "type"
+  | "assignee"
+  | "created_at"
+  | "sla"
+  | "time_open";
+
+type TicketColumnDefinition = {
+  key: TicketColumnKey;
+  label: string;
+  sortable?: boolean;
+  className: string;
+  render: (ticket: Row) => React.ReactNode;
+};
+
+const COMPACT_TICKET_COLUMNS: TicketColumnKey[] = [
+  "id",
+  "model",
+  "client",
+  "priority",
+  "status",
+  "assignee",
+  "sla",
+  "time_open",
+];
+
+const EXTENDED_TICKET_COLUMNS: TicketColumnKey[] = [
+  "id",
+  "model",
+  "serial",
+  "client",
+  "requester",
+  "priority",
+  "status",
+  "type",
+  "assignee",
+  "created_at",
+  "sla",
+  "time_open",
+];
 
 function TicketsPage() {
   const { search } = useTickets();
@@ -103,6 +151,10 @@ function TicketsPage() {
   const [bulkConfirm, setBulkConfirm] = useState<BulkConfirmAction | null>(null);
   const [pendingDays, setPendingDays] = useState(3);
   const [hasUpdates, setHasUpdates] = useState(false);
+  const [tableView, setTableView] = useState<TicketTableView>("compact");
+  const [visibleColumns, setVisibleColumns] = useState<Set<TicketColumnKey>>(
+    () => new Set(COMPACT_TICKET_COLUMNS),
+  );
   const loadSettings = useServerFn(getPublicAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
   const listQuery = useTicketsList({
@@ -422,6 +474,132 @@ function TicketsPage() {
     );
   }
 
+  function setTicketTableView(view: TicketTableView) {
+    setTableView(view);
+    setVisibleColumns(
+      new Set(view === "compact" ? COMPACT_TICKET_COLUMNS : EXTENDED_TICKET_COLUMNS),
+    );
+  }
+
+  function toggleColumn(key: TicketColumnKey, checked: boolean) {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(key);
+      else if (next.size > 1) next.delete(key);
+      return next;
+    });
+  }
+
+  function textCell(value: string | null | undefined, empty = "-") {
+    const text = value?.trim() || empty;
+    return (
+      <div className="truncate" title={text}>
+        {text}
+      </div>
+    );
+  }
+
+  const allTicketColumns: TicketColumnDefinition[] = [
+    {
+      key: "id",
+      label: "ID",
+      className: "w-[76px] min-w-[76px] max-w-[76px]",
+      render: (t) => (
+        <div className="truncate font-mono text-[11.5px] text-text3" title={t.ticket_code}>
+          {t.ticket_code}
+        </div>
+      ),
+    },
+    {
+      key: "model",
+      label: "Modello",
+      className: "w-[170px] min-w-[150px] max-w-[210px]",
+      render: (t) => textCell(ticketModel(t)),
+    },
+    {
+      key: "serial",
+      label: "Seriale",
+      className: "w-[120px] min-w-[110px] max-w-[150px]",
+      render: (t) => (
+        <div className="truncate font-mono text-[11px] text-text3" title={ticketSerial(t) || "-"}>
+          {ticketSerial(t) || "-"}
+        </div>
+      ),
+    },
+    {
+      key: "client",
+      label: "Cliente",
+      className: "w-[180px] min-w-[150px] max-w-[230px]",
+      render: (t) => textCell(ticketClient(t)),
+    },
+    {
+      key: "requester",
+      label: "Richiedente",
+      className: "w-[160px] min-w-[130px] max-w-[210px]",
+      render: (t) => textCell(t.requester),
+    },
+    {
+      key: "priority",
+      label: "Priorita",
+      sortable: true,
+      className: "w-[90px] min-w-[80px] max-w-[100px]",
+      render: (t) => <PriorityLabel p={t.priority} />,
+    },
+    {
+      key: "status",
+      label: "Stato",
+      sortable: true,
+      className: "w-[130px] min-w-[120px] max-w-[150px]",
+      render: (t) => <StatusBadge status={t.status} />,
+    },
+    {
+      key: "type",
+      label: "Tipo",
+      className: "w-[125px] min-w-[110px] max-w-[145px]",
+      render: (t) => <TicketTypeBadge type={t.ticket_type} />,
+    },
+    {
+      key: "assignee",
+      label: "Assegnatario",
+      className: "w-[150px] min-w-[130px] max-w-[180px]",
+      render: (t) => <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />,
+    },
+    {
+      key: "created_at",
+      label: "Creato",
+      sortable: true,
+      className: "w-[95px] min-w-[85px] max-w-[110px]",
+      render: (t) => (
+        <div className="truncate text-[11px] text-text3" title={fmtDateTime(t.created_at)}>
+          {fmtDate(t.created_at)}
+        </div>
+      ),
+    },
+    {
+      key: "sla",
+      label: "SLA",
+      className: "w-[150px] min-w-[140px] max-w-[170px]",
+      render: (t) => (
+        <SlaBadge
+          created_at={t.created_at}
+          priority={t.priority}
+          slaLimits={slaLimits}
+          deadline={t.due_date || t.sla_deadline}
+          breached={t.sla_breached}
+        />
+      ),
+    },
+    {
+      key: "time_open",
+      label: "Tempo aperto",
+      className: "w-[150px] min-w-[135px] max-w-[170px]",
+      render: (t) => (
+        <TimeOpenBadge created_at={t.created_at} priority={t.priority} slaLimits={slaLimits} />
+      ),
+    },
+  ];
+  const visibleTableColumns = allTicketColumns.filter((column) => visibleColumns.has(column.key));
+
   return (
     <div className="flex flex-col gap-4">
       {hasUpdates ? (
@@ -665,6 +843,61 @@ function TicketsPage() {
         >
           Cliente filtrato
         </button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex overflow-hidden rounded-lg border"
+            style={{ borderColor: "var(--border)" }}
+          >
+            {(
+              [
+                ["compact", "Compatta"],
+                ["extended", "Estesa"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className="px-3 py-1.5 text-[11px] font-semibold transition-colors"
+                style={{
+                  background: tableView === value ? "var(--accent)" : "var(--surface2)",
+                  color: tableView === value ? "var(--accent-foreground)" : "var(--text2)",
+                }}
+                onClick={() => setTicketTableView(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <details className="relative">
+            <summary className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer list-none">
+              <Columns3 className="w-3 h-3" /> Colonne ({visibleTableColumns.length})
+            </summary>
+            <div
+              className="absolute right-0 z-30 mt-2 w-56 rounded-xl border p-2 shadow-lg"
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+            >
+              <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wide text-text3">
+                Colonne visibili
+              </div>
+              <div className="max-h-72 space-y-1 overflow-y-auto">
+                {allTicketColumns.map((column) => (
+                  <label
+                    key={column.key}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-text2 hover:bg-surface2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns.has(column.key)}
+                      disabled={visibleColumns.size === 1 && visibleColumns.has(column.key)}
+                      onChange={(event) => toggleColumn(column.key, event.target.checked)}
+                    />
+                    {column.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
 
       {listQuery.isError ? (
@@ -675,7 +908,13 @@ function TicketsPage() {
       ) : (
         <div className="pc-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table
+              className={
+                tableView === "compact"
+                  ? "w-full min-w-[980px] table-fixed"
+                  : "w-full min-w-[1420px] table-fixed"
+              }
+            >
               <thead>
                 <tr>
                   <th
@@ -692,23 +931,10 @@ function TicketsPage() {
                       onChange={toggleAllVisible}
                     />
                   </th>
-                  {[
-                    { key: "id", label: "ID", sortable: false },
-                    { key: "model", label: "Modello", sortable: false },
-                    { key: "serial", label: "Seriale", sortable: false },
-                    { key: "client", label: "Cliente", sortable: false },
-                    { key: "requester", label: "Richiedente", sortable: false },
-                    { key: "priority", label: "Priorita", sortable: true },
-                    { key: "status", label: "Stato", sortable: true },
-                    { key: "type", label: "Tipo", sortable: false },
-                    { key: "assignee", label: "Assegnatario", sortable: false },
-                    { key: "created_at", label: "Creato", sortable: true },
-                    { key: "sla", label: "SLA", sortable: false },
-                    { key: "time_open", label: "Tempo aperto", sortable: false },
-                  ].map((h) => (
+                  {visibleTableColumns.map((h) => (
                     <th
                       key={h.key}
-                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b select-none"
+                      className={`text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b select-none ${h.className}`}
                       style={{
                         background: "var(--surface2)",
                         borderColor: "var(--border)",
@@ -746,7 +972,11 @@ function TicketsPage() {
               </thead>
               <tbody>
                 {listLoading ? (
-                  <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
+                  <TableSkeletonRows
+                    rows={12}
+                    columns={visibleTableColumns.length + 1}
+                    cellClassName="px-[14px] py-[10px]"
+                  />
                 ) : (
                   <>
                     {data.map((t) => (
@@ -772,59 +1002,22 @@ function TicketsPage() {
                             onChange={() => toggleTicketSelection(t.id)}
                           />
                         </td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                          {t.ticket_code}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">{ticketModel(t)}</td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                          {ticketSerial(t) || "-"}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">{ticketClient(t)}</td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">{t.requester}</td>
-                        <td className="px-[14px] py-[10px]">
-                          <PriorityLabel p={t.priority} />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <StatusBadge status={t.status} />
-                          </div>
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <TicketTypeBadge type={t.ticket_type} />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <AssigneeChip
-                            initials={t.assignee?.initials}
-                            name={t.assignee?.full_name}
-                          />
-                        </td>
-                        <td
-                          className="px-[14px] py-[10px] text-[11px] text-text3"
-                          title={fmtDateTime(t.created_at)}
-                        >
-                          {fmtDate(t.created_at)}
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <SlaBadge
-                            created_at={t.created_at}
-                            priority={t.priority}
-                            slaLimits={slaLimits}
-                            deadline={t.due_date || t.sla_deadline}
-                            breached={t.sla_breached}
-                          />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <TimeOpenBadge
-                            created_at={t.created_at}
-                            priority={t.priority}
-                            slaLimits={slaLimits}
-                          />
-                        </td>
+                        {visibleTableColumns.map((column) => (
+                          <td
+                            key={column.key}
+                            className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                          >
+                            {column.render(t)}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                     {!data.length && (
                       <tr>
-                        <td colSpan={13} className="text-center py-10 text-text3 text-sm">
+                        <td
+                          colSpan={visibleTableColumns.length + 1}
+                          className="text-center py-10 text-text3 text-sm"
+                        >
                           Nessun ticket
                         </td>
                       </tr>
@@ -902,22 +1095,22 @@ function SlaBadge({
   const palette =
     sla.status === "overdue"
       ? {
-          bg: "color-mix(in oklab, var(--danger) 22%, transparent)",
-          fg: "var(--danger)",
-          border: "color-mix(in oklab, var(--danger) 45%, transparent)",
+          bg: "var(--badge-danger-bg)",
+          fg: "var(--badge-danger-fg)",
+          border: "var(--badge-danger-border)",
           label: "SLA violato",
         }
       : sla.status === "warning"
         ? {
-            bg: "color-mix(in oklab, var(--warning) 22%, transparent)",
-            fg: "var(--warning)",
-            border: "color-mix(in oklab, var(--warning) 45%, transparent)",
+            bg: "var(--badge-warning-bg)",
+            fg: "var(--badge-warning-fg)",
+            border: "var(--badge-warning-border)",
             label: "In scadenza",
           }
         : {
-            bg: "color-mix(in oklab, var(--success) 22%, transparent)",
-            fg: "var(--success)",
-            border: "color-mix(in oklab, var(--success) 45%, transparent)",
+            bg: "var(--badge-success-bg)",
+            fg: "var(--badge-success-fg)",
+            border: "var(--badge-success-border)",
             label: "SLA OK",
           };
 
@@ -951,24 +1144,24 @@ function TimeOpenBadge({
   let border: string;
   let label: string;
   if (sla.status === "overdue") {
-    bg = "color-mix(in oklab, var(--danger) 22%, transparent)";
-    fg = "var(--danger)";
-    border = "color-mix(in oklab, var(--danger) 45%, transparent)";
+    bg = "var(--badge-danger-bg)";
+    fg = "var(--badge-danger-fg)";
+    border = "var(--badge-danger-border)";
     label = "SLA scaduto";
   } else if (hoursOpen > 72) {
-    bg = "color-mix(in oklab, var(--danger) 22%, transparent)";
-    fg = "var(--danger)";
-    border = "color-mix(in oklab, var(--danger) 45%, transparent)";
+    bg = "var(--badge-danger-bg)";
+    fg = "var(--badge-danger-fg)";
+    border = "var(--badge-danger-border)";
     label = "> 3gg";
   } else if (hoursOpen > 24) {
-    bg = "color-mix(in oklab, var(--warning) 22%, transparent)";
-    fg = "var(--warning)";
-    border = "color-mix(in oklab, var(--warning) 45%, transparent)";
+    bg = "var(--badge-warning-bg)";
+    fg = "var(--badge-warning-fg)";
+    border = "var(--badge-warning-border)";
     label = "1-3gg";
   } else {
-    bg = "color-mix(in oklab, var(--success) 22%, transparent)";
-    fg = "var(--success)";
-    border = "color-mix(in oklab, var(--success) 45%, transparent)";
+    bg = "var(--badge-success-bg)";
+    fg = "var(--badge-success-fg)";
+    border = "var(--badge-success-border)";
     label = "< 24h";
   }
 

@@ -131,6 +131,16 @@
   --warn-bg: var(--warning-light);
   --danger-bg: var(--danger-light);
 
+  --badge-success-bg: #d1fae5;
+  --badge-success-fg: #065f46;
+  --badge-success-border: transparent;
+  --badge-warning-bg: #fef3c7;
+  --badge-warning-fg: #92400e;
+  --badge-warning-border: transparent;
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-fg: #991b1b;
+  --badge-danger-border: transparent;
+
   --font-sans: "Geist", "Inter", system-ui, sans-serif;
   --font-head: var(--font-sans);
   --font-body: var(--font-sans);
@@ -186,6 +196,16 @@
   --warn: var(--warning);
   --warn-bg: var(--warning-light);
   --danger-bg: var(--danger-light);
+
+  --badge-success-bg: color-mix(in oklab, var(--success) 22%, transparent);
+  --badge-success-fg: var(--success);
+  --badge-success-border: color-mix(in oklab, var(--success) 45%, transparent);
+  --badge-warning-bg: color-mix(in oklab, var(--warning) 22%, transparent);
+  --badge-warning-fg: var(--warning);
+  --badge-warning-border: color-mix(in oklab, var(--warning) 45%, transparent);
+  --badge-danger-bg: color-mix(in oklab, var(--danger) 22%, transparent);
+  --badge-danger-fg: var(--danger);
+  --badge-danger-border: color-mix(in oklab, var(--danger) 45%, transparent);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2);

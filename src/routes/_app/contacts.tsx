@@ -7,7 +7,20 @@ import queries, { type GlobalContactRow } from "@/lib/queries/clients";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Copy, Link2, Pencil, Search, Star, Trash2, Users } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Copy,
+  Link2,
+  Mail,
+  Pencil,
+  Phone,
+  Search,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
@@ -49,8 +62,11 @@ function ContactsPage() {
   );
   const [q, setQ] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
-  const [portalFilter, setPortalFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "primary" | "portalActive" | "missingEmail"
+  >("all");
   const [editing, setEditing] = useState<GlobalContactRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<GlobalContactRow | null>(null);
   const [form, setForm] = useState<ContactForm>(emptyContactForm);
@@ -75,11 +91,18 @@ function ContactsPage() {
       ).sort((a, b) => clientName(a).localeCompare(clientName(b))),
     [contacts],
   );
+  const roles = useMemo(
+    () =>
+      Array.from(
+        new Set(contacts.map((contact) => contact.job_title).filter(Boolean) as string[]),
+      ).sort((a, b) => a.localeCompare(b)),
+    [contacts],
+  );
   const departments = useMemo(
     () =>
       Array.from(
         new Set(contacts.map((contact) => contact.department).filter(Boolean) as string[]),
-      ).sort(),
+      ).sort((a, b) => a.localeCompare(b)),
     [contacts],
   );
   const filteredContacts = contacts.filter((contact) => {
@@ -87,17 +110,31 @@ function ContactsPage() {
     const haystack = [
       contactLabel(contact),
       contact.email ?? "",
+      contact.phone ?? "",
+      contact.job_title ?? "",
+      contact.department ?? "",
       contact.client ? clientName(contact.client) : "",
     ]
       .join(" ")
       .toLowerCase();
     if (term && !haystack.includes(term)) return false;
     if (clientFilter !== "all" && contact.client_id !== clientFilter) return false;
+    if (roleFilter !== "all" && contact.job_title !== roleFilter) return false;
     if (departmentFilter !== "all" && contact.department !== departmentFilter) return false;
-    if (portalFilter === "active" && !contact.portal_active) return false;
-    if (portalFilter === "inactive" && contact.portal_active) return false;
+    if (statusFilter === "primary" && !contact.is_primary) return false;
+    if (statusFilter === "portalActive" && !contact.portal_active) return false;
+    if (statusFilter === "missingEmail" && contact.email) return false;
     return true;
   });
+  const groupedContacts = Array.from(
+    filteredContacts.reduce((map, contact) => {
+      const key = contact.client_id || "no-client";
+      const current = map.get(key) ?? { client: contact.client, rows: [] as GlobalContactRow[] };
+      current.rows.push(contact);
+      map.set(key, current);
+      return map;
+    }, new Map<string, { client: GlobalContactRow["client"]; rows: GlobalContactRow[] }>()),
+  ).sort((a, b) => clientGroupName(a[1].client).localeCompare(clientGroupName(b[1].client)));
 
   function openEdit(contact: GlobalContactRow) {
     setEditing(contact);
@@ -199,16 +236,19 @@ function ContactsPage() {
       </div>
 
       <div
-        className="grid gap-2 border-b p-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_170px]"
-        style={{ borderColor: "var(--border)" }}
+        className="grid gap-2 border-b p-3 lg:grid-cols-[minmax(220px,1fr)_180px_180px_170px_170px]"
+        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
       >
-        <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2 rounded-lg border px-3 py-2"
+          style={{ background: "var(--surface)", borderColor: "var(--border2)" }}
+        >
           <Search className="h-4 w-4 text-text3" />
           <input
-            className="pc-input"
+            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
             value={q}
             onChange={(event) => setQ(event.target.value)}
-            placeholder="Cerca per nome, email o cliente..."
+            placeholder="Cerca nome, azienda, email, telefono, ruolo..."
           />
         </div>
         <select
@@ -216,10 +256,22 @@ function ContactsPage() {
           value={clientFilter}
           onChange={(event) => setClientFilter(event.target.value)}
         >
-          <option value="all">Tutti i clienti</option>
+          <option value="all">Tutte le aziende</option>
           {clients.map((client) => (
             <option key={client.id} value={client.id}>
               {clientName(client)}
+            </option>
+          ))}
+        </select>
+        <select
+          className="pc-input"
+          value={roleFilter}
+          onChange={(event) => setRoleFilter(event.target.value)}
+        >
+          <option value="all">Tutti i ruoli</option>
+          {roles.map((role) => (
+            <option key={role} value={role}>
+              {role}
             </option>
           ))}
         </select>
@@ -237,108 +289,77 @@ function ContactsPage() {
         </select>
         <select
           className="pc-input"
-          value={portalFilter}
-          onChange={(event) => setPortalFilter(event.target.value as typeof portalFilter)}
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
         >
-          <option value="all">Accesso portale</option>
-          <option value="active">Portale attivo</option>
-          <option value="inactive">Senza accesso</option>
+          <option value="all">Tutti gli stati</option>
+          <option value="primary">Referente principale</option>
+          <option value="portalActive">Portale attivo</option>
+          <option value="missingEmail">Senza email</option>
         </select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-[12.5px]">
-          <thead style={{ background: "var(--surface2)" }}>
-            <tr>
-              {[
-                "Nome",
-                "Cliente",
-                "Email",
-                "Telefono",
-                "Ruolo",
-                "Reparto",
-                "Principale",
-                "Accesso portale",
-                "Azioni",
-              ].map((header) => (
-                <th
-                  key={header}
-                  className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredContacts.map((contact) => (
-              <tr
-                key={contact.id}
-                className="border-t hover:bg-surface2"
-                style={{ borderColor: "var(--border)" }}
+      <div className="space-y-4 p-4">
+        {groupedContacts.map(([clientId, group]) => (
+          <section
+            key={clientId}
+            className="rounded-xl border"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+              style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+            >
+              <button
+                className="inline-flex min-w-0 items-center gap-2 text-left"
+                onClick={() =>
+                  group.client &&
+                  void navigate({
+                    to: "/clients",
+                    search: { clientId: group.client.id, tab: "contacts" },
+                  })
+                }
               >
-                <td className="px-3 py-2 font-semibold">
-                  <button
-                    className="inline-flex items-center gap-1 text-left text-accent"
-                    onClick={() =>
-                      void navigate({
-                        to: "/clients",
-                        search: { clientId: contact.client_id, tab: "contacts" },
-                      })
-                    }
-                  >
-                    {contact.is_primary && (
-                      <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />
-                    )}
-                    {contactLabel(contact)}
-                  </button>
-                </td>
-                <td className="px-3 py-2">{contact.client ? clientName(contact.client) : "-"}</td>
-                <td className="px-3 py-2">{contact.email || "-"}</td>
-                <td className="px-3 py-2">{contact.phone || "-"}</td>
-                <td className="px-3 py-2">{contact.job_title || "-"}</td>
-                <td className="px-3 py-2">{contact.department || "-"}</td>
-                <td className="px-3 py-2">{contact.is_primary ? "Si" : "-"}</td>
-                <td className="px-3 py-2">
-                  <PortalBadge active={contact.portal_active} />
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    <button
-                      className="pc-btn pc-btn-ghost pc-btn-xs"
-                      disabled={!canEdit}
-                      onClick={() => openEdit(contact)}
-                    >
-                      <Pencil className="h-3 w-3" /> Modifica
-                    </button>
-                    <button
-                      className="pc-btn pc-btn-ghost pc-btn-xs"
-                      disabled={!canManagePortalAccess || busy}
-                      onClick={() => generateContactPortalLink(contact)}
-                    >
-                      <Link2 className="h-3 w-3" /> Portale
-                    </button>
-                    <button
-                      className="pc-btn-icon"
-                      disabled={!canDelete}
-                      onClick={() => setDeleteTarget(contact)}
-                      title="Elimina referente"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!filteredContacts.length && (
-              <tr>
-                <td className="px-3 py-10 text-center text-sm text-text3" colSpan={9}>
-                  Nessun referente trovato
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                <Building2 className="h-4 w-4 shrink-0 text-text3" />
+                <span className="truncate text-sm font-bold text-text">
+                  {clientGroupName(group.client)}
+                </span>
+              </button>
+              <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
+                {group.rows.length} referenti
+              </span>
+            </div>
+            <div className="grid gap-3 p-3 xl:grid-cols-2">
+              {group.rows.map((contact) => (
+                <GlobalContactCard
+                  key={contact.id}
+                  contact={contact}
+                  busy={busy}
+                  canDelete={canDelete}
+                  canEdit={canEdit}
+                  canManagePortalAccess={canManagePortalAccess}
+                  onOpenClient={() =>
+                    void navigate({
+                      to: "/clients",
+                      search: { clientId: contact.client_id, tab: "contacts" },
+                    })
+                  }
+                  onEdit={() => openEdit(contact)}
+                  onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                  onDelete={() => setDeleteTarget(contact)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+        {!filteredContacts.length && (
+          <div
+            className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            Nessun referente trovato con i filtri correnti.
+          </div>
+        )}
       </div>
 
       <EditContactModal
@@ -371,6 +392,139 @@ function ContactsPage() {
           if (deleteTarget) await deleteContact(deleteTarget);
         }}
       />
+    </div>
+  );
+}
+
+function GlobalContactCard({
+  contact,
+  busy,
+  canDelete,
+  canEdit,
+  canManagePortalAccess,
+  onOpenClient,
+  onEdit,
+  onGeneratePortalLink,
+  onDelete,
+}: {
+  contact: GlobalContactRow;
+  busy: boolean;
+  canDelete: boolean;
+  canEdit: boolean;
+  canManagePortalAccess: boolean;
+  onOpenClient: () => void;
+  onEdit: () => void;
+  onGeneratePortalLink: () => void;
+  onDelete: () => void;
+}) {
+  const name = contactLabel(contact) || "Referente";
+
+  return (
+    <div
+      className="rounded-xl border p-4"
+      style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent">
+          {contactInitials(contact)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="truncate text-left text-sm font-bold text-accent"
+              onClick={onOpenClient}
+            >
+              {name}
+            </button>
+            {contact.is_primary && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-warn-bg px-2 py-0.5 text-[10px] font-bold text-warn">
+                <Star className="h-3 w-3" /> Principale
+              </span>
+            )}
+            <PortalBadge active={contact.portal_active} />
+          </div>
+          <button
+            className="mt-1 inline-flex max-w-full items-center gap-1 text-left text-[12px] font-semibold text-text2 hover:text-accent"
+            onClick={onOpenClient}
+            title={contact.client ? clientName(contact.client) : "Cliente non associato"}
+          >
+            <Building2 className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {contact.client ? clientName(contact.client) : "Cliente non associato"}
+            </span>
+          </button>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-text3">
+            <span className="inline-flex items-center gap-1">
+              <Briefcase className="h-3 w-3" /> {contact.job_title || "Ruolo non indicato"}
+            </span>
+            {contact.department && (
+              <span className="inline-flex items-center gap-1">
+                <Building2 className="h-3 w-3" /> {contact.department}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="inline-flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-semibold text-text2 hover:text-accent"
+            style={{ borderColor: "var(--border)" }}
+            title={contact.email}
+          >
+            <Mail className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{contact.email}</span>
+          </a>
+        ) : (
+          <span
+            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] text-text3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <Mail className="h-3.5 w-3.5" /> Email mancante
+          </span>
+        )}
+        {contact.phone ? (
+          <a
+            href={`tel:${contact.phone}`}
+            className="inline-flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-semibold text-text2 hover:text-accent"
+            style={{ borderColor: "var(--border)" }}
+            title={contact.phone}
+          >
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{contact.phone}</span>
+          </a>
+        ) : (
+          <span
+            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] text-text3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <Phone className="h-3.5 w-3.5" /> Telefono mancante
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap justify-end gap-1.5">
+        <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canEdit} onClick={onEdit}>
+          <Pencil className="h-3 w-3" /> Modifica
+        </button>
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-xs"
+          disabled={!canManagePortalAccess || busy}
+          onClick={onGeneratePortalLink}
+        >
+          <Link2 className="h-3 w-3" /> Portale
+        </button>
+        <button
+          className="pc-btn-icon"
+          disabled={!canDelete}
+          onClick={onDelete}
+          title="Elimina referente"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -561,8 +715,21 @@ function clientName(client: NonNullable<GlobalContactRow["client"]>) {
   return client.company_name || client.name;
 }
 
+function clientGroupName(client: GlobalContactRow["client"]) {
+  return client ? clientName(client) : "Cliente non associato";
+}
+
 function contactLabel(contact: Pick<GlobalContactRow, "full_name" | "first_name" | "last_name">) {
   return contact.full_name || [contact.first_name, contact.last_name].filter(Boolean).join(" ");
+}
+
+function contactInitials(
+  contact: Pick<GlobalContactRow, "full_name" | "first_name" | "last_name" | "email">,
+) {
+  const name = contactLabel(contact) || contact.email || "Referente";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
 }
 
 function firstName(fullName: string) {
