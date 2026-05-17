@@ -22,6 +22,11 @@ function colorForCount(n: number) {
   return "bg-emerald-700 text-white";
 }
 
+function normalizeWeekCounts(value: unknown) {
+  const counts = Array.isArray(value) ? value : [];
+  return Array.from({ length: 7 }, (_, index) => Number(counts[index] ?? 0));
+}
+
 export default function TechnicianHeatmapWidget() {
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianWeeklyActivity);
@@ -49,7 +54,7 @@ export default function TechnicianHeatmapWidget() {
     return () => clearInterval(t);
   }, [load]);
 
-  const technicians = data?.technicians ?? [];
+  const technicians = Array.isArray(data?.technicians) ? data.technicians : [];
   const weekStart = data?.weekStart ?? new Date().toISOString();
   const weekLabel = useMemo(() => {
     const s = new Date(weekStart);
@@ -98,7 +103,7 @@ export default function TechnicianHeatmapWidget() {
                     <div className="font-semibold text-sm">
                       {t.initials} {t.name}
                     </div>
-                    {t.counts.map((c: number, i: number) => (
+                    {normalizeWeekCounts(t.counts).map((c: number, i: number) => (
                       <div
                         key={i}
                         className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`}

@@ -11,6 +11,10 @@ interface CriticalEventsWidgetProps {
   accessToken: string | undefined;
 }
 
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps) {
   const [events, setEvents] = useState<ActivityLogEntry[]>([]);
   const [slaTickets, setSlaTickets] = useState<any[]>([]);
@@ -26,8 +30,8 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
       loadSlaTickets({ data: { accessToken, thresholdDays: 5 } }),
     ])
       .then(([critical, sla]) => {
-        setEvents(critical);
-        setSlaTickets((sla ?? []).slice(0, 3));
+        setEvents(asArray<ActivityLogEntry>(critical));
+        setSlaTickets(asArray<any>(sla).slice(0, 3));
       })
       .catch(() => {})
       .finally(() => setLoading(false));

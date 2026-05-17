@@ -85,10 +85,15 @@ export async function sendEmail(
     return;
   }
 
-  const importRuntime = new Function("specifier", "return import(specifier)") as (
-    specifier: string,
-  ) => Promise<typeof import("nodemailer")>;
-  const nodemailer = await importRuntime("nodemailer");
+  if ("WebSocketPair" in globalThis) {
+    console.warn(
+      "SMTP diretto non supportato in Cloudflare Workers: email non inviata. " +
+        "Configurare un provider HTTP per l'invio email in produzione.",
+    );
+    return;
+  }
+
+  const nodemailer = await import("nodemailer");
   const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,

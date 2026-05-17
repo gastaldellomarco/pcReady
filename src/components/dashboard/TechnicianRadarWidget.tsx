@@ -38,7 +38,7 @@ export default function TechnicianRadarWidget({
     setLoading(true);
     try {
       const res = await fetcher({ data: { accessToken: session.access_token, dateFrom, dateTo } });
-      const out = res?.rows ?? [];
+      const out = Array.isArray(res?.rows) ? res.rows : [];
       setRows(out);
       setSelectedId((prev) => prev ?? out[0]?.id ?? out[0]?.technician_id ?? null);
     } catch (err) {

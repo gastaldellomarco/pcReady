@@ -12,8 +12,9 @@ function workloadColor(assigned: number) {
 
 export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
   const navigate = useNavigate();
+  const safeRows = Array.isArray(rows) ? rows : [];
 
-  if (!rows.length) {
+  if (!safeRows.length) {
     return (
       <div className="text-center text-text3 py-6">
         Nessun dato tecnico nel periodo selezionato.
@@ -23,7 +24,7 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
 
   return (
     <div className="flex gap-3 overflow-x-auto lg:flex-wrap">
-      {rows.map((row) => {
+      {safeRows.map((row) => {
         const pct = row.assigned
           ? Math.round((row.completed / Math.max(1, row.assigned)) * 100)
           : 0;
