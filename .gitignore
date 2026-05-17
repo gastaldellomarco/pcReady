@@ -44,3 +44,4 @@ backups/
 *.njsproj
 *.sln
 *.sw?
+.agents

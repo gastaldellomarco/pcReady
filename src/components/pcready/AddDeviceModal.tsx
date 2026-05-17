@@ -1,11 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
-import { DeviceSchema, type DeviceInput } from "@/lib/schemas/devices";
+import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
 import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
-import { getPublicAppSettings } from "@/lib/app-settings";
+import { getClientAppSettings, getPublicAppSettings } from "@/lib/app-settings";
 import { loadClientOptions } from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";
@@ -16,6 +16,12 @@ import { toast } from "sonner";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function normalizeOptions(values: unknown): string[] {
+  return Array.isArray(values)
+    ? values.map((value) => String(value).trim()).filter(Boolean)
+    : [];
 }
 
 interface ClientOption {
@@ -32,7 +38,7 @@ export function AddDeviceModal() {
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const form = useForm<DeviceInput>({
+  const form = useForm<DeviceFormInput, unknown, DeviceInput>({
     resolver: zodResolver(DeviceSchema),
     mode: "onChange",
     defaultValues: {
@@ -42,6 +48,7 @@ export function AddDeviceModal() {
       client_id: "",
       end_user: null,
       os: OS_OPTIONS[0],
+      purchase_cost: null,
       notes: null,
     },
   });
@@ -56,22 +63,26 @@ export function AddDeviceModal() {
     });
   }, [addDeviceOpen, addDeviceInitialSerial, form]);
 
+  const applySettingsOptions = useCallback((settings: { os_options?: unknown; device_brands?: unknown }) => {
+    const nextOsOptions = normalizeOptions(settings.os_options);
+    const nextBrandOptions = normalizeOptions(settings.device_brands);
+    const resolvedOsOptions = nextOsOptions.length ? nextOsOptions : OS_OPTIONS;
+
+    setOsOptions(resolvedOsOptions);
+    setBrandOptions(nextBrandOptions);
+
+    if (!resolvedOsOptions.includes(form.getValues().os)) {
+      form.setValue("os", resolvedOsOptions[0], { shouldValidate: true });
+    }
+  }, [form]);
+
   useEffect(() => {
     if (!addDeviceOpen || !session?.access_token) return;
+    applySettingsOptions(getClientAppSettings());
     loadSettings({ data: { accessToken: session.access_token } })
-      .then((settings) => {
-        const nextOptions = settings.os_options.length ? settings.os_options : OS_OPTIONS;
-        setBrandOptions(settings.device_brands);
-        setOsOptions(nextOptions);
-        if (!nextOptions.includes(form.getValues().os)) {
-          form.setValue("os", nextOptions[0], { shouldValidate: true });
-        }
-      })
-      .catch(() => {
-        setBrandOptions([]);
-        setOsOptions(OS_OPTIONS);
-      });
-  }, [addDeviceOpen, form, loadSettings, session?.access_token]);
+      .then((settings) => applySettingsOptions(settings))
+      .catch(() => applySettingsOptions(getClientAppSettings()));
+  }, [addDeviceOpen, applySettingsOptions, loadSettings, session?.access_token]);
 
   const createDeviceMut = (inventoryQueries as any).useCreateDevice();
 
@@ -89,6 +100,7 @@ export function AddDeviceModal() {
         serial: values.serial,
         assigned_to: (values.end_user as string) || null,
         os: values.os,
+        purchase_cost: values.purchase_cost ?? null,
         notes: (values.notes as string) || null,
         created_by: user!.id,
       };
@@ -107,6 +119,7 @@ export function AddDeviceModal() {
         client_id: client.id,
         end_user: null,
         os: osOptions[0] ?? OS_OPTIONS[0],
+        purchase_cost: null,
         notes: null,
       });
       closeAddDevice();
@@ -189,16 +202,34 @@ export function AddDeviceModal() {
             <input className="pc-input" {...form.register("end_user")} />
           </Field>
         </div>
-        <Field label="OS">
-          <select className="pc-input" {...form.register("os")}>
-            {osOptions.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-          {form.formState.errors.os && (
-            <p className="text-sm text-destructive mt-1">{form.formState.errors.os.message}</p>
-          )}
-        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <Field label="OS">
+            <select className="pc-input" {...form.register("os")}>
+              {osOptions.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+            {form.formState.errors.os && (
+              <p className="text-sm text-destructive mt-1">{form.formState.errors.os.message}</p>
+            )}
+          </Field>
+          <Field label="Costo acquisto">
+            <input
+              className="pc-input"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              {...form.register("purchase_cost")}
+              placeholder="0,00"
+            />
+            {form.formState.errors.purchase_cost && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.purchase_cost.message}
+              </p>
+            )}
+          </Field>
+        </div>
         <Field label="Note">
           <textarea className="pc-input min-h-[90px]" {...form.register("notes")} />
         </Field>

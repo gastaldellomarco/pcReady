@@ -5,12 +5,20 @@ const migrationsDir = join(process.cwd(), "supabase", "migrations");
 const files = (await readdir(migrationsDir)).filter((file) => file.endsWith(".sql")).sort();
 const timestampPattern = /^\d{14}_.+\.sql$/;
 const errors = [];
+const migrationVersions = new Map();
 
 for (const file of files) {
   const fullPath = join(migrationsDir, file);
   const sql = await readFile(fullPath, "utf8");
   if (file !== "patch_idempotent.sql" && !timestampPattern.test(file)) {
     errors.push(`${file}: nome migration non valido, usa YYYYMMDDHHMMSS_nome.sql`);
+  }
+
+  if (timestampPattern.test(file)) {
+    const version = file.slice(0, 14);
+    const matchingFiles = migrationVersions.get(version) ?? [];
+    matchingFiles.push(file);
+    migrationVersions.set(version, matchingFiles);
   }
 
   if (!sql.trim()) {
@@ -28,6 +36,12 @@ for (const file of files) {
   }, new Map());
   for (const [tag, count] of dollarQuoteCounts) {
     if (count % 2 !== 0) errors.push(`${file}: blocco dollar-quote ${tag} non bilanciato`);
+  }
+}
+
+for (const [version, matchingFiles] of migrationVersions) {
+  if (matchingFiles.length > 1) {
+    errors.push(`${version}: versione migration duplicata (${matchingFiles.join(", ")})`);
   }
 }
 

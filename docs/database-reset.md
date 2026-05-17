@@ -56,16 +56,18 @@ Le migration definiscono queste tabelle applicative in `public`:
 - `user_profiles`
 - `user_roles`
 
-Sono inoltre presenti dati gestiti da Supabase in altri schema, ad esempio `auth` e `storage`. Il reset Supabase CLI ricrea lo stato partendo dalle migration e dai seed configurati.
+Sono inoltre presenti dati gestiti da Supabase in altri schema, ad esempio `auth` e `storage`. Il reset Supabase CLI ricrea lo stato partendo dalle migration e dai seed configurati. Il seeder completo crea tre utenti demo minimi in `auth.users` solo per soddisfare le FK di profili, ruoli e assegnazioni.
 
 ## Seed iniziali
 
 Il file `supabase/config.toml` abilita l'esecuzione automatica di:
 
 1. `supabase/seed.sql`
-2. `supabase/seed_data.sql`
+2. `supabase/seed_demo_full.sql`
 
-Questi file reinseriscono template email, clienti, contatti, dispositivi, checklist, script e ticket dimostrativi. Alcuni dati di configurazione iniziale, ad esempio `app_settings`, `automation_rules`, template email aggiuntivi e pacchetti assistenza, sono dichiarati direttamente nelle migration e vengono ricreati quando il database viene resettato tramite migration.
+`seed.sql` mantiene i template email base. `seed_demo_full.sql` inserisce un dataset dimostrativo coerente e idempotente per ambiente sviluppo/QA: utenti demo, profili, clienti, contatti, dispositivi, contratti, pacchetti assistenza, ticket, checklist, note, allegati logici, calendari e manutenzioni. Alcuni dati di configurazione iniziale, ad esempio `app_settings`, `automation_rules`, template email aggiuntivi e pacchetti assistenza standard, sono dichiarati direttamente nelle migration e vengono ricreati quando il database viene resettato tramite migration.
+
+Il vecchio `supabase/seed_data.sql` resta disponibile come dataset legacy, ma non è più eseguito automaticamente dal reset perché generava dati parziali/random e molte colonne opzionali non valorizzate.
 
 ## Procedura locale
 
@@ -95,6 +97,20 @@ Questi file reinseriscono template email, clienti, contatti, dispositivi, checkl
    - `bun run typecheck`
    - `bun run test`
    - `bun run build`
+
+## Tabelle generate a runtime o sensibili
+
+Queste tabelle non vengono riempite artificialmente, salvo il client OAuth tecnico `pcready-demo-client`:
+
+- `oauth_authorization_codes`: generata durante il flow OAuth.
+- `oauth_consents`: generata quando un utente autorizza un client OAuth.
+- `portal_sessions`: generata dagli accessi del portale clienti.
+- `user_mfa_backup_codes`: generata dalla configurazione MFA degli utenti.
+- `activity_log`: generata da azioni applicative e audit runtime.
+- `archived_logs`: generata da job di retention/archive log.
+- `automation_run_logs`: generata dall'esecuzione reale dei flow di automazione.
+- `notifications`: generata da ticket, checklist, manutenzioni e automazioni.
+- `entity_versions`: generata dal versioning applicativo quando vengono mutate entità tracciate.
 
 ## Ripristino da backup
 

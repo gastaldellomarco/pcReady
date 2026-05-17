@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { promises as dns } from "dns";
+import ipaddr from "ipaddr.js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
@@ -71,6 +73,27 @@ export interface SaveAutomationRunInput {
   actionsExecuted: ActionResult[];
   errorMessage: string | null;
   isDryRun: boolean;
+}
+
+function isPrivateIP(ip: string): boolean {
+  try {
+    const cleaned = ip.split("%")[0];
+    const addr = ipaddr.parse(cleaned);
+    const range = addr.range();
+    // ranges that are not allowed for webhook destinations
+    const blocked = [
+      "private",
+      "loopback",
+      "linkLocal",
+      "uniqueLocal",
+      "unspecified",
+      "reserved",
+      "multicast",
+    ];
+    return blocked.includes(range);
+  } catch {
+    return false;
+  }
 }
 
 /** Persiste una riga in `automation_run_logs` (esposta anche come vista `automation_runs`). */
@@ -958,7 +981,7 @@ function delayAction(
   };
 }
 
-async function webhookAction(
+export async function webhookAction(
   rawConfig: Record<string, any>,
   triggerPayload: Record<string, any>,
   actionLabel: string,
@@ -997,6 +1020,30 @@ async function webhookAction(
   }
 
   try {
+    // SSRF protections: only allow http/https, optional allowlist, and block private IPs
+    const parsedUrl = new URL(parsed.data.url);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      throw new Error("Protocollo non consentito per webhook");
+    }
+
+    // Optional allowlist via env var `ALLOWED_WEBHOOK_HOSTS` (comma-separated),
+    // if set, only hosts matching entries (exact or subdomain) are allowed.
+    const allowlist = process.env.ALLOWED_WEBHOOK_HOSTS;
+    if (allowlist && allowlist.trim()) {
+      const host = parsedUrl.hostname.toLowerCase();
+      const allowed = allowlist.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+      const ok = allowed.some((a) => host === a || host.endsWith("." + a));
+      if (!ok) throw new Error("Webhook destinazione non in allowlist");
+    }
+
+    // Resolve DNS and ensure no private/loopback/link-local addresses are returned.
+    const addrs = await dns.lookup(parsedUrl.hostname, { all: true });
+    for (const a of addrs) {
+      if (isPrivateIP(a.address)) {
+        throw new Error("SSRF: destinazione non consentata");
+      }
+    }
+
     const response = await fetch(parsed.data.url, {
       method: "POST",
       headers: { "content-type": "application/json" },
