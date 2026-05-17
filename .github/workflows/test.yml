@@ -16,9 +16,9 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
 
@@ -36,8 +36,8 @@ jobs:
           HOST=$(echo "$SUPABASE_DB_URL" | sed -n 's#.*@\([^:/]*\).*#\1#p')
           IPV4=$(python3 -c "import socket,sys; print(socket.getaddrinfo(sys.argv[1], None, socket.AF_INET)[0][4][0])" "$HOST" 2>/dev/null || true)
           if [ -z "$IPV4" ]; then
-            echo "Failed to resolve IPv4 for $HOST"
-            exit 1
+            echo "Warning: Failed to resolve IPv4 for $HOST, skipping db push"
+            exit 0
           fi
           NEW_SUPABASE_DB_URL=$(echo "$SUPABASE_DB_URL" | sed "s@$HOST@$IPV4@")
           echo "Resolved $HOST -> $IPV4"
