@@ -45,3 +45,4 @@ backups/
 *.sln
 *.sw?
 .agents
+.obsidian

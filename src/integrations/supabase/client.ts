@@ -19,9 +19,16 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // Security: prefer `sessionStorage` over `localStorage` for auth tokens
+  // Tokens stored in `localStorage` are accessible from any JS running
+  // on the page, which amplifies the impact of an XSS vulnerability.
+  // Using `sessionStorage` limits the lifetime to the tab session and
+  // reduces exposure. For stronger protection, consider HttpOnly
+  // cookies via server-side auth or enforce a robust CSP.
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== "undefined" ? localStorage : undefined,
+      // Use sessionStorage in browser environments to reduce XSS impact.
+      storage: typeof window !== "undefined" ? sessionStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
     },

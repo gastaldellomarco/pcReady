@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
 import { initTheme } from "@/lib/theme";
 import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
+import staffLogin from "@/lib/staff-auth";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { toast } from "sonner";
 import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
@@ -48,6 +49,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const route = useRouterState({ select: (state) => state.location.pathname });
   const assertLoginLimit = useServerFn(assertStaffLoginRateLimit);
+  const serverLogin = useServerFn(staffLogin);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
@@ -74,9 +76,24 @@ function AuthPage() {
     setBusy(true);
     try {
       await assertLoginLimit({ data: { email } });
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-      if (error) throw error;
-      const mfaStatus = await getMfaClientStatus(data.user?.id);
+      // Call server login and log full response for debugging
+      const serverResp = await serverLogin({ data: { email, password: pwd } });
+      console.debug("[auth] serverLogin response:", serverResp);
+      const loginData = (serverResp as any)?.data ?? (serverResp as any);
+      if (!loginData?.session) {
+        console.error("[auth] missing session in serverLogin response", loginData);
+        throw new Error("Authentication failed");
+      }
+      // Set session in client-side supabase so the app behaves as if signInWithPassword was called
+      try {
+        const setRes = await supabase.auth.setSession(loginData.session as any);
+        console.debug("[auth] supabase.setSession result:", setRes);
+      } catch (setErr) {
+        console.error("[auth] supabase.setSession error:", setErr);
+        throw setErr;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const mfaStatus = await getMfaClientStatus(userData?.user?.id);
       toast.success("Bentornato!");
       if (mfaStatus.needsChallenge) {
         rememberChallengeStarted();

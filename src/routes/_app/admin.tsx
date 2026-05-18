@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import { checkAdmin } from "@/lib/check-admin";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
 import { AdminOAuthTab } from "@/components/admin/AdminOAuthTab";
@@ -34,15 +36,44 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 function AdminUsersPage() {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, loading, session } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
+  const check = useServerFn(checkAdmin);
+  const [serverVerified, setServerVerified] = useState<{
+    loading: boolean;
+    isAdmin: boolean;
+  }>({ loading: true, isAdmin: false });
 
   useEffect(() => {
-    if (!loading && !isAdmin) navigate({ to: "/dashboard", replace: true });
-  }, [isAdmin, loading, navigate]);
+    let mounted = true;
+    // First, fast client-side redirect for unauthenticated users
+    if (!loading && !session) {
+      navigate({ to: "/dashboard", replace: true });
+      return;
+    }
 
-  if (loading || !isAdmin) {
+    // Verify admin status server-side to prevent client-only bypass
+    (async () => {
+      try {
+        const resp = await check({ data: { accessToken: session?.access_token ?? "" } });
+        if (!mounted) return;
+        const isAdminServer = (resp as any)?.isAdmin === true;
+        setServerVerified({ loading: false, isAdmin: isAdminServer });
+        if (!isAdminServer) navigate({ to: "/dashboard", replace: true });
+      } catch (err) {
+        if (!mounted) return;
+        setServerVerified({ loading: false, isAdmin: false });
+        navigate({ to: "/dashboard", replace: true });
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [loading, session, check, navigate]);
+
+  if (loading || serverVerified.loading || !serverVerified.isAdmin) {
     return <div className="text-text3 text-sm">Verifica permessi...</div>;
   }
 

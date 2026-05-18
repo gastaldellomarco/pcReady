@@ -3,6 +3,83 @@ import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_BUCKET = "ticket-documents";
 
+const ALLOWED_FILE_TYPES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".pdf": "application/pdf",
+  ".txt": "text/plain",
+};
+
+function getFileExtension(name: string) {
+  const match = name.toLowerCase().match(/\.[a-z0-9]+$/);
+  return match ? match[0] : "";
+}
+
+function isLikelyPlainText(bytes: Uint8Array) {
+  if (bytes.includes(0)) return false;
+  return Array.from(bytes).every((byte) => {
+    return byte === 9 || byte === 10 || byte === 13 || (byte >= 32 && byte <= 126) || byte >= 128;
+  });
+}
+
+function detectMimeTypeFromHeader(bytes: Uint8Array): string | null {
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return "image/png";
+  }
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (bytes.length >= 6 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+    return "image/gif";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+  if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+    return "application/pdf";
+  }
+  return null;
+}
+
+export async function validateTicketAttachmentFile(file: File) {
+  const extension = getFileExtension(file.name || "");
+  const expectedType = ALLOWED_FILE_TYPES[extension];
+  if (!expectedType) {
+    throw new Error("Estensione file non consentita");
+  }
+
+  const headerBytes = new Uint8Array(await file.slice(0, 512).arrayBuffer());
+  const detectedType = detectMimeTypeFromHeader(headerBytes);
+  if (detectedType) {
+    if (detectedType !== expectedType) {
+      throw new Error("Tipo file non valido in base all'intestazione del file");
+    }
+    return expectedType;
+  }
+
+  if (extension === ".txt") {
+    if (!isLikelyPlainText(headerBytes)) {
+      throw new Error("File .txt non è testo valido");
+    }
+    return expectedType;
+  }
+
+  throw new Error("Impossibile determinare il tipo di file");
+}
+
 export interface TicketAttachment {
   id: string;
   ticket_id: string;
@@ -56,10 +133,11 @@ export async function uploadTicketAttachment({
 }) {
   const safeName = sanitizeFileName(file.name || "allegato");
   const path = `tickets/${ticketId}/${noteId ? `notes/${noteId}/` : ""}${Date.now()}-${safeName}`;
+  const contentType = await validateTicketAttachmentFile(file);
   const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type || "application/octet-stream",
+    contentType,
   });
   if (uploadError) throw uploadError;
 
@@ -70,9 +148,10 @@ export async function uploadTicketAttachment({
       note_id: noteId,
       storage_bucket: STORAGE_BUCKET,
       storage_path: path,
-      file_name: file.name,
+      // store a sanitized filename to avoid problematic characters
+      file_name: safeName,
       file_size: file.size,
-      mime_type: file.type || "application/octet-stream",
+      mime_type: contentType,
       uploaded_by: uploadedBy ?? null,
     })
     .select("id")
@@ -101,7 +180,9 @@ export async function getAttachmentSignedUrl(attachment: TicketAttachment) {
   const { data, error } = await supabase.storage
     .from(attachment.storage_bucket || STORAGE_BUCKET)
     .createSignedUrl(attachment.storage_path, 60 * 10, {
-      download: false,
+      // Force download to set Content-Disposition: attachment on served file
+      // This prevents inline execution of potentially dangerous file types.
+      download: attachment.file_name || true,
     });
   if (error) throw error;
   return data.signedUrl;

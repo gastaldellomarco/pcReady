@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyRole } from "@/lib/get-my-role";
 import type { Session, User } from "@supabase/supabase-js";
 import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
 
@@ -16,7 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const profileRequestId = useRef(0);
 
-  const loadProfile = useCallback(async (uid: string) => {
+  const getRole = useServerFn(getMyRole);
+
+  const loadProfile = useCallback(async (uid: string, accessToken?: string | null) => {
     const requestId = ++profileRequestId.current;
     setProfileLoading(true);
     setAuthError(null);
@@ -25,7 +29,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [
         { data: p, error: profileError },
         { data: up, error: userProfileError },
-        { data: r, error: roleError },
       ] = await Promise.all([
         supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
         supabase
@@ -33,8 +36,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select("display_name, avatar_url, password_set")
           .eq("id", uid)
           .maybeSingle(),
-        supabase.rpc("get_user_role", { _user_id: uid }),
       ]);
+
+      // Fetch role server-side to avoid exposing admin RPC to client
+      let r: any = null;
+      let roleError: unknown = null;
+      try {
+        const roleResp = await getRole({ data: { accessToken: accessToken ?? "" } });
+        r = roleResp as any;
+      } catch (e) {
+        roleError = e;
+      }
 
       if (requestId !== profileRequestId.current) return;
       if (profileError) throw profileError;
@@ -49,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initials: p.initials || displayName.slice(0, 2).toUpperCase(),
         avatar_url: (up as any)?.avatar_url ?? null,
         password_set: (up as any)?.password_set ?? true,
-        role: (r as AppRole) ?? "viewer",
+        role: (r?.role as AppRole) ?? "viewer",
       });
     } catch (err: unknown) {
       if (requestId !== profileRequestId.current) return;
@@ -73,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await loadProfile(s.user.id);
+      await loadProfile(s.user.id, s?.access_token ?? null);
     },
     [loadProfile],
   );
