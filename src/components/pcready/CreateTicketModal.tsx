@@ -135,6 +135,20 @@ async function loadDeviceAutocompleteOptions(
   });
 }
 
+export const __getInitialFormState = () => ({
+  client_id: "",
+  device_id: "",
+  requester_contact_id: "",
+  requester: "",
+  free_requester: false,
+  ticket_type: "device" as TicketType,
+  priority: "med" as TicketPriority,
+  assignee_id: "",
+  ticket_category: "",
+  software: "",
+  notes: "",
+});
+
 export function CreateTicketModal() {
   const { createOpen, closeCreate } = useTickets();
   const { user, canEdit, session } = useAuth();
@@ -153,19 +167,7 @@ export function CreateTicketModal() {
   const [templateIds, setTemplateIds] = useState<string[]>([]);
   const [templatePickerId, setTemplatePickerId] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({
-    client_id: "",
-    device_id: "",
-    requester_contact_id: "",
-    requester: "",
-    free_requester: false,
-    ticket_type: "device" as TicketType,
-    priority: "med" as TicketPriority,
-    assignee_id: "",
-    ticket_category: "",
-    software: "",
-    notes: "",
-  });
+  const [f, setF] = useState(__getInitialFormState());
 
   useEffect(() => {
     if (!createOpen) return;
@@ -305,19 +307,8 @@ export function CreateTicketModal() {
         if (assignee) toast.message(`Notifica inviata a ${assignee.full_name}`);
       }
       toast.success(`${data.ticket_code} creato`);
-      setF({
-        client_id: "",
-        device_id: "",
-        requester_contact_id: "",
-        requester: "",
-        free_requester: false,
-        ticket_type: "device",
-        priority: "med",
-        assignee_id: "",
-        ticket_category: "",
-        software: "",
-        notes: "",
-      });
+      // Reset form state only after successful creation
+      setF(getInitialFormState());
       setSelectedClient(null);
       setSelectedContact(null);
       setSelectedDevice(null);

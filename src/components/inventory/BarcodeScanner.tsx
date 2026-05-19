@@ -14,6 +14,12 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
 
+  // reset transient state when closing
+  function resetState() {
+    setError(null);
+    setManualCode("");
+  }
+
   useEffect(() => {
     if (!open || !videoRef.current) return;
 
@@ -61,8 +67,13 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
     onDetected(value);
   }
 
+  function handleClose() {
+    resetState();
+    onClose();
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title="Scansiona codice" size="lg">
+    <Modal open={open} onClose={handleClose} title="Scansiona codice" size="lg">
       <div className="flex flex-col gap-3">
         <div
           className="aspect-video overflow-hidden rounded-md border"
@@ -93,7 +104,7 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
           </button>
         </div>
         <div className="flex justify-end">
-          <button className="pc-btn pc-btn-ghost" onClick={onClose}>
+          <button className="pc-btn pc-btn-ghost" onClick={handleClose}>
             Chiudi
           </button>
         </div>

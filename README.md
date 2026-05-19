@@ -132,6 +132,10 @@ La procedura completa è documentata in [`docs/BACKUP.md`](docs/BACKUP.md).
 - `supabase/migrations`: schema, funzioni, trigger e policy RLS
 - `wrangler.jsonc`: configurazione Cloudflare Workers
 
+## Deployment & Maintenance
+
+See the deployment and maintenance instructions in [`docs/deployment.md`](docs/deployment.md). It explains how to toggle maintenance mode using `VITE_MAINTENANCE_MODE` and `VITE_MAINTENANCE_END`, the required ISO 8601 format, and the difference between build-time `VITE_*` variables and runtime environment variables.
+
 ## Ruoli Utente
 
 - `admin`: accesso completo, gestione utenti e configurazioni
