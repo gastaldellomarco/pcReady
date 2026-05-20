@@ -1,3 +1,5 @@
+import OverflowTable from "@/components/ui/overflow-table";
+
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -561,7 +563,8 @@ function AssignmentsTab({
         <div className="pc-card-title">Storico bundle assegnati</div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-[12.5px]">
+        <OverflowTable>
+          <table className="w-full min-w-[980px] text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
               {["Cliente", "Bundle", "Stato", "Periodo", "Rinnovo", "Canone", "Note", "Azioni"].map(
@@ -625,7 +628,8 @@ function AssignmentsTab({
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </OverflowTable>
       </div>
     </div>
   );
@@ -647,7 +651,8 @@ function UsageTab({
           <div className="pc-card-title">Consumi bundle e alert</div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1060px] text-[12.5px]">
+          <OverflowTable>
+            <table className="w-full min-w-[1060px] text-[12.5px]">
             <thead style={{ background: "var(--surface2)" }}>
               <tr>
                 {["Cliente", "Bundle", "Ore", "On-site", "Extra", "Scadenza", "Alert"].map((h) => (
@@ -717,7 +722,8 @@ function UsageTab({
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </OverflowTable>
         </div>
       </div>
       <div className="pc-card overflow-hidden">
@@ -725,7 +731,8 @@ function UsageTab({
           <div className="pc-card-title">Report mensile</div>
         </div>
         <div className="max-h-[520px] overflow-auto">
-          <table className="w-full text-[12px]">
+          <OverflowTable>
+            <table className="w-full text-[12px]">
             <thead style={{ background: "var(--surface2)" }}>
               <tr>
                 <th className="px-3 py-2 text-left">Mese</th>
@@ -757,7 +764,8 @@ function UsageTab({
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </OverflowTable>
         </div>
       </div>
     </div>
@@ -876,7 +884,8 @@ function BillingTab({
         <div className="pc-card-hd">
           <div className="pc-card-title">Storico canoni pagati</div>
         </div>
-        <table className="w-full text-[12.5px]">
+        <OverflowTable>
+          <table className="w-full text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
               {["Cliente", "Bundle", "Periodo", "Importo", "Stato"].map((h) => (
@@ -911,7 +920,8 @@ function BillingTab({
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </OverflowTable>
       </div>
     </div>
   );

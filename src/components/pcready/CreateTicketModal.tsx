@@ -135,7 +135,8 @@ async function loadDeviceAutocompleteOptions(
   });
 }
 
-export const __getInitialFormState = () => ({
+function getInitialFormState() {
+  return {
   client_id: "",
   device_id: "",
   requester_contact_id: "",
@@ -147,7 +148,8 @@ export const __getInitialFormState = () => ({
   ticket_category: "",
   software: "",
   notes: "",
-});
+  };
+}
 
 export function CreateTicketModal() {
   const { createOpen, closeCreate } = useTickets();
@@ -167,7 +169,7 @@ export function CreateTicketModal() {
   const [templateIds, setTemplateIds] = useState<string[]>([]);
   const [templatePickerId, setTemplatePickerId] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState(__getInitialFormState());
+  const [f, setF] = useState(getInitialFormState());
 
   useEffect(() => {
     if (!createOpen) return;

@@ -354,7 +354,7 @@ function AppLayout() {
         >
           {isMobile && (
             <button
-              className="pc-btn-icon"
+              className="pc-btn-icon touch-target"
               onClick={() => setMobileNavOpen(true)}
               title="Apri menu"
             >

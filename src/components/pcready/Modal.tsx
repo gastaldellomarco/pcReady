@@ -58,7 +58,7 @@ export function Modal({
           <span className="text-[15px] font-bold" style={{ fontFamily: "var(--font-head)" }}>
             {title}
           </span>
-          <button onClick={onClose} className="pc-btn-icon">
+          <button onClick={onClose} className="pc-btn-icon touch-target">
             <X className="w-3 h-3" />
           </button>
         </div>

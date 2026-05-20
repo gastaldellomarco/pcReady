@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Plus, Wrench } from "lucide-react";
+import OverflowTable from "@/components/ui/overflow-table";
 import { toast } from "sonner";
 import { fmtDate, fmtDateTime } from "@/lib/pcready";
 import {
@@ -252,7 +253,7 @@ export function MaintenanceSchedulePanel({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
+      <OverflowTable className="rounded-lg border" >
         <table className="w-full text-[12px]">
           <thead>
             <tr>
@@ -304,7 +305,7 @@ export function MaintenanceSchedulePanel({
             )}
           </tbody>
         </table>
-      </div>
+      </OverflowTable>
 
       {!compact ? (
         <div className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>

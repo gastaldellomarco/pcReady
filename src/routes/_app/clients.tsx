@@ -1,3 +1,5 @@
+import OverflowTable from "@/components/ui/overflow-table";
+
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ListSkeleton, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
@@ -1028,7 +1030,7 @@ function ClientsPage() {
                         </button>
                       )}
                       <button
-                        className="pc-btn-icon"
+                        className="pc-btn-icon touch-target"
                         disabled={!canDelete}
                         onClick={() => setDestructiveAction({ type: "contact", contact })}
                         title="Elimina referente"
@@ -1479,7 +1481,8 @@ function ResponsiveTable({
   }
   return (
     <div className="overflow-x-auto rounded-md border" style={{ borderColor: "var(--border)" }}>
-      <table className="w-full text-[12.5px]">
+      <OverflowTable>
+        <table className="w-full text-[12.5px]">
         <thead style={{ background: "var(--surface2)" }}>
           <tr>
             {headers.map((header) => (
@@ -1503,7 +1506,8 @@ function ResponsiveTable({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </OverflowTable>
     </div>
   );
 }
@@ -1848,7 +1852,8 @@ function ImportContactsCsvDialog({
               className="max-h-[360px] overflow-auto rounded-md border"
               style={{ borderColor: "var(--border)" }}
             >
-              <table className="w-full text-xs">
+              <OverflowTable>
+                <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "var(--surface2)" }}>
                     {["Riga", "Nome", "Email", "Ruolo", "Reparto", "Azione", "Validazione"].map(
@@ -1907,7 +1912,8 @@ function ImportContactsCsvDialog({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </OverflowTable>
             </div>
           </div>
         )}
@@ -2118,7 +2124,8 @@ function ImportClientsCsvDialog({
               className="max-h-[360px] overflow-auto rounded-md border"
               style={{ borderColor: "var(--border)" }}
             >
-              <table className="w-full text-xs">
+              <OverflowTable>
+                <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "var(--surface2)" }}>
                     {["Riga", "Nome", "Azienda", "P.IVA", "Email", "Azione", "Validazione"].map(
@@ -2153,7 +2160,8 @@ function ImportClientsCsvDialog({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </OverflowTable>
             </div>
           </div>
         )}

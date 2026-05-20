@@ -69,7 +69,7 @@ export async function uploadValidatedAttachment({
   bucket = "ticket-documents",
   path,
   fileBuffer,
-  fileName,
+  _fileName,
   contentType,
 }: {
   bucket?: string;
@@ -98,13 +98,13 @@ export async function enforceAttachmentDownloadPolicy(bucket = "ticket-documents
   const listRes = await supabaseAdmin.storage.from(bucket).list("", { limit: 1000 });
   if (listRes.error) throw listRes.error;
   const objects = listRes.data || [];
-  for (const obj of objects) {
+  for (const _obj of objects) {
     try {
       // createSignedUrl supports download param, no-op here; admin can't set bucket policy programmatically
       // so we only surface the object keys that should be reviewed
       // Return list to caller for manual or scripted handling
-    } catch (e) {
-      // continue
+    } catch (_e) {
+      void _e;
     }
   }
   return objects.map((o: any) => o.name);

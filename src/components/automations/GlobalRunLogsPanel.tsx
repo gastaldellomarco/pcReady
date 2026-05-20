@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/pcready";
+import OverflowTable from "@/components/ui/overflow-table";
 import {
   CheckCircle2,
   XCircle,
@@ -109,7 +110,7 @@ export function GlobalRunLogsPanel({
         <div className="py-6 text-center text-sm text-text3">Nessun log trovato</div>
       )}
       {!loading && logs.length > 0 && (
-        <div className="overflow-x-auto">
+        <OverflowTable>
           <Table>
             <TableHeader>
               <TableRow>
@@ -261,7 +262,7 @@ export function GlobalRunLogsPanel({
               })}
             </TableBody>
           </Table>
-        </div>
+        </OverflowTable>
       )}
     </div>
   );

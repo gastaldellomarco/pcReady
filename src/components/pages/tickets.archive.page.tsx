@@ -1,3 +1,5 @@
+import OverflowTable from "@/components/ui/overflow-table";
+
 import { useEffect, useState } from "react";
 import queries from "@/lib/queries/tickets";
 import { openTicketDetail } from "@/lib/use-detail";
@@ -72,8 +74,8 @@ export default function TicketsArchivePage() {
       </div>
 
       <div className="pc-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <OverflowTable>
+            <table className="w-full">
             <thead>
               <tr>
                 {[
@@ -162,8 +164,8 @@ export default function TicketsArchivePage() {
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+            </table>
+        </OverflowTable>
       </div>
 
       <div className="flex items-center justify-end gap-2">

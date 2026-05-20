@@ -364,14 +364,14 @@ function ScriptCard({
         <span className="text-[10.5px] text-text3 font-mono">Apri →</span>
         <div className="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {onEdit && (
-            <button onClick={onEdit} className="pc-btn-icon" title="Modifica">
+            <button onClick={onEdit} className="pc-btn-icon touch-target" title="Modifica">
               <Pencil className="w-3 h-3" />
             </button>
           )}
           {onDelete && (
             <button
               onClick={onDelete}
-              className="pc-btn-icon"
+              className="pc-btn-icon touch-target"
               title="Elimina"
               style={{ color: "var(--danger, #DC2626)" }}
             >

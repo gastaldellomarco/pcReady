@@ -33,7 +33,7 @@ export function EmailPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Anteprima email</DialogTitle>
           <DialogDescription>{renderedSubject}</DialogDescription>

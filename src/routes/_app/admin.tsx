@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 function AdminUsersPage() {
-  const { isAdmin, loading, session } = useAuth();
+  const { loading, session } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const check = useServerFn(checkAdmin);
@@ -61,7 +61,7 @@ function AdminUsersPage() {
         const isAdminServer = (resp as any)?.isAdmin === true;
         setServerVerified({ loading: false, isAdmin: isAdminServer });
         if (!isAdminServer) navigate({ to: "/dashboard", replace: true });
-      } catch (err) {
+      } catch (_err) {
         if (!mounted) return;
         setServerVerified({ loading: false, isAdmin: false });
         navigate({ to: "/dashboard", replace: true });

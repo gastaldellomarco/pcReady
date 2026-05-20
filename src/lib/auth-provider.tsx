@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (requestId === profileRequestId.current) setProfileLoading(false);
     }
-  }, []);
+  }, [getRole]);
 
   const applySession = useCallback(
     async (s: Session | null) => {

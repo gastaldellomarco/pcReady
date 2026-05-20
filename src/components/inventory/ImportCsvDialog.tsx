@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Download, FileUp } from "lucide-react";
 import { Modal } from "@/components/pcready/Modal";
+import OverflowTable from "@/components/ui/overflow-table";
 import { useAuth } from "@/lib/auth-context";
 import {
   csvTemplate,
@@ -175,10 +176,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               <SummaryBox label="Errori" value={stats.errors} />
               <SummaryBox label="Righe" value={rows.length} />
             </div>
-            <div
-              className="max-h-[360px] overflow-auto rounded-md border"
-              style={{ borderColor: "var(--border)" }}
-            >
+            <OverflowTable className="max-h-[360px] overflow-auto rounded-md border">
               <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "var(--surface2)" }}>
@@ -225,7 +223,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </OverflowTable>
           </div>
         )}
 

@@ -398,9 +398,49 @@
     background: var(--surface2);
     color: var(--text2);
     border: 1px solid var(--border);
-    opacity: 1;
+
   }
 
+  /* end .pc-badge-archived */
+:root {
+  --mobile-gap: 12px;
+  --touch-target-size: 44px;
+}
+
+/* Mobile primitives */
+:root {
+  --mobile-gap: 12px;
+  --touch-target-size: 44px;
+}
+
+@layer utilities {
+  .min-touch {
+    min-width: var(--touch-target-size);
+    min-height: var(--touch-target-size);
+  }
+
+  .touch-target {
+    min-width: var(--touch-target-size);
+    min-height: var(--touch-target-size);
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .overflow-x-auto-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+  
   .pc-input {
     padding: 8px 11px;
     border: 1px solid var(--border2);

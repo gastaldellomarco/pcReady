@@ -35,6 +35,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import OverflowTable from "@/components/ui/overflow-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -981,7 +982,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                             e.stopPropagation();
                             handleDeletePreset(preset.id);
                           }}
-                          className="ml-2 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-text3 hover:text-red-600"
+                          className="ml-2 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-text3 hover:text-red-600 touch-target"
                           title="Elimina vista"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -1026,8 +1027,8 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
             ) : viewMode === "table" ? (
               <>
                 {/* Table View */}
-                <div className="rounded-lg border border-border overflow-hidden">
-                  <Table className="table-fixed">
+                  <OverflowTable className="rounded-lg border border-border">
+                    <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="bg-muted/50 dark:bg-muted/10">
                         <TableHead className="w-[24px] pl-3" />
@@ -1052,7 +1053,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                       ))}
                     </TableBody>
                   </Table>
-                </div>
+                </OverflowTable>
               </>
             ) : (
               <>
@@ -1141,7 +1142,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
 
       {/* Save Preset Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Salva vista filtrata</DialogTitle>
             <DialogDescription>

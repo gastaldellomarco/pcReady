@@ -1,4 +1,6 @@
-﻿import { useState, type ReactNode } from "react";
+﻿import OverflowTable from "@/components/ui/overflow-table";
+
+import { useState, type ReactNode } from "react";
 import {
   Bell,
   CheckCircle2,
@@ -380,7 +382,7 @@ export function AdminSettingsTab() {
                               SLA del ticket viene calcolata sul tempo di risoluzione.
                             </p>
                           </div>
-                          <div className="overflow-x-auto">
+                          <OverflowTable>
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="border-b">
@@ -425,7 +427,7 @@ export function AdminSettingsTab() {
                                 ))}
                               </tbody>
                             </table>
-                          </div>
+                          </OverflowTable>
                         </div>
                       </div>
                     </div>

@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import OverflowTable from "@/components/ui/overflow-table";
 import {
   Select,
   SelectContent,
@@ -1202,8 +1203,9 @@ export function DeviceDetailModal() {
               {openTickets.length} ticket aperti · {closedTickets.length} ticket chiusi
             </div>
           </div>
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-[12px]">
+          <OverflowTable className="mt-3">
+            <OverflowTable>
+              <table className="w-full text-[12px]">
               <thead>
                 <tr>
                   {[
@@ -1284,8 +1286,9 @@ export function DeviceDetailModal() {
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </OverflowTable>
+          </OverflowTable>
         </div>
       )}
 

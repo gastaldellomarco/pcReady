@@ -36,6 +36,7 @@ import type { OAuthClientInfo } from "@/lib/oauth-consent";
 import { useAuth } from "@/lib/auth-context";
 import { OAUTH_SCOPES, getScopeLabel } from "@/lib/oauth-scopes";
 import { useAdminOAuthClients } from "@/hooks/useAdminOAuthClients";
+import OverflowTable from "@/components/ui/overflow-table";
 
 export function AdminOAuthTab() {
   const { session, isAdmin } = useAuth();
@@ -51,7 +52,6 @@ export function AdminOAuthTab() {
     rotatedSecret,
     setRotatedSecret,
     copyOAuthField,
-    updateClientStatus,
     rotateClientSecret,
     actionBusyId,
     lifecycleOpenFor,
@@ -286,7 +286,7 @@ export function AdminOAuthTab() {
           if (!open) setOauthCreated(null);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           {oauthCreated ? (
             <>
               <DialogHeader>
@@ -407,7 +407,7 @@ export function AdminOAuthTab() {
           if (!open) setRotatedSecret(null);
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           {rotatedSecret ? (
             <>
               <DialogHeader>
@@ -596,7 +596,7 @@ export function AdminOAuthTab() {
       </Card>
 
       <Dialog open={!!lifecycleOpenFor} onOpenChange={(o) => !o && closeLifecycle()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Storico client OAuth</DialogTitle>
             <DialogDescription>
@@ -612,7 +612,7 @@ export function AdminOAuthTab() {
                 {lifecycleData.consents.length === 0 ? (
                   <p className="text-muted-foreground text-xs">Nessun consenso registrato.</p>
                 ) : (
-                  <div className="border rounded-md overflow-x-auto max-h-48 overflow-y-auto">
+                  <OverflowTable className="max-h-48 overflow-y-auto">
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50 sticky top-0">
                         <tr>
@@ -643,7 +643,7 @@ export function AdminOAuthTab() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </OverflowTable>
                 )}
               </div>
               <div>
@@ -651,7 +651,7 @@ export function AdminOAuthTab() {
                 {lifecycleData.authorizationEvents.length === 0 ? (
                   <p className="text-muted-foreground text-xs">Nessun codice registrato.</p>
                 ) : (
-                  <div className="border rounded-md overflow-x-auto max-h-40 overflow-y-auto">
+                  <OverflowTable className="max-h-40 overflow-y-auto">
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50 sticky top-0">
                         <tr>
@@ -672,7 +672,7 @@ export function AdminOAuthTab() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </OverflowTable>
                 )}
               </div>
               <div>

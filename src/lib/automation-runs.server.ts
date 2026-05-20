@@ -16,9 +16,7 @@ import type {
   HealthStatus,
   RunLogStatus,
 } from "@/lib/automation-runs";
-import type {
-  AutomationFlow,
-} from "@/types/automation";
+import type { AutomationFlow } from "@/types/automation";
 
 // ─── Block Types for execution pipeline ───────────────────────────────
 

@@ -1,3 +1,5 @@
+import OverflowTable from "@/components/ui/overflow-table";
+
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Clock, RefreshCw } from "lucide-react";
@@ -55,7 +57,7 @@ export function OverdueTicketsWidget() {
             Nessun ticket SLA violato o in scadenza
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <OverflowTable>
             <table className="w-full">
               <thead>
                 <tr>
@@ -107,8 +109,8 @@ export function OverdueTicketsWidget() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+          </OverflowTable>
         )}
       </div>
     </div>

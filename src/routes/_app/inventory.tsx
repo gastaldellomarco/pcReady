@@ -808,7 +808,7 @@ function InventoryPage() {
                         >
                           <div className="flex items-center gap-1">
                             <button
-                              className="pc-btn-icon"
+                              className="pc-btn-icon touch-target"
                               title="Crea ticket con questo dispositivo"
                               aria-label={`Crea ticket per ${r.serial || r.id}`}
                               onClick={() => {
@@ -819,7 +819,7 @@ function InventoryPage() {
                               <TicketPlus className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              className="pc-btn-icon"
+                              className="pc-btn-icon touch-target"
                               title="QR dispositivo"
                               aria-label={`QR ${r.serial || r.id}`}
                               onClick={() => setQrDevice(toQrDevice(r))}

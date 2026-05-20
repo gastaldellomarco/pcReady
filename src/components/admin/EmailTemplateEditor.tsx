@@ -279,7 +279,7 @@ export function EmailTemplateEditor({
         sampleValues={sampleValues}
       />
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Ripristinare il template di default?</AlertDialogTitle>
             <AlertDialogDescription>

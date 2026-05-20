@@ -1,3 +1,5 @@
+import OverflowTable from "@/components/ui/overflow-table";
+
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Inbox, RefreshCw } from "lucide-react";
@@ -186,8 +188,9 @@ export function TableSkeleton({
           <Skeleton className="ml-auto h-9 w-24" />
         </div>
       )}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <OverflowTable>
+        <OverflowTable>
+          <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40">
               {Array.from({ length: columns }).map((_, c) => (
@@ -200,8 +203,9 @@ export function TableSkeleton({
           <tbody>
             <TableSkeletonRows rows={rows} columns={columns} />
           </tbody>
-        </table>
-      </div>
+          </table>
+        </OverflowTable>
+      </OverflowTable>
     </div>
   );
 }

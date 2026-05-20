@@ -11,7 +11,7 @@ export const checkAdmin = createServerFn({ method: "POST" })
     try {
       await requireAdmin(data.accessToken);
       return { isAdmin: true };
-    } catch (err) {
+    } catch (_err) {
       return { isAdmin: false };
     }
   });

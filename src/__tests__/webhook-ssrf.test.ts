@@ -6,12 +6,12 @@ describe("webhookAction SSRF protections", () => {
 
   beforeEach(() => {
     // stub fetch
-    // @ts-ignore
+    // @ts-expect-error mock global fetch
     globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
-    // @ts-ignore
+    // @ts-expect-error restore original fetch
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
@@ -33,13 +33,13 @@ describe("webhookAction SSRF protections", () => {
     vi.mock("dns", () => ({
       promises: { lookup: vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]) },
     }));
-    // @ts-ignore
+    // @ts-expect-error mocked fetch
     globalThis.fetch.mockResolvedValue({ ok: true, status: 200, text: async () => "ok" });
 
     const result = await webhookAction({ url: "http://example.com", payload: "{}" }, { ticket_id: 1 }, "test");
     expect(result.status).toBe("success");
     // ensure fetch was called
-    // @ts-ignore
+    // @ts-expect-error mocked fetch
     expect(globalThis.fetch).toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 ﻿import { MailPlus, Search, Trash2, UserX, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { TableSkeletonRows } from "@/components/page-states";
+import OverflowTable from "@/components/ui/overflow-table";
 import { TabsContent } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -284,7 +285,8 @@ export function AdminUsersTab() {
             </div>
           </div>
         )}
-        <table className="w-full text-sm">
+        <OverflowTable>
+          <table className="w-full text-sm">
           <thead>
             <tr>
               <th
@@ -382,7 +384,7 @@ export function AdminUsersTab() {
                   <td className="px-[14px] py-[10px]">
                     <div className="flex items-center gap-1">
                       <button
-                        className="pc-btn-icon"
+                        className="pc-btn-icon touch-target"
                         title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
                         disabled={busyId === row.id || row.id === user?.id}
                         onClick={() => toggleDisabled(row)}
@@ -394,7 +396,7 @@ export function AdminUsersTab() {
                         )}
                       </button>
                       <button
-                        className="pc-btn-icon"
+                        className="pc-btn-icon touch-target"
                         title="Rimuovi utente"
                         disabled={busyId === row.id || row.id === user?.id}
                         onClick={() => remove(row)}
@@ -415,7 +417,8 @@ export function AdminUsersTab() {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </OverflowTable>
       </div>
       <AlertDialog
         open={!!deleteTarget}
@@ -423,7 +426,7 @@ export function AdminUsersTab() {
           if (!open) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Rimuovi utente</AlertDialogTitle>
             <AlertDialogDescription>
@@ -446,7 +449,7 @@ export function AdminUsersTab() {
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {bulkAction === "disable" ? "Disabilita utenti" : "Riabilita utenti"}

@@ -32,7 +32,7 @@ export function TagListEditor({
             {value}
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground touch-target"
               onClick={() => onChange(values.filter((item) => item !== value))}
             >
               ×

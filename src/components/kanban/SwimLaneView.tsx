@@ -1,4 +1,5 @@
 import { useMemo, type MouseEvent } from "react";
+import OverflowTable from "@/components/ui/overflow-table";
 import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
 import { pcReadyColors } from "@/lib/design-system";
@@ -107,7 +108,7 @@ export function SwimLaneView({
 
   return (
     <div className="pc-card overflow-hidden">
-      <div className="overflow-x-auto">
+      <OverflowTable>
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -215,7 +216,7 @@ export function SwimLaneView({
             ))}
           </tbody>
         </table>
-      </div>
+      </OverflowTable>
     </div>
   );
 }

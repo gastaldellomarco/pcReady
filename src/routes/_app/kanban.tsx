@@ -1036,7 +1036,7 @@ function KanbanPage() {
                   Limiti WIP e colori sfondo colonne. 0 = nessun limite.
                 </p>
               </div>
-              <button className="pc-btn-icon" onClick={() => setWipDialogOpen(false)}>
+              <button className="pc-btn-icon touch-target" onClick={() => setWipDialogOpen(false)}>
                 <X className="h-3 w-3" />
               </button>
             </div>

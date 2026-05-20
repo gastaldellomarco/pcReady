@@ -517,7 +517,7 @@ function GlobalContactCard({
           <Link2 className="h-3 w-3" /> Portale
         </button>
         <button
-          className="pc-btn-icon"
+          className="pc-btn-icon touch-target"
           disabled={!canDelete}
           onClick={onDelete}
           title="Elimina referente"

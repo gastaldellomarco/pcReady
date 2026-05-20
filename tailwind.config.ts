@@ -1,8 +1,16 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config = {
   theme: {
     extend: {
+      screens: {
+        xs: "320px",
+        sm: "375px",
+        s390: "390px",
+        md: "768px",
+        lg: "1024px",
+      },
       colors: {
         primary: {
           DEFAULT: "var(--primary)",
@@ -52,6 +60,33 @@ const config = {
       },
     },
   },
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      addUtilities(
+        {
+          ".touch-target": {
+            minWidth: "44px",
+            minHeight: "44px",
+            padding: "8px",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          ".safe-area-inset": {
+            paddingBottom: "env(safe-area-inset-bottom)",
+            paddingTop: "env(safe-area-inset-top)",
+            paddingLeft: "env(safe-area-inset-left)",
+            paddingRight: "env(safe-area-inset-right)",
+          },
+          ".overflow-x-auto-table": {
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+          },
+        },
+        { variants: ["responsive"] },
+      );
+    }),
+  ],
 } satisfies Config;
 
 export default config;

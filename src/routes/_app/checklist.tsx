@@ -622,7 +622,7 @@ function TemplateEditor({
                         }}
                       />
                       <button
-                        className="pc-btn-icon"
+                        className="pc-btn-icon touch-target"
                         onClick={() => {
                           renameTab(k, tabLabel);
                           setEditingTab(null);
@@ -630,7 +630,7 @@ function TemplateEditor({
                       >
                         <Check className="w-3 h-3" />
                       </button>
-                      <button className="pc-btn-icon" onClick={() => setEditingTab(null)}>
+                      <button className="pc-btn-icon touch-target" onClick={() => setEditingTab(null)}>
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -658,15 +658,15 @@ function TemplateEditor({
                 </div>
               );
             })}
-            {canEdit && !previewMode && (
-              <button
-                onClick={addTab}
-                className="px-2.5 py-2 text-text3 hover:text-accent"
-                title="Aggiungi sezione"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            )}
+              {canEdit && !previewMode && (
+                <button
+                  onClick={addTab}
+                  className="px-2.5 py-2 text-text3 hover:text-accent"
+                  title="Aggiungi sezione"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              )}
           </div>
         </div>
 
@@ -849,7 +849,7 @@ function SortableChecklistItem({
       {/* Drag handle */}
       {inEdit && (
         <button
-          className="pc-btn-icon cursor-grab"
+          className="pc-btn-icon touch-target cursor-grab"
           {...attributes}
           {...listeners}
           title="Trascina per riordinare"
@@ -907,7 +907,7 @@ function SortableChecklistItem({
       {/* Required toggle (edit) */}
       {inEdit && (
         <button
-          className={`pc-btn-icon ${item.required ? "text-red-500" : "opacity-30"}`}
+          className={`pc-btn-icon touch-target ${item.required ? "text-red-500" : "opacity-30"}`}
           onClick={() => onRequiredChange(item.id, !item.required)}
           title={item.required ? "Obbligatoria" : "Non obbligatoria"}
         >
@@ -931,7 +931,7 @@ function SortableChecklistItem({
       {/* Remove button */}
       {inEdit && (
         <button
-          className="pc-btn-icon flex-shrink-0"
+          className="pc-btn-icon touch-target flex-shrink-0"
           onClick={() => onRemove(item.id)}
           title="Rimuovi"
         >
