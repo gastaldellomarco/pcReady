@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import fetch from "node-fetch";
+// Use the global `fetch` provided by Node (no import). Node 22+ exposes fetch.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
