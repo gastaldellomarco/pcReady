@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import fetch from "node-fetch";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
@@ -57,7 +56,7 @@ export async function staffLoginServer(data: { email: string; password: string; 
       console.error(`[staffLoginServer] auth token request failed: status=${resp.status}`, json);
       // record failed attempt (best-effort)
       try {
-        await supabaseAdmin.from("auth_failed_attempts").insert({ email, success: false, payload: json });
+        await supabaseAdmin.from("auth_failed_attempts" as any).insert({ email, success: false, payload: json });
       } catch (e) {
         // ignore
       }
@@ -68,7 +67,7 @@ export async function staffLoginServer(data: { email: string; password: string; 
 
     // record success (best-effort)
     try {
-      await supabaseAdmin.from("auth_failed_attempts").insert({ email, success: true, payload: {} });
+      await supabaseAdmin.from("auth_failed_attempts" as any).insert({ email, success: true, payload: {} });
     } catch (e) {}
 
     // return session object to client to set via supabase.auth.setSession
