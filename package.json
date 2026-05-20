@@ -80,7 +80,6 @@
     "ipaddr.js": "^2.4.0",
     "lucide-react": "^0.575.0",
     "nodemailer": "^8.0.7",
-    "pako": "^1.0.11",
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
@@ -102,8 +101,6 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.4.0",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

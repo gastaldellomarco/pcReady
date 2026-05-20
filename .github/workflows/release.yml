@@ -50,25 +50,33 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           NEW_VERSION=$(npm version ${{ inputs.bump }} --no-git-tag-version)
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "Nuova versione: ${NEW_VERSION}"
+          VERSION=${NEW_VERSION#v}
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Nuova versione: ${TAG}"
+
+      - name: Update changelog
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          scripts/update-changelog.sh "${{ steps.bump.outputs.version }}" "${{ steps.bump.outputs.tag }}"
 
       - name: Commit version bump
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          git add package.json
-          git commit -m "chore(release): v${{ steps.bump.outputs.version }}"
+          git add package.json CHANGELOG.md
+          git commit -m "chore(release): ${{ steps.bump.outputs.tag }}"
 
       - name: Create tag
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          git tag v${{ steps.bump.outputs.version }}
+          git tag ${{ steps.bump.outputs.tag }}
 
       - name: Push commit + tag
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           git push origin main
-          git push origin v${{ steps.bump.outputs.version }}
+          git push origin ${{ steps.bump.outputs.tag }}
 
       - name: Generate changelog
         id: changelog
@@ -86,8 +94,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v%s', steps.bump.outputs.version) || github.ref_name }}
-          name: "PCReady ${{ github.event_name == 'workflow_dispatch' && format('v%s', steps.bump.outputs.version) || github.ref_name }}"
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && steps.bump.outputs.tag || github.ref_name }}
+          name: "PCReady ${{ github.event_name == 'workflow_dispatch' && steps.bump.outputs.tag || github.ref_name }}"
           body_path: /tmp/changelog.md
           draft: false
           prerelease: false
