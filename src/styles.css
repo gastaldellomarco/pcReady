@@ -593,3 +593,105 @@
 .pc-anim-in {
   animation: pc-fade-in 0.25s ease both;
 }
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
+
+  @media (min-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 13px;
+    }
+  }
+}
+
+@layer components {
+  .pc-btn {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  .pc-btn-sm,
+  .pc-btn-xs,
+  .pc-btn-icon {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .pc-input {
+    min-height: 42px;
+  }
+
+  .pc-card,
+  .pc-card-body,
+  .pc-card-hd {
+    min-width: 0;
+  }
+
+  @media (max-width: 639px) {
+    .pc-card {
+      border-radius: 10px;
+    }
+
+    .pc-card-hd {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+    }
+
+    .pc-card-body {
+      padding: 14px;
+    }
+
+    .pc-stat {
+      padding: 14px;
+    }
+
+    .pc-stat-val {
+      font-size: 22px;
+    }
+
+    .pc-badge {
+      max-width: 100%;
+      white-space: normal;
+    }
+  }
+}
+
+@layer utilities {
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  }
+
+  .overflow-x-auto,
+  .overflow-x-auto-table {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}

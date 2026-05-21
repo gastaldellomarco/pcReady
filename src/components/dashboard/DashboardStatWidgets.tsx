@@ -41,11 +41,11 @@ export function DashboardStatCard({
       >
         {icon}
       </div>
-      <div className="pc-stat-lbl">{label}</div>
-      <div className="pc-stat-val" style={{ color: valueColor || "inherit" }}>
+      <div className="pc-stat-lbl break-anywhere pr-10">{label}</div>
+      <div className="pc-stat-val break-anywhere pr-8" style={{ color: valueColor || "inherit" }}>
         {value}
       </div>
-      <div className="pc-stat-sub">{sub}</div>
+      <div className="pc-stat-sub break-anywhere">{sub}</div>
     </div>
   );
 

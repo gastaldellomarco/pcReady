@@ -238,10 +238,10 @@ function DashboardPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
       {/* Header with title and widget settings */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold">Dashboard</h2>
           <div className="text-xs text-text3">Panoramica generale delle attivita</div>
         </div>
@@ -325,7 +325,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
   switch (id) {
     case "stat-cards":
       return (
-        <div key="stat-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div key="stat-cards" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <DashboardStatCard
             label="Ticket totali"
             value={ctx.total}
@@ -505,13 +505,13 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
               })}
             </div>
           </div>
-          <div className="pc-card lg:col-span-2">
+          <div className="pc-card min-w-0 lg:col-span-2">
             <div className="pc-card-hd">
               <span className="pc-card-title">Garanzie in scadenza (prossimi 90 giorni)</span>
               <span className="text-[11px] text-text3 font-mono">{expiringRows.length}</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[620px]">
                 <thead>
                   <tr>
                     {["Asset", "Scadenza", "Stato", "Fornitore"].map((h) => (
@@ -588,8 +588,8 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
     case "analytics-card":
       return (
         <div key="analytics-card">
-          <div className="flex items-center justify-between mb-3">
-            <div>
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <h3 className="text-sm font-semibold">Panoramica dispositivi & ticket</h3>
               <div className="text-xs text-text3">
                 Trend e widget di riepilogo filtrati per periodo

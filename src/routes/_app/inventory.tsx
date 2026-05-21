@@ -537,10 +537,10 @@ function InventoryPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2 items-center">
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
         <select
-          className="pc-input max-w-[160px]"
+          className="pc-input lg:max-w-[160px]"
           value={fs}
           onChange={(e) => setFs(e.target.value)}
         >
@@ -552,7 +552,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
-          className="pc-input max-w-[200px]"
+          className="pc-input lg:max-w-[200px]"
           value={fos}
           onChange={(e) => setFos(e.target.value)}
         >
@@ -562,7 +562,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
-          className="pc-input max-w-[190px]"
+          className="pc-input lg:max-w-[190px]"
           value={fcategory}
           onChange={(e) => setFcategory(e.target.value)}
         >
@@ -574,7 +574,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
-          className="pc-input max-w-[190px]"
+          className="pc-input lg:max-w-[190px]"
           value={ftype}
           onChange={(e) => setFtype(e.target.value)}
         >
@@ -589,13 +589,13 @@ function InventoryPage() {
           ))}
         </select>
         <input
-          className="pc-input max-w-[260px]"
+          className="pc-input lg:max-w-[260px]"
           placeholder="Cerca asset tag, seriale, modello, tipo..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <select
-          className="pc-input max-w-[210px]"
+          className="pc-input lg:max-w-[210px]"
           value={updatedBeforeDays ?? ""}
           onChange={(e) => setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)}
         >
@@ -606,7 +606,7 @@ function InventoryPage() {
           <option value="60">Non aggiornati da &gt; 60 giorni</option>
         </select>
         <select
-          className="pc-input max-w-[190px]"
+          className="pc-input lg:max-w-[190px]"
           value={warrantyFilter}
           onChange={(e) => setWarrantyFilter(e.target.value as WarrantyFilter)}
         >
@@ -625,7 +625,10 @@ function InventoryPage() {
         >
           <Wrench className="w-3 h-3" /> In scadenza 30g
         </button>
-        <div className="flex rounded-lg border" style={{ borderColor: "var(--border)" }}>
+        <div
+          className="grid grid-cols-2 rounded-lg border sm:col-span-2 lg:flex"
+          style={{ borderColor: "var(--border)" }}
+        >
           <button
             type="button"
             className={`pc-btn pc-btn-sm ${view === "list" ? "pc-btn-primary" : "pc-btn-ghost"}`}
@@ -641,7 +644,7 @@ function InventoryPage() {
             <CalendarDays className="w-3 h-3" /> Calendario manutenzioni
           </button>
         </div>
-        <span className="ml-auto self-center text-xs text-text3 font-mono">
+        <span className="self-center text-xs text-text3 font-mono lg:ml-auto">
           {total
             ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
             : "0 dispositivi"}
@@ -686,7 +689,7 @@ function InventoryPage() {
       </div>
       {selectedIds.size > 0 && (
         <div
-          className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg"
+          className="grid grid-cols-2 items-center gap-2 rounded-lg px-3 py-2 sm:flex sm:flex-wrap"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
           <span className="text-[12px] font-semibold text-text3 font-mono mr-1">
@@ -700,7 +703,7 @@ function InventoryPage() {
               </button>
             ) : null}
           </span>
-          <div className="flex-1" />
+          <div className="hidden flex-1 sm:block" />
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
             disabled={bulkBusy}
@@ -750,9 +753,36 @@ function InventoryPage() {
           onRetry={() => listQuery.refetch()}
         />
       ) : (
-        <div className="pc-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <>
+          <div className="grid gap-3 md:hidden">
+            {listLoading ? (
+              <div className="pc-card pc-card-body text-sm text-text3">Caricamento inventario...</div>
+            ) : data.length ? (
+              data.map((r) => (
+                <DeviceMobileCard
+                  key={r.id}
+                  row={r}
+                  selected={selectedIds.has(r.id)}
+                  saving={statusSavingId === r.id}
+                  onOpen={() => openDeviceDetail(r.id)}
+                  onSelect={(checked) => toggleSelected(r.id, checked)}
+                  onStatusChange={handleStatusChange}
+                  onCreateTicket={() => {
+                    openDeviceDetail(r.id);
+                    setTimeout(() => openCreate(), 200);
+                  }}
+                  onQr={() => setQrDevice(toQrDevice(r))}
+                />
+              ))
+            ) : (
+              <div className="pc-card pc-card-body text-center text-sm text-text3">
+                Nessun dispositivo. Tocca <b>Aggiungi dispositivo</b> per iniziare.
+              </div>
+            )}
+          </div>
+          <div className="pc-card hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1180px]">
               <thead>
                 <tr>
                   <th
@@ -901,8 +931,9 @@ function InventoryPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
       {view === "list" && (
         <div className="flex items-center justify-end gap-2">
@@ -1327,6 +1358,88 @@ function WarrantyBadge({ expiryDate }: { expiryDate: string | null }) {
       {meta.label}
       {subtitle ? <span className="font-mono opacity-80">· {subtitle}</span> : null}
     </span>
+  );
+}
+
+function DeviceMobileCard({
+  row,
+  selected,
+  saving,
+  onOpen,
+  onSelect,
+  onStatusChange,
+  onCreateTicket,
+  onQr,
+}: {
+  row: Row;
+  selected: boolean;
+  saving: boolean;
+  onOpen: () => void;
+  onSelect: (checked: boolean) => void;
+  onStatusChange: (id: string, next: DeviceStatus) => void | Promise<void>;
+  onCreateTicket: () => void;
+  onQr: () => void;
+}) {
+  return (
+    <article className="pc-card p-3">
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-1 h-5 w-5"
+          aria-label={`Seleziona ${row.asset_tag || row.serial || row.id}`}
+          checked={selected}
+          onChange={(event) => onSelect(event.target.checked)}
+        />
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={onOpen}>
+          <div className="break-anywhere text-sm font-semibold">{row.model}</div>
+          <div className="mt-1 font-mono text-[11px] text-text3">
+            {row.asset_tag || row.id.slice(0, 8)}
+            {row.serial ? ` · S/N ${row.serial}` : ""}
+          </div>
+        </button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+        <div>
+          <div className="pc-label">Categoria</div>
+          <div>{getDeviceCategoryLabel(row.category)}</div>
+        </div>
+        <div>
+          <div className="pc-label">Tipo</div>
+          <div>{row.device_type || "-"}</div>
+        </div>
+        <div>
+          <div className="pc-label">Cliente</div>
+          <div className="break-anywhere">{row.client?.name || "-"}</div>
+        </div>
+        <div>
+          <div className="pc-label">Garanzia</div>
+          <WarrantyBadge expiryDate={row.warranty_expiry_date} />
+        </div>
+      </div>
+      {row.has_maintenance_due_soon ? (
+        <div className="mt-3 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+          <Wrench className="h-3 w-3" />
+          Manutenzione {row.next_maintenance_due_date ? fmtDate(row.next_maintenance_due_date) : "in scadenza"}
+        </div>
+      ) : null}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <DeviceStatusBadge
+          deviceId={row.id}
+          status={row.status}
+          hasActiveAssignment={!!row.has_active_assignment}
+          saving={saving}
+          onStatusChange={onStatusChange}
+        />
+        <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCreateTicket}>
+          <TicketPlus className="h-3.5 w-3.5" />
+          Ticket
+        </button>
+        <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onQr}>
+          <QrCode className="h-3.5 w-3.5" />
+          QR
+        </button>
+      </div>
+    </article>
   );
 }
 

@@ -1,79 +1,97 @@
-Mobile Responsiveness Audit — pcready
+# Mobile Responsiveness Audit - PCReady
 
-Date: 2026-05-20
+Date: 2026-05-21
 
-Goal
+## Scope
 
-- Make the app fully usable on mobile: responsive layout, touch-friendly controls, no horizontal overflow, accessible basics.
+Target breakpoints: 320, 375, 390, 768, 1024 px.
 
-Primary routes (first-pass)
+Primary areas reviewed:
 
-- / (index)
-- /auth (login, set-password, callback, 2fa)
-- /portal (dashboard, devices, profile, tickets, documents)
-- /\_app (dashboard, tickets, kanban, calendar, inventory, clients, contacts, automations, admin, etc.)
+- App shell: header, sidebar, mobile navigation sheet, main content container.
+- Shared overlays: custom `Modal`, Radix `Dialog`, `AlertDialog`, `Sheet`.
+- Shared dense content: `OverflowTable`, tabs, cards, buttons, inputs.
+- Core screens touched directly: Dashboard and Inventory.
+- Existing areas noted for follow-up: Kanban drag/drop, Calendar dense views, admin audit/OAuth tables, PDF previews.
 
-Components and areas to review (first-pass, by severity)
+## Findings
 
-Blocking
+Blocking issues addressed:
 
-- Global header/topbar: ensure collapsed / sticky behavior on mobile and visible CTAs.
-- Tables used in admin pages (clients, inventory, audit): risk of horizontal overflow and unreadable columns.
-- Dialogs/modals (alert-dialog, EmailPreviewDialog, CreateTicketModal): may not fit small screens; need full-screen/drawer fallback.
-- Complex interactive components: Kanban (drag/drop), calendar, charts — touch alternatives required.
+- Desktop header CTAs consumed too much mobile width.
+- Main content could inherit desktop padding and create cramped layouts.
+- Custom modals did not reliably become full-screen on 320-390 px viewports.
+- Dialog and alert dialog content could exceed the viewport height.
+- Inventory table had too many columns for phones.
+- Dashboard stat grid used two columns on the smallest phones.
 
-Medium
+Medium issues addressed:
 
-- Sidebar: currently has a mobile `Sheet` implementation — verify accessibility, focus management, and closing behavior.
-- Dropdowns/popovers/tooltips relying on hover.
-- Forms: input sizes, labels, keyboard types, error UX on small screens.
+- Touch targets on buttons/icon controls were too small in several shared paths.
+- Tabs could overflow when many labels were visible.
+- Dashboard widget settings drawer had small drag/visibility controls.
+- Dense dashboard tables lacked explicit minimum table widths inside scroll containers.
 
-Cosmetic
+Cosmetic issues addressed:
 
-- Dense cards/widgets with many columns or small text sizes.
-- Long tables without prioritized columns.
+- Long stat values and labels could overflow cards.
+- Mobile card/table containers lacked consistent `min-w-0` and word breaking.
 
-Quick wins (low-effort, high-impact)
+## Implemented Fixes
 
-- Ensure `<meta name="viewport" content="width=device-width, initial-scale=1">` present in HTML shell.
-- Add `max-w-full` and `overflow-x-auto` wrappers to table containers.
-- Convert critical modals to `full-screen` on <480px (or use `Sheet`/Drawer). Ensure scroll-lock.
-- Increase default touch target sizes for buttons and icon-only controls via utility class (min-44).
-- Add `break-words` and prevent `white-space: nowrap` on long labels.
+Shared responsive primitives:
 
-Breakpoints & strategy
+- App shell now uses `min-h-dvh`, `overflow-x-hidden`, mobile padding, and truncating page title.
+- Mobile header hides desktop CTAs and exposes a single icon CTA for new tickets.
+- Navigation links meet a 44 px touch target.
+- Buttons, small buttons, icon buttons, and inputs have mobile-friendly minimum sizes.
+- Inputs use 16 px font size on mobile to avoid iOS zoom.
+- `break-anywhere`, safe-area, and touch scroll utilities added.
 
-- Mobile-first breakpoints to target: 320, 375, 390, 768, 1024.
-- Use Tailwind responsive utilities and a shared spacing/typography scale for mobile density.
-- Avoid hover-only interactions; augment with tap affordances.
+Overlays:
 
-Suggested next technical steps (prioritized)
+- `src/components/pcready/Modal.tsx` is full-screen on mobile and constrained on desktop.
+- `src/components/ui/dialog.tsx` is full-screen/scrollable on mobile and centered on desktop.
+- `src/components/ui/alert-dialog.tsx` is inset and scrollable on mobile.
+- `src/components/ui/sheet.tsx` close target is touch-friendly.
 
-1. Implement a project-level `mobile-primitives` stylesheet and Tailwind config adjustments (spacing, touch target utility, safe-area insets).
-2. Audit and wrap all tables with an `OverflowTable` wrapper that provides horizontal scroll and an optional card fallback.
-3. Convert modals that don't fit into `Sheet` (left/right/bottom) or full-screen dialogs at small widths.
-4. Review Kanban + drag/drop: provide a tap-to-move alternative and disable drag-on-touch by default.
-5. Update header and sidebar behavior: mobile header with hamburger opening `Sidebar` sheet; ensure focus trap and escape to close.
-6. Run manual tests on viewports: 320, 375, 390, 768 (portrait & landscape where relevant).
+Dense content:
 
-Files/places to start
+- `OverflowTable` is a focusable horizontal scroll region with touch scrolling.
+- Tabs scroll horizontally on small screens.
+- Dashboard stat cards collapse to one column on phones.
+- Inventory uses mobile cards below `md`, while keeping the full table for tablet/desktop.
 
-- `src/components/ui/sidebar.tsx` — already has mobile `Sheet` behavior; verify focus/escape and hit area.
-- `src/components/pcready/CreateTicketModal` — modals need review.
-- `src/components/*` (admin, tickets, dashboard) — inspect tables and dense layouts.
-- `src/styles.css` and `tailwind.config.ts` — add mobile-friendly variables and utilities.
+## Manual/Static Checks
 
-Acceptance checklist
+Completed:
 
-- No horizontal overflow on target viewports.
-- Touch targets >= 44px where applicable.
-- Forms readable and usable without zoom.
-- Modals usable (full-screen/drawer) with visible CTA.
-- Key interactive components have touch-friendly alternatives.
+- ESLint targeted on touched files: passed.
+- `git diff --check` on touched files: passed.
+- Vite dev server started and returned HTTP 200 once on `127.0.0.1:5177`.
 
-Next action I can take now
+Blocked or incomplete:
 
-- (A) Implement `mobile-primitives` changes in `tailwind.config.ts` + `src/styles.css` (mobile-first spacing, touch target utility, safe-area handling). Or
-- (B) Begin converting selected modal (`CreateTicketModal`) to full-screen sheet on small screens and wrap tables with scroll container.
+- Full `bun run typecheck` still fails due to pre-existing unrelated errors in:
+  - `src/__tests__/CreateTicketModal.test.tsx`
+  - `src/__tests__/webhook-ssrf.test.ts`
+  - `src/components/admin/AdminOAuthTab.tsx`
+  - `src/lib/server/attachmentUtils.server.ts`
+  - `src/lib/server/staff-auth.server.ts`
+  - `vite.config.ts`
+- Browser-based visual verification across all breakpoints was not completed because the background dev server did not remain reachable from this shell.
 
-I can implement A or B now — tell me which to start with or I can proceed with A by default.
+## Residual Risks
+
+- Kanban drag/drop still needs a touch-specific move alternative.
+- Calendar day/week layouts need portrait and landscape validation.
+- Admin audit/OAuth screens have dense controls and should receive card fallbacks or simplified mobile filters.
+- PDF previews/exports are generated artifacts; mobile preview UX may need separate validation.
+- Some route-specific tables still rely on horizontal scroll rather than mobile card views.
+
+## Definition Of Done Status
+
+- Audit completed: partial, focused on app shell/shared components/core routes.
+- Fix responsive applied to core screens: yes for shell, dashboard, inventory, overlays.
+- Breakpoint testing: static and startup checks only; manual visual QA still required.
+- Desktop regression risk: mitigated by desktop-only preservation of table and centered dialog behavior.

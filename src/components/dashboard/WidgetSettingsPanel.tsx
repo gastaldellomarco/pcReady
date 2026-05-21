@@ -48,10 +48,10 @@ function SortableWidgetItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface2 border border-border text-[12.5px]"
+      className="flex min-h-12 items-center gap-3 rounded-lg border border-border bg-surface2 px-3 py-2.5 text-[12.5px]"
     >
       <button
-        className="cursor-grab active:cursor-grabbing text-text3 hover:text-text2 touch-none"
+        className="touch-target cursor-grab touch-none text-text3 hover:text-text2 active:cursor-grabbing"
         {...attributes}
         {...listeners}
         aria-label="Trascina per riordinare"
@@ -63,7 +63,7 @@ function SortableWidgetItem({
         <div className="text-[11px] text-text3 truncate">{entry?.description ?? ""}</div>
       </div>
       <button
-        className={`p-1.5 rounded hover:bg-surface3 transition-colors ${
+        className={`touch-target rounded transition-colors hover:bg-surface3 ${
           widget.visible ? "text-accent" : "text-text3"
         }`}
         onClick={() => onToggleVisibility(widget.id)}
@@ -102,8 +102,8 @@ export function WidgetSettingsPanel({
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div
-        className="relative w-full max-w-sm bg-white dark:bg-surface1 border-l border-border shadow-xl h-full overflow-y-auto"
-        style={{ background: "var(--surface1)" }}
+        className="relative h-full w-full max-w-sm overflow-y-auto border-l border-border bg-white shadow-xl dark:bg-surface"
+        style={{ background: "var(--surface)" }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold">Gestione widget</h3>

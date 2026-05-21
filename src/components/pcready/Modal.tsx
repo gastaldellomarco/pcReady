@@ -35,37 +35,42 @@ export function Modal({
   if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[500] flex items-start justify-center px-4 py-8 overflow-y-auto"
+      className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="pc-anim-in flex flex-col w-full my-auto"
+        className="pc-anim-in flex min-h-dvh w-full flex-col sm:my-auto sm:min-h-0"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
+          borderRadius: "clamp(0px, 2vw, var(--radius))",
           boxShadow: "var(--shadow-lg)",
           maxWidth: MODAL_MAX_WIDTH[size],
-          maxHeight: "calc(100vh - 4rem)",
+          maxHeight: "min(100dvh, calc(100vh - 4rem))",
         }}
       >
         <div
-          className="flex items-center justify-between px-[22px] py-[16px] border-b"
+          className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-[22px] sm:py-[16px]"
           style={{ borderColor: "var(--border)" }}
         >
-          <span className="text-[15px] font-bold" style={{ fontFamily: "var(--font-head)" }}>
+          <span
+            className="min-w-0 truncate text-[15px] font-bold"
+            style={{ fontFamily: "var(--font-head)" }}
+          >
             {title}
           </span>
-          <button onClick={onClose} className="pc-btn-icon touch-target">
+          <button onClick={onClose} className="pc-btn-icon touch-target shrink-0">
             <X className="w-3 h-3" />
           </button>
         </div>
-        <div className="overflow-y-auto px-[22px] py-[20px] flex-1">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-[22px] sm:py-[20px]">
+          {children}
+        </div>
         {footer && (
           <div
-            className="flex justify-end gap-2 px-[22px] py-[14px] border-t"
+            className="safe-area-bottom flex flex-col-reverse gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-[22px] sm:py-[14px]"
             style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
           >
             {footer}

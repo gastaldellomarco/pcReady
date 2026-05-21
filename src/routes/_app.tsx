@@ -316,7 +316,7 @@ function AppLayout() {
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh overflow-x-hidden">
       {!isMobile && (
         <aside
           className="fixed top-0 left-0 bottom-0 z-40 flex flex-col border-r"
@@ -333,7 +333,7 @@ function AppLayout() {
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent
           side="left"
-          className="flex flex-col w-[300px] max-w-[86vw] p-0"
+          className="flex w-[300px] max-w-[86vw] flex-col p-0"
           style={{
             background: "var(--surface)",
             borderColor: "var(--border)",
@@ -347,9 +347,9 @@ function AppLayout() {
       </Sheet>
 
       {/* MAIN */}
-      <div className="flex-1 flex flex-col" style={{ marginLeft: isMobile ? 0 : 240 }}>
+      <div className="flex min-w-0 flex-1 flex-col" style={{ marginLeft: isMobile ? 0 : 240 }}>
         <header
-          className="sticky top-0 z-30 h-14 px-4 md:px-7 flex items-center gap-3 border-b"
+          className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b px-3 py-2 md:px-7"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
           {isMobile && (
@@ -362,23 +362,33 @@ function AppLayout() {
             </button>
           )}
           <h1
-            className="text-[17px] font-bold tracking-tight"
+            className="min-w-0 flex-1 truncate text-[16px] font-bold tracking-tight sm:text-[17px]"
             style={{ fontFamily: "var(--font-head)" }}
           >
             {pageTitle}
           </h1>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <SearchBox />
             <NotificationBell />
-            <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
+            <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm hidden sm:inline-flex">
               <Boxes className="w-3 h-3" /> Inventario
             </Link>
-            <button onClick={() => openCreate()} className="pc-btn pc-btn-primary pc-btn-sm">
+            <button
+              onClick={() => openCreate()}
+              className="pc-btn pc-btn-primary pc-btn-sm hidden sm:inline-flex"
+            >
               <Plus className="w-3 h-3" /> Nuovo Ticket
+            </button>
+            <button
+              onClick={() => openCreate()}
+              className="pc-btn-icon touch-target sm:hidden"
+              aria-label="Nuovo ticket"
+            >
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </header>
-        <main className="flex-1 px-7 py-6 pc-anim-in">
+        <main className="pc-anim-in min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-5 md:px-7 md:py-6">
           {mfaRequiredMessage ? (
             <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {mfaRequiredMessage}
@@ -567,7 +577,7 @@ function NavLinkItem({ to, label, icon: Icon, active, badge, onClick }: NavLinkI
     <Link
       to={to}
       onClick={onClick}
-      className="flex items-center gap-[9px] px-[9px] py-[8px] rounded-[7px] text-[13px] font-medium transition-all"
+      className="flex min-h-11 items-center gap-[9px] rounded-[7px] px-[9px] py-[8px] text-[13px] font-medium transition-all"
       style={{
         background: active ? "var(--accent2)" : "transparent",
         color: active ? "var(--accent)" : "var(--text2)",
