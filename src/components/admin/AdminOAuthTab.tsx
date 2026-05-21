@@ -52,6 +52,7 @@ export function AdminOAuthTab() {
     rotatedSecret,
     setRotatedSecret,
     copyOAuthField,
+    updateClientStatus,
     rotateClientSecret,
     actionBusyId,
     lifecycleOpenFor,

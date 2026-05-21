@@ -74,6 +74,30 @@ export type Database = {
           },
         ];
       };
+      auth_failed_attempts: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          payload: Json;
+          success: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          payload?: Json;
+          success?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          payload?: Json;
+          success?: boolean;
+        };
+        Relationships: [];
+      };
       app_settings: {
         Row: {
           key: string;

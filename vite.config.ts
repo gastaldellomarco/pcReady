@@ -12,12 +12,8 @@ export default defineConfig(({ command, mode }) => {
     Object.entries(env).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)]),
   );
 
-  const plugins = [
-    tanstackStart({
-      router: {
-        autoCodeSplitting: true,
-      },
-    }),
+  const plugins: any[] = [
+    tanstackStart(),
     react(),
     tailwindcss(),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),

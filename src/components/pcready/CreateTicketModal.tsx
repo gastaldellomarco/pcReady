@@ -9,6 +9,7 @@ import {
   DEFAULT_STRUCTURE,
   type ChecklistStructure,
 } from "@/lib/pcready";
+import { getInitialCreateTicketFormState } from "./createTicketFormState";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadClientOptions,
@@ -135,22 +136,6 @@ async function loadDeviceAutocompleteOptions(
   });
 }
 
-function getInitialFormState() {
-  return {
-  client_id: "",
-  device_id: "",
-  requester_contact_id: "",
-  requester: "",
-  free_requester: false,
-  ticket_type: "device" as TicketType,
-  priority: "med" as TicketPriority,
-  assignee_id: "",
-  ticket_category: "",
-  software: "",
-  notes: "",
-  };
-}
-
 export function CreateTicketModal() {
   const { createOpen, closeCreate } = useTickets();
   const { user, canEdit, session } = useAuth();
@@ -169,7 +154,7 @@ export function CreateTicketModal() {
   const [templateIds, setTemplateIds] = useState<string[]>([]);
   const [templatePickerId, setTemplatePickerId] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState(getInitialFormState());
+  const [f, setF] = useState(getInitialCreateTicketFormState());
 
   useEffect(() => {
     if (!createOpen) return;
@@ -310,7 +295,7 @@ export function CreateTicketModal() {
       }
       toast.success(`${data.ticket_code} creato`);
       // Reset form state only after successful creation
-      setF(getInitialFormState());
+      setF(getInitialCreateTicketFormState());
       setSelectedClient(null);
       setSelectedContact(null);
       setSelectedDevice(null);

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { __getInitialFormState } from "@/components/pcready/CreateTicketModal";
+import { getInitialCreateTicketFormState } from "@/components/pcready/createTicketFormState";
 
 describe("CreateTicketModal form reset", () => {
   it("provides initial form state and reset restores defaults", () => {
-    const initial = __getInitialFormState();
+    const initial = getInitialCreateTicketFormState();
     expect(initial).toMatchObject({
       client_id: "",
       device_id: "",
@@ -20,7 +20,7 @@ describe("CreateTicketModal form reset", () => {
     // simulate mutated form
     const mutated = { ...initial, client_id: "c1", notes: "foo" };
     // resetting is simply getting initial state again
-    const reset = __getInitialFormState();
+    const reset = getInitialCreateTicketFormState();
     expect(reset).toEqual(initial);
     expect(reset).not.toEqual(mutated);
   });
