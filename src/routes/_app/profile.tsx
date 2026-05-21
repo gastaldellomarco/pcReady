@@ -20,6 +20,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -591,7 +592,13 @@ function ProfilePage() {
                   style={{ background: colors.bg, color: colors.fg }}
                 >
                   {personal.avatar_url ? (
-                    <img src={personal.avatar_url} alt="" className="h-full w-full object-cover" />
+                    <OptimizedImage
+                      src={personal.avatar_url}
+                      alt=""
+                      width={96}
+                      height={96}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     initials
                   )}
@@ -1386,7 +1393,15 @@ function QrCodeBox({ qrCode }: { qrCode: string }) {
       />
     );
   }
-  return <img src={qrCode} alt="QR code 2FA" className="mx-auto rounded-lg border bg-white p-4" />;
+  return (
+    <OptimizedImage
+      src={qrCode}
+      alt="QR code 2FA"
+      width={200}
+      height={200}
+      className="mx-auto rounded-lg border bg-white p-4"
+    />
+  );
 }
 
 function BackupCodesPanel({ codes, onCopy }: { codes: string[]; onCopy: () => void }) {

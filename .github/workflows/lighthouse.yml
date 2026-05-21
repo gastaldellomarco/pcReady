@@ -1,0 +1,23 @@
+name: Lighthouse
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    env:
+      LHCI_URL: ${{ vars.LHCI_URL || 'https://pcready.pages.dev/' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            ${{ env.LHCI_URL }}
+          budgetPath: ./lighthouse-budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

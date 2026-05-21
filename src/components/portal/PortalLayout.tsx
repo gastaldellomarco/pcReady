@@ -2,6 +2,7 @@ import { Outlet } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { PageErrorBoundary } from "@/components/page-states";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Monitor } from "lucide-react";
 import { validatePortalSession } from "@/lib/portal-auth";
 
@@ -25,7 +26,14 @@ export function PortalLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <a href="/portal" className="flex items-center gap-2 font-semibold">
             {branding?.logoUrl ? (
-              <img src={branding.logoUrl} alt="Logo cliente" className="h-7 w-auto rounded" />
+              <OptimizedImage
+                src={branding.logoUrl}
+                alt="Logo cliente"
+                width={28}
+                height={28}
+                priority
+                className="h-7 w-auto rounded"
+              />
             ) : (
               <Monitor className="h-5 w-5" style={{ color: primaryColor }} />
             )}

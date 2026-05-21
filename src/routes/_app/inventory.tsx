@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import queries from "@/lib/queries/inventory";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
@@ -131,7 +132,7 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
   retired: { label: "Dismesso", color: pcReadyColors.textSecondary },
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = LIST_PAGE_SIZE;
 
 function InventoryPage() {
   const { openAddDevice, openCreate } = useTickets();

@@ -43,6 +43,7 @@ import {
 } from "@/components/pcready/AsyncAutocomplete";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { insertActivity } from "@/lib/queries/activity";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 
 export const Route = createFileRoute("/_app/tickets")({
   head: () => ({
@@ -76,7 +77,7 @@ interface Row {
   assignee?: { full_name: string; initials: string } | null;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = LIST_PAGE_SIZE;
 type BulkConfirmAction = { type: "archive" } | { type: "status"; status: TicketStatus };
 type TicketTableView = "compact" | "extended";
 type TicketColumnKey =

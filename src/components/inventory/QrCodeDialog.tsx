@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Printer } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/pcready/Modal";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { toast } from "sonner";
 import { deviceUrl, labelHtml } from "@/lib/inventory-labels";
 
@@ -80,7 +81,13 @@ export function QrCodeDialog({ device, onClose }: Props) {
           style={{ borderColor: "var(--border)", background: "#fff" }}
         >
           {dataUrl ? (
-            <img src={dataUrl} alt={`QR ${device.serial || device.id}`} className="h-64 w-64" />
+            <OptimizedImage
+              src={dataUrl}
+              alt={`QR ${device.serial || device.id}`}
+              width={256}
+              height={256}
+              className="h-64 w-64"
+            />
           ) : (
             <span className="text-sm text-text3">Generazione...</span>
           )}

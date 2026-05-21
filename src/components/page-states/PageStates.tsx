@@ -106,6 +106,27 @@ export function PageEmptyState({
   );
 }
 
+/** Full-page loading shell for route-level Suspense / pending states. */
+export function PageSkeleton({
+  variant = "app",
+  className,
+}: {
+  variant?: PageStateVariant;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex flex-col gap-4 p-1", className)}
+      aria-busy
+      aria-label="Caricamento pagina"
+    >
+      <Skeleton className="h-8 w-48 max-w-[40%]" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <ListSkeleton rows={5} variant={variant} className="gap-3" />
+    </div>
+  );
+}
+
 export function ListSkeleton({
   rows = 6,
   variant = "app",

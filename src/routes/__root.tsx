@@ -10,6 +10,9 @@ import { isMaintenanceModeEnabled } from "@/lib/maintenance-env";
 
 import appCss from "../styles.css?url";
 
+const FONTS_STYLESHEET =
+  "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap";
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -32,10 +35,9 @@ export const Route = createRootRoute({
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
-      },
+      { rel: "preload", href: FONTS_STYLESHEET, as: "style" },
+      { rel: "preload", href: appCss, as: "style" },
+      { rel: "stylesheet", href: FONTS_STYLESHEET },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "apple-touch-icon", href: "/app-icon.svg" },
       { rel: "stylesheet", href: appCss },

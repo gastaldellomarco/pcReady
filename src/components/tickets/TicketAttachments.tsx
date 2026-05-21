@@ -9,6 +9,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
 import {
@@ -196,9 +197,11 @@ export function TicketAttachments({
                 style={{ borderColor: "var(--border)" }}
               >
                 {previewUrls[attachment.id] ? (
-                  <img
+                  <OptimizedImage
                     src={previewUrls[attachment.id]}
                     alt={attachment.file_name}
+                    width={320}
+                    height={112}
                     className="h-28 w-full object-cover transition-transform group-hover:scale-105"
                   />
                 ) : (

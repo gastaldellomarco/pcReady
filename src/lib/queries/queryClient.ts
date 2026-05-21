@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider, type DefaultOptions } from "@tanstack/react-query";
 import React from "react";
+import { LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
 
 const defaultOptions: DefaultOptions = {
   queries: {
     retry: 1,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
     refetchOnWindowFocus: false,
   },
   mutations: {

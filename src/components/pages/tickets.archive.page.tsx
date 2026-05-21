@@ -2,6 +2,7 @@ import OverflowTable from "@/components/ui/overflow-table";
 
 import { useEffect, useState } from "react";
 import queries from "@/lib/queries/tickets";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { openTicketDetail } from "@/lib/use-detail";
 import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
 import {
@@ -29,7 +30,7 @@ interface Row {
   assignee?: { full_name: string; initials: string } | null;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = LIST_PAGE_SIZE;
 
 export default function TicketsArchivePage() {
   const [rows, setRows] = useState<Row[]>([]);

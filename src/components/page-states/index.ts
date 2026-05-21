@@ -1,6 +1,7 @@
 export {
   CardGridSkeleton,
   ListSkeleton,
+  PageSkeleton,
   PageEmptyState,
   PageFetchError,
   TableSkeleton,

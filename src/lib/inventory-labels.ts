@@ -32,7 +32,7 @@ export function labelHtml(items: { device: QrDevice; dataUrl: string }[]) {
     .map(
       ({ device, dataUrl }) => `
         <section class="label">
-          <img src="${dataUrl}" alt="QR" />
+          <img src="${dataUrl}" alt="QR" width="120" height="120" loading="lazy" decoding="async" />
           <div class="meta">
             <strong>${escapeHtml(device.serial || "-")}</strong>
             <span>${escapeHtml(device.model)}</span>

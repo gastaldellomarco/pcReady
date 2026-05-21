@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
+import { PageSkeleton } from "@/components/page-states";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
@@ -8,6 +9,7 @@ export const getRouter = () => {
     context: {},
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
+    defaultPendingComponent: () => <PageSkeleton />,
     defaultErrorComponent: ({ error }) => <ServerErrorPage error={error} />,
   });
 

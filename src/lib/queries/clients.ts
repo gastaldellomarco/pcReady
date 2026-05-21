@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
 
 export type ClientsListParams = { q?: string; page?: number; pageSize?: number };
 
@@ -9,7 +10,7 @@ const CLIENT_SELECT =
 const OPEN_TICKET_STATUSES = ["pending", "in-progress", "testing", "ready"] as const;
 
 export async function fetchClientsList(params: ClientsListParams) {
-  const PAGE_SIZE = params.pageSize ?? 50;
+  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
   let query = supabase.from("clients").select(CLIENT_SELECT, { count: "exact" }).order("name");
   const term = (params.q || "").trim().replace(/[,%]/g, "");
@@ -43,8 +44,10 @@ export async function fetchClientsList(params: ClientsListParams) {
 
 export function useClientsList(params: ClientsListParams) {
   return useQuery({
-    queryKey: ["clients", params.q || "", params.page ?? 0, params.pageSize ?? 50],
+    queryKey: ["clients", params.q || "", params.page ?? 0, params.pageSize ?? LIST_PAGE_SIZE],
     queryFn: () => fetchClientsList(params),
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
   });
 }

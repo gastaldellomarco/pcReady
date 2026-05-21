@@ -1,6 +1,10 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QUERY_KEYS } from "./keys";
+import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
+
+const TICKET_DETAIL_SELECT =
+  "id, ticket_code, client, client_id, requester, ticket_type, priority, status, source, assignee_id, software, notes, checklist, checklist_structure, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, sla_response_due_at, sla_resolution_due_at, completed_at, device_id, model, billable_hours, hourly_rate, material_cost, labor_cost, total_cost, cost_notes, cost_currency, bundle_assignment_id, bundle_extra_hours, bundle_extra_amount, onsite_visit, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
 
 export async function loadClientOptions(query: string) {
   let request = supabase.from("clients").select("id, name, company_name, email").order("name");
@@ -102,9 +106,7 @@ export async function fetchTicketById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
     .from("tickets")
-    .select(
-      "*, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-    )
+    .select(TICKET_DETAIL_SELECT)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -172,7 +174,7 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 export async function fetchTicketsList(params: TicketsListParams) {
-  const PAGE_SIZE = params.pageSize ?? 50;
+  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
 
   let query = supabase
@@ -239,9 +241,11 @@ export function useTicketsList(params: TicketsListParams) {
       params.sortBy ?? "created_at",
       params.sortDir ?? "desc",
       params.page ?? 0,
-      params.pageSize ?? 50,
+      params.pageSize ?? LIST_PAGE_SIZE,
     ],
     queryFn: () => fetchTicketsList(params),
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -251,6 +255,8 @@ export function useTicketQuery(id: string | null) {
     queryKey: QUERY_KEYS.ticket(id ?? "null"),
     queryFn: () => fetchTicketById(id as string),
     enabled: !!id,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
   });
 }
 

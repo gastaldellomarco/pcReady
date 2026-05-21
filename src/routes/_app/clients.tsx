@@ -16,6 +16,7 @@ import {
 } from "@/lib/schemas/clients";
 import { supabase } from "@/integrations/supabase/client";
 import queries from "@/lib/queries/clients";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { openDeviceDetail, openTicketDetail } from "@/lib/use-detail";
@@ -180,7 +181,7 @@ const emptyContact: ContactForm = {
   notes: "",
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = LIST_PAGE_SIZE;
 const EXPORT_CHUNK_SIZE = 1000;
 const CLIENT_SELECT =
   "id, name, company_name, vat_number, fiscal_code, email, phone, website_url, address, notes, portal_logo_url, portal_primary_color, portal_welcome_message, portal_name, updated_at";

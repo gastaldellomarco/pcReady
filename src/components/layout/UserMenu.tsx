@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface UserMenuProps {
   profile: AuthProfile;
@@ -77,9 +78,11 @@ function UserAvatar({
 }) {
   if (profile.avatar_url) {
     return (
-      <img
+      <OptimizedImage
         src={profile.avatar_url}
         alt=""
+        width={28}
+        height={28}
         className="h-7 w-7 flex-shrink-0 rounded-full object-cover"
       />
     );

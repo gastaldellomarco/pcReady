@@ -1,9 +1,11 @@
 import { useRouter } from "@tanstack/react-router";
-import { errorMessage, ListSkeleton, PageFetchError } from "@/components/page-states";
+import { errorMessage, PageFetchError, PageSkeleton } from "@/components/page-states";
 
 export function LoadingSkeleton({ variant = "app" as const }: { variant?: "app" | "portal" }) {
-  return <ListSkeleton rows={5} variant={variant} className="p-1" />;
+  return <PageSkeleton variant={variant} />;
 }
+
+export { PageSkeleton };
 
 function RouteErrorView({ error, reset }: { error: Error | unknown; reset?: () => void }) {
   const router = useRouter();

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { WarrantyFilter } from "@/lib/warranty";
+import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
 
 export type DevicesListParams = {
   status?: string;
@@ -14,23 +15,47 @@ export type DevicesListParams = {
   client_id?: string;
   warrantyStatus?: WarrantyFilter;
   maintenanceDueSoon?: boolean;
+  /** Cached device ids with an active ticket assignment (for withoutTicket filter). */
+  assignedIdsForFilter?: string[];
 };
 
-export async function fetchAssignedDeviceIds() {
+export async function fetchAllAssignedDeviceIds() {
   const { data, error } = await supabase
     .from("ticket_device_assignments")
     .select("device_id")
     .is("unassigned_at", null);
   if (error) throw error;
-  return ((data ?? []) as any[]).map((r) => r.device_id).filter(Boolean) as string[];
+  return ((data ?? []) as Array<{ device_id: string }>)
+    .map((r) => r.device_id)
+    .filter(Boolean) as string[];
+}
+
+async function fetchActiveAssignmentsForDeviceIds(deviceIds: string[]) {
+  if (!deviceIds.length) return new Set<string>();
+  const { data, error } = await supabase
+    .from("ticket_device_assignments")
+    .select("device_id")
+    .in("device_id", deviceIds)
+    .is("unassigned_at", null);
+  if (error) throw error;
+  return new Set(
+    ((data ?? []) as Array<{ device_id: string }>).map((r) => r.device_id).filter(Boolean),
+  );
+}
+
+export function useAllAssignedDeviceIds(enabled: boolean) {
+  return useQuery({
+    queryKey: ["inventory", "assigned-device-ids"],
+    queryFn: fetchAllAssignedDeviceIds,
+    enabled,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+  });
 }
 
 export async function fetchDevicesList(params: DevicesListParams) {
-  const PAGE_SIZE = params.pageSize ?? 50;
+  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
-
-  const assignedIds = await fetchAssignedDeviceIds();
-  const assignedSet = new Set(assignedIds);
   let dueMaintenanceDeviceIds: string[] = [];
   const today = new Date().toISOString().slice(0, 10);
   const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -61,8 +86,9 @@ export async function fetchDevicesList(params: DevicesListParams) {
   if (term)
     query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
 
-  if (params.withoutTicket && assignedIds.length) {
-    query = query.not("id", "in", `(${assignedIds.map((id) => `'${id}'`).join(",")})`);
+  const assignedIdsForFilter = params.assignedIdsForFilter;
+  if (params.withoutTicket && assignedIdsForFilter?.length) {
+    query = query.not("id", "in", `(${assignedIdsForFilter.join(",")})`);
   }
   if (params.maintenanceDueSoon && dueMaintenanceDeviceIds.length) {
     query = query.in("id", dueMaintenanceDeviceIds as any);
@@ -95,6 +121,7 @@ export async function fetchDevicesList(params: DevicesListParams) {
   const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
   const pageIds = ((data ?? []) as Array<{ id: string }>).map((row) => row.id);
+  const assignedSet = await fetchActiveAssignmentsForDeviceIds(pageIds);
   let dueByDevice = new Map<string, string>();
   if (pageIds.length) {
     const { data: dueRows } = await (supabase as any)
@@ -121,6 +148,9 @@ export async function fetchDevicesList(params: DevicesListParams) {
 }
 
 export function useInventoryList(params: DevicesListParams) {
+  const needsAssignedFilter = !!params.withoutTicket;
+  const assignedQuery = useAllAssignedDeviceIds(needsAssignedFilter);
+
   return useQuery({
     queryKey: [
       "inventory",
@@ -128,15 +158,23 @@ export function useInventoryList(params: DevicesListParams) {
       params.os || "",
       params.q || "",
       params.page ?? 0,
-      params.pageSize ?? 50,
+      params.pageSize ?? LIST_PAGE_SIZE,
       params.withoutTicket ? "without" : "",
       params.updatedBefore || "",
       params.updatedAfter || "",
       params.client_id || "",
       params.warrantyStatus || "all",
       params.maintenanceDueSoon ? "maintenance-due" : "",
+      needsAssignedFilter ? assignedQuery.dataUpdatedAt : 0,
     ],
-    queryFn: () => fetchDevicesList(params),
+    queryFn: () =>
+      fetchDevicesList({
+        ...params,
+        assignedIdsForFilter: needsAssignedFilter ? assignedQuery.data : undefined,
+      }),
+    enabled: !needsAssignedFilter || assignedQuery.isSuccess,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -188,7 +226,8 @@ export function useCreateDevicesBulk() {
 }
 
 export default {
-  fetchAssignedDeviceIds,
+  fetchAllAssignedDeviceIds,
+  useAllAssignedDeviceIds,
   fetchDevicesList,
   useInventoryList,
   fetchDeviceBySerial,
