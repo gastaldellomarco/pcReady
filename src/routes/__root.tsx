@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth-provider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import QueryProvider from "@/lib/queries/queryClient";
 import { Toaster } from "@/components/ui/sonner";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { isMaintenanceModeEnabled } from "@/lib/maintenance-env";
 
 import appCss from "../styles.css?url";
@@ -84,6 +85,7 @@ function RootComponent() {
     <ThemeProvider defaultTheme="system" enableSystem>
       <QueryProvider>
         <AuthProvider>
+          <ConnectionBanner />
           <Outlet />
           <Toaster richColors position="bottom-right" />
         </AuthProvider>

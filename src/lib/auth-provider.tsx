@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (s: Session | null) => {
       setSession(s);
       setUser(s?.user ?? null);
+      void supabase.realtime.setAuth(s?.access_token ?? null);
 
       if (!s?.user) {
         profileRequestId.current++;

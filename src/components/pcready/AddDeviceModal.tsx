@@ -62,13 +62,29 @@ export function AddDeviceModal() {
       client_id: "",
       end_user: null,
       os: OS_OPTIONS[0],
+      cpu_name: "",
+      ram_gb: "",
+      storage_capacity_gb: "",
+      storage_type: "",
+      ip_address: "",
+      mac_address: "",
+      location: "",
+      firmware_version: "",
+      port_count: "",
       poe_supported: false,
-      purchase_cost: null,
+      toner_model: "",
+      page_count: "",
+      print_technology: "",
+      license_expiry: "",
+      vlan_config: "",
+      rack_position: "",
+      server_role: "",
+      purchase_cost: "",
       notes: null,
     },
   });
   const selectedCategory = form.watch("category") as DeviceCategory;
-  const selectedTypes = getDeviceTypes(selectedCategory, true);
+  const selectedTypes = getDeviceTypes(selectedCategory);
 
   useEffect(() => {
     const currentType = form.getValues().device_type ?? DEFAULT_DEVICE_TYPE;
@@ -163,8 +179,15 @@ export function AddDeviceModal() {
     if (!canEdit) return toast.error("Permessi insufficienti");
     setBusy(true);
     try {
-      const client = clients.find((c) => c.id === values.client_id);
-      if (!client) return toast.error("Seleziona un cliente");
+      if (!(clients && clients.length) && !addDeviceClient) {
+        toast.error("Nessun cliente disponibile — crea o seleziona un cliente prima di aggiungere dispositivi");
+        return;
+      }
+      const client = clients.find((c) => c.id === values.client_id) || addDeviceClient;
+      if (!client) {
+        toast.error("Seleziona un cliente");
+        return;
+      }
 
       const deviceInsert: TablesInsert<"devices"> = {
         category: values.category,
@@ -221,11 +244,56 @@ export function AddDeviceModal() {
       });
       closeAddDevice();
     } catch (e: unknown) {
-      toast.error(errorMessage(e, "Errore creazione dispositivo"));
+      const msg = errorMessage(e, "Errore creazione dispositivo");
+      // show more visible error for debugging
+      toast.error(msg);
+      console.error("AddDevice error:", e);
     } finally {
       setBusy(false);
     }
   });
+
+  async function onAddClick() {
+    // trigger validation run and focus first invalid field if any
+    // Log current values to help debug cases where fields look filled but validation fails
+    console.debug("AddDevice attempted values:", form.getValues());
+    const ok = await form.trigger();
+    if (!ok) {
+      // compute first error and show its message if available
+      // also log a serialized copy of errors + values to ensure copy/paste-friendly output
+      try {
+        const errorsMap = Object.fromEntries(
+          Object.entries(form.formState.errors).map(([k, v]) => [
+            k,
+            {
+              message: (v as any)?.message ?? null,
+              type: (v as any)?.type ?? null,
+              ref: (v as any)?.ref ? ((v as any).ref.name || String((v as any).ref)) : null,
+            },
+          ]),
+        );
+        console.error("AddDevice validation failed keys:", Object.keys(form.formState.errors));
+        console.error("AddDevice validation failed (errors):\n" + JSON.stringify(errorsMap, null, 2));
+        console.error("AddDevice values:\n" + JSON.stringify(form.getValues(), null, 2));
+      } catch (e) {
+        console.error("AddDevice validation failed (unable to serialize)", e, form.formState.errors, form.getValues());
+      }
+
+      const entries = Object.entries(form.formState.errors);
+      const first = entries[0];
+      if (first) {
+        const [field, err] = first as [string, any];
+        if (field) form.setFocus(field as any);
+        const message = err?.message || "Compila i campi obbligatori prima di procedere";
+        toast.error(message);
+      } else {
+        toast.error("Compila i campi obbligatori prima di procedere");
+      }
+      return;
+    }
+    // call submit handler (will run final validation and submit)
+    void submit();
+  }
 
   return (
     <Modal
@@ -238,7 +306,7 @@ export function AddDeviceModal() {
           <button className="pc-btn pc-btn-ghost" onClick={closeAddDevice}>
             Annulla
           </button>
-          <button className="pc-btn pc-btn-primary" disabled={busy} onClick={submit}>
+          <button className="pc-btn pc-btn-primary" disabled={busy} onClick={onAddClick}>
             {busy ? "Creazione..." : "Aggiungi dispositivo"}
           </button>
         </>
@@ -441,6 +509,21 @@ export function AddDeviceModal() {
         mode="barcode-1d"
         targetLabel={barcodeTarget === "asset_tag" ? "asset tag interno" : "seriale produttore"}
       />
+      {/* Temporary debug panel: shows validation errors and current values for easier troubleshooting */}
+      {Object.keys(form.formState.errors).length > 0 && (
+        <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <div className="font-semibold mb-2">Debug: form errors & values</div>
+          <pre className="whitespace-pre-wrap max-h-48 overflow-auto">{JSON.stringify({
+            errors: Object.fromEntries(
+              Object.entries(form.formState.errors).map(([k, v]) => [
+                k,
+                { message: (v as any)?.message ?? null, type: (v as any)?.type ?? null },
+              ]),
+            ),
+            values: form.getValues(),
+          }, null, 2)}</pre>
+        </div>
+      )}
     </Modal>
   );
 }
