@@ -12,7 +12,21 @@
 - [20260507130000_notifications.sql](file://supabase/migrations/20260507130000_notifications.sql)
 - [TechnicianStatsWidget.tsx](file://src/components/dashboard/TechnicianStatsWidget.tsx)
 - [dashboard-analytics.ts](file://src/lib/dashboard-analytics.ts)
+- [optimized-image.tsx](file://src/components/ui/optimized-image.tsx)
+- [overflow-table.tsx](file://src/components/ui/overflow-table.tsx)
+- [table.tsx](file://src/components/ui/table.tsx)
+- [use-mobile.tsx](file://src/hooks/use-mobile.tsx)
+- [mobile-audit.md](file://docs/mobile-audit.md)
+- [styles.css](file://src/styles.css)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new OptimizedImage component documentation with lazy-loading and performance optimization strategies
+- Added new OverflowTable component documentation for mobile-responsive table handling
+- Enhanced mobile responsiveness section with comprehensive responsive design patterns
+- Updated performance considerations with new lazy-loading strategies and responsive design patterns
+- Added new sections for component-level performance optimization
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -22,12 +36,13 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Dependency Analysis](#dependency-analysis)
 7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+8. [Mobile Responsiveness and Responsive Design](#mobile-responsiveness-and-responsive-design)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive guidance for optimizing real-time performance in the application. It focuses on subscription optimization, memory management, network efficiency, monitoring and profiling, rate limiting and notification throttling, caching and offline synchronization patterns, performance metrics collection, and best practices for lifecycle management and cleanup. The content is grounded in the repository’s real-time subscriptions, rate limiting, Supabase configuration, and UI polling patterns.
+This document provides comprehensive guidance for optimizing real-time performance in the application. It focuses on subscription optimization, memory management, network efficiency, monitoring and profiling, rate limiting and notification throttling, caching and offline synchronization patterns, performance metrics collection, and best practices for lifecycle management and cleanup. The content is grounded in the repository's real-time subscriptions, rate limiting, Supabase configuration, UI polling patterns, and newly introduced performance-optimized components including OptimizedImage and OverflowTable for enhanced mobile responsiveness.
 
 ## Project Structure
 The performance-critical parts of the system revolve around:
@@ -37,6 +52,9 @@ The performance-critical parts of the system revolve around:
 - Notification creation and cleanup policies
 - UI polling strategies for periodic refresh
 - Dashboard analytics normalization and normalization ranges
+- **New**: OptimizedImage component with intelligent lazy-loading and decoding strategies
+- **New**: OverflowTable component for mobile-responsive table handling
+- **New**: Comprehensive mobile responsiveness framework with breakpoint detection
 
 ```mermaid
 graph TB
@@ -59,11 +77,18 @@ end
 subgraph "Analytics"
 DA["dashboard-analytics.ts"]
 end
+subgraph "Performance Optimized Components"
+OIC["OptimizedImage.tsx"]
+OT["OverflowTable.tsx"]
+UM["use-mobile.tsx"]
+end
 RT --> SB
 NTS --> RL
 NTS --> RLC
 NTSS --> NMS
 TS --> DA
+OIC --> UM
+OT --> UM
 ```
 
 **Diagram sources**
@@ -76,6 +101,9 @@ TS --> DA
 - [20260507130000_notifications.sql:1-77](file://supabase/migrations/20260507130000_notifications.sql#L1-L77)
 - [TechnicianStatsWidget.tsx:36-62](file://src/components/dashboard/TechnicianStatsWidget.tsx#L36-L62)
 - [dashboard-analytics.ts:507-558](file://src/lib/dashboard-analytics.ts#L507-L558)
+- [optimized-image.tsx:1-25](file://src/components/ui/optimized-image.tsx#L1-L25)
+- [overflow-table.tsx:1-24](file://src/components/ui/overflow-table.tsx#L1-L24)
+- [use-mobile.tsx:1-19](file://src/hooks/use-mobile.tsx#L1-L19)
 
 **Section sources**
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
@@ -87,6 +115,9 @@ TS --> DA
 - [20260507130000_notifications.sql:1-77](file://supabase/migrations/20260507130000_notifications.sql#L1-L77)
 - [TechnicianStatsWidget.tsx:36-62](file://src/components/dashboard/TechnicianStatsWidget.tsx#L36-L62)
 - [dashboard-analytics.ts:507-558](file://src/lib/dashboard-analytics.ts#L507-L558)
+- [optimized-image.tsx:1-25](file://src/components/ui/optimized-image.tsx#L1-L25)
+- [overflow-table.tsx:1-24](file://src/components/ui/overflow-table.tsx#L1-L24)
+- [use-mobile.tsx:1-19](file://src/hooks/use-mobile.tsx#L1-L19)
 
 ## Core Components
 - Real-time subscription hook: Provides reactive data synchronization with Supabase Realtime and automatic cleanup.
@@ -95,6 +126,9 @@ TS --> DA
 - Notifications: Server functions for creating and listing notifications with rate limiting and database-backed cleanup.
 - UI polling: Periodic refresh intervals for dashboard widgets.
 - Analytics normalization: Normalization of metrics to 0–100 scale with range-aware calculations.
+- **New**: OptimizedImage: Intelligent image component with lazy-loading, decoding, and fetch priority optimization for critical vs non-critical images.
+- **New**: OverflowTable: Mobile-responsive table wrapper with horizontal scrolling and accessibility support for dense data displays.
+- **New**: Mobile responsiveness framework: Breakpoint detection and responsive design utilities for optimal mobile performance.
 
 **Section sources**
 - [useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
@@ -105,9 +139,12 @@ TS --> DA
 - [notifications.server.ts:27-140](file://src/lib/notifications.server.ts#L27-L140)
 - [TechnicianStatsWidget.tsx:36-44](file://src/components/dashboard/TechnicianStatsWidget.tsx#L36-L44)
 - [dashboard-analytics.ts:507-558](file://src/lib/dashboard-analytics.ts#L507-L558)
+- [optimized-image.tsx:8-24](file://src/components/ui/optimized-image.tsx#L8-L24)
+- [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
+- [use-mobile.tsx:5-18](file://src/hooks/use-mobile.tsx#L5-L18)
 
 ## Architecture Overview
-The real-time architecture integrates React hooks, Supabase Realtime, and server-side logic. Subscriptions are scoped per table and cleaned up on unmount. Rate limiting protects server functions, and database policies ensure timely cleanup of notifications.
+The real-time architecture integrates React hooks, Supabase Realtime, and server-side logic. Subscriptions are scoped per table and cleaned up on unmount. Rate limiting protects server functions, and database policies ensure timely cleanup of notifications. The new performance-optimized components provide intelligent lazy-loading and responsive design patterns.
 
 ```mermaid
 sequenceDiagram
@@ -263,7 +300,7 @@ Clear --> End(["Unmounted"])
 
 ### Analytics Normalization
 - Metrics are normalized to 0–100 using min/max ranges computed from non-null values.
-- Special handling inverts “speed” and “reactivity” so lower values yield higher scores.
+- Special handling inverts "speed" and "reactivity" so lower values yield higher scores.
 
 ```mermaid
 flowchart TD
@@ -281,10 +318,74 @@ F --> G["Attach normalized metrics to rows"]
 **Section sources**
 - [dashboard-analytics.ts:507-558](file://src/lib/dashboard-analytics.ts#L507-L558)
 
+### OptimizedImage Component
+- Purpose: Intelligent image component that optimizes loading performance by applying appropriate lazy-loading, decoding, and fetch priority strategies based on image importance.
+- Priority handling: Images marked as priority use eager loading, synchronous decoding, and high fetch priority for above-the-fold content.
+- Non-priority images use lazy loading, asynchronous decoding, and normal fetch priority to defer non-critical resources.
+- Performance benefits: Reduces initial page weight, improves LCP scores, and prevents render blocking for non-critical images.
+
+```mermaid
+flowchart TD
+A["OptimizedImage Component"] --> B{"priority prop?"}
+B --> |true| C["loading='eager'"]
+B --> |true| D["decoding='sync'"]
+B --> |true| E["fetchPriority='high'"]
+B --> |false| F["loading='lazy'"]
+B --> |false| G["decoding='async'"]
+B --> |false| H["fetchPriority=undefined"]
+C --> I["Render optimized image"]
+D --> I
+E --> I
+F --> I
+G --> I
+H --> I
+```
+
+**Diagram sources**
+- [optimized-image.tsx:9-24](file://src/components/ui/optimized-image.tsx#L9-L24)
+
+**Section sources**
+- [optimized-image.tsx:1-25](file://src/components/ui/optimized-image.tsx#L1-L25)
+
+### OverflowTable Component
+- Purpose: Mobile-responsive table wrapper that enables horizontal scrolling for dense data tables while maintaining accessibility and usability on mobile devices.
+- Horizontal scrolling: Provides overflow-x-auto with touch scrolling support for seamless mobile navigation.
+- Accessibility: Includes focus management, ARIA labels, and keyboard navigation support.
+- Responsive design: Integrates with mobile breakpoint detection to adapt behavior across different screen sizes.
+- Performance: Optimized rendering with minimal DOM overhead for large datasets.
+
+```mermaid
+flowchart TD
+A["OverflowTable Component"] --> B["Container div with overflow-x-auto"]
+B --> C["Focusable region (tabIndex=0)"]
+C --> D["ARIA accessibility (aria-label)"]
+D --> E["Child table content"]
+E --> F["Responsive behavior"]
+```
+
+**Diagram sources**
+- [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
+
+**Section sources**
+- [overflow-table.tsx:1-24](file://src/components/ui/overflow-table.tsx#L1-L24)
+
+### Mobile Responsiveness Framework
+- Breakpoint detection: Uses CSS media queries and React hooks to detect mobile vs desktop environments.
+- Touch-friendly design: Implements minimum touch targets, safe area insets, and optimized interaction patterns.
+- Adaptive layouts: Provides different rendering strategies for mobile and desktop contexts.
+- Performance optimization: Minimizes layout thrashing and ensures smooth transitions between states.
+
+**Section sources**
+- [use-mobile.tsx:1-19](file://src/hooks/use-mobile.tsx#L1-L19)
+- [mobile-audit.md:1-98](file://docs/mobile-audit.md#L1-L98)
+- [styles.css:410-442](file://src/styles.css#L410-L442)
+
 ## Dependency Analysis
 - Real-time hook depends on the Supabase client and uses a unique channel suffix per subscription.
 - Notifications rely on rate limiting presets and server-side logic to enforce constraints.
 - Database migrations enable Realtime publication for core tables and schedule cleanup jobs for notifications.
+- **New**: OptimizedImage depends on React's native image attributes and integrates with the mobile responsiveness framework.
+- **New**: OverflowTable depends on Tailwind CSS utility classes and accessibility standards for mobile optimization.
 
 ```mermaid
 graph LR
@@ -293,6 +394,9 @@ NTS["notifications.ts"] --> RL["rate-limit.ts"]
 NTS --> RLC["rate-limit-config.ts"]
 NTSS["notifications.server.ts"] --> NMS["20260507130000_notifications.sql"]
 RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
+OIC["OptimizedImage.tsx"] --> UM["use-mobile.tsx"]
+OT["OverflowTable.tsx"] --> UM
+OT --> TBL["table.tsx"]
 ```
 
 **Diagram sources**
@@ -304,6 +408,9 @@ RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
 - [notifications.server.ts:1](file://src/lib/notifications.server.ts#L1)
 - [20260507130000_notifications.sql:39-53](file://supabase/migrations/20260507130000_notifications.sql#L39-L53)
 - [20260514182000_realtime_replica_identity_core_tables.sql:9-30](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L9-L30)
+- [optimized-image.tsx:1-6](file://src/components/ui/optimized-image.tsx#L1-L6)
+- [overflow-table.tsx:1-7](file://src/components/ui/overflow-table.tsx#L1-L7)
+- [table.tsx:1-4](file://src/components/ui/table.tsx#L1-L4)
 
 **Section sources**
 - [useRealtimeTable.ts:3-4](file://src/hooks/useRealtimeTable.ts#L3-L4)
@@ -314,6 +421,9 @@ RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
 - [notifications.server.ts:1](file://src/lib/notifications.server.ts#L1)
 - [20260507130000_notifications.sql:39-53](file://supabase/migrations/20260507130000_notifications.sql#L39-L53)
 - [20260514182000_realtime_replica_identity_core_tables.sql:9-30](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L9-L30)
+- [optimized-image.tsx:1-6](file://src/components/ui/optimized-image.tsx#L1-L6)
+- [overflow-table.tsx:1-7](file://src/components/ui/overflow-table.tsx#L1-L7)
+- [table.tsx:1-4](file://src/components/ui/table.tsx#L1-L4)
 
 ## Performance Considerations
 - Subscription optimization
@@ -329,10 +439,23 @@ RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
   - Connection pooling: Reuse a single Supabase client instance via the provided proxy pattern to minimize connection churn.
   - Bandwidth management: Narrow queries to required columns, filter early, and avoid large payloads in Realtime events by using replica identity and targeted selects.
 
+- **New**: Image optimization with lazy-loading strategies
+  - Priority-based loading: Use OptimizedImage with priority=true for above-the-fold content to improve LCP scores.
+  - Non-critical images: Default lazy loading reduces initial page weight and improves perceived performance.
+  - Decoding optimization: Synchronous decoding for critical images, asynchronous for non-critical to prevent render blocking.
+  - Fetch priority: High priority for above-the-fold images, normal priority for background content.
+
+- **New**: Mobile-responsive table optimization
+  - Horizontal scrolling: OverflowTable enables smooth horizontal scrolling without breaking mobile layouts.
+  - Accessibility compliance: Proper ARIA labels and keyboard navigation for mobile users.
+  - Performance: Minimal DOM overhead for large datasets with optimized rendering.
+
 - Monitoring and profiling
   - Measure render times and update frequency for components using Realtime subscriptions.
   - Track rate limit hits and retries to identify hotspots.
   - Monitor database query durations and Realtime event throughput.
+  - **New**: Monitor image loading performance and lazy-loading effectiveness.
+  - **New**: Track mobile-specific performance metrics and responsive behavior.
 
 - Rate limiting and notification throttling
   - Enforce rate limits on high-frequency operations (e.g., creating notifications).
@@ -352,6 +475,38 @@ RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
 - [rate-limit.ts:24-29](file://src/lib/rate-limit.ts#L24-L29)
 - [notifications.ts:58-66](file://src/lib/notifications.ts#L58-L66)
 - [dashboard-analytics.ts:507-558](file://src/lib/dashboard-analytics.ts#L507-L558)
+- [optimized-image.tsx:8-24](file://src/components/ui/optimized-image.tsx#L8-L24)
+- [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
+
+## Mobile Responsiveness and Responsive Design
+The application implements a comprehensive mobile-first approach with intelligent responsive design patterns:
+
+### Mobile Breakpoint Strategy
+- **Breakpoint Detection**: Uses a 960px threshold to determine mobile vs desktop contexts.
+- **Adaptive Rendering**: Components automatically adjust behavior based on detected screen size.
+- **Touch Optimization**: Minimum 44px touch targets and optimized interaction patterns for mobile devices.
+
+### Responsive Table Handling
+- **OverflowTable Component**: Provides horizontal scrolling for dense data tables on mobile devices.
+- **Accessibility**: Includes ARIA labels, focus management, and keyboard navigation support.
+- **Performance**: Optimized rendering with minimal DOM overhead for large datasets.
+
+### Image Loading Optimization
+- **Priority Images**: Above-the-fold content uses eager loading with synchronous decoding.
+- **Lazy Images**: Background content uses lazy loading with asynchronous decoding.
+- **Fetch Priority**: Critical images get high fetch priority, non-critical images use normal priority.
+
+### Mobile-First Design Principles
+- **Touch Targets**: Minimum 44px size for all interactive elements.
+- **Safe Areas**: Proper handling of device safe areas for modern mobile devices.
+- **Font Sizing**: 16px font size on mobile to prevent iOS zoom behavior.
+- **Layout Adaptation**: Grid layouts collapse to single column on mobile, maintaining readability.
+
+**Section sources**
+- [use-mobile.tsx:5-18](file://src/hooks/use-mobile.tsx#L5-L18)
+- [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
+- [mobile-audit.md:40-63](file://docs/mobile-audit.md#L40-L63)
+- [styles.css:410-442](file://src/styles.css#L410-L442)
 
 ## Troubleshooting Guide
 - Realtime subscriptions not updating
@@ -374,15 +529,33 @@ RT --> MIG["20260514182000_realtime_replica_identity_core_tables.sql"]
   - Check user preferences and database cleanup policies.
   - Validate server function inputs and authentication tokens.
 
+- **New**: Image loading issues
+  - Verify OptimizedImage props and priority usage.
+  - Check browser support for native lazy-loading and decoding attributes.
+  - Monitor image loading performance in developer tools.
+
+- **New**: Mobile table scrolling problems
+  - Ensure OverflowTable wrapper is properly configured.
+  - Check CSS overflow properties and touch scrolling support.
+  - Verify accessibility attributes are correctly applied.
+
+- **New**: Responsive design issues
+  - Verify mobile breakpoint detection is working correctly.
+  - Check CSS media queries and responsive utility classes.
+  - Test across different mobile device sizes and orientations.
+
 **Section sources**
 - [useRealtimeTable.ts:43-45](file://src/hooks/useRealtimeTable.ts#L43-L45)
 - [20260514182000_realtime_replica_identity_core_tables.sql:13-30](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L13-L30)
 - [rate-limit.ts:74-90](file://src/lib/rate-limit.ts#L74-L90)
 - [notifications.server.ts:27-67](file://src/lib/notifications.server.ts#L27-L67)
 - [20260507130000_notifications.sql:55-76](file://supabase/migrations/20260507130000_notifications.sql#L55-L76)
+- [optimized-image.tsx:8-24](file://src/components/ui/optimized-image.tsx#L8-L24)
+- [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
+- [use-mobile.tsx:5-18](file://src/hooks/use-mobile.tsx#L5-L18)
 
 ## Conclusion
-By combining targeted Realtime subscriptions, disciplined lifecycle management, rate limiting, and thoughtful UI polling, the application achieves responsive, scalable real-time experiences. Complementary database-level cleanup and normalization strategies further improve performance and maintainability.
+By combining targeted Realtime subscriptions, disciplined lifecycle management, rate limiting, and thoughtful UI polling with the newly introduced performance-optimized components, the application achieves responsive, scalable real-time experiences. The OptimizedImage component provides intelligent lazy-loading strategies for improved performance, while OverflowTable ensures mobile-responsive table handling. The comprehensive mobile-first design approach with breakpoint detection and responsive patterns further enhances user experience across all device types. Complementary database-level cleanup and normalization strategies continue to improve overall performance and maintainability.
 
 ## Appendices
 - Best practices summary
@@ -392,3 +565,7 @@ By combining targeted Realtime subscriptions, disciplined lifecycle management, 
   - Normalize metrics once and reuse.
   - Reuse a single Supabase client instance.
   - Prefer Realtime over polling; if polling is used, tune intervals and avoid overlap.
+  - **New**: Use OptimizedImage with appropriate priority settings for optimal LCP scores.
+  - **New**: Implement OverflowTable for mobile-responsive table displays.
+  - **New**: Leverage mobile breakpoint detection for adaptive rendering.
+  - **New**: Follow mobile-first design principles with proper touch targets and accessibility.

@@ -16,6 +16,11 @@
 - [src/components/ui/form.tsx](file://src/components/ui/form.tsx)
 - [src/lib/tickets.ts](file://src/lib/tickets.ts)
 - [src/lib/schemas/index.ts](file://src/lib/schemas/index.ts)
+- [src/lib/queries/ticketAttachments.ts](file://src/lib/queries/ticketAttachments.ts)
+- [src/lib/server/attachmentUtils.server.ts](file://src/lib/server/attachmentUtils.server.ts)
+- [src/components/tickets/TicketAttachments.tsx](file://src/components/tickets/TicketAttachments.tsx)
+- [src/__tests__/ticketAttachments.test.ts](file://src/__tests__/ticketAttachments.test.ts)
+- [scripts/scan-attachments.mjs](file://scripts/scan-attachments.mjs)
 - [README.md](file://README.md)
 - [docs/architecture.md](file://docs/architecture.md)
 - [docs/domain-model.md](file://docs/domain-model.md)
@@ -25,15 +30,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced code style and formatting guidelines with specific ESLint and Prettier configurations
-- Expanded TypeScript usage patterns and type safety practices with strict compiler options
-- Added comprehensive component development patterns including prop interfaces and state management
-- Updated state management best practices with React hooks and custom hooks documentation
-- Improved database and real-time patterns with Supabase integration details
-- Added architectural patterns documentation covering Server Functions Pattern and Repository Pattern
-- Enhanced testing strategies with Vitest configuration and coverage thresholds
-- Updated debugging and profiling techniques with linting and type-checking workflows
-- Expanded accessibility, security, and internationalization considerations
+- Enhanced file attachment validation and security improvements for PNG, JPEG, WebP, and PDF files
+- Improved MIME type detection capabilities with better edge case handling
+- Added comprehensive security vulnerability prevention measures
+- Updated attachment validation system with server-side and client-side validation
+- Added automated scanning script for detecting potentially malicious files
+- Enhanced component-level attachment handling with robust error management
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -53,9 +55,10 @@
 15. [Database and Real-Time Patterns](#database-and-real-time-patterns)
 16. [Architectural Patterns](#architectural-patterns)
 17. [Code Organization Principles](#code-organization-principles)
-18. [Accessibility, Security, and Internationalization](#accessibility-security-and-internationalization)
-19. [Code Review and Contribution Workflows](#code-review-and-contribution-workflows)
-20. [Conclusion](#conclusion)
+18. [File Attachment Security and Validation](#file-attachment-security-and-validation)
+19. [Accessibility, Security, and Internationalization](#accessibility-security-and-internationalization)
+20. [Code Review and Contribution Workflows](#code-review-and-contribution-workflows)
+21. [Conclusion](#conclusion)
 
 ## Introduction
 This document defines PCReady's development guidelines and best practices. It consolidates code style, TypeScript usage, component patterns, state management, performance optimization, architecture, testing, debugging, accessibility, security, and internationalization guidance. These practices are grounded in the repository's existing tooling (ESLint, Prettier, TypeScript, Vitest), frameworks (TanStack Router/Start, React Query), and integrations (Supabase).
@@ -484,6 +487,98 @@ D --> E["UI Re-render"]
 - [src/lib/schemas/index.ts:1-8](file://src/lib/schemas/index.ts#L1-L8)
 - [tsconfig.json:25-27](file://tsconfig.json#L25-L27)
 
+## File Attachment Security and Validation
+
+### Enhanced Attachment Validation System
+The system now implements comprehensive file attachment validation with enhanced security measures for PNG, JPEG, WebP, and PDF files.
+
+```mermaid
+flowchart TD
+A["File Upload Request"] --> B["Extension Validation"]
+B --> C{"Allowed Extension?"}
+C --> |No| D["Reject: Invalid Extension"]
+C --> |Yes| E["Header Detection"]
+E --> F{"MIME Type Detected?"}
+F --> |Yes| G{"Matches Expected Type?"}
+G --> |No| H["Reject: Header Mismatch"]
+G --> |Yes| I["Accept File"]
+F --> |No| J{"Is .txt File?"}
+J --> |Yes| K{"Plain Text Check"}
+K --> |No| L["Reject: Not Valid Plain Text"]
+K --> |Yes| M["Accept .txt File"]
+J --> |No| N["Reject: Cannot Determine Type"]
+```
+
+**Diagram sources**
+- [src/lib/queries/ticketAttachments.ts:57-81](file://src/lib/queries/ticketAttachments.ts#L57-L81)
+- [src/lib/server/attachmentUtils.server.ts:69-82](file://src/lib/server/attachmentUtils.server.ts#L69-L82)
+
+### MIME Type Detection Capabilities
+The validation system now includes robust MIME type detection for multiple file formats:
+
+- **PNG**: Validates 8-byte signature `0x89 0x50 0x4e 0x47`
+- **JPEG**: Validates 3-byte signature `0xff 0xd8 0xff`
+- **GIF**: Validates 6-byte signature `0x47 0x49 0x46`
+- **WebP**: Validates 12-byte signature `0x52 0x49 0x46 0x46 ... 0x57 0x45 0x42 0x50`
+- **PDF**: Validates 4-byte signature `0x25 0x50 0x44 0x46`
+- **SVG/HTML**: Detects and rejects potentially malicious text-based files
+
+**Section sources**
+- [src/lib/queries/ticketAttachments.ts:28-55](file://src/lib/queries/ticketAttachments.ts#L28-L55)
+- [src/lib/server/attachmentUtils.server.ts:18-67](file://src/lib/server/attachmentUtils.server.ts#L18-L67)
+
+### Security Vulnerability Prevention
+The system implements multiple layers of security protection:
+
+- **Double Validation**: Both client-side and server-side validation
+- **Header Signature Verification**: Binary signature matching for file authenticity
+- **Extension-Header Consistency**: Ensures file extension matches actual content
+- **Plain Text Validation**: Special handling for .txt files to prevent binary content masquerading
+- **SVG/HTML Detection**: Prevents malicious text-based files from being treated as images
+- **Content-Disposition Enforcement**: Forces download behavior to prevent inline execution
+
+**Section sources**
+- [src/lib/queries/ticketAttachments.ts:73-78](file://src/lib/queries/ticketAttachments.ts#L73-L78)
+- [src/lib/server/attachmentUtils.server.ts:56-66](file://src/lib/server/attachmentUtils.server.ts#L56-L66)
+- [src/lib/queries/ticketAttachments.ts:184-188](file://src/lib/queries/ticketAttachments.ts#L184-L188)
+
+### Automated Security Scanning
+The system includes an automated scanning script for detecting potentially malicious files:
+
+- **Bucket Scanning**: Analyzes all files in the ticket-documents bucket
+- **Header Analysis**: Downloads and examines file headers for suspicious patterns
+- **Text-Based Detection**: Identifies SVG and HTML content in file headers
+- **Flag Generation**: Creates reports of potentially dangerous files for manual review
+
+**Section sources**
+- [scripts/scan-attachments.mjs:14-18](file://scripts/scan-attachments.mjs#L14-L18)
+- [scripts/scan-attachments.mjs:20-44](file://scripts/scan-attachments.mjs#L20-L44)
+
+### Component-Level Attachment Handling
+The TicketAttachments component provides comprehensive file management with built-in security:
+
+- **Drag & Drop Interface**: Secure file upload with validation
+- **Preview Generation**: Safe image preview using signed URLs
+- **Download Protection**: Enforced download behavior prevents inline execution
+- **Error Handling**: Comprehensive error messaging for validation failures
+- **Access Control**: Permission-based file operations
+
+**Section sources**
+- [src/components/tickets/TicketAttachments.tsx:81-93](file://src/components/tickets/TicketAttachments.tsx#L81-L93)
+- [src/components/tickets/TicketAttachments.tsx:95-121](file://src/components/tickets/TicketAttachments.tsx#L95-L121)
+- [src/components/tickets/TicketAttachments.tsx:142-172](file://src/components/tickets/TicketAttachments.tsx#L142-L172)
+
+### Testing and Quality Assurance
+Comprehensive test coverage ensures validation reliability:
+
+- **Unit Tests**: Validate MIME type detection for all supported formats
+- **Security Tests**: Test rejection of malicious file types
+- **Edge Case Testing**: Handle various file corruption scenarios
+- **Integration Tests**: End-to-end validation pipeline testing
+
+**Section sources**
+- [src/__tests__/ticketAttachments.test.ts:12-46](file://src/__tests__/ticketAttachments.test.ts#L12-L46)
+
 ## Accessibility, Security, and Internationalization
 - Accessibility:
   - Use Radix UI primitives and semantic labeling
@@ -492,6 +587,9 @@ D --> E["UI Re-render"]
   - Server Functions for privileged operations
   - Input validation with Zod
   - Rate limiting enforcement
+  - Enhanced file attachment validation with MIME type detection
+  - Automated security scanning for malicious files
+  - Content-Disposition enforcement for download protection
 - Internationalization:
   - No explicit i18n framework detected; consider adding if needed
 
@@ -499,6 +597,8 @@ D --> E["UI Re-render"]
 - [src/components/ui/form.tsx:86-119](file://src/components/ui/form.tsx#L86-L119)
 - [src/lib/admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [src/lib/tickets.ts:50-110](file://src/lib/tickets.ts#L50-L110)
+- [src/lib/queries/ticketAttachments.ts:57-81](file://src/lib/queries/ticketAttachments.ts#L57-L81)
+- [src/lib/server/attachmentUtils.server.ts:69-82](file://src/lib/server/attachmentUtils.server.ts#L69-L82)
 
 ## Code Review and Contribution Workflows
 - Lint and type-check before submitting changes
@@ -508,4 +608,4 @@ D --> E["UI Re-render"]
 - Use conventional commit messages and follow branch naming conventions
 
 ## Conclusion
-These guidelines consolidate PCReady's current practices around code quality, type safety, component design, state management, real-time updates, and testing. Adhering to them ensures consistency, reliability, and maintainability across the codebase.
+These guidelines consolidate PCReady's current practices around code quality, type safety, component design, state management, real-time updates, and testing. The enhanced file attachment validation system provides comprehensive security measures for handling PNG, JPEG, WebP, and PDF files with improved MIME type detection capabilities and better edge case handling. Adhering to them ensures consistency, reliability, and maintainability across the codebase while preventing security vulnerabilities through multiple validation layers and automated scanning capabilities.
