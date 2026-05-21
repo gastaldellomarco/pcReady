@@ -1,8 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { useEffect } from "react";
-import SwaggerUI from "swagger-ui-react";
-import "swagger-ui-react/swagger-ui.css";
+import { useEffect, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -23,6 +21,22 @@ function ApiDocsPage() {
   const navigate = useNavigate();
   const canViewDocs = profile?.role === "admin" || profile?.role === "tech";
   const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+
+  const [SwaggerUIComp, setSwaggerUIComp] = useState<any>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    // dynamically import Swagger UI and its CSS only when the page is mounted
+    Promise.all([
+      import("swagger-ui-react"),
+      import("swagger-ui-react/swagger-ui.css").catch(() => null),
+    ]).then(([mod]) => {
+      if (mounted) setSwaggerUIComp(() => (mod?.default ? mod.default : mod));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading && profile && !canViewDocs) navigate({ to: "/dashboard", replace: true });
@@ -57,20 +71,24 @@ function ApiDocsPage() {
       </div>
 
       <div className="pc-card overflow-hidden api-docs-shell">
-        <SwaggerUI
-          url="/openapi/openapi.yaml"
-          docExpansion="list"
-          defaultModelsExpandDepth={1}
-          persistAuthorization
-          requestInterceptor={(request) => {
-            request.headers = request.headers || {};
-            if (anonKey && !request.headers.apikey) request.headers.apikey = anonKey;
-            if (session?.access_token && !request.headers.Authorization) {
-              request.headers.Authorization = `Bearer ${session.access_token}`;
-            }
-            return request;
-          }}
-        />
+        {SwaggerUIComp ? (
+          <SwaggerUIComp
+            url="/openapi/openapi.yaml"
+            docExpansion="list"
+            defaultModelsExpandDepth={1}
+            persistAuthorization
+            requestInterceptor={(request: any) => {
+              request.headers = request.headers || {};
+              if (anonKey && !request.headers.apikey) request.headers.apikey = anonKey;
+              if (session?.access_token && !request.headers.Authorization) {
+                request.headers.Authorization = `Bearer ${session.access_token}`;
+              }
+              return request;
+            }}
+          />
+        ) : (
+          <div className="p-6">Caricamento documentazione...</div>
+        )}
       </div>
       <style>{swaggerOverrides}</style>
     </div>

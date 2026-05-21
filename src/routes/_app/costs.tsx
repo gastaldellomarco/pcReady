@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Document } from "@react-pdf/renderer";
 import { createFileRoute } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
-import {
-  BrandedPage,
-  PdfSection,
-  PdfTable,
-  StatStrip,
-  type PdfColumn,
-} from "@/components/pcready/pdf/shared";
-import { pdfPalette } from "@/components/pcready/pdf/theme";
+// PDF generation is dynamically imported to avoid bundling heavy @react-pdf/renderer in the client
 import { Download, Eye, FileText, Save, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
@@ -246,6 +238,10 @@ function CostsPage() {
   async function exportPdf(mode: "preview" | "download") {
     setPdfBusy(mode);
     try {
+      const [{ previewPdf, downloadPdf }, { CostsReportPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/CostsReportPdf"),
+      ]);
       const doc = (
         <CostsReportPdf
           rows={filteredTickets}

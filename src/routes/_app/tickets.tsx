@@ -33,8 +33,7 @@ import {
 } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
 import { ArrowUpDown, Columns3, Eye, FileDown } from "lucide-react";
-import { TicketListPdf, type TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
-import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
+import type { TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { buildDownloadFileName } from "@/lib/downloads";
 import {
@@ -295,6 +294,10 @@ function TicketsPage() {
         ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
         : null;
       const org = settings?.organization_name;
+      const [{ downloadPdf }, { TicketListPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/TicketListPdf"),
+      ]);
       await downloadPdf(
         <TicketListPdf rows={pdfRows()} organizationName={org} />,
         buildDownloadFileName("pcready-ticket", "pdf", { dated: true }),
@@ -315,6 +318,10 @@ function TicketsPage() {
         ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
         : null;
       const org = settings?.organization_name;
+      const [{ previewPdf }, { TicketListPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/TicketListPdf"),
+      ]);
       await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
       toast.error(errorMessage(error, "Errore anteprima PDF"));
@@ -385,6 +392,10 @@ function TicketsPage() {
       const settings = session?.access_token
         ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
         : null;
+      const [{ downloadPdf }, { TicketListPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/TicketListPdf"),
+      ]);
       await downloadPdf(
         <TicketListPdf
           rows={selectedRows.map(rowToPdf)}

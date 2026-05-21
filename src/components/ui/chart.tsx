@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
+import type * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
 
@@ -32,15 +32,27 @@ function useChart() {
   return context;
 }
 
-const ChartContainer = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    config: ChartConfig;
-    children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["children"];
-  }
->(({ id, className, children, config, ...props }, ref) => {
+// dynamic load recharts to avoid bundling it into the initial client bundle
+let rechartsPromise: Promise<any> | null = null;
+function loadRecharts() {
+  if (!rechartsPromise) rechartsPromise = import("recharts");
+  return rechartsPromise;
+}
+
+const ChartContainer = React.forwardRef<any, any>(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+  const [ResponsiveContainer, setResponsiveContainer] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    loadRecharts().then((m) => {
+      if (mounted) setResponsiveContainer(() => m.ResponsiveContainer);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -54,7 +66,11 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
+        {ResponsiveContainer ? (
+          <ResponsiveContainer>{children}</ResponsiveContainer>
+        ) : (
+          <div className="flex w-full h-full items-center justify-center">Loading chart…</div>
+        )}
       </div>
     </ChartContext.Provider>
   );
@@ -90,7 +106,21 @@ ${colorConfig
   );
 };
 
-const ChartTooltip = RechartsPrimitive.Tooltip;
+const ChartTooltip: React.ComponentType<any> = (props) => {
+  const [Comp, setComp] = React.useState<any>(null);
+  React.useEffect(() => {
+    let mounted = true;
+    loadRecharts().then((m) => {
+      if (mounted) setComp(() => m.Tooltip);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!Comp) return null;
+  return <Comp {...props} />;
+};
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -238,7 +268,21 @@ const ChartTooltipContent = React.forwardRef<
 );
 ChartTooltipContent.displayName = "ChartTooltip";
 
-const ChartLegend = RechartsPrimitive.Legend;
+const ChartLegend: React.ComponentType<any> = (props) => {
+  const [Comp, setComp] = React.useState<any>(null);
+  React.useEffect(() => {
+    let mounted = true;
+    loadRecharts().then((m) => {
+      if (mounted) setComp(() => m.Legend);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!Comp) return null;
+  return <Comp {...props} />;
+};
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,

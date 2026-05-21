@@ -15,8 +15,7 @@ import {
   type AuditLogUserOption,
 } from "@/lib/audit-log";
 import { downloadCsv } from "@/lib/downloads";
-import { downloadPdf } from "@/components/pcready/pdf/export";
-import { AuditLogReportPdf } from "@/components/admin/AuditLogReportPdf";
+// PDF exporter and AuditLogReportPdf are dynamically imported when needed to avoid bundling @react-pdf on the client
 
 export type ViewMode = "table" | "timeline";
 
@@ -247,6 +246,11 @@ export function useAdminAudit(args: {
         month: "long",
         year: "numeric",
       });
+
+      const [{ downloadPdf }, { AuditLogReportPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/admin/AuditLogReportPdf"),
+      ]);
 
       const pdfElement = createElement(AuditLogReportPdf, {
         entries: auditEntries,

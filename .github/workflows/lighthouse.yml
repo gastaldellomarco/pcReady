@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LHCI_URL: ${{ vars.LHCI_URL || 'https://pcready.mavcoo.it/' }}
+      # Choose budget phase: phase1, phase2, phase3. Can be set as repo var LHCI_BUDGET_STAGE
+      BUDGET_STAGE: ${{ vars.LHCI_BUDGET_STAGE || 'phase1' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -30,6 +32,7 @@ jobs:
         with:
           urls: |
             ${{ env.LHCI_URL }}
-          budgetPath: ./lighthouse-budget.json
+          # select budget file per stage
+          budgetPath: ./lighthouse-budget-${{ env.BUDGET_STAGE }}.json
           uploadArtifacts: true
           temporaryPublicStorage: true

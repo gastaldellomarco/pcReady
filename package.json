@@ -118,6 +118,7 @@
     "vite": "^7.3.1",
     "vite-plugin-image-optimizer": "^2.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "4.90.0"
+    "wrangler": "4.90.0",
+    "rollup-plugin-visualizer": "^5.10.0"
   }
 }

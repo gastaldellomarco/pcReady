@@ -1,4 +1,4 @@
-import { Document } from "@react-pdf/renderer";
+import React from "react";
 import {
   BrandedPage,
   PdfSection,
@@ -68,6 +68,42 @@ export function AuditLogReportPdf({
       },
     },
   ];
+
+  const [pdfModule, setPdfModule] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    import("@react-pdf/renderer")
+      .then((m) => {
+        if (mounted) setPdfModule(m);
+      })
+      .catch(() => {
+        // swallow: consumers should handle absence
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!pdfModule) {
+    // PDF lib not loaded yet — render a lightweight placeholder or nothing.
+    return (
+      <BrandedPage
+        title="Report Audit Log"
+        meta={`${dateLabel} - ${totalCount} eventi | Export: ${exportUser}`}
+        organizationName={organizationName}
+      >
+        <PdfSection
+          title="Log di Audit"
+          meta={`${totalCount} eventi trovati${filterSummary !== "nessun filtro" ? ` | Filtri: ${filterSummary}` : ""}`}
+        >
+          <PdfTable rows={entries.slice(0, 100)} columns={columns} />
+        </PdfSection>
+      </BrandedPage>
+    );
+  }
+
+  const { Document } = pdfModule;
 
   return (
     <Document author={organizationName || "PCReady"} title="Report Audit Log">

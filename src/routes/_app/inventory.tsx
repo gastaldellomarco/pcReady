@@ -35,8 +35,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
-import { InventoryPdf, type DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
-import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
+import type { DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
 import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
@@ -272,6 +271,10 @@ function InventoryPage() {
         ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
         : null;
       const org = settings?.organization_name;
+      const [{ downloadPdf }, { InventoryPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/InventoryPdf"),
+      ]);
       await downloadPdf(
         <InventoryPdf rows={pdfRows()} organizationName={org} />,
         buildDownloadFileName("pcready-inventario", "pdf", { dated: true }),
@@ -292,6 +295,10 @@ function InventoryPage() {
         ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
         : null;
       const org = settings?.organization_name;
+      const [{ previewPdf }, { InventoryPdf }] = await Promise.all([
+        import("@/components/pcready/pdf/export"),
+        import("@/components/pcready/pdf/InventoryPdf"),
+      ]);
       await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
       toast.error(errorMessage(error, "Errore anteprima PDF"));

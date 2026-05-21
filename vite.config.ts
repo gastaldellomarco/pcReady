@@ -2,6 +2,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -35,6 +36,8 @@ export default defineConfig(({ command, mode }) => {
       cloudflare({
         viteEnvironment: { name: "ssr" },
       }),
+      // optional bundle visualizer when ANALYZE=true or VITE_ANALYZE=true
+      ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true" ? [visualizer({ filename: "dist/stats.html", gzip: true, brotli: true })] : []),
     );
   }
 

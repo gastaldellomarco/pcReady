@@ -22,8 +22,7 @@ import {
 import { dashboardDeviceLabel } from "@/components/dashboard/dashboard-stat-utils";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
-import { downloadPdf } from "@/components/pcready/pdf/export";
-import { AnalyticsReportPdf } from "@/components/dashboard/AnalyticsReportPdf";
+// Analytics PDF exporter is dynamically loaded to avoid bundling heavy PDF runtime
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { buildDownloadFileName } from "@/lib/downloads";
 import { CriticalEventsWidget } from "@/components/dashboard/CriticalEventsWidget";
@@ -620,12 +619,14 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   if (!ctx.analytics) return;
                   const settings = ctx.session?.access_token
                     ? await ctx
-                        .loadSettings({
-                          data: { accessToken: ctx.session.access_token },
-                        })
+                        .loadSettings({ data: { accessToken: ctx.session.access_token } })
                         .catch(() => null)
                     : null;
                   const org = settings?.organization_name;
+                  const [{ downloadPdf }, { AnalyticsReportPdf }] = await Promise.all([
+                    import("@/components/pcready/pdf/export"),
+                    import("@/components/dashboard/AnalyticsReportPdf"),
+                  ]);
                   await downloadPdf(
                     <AnalyticsReportPdf
                       analytics={ctx.analytics}
