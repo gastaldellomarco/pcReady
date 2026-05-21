@@ -12,7 +12,7 @@ VERSION=${NEW_VERSION#v}
 TAG="v$VERSION"
 echo "New version: $TAG"
 
-scripts/update-changelog.sh "$VERSION" "$TAG"
+bash scripts/update-changelog.sh "$VERSION" "$TAG"
 
 git add package.json CHANGELOG.md
 git commit -m "chore(release): $TAG"

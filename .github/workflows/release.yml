@@ -59,7 +59,13 @@ jobs:
       - name: Update changelog
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          scripts/update-changelog.sh "${{ steps.bump.outputs.version }}" "${{ steps.bump.outputs.tag }}"
+          bash scripts/update-changelog.sh "${{ steps.bump.outputs.version }}" "${{ steps.bump.outputs.tag }}"
+
+      - name: Validate changelog links
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          grep -q "^\[Unreleased\]: https://github.com/gastaldellomarco/pcReady/compare/${{ steps.bump.outputs.tag }}...HEAD$" CHANGELOG.md
+          grep -q "^\[${{ steps.bump.outputs.version }}\]: https://github.com/gastaldellomarco/pcReady/compare/" CHANGELOG.md
 
       - name: Commit version bump
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -81,14 +87,26 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && steps.bump.outputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          VERSION="${VERSION#v}"
+          node --input-type=module - "$VERSION" <<'JS' > /tmp/changelog.md
+          import fs from "node:fs";
+
+          const [version] = process.argv.slice(2);
+          const lines = fs.readFileSync("CHANGELOG.md", "utf8").split(/\r?\n/);
+          const start = lines.findIndex((line) => line.startsWith(`## [${version}] - `));
+          const end =
+            start === -1
+              ? -1
+              : lines.findIndex((line, index) => index > start && line.startsWith("## ["));
+          const body =
+            start === -1
+              ? "Release automatica."
+              : lines.slice(start + 1, end === -1 ? undefined : end).join("\n").trim();
+          process.stdout.write(body || "Release automatica.");
+          JS
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" | head -30)
-          else
-            # Exclude the bump commit itself (HEAD) when generating changelog
-            CHANGELOG=$(git log ${PREV_TAG}..HEAD~1 --pretty=format:"- %s (%h)")
-          fi
-          echo "$CHANGELOG" > /tmp/changelog.md
           echo "prev_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release

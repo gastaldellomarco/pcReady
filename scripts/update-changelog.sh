@@ -32,55 +32,51 @@ if [ -n "$PREV_TAG" ]; then
   RANGE="${PREV_TAG}..HEAD"
 fi
 
-map_commits() {
-  local grep_arg=$1
-  local fallback=$2
-  local commits
-
+commit_lines() {
+  local grep_arg=${1:-}
+  local invert=${2:-false}
+  local args=()
   if [ -n "$RANGE" ]; then
-    commits=$(git log "$RANGE" --grep="$grep_arg" --regexp-ignore-case --pretty=format:"- %s" || true)
-  else
-    commits=$(git log --grep="$grep_arg" --regexp-ignore-case --pretty=format:"- %s" || true)
+    args+=("$RANGE")
   fi
 
+  if [ -n "$grep_arg" ]; then
+    args+=(--grep="$grep_arg" --regexp-ignore-case)
+  fi
+
+  if [ "$invert" = "true" ]; then
+    args+=(--invert-grep)
+  fi
+
+  git log "${args[@]}" --pretty=format:"%s" |
+    sed -E \
+      -e 's/^[[:space:]]+//' \
+      -e 's/^(feat|fix|docs|chore|refactor|perf|test|build|ci|style)(\([^)]+\))?!?:[[:space:]]*//' \
+      -e 's/^./\U&/' \
+      -e 's/^/- /' || true
+}
+
+section() {
+  local title=$1
+  local commits=$2
+
   if [ -n "$commits" ]; then
-    printf '%s\n' "$fallback"
-    printf '%s\n\n' "$commits"
+    printf '### %s\n%s\n\n' "$title" "$commits"
   fi
 }
 
-ADDED=$(map_commits '^feat' '### Added')
-FIXED=$(map_commits '^fix' '### Fixed')
-REMOVED=$(map_commits '^remove\|^revert\|BREAKING CHANGE' '### Removed')
+ADDED_COMMITS=$(commit_lines '^feat')
+FIXED_COMMITS=$(commit_lines '^fix')
+REMOVED_COMMITS=$(commit_lines '^remove|^revert|BREAKING CHANGE')
+CHANGED_COMMITS=$(commit_lines '^feat|^fix|^remove|^revert|BREAKING CHANGE' true)
 
-if [ -n "$ADDED" ]; then
-  ADDED="${ADDED}"$'\n\n'
-fi
+BODY="$(
+  section "Added" "$ADDED_COMMITS"
+  section "Changed" "$CHANGED_COMMITS"
+  section "Fixed" "$FIXED_COMMITS"
+  section "Removed" "$REMOVED_COMMITS"
+)"
 
-if [ -n "$FIXED" ]; then
-  FIXED="${FIXED}"$'\n\n'
-fi
-
-if [ -n "$REMOVED" ]; then
-  REMOVED="${REMOVED}"$'\n\n'
-fi
-
-if [ -n "$RANGE" ]; then
-  CHANGED_COMMITS=$(git log "$RANGE" --invert-grep --grep='^feat' --grep='^fix' --grep='^remove\|^revert\|BREAKING CHANGE' --regexp-ignore-case --pretty=format:"- %s" || true)
-else
-  CHANGED_COMMITS=$(git log --invert-grep --grep='^feat' --grep='^fix' --grep='^remove\|^revert\|BREAKING CHANGE' --regexp-ignore-case --pretty=format:"- %s" || true)
-fi
-
-CHANGED=""
-if [ -n "$CHANGED_COMMITS" ]; then
-  CHANGED=$(printf '### Changed\n%s\n\n' "$CHANGED_COMMITS")
-fi
-
-if [ -n "$CHANGED" ]; then
-  CHANGED="${CHANGED}"$'\n\n'
-fi
-
-BODY="${ADDED}${CHANGED}${FIXED}${REMOVED}"
 if [ -z "$BODY" ]; then
   BODY="### Changed
 - Aggiornamento release.
@@ -92,36 +88,52 @@ NEW_SECTION="## [${VERSION}] - ${DATE}
 
 ${BODY}"
 
-python - "$CHANGELOG_FILE" "$NEW_SECTION" <<'PY'
-import pathlib
-import sys
+node --input-type=module - "$CHANGELOG_FILE" "$NEW_SECTION" <<'JS'
+import fs from "node:fs";
 
-path = pathlib.Path(sys.argv[1])
-new_section = sys.argv[2].rstrip() + "\n\n"
-text = path.read_text(encoding="utf-8")
-marker = "### Removed"
-insert_after = text.index(marker) + len(marker)
-text = text[:insert_after] + "\n\n" + new_section + text[insert_after:].lstrip()
-path.write_text(text, encoding="utf-8")
-PY
+const [path, newSection] = process.argv.slice(2);
+const text = fs.readFileSync(path, "utf8");
+const normalized = text.endsWith("\n") ? text : `${text}\n`;
+const unreleasedHeading = normalized.match(/^## \[Unreleased\]$/m);
+const releaseHeading = normalized.match(/^## \[[^\]]+\] - \d{4}-\d{2}-\d{2}$/m);
 
-python - "$CHANGELOG_FILE" "$REPO_URL" "$VERSION" "$TAG" "${PREV_TAG:-}" <<'PY'
-import pathlib
-import re
-import sys
+if (!unreleasedHeading) {
+  throw new Error("Missing ## [Unreleased] section in CHANGELOG.md");
+}
 
-path = pathlib.Path(sys.argv[1])
-repo_url, version, tag, prev_tag = sys.argv[2:6]
-text = path.read_text(encoding="utf-8")
-text = re.sub(r"\n\[Unreleased\]: .*(?=\n|$)", "", text)
-text = re.sub(rf"\n\[{re.escape(version)}\]: .*(?=\n|$)", "", text)
-base = text.rstrip() + "\n\n"
-base += f"[Unreleased]: {repo_url}/compare/{tag}...HEAD\n"
-if prev_tag:
-    base += f"[{version}]: {repo_url}/compare/{prev_tag}...{tag}\n"
-else:
-    base += f"[{version}]: {repo_url}/releases/tag/{tag}\n"
-path.write_text(base, encoding="utf-8")
-PY
+const unreleasedLineEnd = normalized.indexOf("\n", unreleasedHeading.index);
+const beforeUnreleasedBody = normalized.slice(0, unreleasedLineEnd).trimEnd();
+const existingReleases = releaseHeading ? normalized.slice(releaseHeading.index).trimStart() : "";
+const emptyUnreleased = "### Added\n\n### Changed\n\n### Fixed\n\n### Removed";
+const next = `${beforeUnreleasedBody}\n\n${emptyUnreleased}\n\n${newSection.trim()}\n\n${existingReleases}`;
+
+fs.writeFileSync(path, `${next.trimEnd()}\n`, "utf8");
+JS
+
+node --input-type=module - "$CHANGELOG_FILE" "$REPO_URL" "$VERSION" "$TAG" "${PREV_TAG:-}" <<'JS'
+import fs from "node:fs";
+
+const [path, repoUrl, version, tag, prevTag] = process.argv.slice(2);
+const lines = fs.readFileSync(path, "utf8").split(/\r?\n/);
+const filtered = lines.filter((line) => {
+  if (line.startsWith("[Unreleased]: ")) return false;
+  if (line.startsWith(`[${version}]: `)) return false;
+  return true;
+});
+
+while (filtered.length > 0 && filtered.at(-1) === "") {
+  filtered.pop();
+}
+
+filtered.push("");
+filtered.push(`[Unreleased]: ${repoUrl}/compare/${tag}...HEAD`);
+filtered.push(
+  prevTag
+    ? `[${version}]: ${repoUrl}/compare/${prevTag}...${tag}`
+    : `[${version}]: ${repoUrl}/releases/tag/${tag}`,
+);
+
+fs.writeFileSync(path, `${filtered.join("\n")}\n`, "utf8");
+JS
 
 echo "CHANGELOG.md updated for ${TAG}"
