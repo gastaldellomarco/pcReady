@@ -35,9 +35,9 @@ describe("inventory-import", () => {
   it("csvTemplate includes headers and sample row", () => {
     const t = csvTemplate();
     expect(t).toContain(
-      "serial,brand,model,os,status,client_name,notes,purchase_date,warranty_expiry_date,warranty_type,warranty_provider,warranty_notes",
+      "asset_tag,serial,brand,model,category,device_type,os,status,client_name,notes,purchase_date,warranty_expiry_date,warranty_type,warranty_provider,warranty_notes",
     );
-    expect(t).toContain("ABC123");
+    expect(t).toContain("DellSN123");
   });
 
   it("parseDevicesCsv maps rows and skips empty lines", () => {

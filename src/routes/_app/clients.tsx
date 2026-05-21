@@ -147,6 +147,7 @@ type TicketRow = {
 
 type DeviceRow = {
   id: string;
+  asset_tag: string | null;
   model: string;
   serial: string | null;
   os: string | null;
@@ -368,6 +369,17 @@ function ClientsPage() {
   const listLoading = listQuery.isLoading;
   const allPageSelected =
     displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
+
+  function openAddDeviceForSelectedClient() {
+    if (!selected) return toast.error("Seleziona prima un cliente");
+    openAddDevice({
+      client: {
+        id: selected.id,
+        name: selected.company_name || selected.name,
+        lockClient: true,
+      },
+    });
+  }
 
   async function loadContacts(clientId: string) {
     const { data, error } = await supabase
@@ -1083,7 +1095,7 @@ function ClientsPage() {
                   <DeviceSummary devices={devices} />
                   <button
                     className="pc-btn pc-btn-primary pc-btn-sm"
-                    onClick={() => openAddDevice()}
+                    onClick={openAddDeviceForSelectedClient}
                   >
                     <Plus className="w-3 h-3" /> Aggiungi dispositivo
                   </button>
@@ -1093,12 +1105,20 @@ function ClientsPage() {
                   emptyAction={
                     <button
                       className="pc-btn pc-btn-primary pc-btn-sm"
-                      onClick={() => openAddDevice()}
+                      onClick={openAddDeviceForSelectedClient}
                     >
                       <Plus className="w-3 h-3" /> Aggiungi primo dispositivo
                     </button>
                   }
-                  headers={["Modello", "Seriale", "OS", "Stato", "Assegnato a", "Inserito"]}
+                  headers={[
+                    "Modello",
+                    "Asset tag",
+                    "Seriale produttore",
+                    "OS",
+                    "Stato",
+                    "Assegnato a",
+                    "Inserito",
+                  ]}
                   rows={devices.map((device) => [
                     <button
                       className="font-semibold text-accent"
@@ -1106,6 +1126,7 @@ function ClientsPage() {
                     >
                       {device.model}
                     </button>,
+                    <span className="font-mono text-[12px]">{device.asset_tag || "-"}</span>,
                     <span className="font-mono text-[12px]">{device.serial || "-"}</span>,
                     device.os || "-",
                     <DeviceStatusPill status={device.status} />,
@@ -1484,29 +1505,29 @@ function ResponsiveTable({
     <div className="overflow-x-auto rounded-md border" style={{ borderColor: "var(--border)" }}>
       <OverflowTable>
         <table className="w-full text-[12.5px]">
-        <thead style={{ background: "var(--surface2)" }}>
-          <tr>
-            {headers.map((header) => (
-              <th
-                key={header}
-                className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
-              >
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((cells, rowIndex) => (
-            <tr key={rowIndex} className="border-t" style={{ borderColor: "var(--border)" }}>
-              {cells.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-3 py-2 align-middle text-text2">
-                  {cell}
-                </td>
+          <thead style={{ background: "var(--surface2)" }}>
+            <tr>
+              {headers.map((header) => (
+                <th
+                  key={header}
+                  className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+                >
+                  {header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
+          </thead>
+          <tbody>
+            {rows.map((cells, rowIndex) => (
+              <tr key={rowIndex} className="border-t" style={{ borderColor: "var(--border)" }}>
+                {cells.map((cell, cellIndex) => (
+                  <td key={cellIndex} className="px-3 py-2 align-middle text-text2">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
         </table>
       </OverflowTable>
     </div>
@@ -1855,64 +1876,69 @@ function ImportContactsCsvDialog({
             >
               <OverflowTable>
                 <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ background: "var(--surface2)" }}>
-                    {["Riga", "Nome", "Email", "Ruolo", "Reparto", "Azione", "Validazione"].map(
-                      (h) => (
-                        <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr
-                      key={`${row.rowNumber}-${row.email}-${row.full_name}`}
-                      className="border-t"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <td className="px-3 py-2 font-mono">{row.rowNumber}</td>
-                      <td className="px-3 py-2">{row.full_name || "-"}</td>
-                      <td className="px-3 py-2">{row.email || "-"}</td>
-                      <td className="px-3 py-2">{row.job_title || "-"}</td>
-                      <td className="px-3 py-2">{row.department || "-"}</td>
-                      <td className="px-3 py-2">
-                        {duplicateMode === "ask" && row.existingId && !row.errors.length ? (
-                          <select
-                            className="pc-input h-8 w-auto text-xs"
-                            value={row.action}
-                            onChange={(event) =>
-                              setRows((current) =>
-                                current.map((item) =>
-                                  item.rowNumber === row.rowNumber
-                                    ? {
-                                        ...item,
-                                        action: event.target.value as ContactImportRow["action"],
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
+                  <thead>
+                    <tr style={{ background: "var(--surface2)" }}>
+                      {["Riga", "Nome", "Email", "Ruolo", "Reparto", "Azione", "Validazione"].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="px-3 py-2 text-left font-bold uppercase text-text3"
                           >
-                            <option value="skip">Salta</option>
-                            <option value="update">Sovrascrivi</option>
-                          </select>
-                        ) : (
-                          row.action
-                        )}
-                      </td>
-                      <td
-                        className={
-                          row.errors.length ? "px-3 py-2 text-destructive" : "px-3 py-2 text-text3"
-                        }
-                      >
-                        {row.errors.join(", ") || (row.existingId ? "Email gia' presente" : "OK")}
-                      </td>
+                            {h}
+                          </th>
+                        ),
+                      )}
                     </tr>
-                  ))}
-                </tbody>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr
+                        key={`${row.rowNumber}-${row.email}-${row.full_name}`}
+                        className="border-t"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <td className="px-3 py-2 font-mono">{row.rowNumber}</td>
+                        <td className="px-3 py-2">{row.full_name || "-"}</td>
+                        <td className="px-3 py-2">{row.email || "-"}</td>
+                        <td className="px-3 py-2">{row.job_title || "-"}</td>
+                        <td className="px-3 py-2">{row.department || "-"}</td>
+                        <td className="px-3 py-2">
+                          {duplicateMode === "ask" && row.existingId && !row.errors.length ? (
+                            <select
+                              className="pc-input h-8 w-auto text-xs"
+                              value={row.action}
+                              onChange={(event) =>
+                                setRows((current) =>
+                                  current.map((item) =>
+                                    item.rowNumber === row.rowNumber
+                                      ? {
+                                          ...item,
+                                          action: event.target.value as ContactImportRow["action"],
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="skip">Salta</option>
+                              <option value="update">Sovrascrivi</option>
+                            </select>
+                          ) : (
+                            row.action
+                          )}
+                        </td>
+                        <td
+                          className={
+                            row.errors.length
+                              ? "px-3 py-2 text-destructive"
+                              : "px-3 py-2 text-text3"
+                          }
+                        >
+                          {row.errors.join(", ") || (row.existingId ? "Email gia' presente" : "OK")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </OverflowTable>
             </div>
@@ -2127,40 +2153,45 @@ function ImportClientsCsvDialog({
             >
               <OverflowTable>
                 <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ background: "var(--surface2)" }}>
-                    {["Riga", "Nome", "Azienda", "P.IVA", "Email", "Azione", "Validazione"].map(
-                      (h) => (
-                        <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr
-                      key={`${row.rowNumber}-${row.email}-${row.vat_number}`}
-                      className="border-t"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <td className="px-3 py-2 font-mono">{row.rowNumber}</td>
-                      <td className="px-3 py-2">{row.name || "-"}</td>
-                      <td className="px-3 py-2">{row.company_name || "-"}</td>
-                      <td className="px-3 py-2 font-mono">{row.vat_number || "-"}</td>
-                      <td className="px-3 py-2">{row.email || "-"}</td>
-                      <td className="px-3 py-2">{row.action}</td>
-                      <td
-                        className={
-                          row.errors.length ? "px-3 py-2 text-destructive" : "px-3 py-2 text-text3"
-                        }
-                      >
-                        {row.errors.join(", ") || "OK"}
-                      </td>
+                  <thead>
+                    <tr style={{ background: "var(--surface2)" }}>
+                      {["Riga", "Nome", "Azienda", "P.IVA", "Email", "Azione", "Validazione"].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="px-3 py-2 text-left font-bold uppercase text-text3"
+                          >
+                            {h}
+                          </th>
+                        ),
+                      )}
                     </tr>
-                  ))}
-                </tbody>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr
+                        key={`${row.rowNumber}-${row.email}-${row.vat_number}`}
+                        className="border-t"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <td className="px-3 py-2 font-mono">{row.rowNumber}</td>
+                        <td className="px-3 py-2">{row.name || "-"}</td>
+                        <td className="px-3 py-2">{row.company_name || "-"}</td>
+                        <td className="px-3 py-2 font-mono">{row.vat_number || "-"}</td>
+                        <td className="px-3 py-2">{row.email || "-"}</td>
+                        <td className="px-3 py-2">{row.action}</td>
+                        <td
+                          className={
+                            row.errors.length
+                              ? "px-3 py-2 text-destructive"
+                              : "px-3 py-2 text-text3"
+                          }
+                        >
+                          {row.errors.join(", ") || "OK"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </OverflowTable>
             </div>

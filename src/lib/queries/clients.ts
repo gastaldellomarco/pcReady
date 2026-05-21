@@ -236,7 +236,7 @@ export async function fetchClientDevices(clientId: string) {
   if (!clientId) return [];
   const { data, error } = await supabase
     .from("devices")
-    .select("id, model, serial, os, status, assigned_to, created_at, updated_at")
+    .select("id, asset_tag, model, serial, os, status, assigned_to, created_at, updated_at")
     .eq("client_id", clientId)
     .order("updated_at", { ascending: false });
   if (error) throw error;

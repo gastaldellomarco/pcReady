@@ -6,6 +6,8 @@ import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-co
 export type DevicesListParams = {
   status?: string;
   os?: string;
+  category?: string;
+  deviceType?: string;
   q?: string;
   page?: number;
   pageSize?: number;
@@ -75,16 +77,20 @@ export async function fetchDevicesList(params: DevicesListParams) {
   let query = supabase
     .from("devices")
     .select(
-      "id, serial, model, os, status, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, client:clients(name)",
+      "id, asset_tag, serial, model, os, status, category, device_type, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, client:clients(name)",
       { count: "exact" },
     )
     .order("updated_at", { ascending: false });
 
   if (params.status) query = query.eq("status", params.status as any);
   if (params.os) query = query.eq("os", params.os as any);
+  if (params.category) query = query.eq("category", params.category as any);
+  if (params.deviceType) query = query.eq("device_type", params.deviceType as any);
   const term = (params.q || "").trim().replace(/[,%]/g, "");
   if (term)
-    query = query.or(`serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%`);
+    query = query.or(
+      `asset_tag.ilike.%${term}%,serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%,device_type.ilike.%${term}%`,
+    );
 
   const assignedIdsForFilter = params.assignedIdsForFilter;
   if (params.withoutTicket && assignedIdsForFilter?.length) {
@@ -156,6 +162,8 @@ export function useInventoryList(params: DevicesListParams) {
       "inventory",
       params.status || "",
       params.os || "",
+      params.category || "",
+      params.deviceType || "",
       params.q || "",
       params.page ?? 0,
       params.pageSize ?? LIST_PAGE_SIZE,
@@ -182,8 +190,10 @@ export function useInventoryList(params: DevicesListParams) {
 export async function fetchDeviceBySerial(serial: string) {
   const { data, error } = await supabase
     .from("devices")
-    .select("id, serial")
-    .ilike("serial", serial)
+    .select("id, asset_tag, serial")
+    .or(
+      `asset_tag.ilike.${serial.replace(/[,%]/g, "")},serial.ilike.${serial.replace(/[,%]/g, "")}`,
+    )
     .maybeSingle();
   if (error) throw error;
   return data ?? null;
@@ -193,7 +203,7 @@ export async function createDevice(payload: Record<string, any>) {
   const { data, error } = await supabase
     .from("devices")
     .insert(payload as any)
-    .select("id, serial")
+    .select("id, asset_tag, serial")
     .single();
   if (error) throw error;
   return data;

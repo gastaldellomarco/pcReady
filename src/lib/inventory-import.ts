@@ -1,14 +1,24 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { WARRANTY_TYPES, type WarrantyType } from "@/lib/warranty";
+import {
+  DEFAULT_DEVICE_CATEGORY,
+  DEFAULT_DEVICE_TYPE,
+  DEVICE_TYPES_BY_CATEGORY,
+  isDeviceCategory,
+  type DeviceCategory,
+} from "@/lib/device-taxonomy";
 
 export type DeviceStatus = Database["public"]["Enums"]["device_status"];
 
 export const DEVICE_STATUSES: DeviceStatus[] = ["available", "assigned", "maintenance", "retired"];
 export const INVENTORY_CSV_HEADERS = [
+  "asset_tag",
   "serial",
   "brand",
   "model",
+  "category",
+  "device_type",
   "os",
   "status",
   "client_name",
@@ -22,9 +32,12 @@ export const INVENTORY_CSV_HEADERS = [
 
 export interface CsvRow {
   rowNumber: number;
-  serial: string;
+  asset_tag?: string | null;
+  serial: string | null;
   brand?: string | null;
   model: string;
+  category?: DeviceCategory;
+  device_type?: string;
   os: string | null;
   status: DeviceStatus;
   client_name: string;
@@ -56,7 +69,7 @@ export interface ImportResult {
 }
 
 export function csvTemplate() {
-  return `${INVENTORY_CSV_HEADERS.join(",")}\nABC123,Dell,Dell Latitude 5540,Windows 11 Pro,available,Cliente Demo,Prima fornitura,2026-01-15,2029-01-15,standard,Dell Support,Contratto WTY-123`;
+  return `${INVENTORY_CSV_HEADERS.join(",")}\n,DellSN123,Dell,Dell Latitude 5540,endpoint,Laptop,Windows 11 Pro,available,Cliente Demo,Prima fornitura,2026-01-15,2029-01-15,standard,Dell Support,Contratto WTY-123`;
 }
 
 export function parseDevicesCsv(text: string): CsvRow[] {
@@ -71,11 +84,16 @@ export function parseDevicesCsv(text: string): CsvRow[] {
     const read = (name: (typeof INVENTORY_CSV_HEADERS)[number]) =>
       record[index.get(name) ?? -1]?.trim() ?? "";
     const warrantyType = read("warranty_type") || null;
+    const rawCategory = read("category");
+    const category = isDeviceCategory(rawCategory) ? rawCategory : DEFAULT_DEVICE_CATEGORY;
     return {
       rowNumber: offset + 2,
+      asset_tag: read("asset_tag") || null,
       serial: read("serial"),
       brand: read("brand") || null,
       model: read("model"),
+      category,
+      device_type: read("device_type") || DEFAULT_DEVICE_TYPE,
       os: read("os") || null,
       status: (read("status") || "available") as DeviceStatus,
       client_name: read("client_name"),
@@ -92,9 +110,10 @@ export function parseDevicesCsv(text: string): CsvRow[] {
 export async function loadInventoryImportContext(rows: CsvRow[]) {
   const clientNames = uniqueValues(rows.map((row) => row.client_name));
   const serials = uniqueValues(rows.map((row) => row.serial));
+  const assetTags = uniqueValues(rows.map((row) => row.asset_tag ?? ""));
   const [clients, devices] = await Promise.all([
     loadClientsByName(clientNames),
-    loadDevicesBySerial(serials),
+    loadDevicesBySerialOrAssetTag(serials, assetTags),
   ]);
 
   return {
@@ -106,7 +125,7 @@ export async function loadInventoryImportContext(rows: CsvRow[]) {
 export function validateImportRows(
   rows: CsvRow[],
   clients: ClientLookup[],
-  devices: { id: string; serial: string | null }[],
+  devices: { id: string; asset_tag?: string | null; serial: string | null }[],
 ): PreviewRow[] {
   const clientsByName = new Map<string, ClientLookup>();
   for (const client of clients) {
@@ -119,16 +138,28 @@ export function validateImportRows(
       .filter((device) => device.serial?.trim())
       .map((device) => [normalizeKey(device.serial as string), device.id]),
   );
+  const devicesByAssetTag = new Map(
+    devices
+      .filter((device) => device.asset_tag?.trim())
+      .map((device) => [normalizeKey(device.asset_tag as string), device.id]),
+  );
   const seenInFile = new Set<string>();
 
   return rows.map((row) => {
     const errors: string[] = [];
     const serialKey = normalizeKey(row.serial);
+    const assetTagKey = normalizeKey(row.asset_tag);
     const client = clientsByName.get(normalizeKey(row.client_name)) ?? null;
-    const existingDeviceId = devicesBySerial.get(serialKey) ?? null;
+    const existingDeviceId =
+      devicesByAssetTag.get(assetTagKey) ?? devicesBySerial.get(serialKey) ?? null;
+    const category = isDeviceCategory(row.category) ? row.category : DEFAULT_DEVICE_CATEGORY;
+    const deviceType = row.device_type || DEFAULT_DEVICE_TYPE;
 
-    if (!row.serial) errors.push("Seriale obbligatorio");
     if (!row.model) errors.push("Modello obbligatorio");
+    if (row.category && !isDeviceCategory(row.category)) errors.push("Categoria non valida");
+    if (!DEVICE_TYPES_BY_CATEGORY[category]?.includes(deviceType)) {
+      errors.push("Tipo dispositivo non valido per la categoria");
+    }
     if (!row.client_name) errors.push("Cliente obbligatorio");
     if (row.client_name && !client) errors.push("Cliente non trovato");
     if (!DEVICE_STATUSES.includes(row.status)) errors.push("Stato non valido");
@@ -139,11 +170,14 @@ export function validateImportRows(
     if (row.warranty_type && !WARRANTY_TYPES.some((type) => type.value === row.warranty_type)) {
       errors.push("Tipo garanzia non valido");
     }
-    if (serialKey && seenInFile.has(serialKey)) errors.push("Seriale duplicato nel CSV");
-    if (serialKey) seenInFile.add(serialKey);
+    const dedupeKey = assetTagKey ? `asset:${assetTagKey}` : serialKey ? `serial:${serialKey}` : "";
+    if (dedupeKey && seenInFile.has(dedupeKey)) errors.push("Identificativo duplicato nel CSV");
+    if (dedupeKey) seenInFile.add(dedupeKey);
 
     return {
       ...row,
+      category,
+      device_type: deviceType,
       action: errors.length ? "skip" : existingDeviceId ? "update" : "insert",
       existingDeviceId,
       client_id: client?.id ?? null,
@@ -166,6 +200,8 @@ export async function importDevicesFromCsv(
       if (row.existingDeviceId) {
         const update: TablesUpdate<"devices"> = {
           client_id: row.client_id!,
+          category: row.category ?? DEFAULT_DEVICE_CATEGORY,
+          device_type: row.device_type ?? DEFAULT_DEVICE_TYPE,
           brand: row.brand,
           model: row.model,
           os: row.os,
@@ -177,6 +213,7 @@ export async function importDevicesFromCsv(
           warranty_provider: row.warranty_provider,
           warranty_notes: row.warranty_notes,
         };
+        if (row.asset_tag) update.asset_tag = row.asset_tag;
         const { error } = await supabase
           .from("devices")
           .update(update)
@@ -186,7 +223,10 @@ export async function importDevicesFromCsv(
       } else {
         const insert: TablesInsert<"devices"> = {
           client_id: row.client_id!,
+          asset_tag: row.asset_tag,
           serial: row.serial,
+          category: row.category ?? DEFAULT_DEVICE_CATEGORY,
+          device_type: row.device_type ?? DEFAULT_DEVICE_TYPE,
           brand: row.brand,
           model: row.model,
           os: row.os,
@@ -207,7 +247,7 @@ export async function importDevicesFromCsv(
     } catch (error) {
       results.errors.push({
         rowNumber: row.rowNumber,
-        serial: row.serial,
+        serial: row.asset_tag || row.serial || "",
         error: error instanceof Error ? error.message : "Errore import",
       });
     } finally {
@@ -228,12 +268,12 @@ function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, "_");
 }
 
-function normalizeKey(value: string) {
-  return value.trim().toLowerCase();
+function normalizeKey(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? "";
 }
 
-function uniqueValues(values: string[]) {
-  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+function uniqueValues(values: (string | null | undefined)[]) {
+  return Array.from(new Set(values.map((value) => value?.trim() ?? "").filter(Boolean)));
 }
 
 function orValue(value: string) {
@@ -259,13 +299,29 @@ async function loadClientsByName(names: string[]) {
   return Array.from(clientsById.values());
 }
 
-async function loadDevicesBySerial(serials: string[]) {
-  const devices: { id: string; serial: string | null }[] = [];
+async function loadDevicesBySerialOrAssetTag(serials: string[], assetTags: string[]) {
+  const devices: { id: string; asset_tag: string | null; serial: string | null }[] = [];
   for (const chunk of chunks(serials.map(orValue).filter(Boolean), 50)) {
     const filters = chunk.map((serial) => `serial.ilike.${serial}`).join(",");
-    const { data, error } = await supabase.from("devices").select("id, serial").or(filters);
+    const { data, error } = await supabase
+      .from("devices")
+      .select("id, asset_tag, serial")
+      .or(filters);
     if (error) throw error;
-    devices.push(...((data ?? []) as { id: string; serial: string | null }[]));
+    devices.push(
+      ...((data ?? []) as { id: string; asset_tag: string | null; serial: string | null }[]),
+    );
+  }
+  for (const chunk of chunks(assetTags.map(orValue).filter(Boolean), 50)) {
+    const filters = chunk.map((assetTag) => `asset_tag.ilike.${assetTag}`).join(",");
+    const { data, error } = await supabase
+      .from("devices")
+      .select("id, asset_tag, serial")
+      .or(filters);
+    if (error) throw error;
+    devices.push(
+      ...((data ?? []) as { id: string; asset_tag: string | null; serial: string | null }[]),
+    );
   }
   return devices;
 }

@@ -46,3 +46,7 @@ backups/
 *.sw?
 .agents
 .obsidian
+.qodo
+.venv
+.sixth
+.junie

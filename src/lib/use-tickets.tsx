@@ -1,18 +1,30 @@
 import { useSyncExternalStore } from "react";
 
+export interface AddDeviceClientContext {
+  id: string;
+  name: string;
+  lockClient?: boolean;
+}
+
+export interface OpenAddDeviceOptions {
+  initialSerial?: string;
+  client?: AddDeviceClientContext;
+}
+
 interface State {
   search: string;
   pendingCount: number;
   createOpen: boolean;
   addDeviceOpen: boolean;
   addDeviceInitialSerial: string;
+  addDeviceClient: AddDeviceClientContext | null;
 }
 interface API extends State {
   setSearch: (s: string) => void;
   setPendingCount: (n: number) => void;
   openCreate: () => void;
   closeCreate: () => void;
-  openAddDevice: (initialSerial?: string) => void;
+  openAddDevice: (options?: string | OpenAddDeviceOptions) => void;
   closeAddDevice: () => void;
 }
 
@@ -22,6 +34,7 @@ let s: State = {
   createOpen: false,
   addDeviceOpen: false,
   addDeviceInitialSerial: "",
+  addDeviceClient: null,
 };
 const listeners = new Set<() => void>();
 
@@ -30,9 +43,19 @@ const actions = {
   setPendingCount: (n: number) => set({ pendingCount: n }),
   openCreate: () => set({ createOpen: true }),
   closeCreate: () => set({ createOpen: false }),
-  openAddDevice: (initialSerial = "") =>
-    set({ addDeviceOpen: true, addDeviceInitialSerial: initialSerial }),
-  closeAddDevice: () => set({ addDeviceOpen: false, addDeviceInitialSerial: "" }),
+  openAddDevice: (options: string | OpenAddDeviceOptions = "") => {
+    const next =
+      typeof options === "string"
+        ? { initialSerial: options, client: null }
+        : { initialSerial: options.initialSerial ?? "", client: options.client ?? null };
+    set({
+      addDeviceOpen: true,
+      addDeviceInitialSerial: next.initialSerial,
+      addDeviceClient: next.client,
+    });
+  },
+  closeAddDevice: () =>
+    set({ addDeviceOpen: false, addDeviceInitialSerial: "", addDeviceClient: null }),
   // legacy refresh removed; rely on React Query invalidation
 };
 

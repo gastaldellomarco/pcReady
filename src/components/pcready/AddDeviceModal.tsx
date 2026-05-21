@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
 import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
 import { Modal } from "./Modal";
 import { OS_OPTIONS } from "@/lib/pcready";
+import {
+  DEFAULT_DEVICE_CATEGORY,
+  DEFAULT_DEVICE_TYPE,
+  DEVICE_CATEGORIES,
+  DEVICE_CATEGORY_LABELS,
+  getDeviceTypes,
+  type DeviceCategory,
+} from "@/lib/device-taxonomy";
 import { getClientAppSettings, getPublicAppSettings } from "@/lib/app-settings";
 import { loadClientOptions } from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
@@ -12,6 +20,8 @@ import inventoryQueries from "@/lib/queries/inventory";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { Barcode, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 function errorMessage(error: unknown, fallback: string) {
@@ -19,9 +29,7 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 function normalizeOptions(values: unknown): string[] {
-  return Array.isArray(values)
-    ? values.map((value) => String(value).trim()).filter(Boolean)
-    : [];
+  return Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [];
 }
 
 interface ClientOption {
@@ -30,51 +38,91 @@ interface ClientOption {
   company_name: string | null;
 }
 
+type BarcodeTarget = "asset_tag" | "serial";
+
 export function AddDeviceModal() {
-  const { addDeviceOpen, addDeviceInitialSerial, closeAddDevice } = useTickets();
+  const { addDeviceOpen, addDeviceInitialSerial, addDeviceClient, closeAddDevice } = useTickets();
   const { user, canEdit, session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [barcodeTarget, setBarcodeTarget] = useState<BarcodeTarget | null>(null);
   const form = useForm<DeviceFormInput, unknown, DeviceInput>({
     resolver: zodResolver(DeviceSchema),
     mode: "onChange",
     defaultValues: {
+      category: DEFAULT_DEVICE_CATEGORY,
+      device_type: DEFAULT_DEVICE_TYPE,
+      asset_tag: null,
       brand: null,
       model: "",
       serial: "",
       client_id: "",
       end_user: null,
       os: OS_OPTIONS[0],
+      poe_supported: false,
       purchase_cost: null,
       notes: null,
     },
   });
+  const selectedCategory = form.watch("category") as DeviceCategory;
+  const selectedTypes = getDeviceTypes(selectedCategory, true);
+
+  useEffect(() => {
+    const currentType = form.getValues().device_type ?? DEFAULT_DEVICE_TYPE;
+    if (!selectedTypes.includes(currentType)) {
+      form.setValue("device_type", selectedTypes[0] ?? DEFAULT_DEVICE_TYPE, {
+        shouldValidate: true,
+      });
+    }
+  }, [form, selectedTypes]);
 
   useEffect(() => {
     if (!addDeviceOpen) return;
-    if (addDeviceInitialSerial)
-      form.setValue("serial", addDeviceInitialSerial, { shouldValidate: true });
+    if (addDeviceInitialSerial) {
+      if (/^[A-Z]{2,5}-\d{4,}$/i.test(addDeviceInitialSerial)) {
+        form.setValue("asset_tag", addDeviceInitialSerial.toUpperCase(), { shouldValidate: true });
+      } else {
+        form.setValue("serial", addDeviceInitialSerial, { shouldValidate: true });
+      }
+    }
+
+    if (addDeviceClient?.id) {
+      setClients([
+        {
+          id: addDeviceClient.id,
+          name: addDeviceClient.name,
+          company_name: addDeviceClient.name,
+        },
+      ]);
+      form.setValue("client_id", addDeviceClient.id, { shouldValidate: true });
+      return;
+    }
+
     loadClientOptions("").then((arr: any[]) => {
       setClients(arr || []);
       if (arr?.[0]?.id) form.setValue("client_id", form.getValues().client_id || arr[0].id);
     });
-  }, [addDeviceOpen, addDeviceInitialSerial, form]);
+  }, [addDeviceOpen, addDeviceInitialSerial, addDeviceClient, form]);
 
-  const applySettingsOptions = useCallback((settings: { os_options?: unknown; device_brands?: unknown }) => {
-    const nextOsOptions = normalizeOptions(settings.os_options);
-    const nextBrandOptions = normalizeOptions(settings.device_brands);
-    const resolvedOsOptions = nextOsOptions.length ? nextOsOptions : OS_OPTIONS;
+  const applySettingsOptions = useCallback(
+    (settings: { os_options?: unknown; device_brands?: unknown }) => {
+      const nextOsOptions = normalizeOptions(settings.os_options);
+      const nextBrandOptions = normalizeOptions(settings.device_brands);
+      const resolvedOsOptions = nextOsOptions.length ? nextOsOptions : OS_OPTIONS;
 
-    setOsOptions(resolvedOsOptions);
-    setBrandOptions(nextBrandOptions);
+      setOsOptions(resolvedOsOptions);
+      setBrandOptions(nextBrandOptions);
 
-    if (!resolvedOsOptions.includes(form.getValues().os)) {
-      form.setValue("os", resolvedOsOptions[0], { shouldValidate: true });
-    }
-  }, [form]);
+      const currentOs = form.getValues().os;
+      if (currentOs && !resolvedOsOptions.includes(currentOs)) {
+        form.setValue("os", resolvedOsOptions[0], { shouldValidate: true });
+      }
+    },
+    [form],
+  );
 
   useEffect(() => {
     if (!addDeviceOpen || !session?.access_token) return;
@@ -86,6 +134,31 @@ export function AddDeviceModal() {
 
   const createDeviceMut = (inventoryQueries as any).useCreateDevice();
 
+  function focusBarcodeTarget(target: BarcodeTarget) {
+    form.setFocus(target);
+    toast.info(
+      target === "asset_tag"
+        ? "Campo asset tag pronto per scanner barcode USB/Bluetooth"
+        : "Campo seriale pronto per scanner barcode USB/Bluetooth",
+    );
+  }
+
+  function applyBarcodeValue(value: string) {
+    if (!barcodeTarget) return;
+    const next = value.trim();
+    if (!next) return;
+    form.setValue(barcodeTarget, barcodeTarget === "asset_tag" ? next.toUpperCase() : next, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.setFocus(barcodeTarget);
+    setBarcodeTarget(null);
+    toast.success(
+      barcodeTarget === "asset_tag" ? "Asset tag compilato da barcode" : "Seriale compilato da barcode",
+    );
+  }
+
   const submit = form.handleSubmit(async (values) => {
     if (!canEdit) return toast.error("Permessi insufficienti");
     setBusy(true);
@@ -94,12 +167,32 @@ export function AddDeviceModal() {
       if (!client) return toast.error("Seleziona un cliente");
 
       const deviceInsert: TablesInsert<"devices"> = {
+        category: values.category,
+        device_type: values.device_type,
+        asset_tag: values.asset_tag || null,
         brand: (values.brand as string) || null,
         client_id: client.id,
         model: values.model,
-        serial: values.serial,
+        serial: values.serial || null,
         assigned_to: (values.end_user as string) || null,
-        os: values.os,
+        os: values.os || null,
+        cpu_name: values.cpu_name || null,
+        ram_gb: values.ram_gb ?? null,
+        storage_capacity_gb: values.storage_capacity_gb ?? null,
+        storage_type: values.storage_type || null,
+        ip_address: values.ip_address || null,
+        mac_address: values.mac_address || null,
+        location: values.location || null,
+        firmware_version: values.firmware_version || null,
+        port_count: values.port_count ?? null,
+        poe_supported: values.poe_supported ?? false,
+        toner_model: values.toner_model || null,
+        page_count: values.page_count ?? null,
+        print_technology: values.print_technology || null,
+        license_expiry: values.license_expiry || null,
+        vlan_config: values.vlan_config || null,
+        rack_position: values.rack_position || null,
+        server_role: values.server_role || null,
         purchase_cost: values.purchase_cost ?? null,
         notes: (values.notes as string) || null,
         created_by: user!.id,
@@ -108,17 +201,21 @@ export function AddDeviceModal() {
       const insertActivity = activityQueries.insertActivity as any;
       await insertActivity({
         type: "user",
-        message: `Dispositivo ${data.serial || values.model} aggiunto all'inventario`,
+        message: `Dispositivo ${data.asset_tag || data.serial || values.model} aggiunto all'inventario`,
         actor_id: user!.id,
       });
       toast.success("Dispositivo aggiunto all'inventario");
       form.reset({
+        category: DEFAULT_DEVICE_CATEGORY,
+        device_type: DEFAULT_DEVICE_TYPE,
+        asset_tag: null,
         brand: null,
         model: "",
         serial: "",
         client_id: client.id,
         end_user: null,
         os: osOptions[0] ?? OS_OPTIONS[0],
+        poe_supported: false,
         purchase_cost: null,
         notes: null,
       });
@@ -148,7 +245,76 @@ export function AddDeviceModal() {
       }
     >
       <div className="flex flex-col gap-[14px]">
+        <div
+          className="rounded-md border px-3 py-2 text-[12.5px]"
+          style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+        >
+          <div className="flex items-start gap-2">
+            <Barcode className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div>
+              <div className="font-semibold text-text">Barcode 1D per inserimento rapido</div>
+              <div className="text-text3">
+                Funzione diversa dal QR code inventario: usa scanner USB/Bluetooth o camera per
+                compilare asset tag interno e seriale produttore.
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <Field label="Categoria *">
+            <select className="pc-input" {...form.register("category")}>
+              {DEVICE_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {DEVICE_CATEGORY_LABELS[category]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Tipo *">
+            <select className="pc-input" {...form.register("device_type")}>
+              {selectedTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+            {form.formState.errors.device_type && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.device_type.message}
+              </p>
+            )}
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <Field label="Asset tag interno">
+            <div className="flex gap-2">
+              <input
+                className="pc-input min-w-0 font-mono"
+                {...form.register("asset_tag")}
+                placeholder="Auto: PCR-000001"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+              />
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+                onClick={() => focusBarcodeTarget("asset_tag")}
+                title="Focus rapido per scanner hardware"
+              >
+                <ScanLine className="h-3.5 w-3.5" />
+                USB
+              </button>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+                onClick={() => setBarcodeTarget("asset_tag")}
+                title="Scansiona barcode 1D con camera"
+              >
+                <Barcode className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </Field>
           <Field label="Brand">
             <select className="pc-input" {...form.register("brand")}>
               <option value="">— Nessun brand —</option>
@@ -169,12 +335,34 @@ export function AddDeviceModal() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.model.message}</p>
             )}
           </Field>
-          <Field label="Seriale *">
-            <input
-              className="pc-input font-mono"
-              {...form.register("serial")}
-              placeholder="ABCD1234"
-            />
+          <Field label="Seriale produttore">
+            <div className="flex gap-2">
+              <input
+                className="pc-input min-w-0 font-mono"
+                {...form.register("serial")}
+                placeholder="Opzionale"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+              />
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+                onClick={() => focusBarcodeTarget("serial")}
+                title="Focus rapido per scanner hardware"
+              >
+                <ScanLine className="h-3.5 w-3.5" />
+                USB
+              </button>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+                onClick={() => setBarcodeTarget("serial")}
+                title="Scansiona barcode 1D con camera"
+              >
+                <Barcode className="h-3.5 w-3.5" />
+              </button>
+            </div>
             {form.formState.errors.serial && (
               <p className="text-sm text-destructive mt-1">
                 {form.formState.errors.serial.message}
@@ -184,14 +372,24 @@ export function AddDeviceModal() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="Cliente *">
-            <select className="pc-input" {...form.register("client_id")}>
-              {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
-              {(Array.isArray(clients) ? clients : []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company_name || c.name}
-                </option>
-              ))}
-            </select>
+            {addDeviceClient?.lockClient ? (
+              <div
+                className="flex min-h-10 items-center rounded-md border px-3 text-sm font-semibold"
+                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+              >
+                Cliente: {addDeviceClient.name}
+                <input type="hidden" {...form.register("client_id")} />
+              </div>
+            ) : (
+              <select className="pc-input" {...form.register("client_id")}>
+                {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
+                {(Array.isArray(clients) ? clients : []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.company_name || c.name}
+                  </option>
+                ))}
+              </select>
+            )}
             {form.formState.errors.client_id && (
               <p className="text-sm text-destructive mt-1">
                 {form.formState.errors.client_id.message}
@@ -205,6 +403,7 @@ export function AddDeviceModal() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label="OS">
             <select className="pc-input" {...form.register("os")}>
+              <option value="">— Non applicabile —</option>
               {osOptions.map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -230,11 +429,155 @@ export function AddDeviceModal() {
             )}
           </Field>
         </div>
+        <DynamicDeviceFields category={selectedCategory} form={form} />
         <Field label="Note">
           <textarea className="pc-input min-h-[90px]" {...form.register("notes")} />
         </Field>
       </div>
+      <BarcodeScanner
+        open={barcodeTarget !== null}
+        onClose={() => setBarcodeTarget(null)}
+        onDetected={applyBarcodeValue}
+        mode="barcode-1d"
+        targetLabel={barcodeTarget === "asset_tag" ? "asset tag interno" : "seriale produttore"}
+      />
     </Modal>
+  );
+}
+
+function DynamicDeviceFields({
+  category,
+  form,
+}: {
+  category: DeviceCategory;
+  form: UseFormReturn<DeviceFormInput, unknown, DeviceInput>;
+}) {
+  if (category === "printing") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+        <Field label="IP">
+          <input
+            className="pc-input font-mono"
+            {...form.register("ip_address")}
+            placeholder="192.168.1.50"
+          />
+        </Field>
+        <Field label="Tecnologia">
+          <input
+            className="pc-input"
+            {...form.register("print_technology")}
+            placeholder="Laser, inkjet..."
+          />
+        </Field>
+        <Field label="Modello toner">
+          <input className="pc-input" {...form.register("toner_model")} />
+        </Field>
+        <Field label="Contatore pagine">
+          <input className="pc-input" type="number" min="0" {...form.register("page_count")} />
+        </Field>
+      </div>
+    );
+  }
+
+  if (category === "network") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+        <Field label="IP management">
+          <input
+            className="pc-input font-mono"
+            {...form.register("ip_address")}
+            placeholder="192.168.1.1"
+          />
+        </Field>
+        <Field label="MAC address">
+          <input
+            className="pc-input font-mono"
+            {...form.register("mac_address")}
+            placeholder="00:11:22:33:44:55"
+          />
+        </Field>
+        <Field label="Firmware">
+          <input className="pc-input" {...form.register("firmware_version")} />
+        </Field>
+        <Field label="Numero porte">
+          <input className="pc-input" type="number" min="0" {...form.register("port_count")} />
+        </Field>
+        <Field label="VLAN">
+          <input className="pc-input" {...form.register("vlan_config")} placeholder="10, 20, 30" />
+        </Field>
+        <Field label="Scadenza licenza">
+          <input className="pc-input" type="date" {...form.register("license_expiry")} />
+        </Field>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" {...form.register("poe_supported")} />
+          PoE supportato
+        </label>
+      </div>
+    );
+  }
+
+  if (category === "server_infra") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+        <Field label="IP">
+          <input className="pc-input font-mono" {...form.register("ip_address")} />
+        </Field>
+        <Field label="Rack position">
+          <input
+            className="pc-input"
+            {...form.register("rack_position")}
+            placeholder="Rack A / U12"
+          />
+        </Field>
+        <Field label="CPU">
+          <input className="pc-input" {...form.register("cpu_name")} />
+        </Field>
+        <Field label="RAM GB">
+          <input className="pc-input" type="number" min="0" {...form.register("ram_gb")} />
+        </Field>
+        <Field label="Storage GB">
+          <input
+            className="pc-input"
+            type="number"
+            min="0"
+            {...form.register("storage_capacity_gb")}
+          />
+        </Field>
+        <Field label="Ruolo server">
+          <input
+            className="pc-input"
+            {...form.register("server_role")}
+            placeholder="AD, backup, file server..."
+          />
+        </Field>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+      <Field label="CPU">
+        <input className="pc-input" {...form.register("cpu_name")} />
+      </Field>
+      <Field label="RAM GB">
+        <input className="pc-input" type="number" min="0" {...form.register("ram_gb")} />
+      </Field>
+      <Field label="Disco GB">
+        <input
+          className="pc-input"
+          type="number"
+          min="0"
+          {...form.register("storage_capacity_gb")}
+        />
+      </Field>
+      <Field label="Tipo disco">
+        <input
+          className="pc-input"
+          {...form.register("storage_type")}
+          placeholder="SSD, NVMe, HDD"
+        />
+      </Field>
+    </div>
   );
 }
 

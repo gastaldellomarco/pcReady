@@ -1,5 +1,6 @@
 import { Document } from "@react-pdf/renderer";
 import { fmtDate } from "@/lib/pcready";
+import { getDeviceCategoryLabel } from "@/lib/device-taxonomy";
 import { getWarrantyStatus, WARRANTY_STATUS_META, type WarrantyStatus } from "@/lib/warranty";
 import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
@@ -8,8 +9,11 @@ export type DevicePdfStatus = "available" | "assigned" | "maintenance" | "retire
 
 export interface DevicePdfRow {
   id: string;
+  asset_tag?: string | null;
   serial: string | null;
   model: string;
+  category?: string | null;
+  device_type?: string | null;
   os: string | null;
   status: DevicePdfStatus;
   client: string;
@@ -63,14 +67,27 @@ export function InventoryPdf({
     );
 
   const columns: PdfColumn<DevicePdfRow>[] = [
-    { key: "id", label: "ID", width: 60, mono: true, value: (row) => row.id.slice(0, 8) },
-    { key: "model", label: "Modello", width: 130, value: (row) => row.model },
-    { key: "serial", label: "Seriale", width: 86, mono: true, value: (row) => row.serial || "-" },
-    { key: "os", label: "OS", width: 112, value: (row) => row.os || "-" },
+    {
+      key: "id",
+      label: "Asset",
+      width: 72,
+      mono: true,
+      value: (row) => row.asset_tag || row.id.slice(0, 8),
+    },
+    { key: "model", label: "Modello", width: 110, value: (row) => row.model },
+    {
+      key: "category",
+      label: "Categoria",
+      width: 82,
+      value: (row) => getDeviceCategoryLabel(row.category),
+    },
+    { key: "type", label: "Tipo", width: 82, value: (row) => row.device_type || "-" },
+    { key: "serial", label: "S/N prod.", width: 78, mono: true, value: (row) => row.serial || "-" },
+    { key: "os", label: "OS", width: 92, value: (row) => row.os || "-" },
     {
       key: "status",
       label: "Stato",
-      width: 96,
+      width: 86,
       badge: (row) => ({
         label: DEVICE_STATUS_META[row.status].label,
         color: DEVICE_STATUS_META[row.status].color,
@@ -78,15 +95,22 @@ export function InventoryPdf({
       }),
       value: (row) => DEVICE_STATUS_META[row.status].label,
     },
-    { key: "client", label: "Cliente", width: 132, value: (row) => row.client },
-    { key: "user", label: "Utente", width: 94, value: (row) => row.assigned_to || "-" },
-    { key: "updated", label: "Aggiornato", width: 70, value: (row) => fmtDate(row.updated_at) },
+    { key: "client", label: "Cliente", width: 104, value: (row) => row.client },
+    { key: "user", label: "Utente", width: 78, value: (row) => row.assigned_to || "-" },
+    { key: "updated", label: "Agg.", width: 56, value: (row) => fmtDate(row.updated_at) },
   ];
 
   const warrantyColumns: PdfColumn<DevicePdfRow>[] = [
-    { key: "id", label: "ID", width: 50, mono: true, value: (row) => row.id.slice(0, 8) },
-    { key: "model", label: "Modello", width: 120, value: (row) => row.model },
-    { key: "serial", label: "Seriale", width: 78, mono: true, value: (row) => row.serial || "-" },
+    {
+      key: "id",
+      label: "Asset",
+      width: 62,
+      mono: true,
+      value: (row) => row.asset_tag || row.id.slice(0, 8),
+    },
+    { key: "model", label: "Modello", width: 105, value: (row) => row.model },
+    { key: "type", label: "Tipo", width: 78, value: (row) => row.device_type || "-" },
+    { key: "serial", label: "S/N prod.", width: 78, mono: true, value: (row) => row.serial || "-" },
     { key: "client", label: "Cliente", width: 110, value: (row) => row.client },
     {
       key: "purchase",

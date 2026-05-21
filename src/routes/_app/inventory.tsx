@@ -9,6 +9,13 @@ import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
+import {
+  DEVICE_CATEGORIES,
+  DEVICE_CATEGORY_LABELS,
+  getDeviceCategoryLabel,
+  getDeviceTypes,
+  type DeviceCategory,
+} from "@/lib/device-taxonomy";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -83,9 +90,12 @@ export const Route = createFileRoute("/_app/inventory")({
 
 interface Row {
   id: string;
+  asset_tag: string;
   serial: string | null;
   model: string;
   os: string | null;
+  category: string | null;
+  device_type: string | null;
   status: DeviceStatus;
   client_id: string;
   client?: { name: string } | null;
@@ -144,6 +154,8 @@ function InventoryPage() {
   const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
   const [fos, setFos] = useState("");
+  const [fcategory, setFcategory] = useState("");
+  const [ftype, setFtype] = useState("");
   const [q, setQ] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -181,6 +193,8 @@ function InventoryPage() {
   const listQuery = useInventoryList({
     status: fs || undefined,
     os: fos || undefined,
+    category: fcategory || undefined,
+    deviceType: ftype || undefined,
     q,
     page,
     pageSize: PAGE_SIZE,
@@ -217,7 +231,11 @@ function InventoryPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [fs, fos, q, warrantyFilter, maintenanceDueFilter]);
+  }, [fs, fos, fcategory, ftype, q, warrantyFilter, maintenanceDueFilter]);
+
+  useEffect(() => {
+    setFtype("");
+  }, [fcategory]);
 
   const data = rows;
   const listLoading = listQuery.isLoading;
@@ -228,8 +246,11 @@ function InventoryPage() {
   function pdfRows(): DevicePdfRow[] {
     return data.map((r) => ({
       id: r.id,
+      asset_tag: r.asset_tag,
       serial: r.serial,
       model: r.model,
+      category: r.category,
+      device_type: r.device_type,
       os: r.os,
       status: r.status,
       client: r.client?.name || "-",
@@ -412,7 +433,7 @@ function InventoryPage() {
       const { data: rows, error } = await supabase
         .from("devices")
         .select(
-          "id, serial, brand, model, os, status, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, device_type, cpu_name, cpu_frequency_ghz, cpu_cores, ram_gb, ram_type, ram_frequency_mhz, storage_type, storage_capacity_gb, storage_drive_count, os_version, os_architecture, screen_resolution, screen_size_inches, screen_type, wifi, ethernet, bluetooth, client:clients(name)",
+          "id, asset_tag, serial, brand, model, category, device_type, os, status, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, cpu_name, cpu_frequency_ghz, cpu_cores, ram_gb, ram_type, ram_frequency_mhz, storage_type, storage_capacity_gb, storage_drive_count, os_version, os_architecture, screen_resolution, screen_size_inches, screen_type, wifi, ethernet, bluetooth, client:clients(name)",
         )
         .in("id", ids);
       if (error) throw error;
@@ -474,8 +495,11 @@ function InventoryPage() {
   function toPdfRow(r: Row): DevicePdfRow {
     return {
       id: r.id,
+      asset_tag: r.asset_tag,
       serial: r.serial,
       model: r.model,
+      category: r.category,
+      device_type: r.device_type,
       os: r.os,
       status: r.status,
       client: r.client?.name || "-",
@@ -537,9 +561,36 @@ function InventoryPage() {
             <option key={o}>{o}</option>
           ))}
         </select>
+        <select
+          className="pc-input max-w-[190px]"
+          value={fcategory}
+          onChange={(e) => setFcategory(e.target.value)}
+        >
+          <option value="">Tutte le categorie</option>
+          {DEVICE_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {DEVICE_CATEGORY_LABELS[category]}
+            </option>
+          ))}
+        </select>
+        <select
+          className="pc-input max-w-[190px]"
+          value={ftype}
+          onChange={(e) => setFtype(e.target.value)}
+        >
+          <option value="">Tutti i tipi</option>
+          {(fcategory
+            ? getDeviceTypes(fcategory as DeviceCategory)
+            : DEVICE_CATEGORIES.flatMap((category) => getDeviceTypes(category))
+          ).map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
         <input
           className="pc-input max-w-[260px]"
-          placeholder="Cerca seriale, modello, utente..."
+          placeholder="Cerca asset tag, seriale, modello, tipo..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -716,9 +767,11 @@ function InventoryPage() {
                     />
                   </th>
                   {[
-                    "ID",
-                    "Seriale",
+                    "Asset tag",
+                    "Seriale produttore",
                     "Modello",
+                    "Categoria",
+                    "Tipo",
                     "OS",
                     "Stato",
                     "Garanzia",
@@ -739,7 +792,7 @@ function InventoryPage() {
               </thead>
               <tbody>
                 {listLoading ? (
-                  <TableSkeletonRows rows={12} columns={11} cellClassName="px-[14px] py-[10px]" />
+                  <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
                 ) : (
                   <>
                     {data.map((r) => (
@@ -761,7 +814,7 @@ function InventoryPage() {
                           />
                         </td>
                         <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                          {r.id.slice(0, 8)}
+                          {r.asset_tag || r.id.slice(0, 8)}
                         </td>
                         <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
                           {r.serial || "-"}
@@ -776,6 +829,12 @@ function InventoryPage() {
                                 : "in scadenza"}
                             </div>
                           ) : null}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {getDeviceCategoryLabel(r.category)}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {r.device_type || "-"}
                         </td>
                         <td className="px-[14px] py-[10px] text-[12px] text-text2">
                           {r.os || "-"}
@@ -833,7 +892,7 @@ function InventoryPage() {
                     ))}
                     {!data.length && (
                       <tr>
-                        <td colSpan={11} className="text-center py-12 text-text3 text-sm">
+                        <td colSpan={13} className="text-center py-12 text-text3 text-sm">
                           Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
                         </td>
                       </tr>
@@ -1151,6 +1210,8 @@ function CompareDevicesModal({
 }) {
   const specs: [string, (row: CompareDevice) => string][] = [
     ["Brand / modello", (row) => `${row.brand || "—"} ${row.model}`.trim()],
+    ["Asset tag", (row) => row.asset_tag || "—"],
+    ["Categoria", (row) => getDeviceCategoryLabel(row.category)],
     ["Tipo", (row) => row.device_type || "—"],
     ["Seriale", (row) => row.serial || "—"],
     ["Stato", (row) => DEVICE_STATUS_META[row.status]?.label || row.status],
@@ -1330,7 +1391,7 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 function toQrDevice(row: Row): QrDevice {
-  return { id: row.id, serial: row.serial, model: row.model };
+  return { id: row.id, serial: row.asset_tag || row.serial, model: row.model };
 }
 
 function extractDeviceCode(rawCode: string) {

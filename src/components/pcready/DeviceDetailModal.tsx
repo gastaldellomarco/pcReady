@@ -47,8 +47,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Cpu, HardDrive, Monitor, Network, QrCode, Save, TicketPlus, Wrench } from "lucide-react";
+import {
+  Barcode,
+  Cpu,
+  HardDrive,
+  Monitor,
+  Network,
+  QrCode,
+  Save,
+  ScanLine,
+  TicketPlus,
+  Wrench,
+} from "lucide-react";
 import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import {
   daysUntil,
   getWarrantyStatus,
@@ -60,9 +72,11 @@ import {
   type WarrantyType,
 } from "@/lib/warranty";
 import { pcReadyColors } from "@/lib/design-system";
+import { getDeviceCategoryLabel } from "@/lib/device-taxonomy";
 
 interface DeviceRow {
   id: string;
+  asset_tag: string | null;
   brand: string | null;
   serial: string | null;
   model: string;
@@ -73,7 +87,21 @@ interface DeviceRow {
   client_id: string;
   client?: { name: string } | null;
   assigned_to: string | null;
+  category: string | null;
   device_type: string | null;
+  ip_address: string | null;
+  mac_address: string | null;
+  location: string | null;
+  firmware_version: string | null;
+  port_count: number | null;
+  poe_supported: boolean | null;
+  toner_model: string | null;
+  page_count: number | null;
+  print_technology: string | null;
+  license_expiry: string | null;
+  vlan_config: string | null;
+  rack_position: string | null;
+  server_role: string | null;
   location_office: string | null;
   location_floor: string | null;
   location_desk: string | null;
@@ -179,7 +207,10 @@ const DEVICE_STATUS_OPTIONS: DeviceInventoryStatus[] = [
   "retired",
 ];
 
+const DEVICE_STATUS_OPTION_SET = new Set<string>(DEVICE_STATUS_OPTIONS);
+
 type DeviceDetailTab = "info" | "hardware" | "maintenance" | "tickets" | "history";
+type DeviceBarcodeTarget = "asset_tag" | "serial";
 
 type HardwareDraft = {
   cpu_name: string;
@@ -216,6 +247,10 @@ export function DeviceDetailModal() {
   const [statusSaving, setStatusSaving] = useState(false);
   const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<DeviceInventoryStatus | null>(null);
+  const [editingIdentity, setEditingIdentity] = useState(false);
+  const [savingIdentity, setSavingIdentity] = useState(false);
+  const [barcodeTarget, setBarcodeTarget] = useState<DeviceBarcodeTarget | null>(null);
+  const [identityDraft, setIdentityDraft] = useState({ asset_tag: "", serial: "" });
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -242,6 +277,9 @@ export function DeviceDetailModal() {
       setHistoryEntries([]);
       setActivities([]);
       setProfileNames({});
+      setEditingIdentity(false);
+      setIdentityDraft({ asset_tag: "", serial: "" });
+      setBarcodeTarget(null);
       setEditingWarranty(false);
       setEditingHardware(false);
       setActiveTab("info");
@@ -270,6 +308,10 @@ export function DeviceDetailModal() {
       const deviceRow = devRes.data as DeviceRow | null;
       setD(deviceRow);
       if (deviceRow) {
+        setIdentityDraft({
+          asset_tag: deviceRow.asset_tag ?? "",
+          serial: deviceRow.serial ?? "",
+        });
         setWarrantyDraft({
           purchase_date: toDateInputValue(deviceRow.purchase_date),
           warranty_expiry_date: toDateInputValue(deviceRow.warranty_expiry_date),
@@ -463,6 +505,7 @@ export function DeviceDetailModal() {
       .includes("maintenance"),
   );
   const systemHealth = computeSystemHealth(d, openTickets);
+  const deviceStatusOptions = useMemo(() => getDeviceStatusOptions(d?.status), [d?.status]);
   const purchaseCost = d?.purchase_cost ?? 0;
   const repairCosts = maintenanceTickets.reduce(
     (sum, ticket) => sum + (ticket.repair_cost ?? 0),
@@ -515,6 +558,65 @@ export function DeviceDetailModal() {
     } finally {
       setSavingNotes(false);
     }
+  }
+
+  async function saveIdentity() {
+    if (!d || !session?.access_token) return;
+    setSavingIdentity(true);
+    try {
+      const payload = {
+        asset_tag: identityDraft.asset_tag.trim() || null,
+        serial: identityDraft.serial.trim() || null,
+      };
+      const { error } = await supabase.from("devices").update(payload).eq("id", d.id);
+      if (error) throw error;
+      setD({ ...d, ...payload, updated_at: new Date().toISOString() });
+      setEditingIdentity(false);
+      toast.success("Codici dispositivo aggiornati");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore salvataggio codici");
+    } finally {
+      setSavingIdentity(false);
+    }
+  }
+
+  function startIdentityEdit() {
+    if (!d) return;
+    setIdentityDraft({
+      asset_tag: d.asset_tag ?? "",
+      serial: d.serial ?? "",
+    });
+    setEditingIdentity(true);
+  }
+
+  function focusIdentityField(target: DeviceBarcodeTarget) {
+    setEditingIdentity(true);
+    window.setTimeout(() => {
+      document.getElementById(deviceIdentityInputId(target))?.focus();
+    }, 50);
+    toast.info(
+      target === "asset_tag"
+        ? "Campo asset tag pronto per scanner barcode USB/Bluetooth"
+        : "Campo seriale pronto per scanner barcode USB/Bluetooth",
+    );
+  }
+
+  function applyBarcodeValue(value: string) {
+    if (!barcodeTarget) return;
+    const next = value.trim();
+    if (!next) return;
+    setIdentityDraft((prev) => ({
+      ...prev,
+      [barcodeTarget]: barcodeTarget === "asset_tag" ? next.toUpperCase() : next,
+    }));
+    setEditingIdentity(true);
+    setBarcodeTarget(null);
+    window.setTimeout(() => {
+      document.getElementById(deviceIdentityInputId(barcodeTarget))?.focus();
+    }, 50);
+    toast.success(
+      barcodeTarget === "asset_tag" ? "Asset tag letto da barcode" : "Seriale letto da barcode",
+    );
   }
 
   async function saveWarranty() {
@@ -599,6 +701,10 @@ export function DeviceDetailModal() {
   }
 
   function onDeviceStatusSelect(value: string) {
+    if (!isDeviceInventoryStatus(value)) {
+      toast.error("Stato dispositivo non valido");
+      return;
+    }
     const next = value as DeviceInventoryStatus;
     if (!d || next === d.status) return;
     if (next === "maintenance" || next === "retired") {
@@ -631,7 +737,7 @@ export function DeviceDetailModal() {
       open={true}
       onClose={close}
       size="xl"
-      title={`${d.model} — ${d.serial || "senza seriale"}`}
+      title={`${d.model} — ${d.asset_tag || d.serial || "senza codice"}`}
     >
       <div
         className="mb-4 rounded-xl border p-3"
@@ -647,7 +753,7 @@ export function DeviceDetailModal() {
               {d.model}
             </div>
             <div className="font-mono text-[11px] text-text3">
-              Asset · {d.id} · SN {d.serial || "—"}
+              Asset · {d.asset_tag || d.id} · S/N produttore {d.serial || "—"}
             </div>
           </div>
           <DeviceStatusPill status={d.status} large />
@@ -721,13 +827,17 @@ export function DeviceDetailModal() {
                   onValueChange={onDeviceStatusSelect}
                   disabled={statusSaving}
                 >
-                  <SelectTrigger className="mt-1 h-9 text-[13px]">
+                  <SelectTrigger aria-label="Stato dispositivo" className="mt-1 h-9 text-[13px]">
                     <SelectValue placeholder="Stato" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEVICE_STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {DEVICE_STATUS_LABEL[s]}
+                    {deviceStatusOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.legacy}
+                      >
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -752,15 +862,101 @@ export function DeviceDetailModal() {
               <div className="pc-label">OS</div>
               <div className="text-[13px]">{d.os || "—"}</div>
             </div>
-            <div>
-              <div className="pc-label">Brand / seriale</div>
-              <div className="text-[13px]">
-                {d.brand || "—"} · <span className="font-mono">{d.serial || "—"}</span>
+            <div className="sm:col-span-2">
+              <div
+                className="rounded-lg border p-3"
+                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="pc-label">Codici dispositivo</div>
+                    <div className="text-[12px] text-text3">
+                      Barcode 1D separato dal QR inventario: seriale produttore e asset tag
+                      interno restano campi distinti.
+                    </div>
+                  </div>
+                  {canEdit && !editingIdentity ? (
+                    <button
+                      type="button"
+                      className="pc-btn pc-btn-ghost pc-btn-sm"
+                      onClick={startIdentityEdit}
+                    >
+                      Modifica codici
+                    </button>
+                  ) : null}
+                </div>
+                {editingIdentity ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <IdentityBarcodeField
+                      id={deviceIdentityInputId("asset_tag")}
+                      label="Asset tag interno"
+                      value={identityDraft.asset_tag}
+                      placeholder="PCR-000001"
+                      onChange={(value) =>
+                        setIdentityDraft((prev) => ({ ...prev, asset_tag: value }))
+                      }
+                      onHardwareFocus={() => focusIdentityField("asset_tag")}
+                      onCameraScan={() => setBarcodeTarget("asset_tag")}
+                    />
+                    <IdentityBarcodeField
+                      id={deviceIdentityInputId("serial")}
+                      label="Seriale produttore"
+                      value={identityDraft.serial}
+                      placeholder="Seriale da etichetta"
+                      onChange={(value) =>
+                        setIdentityDraft((prev) => ({ ...prev, serial: value }))
+                      }
+                      onHardwareFocus={() => focusIdentityField("serial")}
+                      onCameraScan={() => setBarcodeTarget("serial")}
+                    />
+                    <div className="flex gap-2 sm:col-span-2">
+                      <button
+                        type="button"
+                        className="pc-btn pc-btn-primary pc-btn-sm"
+                        disabled={savingIdentity}
+                        onClick={() => void saveIdentity()}
+                      >
+                        <Save className="h-3 w-3" />
+                        {savingIdentity ? "Salvataggio..." : "Salva codici"}
+                      </button>
+                      <button
+                        type="button"
+                        className="pc-btn pc-btn-ghost pc-btn-sm"
+                        onClick={() => {
+                          setEditingIdentity(false);
+                          setIdentityDraft({
+                            asset_tag: d.asset_tag ?? "",
+                            serial: d.serial ?? "",
+                          });
+                        }}
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div>
+                      <div className="pc-label">Brand</div>
+                      <div className="text-[13px]">{d.brand || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="pc-label">Asset tag interno</div>
+                      <div className="font-mono text-[13px]">{d.asset_tag || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="pc-label">Seriale produttore</div>
+                      <div className="font-mono text-[13px]">{d.serial || "—"}</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div>
-              <div className="pc-label">Tipo dispositivo</div>
-              <div className="text-[13px]">{d.device_type || "—"}</div>
+              <div className="pc-label">Categoria / tipo</div>
+              <div className="text-[13px]">
+                {getDeviceCategoryLabel(d.category)} · {d.device_type || "—"}
+              </div>
             </div>
             <div>
               <div className="pc-label">Localizzazione</div>
@@ -774,6 +970,8 @@ export function DeviceDetailModal() {
               </div>
             </div>
           </div>
+
+          <AssetMetadataPanel device={d} />
 
           {lastEvent && (
             <div
@@ -1206,86 +1404,86 @@ export function DeviceDetailModal() {
           <OverflowTable className="mt-3">
             <OverflowTable>
               <table className="w-full text-[12px]">
-              <thead>
-                <tr>
-                  {[
-                    "Codice",
-                    "Titolo",
-                    "Stato",
-                    "Tecnico",
-                    "Data apertura",
-                    "Data chiusura",
-                    "Costo riparazione",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="border-b px-3 py-2 text-left text-[10px] font-bold uppercase text-text3"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((ticket) => {
-                  const open = !isClosedTicket(ticket);
-                  return (
-                    <tr
-                      key={ticket.id}
-                      className="cursor-pointer border-b hover:bg-background/80"
-                      style={{ borderColor: "var(--border)" }}
-                      onClick={() => openTicketDetail(ticket.id)}
-                    >
-                      <td className="px-3 py-2 font-mono font-semibold">{ticket.ticket_code}</td>
-                      <td className="px-3 py-2">
-                        {ticket.notes?.slice(0, 70) ||
-                          TICKET_TYPE_LABEL[ticket.ticket_type as TicketType] ||
-                          ticket.ticket_type}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={
-                            open
-                              ? "rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-800"
-                              : "text-text3"
-                          }
-                        >
-                          {STATUS_META[ticket.status as keyof typeof STATUS_META]?.label ??
-                            ticket.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">{ticket.assignee?.full_name || "—"}</td>
-                      <td className="px-3 py-2">{fmtDateTime(ticket.created_at)}</td>
-                      <td className="px-3 py-2">
-                        {ticket.closed_at ? fmtDateTime(ticket.closed_at) : "—"}
-                      </td>
-                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        {ticket.ticket_type === "maintenance" ? (
-                          <button
-                            type="button"
-                            className="font-mono text-accent hover:underline"
-                            onClick={() => void saveRepairCost(ticket)}
+                <thead>
+                  <tr>
+                    {[
+                      "Codice",
+                      "Titolo",
+                      "Stato",
+                      "Tecnico",
+                      "Data apertura",
+                      "Data chiusura",
+                      "Costo riparazione",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="border-b px-3 py-2 text-left text-[10px] font-bold uppercase text-text3"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((ticket) => {
+                    const open = !isClosedTicket(ticket);
+                    return (
+                      <tr
+                        key={ticket.id}
+                        className="cursor-pointer border-b hover:bg-background/80"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openTicketDetail(ticket.id)}
+                      >
+                        <td className="px-3 py-2 font-mono font-semibold">{ticket.ticket_code}</td>
+                        <td className="px-3 py-2">
+                          {ticket.notes?.slice(0, 70) ||
+                            TICKET_TYPE_LABEL[ticket.ticket_type as TicketType] ||
+                            ticket.ticket_type}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={
+                              open
+                                ? "rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-800"
+                                : "text-text3"
+                            }
                           >
-                            {ticket.repair_cost == null
-                              ? "Inserisci"
-                              : formatCurrency(ticket.repair_cost)}
-                          </button>
-                        ) : (
-                          "—"
-                        )}
+                            {STATUS_META[ticket.status as keyof typeof STATUS_META]?.label ??
+                              ticket.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">{ticket.assignee?.full_name || "—"}</td>
+                        <td className="px-3 py-2">{fmtDateTime(ticket.created_at)}</td>
+                        <td className="px-3 py-2">
+                          {ticket.closed_at ? fmtDateTime(ticket.closed_at) : "—"}
+                        </td>
+                        <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                          {ticket.ticket_type === "maintenance" ? (
+                            <button
+                              type="button"
+                              className="font-mono text-accent hover:underline"
+                              onClick={() => void saveRepairCost(ticket)}
+                            >
+                              {ticket.repair_cost == null
+                                ? "Inserisci"
+                                : formatCurrency(ticket.repair_cost)}
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!tickets.length && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-text3">
+                        Nessun ticket collegato a questo dispositivo.
                       </td>
                     </tr>
-                  );
-                })}
-                {!tickets.length && (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-text3">
-                      Nessun ticket collegato a questo dispositivo.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+                  )}
+                </tbody>
               </table>
             </OverflowTable>
           </OverflowTable>
@@ -1332,6 +1530,14 @@ export function DeviceDetailModal() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <BarcodeScanner
+        open={barcodeTarget !== null}
+        onClose={() => setBarcodeTarget(null)}
+        onDetected={applyBarcodeValue}
+        mode="barcode-1d"
+        targetLabel={barcodeTarget === "asset_tag" ? "asset tag interno" : "seriale produttore"}
+      />
+
       <div className="flex justify-between">
         {d ? (
           <button
@@ -1373,6 +1579,120 @@ function DeviceStatusPill({ status, large = false }: { status: string; large?: b
       {DEVICE_STATUS_LABEL[status as DeviceInventoryStatus] ?? formatDeviceStatus(status)}
     </span>
   );
+}
+
+function AssetMetadataPanel({ device }: { device: DeviceRow }) {
+  const rows = getAssetMetadataRows(device);
+  if (!rows.length) return null;
+  return (
+    <div
+      className="mb-4 rounded-lg border p-3"
+      style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+    >
+      <div className="mb-2 text-sm font-semibold">Metadati asset</div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3 text-[12.5px]">
+            <span className="text-text3">{label}</span>
+            <span className="text-right font-medium">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IdentityBarcodeField({
+  id,
+  label,
+  value,
+  placeholder,
+  onChange,
+  onHardwareFocus,
+  onCameraScan,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  onHardwareFocus: () => void;
+  onCameraScan: () => void;
+}) {
+  return (
+    <div>
+      <label className="pc-label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="mt-1 flex gap-2">
+        <input
+          id={id}
+          className="pc-input min-w-0 font-mono"
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+        />
+        <button
+          type="button"
+          className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+          onClick={onHardwareFocus}
+          title="Focus rapido per scanner hardware"
+        >
+          <ScanLine className="h-3.5 w-3.5" />
+          USB
+        </button>
+        <button
+          type="button"
+          className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+          onClick={onCameraScan}
+          title="Scansiona barcode 1D con camera"
+        >
+          <Barcode className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function deviceIdentityInputId(target: DeviceBarcodeTarget) {
+  return `device-identity-${target}`;
+}
+
+function getAssetMetadataRows(device: DeviceRow): [string, string][] {
+  const rows: [string, unknown][] = [];
+  if (device.ip_address) rows.push(["IP", device.ip_address]);
+  if (device.mac_address) rows.push(["MAC", device.mac_address]);
+  if (device.location) rows.push(["Posizione", device.location]);
+  if (device.firmware_version) rows.push(["Firmware", device.firmware_version]);
+  if (device.category === "printing") {
+    rows.push(
+      ["Tecnologia", device.print_technology],
+      ["Toner", device.toner_model],
+      ["Contatore pagine", device.page_count],
+    );
+  }
+  if (device.category === "network") {
+    rows.push(
+      ["Porte", device.port_count],
+      ["PoE", device.poe_supported == null ? null : device.poe_supported ? "Sì" : "No"],
+      ["VLAN", device.vlan_config],
+      ["Scadenza licenza", device.license_expiry ? fmtDate(device.license_expiry) : null],
+    );
+  }
+  if (device.category === "server_infra") {
+    rows.push(
+      ["Rack", device.rack_position],
+      ["Ruolo", device.server_role],
+      ["RAM", device.ram_gb ? `${device.ram_gb} GB` : null],
+      ["Storage", device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null],
+    );
+  }
+  return rows
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .map(([label, value]) => [label, String(value)]);
 }
 
 function HardwareTab({
@@ -1745,6 +2065,31 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value || 0);
 }
 
+function isDeviceInventoryStatus(value: string): value is DeviceInventoryStatus {
+  return DEVICE_STATUS_OPTION_SET.has(value);
+}
+
+function getDeviceStatusOptions(currentStatus?: string | null) {
+  const options = DEVICE_STATUS_OPTIONS.map((value) => ({
+    value,
+    label: DEVICE_STATUS_LABEL[value],
+    legacy: false,
+  }));
+
+  if (currentStatus && !isDeviceInventoryStatus(currentStatus)) {
+    return [
+      {
+        value: currentStatus,
+        label: `${formatDeviceStatus(currentStatus)} (legacy)`,
+        legacy: true,
+      },
+      ...options,
+    ];
+  }
+
+  return options;
+}
+
 function buildChecklistSummary(ticket: TicketRow) {
   const structure = parseTicketChecklistStructure(ticket.checklist_structure);
   const state = parseTicketChecklistState(ticket.checklist);
@@ -1849,7 +2194,9 @@ function buildDeviceTimeline(input: {
     at: device.created_at,
     kind: "device",
     title: "Asset registrato in inventario",
-    detail: `${device.model}${device.serial ? ` · seriale ${device.serial}` : ""}`,
+    detail: `${device.model}${device.asset_tag ? ` · asset ${device.asset_tag}` : ""}${
+      device.serial ? ` · S/N ${device.serial}` : ""
+    }`,
     operatorId: device.created_by,
     operatorLabel: nameOf(device.created_by) ?? undefined,
   });

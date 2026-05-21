@@ -6,10 +6,31 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onDetected: (code: string) => void;
+  targetLabel?: string;
+  mode?: "inventory" | "barcode-1d";
 }
 
-export function BarcodeScanner({ open, onClose, onDetected }: Props) {
+export const SUPPORTED_1D_BARCODE_FORMATS = [
+  "Code 128",
+  "Code 39",
+  "Code 93",
+  "Codabar",
+  "ITF",
+  "EAN-13",
+  "EAN-8",
+  "UPC-A",
+  "UPC-E",
+] as const;
+
+export function BarcodeScanner({
+  open,
+  onClose,
+  onDetected,
+  targetLabel = "seriale o asset tag",
+  mode = "inventory",
+}: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
@@ -25,6 +46,7 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
     let active = true;
     setError(null);
+    window.setTimeout(() => inputRef.current?.focus(), 80);
 
     if (!canUseCamera()) {
       setError(cameraUnavailableMessage());
@@ -34,9 +56,12 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
     }
 
     import("@zxing/browser")
-      .then(({ BrowserMultiFormatReader }) => {
+      .then(({ BrowserMultiFormatOneDReader, BrowserMultiFormatReader }) => {
         if (!active || !videoRef.current) return null;
-        const reader = new BrowserMultiFormatReader();
+        const reader =
+          mode === "barcode-1d"
+            ? new BrowserMultiFormatOneDReader()
+            : new BrowserMultiFormatReader();
         return reader.decodeFromVideoDevice(undefined, videoRef.current, (result) => {
           if (!active || !result) return;
           const value = result.getText().trim();
@@ -58,7 +83,7 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [open, onDetected]);
+  }, [mode, open, onDetected]);
 
   function submitManualCode() {
     const value = manualCode.trim();
@@ -73,8 +98,25 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Scansiona codice" size="lg">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title={mode === "barcode-1d" ? "Leggi barcode 1D" : "Scansiona codice inventario"}
+      size="lg"
+    >
       <div className="flex flex-col gap-3">
+        {mode === "barcode-1d" ? (
+          <div
+            className="rounded-md border px-3 py-2 text-sm"
+            style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+          >
+            <div className="font-semibold">Destinazione: {targetLabel}</div>
+            <div className="mt-1 text-xs text-text3">
+              Funzione diversa dal QR code inventario: legge codici lineari 1D per compilare
+              seriali e asset tag.
+            </div>
+          </div>
+        ) : null}
         <div
           className="aspect-video overflow-hidden rounded-md border"
           style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
@@ -83,16 +125,29 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
         </div>
         {error ? (
           <div className="text-sm text-destructive">{error}</div>
+        ) : mode === "barcode-1d" ? (
+          <div className="text-xs text-text3">
+            Inquadra un barcode 1D. Formati supportati:{" "}
+            {SUPPORTED_1D_BARCODE_FORMATS.join(", ")}.
+          </div>
         ) : (
           <div className="text-xs text-text3">
-            Inquadra un QR o barcode. Funziona anche con scanner esterni che inseriscono testo nel
-            sistema.
+            Inquadra un QR inventario o un codice compatibile per cercare il dispositivo.
           </div>
         )}
+        <div className="text-xs text-text3">
+          Scanner USB/Bluetooth keyboard-wedge: punta il lettore su questo campo, poi scansiona.
+          Invio conferma automaticamente il valore letto.
+        </div>
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             className="pc-input font-mono"
-            placeholder="Seriale o contenuto QR"
+            placeholder={
+              mode === "barcode-1d"
+                ? "Seriale o asset tag da barcode"
+                : "Seriale, asset tag o contenuto QR"
+            }
             value={manualCode}
             onChange={(event) => setManualCode(event.target.value)}
             onKeyDown={(event) => {
@@ -100,7 +155,7 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
             }}
           />
           <button className="pc-btn pc-btn-primary" onClick={submitManualCode}>
-            Cerca
+            {mode === "barcode-1d" ? "Applica" : "Cerca"}
           </button>
         </div>
         <div className="flex justify-end">
