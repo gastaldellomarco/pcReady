@@ -13,6 +13,19 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## [1.1.0] - 2026-05-24
+
+### Added
+- Implement progressive Lighthouse budget strategy with dynamic PDF generation
+- Implement post-deploy healthcheck and update Lighthouse CI configuration; add healthcheck script and improve form state management
+
+### Changed
+- Add Italian localization for scripts and tickets
+- Add comprehensive documentation for Barcode Inventory Management and Device Taxonomy System
+- Implement progressive Lighthouse budget strategy with dynamic PDF generation
+- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
+- Implement post-deploy healthcheck and update Lighthouse CI configuration; add healthcheck script and improve form state management
+
 ## [1.0.0] - 2026-05-21
 
 ### Added
@@ -115,5 +128,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 [0.23.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.19.0...vv0.23.0
 
-[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.23.0...v1.0.0
+
+[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
