@@ -55,14 +55,14 @@
   },
   "wizard": {
     "steps": {
-      "trigger": "Trigger",
-      "triggerDesc": "Evento scatenante",
-      "conditions": "Condizioni",
-      "conditionsDesc": "Filtri opzionali",
+      "template": "Modello",
+      "templateDesc": "Scegli un template",
+      "event": "Evento",
+      "eventDesc": "Quando si attiva",
+      "filters": "Filtri",
+      "filtersDesc": "Condizioni opzionali",
       "actions": "Azioni",
-      "actionsDesc": "Cosa eseguire",
-      "schedule": "Schedule",
-      "scheduleDesc": "Pianificazione",
+      "actionsDesc": "Cosa succede",
       "review": "Riepilogo",
       "reviewDesc": "Verifica e salva"
     },
@@ -82,6 +82,49 @@
     "back": "Indietro",
     "next": "Avanti",
     "save": "Salva regola"
+  },
+  "templateStep": {
+    "title": "Scegli un modello",
+    "description": "Seleziona un template preconfigurato o inizia da zero. Puoi modificare tutto nei prossimi passaggi.",
+    "startFromScratch": "Inizia da zero",
+    "startFromScratchDesc": "Crea un'automazione personalizzata senza template",
+    "categories": {
+      "notification": "Notifica",
+      "status": "Stato",
+      "schedule": "Schedulazione",
+      "urgency": "Urgenza"
+    }
+  },
+  "eventStep": {
+    "title": "Quando deve partire questa automazione?",
+    "description": "Scegli l'evento che attiva questa regola. Esempio: quando arriva un nuovo ticket urgente.",
+    "warrantyDaysLabel": "Giorni prima della scadenza",
+    "warrantyDaysHelp": "Esempio: 30 invia l'alert quando la garanzia scade entro 30 giorni.",
+    "cronLabel": "Espressione Cron",
+    "cronPlaceholder": "es. 0 8 * * * (ogni giorno alle 8:00)",
+    "cronHelp": "Formato standard cron a 5 campi: minuto ora giorno mese giorno-settimana",
+    "options": {
+      "ticket_created": "Nuovo ticket",
+      "ticket_updated": "Ticket aggiornato",
+      "checklist_completed": "Checklist completata",
+      "sla_warning": "SLA in scadenza",
+      "sla_breached": "SLA violato",
+      "warranty_expiring_soon": "Garanzia in scadenza",
+      "warranty_expired": "Garanzia scaduta",
+      "scheduled": "Schedulato",
+      "manual": "Manuale"
+    },
+    "examples": {
+      "ticket_created": "Quando viene creato un nuovo ticket",
+      "ticket_updated": "Quando un ticket esistente viene modificato",
+      "checklist_completed": "Quando una checklist viene completata",
+      "sla_warning": "Quando un ticket si avvicina alla scadenza SLA",
+      "sla_breached": "Quando un ticket supera la scadenza SLA",
+      "warranty_expiring_soon": "Quando la garanzia sta per scadere",
+      "warranty_expired": "Quando un dispositivo ha superato la data di garanzia",
+      "scheduled": "Esecuzione automatica con orario predefinito",
+      "manual": "Solo su azione manuale dell'utente"
+    }
   },
   "trigger": {
     "title": "Trigger",
@@ -112,6 +155,167 @@
       "manual_desc": "Eseguita solo manualmente o da un trigger esterno"
     }
   },
+  "filtersStep": {
+    "title": "Sotto quali condizioni?",
+    "description": "Opzionale — filtra solo i casi che corrispondono ai criteri. Esempio: solo ticket con priorità alta.",
+    "addFilter": "Aggiungi filtro",
+    "emptyState": "Nessun filtro — l'automazione si attiva per ogni {{triggerName}}",
+    "defaultTriggerName": "evento",
+    "edit": "Modifica",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "remove": "Rimuovi",
+    "fieldPlaceholder": "Campo",
+    "valuePlaceholder": "Valore",
+    "and": "E",
+    "operators": {
+      "field_equals": "Uguale a",
+      "field_not_equals": "Diverso da",
+      "field_greater_than": "Maggiore di",
+      "field_less_than": "Minore di",
+      "field_contains": "Contiene",
+      "field_starts_with": "Inizia con",
+      "field_ends_with": "Finisce con",
+      "priority_high": "Priorità alta",
+      "tag_contains": "Tag contiene"
+    },
+    "human": {
+      "field_equals": "{{field}} è \"{{value}}\"",
+      "field_not_equals": "{{field}} non è \"{{value}}\"",
+      "field_greater_than": "{{field}} > {{value}}",
+      "field_less_than": "{{field}} < {{value}}",
+      "field_contains": "{{field}} contiene \"{{value}}\"",
+      "field_starts_with": "{{field}} inizia con \"{{value}}\"",
+      "field_ends_with": "{{field}} finisce con \"{{value}}\"",
+      "priority_high": "Priorità è alta",
+      "tag_contains": "Tag contiene \"{{value}}\""
+    }
+  },
+  "conditionsBuilder": {
+    "whenConditions": "Quando queste condizioni sono soddisfatte:",
+    "logic": {
+      "and": "Tutte devono essere vere (AND)",
+      "or": "Basta che una sia vera (OR)"
+    },
+    "emptyState": {
+      "title": "Nessun filtro configurato",
+      "description": "L'automazione si attiverà per ogni {{trigger}}",
+      "defaultTrigger": "evento",
+      "addFirst": "+ Aggiungi la prima condizione"
+    },
+    "field": {
+      "placeholder": "Seleziona campo",
+      "groups": {
+        "ticket": "Ticket",
+        "device": "Dispositivo"
+      }
+    },
+    "operator": {
+      "placeholder": "Operatore",
+      "eq": "è",
+      "neq": "non è",
+      "contains": "contiene",
+      "gt": "maggiore di",
+      "lt": "minore di",
+      "in": "in elenco"
+    },
+    "value": {
+      "placeholder": "Valore",
+      "placeholderString": "Inserisci testo",
+      "placeholderNumber": "Inserisci numero",
+      "addItem": "+ Aggiungi",
+      "removeItem": "Rimuovi"
+    },
+    "actions": {
+      "addCondition": "+ Aggiungi condizione",
+      "removeCondition": "Rimuovi",
+      "and": "E",
+      "or": "OPPURE"
+    }
+  },
+  "actionsBuilder": {
+    "title": "Cosa deve succedere?",
+    "description": "Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti.",
+    "addAction": "+ Aggiungi azione",
+    "noActions": "Nessuna azione configurata. Aggiungi almeno un'azione.",
+    "remove": "Rimuovi",
+    "reorder": {
+      "up": "Sposta su",
+      "down": "Sposta giù",
+      "order": "Ordine"
+    },
+    "optionalPlaceholder": "Lascia vuoto per usare il contesto dal trigger",
+    "keepCurrent": "Mantieni attuale",
+    "selectPriority": "Seleziona priorità",
+    "variablePicker": {
+      "title": "Inserisci variabile",
+      "search": "Cerca variabili...",
+      "noResults": "Nessuna variabile trovata",
+      "insert": "Inserisci {{variable}}"
+    },
+    "blocks": {
+      "send_email": {
+        "title": "Invia email",
+        "to": "A",
+        "subject": "Oggetto",
+        "subjectPlaceholder": "Nuovo ticket creato",
+        "body": "Corpo",
+        "bodyPlaceholder": "Messaggio dell'email...",
+        "isHtml": "Corpo è HTML"
+      },
+      "update_ticket": {
+        "title": "Aggiorna ticket",
+        "ticketId": "ID Ticket (opzionale)",
+        "status": "Stato",
+        "priority": "Priorità",
+        "assignee": "Assegnatario",
+        "assigneePlaceholder": "UUID assegnatario"
+      },
+      "add_comment": {
+        "title": "Aggiungi commento",
+        "ticketId": "ID Ticket (opzionale)",
+        "content": "Contenuto",
+        "contentPlaceholder": "Scrivi il commento...",
+        "isInternal": "Nota interna (non visibile al cliente)"
+      },
+      "create_ticket": {
+        "title": "Crea ticket",
+        "titleField": "Titolo",
+        "titlePlaceholder": "Titolo del nuovo ticket",
+        "description": "Descrizione",
+        "descriptionPlaceholder": "Descrizione del problema...",
+        "customer": "Cliente (opzionale)",
+        "customerPlaceholder": "ID cliente",
+        "priority": "Priorità",
+        "assignee": "Assegnatario (opzionale)",
+        "assigneePlaceholder": "UUID assegnatario"
+      },
+      "create_notification": {
+        "title": "Crea notifica",
+        "user": "Utente (opzionale)",
+        "userPlaceholder": "ID utente",
+        "type": "Tipo",
+        "titleField": "Titolo",
+        "titlePlaceholder": "Titolo notifica",
+        "body": "Messaggio",
+        "bodyPlaceholder": "Contenuto del messaggio...",
+        "link": "Link (opzionale)"
+      },
+      "assign_ticket": {
+        "title": "Assegna ticket",
+        "ticketId": "ID Ticket (opzionale)",
+        "assignee": "Assegnatario",
+        "assigneePlaceholder": "UUID assegnatario"
+      },
+      "update_device": {
+        "title": "Aggiorna dispositivo",
+        "deviceId": "ID Dispositivo (opzionale)",
+        "status": "Stato",
+        "location": "Sede (opzionale)",
+        "locationPlaceholder": "ID sede"
+      }
+    }
+  },
   "conditions": {
     "title": "Condizioni",
     "subtitle": "Aggiungi condizioni opzionali che devono essere soddisfatte per eseguire le azioni.",
@@ -134,6 +338,10 @@
       "priority_high": "Priorità alta",
       "tag_contains": "Tag contiene"
     }
+  },
+  "actionsStep": {
+    "title": "Cosa deve succedere?",
+    "description": "Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti."
   },
   "actions": {
     "title": "Azioni",
@@ -200,6 +408,24 @@
       "interval": "Intervallo"
     },
     "cronExpression": "Expression"
+  },
+  "reviewStep": {
+    "title": "Controlla prima di salvare",
+    "description": "Verifica che tutto sia corretto. Puoi tornare indietro per modificare.",
+    "summaryTitle": "Riepilogo automazione",
+    "summaryPrefix": "Quando",
+    "withConditions": "con",
+    "summaryActionSeparator": "→",
+    "editTrigger": "Modifica trigger",
+    "nameLabel": "Nome automazione",
+    "namePlaceholder": "Dai un nome a questa automazione",
+    "descriptionLabel": "Descrizione",
+    "descriptionPlaceholder": "Descrivi brevemente cosa fa questa automazione",
+    "categoryLabel": "Categoria",
+    "noCategory": "Nessuna categoria",
+    "incompleteConfig": "Configurazione incompleta",
+    "scheduleLabel": "Schedulazione",
+    "technicalDetails": "Dettagli tecnici (JSON)"
   },
   "review": {
     "title": "Riepilogo",

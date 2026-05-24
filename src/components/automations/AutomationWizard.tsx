@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, Save, FlaskConical, Check } from "lucide-react";
-import TriggerStep from "./steps/TriggerStep";
-import ConditionsStep from "./steps/ConditionsStep";
+import TemplateStep from "./steps/TemplateStep";
+import EventStep from "./steps/EventStep";
+import FiltersStep from "./steps/FiltersStep";
 import ActionsStep from "./steps/ActionsStep";
-import ScheduleStep from "./steps/ScheduleStep";
 import ReviewStep from "./steps/ReviewStep";
 import type {
   TriggerDef,
@@ -20,6 +20,14 @@ import {
   groupErrorsBySection,
   getSectionLabel,
 } from "@/lib/automations/flow-validation";
+import { getTemplateById } from "@/lib/automations/templates";
+// DSL validation
+import {
+  validateTrigger,
+  validateActions,
+  formatValidationErrors,
+} from "@/domain/automation.schema";
+import { mapLegacyTriggerType } from "@/domain/automation";
 
 export default function AutomationWizard({
   initial,
@@ -35,14 +43,17 @@ export default function AutomationWizard({
   const { t } = useTranslation("automations");
 
   const STEPS = [
-    { label: t("wizard.steps.trigger", "Trigger"), description: t("wizard.steps.triggerDesc", "Triggering event") },
-    { label: t("wizard.steps.conditions", "Conditions"), description: t("wizard.steps.conditionsDesc", "Optional filters") },
-    { label: t("wizard.steps.actions", "Actions"), description: t("wizard.steps.actionsDesc", "What to execute") },
-    { label: t("wizard.steps.schedule", "Schedule"), description: t("wizard.steps.scheduleDesc", "Scheduling") },
-    { label: t("wizard.steps.review", "Review"), description: t("wizard.steps.reviewDesc", "Check and save") },
+    { label: t("wizard.steps.template", "Modello"), description: t("wizard.steps.templateDesc", "Scegli un template") },
+    { label: t("wizard.steps.event", "Evento"), description: t("wizard.steps.eventDesc", "Quando si attiva") },
+    { label: t("wizard.steps.filters", "Filtri"), description: t("wizard.steps.filtersDesc", "Condizioni opzionali") },
+    { label: t("wizard.steps.actions", "Azioni"), description: t("wizard.steps.actionsDesc", "Cosa succede") },
+    { label: t("wizard.steps.review", "Riepilogo"), description: t("wizard.steps.reviewDesc", "Verifica e salva") },
   ];
 
-  const [step, setStep] = useState(0);
+  // Skip template step if editing existing automation
+  const isEditing = Boolean(initial?.name);
+  const [step, setStep] = useState(isEditing ? 1 : 0);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [category, setCategory] = useState<string | null>(initial?.category ?? null);
@@ -51,13 +62,10 @@ export default function AutomationWizard({
     initial?.conditions_definition ?? [],
   );
   const [actions, setActions] = useState<ActionDef[]>(initial?.actions_definition ?? []);
-  const [schedule, setSchedule] = useState<ScheduleDef | null>(
-    initial?.schedule_definition ?? null,
-  );
+  // schedule kept for backward compatibility with existing automations
+  const [schedule] = useState<ScheduleDef | null>(initial?.schedule_definition ?? null);
   const [changeNote, setChangeNote] = useState(initial?.changeNote ?? "");
-  const [errors, setErrors] = useState<{ trigger?: string; actions?: string; general?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Compute inline validation for ReviewStep
   const flowPreview = {
@@ -74,17 +82,91 @@ export default function AutomationWizard({
   };
   const validation = step === 4 ? validateWizardPayload(flowPreview) : null;
 
-  function validateCurrent(currentStep: number): { ok: boolean; message?: string } {
-    if (currentStep === 0) {
-      if (!trigger) return { ok: false, message: t("wizard.validation.selectTrigger", "Select a trigger") };
+  function handleSelectTemplate(templateId: string | null) {
+    setSelectedTemplateId(templateId);
+    
+    if (templateId) {
+      const template = getTemplateById(templateId);
+      if (template) {
+        // Pre-populate wizard with template data
+        setName(template.defaultPayload.name || "");
+        setDescription(template.defaultPayload.description || "");
+        setCategory(template.defaultPayload.category || null);
+        setTrigger(template.defaultPayload.trigger_definition || null);
+        setConditions(template.defaultPayload.conditions_definition || []);
+        setActions(template.defaultPayload.actions_definition || []);
+      }
+    }
+    
+    // Advance to Event step
+    setStep(1);
+  }
+
+  // Schema-based validation for each step
+  function validateCurrent(currentStep: number): { ok: boolean; message?: string; fieldErrors?: Record<string, string> } {
+    // Step 0 (Template) - no validation needed, always can proceed
+    if (currentStep === 0) return { ok: true };
+
+    // Step 1 (Event) - trigger required with schema validation
+    if (currentStep === 1) {
+      if (!trigger) {
+        return { ok: false, message: t("wizard.validation.selectTrigger", "Seleziona un trigger") };
+      }
+      // Validate trigger with DSL schema
+      const dslTriggerType = mapLegacyTriggerType(trigger.type);
+      const triggerValidation = validateTrigger({
+        type: dslTriggerType,
+        config: trigger.config || {},
+      });
+      if (!triggerValidation.valid) {
+        return {
+          ok: false,
+          message: triggerValidation.errors.map((e) => e.message).join(", "),
+          fieldErrors: formatValidationErrors(triggerValidation.errors),
+        };
+      }
       return { ok: true };
     }
-    if (currentStep === 2) {
-      if (!actions || actions.length === 0)
-        return { ok: false, message: t("wizard.validation.addAction", "Add at least one action") };
+
+    // Step 2 (Filters) - optional, always valid
+    if (currentStep === 2) return { ok: true };
+
+    // Step 3 (Actions) - at least one action required with schema validation
+    if (currentStep === 3) {
+      if (!actions || actions.length === 0) {
+        return { ok: false, message: t("wizard.validation.addAction", "Aggiungi almeno un'azione") };
+      }
+      // Validate actions with DSL schema (convert from legacy ActionDef)
+      const dslActions = actions.map((a, index) => ({
+        id: a.id,
+        type: mapLegacyActionType(a.type),
+        order: index,
+        config: a.config || {},
+      }));
+      const actionsValidation = validateActions(dslActions);
+      if (!actionsValidation.valid) {
+        return {
+          ok: false,
+          message: actionsValidation.errors.map((e) => e.message).join(", "),
+          fieldErrors: formatValidationErrors(actionsValidation.errors),
+        };
+      }
       return { ok: true };
     }
+
     return { ok: true };
+  }
+
+  // Helper to map legacy action type to DSL
+  function mapLegacyActionType(type: string): string {
+    const mapping: Record<string, string> = {
+      send_email: "send_email",
+      update_ticket_status: "update_ticket",
+      create_notification: "create_notification",
+      update_device_status: "update_device",
+      assign_ticket: "assign_ticket",
+    };
+    return mapping[type] || "send_email";
   }
 
   function generateSummary() {
@@ -97,10 +179,17 @@ export default function AutomationWizard({
   function handleNext() {
     const v = validateCurrent(step);
     if (!v.ok) {
-      if (step === 0) setErrors((e) => ({ ...e, trigger: v.message }));
-      if (step === 2) setErrors((e) => ({ ...e, actions: v.message }));
+      // Set specific field errors from validation
+      if (v.fieldErrors) {
+        setErrors(v.fieldErrors);
+      } else {
+        // Generic error for the step
+        const stepKey = step === 1 ? "trigger" : step === 3 ? "actions" : "general";
+        setErrors({ [stepKey]: v.message || "" });
+      }
       return;
     }
+    setErrors({}); // Clear errors on successful validation
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
@@ -169,41 +258,71 @@ export default function AutomationWizard({
       {/* Step content */}
       <div className="space-y-4">
         {step === 0 && (
+          <TemplateStep
+            selectedTemplateId={selectedTemplateId}
+            onSelectTemplate={handleSelectTemplate}
+          />
+        )}
+        {step === 1 && (
           <div>
-            <TriggerStep
+            <EventStep
               value={trigger}
               onChange={(v) => {
                 setTrigger(v);
-                setErrors((e) => ({ ...e, trigger: undefined }));
+                setErrors((e) => {
+                  const newErrors = { ...e };
+                  delete newErrors.trigger;
+                  return newErrors;
+                });
               }}
             />
             {errors.trigger && <div className="mt-2 text-sm text-rose-600">{errors.trigger}</div>}
           </div>
         )}
-        {step === 1 && (
+        {step === 2 && (
           <div>
-            <ConditionsStep
+            <FiltersStep
               value={conditions}
               onChange={(v) => {
                 setConditions(v);
-                setErrors((e) => ({ ...e, general: undefined }));
+                setErrors((e) => {
+                  const newErrors = { ...e };
+                  delete newErrors.general;
+                  return newErrors;
+                });
               }}
+              triggerName={trigger?.type}
             />
           </div>
         )}
-        {step === 2 && (
+        {step === 3 && (
           <div>
             <ActionsStep
               value={actions}
               onChange={(v) => {
                 setActions(v);
-                setErrors((e) => ({ ...e, actions: undefined }));
+                setErrors((e) => {
+                  const newErrors = { ...e };
+                  delete newErrors.actions;
+                  // Also clear action-specific errors
+                  Object.keys(newErrors).forEach((key) => {
+                    if (key.startsWith("actions[")) delete newErrors[key];
+                  });
+                  return newErrors;
+                });
               }}
+              triggerType={trigger?.type}
             />
+            {/* Display general actions error */}
             {errors.actions && <div className="mt-2 text-sm text-rose-600">{errors.actions}</div>}
+            {/* Display field-specific errors */}
+            {Object.entries(errors).filter(([k]) => k.startsWith("actions[")).map(([k, v]) => (
+              <div key={k} className="mt-1 text-xs text-rose-600">
+                {v}
+              </div>
+            ))}
           </div>
         )}
-        {step === 3 && <ScheduleStep value={schedule} onChange={setSchedule} />}
         {step === 4 && (
           <ReviewStep
             name={name}
@@ -213,10 +332,10 @@ export default function AutomationWizard({
             conditions={conditions}
             actions={actions}
             schedule={schedule}
-            summary={generateSummary()}
             onChangeName={setName}
             onChangeDescription={setDescription}
             onChangeCategory={(v) => setCategory(v || null)}
+            onNavigateToStep={setStep}
           />
         )}
 

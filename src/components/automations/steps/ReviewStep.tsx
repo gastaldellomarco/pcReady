@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Edit3 } from "lucide-react";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
 import type { TriggerDef, ConditionDef, ActionDef, ScheduleDef } from "@/types/automation";
 
@@ -9,11 +11,11 @@ export default function ReviewStep({
   conditions,
   actions,
   schedule,
-  summary,
   category,
   onChangeName,
   onChangeDescription,
   onChangeCategory,
+  onNavigateToStep,
 }: {
   name: string;
   description: string | null;
@@ -21,13 +23,14 @@ export default function ReviewStep({
   conditions: ConditionDef[];
   actions: ActionDef[];
   schedule: ScheduleDef | null;
-  summary: string;
   category?: string | null;
   onChangeName: (s: string) => void;
   onChangeDescription: (s: string) => void;
   onChangeCategory?: (s: string) => void;
+  onNavigateToStep?: (step: number) => void;
 }) {
   const { t } = useTranslation("automations");
+  const [jsonOpen, setJsonOpen] = useState(false);
 
   const triggerLabels: Record<string, string> = {
     ticket_created: t("trigger.options.ticket_created", "Ticket created"),
@@ -49,64 +52,118 @@ export default function ReviewStep({
     assign_ticket: t("actions.types.assign_ticket", "Assign ticket"),
   };
 
-  function renderConditionLabel(c: ConditionDef): string {
+  function renderConditionHuman(c: ConditionDef): string {
     const field = c.config?.field ?? "";
     const val = c.config?.value ?? "";
     switch (c.type) {
-      case "field_equals": return t("review.conditionFieldEquals", 'Field "{{field}}" = "{{value}}"', { field, value: val });
-      case "field_not_equals": return t("review.conditionFieldNotEquals", 'Field "{{field}}" != "{{value}}"', { field, value: val });
-      case "field_greater_than": return t("review.conditionFieldGreaterThan", 'Field "{{field}}" > "{{value}}"', { field, value: val });
-      case "field_less_than": return t("review.conditionFieldLessThan", 'Field "{{field}}" < "{{value}}"', { field, value: val });
-      case "field_contains": return t("review.conditionFieldContains", 'Field "{{field}}" contains "{{value}}"', { field, value: val });
-      case "field_starts_with": return t("review.conditionFieldStartsWith", 'Field "{{field}}" starts with "{{value}}"', { field, value: val });
-      case "field_ends_with": return t("review.conditionFieldEndsWith", 'Field "{{field}}" ends with "{{value}}"', { field, value: val });
-      case "priority_high": return t("review.conditionPriorityHigh", "High priority");
-      case "tag_contains": return t("review.conditionTagContains", 'Tag contains "{{value}}"', { value: val });
+      case "field_equals": return t("filtersStep.human.field_equals", '{{field}} è "{{value}}"', { field, value: val });
+      case "field_not_equals": return t("filtersStep.human.field_not_equals", '{{field}} non è "{{value}}"', { field, value: val });
+      case "field_greater_than": return t("filtersStep.human.field_greater_than", "{{field}} > {{value}}", { field, value: val });
+      case "field_less_than": return t("filtersStep.human.field_less_than", "{{field}} < {{value}}", { field, value: val });
+      case "field_contains": return t("filtersStep.human.field_contains", '{{field}} contiene "{{value}}"', { field, value: val });
+      case "field_starts_with": return t("filtersStep.human.field_starts_with", '{{field}} inizia con "{{value}}"', { field, value: val });
+      case "field_ends_with": return t("filtersStep.human.field_ends_with", '{{field}} finisce con "{{value}}"', { field, value: val });
+      case "priority_high": return t("filtersStep.human.priority_high", "Priorità è alta");
+      case "tag_contains": return t("filtersStep.human.tag_contains", 'Tag contiene "{{value}}"', { value: val });
       default: return c.type;
     }
   }
 
+  function generateHumanSummary(): string {
+    if (!trigger) return t("reviewStep.incompleteConfig", "Configurazione incompleta");
+    
+    const triggerText = triggerLabels[trigger.type] || trigger.type;
+    let result = t("reviewStep.summaryPrefix", "Quando") + " " + triggerText;
+    
+    // Add conditions
+    if (conditions.length > 0) {
+      const condTexts = conditions.map(renderConditionHuman);
+      result += " " + t("reviewStep.withConditions", "con") + " " + condTexts.join(" " + t("filtersStep.and", "E") + " ");
+    }
+    
+    // Add actions
+    if (actions.length > 0) {
+      result += " " + t("reviewStep.summaryActionSeparator", "→") + " ";
+      const actionTexts = actions.map(a => actionLabels[a.type] || a.type);
+      result += actionTexts.join(" " + t("filtersStep.and", "E") + " ");
+    }
+    
+    return result;
+  }
+
+  function getTechnicalPayload() {
+    return {
+      name,
+      description,
+      category,
+      trigger_definition: trigger,
+      conditions_definition: conditions,
+      actions_definition: actions,
+      schedule_definition: schedule,
+    };
+  }
+
   return (
     <div>
-      <h3 className="text-lg font-semibold">{t("review.title", "Review")}</h3>
+      <h3 className="text-lg font-semibold">{t("reviewStep.title", "Controlla prima di salvare")}</h3>
       <p className="text-sm text-text3">
-        {t("review.subtitle", "Check the rule configuration before saving.")}
+        {t("reviewStep.description", "Verifica che tutto sia corretto. Puoi tornare indietro per modificare.")}
       </p>
 
       <div className="mt-4 space-y-4">
-        {/* Name */}
+        <div className="rounded-xl border-2 border-accent/20 bg-accent/5 p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">
+                {t("reviewStep.summaryTitle", "Riepilogo automazione")}
+              </div>
+              <div className="text-sm font-medium leading-relaxed">
+                {generateHumanSummary()}
+              </div>
+            </div>
+            {onNavigateToStep && (
+              <button
+                type="button"
+                onClick={() => onNavigateToStep(1)}
+                className="ml-2 flex items-center gap-1 rounded-md p-1.5 text-xs text-accent hover:bg-accent/10"
+                title={t("reviewStep.editTrigger", "Modifica trigger")}
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div>
-          <label className="text-sm font-medium">{t("review.nameLabel", "Rule name")}</label>
+          <label className="text-sm font-medium">{t("reviewStep.nameLabel", "Nome automazione")}</label>
           <input
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             value={name}
             onChange={(e) => onChangeName(e.target.value)}
-            placeholder={t("review.namePlaceholder", "Give the rule a name")}
+            placeholder={t("reviewStep.namePlaceholder", "Dai un nome a questa automazione")}
           />
         </div>
 
-        {/* Description */}
         <div>
-          <label className="text-sm font-medium">{t("review.descriptionLabel", "Description")}</label>
+          <label className="text-sm font-medium">{t("reviewStep.descriptionLabel", "Descrizione")}</label>
           <textarea
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             rows={2}
             value={description ?? ""}
             onChange={(e) => onChangeDescription(e.target.value)}
-            placeholder={t("review.descriptionPlaceholder", "Briefly describe what this rule does")}
+            placeholder={t("reviewStep.descriptionPlaceholder", "Descrivi brevemente cosa fa questa automazione")}
           />
         </div>
 
-        {/* Category */}
         {onChangeCategory && (
           <div>
-            <label className="text-sm font-medium">{t("review.categoryLabel", "Category")}</label>
+            <label className="text-sm font-medium">{t("reviewStep.categoryLabel", "Categoria")}</label>
             <select
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
               value={category ?? ""}
               onChange={(e) => onChangeCategory(e.target.value)}
             >
-              <option value="">{t("review.noCategory", "No category")}</option>
+              <option value="">{t("reviewStep.noCategory", "Nessuna categoria")}</option>
               {AUTOMATION_CATEGORY_OPTIONS.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -116,85 +173,41 @@ export default function ReviewStep({
           </div>
         )}
 
-        {/* Summary preview card */}
-        <div className="rounded-xl border-2 border-accent/20 bg-accent/5 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-accent">
-            {t("review.previewTitle", "Rule preview")}
-          </div>
-          <div className="mt-2 text-sm font-medium">
-            {summary || t("review.incompleteConfig", "Incomplete configuration")}
-          </div>
-        </div>
-
-        {/* Trigger */}
-        <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-            {t("review.triggerLabel", "Trigger")}
-          </div>
-          <p className="mt-1 text-sm text-blue-800">
-            {trigger?.type
-              ? (triggerLabels[trigger.type] ?? trigger.type)
-              : t("review.notConfigured", "Not configured")}
-          </p>
-          {trigger?.config && Object.keys(trigger.config).length > 0 && (
-            <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
-              {JSON.stringify(trigger.config, null, 2)}
-            </pre>
-          )}
-        </div>
-
-        {/* Conditions */}
-        {conditions && conditions.length > 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-              {t("review.conditionsLabel", "Conditions")} ({conditions.length})
-            </div>
-            <ul className="mt-1 space-y-1">
-              {conditions.map((c, i) => (
-                <li key={c.id ?? i} className="text-sm text-amber-800">
-                  {renderConditionLabel(c)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Actions */}
-        {actions && actions.length > 0 && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
-              {t("review.actionsLabel", "Actions")} ({actions.length})
-            </div>
-            <ul className="mt-1 space-y-1.5">
-              {actions.map((a, i) => (
-                <li key={a.id ?? i} className="text-sm text-emerald-800">
-                  <span className="font-semibold">{actionLabels[a.type ?? ""] ?? a.type}</span>
-                  {a.config && Object.keys(a.config).length > 0 && (
-                    <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-emerald-100/50 p-1.5 text-[11px] font-mono text-emerald-800">
-                      {JSON.stringify(a.config, null, 2)}
-                    </pre>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Schedule */}
-        {schedule && schedule.type && schedule.type !== "none" && (
+        {trigger?.type === "scheduled" && Boolean(trigger.config?.cron) && (
           <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">
-              {t("review.scheduleLabel", "Schedule")}
+              {t("reviewStep.scheduleLabel", "Schedulazione")}
             </div>
             <p className="mt-1 text-sm text-purple-800">
-              {schedule.type === "cron"
-                ? `${t("review.cronPrefix", "Cron: ")}${schedule.cron ?? "-"}`
-                : schedule.type === "interval"
-                  ? `${t("review.intervalPrefix", "Interval: every ")}${schedule.interval ?? "?"}`
-                  : schedule.type}
+              Cron: {String(trigger.config?.cron)}
             </p>
           </div>
         )}
+
+        <div className="rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={() => setJsonOpen(!jsonOpen)}
+            className="flex w-full items-center justify-between rounded-lg p-3 text-left hover:bg-surface1"
+            aria-expanded={jsonOpen}
+          >
+            <span className="text-sm font-medium">
+              {t("reviewStep.technicalDetails", "Dettagli tecnici (JSON)")}
+            </span>
+            {jsonOpen ? (
+              <ChevronUp className="h-4 w-4 text-text3" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-text3" />
+            )}
+          </button>
+          {jsonOpen && (
+            <div className="border-t border-border p-3">
+              <pre className="max-h-60 overflow-auto rounded bg-surface2 p-3 text-xs font-mono text-text3">
+                {JSON.stringify(getTechnicalPayload(), null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

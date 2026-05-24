@@ -139,6 +139,7 @@ export const WizardFlowPayloadSchema = z.object({
   summary: z.string().optional(),
   version: z.number().optional(),
   changeNote: z.string().optional(),
+  selectedTemplateId: z.string().nullable().optional(),
 });
 
 export type WizardFlowPayload = z.infer<typeof WizardFlowPayloadSchema>;

@@ -279,7 +279,7 @@ function AutomationsPage() {
 
       {/* Builder/Wizard Dialog */}
       <Dialog open={builderOpen} onOpenChange={setBuilderOpen}>
-        <DialogContent className="max-w-2xl max-h-[85dvh] overflow-hidden flex flex-col p-0">
+        <DialogContent className="max-w-3xl max-h-[95dvh] overflow-hidden flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
             <DialogTitle>
               {editingRule ? t("dialog.editTitle", "Modifica automazione") : t("dialog.newTitle", "Nuova automazione")}
@@ -316,9 +316,9 @@ function AutomationsPage() {
             </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
           {guidedMode ? (
-            <div className="p-6">
+            <div className="p-6 pb-2">
               <AutomationWizard
                 initial={
                   editingRule
