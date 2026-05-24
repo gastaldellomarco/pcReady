@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, Save, FlaskConical, Check } from "lucide-react";
@@ -20,14 +21,6 @@ import {
   getSectionLabel,
 } from "@/lib/automations/flow-validation";
 
-const STEPS = [
-  { label: "Trigger", description: "Evento scatenante" },
-  { label: "Condizioni", description: "Filtri opzionali" },
-  { label: "Azioni", description: "Cosa eseguire" },
-  { label: "Schedule", description: "Pianificazione" },
-  { label: "Riepilogo", description: "Verifica e salva" },
-];
-
 export default function AutomationWizard({
   initial,
   onCancel,
@@ -39,6 +32,16 @@ export default function AutomationWizard({
   onSave: (flow: WizardFlowPayload) => void;
   onTest?: () => void;
 }) {
+  const { t } = useTranslation("automations");
+
+  const STEPS = [
+    { label: t("wizard.steps.trigger", "Trigger"), description: t("wizard.steps.triggerDesc", "Triggering event") },
+    { label: t("wizard.steps.conditions", "Conditions"), description: t("wizard.steps.conditionsDesc", "Optional filters") },
+    { label: t("wizard.steps.actions", "Actions"), description: t("wizard.steps.actionsDesc", "What to execute") },
+    { label: t("wizard.steps.schedule", "Schedule"), description: t("wizard.steps.scheduleDesc", "Scheduling") },
+    { label: t("wizard.steps.review", "Review"), description: t("wizard.steps.reviewDesc", "Check and save") },
+  ];
+
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -73,22 +76,22 @@ export default function AutomationWizard({
 
   function validateCurrent(currentStep: number): { ok: boolean; message?: string } {
     if (currentStep === 0) {
-      if (!trigger) return { ok: false, message: "Seleziona un trigger" };
+      if (!trigger) return { ok: false, message: t("wizard.validation.selectTrigger", "Select a trigger") };
       return { ok: true };
     }
     if (currentStep === 2) {
       if (!actions || actions.length === 0)
-        return { ok: false, message: "Aggiungi almeno un'azione" };
+        return { ok: false, message: t("wizard.validation.addAction", "Add at least one action") };
       return { ok: true };
     }
     return { ok: true };
   }
 
   function generateSummary() {
-    if (!trigger || actions.length === 0) return "Regola incompleta";
+    if (!trigger || actions.length === 0) return t("wizard.validation.incompleteRule", "Incomplete rule");
     const triggerLabel = trigger.type;
     const actionLabels = actions.map((a) => a.type).join(" e ");
-    return `Quando "${triggerLabel}", esegui ${actionLabels}.`;
+    return t("wizard.validation.summary", "When \"{{trigger}}\", execute {{actions}}.", { trigger: triggerLabel, actions: actionLabels });
   }
 
   function handleNext() {
@@ -221,7 +224,7 @@ export default function AutomationWizard({
         {step === 4 && validation && !validation.valid && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-1.5">
             <p className="text-sm font-semibold text-red-700">
-              Correggi i seguenti errori prima di salvare:
+              {t("wizard.validation.fixErrors", "Fix the following errors before saving:")}
             </p>
             {Object.entries(groupErrorsBySection(validation.errors)).map(([section, errs]) => (
               <div key={section}>
@@ -245,7 +248,9 @@ export default function AutomationWizard({
         {/* Inline warnings */}
         {step === 4 && validation && validation.errors.some((e) => e.severity === "warning") && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1.5">
-            <p className="text-sm font-semibold text-amber-700">Avvisi:</p>
+            <p className="text-sm font-semibold text-amber-700">
+              {t("wizard.validation.warnings", "Warnings:")}
+            </p>
             <ul className="list-disc list-inside space-y-0.5">
               {validation.errors
                 .filter((e) => e.severity === "warning")
@@ -259,13 +264,13 @@ export default function AutomationWizard({
         )}
         {step === 4 && (
           <div>
-            <label className="text-sm font-medium">Nota modifica</label>
+            <label className="text-sm font-medium">{t("wizard.changeNote", "Change note")}</label>
             <textarea
               className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
               rows={2}
               value={changeNote}
               onChange={(event) => setChangeNote(event.target.value)}
-              placeholder="Descrivi cosa e cambiato in questa versione..."
+              placeholder={t("wizard.changeNotePlaceholder", "Describe what changed in this version...")}
             />
           </div>
         )}
@@ -277,30 +282,30 @@ export default function AutomationWizard({
           {step === 4 && onTest && (
             <Button variant="outline" size="sm" onClick={onTest} className="gap-1.5">
               <FlaskConical className="h-4 w-4" />
-              Testa regola
+              {t("wizard.testRule", "Test rule")}
             </Button>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onCancel}>
-            Annulla
+            {t("wizard.cancel", "Cancel")}
           </Button>
           {step > 0 && (
             <Button variant="outline" onClick={handlePrev} className="gap-1">
               <ArrowLeft className="h-4 w-4" />
-              Indietro
+              {t("wizard.back", "Back")}
             </Button>
           )}
           {step < STEPS.length - 1 && (
             <Button onClick={handleNext} className="gap-1">
-              Avanti
+              {t("wizard.next", "Next")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}
           {step === STEPS.length - 1 && (
             <Button onClick={handleSave} className="gap-1.5">
               <Save className="h-4 w-4" />
-              Salva regola
+              {t("wizard.save", "Save rule")}
             </Button>
           )}
         </div>

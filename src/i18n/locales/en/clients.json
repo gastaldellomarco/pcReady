@@ -1,0 +1,336 @@
+{
+  "title": "Client Database",
+  "subtitle": "Management of client accounts, contacts, and portal permissions.",
+  "head": {
+    "title": "Clients - PCReady",
+    "description": "Client database and company contacts."
+  },
+  "newClient": "New Client",
+  "filters": {
+    "all": "All",
+    "withOpenTickets": "With open tickets",
+    "portalActive": "Portal active",
+    "search": "Search client by name, company, or email...",
+    "searchExtended": "Search by name, VAT no., fiscal code or email..."
+  },
+  "columns": {
+    "name": "Name",
+    "company": "Company / Organization",
+    "email": "Email",
+    "phone": "Phone",
+    "openTickets": "Open Tickets",
+    "portal": "Portal Access",
+    "actions": "Actions"
+  },
+  "list": {
+    "title": "Clients",
+    "new": "New",
+    "selectPage": "Select page",
+    "selectLabel": "Select",
+    "selectClient": "Select {{name}}",
+    "selectedCount": "{{count}} selected",
+    "delete": "Delete",
+    "incompleteProfile": "Profile incomplete",
+    "ticketCount": "{{count}} tickets",
+    "deviceCount": "{{count}} devices",
+    "contactCount": "{{count}} contacts",
+    "empty": "No clients found",
+    "previous": "Previous",
+    "page": "Page {{current}} of {{total}}",
+    "next": "Next",
+    "error": "Unable to load clients. Check your connection and try again.",
+    "filterAll": "All",
+    "filterOpenTickets": "Open tickets",
+    "filterPortalActive": "Portal active"
+  },
+  "form": {
+    "createTitle": "New Client",
+    "editTitle": "Edit Client",
+    "fullName": "Full Name",
+    "companyName": "Company Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "address": "Office Address",
+    "save": "Save Client",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "saveClient": "Save client",
+    "ragioneSociale": "Company Name *",
+    "partitaIva": "VAT No.",
+    "codiceFiscale": "Fiscal Code",
+    "emailField": "Email",
+    "telefono": "Phone",
+    "sitoWeb": "Website",
+    "websitePlaceholder": "https://company.it",
+    "openWebsite": "Open website",
+    "indirizzo": "Address",
+    "note": "Notes",
+    "portalBranding": "Client Portal Branding",
+    "portalName": "Portal Name",
+    "portalNamePlaceholder": "IT Portal - Rossi S.r.l.",
+    "portalColor": "Primary Color",
+    "portalLogoUrl": "Client Logo URL",
+    "portalLogoPlaceholder": "https://.../logo.png",
+    "portalWelcomeMessage": "Welcome Message",
+    "portalWelcomePlaceholder": "Welcome to the support portal",
+    "portalInfo": "You can upload the logo to the public bucket client-portal-branding and paste the public URL here.",
+    "newClientTitle": "New client",
+    "newClientDescription": "Fill in the details to create a new client record."
+  },
+  "portal": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "noAccess": "No access",
+    "enablePortal": "Enable Portal",
+    "disablePortal": "Disable Portal",
+    "generatingLink": "Generating portal link...",
+    "linkCopied": "Link copied to clipboard!",
+    "modalTitle": "Portal Access Link",
+    "contact": "Contact",
+    "link": "Link",
+    "expiresOn": "Expires on {{date}}",
+    "warning": "Share this link directly with the client. Anyone who receives it can access the portal as this contact until expiry or revocation.",
+    "close": "Close",
+    "copied": "Copied",
+    "copyLink": "Copy link"
+  },
+  "detail": {
+    "contactInfoEmpty": "Client contact info not filled in",
+    "openTickets": "open tickets",
+    "devices": "devices",
+    "contacts": "contacts"
+  },
+  "tabs": {
+    "info": "Info",
+    "contacts": "Contacts",
+    "tickets": "Tickets",
+    "devices": "Devices"
+  },
+  "contacts": {
+    "count": "{{count}} registered contacts",
+    "importCsv": "Import from CSV",
+    "newContact": "New contact",
+    "empty": "No contacts associated.",
+    "headers": {
+      "name": "Name",
+      "role": "Role",
+      "department": "Department",
+      "email": "Email",
+      "phone": "Phone",
+      "portal": "Portal",
+      "actions": "Actions"
+    },
+    "edit": "Edit",
+    "link": "Link",
+    "revoke": "Revoke",
+    "deleteTitle": "Delete contact",
+    "modalTitleEdit": "Edit contact",
+    "modalTitleNew": "New contact",
+    "formName": "Full Name *",
+    "formEmail": "Email",
+    "formPhone": "Phone",
+    "formRole": "Job Title",
+    "formDepartment": "Department",
+    "formPrimary": "Primary Contact",
+    "formNotes": "Notes",
+    "save": "Save contact",
+    "saving": "Saving..."
+  },
+  "tickets": {
+    "count": "{{count}} linked tickets",
+    "newTicket": "New ticket",
+    "empty": "No tickets for this client.",
+    "createFirst": "Create first ticket",
+    "headers": {
+      "id": "ID",
+      "title": "Title",
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "date": "Opened"
+    },
+    "unassigned": "Unassigned"
+  },
+  "devices": {
+    "addDevice": "Add device",
+    "empty": "No devices for this client.",
+    "addFirstDevice": "Add first device",
+    "headers": {
+      "model": "Model",
+      "assetTag": "Asset Tag",
+      "serial": "Serial No.",
+      "os": "OS",
+      "status": "Status",
+      "assignedTo": "Assigned To",
+      "date": "Added"
+    }
+  },
+  "errors": {
+    "selectClientFirst": "Select a client first",
+    "insufficientPermissions": "Insufficient permissions",
+    "saveClientFirst": "Save the client first",
+    "sessionInvalid": "Invalid session",
+    "cannotCopyLink": "Unable to copy link",
+    "adminOnlyDeleteClients": "Only admins can delete clients",
+    "adminOnlyDeleteContacts": "Only admins can delete contacts",
+    "noActiveLinks": "No active links to revoke"
+  },
+  "toasts": {
+    "clientUpdated": "Client updated",
+    "clientCreated": "Client created",
+    "clientDeleted": "Client deleted",
+    "clientsDeleted": "{{count}} clients deleted",
+    "contactUpdated": "Contact updated",
+    "contactAdded": "Contact added",
+    "contactDeleted": "Contact deleted",
+    "portalLinkGenerated": "Portal link generated",
+    "portalLinkError": "Error generating portal link",
+    "portalLinkRevokeError": "Error revoking portal access",
+    "saveClientError": "Error saving client",
+    "saveContactError": "Error saving contact",
+    "importCompleted": "CSV import completed",
+    "importContactsCompleted": "Contact import completed",
+    "importContactsError": "Error importing contacts",
+    "importCsvError": "Error importing CSV",
+    "importRowError": "Error importing row",
+    "readCsvError": "Error reading CSV"
+  },
+  "statusPill": {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "testing": "Testing",
+    "ready": "Ready",
+    "completed": "Completed",
+    "archived": "Archived"
+  },
+  "priority": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "deviceStatus": {
+    "available": "Available",
+    "assigned": "Assigned",
+    "maintenance": "Maintenance",
+    "retired": "Retired"
+  },
+  "deviceSummary": {
+    "available": "Available: {{count}}",
+    "assigned": "Assigned: {{count}}",
+    "maintenance": "Maintenance: {{count}}",
+    "retired": "Retired: {{count}}"
+  },
+  "destructiveDialog": {
+    "defaultTitle": "Confirm action?",
+    "defaultDescription": "This action is destructive and cannot be undone.",
+    "defaultConfirm": "Confirm",
+    "deleteClientTitle": "Delete this client?",
+    "deleteClientDescription": "The client \"{{name}}\" will be removed along with its related data managed by database policies. This action cannot be undone.",
+    "deleteClientConfirm": "Delete client",
+    "deleteClientsTitle": "Delete selected clients?",
+    "deleteClientsDescription": "{{count}} clients will be removed along with their related data managed by database policies. This action cannot be undone.",
+    "deleteClientsConfirm": "Delete clients",
+    "deleteContactTitle": "Delete this contact?",
+    "deleteContactDescription": "The contact \"{{name}}\" will be removed from the client. This action cannot be undone.",
+    "deleteContactConfirm": "Delete contact",
+    "revokePortalTitle": "Revoke portal access?",
+    "revokePortalDescription": "All active portal links for \"{{name}}\" will be revoked. The contact will no longer be able to use them to access.",
+    "revokePortalConfirm": "Revoke access",
+    "loading": "Processing..."
+  },
+  "importContacts": {
+    "title": "Import CSV contacts",
+    "uploadLabel": "Upload .csv file",
+    "reading": "Reading...",
+    "csvHint": "first_name,last_name,email,phone,job_title,department,is_primary",
+    "downloadTemplate": "Download CSV template",
+    "templateFileName": "pcready-contacts-template.csv",
+    "importValidRows": "Import valid rows",
+    "importing": "Importing...",
+    "importCompleted": "Import completed",
+    "close": "Close",
+    "previewHeaders": {
+      "row": "Row",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department",
+      "action": "Action",
+      "validation": "Validation"
+    },
+    "duplicateMode": {
+      "ask": "Duplicates: ask",
+      "skip": "Duplicates: skip",
+      "overwrite": "Duplicates: overwrite"
+    },
+    "actions": {
+      "skip": "Skip",
+      "overwrite": "Overwrite"
+    },
+    "validation": {
+      "nameRequired": "Name required",
+      "emailRequired": "Email required",
+      "emailInvalid": "Invalid email",
+      "duplicateInCsv": "Duplicate in CSV",
+      "emailExists": "Email already exists",
+      "ok": "OK",
+      "emptyCsv": "CSV empty or with no valid rows",
+      "noValidRows": "No valid rows to import"
+    },
+    "resultSummary": {
+      "inserts": "Inserted",
+      "updates": "Updated",
+      "skipped": "Skipped",
+      "errors": "Errors",
+      "rows": "Rows",
+      "insert": "Insert",
+      "update": "Update"
+    },
+    "resultRow": "Row {{rowNumber}} ({{name}}): {{error}}"
+  },
+  "importClients": {
+    "title": "Import CSV clients",
+    "uploadLabel": "Upload .csv file",
+    "reading": "Reading...",
+    "csvHint": "name, company, vat_no, email",
+    "downloadTemplate": "Download CSV template",
+    "templateFileName": "pcready-clients-template.csv",
+    "confirmImport": "Confirm import",
+    "importing": "Importing...",
+    "importCompleted": "Import completed",
+    "close": "Close",
+    "steps": {
+      "upload": "Upload",
+      "preview": "Preview",
+      "confirm": "Confirm"
+    },
+    "previewHeaders": {
+      "row": "Row",
+      "name": "Name",
+      "company": "Company",
+      "vat": "VAT No.",
+      "email": "Email",
+      "action": "Action",
+      "validation": "Validation"
+    },
+    "validation": {
+      "nameRequired": "Name required",
+      "duplicateInCsv": "Duplicate in CSV",
+      "ok": "OK",
+      "emptyCsv": "CSV empty or with no valid rows",
+      "noValidRows": "No valid rows to import"
+    },
+    "resultSummary": {
+      "inserts": "Inserted",
+      "updates": "Updated",
+      "errors": "Errors",
+      "rows": "Rows",
+      "insert": "Insert",
+      "update": "Update"
+    },
+    "resultRow": "Row {{rowNumber}} ({{name}}): {{error}}"
+  },
+  "general": {
+    "ok": "OK"
+  }
+}

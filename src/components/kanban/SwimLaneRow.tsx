@@ -14,6 +14,7 @@ import { openTicketDetail } from "@/lib/use-detail";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { SwimLaneCard } from "./SwimLaneView";
 import { Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SwimLaneRowProps {
   technician: TechnicianOption | null;
@@ -60,6 +61,7 @@ export function SwimLaneRow({
   selectedCardIds,
   onCardClick,
 }: SwimLaneRowProps) {
+  const { t } = useTranslation(["kanban", "tickets"]);
   const assigneeId = technician?.id ?? null;
   const laneId = assigneeId ?? "unassigned";
 
@@ -93,7 +95,7 @@ export function SwimLaneRow({
                   type="button"
                   onClick={() => onToggleCollapseColumn(status)}
                   className="flex flex-col items-center gap-0.5 cursor-pointer"
-                  title={`Espandi ${STATUS_META[status].label}`}
+                  title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + status, STATUS_META[status].label) })}
                 >
                   <span
                     className="h-2 w-2 rounded-full"
@@ -155,7 +157,7 @@ export function SwimLaneRow({
                   className="flex min-h-16 items-center justify-center rounded-[7px] text-[11px] text-text3"
                   style={{ border: "1.5px dashed var(--border2)" }}
                 >
-                  Trascina qui
+                  {t("dragHere", "Trascina qui")}
                 </div>
               )}
             </div>
@@ -167,6 +169,7 @@ export function SwimLaneRow({
 }
 
 function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
+  const { t } = useTranslation("kanban");
   if (!updatedAt) return null;
   try {
     const d = new Date(updatedAt);
@@ -187,7 +190,7 @@ function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
     return (
       <span
         className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono"
-        title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}
+        title={t("inColumnSince", "In questa colonna da {{time}}", { time: hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m` })}
       >
         <Clock className="h-2.5 w-2.5" />
         {label}
@@ -229,6 +232,14 @@ function TicketCard({
   onPriorityChange?: (id: string, priority: TicketPriority) => void;
   onCardClick?: (event: MouseEvent, id: string) => void;
 }) {
+  const { t } = useTranslation(["kanban", "tickets"]);
+  const indicator = slaIndicator(card);
+  const translatedSlaLabel = indicator.status === "overdue"
+    ? t("tickets:sla.breached", indicator.label)
+    : indicator.status === "warning"
+      ? t("tickets:status.expiring", indicator.label)
+      : t("tickets:sla.ok", indicator.label);
+
   return (
     <div
       draggable={canEdit}
@@ -245,7 +256,7 @@ function TicketCard({
         cursor: canEdit ? "grab" : "pointer",
         opacity: isDragging ? 0.4 : 1,
         transform: isDragging ? "scale(0.98)" : undefined,
-        borderLeft: `4px solid ${slaIndicator(card).color}`,
+        borderLeft: `4px solid ${indicator.color}`,
       }}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
@@ -253,14 +264,14 @@ function TicketCard({
         <div className="flex items-center gap-1.5">
           <span
             className="h-2 w-2 rounded-full"
-            style={{ background: slaIndicator(card).color }}
-            title={slaIndicator(card).label}
+            style={{ background: indicator.color }}
+            title={translatedSlaLabel}
           />
           <PriorityLabel p={card.priority} />
         </div>
       </div>
       <div className={cn("font-semibold", compactView ? "text-[11.5px]" : "mb-0.5 text-[12.5px]")}>
-        {card.device?.model || "Nessun asset"}
+        {card.device?.model || t("tickets:noAsset", "Nessun asset")}
       </div>
       {!compactView && <div className="mb-2 text-[11px] text-text3">{card.client}</div>}
       {canEdit && (
@@ -279,9 +290,9 @@ function TicketCard({
                   event.target.value === "unassigned" ? null : event.target.value,
                 )
               }
-              title="Assegna"
+              title={t("assignTitle", "Assegna")}
             >
-              <option value="unassigned">Non assegnato</option>
+              <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
               {technicians.map((tech) => (
                 <option key={tech.id} value={tech.id}>
                   {tech.full_name}
@@ -294,11 +305,11 @@ function TicketCard({
               onChange={(event) =>
                 onPriorityChange?.(card.id, event.target.value as TicketPriority)
               }
-              title="Priorità"
+              title={t("tickets:columns.priority", "Priorità")}
             >
               {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
                 <option key={priority} value={priority}>
-                  {label}
+                  {t("tickets:priority." + priority, label)}
                 </option>
               ))}
             </select>
@@ -308,11 +319,11 @@ function TicketCard({
               onChange={(event) =>
                 onMove(card.id, event.target.value as TicketStatus, currentAssigneeId)
               }
-              title="Sposta a"
+              title={t("moveTo", "Sposta a")}
             >
               {statuses.map((status) => (
                 <option key={status} value={status}>
-                  {STATUS_META[status].label}
+                  {t("tickets:status." + status, STATUS_META[status].label)}
                 </option>
               ))}
             </select>
@@ -322,7 +333,7 @@ function TicketCard({
             className="pc-btn pc-btn-ghost pc-btn-sm h-7"
             onClick={() => openTicketDetail(card.id)}
           >
-            Apri dettaglio
+            {t("tickets:details", "Apri dettaglio")}
           </button>
         </div>
       )}
@@ -353,29 +364,36 @@ function slaIndicator(card: SwimLaneCard) {
     card.due_date || card.sla_deadline,
     card.sla_breached,
   );
-  if (sla.status === "overdue") return { color: pcReadyColors.danger, label: "SLA violato" };
-  if (sla.status === "warning") return { color: pcReadyColors.warning, label: "In scadenza" };
-  return { color: pcReadyColors.success, label: "SLA OK" };
+  if (sla.status === "overdue") return { color: pcReadyColors.danger, label: "SLA violato", status: "overdue" };
+  if (sla.status === "warning") return { color: pcReadyColors.warning, label: "In scadenza", status: "warning" };
+  return { color: pcReadyColors.success, label: "SLA OK", status: "ok" };
 }
 
 function SlaMiniLabel({ card }: { card: SwimLaneCard }) {
+  const { t } = useTranslation(["tickets"]);
   const indicator = slaIndicator(card);
   const deadline = card.due_date || card.sla_deadline;
+  const translatedLabel = indicator.status === "overdue"
+    ? t("sla.breached", indicator.label)
+    : indicator.status === "warning"
+      ? t("status.expiring", indicator.label)
+      : t("sla.ok", indicator.label);
   return (
     <span
       className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
       style={{ background: `${indicator.color}22`, color: indicator.color }}
-      title={deadline ? formatSlaCountdown(deadline) : indicator.label}
+      title={deadline ? formatSlaCountdown(deadline) : translatedLabel}
     >
-      {indicator.label}
+      {translatedLabel}
     </span>
   );
 }
 
 function UnassignedBadge() {
+  const { t } = useTranslation(["tickets"]);
   return (
     <span className="inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-      Non assegnato
+      {t("unassigned", "Non assegnato")}
     </span>
   );
 }

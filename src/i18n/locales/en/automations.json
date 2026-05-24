@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "title": "Automations — PCReady"
+  },
+  "title": "Automations",
+  "subtitle": "Automation rules and real-time workflows.",
+  "newRule": "New rule",
+  "search": {
+    "placeholder": "Search rule..."
+  },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "error": "With errors",
+    "allCategories": "All categories"
+  },
+  "sort": {
+    "createdAt": "Created date",
+    "name": "Name",
+    "lastRun": "Last run",
+    "executions": "Executions",
+    "ascending": "Ascending",
+    "descending": "Descending"
+  },
+  "loading": "Loading rules...",
+  "empty": {
+    "noRules": "No rules found.",
+    "trySearch": "Try changing the search."
+  },
+  "builder": {
+    "guided": "Guided mode",
+    "advanced": "Advanced mode"
+  },
+  "editor": {
+    "loading": "Loading editor..."
+  },
+  "dialog": {
+    "editTitle": "Edit automation",
+    "newTitle": "New automation"
+  },
+  "delete": {
+    "title": "Delete automation",
+    "description": "Are you sure you want to permanently delete \"{{name}}\"? This action cannot be undone.",
+    "confirm": "Delete"
+  },
+  "archive": {
+    "title": "Archive automation",
+    "description": "Archive \"{{name}}\"? The automation will be deactivated and hidden from the main list. You can always restore it from versions.",
+    "confirm": "Archive",
+    "loading": "Archiving..."
+  },
+  "logs": {
+    "button": "Logs"
+  },
+  "wizard": {
+    "steps": {
+      "trigger": "Trigger",
+      "triggerDesc": "Triggering event",
+      "conditions": "Conditions",
+      "conditionsDesc": "Optional filters",
+      "actions": "Actions",
+      "actionsDesc": "What to execute",
+      "schedule": "Schedule",
+      "scheduleDesc": "Scheduling",
+      "review": "Review",
+      "reviewDesc": "Check and save"
+    },
+    "validation": {
+      "selectTrigger": "Select a trigger",
+      "addAction": "Add at least one action",
+      "incompleteRule": "Incomplete rule",
+      "summary": "When \"{{trigger}}\", execute {{actions}}.",
+      "fixErrors": "Fix the following errors before saving:",
+      "warnings": "Warnings:",
+      "errorSection": "{{section}}"
+    },
+    "changeNote": "Change note",
+    "changeNotePlaceholder": "Describe what changed in this version...",
+    "testRule": "Test rule",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save rule"
+  },
+  "trigger": {
+    "title": "Trigger",
+    "subtitle": "Choose the event that will activate this automation rule.",
+    "warrantyDaysLabel": "Days before expiry",
+    "warrantyDaysHelp": "Example: 30 sends the alert when the warranty expires within 30 days.",
+    "cronLabel": "Cron expression",
+    "cronPlaceholder": "e.g. 0 8 * * * (every day at 8:00)",
+    "cronHelp": "Standard 5-field cron format: minute hour day month weekday",
+    "options": {
+      "ticket_created": "Ticket created",
+      "ticket_created_desc": "When a new ticket is opened",
+      "ticket_updated": "Ticket updated",
+      "ticket_updated_desc": "When an existing ticket is modified",
+      "checklist_completed": "Checklist completed",
+      "checklist_completed_desc": "When a preparation checklist is completed",
+      "sla_warning": "SLA expiring",
+      "sla_warning_desc": "When a ticket is approaching its SLA deadline",
+      "sla_breached": "SLA breached",
+      "sla_breached_desc": "When a ticket exceeds its SLA deadline",
+      "warranty_expiring_soon": "Warranty expiring",
+      "warranty_expiring_soon_desc": "When a device warranty expires within N days",
+      "warranty_expired": "Warranty expired",
+      "warranty_expired_desc": "When a device has passed its warranty expiry date",
+      "scheduled": "Scheduled",
+      "scheduled_desc": "Planned execution with a cron expression",
+      "manual": "Manual",
+      "manual_desc": "Executed only manually or from an external trigger"
+    }
+  },
+  "conditions": {
+    "title": "Conditions",
+    "subtitle": "Add optional conditions that must be met to execute the actions.",
+    "addCondition": "Add condition",
+    "noConditions": "No conditions — the rule will always trigger when the event occurs.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove",
+    "fieldPlaceholder": "Field",
+    "valuePlaceholder": "Value",
+    "and": "AND",
+    "operators": {
+      "field_equals": "Field equals",
+      "field_not_equals": "Field not equals",
+      "field_greater_than": "Greater than",
+      "field_less_than": "Less than",
+      "field_contains": "Contains",
+      "field_starts_with": "Starts with",
+      "field_ends_with": "Ends with",
+      "priority_high": "High priority",
+      "tag_contains": "Tag contains"
+    }
+  },
+  "actions": {
+    "title": "Actions",
+    "subtitle": "Define the actions executed by the runtime (Supabase / email).",
+    "payloadNote": "Ticket and device: leave the ID empty if the trigger sends <ticket_id> / <device_id> in the payload.",
+    "addAction": "Add action",
+    "remove": "Remove",
+    "types": {
+      "send_email": "Send email",
+      "update_ticket_status": "Update ticket status",
+      "create_notification": "In-app notification",
+      "update_device_status": "Update device status",
+      "assign_ticket": "Assign ticket"
+    },
+    "email": {
+      "recipient": "Recipient (optional if in trigger payload)",
+      "recipientPlaceholder": "client@example.com",
+      "subject": "Subject",
+      "body": "Body",
+      "isHtml": "Body is HTML"
+    },
+    "ticketStatus": {
+      "ticketId": "Ticket ID",
+      "status": "Status",
+      "statuses": {
+        "pending": "Pending",
+        "in-progress": "In progress",
+        "testing": "Testing",
+        "ready": "Ready"
+      }
+    },
+    "notification": {
+      "userId": "User ID (auth / profile)",
+      "userIdPlaceholder": "UUID — or use assignee_id in payload",
+      "type": "Type",
+      "title": "Title",
+      "message": "Message",
+      "link": "Link",
+      "linkPlaceholder": "/tickets"
+    },
+    "deviceStatus": {
+      "deviceId": "Device ID",
+      "status": "Status",
+      "statuses": {
+        "available": "Available",
+        "assigned": "Assigned",
+        "maintenance": "Maintenance",
+        "retired": "Retired"
+      }
+    },
+    "assignTicket": {
+      "ticketId": "Ticket ID",
+      "assignee": "Assignee (profile / user UUID)",
+      "assigneePlaceholder": "UUID"
+    }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Set the schedule (optional).",
+    "typeLabel": "Type",
+    "types": {
+      "none": "None",
+      "cron": "Cron",
+      "interval": "Interval"
+    },
+    "cronExpression": "Expression"
+  },
+  "review": {
+    "title": "Review",
+    "subtitle": "Check the rule configuration before saving.",
+    "nameLabel": "Rule name",
+    "namePlaceholder": "Give the rule a name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Briefly describe what this rule does",
+    "categoryLabel": "Category",
+    "noCategory": "No category",
+    "previewTitle": "Rule preview",
+    "incompleteConfig": "Incomplete configuration",
+    "triggerLabel": "Trigger",
+    "notConfigured": "Not configured",
+    "conditionsLabel": "Conditions",
+    "actionsLabel": "Actions",
+    "scheduleLabel": "Schedule",
+    "cronPrefix": "Cron: ",
+    "intervalPrefix": "Interval: every ",
+    "conditionFieldEquals": "Field \"{{field}}\" = \"{{value}}\"",
+    "conditionFieldNotEquals": "Field \"{{field}}\" != \"{{value}}\"",
+    "conditionFieldGreaterThan": "Field \"{{field}}\" > \"{{value}}\"",
+    "conditionFieldLessThan": "Field \"{{field}}\" < \"{{value}}\"",
+    "conditionFieldContains": "Field \"{{field}}\" contains \"{{value}}\"",
+    "conditionFieldStartsWith": "Field \"{{field}}\" starts with \"{{value}}\"",
+    "conditionFieldEndsWith": "Field \"{{field}}\" ends with \"{{value}}\"",
+    "conditionPriorityHigh": "High priority",
+    "conditionTagContains": "Tag contains \"{{value}}\""
+  }
+}

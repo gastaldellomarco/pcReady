@@ -1,4 +1,5 @@
 ﻿import { MailPlus, Search, Trash2, UserX, UserCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { TableSkeletonRows } from "@/components/page-states";
 import OverflowTable from "@/components/ui/overflow-table";
@@ -26,12 +27,14 @@ import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
 import { Badge } from "@/components/ui/badge";
 
 function MfaStatusBadge({ enabled, required }: { enabled: boolean; required: boolean }) {
-  if (enabled) return <Badge className="bg-emerald-600">Attivo</Badge>;
-  if (required) return <Badge className="bg-amber-500 text-white">Richiesto</Badge>;
-  return <Badge variant="secondary">Non attivo</Badge>;
+  const { t } = useTranslation("admin");
+  if (enabled) return <Badge className="bg-emerald-600">{t("users.mfa.active", "Attivo")}</Badge>;
+  if (required) return <Badge className="bg-amber-500 text-white">{t("users.mfa.required", "Richiesto")}</Badge>;
+  return <Badge variant="secondary">{t("users.mfa.notActive", "Non attivo")}</Badge>;
 }
 
 export function AdminUsersTab() {
+  const { t } = useTranslation("admin");
   const { session, user, isAdmin } = useAuth();
   const accessToken = session?.access_token;
   const {
@@ -80,12 +83,12 @@ export function AdminUsersTab() {
         onSubmit={inviteForm.handleSubmit(inviteSubmit)}
       >
         <div className="flex-1 min-w-[220px]">
-          <label className="pc-label">Email nuovo utente</label>
+          <label className="pc-label">{t("users.invite.emailLabel", "Email nuovo utente")}</label>
           <input
             className="pc-input"
             type="email"
             {...inviteForm.register("email")}
-            placeholder="utente@azienda.it"
+            placeholder={t("users.invite.emailPlaceholder", "utente@azienda.it")}
           />
           {inviteForm.formState.errors.email && (
             <p className="text-sm text-destructive mt-1">
@@ -94,11 +97,11 @@ export function AdminUsersTab() {
           )}
         </div>
         <div className="flex-1 min-w-[180px]">
-          <label className="pc-label">Nome</label>
+          <label className="pc-label">{t("users.invite.nameLabel", "Nome")}</label>
           <input
             className="pc-input"
             {...inviteForm.register("fullName")}
-            placeholder="Mario Rossi"
+            placeholder={t("users.invite.namePlaceholder", "Mario Rossi")}
           />
           {inviteForm.formState.errors.fullName && (
             <p className="text-sm text-destructive mt-1">
@@ -107,7 +110,7 @@ export function AdminUsersTab() {
           )}
         </div>
         <div className="min-w-[160px]">
-          <label className="pc-label">Ruolo</label>
+          <label className="pc-label">{t("users.invite.roleLabel", "Ruolo")}</label>
           <select className="pc-input" {...inviteForm.register("role")}>
             {ADMIN_ROLES.map((item) => (
               <option key={item} value={item}>
@@ -121,7 +124,7 @@ export function AdminUsersTab() {
           disabled={inviteBusy || !inviteForm.formState.isValid}
           type="submit"
         >
-          <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? "Invio..." : "Invita"}
+          <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? t("users.invite.submitting", "Invio...") : t("users.invite.submit", "Invita")}
         </button>
       </form>
 
@@ -134,7 +137,7 @@ export function AdminUsersTab() {
           <input
             value={q}
             onChange={(event) => setQ(event.target.value)}
-            placeholder="Cerca nome o email..."
+            placeholder={t("users.search.placeholder", "Cerca nome o email...")}
             className="bg-transparent outline-none text-[13px] flex-1"
           />
         </div>
@@ -143,7 +146,7 @@ export function AdminUsersTab() {
           value={role}
           onChange={(event) => setRole(event.target.value)}
         >
-          <option value="">Tutti i ruoli</option>
+          <option value="">{t("users.search.allRoles", "Tutti i ruoli")}</option>
           {ADMIN_ROLES.map((item) => (
             <option key={item} value={item}>
               {adminRoleLabel(item)}
@@ -151,14 +154,14 @@ export function AdminUsersTab() {
           ))}
         </select>
         <span className="ml-auto self-center text-xs text-text3 font-mono">
-          {(filtered ?? []).length} utenti
+          {t("users.search.count", "{{count}} utenti", { count: (filtered ?? []).length })}
         </span>
       </div>
 
       <div className="pc-card overflow-hidden">
         {selectedIds.size > 0 && (
           <div className="px-4 py-3 border-b bg-surface2 border-border flex items-center gap-3">
-            <div className="text-sm text-text3">{selectedIds.size} selezionati</div>
+            <div className="text-sm text-text3">{t("users.bulk.selected", "{{count}} selezionati", { count: selectedIds.size })}</div>
             <div className="flex items-center gap-2">
               <select
                 className="pc-input max-w-[160px]"
@@ -191,17 +194,17 @@ export function AdminUsersTab() {
                       ),
                     );
                     const ok = results.filter((r) => r.status === "fulfilled").length;
-                    toast.success(`${ok} utenti aggiornati`);
+                    toast.success(t("users.bulk.usersUpdated", "{{count}} utenti aggiornati", { count: ok }));
                     await load();
                     setSelectedIds(new Set());
                   } catch (err) {
-                    toast.error(getAdminErrorMessage(err, "Operazione bulk fallita"));
+                    toast.error(getAdminErrorMessage(err, t("users.bulk.bulkFailed", "Operazione bulk fallita")));
                   } finally {
                     setBulkBusy(false);
                   }
                 }}
               >
-                Applica ruolo
+                {t("users.bulk.applyRole", "Applica ruolo")}
               </Button>
               <Button
                 onClick={() => {
@@ -212,7 +215,7 @@ export function AdminUsersTab() {
                   setBulkConfirmOpen(true);
                 }}
               >
-                Disabilita / Riabilita
+                {t("users.bulk.toggleDisable", "Disabilita / Riabilita")}
               </Button>
               <Button
                 onClick={async () => {
@@ -235,24 +238,24 @@ export function AdminUsersTab() {
                       ),
                     );
                     const ok = results.filter((r) => r.status === "fulfilled").length;
-                    toast.success(`${ok} inviti reinviati`);
+                    toast.success(t("users.bulk.invitesResent", "{{count}} inviti reinviati", { count: ok }));
                     await load();
                     setSelectedIds(new Set());
                   } catch (err) {
-                    toast.error(getAdminErrorMessage(err, "Re-invio bulk fallito"));
+                    toast.error(getAdminErrorMessage(err, t("users.bulk.resendBulkFailed", "Re-invio bulk fallito")));
                   } finally {
                     setBulkBusy(false);
                   }
                 }}
               >
-                Re-invia inviti
+                {t("users.bulk.resendInvites", "Re-invia inviti")}
               </Button>
               <Button
                 onClick={() => {
                   // export CSV for selected
                   const ids = new Set(selectedIds);
                   const selectedRows = rows.filter((r) => ids.has(r.id));
-                  if (selectedRows.length === 0) return toast.error("Nessun utente selezionato");
+                  if (selectedRows.length === 0) return toast.error(t("users.bulk.noUsersSelected", "Nessun utente selezionato"));
                   const headers = [
                     "id",
                     "email",
@@ -277,10 +280,10 @@ export function AdminUsersTab() {
                     ],
                     buildDownloadFileName("pcready-users", "csv", { dated: true }),
                   );
-                  toast.success("CSV esportato");
+                  toast.success(t("users.bulk.csvExported", "CSV esportato"));
                 }}
               >
-                Export CSV
+                {t("users.bulk.exportCsv", "Export CSV")}
               </Button>
             </div>
           </div>
@@ -301,7 +304,7 @@ export function AdminUsersTab() {
                   }}
                 />
               </th>
-              {["Nome", "Email", "Ruolo", "Creato il", "Accesso", "2FA", "Stato", "Azioni"].map(
+              {[t("users.table.colName", "Nome"), t("users.table.colEmail", "Email"), t("users.table.colRole", "Ruolo"), t("users.table.colCreated", "Creato il"), t("users.table.colAccess", "Accesso"), t("users.table.col2fa", "2FA"), t("users.table.colStatus", "Stato"), t("users.table.colActions", "Azioni")].map(
                 (header) => (
                   <th
                     key={header}
@@ -367,7 +370,7 @@ export function AdminUsersTab() {
                     {row.last_sign_in_at ? (
                       fmtDateTime(row.last_sign_in_at)
                     ) : (
-                      <span className="italic">Mai acceduto</span>
+                      <span className="italic">{t("users.row.neverAccessed", "Mai acceduto")}</span>
                     )}
                   </td>
                   <td className="px-[14px] py-[10px]">
@@ -385,7 +388,7 @@ export function AdminUsersTab() {
                     <div className="flex items-center gap-1">
                       <button
                         className="pc-btn-icon touch-target"
-                        title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
+                        title={row.status === "disabled" ? t("users.tooltip.enableUser", "Riabilita utente") : t("users.tooltip.disableUser", "Disabilita utente")}
                         disabled={busyId === row.id || row.id === user?.id}
                         onClick={() => toggleDisabled(row)}
                       >
@@ -397,7 +400,7 @@ export function AdminUsersTab() {
                       </button>
                       <button
                         className="pc-btn-icon touch-target"
-                        title="Rimuovi utente"
+                        title={t("users.tooltip.removeUser", "Rimuovi utente")}
                         disabled={busyId === row.id || row.id === user?.id}
                         onClick={() => remove(row)}
                         style={{ color: "var(--danger, #DC2626)" }}
@@ -412,7 +415,7 @@ export function AdminUsersTab() {
             {!loadingRows && !(filtered ?? []).length && (
               <tr>
                 <td colSpan={9} className="text-center py-10 text-text3 text-sm">
-                  Nessun utente trovato
+                  {t("users.empty.noUsers", "Nessun utente trovato")}
                 </td>
               </tr>
             )}
@@ -428,15 +431,15 @@ export function AdminUsersTab() {
       >
         <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Rimuovi utente</AlertDialogTitle>
+            <AlertDialogTitle>{t("users.delete.title", "Rimuovi utente")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare{" "}
+              {t("users.delete.description", "Sei sicuro di voler eliminare")}{" "}
               <strong>{deleteTarget?.email || deleteTarget?.full_name}</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemove}>Conferma</AlertDialogAction>
+            <AlertDialogCancel>{t("users.delete.cancel", "Annulla")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>{t("users.delete.confirm", "Conferma")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -452,16 +455,17 @@ export function AdminUsersTab() {
         <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkAction === "disable" ? "Disabilita utenti" : "Riabilita utenti"}
+              {bulkAction === "disable" ? t("users.bulkDialog.disableTitle", "Disabilita utenti") : t("users.bulkDialog.enableTitle", "Riabilita utenti")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler {bulkAction === "disable" ? "disabilitare" : "riabilitare"}{" "}
-              {selectedIds.size} utenti selezionati? Questa azione può essere annullata riabilitando
-              gli utenti individualmente.
+              {t("users.bulkDialog.description", "Sei sicuro di voler {{action}} {{count}} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.", {
+                action: bulkAction === "disable" ? "disabilitare" : "riabilitare",
+                count: selectedIds.size,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("users.bulkDialog.cancel", "Annulla")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (!accessToken || !bulkAction) return;
@@ -486,14 +490,14 @@ export function AdminUsersTab() {
                   await load();
                   setSelectedIds(new Set());
                 } catch (err) {
-                  toast.error(getAdminErrorMessage(err, "Operazione bulk fallita"));
+                  toast.error(getAdminErrorMessage(err, t("users.bulk.bulkFailed", "Operazione bulk fallita")));
                 } finally {
                   setBulkBusy(false);
                   setBulkAction(null);
                 }
               }}
             >
-              Conferma
+              {t("users.bulkDialog.confirm", "Conferma")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

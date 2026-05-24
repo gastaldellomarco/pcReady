@@ -1,0 +1,91 @@
+{
+  "title": "Contatti",
+  "subtitle": "Gestione referenti e contatti aziendali.",
+  "newContact": "Nuovo Contatto",
+  "searchPlaceholder": "Cerca contatto per nome, email o telefono...",
+  "filters": {
+    "allCompanies": "Tutte le aziende",
+    "allRoles": "Tutti i ruoli",
+    "allDepartments": "Tutti i reparti",
+    "allStatuses": "Tutti gli stati",
+    "primary": "Referente principale",
+    "portalActive": "Portale attivo",
+    "missingEmail": "Senza email"
+  },
+  "roles": {
+    "admin": "Amministratore",
+    "billing": "Fatturazione",
+    "technical": "Tecnico",
+    "referent": "Referente",
+    "other": "Altro"
+  },
+  "page": {
+    "head": {
+      "title": "Referenti - PCReady",
+      "description": "Vista globale dei referenti cliente."
+    },
+    "title": "Referenti",
+    "contactCount": "{{filtered}}/{{total}} referenti"
+  },
+  "search": {
+    "placeholder": "Cerca nome, azienda, email, telefono, ruolo..."
+  },
+  "contact": {
+    "defaultName": "Referente",
+    "primaryBadge": "Principale",
+    "noClient": "Cliente non associato",
+    "noRole": "Ruolo non indicato",
+    "missingEmail": "Email mancante",
+    "missingPhone": "Telefono mancante",
+    "count": "{{count}} referenti",
+    "editButton": "Modifica",
+    "portalButton": "Portale",
+    "deleteButtonTooltip": "Elimina referente"
+  },
+  "emptyState": {
+    "noResults": "Nessun referente trovato con i filtri correnti."
+  },
+  "editModal": {
+    "title": "Modifica referente",
+    "cancelButton": "Annulla",
+    "saveButton": "Salva referente",
+    "fullNameLabel": "Nome e cognome *",
+    "emailLabel": "Email",
+    "phoneLabel": "Telefono",
+    "roleLabel": "Ruolo",
+    "departmentLabel": "Reparto",
+    "isPrimaryLabel": "Referente principale"
+  },
+  "portalModal": {
+    "title": "Link accesso portale",
+    "closeButton": "Chiudi",
+    "copiedButton": "Copiato",
+    "copyLinkButton": "Copia link",
+    "contactLabel": "Referente"
+  },
+  "portalBadge": {
+    "active": "Attivo",
+    "noAccess": "Nessun accesso"
+  },
+  "deleteDialog": {
+    "title": "Eliminare questo referente?",
+    "descriptionWithName": "Il referente \"{{name}}\" verrà rimosso da {{client}}. L'azione non può essere annullata.",
+    "description": "Il referente verrà rimosso dal cliente. L'azione non può essere annullata.",
+    "confirmLabel": "Elimina referente",
+    "loadingLabel": "Eliminazione...",
+    "thisClient": "questo cliente"
+  },
+  "toast": {
+    "noPermission": "Permessi insufficienti",
+    "nameRequired": "Nome referente obbligatorio",
+    "invalidEmail": "Email non valida",
+    "contactUpdated": "Referente aggiornato",
+    "saveError": "Errore salvataggio referente",
+    "deleteNoPermission": "Solo admin può eliminare referenti",
+    "contactDeleted": "Referente eliminato",
+    "invalidSession": "Sessione non valida",
+    "portalLinkGenerated": "Link portale generato",
+    "portalLinkError": "Errore generazione link portale",
+    "copyLinkError": "Impossibile copiare il link"
+  }
+}

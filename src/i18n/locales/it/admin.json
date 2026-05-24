@@ -1,0 +1,540 @@
+{
+  "meta": {
+    "title": "Admin Utenti - PCReady",
+    "description": "Gestione utenti, ruoli e stato account."
+  },
+  "title": "Amministrazione",
+  "subtitle": "Gestione utenti, ruoli, impostazioni di sistema e audit log.",
+  "tabs": {
+    "users": "Utenti",
+    "settings": "Impostazioni App",
+    "oauth": "OAuth / Applicazioni",
+    "audit": "Audit Log"
+  },
+  "loading": "Verifica permessi...",
+  "unauthorized": "Accesso non autorizzato.",
+  "users": {
+    "mfa": {
+      "active": "Attivo",
+      "required": "Richiesto",
+      "notActive": "Non attivo"
+    },
+    "invite": {
+      "emailLabel": "Email nuovo utente",
+      "emailPlaceholder": "utente@azienda.it",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Mario Rossi",
+      "roleLabel": "Ruolo",
+      "submit": "Invita",
+      "submitting": "Invio..."
+    },
+    "search": {
+      "placeholder": "Cerca nome o email...",
+      "allRoles": "Tutti i ruoli",
+      "count": "{{count}} utenti"
+    },
+    "bulk": {
+      "selected": "{{count}} selezionati",
+      "applyRole": "Applica ruolo",
+      "toggleDisable": "Disabilita / Riabilita",
+      "resendInvites": "Re-invia inviti",
+      "exportCsv": "Export CSV",
+      "usersUpdated": "{{count}} utenti aggiornati",
+      "invitesResent": "{{count}} inviti reinviati",
+      "csvExported": "CSV esportato",
+      "bulkFailed": "Operazione bulk fallita",
+      "resendBulkFailed": "Re-invio bulk fallito",
+      "noUsersSelected": "Nessun utente selezionato"
+    },
+    "table": {
+      "colName": "Nome",
+      "colEmail": "Email",
+      "colRole": "Ruolo",
+      "colCreated": "Creato il",
+      "colAccess": "Accesso",
+      "col2fa": "2FA",
+      "colStatus": "Stato",
+      "colActions": "Azioni"
+    },
+    "row": {
+      "neverAccessed": "Mai acceduto"
+    },
+    "empty": {
+      "noUsers": "Nessun utente trovato"
+    },
+    "tooltip": {
+      "enableUser": "Riabilita utente",
+      "disableUser": "Disabilita utente",
+      "removeUser": "Rimuovi utente"
+    },
+    "delete": {
+      "title": "Rimuovi utente",
+      "description": "Sei sicuro di voler eliminare <strong>{{email}}</strong>?",
+      "cancel": "Annulla",
+      "confirm": "Conferma"
+    },
+    "bulkDialog": {
+      "disableTitle": "Disabilita utenti",
+      "enableTitle": "Riabilita utenti",
+      "description": "Sei sicuro di voler {{action}} {{count}} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.",
+      "cancel": "Annulla",
+      "confirm": "Conferma"
+    }
+  },
+  "settings": {
+    "sections": {
+      "general": {
+        "title": "Generale",
+        "description": "Branding, fuso orario e contatti di supporto."
+      },
+      "operations": {
+        "title": "Operatività",
+        "description": "Limiti tecnici, liste operative, Kanban, SLA e archiviazione."
+      },
+      "security": {
+        "title": "Sicurezza",
+        "description": "Registrazione utenti, approvazione admin e policy 2FA."
+      },
+      "retention": {
+        "title": "Retention",
+        "description": "Conservazione log audit ed export dati."
+      }
+    },
+    "tabs": {
+      "general": "Generale",
+      "emailTemplates": "Template Email"
+    },
+    "backup": {
+      "title": "Backup & Disaster Recovery",
+      "description": "Policy di protezione dati, continuità operativa ed export manuale.",
+      "frequencyLabel": "Frequenza",
+      "frequencyValue": "Giornaliero automatico",
+      "frequencyDetail": "Backup gestiti da Supabase",
+      "retentionLabel": "Retention",
+      "retentionValue": "30 giorni Pro / 7 giorni Free",
+      "retentionDetail": "In base al piano Supabase",
+      "lastBackupLabel": "Ultimo backup",
+      "lastBackupValue": "Gestito dal provider",
+      "lastBackupDetail": "Verificabile dalla dashboard Supabase",
+      "rpoLabel": "RPO",
+      "rpoValue": "< 24 ore",
+      "rpoDetail": "Per backup automatici giornalieri",
+      "rtoLabel": "RTO",
+      "rtoValue": "< 4 ore",
+      "rtoDetail": "Ripristino coordinato con il supporto",
+      "emergencyLabel": "Emergenze",
+      "emergencyValue": "{{email}}",
+      "emergencyDetail": "Contatto operativo per restore e incidenti",
+      "emergencyNotConfigured": "Email supporto non configurata",
+      "exportTitle": "Export manuale dati",
+      "exportDescription": "Scarica un archivio ZIP con CSV di ticket, dispositivi e clienti.",
+      "exportButton": "Esporta tutti i dati",
+      "exportingButton": "Esportazione...",
+      "protectedText": "Dati protetti con backup giornalieri automatici"
+    },
+    "appSettings": {
+      "title": "Impostazioni Applicazione",
+      "description": "Configura le impostazioni globali dell'applicazione PCReady",
+      "loading": "Caricamento impostazioni...",
+      "error": "Errore nel caricamento delle impostazioni",
+      "lastSaved": "Ultimo salvataggio completato alle {{time}}",
+      "footerNote": "Le modifiche vengono applicate ai nuovi flussi e alle configurazioni globali.",
+      "saveButton": "Salva Impostazioni",
+      "savingButton": "Salvataggio..."
+    },
+    "generalSection": {
+      "title": "Generale",
+      "description": "Impostazioni visibili in tutta l'app: nome organizzazione, timezone e canali di supporto.",
+      "organizationLabel": "Nome Organizzazione",
+      "organizationPlaceholder": "PCReady",
+      "timezoneLabel": "Timezone Predefinito",
+      "timezonePlaceholder": "Europe/Rome",
+      "maxDevicesLabel": "Max Dispositivi per Tecnico",
+      "supportEmailLabel": "Email Supporto",
+      "supportEmailPlaceholder": "support@pcready.it"
+    },
+    "operationsSection": {
+      "title": "Operatività",
+      "description": "Valori usati da ticket, inventario, Kanban e automazioni SLA. Modificarli impatta i flussi operativi del team.",
+      "variablesTitle": "Variabili di sistema",
+      "variablesDescription": "Gestisci le liste usate nei form operativi dell'applicazione.",
+      "osOptionsLabel": "Sistemi Operativi disponibili",
+      "osOptionsPlaceholder": "Aggiungi sistema operativo...",
+      "deviceBrandsLabel": "Brand dispositivi",
+      "deviceBrandsPlaceholder": "Aggiungi brand...",
+      "ticketCategoriesLabel": "Categorie ticket",
+      "ticketCategoriesPlaceholder": "Aggiungi categoria...",
+      "wipLimitsLabel": "Limiti WIP Kanban",
+      "autoArchiveLabel": "Archiviazione automatica (giorni)",
+      "autoArchiveHelp": "Numero di giorni dopo il completamento per spostare il ticket in archivio. 0 = mai.",
+      "slaTitle": "Configurazione SLA per priorità",
+      "slaDescription": "Configura i tempi massimi di prima risposta e risoluzione. La scadenza SLA del ticket viene calcolata sul tempo di risoluzione.",
+      "slaPriorityHeader": "Priorità",
+      "slaResponseHeader": "Tempo risposta (ore)",
+      "slaResolutionHeader": "Tempo risoluzione (ore)"
+    },
+    "securitySection": {
+      "title": "Sicurezza e accessi",
+      "description": "Controlla registrazione utenti, approvazione account e obbligo MFA. Queste opzioni incidono direttamente sull'accesso al sistema.",
+      "selfRegistrationLabel": "Abilita registrazione autonoma nuovi utenti",
+      "adminApprovalLabel": "Richiedi approvazione admin per nuovi account",
+      "mfaTitle": "Autenticazione a due fattori",
+      "mfaDescription": "Imposta policy 2FA obbligatorie e periodo di grazia per gli utenti.",
+      "mfaAdminLabel": "Richiedi 2FA per tutti gli utenti admin",
+      "mfaAllLabel": "Richiedi 2FA per tutti gli utenti",
+      "mfaGracePeriodLabel": "Periodo di grazia (giorni)",
+      "mfaGracePeriodHelp": "Dopo N giorni senza configurazione 2FA, l'accesso operativo viene bloccato."
+    },
+    "retentionSection": {
+      "title": "Audit e conservazione",
+      "description": "Definisce per quanto tempo conservare i log operativi prima dell'archiviazione.",
+      "logRetentionTitle": "Retention Log di Audit",
+      "logRetentionDescription": "Configura per quanti giorni mantenere i log di attività prima dell'archiviazione automatica.",
+      "logRetention90": "90 giorni (3 mesi)",
+      "logRetention180": "180 giorni (6 mesi)",
+      "logRetention365": "365 giorni (1 anno)",
+      "logRetention730": "730 giorni (2 anni)",
+      "archiveNote": "I log più vecchi verranno spostati nell'archivio",
+      "archivedLogsNote": "Log archiviati disponibili in sola lettura nella sezione Log"
+    }
+  },
+  "oauth": {
+    "wizard": {
+      "step1Title": "Identità app",
+      "step1Description": "Nome e descrizione leggibili dagli admin e dagli utenti.",
+      "step2Title": "Callback",
+      "step2Description": "URL sicuri a cui PCReady può rimandare l'utente dopo il consenso.",
+      "step3Title": "Permessi",
+      "step3Description": "Ambiti dati che l'app potrà richiedere durante l'autorizzazione.",
+      "stepLabel": "Passo {{number}}",
+      "back": "Indietro",
+      "continue": "Continua",
+      "create": "Crea client",
+      "creating": "Creazione..."
+    },
+    "createCard": {
+      "title": "Nuovo Client OAuth",
+      "description": "Crea un nuovo client per integrare applicazioni esterne con PCReady in modo sicuro.",
+      "docLink": "Leggi la documentazione API (OpenAPI / OAuth)"
+    },
+    "infoAlert": {
+      "title": "Cos'è un Client OAuth?",
+      "description": "Un Client OAuth permette a un'applicazione esterna (per esempio un tool di automazione, un'app mobile o un sistema ERP) di accedere ai dati di PCReady in modo sicuro, senza condividere le password degli utenti. Crea un client solo se stai collegando un'applicazione esterna che deve operare per conto degli utenti che la autorizzano."
+    },
+    "flowAlert": {
+      "title": "Flusso supportato",
+      "description": "PCReady espone il flusso OAuth 2.0 Authorization Code (response_type=code). Gli integratori avviano l'accesso reindirizzando l'utente all'endpoint di autorizzazione, poi scambiano il codice per un token. Il flusso Client Credentials non è supportato per questi client."
+    },
+    "form": {
+      "nameLabel": "Nome applicazione",
+      "namePlaceholder": "Es. CRM Aziendale",
+      "nameHelp": "Nome visibile a chi autorizza l'app e negli elenchi admin.",
+      "descriptionLabel": "Descrizione (facoltativa)",
+      "descriptionPlaceholder": "A cosa serve questa integrazione",
+      "descriptionHelp": "Testo libero per ricordare a chi è destinata l'integrazione.",
+      "redirectLabel": "URL di redirect (callback)",
+      "redirectPlaceholder": "https://myapp.com/callback\nhttps://myapp.com/oauth/callback",
+      "redirectHelp": "L'indirizzo a cui PCReady reindirizza il browser dopo che l'utente ha effettuato l'accesso e concesso i permessi (redirect URI OAuth 2.0). Deve coincidere esattamente con quanto configurato nell'app esterna: trovi il valore nella documentazione o nelle impostazioni sviluppatore di quell'app. Una URL per riga.",
+      "scopeLabel": "Permessi consentiti (scope)",
+      "scopeHelp": "Seleziona cosa l'applicazione potrà chiedere agli utenti durante l'autorizzazione. Ogni voce mostra il nome tecnico del permesso tra parentesi."
+    },
+    "created": {
+      "title": "Client creato",
+      "description": "{{name}}: usa questi valori nella tua applicazione. Il secret non sarà più mostrato.",
+      "saveAlertTitle": "Salva subito il Client Secret",
+      "saveAlertDescription": "Il Client Secret è mostrato una sola volta e non sarà recuperabile da PCReady dopo aver chiuso questa finestra. Copialo e conservalo in un gestore segreti o in configurazione sicura prima di proseguire.",
+      "clientIdLabel": "Client ID",
+      "clientSecretLabel": "Client Secret",
+      "copyButton": "Copia",
+      "howToUse": "Come usare questo client (Authorization Code)",
+      "step1Text": "1. Reindirizza l'utente (già autenticato su PCReady) verso l'autorizzazione con i parametri in query.",
+      "getLabel": "GET — autorizzazione",
+      "postLabel": "POST — scambio code → token",
+      "postBodyText": "Corpo tipico: grant_type=authorization_code, code, client_id, client_secret, redirect_uri (come sopra).",
+      "closeButton": "Ho salvato il secret, chiudi"
+    },
+    "rotated": {
+      "title": "Nuovo Client Secret",
+      "description": "Il secret precedente non è più valido. Aggiorna subito le integrazioni che usano questo client.",
+      "alertTitle": "Copia ora",
+      "alertDescription": "Questo valore non verrà mostrato di nuovo dopo la chiusura della finestra.",
+      "closeButton": "Ho aggiornato le integrazioni, chiudi"
+    },
+    "clientList": {
+      "title": "Client Registrati",
+      "description": "Applicazioni autorizzate ad accedere ai dati PCReady",
+      "notaLabel": "Nota:",
+      "notaText": "Per la gestione del consenso OAuth degli utenti, vedere",
+      "loading": "Caricamento client...",
+      "empty": "Nessun client registrato",
+      "clientIdLabel": "Client ID: {{id}}",
+      "createdAt": "Creato:",
+      "lastActivity": "Ultima attività:",
+      "permissions": "Permessi:",
+      "statusActive": "Attivo",
+      "statusDisabled": "Disattivato",
+      "statusRevoked": "Revocato",
+      "history": "Storico",
+      "rotateSecret": "Ruota secret",
+      "disable": "Disattiva",
+      "reactivate": "Riattiva",
+      "revoke": "Revoca"
+    },
+    "lifecycle": {
+      "title": "Storico client OAuth",
+      "description": "Consensi utenti, codici di autorizzazione recenti e azioni amministrative.",
+      "loading": "Caricamento...",
+      "consentsTitle": "Consensi ({{count}})",
+      "consentsEmpty": "Nessun consenso registrato.",
+      "colUser": "Utente",
+      "colScope": "Scope",
+      "colGranted": "Concesso",
+      "colRevoked": "Revoca",
+      "authCodesTitle": "Codici di autorizzazione (recenti)",
+      "authCodesEmpty": "Nessun codice registrato.",
+      "colCreated": "Creato",
+      "colExpiry": "Scadenza",
+      "colStatus": "Stato",
+      "redeemed": "Riscattato",
+      "notRedeemed": "Non riscattato",
+      "adminAuditTitle": "Audit amministrativo",
+      "adminAuditEmpty": "Nessuna voce.",
+      "close": "Chiudi"
+    },
+    "confirmRotate": {
+      "title": "Ruotare il Client Secret?",
+      "description": "Ruotando il secret per \"{{name}}\", il valore attuale smette di funzionare immediatamente. Tutte le integrazioni che usano il vecchio secret falliranno finché non aggiorni la configurazione. Questa azione viene registrata in audit.",
+      "confirmLabel": "Ruota secret",
+      "loadingLabel": "Rotazione..."
+    },
+    "confirmDisable": {
+      "title": "Disattivare questo client?",
+      "description": "Il client \"{{name}}\" non potrà avviare nuovi flussi OAuth finché non lo riattivi. I consensi esistenti restano in archivio.",
+      "confirmLabel": "Disattiva",
+      "loadingLabel": "Disattivazione..."
+    },
+    "confirmRevoke": {
+      "title": "Revocare definitivamente questo client?",
+      "description": "La revoca di \"{{name}}\" è irreversibile: non potrai riattivare questo client. Crea un nuovo client se serve un'integrazione analoga.",
+      "confirmLabel": "Revoca client",
+      "loadingLabel": "Revoca..."
+    }
+  },
+  "audit": {
+    "actionBadge": {
+      "system": "SISTEMA",
+      "created": "CREAZIONE",
+      "deleted": "ELIMINAZIONE",
+      "modified": "MODIFICA",
+      "access": "ACCESSO",
+      "error": "ERRORE",
+      "bulk": "BULK"
+    },
+    "severity": {
+      "critical": "ERRORE",
+      "warning": "WARNING",
+      "info": "OK"
+    },
+    "entityLabels": {
+      "ticket": "Ticket",
+      "client": "Cliente",
+      "device": "Dispositivo",
+      "user": "Utente",
+      "technician": "Tecnico",
+      "automation": "Automazione",
+      "system": "Sistema",
+      "oauth": "OAuth",
+      "setting": "Impostazione",
+      "email_template": "Email Template"
+    },
+    "diff": {
+      "before": "Prima",
+      "after": "Dopo",
+      "noData": "Nessun dato modifica disponibile",
+      "noDetail": "Nessun dettaglio modifica disponibile"
+    },
+    "rowDetail": {
+      "title": "Dettaglio modifica",
+      "ip": "IP:",
+      "session": "Sessione:",
+      "entity": "Entità:",
+      "eventId": "ID Evento:",
+      "openEntity": "Apri {{label}} #{{id}}"
+    },
+    "kpi": {
+      "eventsToday": "Eventi oggi",
+      "last7Days": "Ultimi 7 giorni",
+      "errors24h": "Errori (24h)"
+    },
+    "viewToggle": {
+      "table": "Tabella",
+      "timeline": "Timeline"
+    },
+    "export": {
+      "button": "Esporta",
+      "csv": "Esporta CSV",
+      "pdf": "Report PDF"
+    },
+    "search": {
+      "placeholder": "Cerca per utente, descrizione, ID entità..."
+    },
+    "filters": {
+      "actionType": "Tipo azione",
+      "allUsers": "Tutti utenti",
+      "allEntities": "Tutte entità",
+      "allOutcomes": "Tutti esiti",
+      "outcomeInfo": "Successo",
+      "outcomeWarning": "Warning",
+      "outcomeCritical": "Errore",
+      "dateFrom": "Da",
+      "dateTo": "A",
+      "reset": "Azzera"
+    },
+    "datePresets": {
+      "today": "Oggi",
+      "yesterday": "Ieri",
+      "last7": "7gg",
+      "last30": "30gg"
+    },
+    "actionTypeOptions": {
+      "ticketCreated": "Creazione Ticket",
+      "ticketStatusChanged": "Modifica Ticket",
+      "ticketDeleted": "Eliminazione Ticket",
+      "deviceCreated": "Creazione Dispositivo",
+      "deviceDeleted": "Eliminazione Dispositivo",
+      "clientCreated": "Creazione Cliente",
+      "clientDeleted": "Eliminazione Cliente",
+      "userInvited": "Invito Utente",
+      "userDisabled": "Disabilitazione Utente"
+    },
+    "entityTypeOptions": {
+      "ticket": "Ticket",
+      "client": "Cliente",
+      "device": "Dispositivo",
+      "user": "Utente",
+      "automation": "Automazione",
+      "system": "Sistema",
+      "oauth": "OAuth",
+      "setting": "Impostazione"
+    },
+    "card": {
+      "title": "Log di Audit",
+      "description": "Registro delle attività amministrative e di sistema"
+    },
+    "loading": "Caricamento log...",
+    "empty": {
+      "title": "Nessuna attività trovata",
+      "subtitle": "Prova a modificare i filtri o azzerarli"
+    },
+    "table": {
+      "colAction": "Azione",
+      "colDetail": "Dettaglio",
+      "colEntity": "Entità",
+      "colTime": "Ora"
+    },
+    "timeline": {
+      "events": "{{count}} eventi"
+    },
+    "pagination": {
+      "pageOf": "Pagina {{page}} di {{totalPages}} ({{total}} totale)",
+      "first": "Prima",
+      "prev": "Precedente",
+      "next": "Successivo",
+      "last": "Ultima"
+    },
+    "presets": {
+      "saveTitle": "Salva vista filtrata",
+      "saveDescription": "Assegna un nome alla configurazione di filtri corrente per poterla riutilizzare in seguito.",
+      "nameLabel": "Nome vista",
+      "namePlaceholder": "Es: Ticket creati oggi, Errori critici...",
+      "cancel": "Annulla",
+      "save": "Salva",
+      "saved": "Vista \"{{name}}\" salvata",
+      "saveFailed": "Salvataggio vista non riuscito",
+      "deleted": "Vista eliminata",
+      "deleteFailed": "Eliminazione vista non riuscita",
+      "loading": "Caricamento...",
+      "noSaved": "Nessuna vista salvata",
+      "saveCurrent": "Salva vista corrente",
+      "menuLabel": "Viste",
+      "deleteTitle": "Elimina vista"
+    },
+    "permalink": {
+      "copied": "Permalink copiato",
+      "failed": "Impossibile copiare il permalink",
+      "title": "Copia permalink con i filtri attuali"
+    },
+    "actor": {
+      "system": "Sistema"
+    }
+  },
+  "statusBadge": {
+    "invitedAgo": "Invitato da {{elapsed}}",
+    "pending": "in attesa",
+    "resendInvite": "Re-invia invito",
+    "active": "Attivo",
+    "disabled": "Disabilitato"
+  },
+  "emailTemplate": {
+    "badge": {
+      "modified": "Modificato dal default"
+    },
+    "lastModified": "Ultima modifica: {{date}} da {{name}}",
+    "system": "Sistema",
+    "labels": {
+      "active": "Attivo",
+      "subject": "Oggetto",
+      "subjectPlaceholder": "[{{org}}] Oggetto email",
+      "htmlTab": "HTML",
+      "textTab": "Testo puro",
+      "htmlLabel": "Corpo HTML",
+      "textLabel": "Corpo testo puro"
+    },
+    "buttons": {
+      "save": "Salva template",
+      "saving": "Salvataggio...",
+      "preview": "Anteprima",
+      "reset": "Ripristina default",
+      "test": "Test",
+      "sending": "Invio..."
+    },
+    "test": {
+      "placeholder": "email test"
+    },
+    "variables": {
+      "title": "Variabili disponibili",
+      "description": "Clicca per inserirle nell'editor attivo.",
+      "copied": "{{token}} copiato"
+    },
+    "resetDialog": {
+      "title": "Ripristinare il template di default?",
+      "description": "Le modifiche non salvate nell'editor verranno sostituite dai valori di default. Il ripristino non verrà salvato nel database finché non clicchi \"Salva template\".",
+      "cancel": "Annulla",
+      "confirm": "Ripristina default"
+    }
+  },
+  "emailPreview": {
+    "title": "Anteprima email",
+    "desktop": "Desktop",
+    "mobile": "Mobile",
+    "iframeTitle": "Anteprima template email"
+  },
+  "auditReport": {
+    "title": "Report Audit Log",
+    "sectionTitle": "Log di Audit",
+    "events": "{{count}} eventi",
+    "exportMeta": "{{dateLabel}} - {{count}} eventi | Export: {{user}}",
+    "filterPrefix": " | Filtri: {{summary}}",
+    "noFilter": "nessun filtro",
+    "colDateTime": "Data/Ora",
+    "colUser": "Utente",
+    "colAction": "Azione",
+    "colDetail": "Dettaglio",
+    "colEntity": "Entità",
+    "colOutcome": "Esito",
+    "outcomeError": "ERRORE",
+    "outcomeWarning": "WARNING",
+    "outcomeOk": "OK",
+    "actorSystem": "Sistema"
+  }
+}

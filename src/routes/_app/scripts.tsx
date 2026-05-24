@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
@@ -36,8 +38,8 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
     meta: [
-      { title: "Script — PCReady" },
-      { name: "description", content: "Libreria script riutilizzabili: PowerShell, Bash e altri." },
+      { title: i18n.t("scripts:meta.title", "Script — PCReady") },
+      { name: "description", content: i18n.t("scripts:meta.description", "Libreria script riutilizzabili: PowerShell, Bash e altri.") },
     ],
   }),
   component: ScriptsPage,
@@ -113,6 +115,7 @@ function computeChangedFields(oldData: any, newData: any) {
 }
 
 function ScriptsPage() {
+  const { t } = useTranslation("scripts");
   const { canEdit, isAdmin } = useAuth();
   const [rows, setRows] = useState<ScriptRow[]>([]);
   const [q, setQ] = useState("");
@@ -155,7 +158,7 @@ function ScriptsPage() {
 
   async function remove(script: ScriptRow) {
     await deleteMut.mutateAsync(script.id);
-    toast.success("Script eliminato");
+    toast.success(t("success.deleted", "Script eliminato"));
   }
 
   return (
@@ -170,7 +173,7 @@ function ScriptsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cerca script..."
+            placeholder={t("search.placeholder", "Cerca script...")}
             className="bg-transparent outline-none text-[13px] flex-1"
           />
         </div>
@@ -179,17 +182,17 @@ function ScriptsPage() {
           value={cat}
           onChange={(e) => setCat(e.target.value)}
         >
-          <option value="">Tutte le categorie</option>
+          <option value="">{t("allCategories", "Tutte le categorie")}</option>
           {cats.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>
         <span className="ml-auto self-center text-xs text-text3 font-mono">
-          {filtered.length} script
+          {t("scriptCount", "{{count}} script", { count: filtered.length })}
         </span>
         {canEdit && (
           <button onClick={() => setCreateOpen(true)} className="pc-btn pc-btn-primary pc-btn-sm">
-            <Plus className="w-3 h-3" /> Nuovo script
+            <Plus className="w-3 h-3" /> {t("newScript", "Nuovo script")}
           </button>
         )}
       </div>
@@ -199,17 +202,17 @@ function ScriptsPage() {
         <div className="pc-card p-10 text-center">
           <Terminal className="w-10 h-10 mx-auto mb-3 text-text3" />
           <div className="text-[15px] font-bold mb-1" style={{ fontFamily: "var(--font-head)" }}>
-            Nessuno script ancora
+            {t("emptyTitle", "Nessuno script ancora")}
           </div>
           <div className="text-[13px] text-text3 mb-4">
-            Crea il tuo primo script riutilizzabile. Lo troverai sempre qui pronto da copiare.
+            {t("emptyDescription", "Crea il tuo primo script riutilizzabile. Lo troverai sempre qui pronto da copiare.")}
           </div>
           {canEdit && (
             <button
               onClick={() => setCreateOpen(true)}
               className="pc-btn pc-btn-primary pc-btn-sm mx-auto"
             >
-              <Plus className="w-3 h-3" /> Nuovo script
+              <Plus className="w-3 h-3" /> {t("newScript", "Nuovo script")}
             </button>
           )}
         </div>
@@ -287,14 +290,14 @@ function ScriptsPage() {
       />
       <DestructiveConfirmDialog
         open={!!deleteTarget}
-        title="Eliminare questo script?"
+        title={t("delete.title", "Eliminare questo script?")}
         description={
           deleteTarget
-            ? `Lo script "${deleteTarget.name}" verra' rimosso dalla libreria. L'azione non puo' essere annullata.`
-            : "Lo script verra' rimosso dalla libreria. L'azione non puo' essere annullata."
+            ? t("delete.description", 'Lo script "{{name}}" verrà rimosso dalla libreria. L\'azione non può essere annullata.', { name: deleteTarget.name })
+            : t("delete.descriptionGeneric", "Lo script verrà rimosso dalla libreria. L'azione non può essere annullata.")
         }
-        confirmLabel="Elimina script"
-        loadingLabel="Eliminazione..."
+        confirmLabel={t("delete.confirm", "Elimina script")}
+        loadingLabel={t("delete.loading", "Eliminazione...")}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         onConfirm={async () => {
           if (deleteTarget) await remove(deleteTarget);
@@ -316,6 +319,7 @@ function ScriptCard({
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
+  const { t } = useTranslation("scripts");
   const Icon = ICONS[s.icon || ""] || Terminal;
   const color = s.color || "#1B4FD8";
   return (
@@ -361,10 +365,10 @@ function ScriptCard({
         className="flex items-center gap-1 mt-3 pt-3 border-t opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ borderColor: "var(--border)" }}
       >
-        <span className="text-[10.5px] text-text3 font-mono">Apri →</span>
+        <span className="text-[10.5px] text-text3 font-mono">{t("card.open", "Apri →")}</span>
         <div className="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {onEdit && (
-            <button onClick={onEdit} className="pc-btn-icon touch-target" title="Modifica">
+            <button onClick={onEdit} className="pc-btn-icon touch-target" title={t("card.edit", "Modifica")}>
               <Pencil className="w-3 h-3" />
             </button>
           )}
@@ -372,7 +376,7 @@ function ScriptCard({
             <button
               onClick={onDelete}
               className="pc-btn-icon touch-target"
-              title="Elimina"
+              title={t("card.delete", "Elimina")}
               style={{ color: "var(--danger, #DC2626)" }}
             >
               <Trash2 className="w-3 h-3" />
@@ -394,12 +398,13 @@ function ScriptViewer({
   onClose: () => void;
   onOpenVersions: () => void;
 }) {
+  const { t } = useTranslation("scripts");
   const Icon = ICONS[script.icon || ""] || Terminal;
   const color = script.color || "#1B4FD8";
 
   function copy() {
     navigator.clipboard.writeText(script.content);
-    toast.success("Script copiato negli appunti");
+    toast.success(t("viewer.copied", "Script copiato negli appunti"));
   }
 
   function download() {
@@ -416,16 +421,16 @@ function ScriptViewer({
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={onClose}>
-            Chiudi
+            {t("viewer.close", "Chiudi")}
           </button>
           <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
-            <History className="w-3 h-3" /> Versioni
+            <History className="w-3 h-3" /> {t("viewer.versions", "Versioni")}
           </button>
           <button className="pc-btn pc-btn-ghost" onClick={download}>
-            <Download className="w-3 h-3" /> Scarica
+            <Download className="w-3 h-3" /> {t("viewer.download", "Scarica")}
           </button>
           <button className="pc-btn pc-btn-primary" onClick={copy}>
-            <Copy className="w-3 h-3" /> Copia
+            <Copy className="w-3 h-3" /> {t("viewer.copy", "Copia")}
           </button>
         </>
       }
@@ -463,7 +468,7 @@ function ScriptViewer({
           maxHeight: "55vh",
         }}
       >
-        {script.content || "// Script vuoto"}
+        {script.content || t("viewer.emptyScript", "// Script vuoto")}
       </pre>
     </Modal>
   );
@@ -479,6 +484,7 @@ function ScriptEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation("scripts");
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const form = useForm<ScriptInput>({
@@ -497,8 +503,8 @@ function ScriptEditor({
   });
 
   const save = form.handleSubmit(async (values) => {
-    if (!values.name.trim()) return toast.error("Inserisci un nome");
-    if (!values.content.trim()) return toast.error("Lo script è vuoto");
+    if (!values.name.trim()) return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
+    if (!values.content.trim()) return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
     setBusy(true);
     try {
       const newData: any = {
@@ -521,7 +527,7 @@ function ScriptEditor({
       if (initial) {
         const { error } = await supabase.from("scripts").update(newData).eq("id", initial.id);
         if (error) throw error;
-        toast.success("Script aggiornato");
+        toast.success(t("success.updated", "Script aggiornato"));
       } else {
         const { data: inserted, error } = await supabase
           .from("scripts")
@@ -530,7 +536,7 @@ function ScriptEditor({
           .single();
         if (error) throw error;
         newData.id = (inserted as any).id; // For versioning
-        toast.success("Script creato");
+        toast.success(t("success.created", "Script creato"));
       }
 
       // Create version
@@ -555,7 +561,7 @@ function ScriptEditor({
 
       onSaved();
     } catch (e: unknown) {
-      toast.error(errorMessage(e, "Errore salvataggio"));
+      toast.error(errorMessage(e, t("editor.errors.saveFailed", "Errore salvataggio")));
     } finally {
       setBusy(false);
     }
@@ -566,35 +572,35 @@ function ScriptEditor({
       open
       onClose={onClose}
       size="lg"
-      title={initial ? "Modifica script" : "Nuovo script"}
+      title={initial ? t("editor.editTitle", "Modifica script") : t("editor.newTitle", "Nuovo script")}
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={onClose}>
-            Annulla
+            {t("editor.cancel", "Annulla")}
           </button>
           <button
             className="pc-btn pc-btn-primary"
             disabled={busy || !form.formState.isValid}
             onClick={save}
           >
-            {busy ? "Salvataggio…" : initial ? "Salva modifiche" : "Crea script"}
+            {busy ? t("editor.saving", "Salvataggio…") : initial ? t("editor.saveChanges", "Salva modifiche") : t("editor.createScript", "Crea script")}
           </button>
         </>
       }
     >
       <div className="flex flex-col gap-[14px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="Nome *">
+          <Field label={t("editor.fieldName", "Nome *")}>
             <input
               className="pc-input"
               {...form.register("name")}
-              placeholder="Reset Windows Update"
+              placeholder={t("editor.namePlaceholder", "Reset Windows Update")}
             />
             {form.formState.errors.name && (
               <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>
             )}
           </Field>
-          <Field label="Categoria">
+          <Field label={t("editor.fieldCategory", "Categoria")}>
             <input className="pc-input" list="cat-list" {...form.register("category")} />
             <datalist id="cat-list">
               {CATEGORIES.map((c) => (
@@ -604,7 +610,7 @@ function ScriptEditor({
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="Linguaggio">
+          <Field label={t("editor.fieldLanguage", "Linguaggio")}>
             <select className="pc-input" {...form.register("language")}>
               {LANGUAGES.map((l) => (
                 <option key={l} value={l}>
@@ -618,7 +624,7 @@ function ScriptEditor({
               </p>
             )}
           </Field>
-          <Field label="Icona">
+          <Field label={t("editor.fieldIcon", "Icona")}>
             <div className="flex flex-wrap gap-1.5">
               {ICON_KEYS.map((k) => {
                 const I = ICONS[k];
@@ -644,7 +650,7 @@ function ScriptEditor({
             </div>
           </Field>
         </div>
-        <Field label="Colore">
+        <Field label={t("editor.fieldColor", "Colore")}>
           <div className="flex flex-wrap gap-1.5">
             {COLORS.map((c) => (
               <button
@@ -664,29 +670,29 @@ function ScriptEditor({
             ))}
           </div>
         </Field>
-        <Field label="Descrizione">
+        <Field label={t("editor.fieldDescription", "Descrizione")}>
           <textarea
             className="pc-input min-h-[60px]"
             {...form.register("description")}
-            placeholder="Cosa fa questo script?"
+            placeholder={t("editor.descriptionPlaceholder", "Cosa fa questo script?")}
           />
         </Field>
-        <Field label="Contenuto script *">
+        <Field label={t("editor.fieldContent", "Contenuto script *")}>
           <textarea
             className="pc-input font-mono text-[12px] min-h-[260px]"
             {...form.register("content")}
-            placeholder="# Il tuo codice qui..."
+            placeholder={t("editor.contentPlaceholder", "# Il tuo codice qui...")}
             spellCheck={false}
           />
           {form.formState.errors.content && (
             <p className="text-sm text-destructive mt-1">{form.formState.errors.content.message}</p>
           )}
         </Field>
-        <Field label="Nota modifica (opzionale)">
+        <Field label={t("editor.fieldChangeNote", "Nota modifica (opzionale)")}>
           <textarea
             className="pc-input min-h-[60px]"
             {...form.register("changeNote")}
-            placeholder="Descrivi le modifiche apportate..."
+            placeholder={t("editor.changeNotePlaceholder", "Descrivi le modifiche apportate...")}
           />
         </Field>
       </div>

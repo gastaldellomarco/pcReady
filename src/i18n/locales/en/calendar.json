@@ -1,0 +1,96 @@
+{
+  "title": "Maintenance Calendar",
+  "subtitle": "Planning and scheduling of technical interventions.",
+  "newEvent": "New Event",
+  "views": {
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  },
+  "errors": {
+    "loadTechnicians": "Unable to load technicians",
+    "moveEvent": "Unable to move event",
+    "loadEvents": "Unable to load calendar events"
+  },
+  "meta": {
+    "title": "Calendar",
+    "description": "Shared team calendar"
+  },
+  "toolbar": {
+    "navPrevTitle": "Previous month/week/day",
+    "navNextTitle": "Next month/week/day",
+    "today": "Today",
+    "weekLabel": "Week",
+    "ariaLabelView": "Change view",
+    "filterAll": "All technicians",
+    "colorType": "Type",
+    "colorTechnician": "Technician",
+    "switchColorType": "Switch to color by type",
+    "switchColorTechnician": "Switch to color by technician",
+    "exportIcalTitle": "Export as iCal (.ics) file",
+    "newEvent": "New event"
+  },
+  "eventTypes": {
+    "intervention": "Intervention",
+    "deadline": "Deadline",
+    "appointment": "Appointment",
+    "availability": "Availability"
+  },
+  "modal": {
+    "editTitle": "Edit event",
+    "newTitle": "New event",
+    "titleLabel": "Title *",
+    "titlePlaceholder": "Event title",
+    "typeLabel": "Event type",
+    "allDayLabel": "All day",
+    "startDateLabel": "Start date *",
+    "startTimeLabel": "Start time",
+    "endDateLabel": "End date *",
+    "endTimeLabel": "End time",
+    "assigneeLabel": "Assigned technician",
+    "assigneeNone": "None",
+    "ticketLabel": "Linked ticket",
+    "ticketPlaceholder": "No linked ticket",
+    "ticketRemoveTitle": "Remove ticket link",
+    "ticketHelp": "Ticket link cannot be modified from here.",
+    "durationLabel": "Duration (min)",
+    "durationPlaceholder": "e.g. 60",
+    "colorLabel": "Custom color",
+    "colorAuto": "Automatic color from event type",
+    "colorReset": "Reset",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Additional notes about the event...",
+    "confirmDelete": "Confirm deletion?",
+    "deleteButton": "Delete",
+    "noButton": "No",
+    "cancelButton": "Cancel",
+    "saveButton": "Save",
+    "savingButton": "Saving…"
+  },
+  "toasts": {
+    "eventUpdated": "Event updated",
+    "eventCreated": "Event created",
+    "eventDeleted": "Event deleted",
+    "updateError": "Error updating: {{message}}",
+    "createError": "Error creating: {{message}}",
+    "deleteError": "Error deleting: {{message}}"
+  },
+  "validation": {
+    "titleRequired": "Title is required",
+    "endAfterStart": "End date must be after start date"
+  },
+  "monthView": {
+    "extraOthers": "+{{count}} more",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "dayView": {
+    "eventCount": "{{count}} event",
+    "eventCount_plural": "{{count}} events"
+  }
+}

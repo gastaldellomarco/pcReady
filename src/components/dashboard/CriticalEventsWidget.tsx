@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { XCircle, AlertTriangle, RefreshCw, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -16,6 +17,7 @@ function asArray<T>(value: unknown): T[] {
 }
 
 export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps) {
+  const { t } = useTranslation("dashboard");
   const [events, setEvents] = useState<ActivityLogEntry[]>([]);
   const [slaTickets, setSlaTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
     <div className="pc-card">
       <div className="pc-card-hd">
         <div className="flex items-center gap-2">
-          <span className="pc-card-title">Eventi critici recenti</span>
+          <span className="pc-card-title">{t("widgets.criticalEvents", "Eventi critici recenti")}</span>
           {events.length + slaTickets.length > 0 && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
               {events.length + slaTickets.length}
@@ -58,11 +60,11 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
       </div>
       <div className="pc-card-body">
         {loading ? (
-          <div className="text-sm text-text3 py-4 text-center">Caricamento...</div>
+          <div className="text-sm text-text3 py-4 text-center">{t("widgets.loading", "Caricamento...")}</div>
         ) : events.length === 0 && slaTickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
             <AlertTriangle className="w-5 h-5 mx-auto mb-2 opacity-40" />
-            Nessun evento critico nelle ultime 24h
+            {t("widgets.noCriticalEvents", "Nessun evento critico nelle ultime 24h")}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -74,11 +76,11 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
                 <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-text2 truncate">
-                    {ticket.ticket_code}: {ticket.sla_breached ? "SLA violato" : "SLA in scadenza"}
+                    {ticket.ticket_code}: {ticket.sla_breached ? t("widgets.slaBreached", "SLA violato") : t("widgets.slaExpiring", "SLA in scadenza")}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[10.5px] text-text3">
-                      {ticket.client ?? "Cliente n/d"}
+                      {ticket.client ?? t("widgets.clientUnknown", "Cliente n/d")}
                     </span>
                     <span className="text-[10.5px] text-text3 font-mono">
                       {formatSlaCountdown(ticket.sla_deadline)}
@@ -109,7 +111,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
               search={{} as any}
               className="flex items-center justify-center gap-1 text-[11px] text-accent hover:underline mt-1"
             >
-              Vedi tutti i log <ArrowRight className="w-3 h-3" />
+              {t("widgets.viewAllLogs", "Vedi tutti i log")} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         )}

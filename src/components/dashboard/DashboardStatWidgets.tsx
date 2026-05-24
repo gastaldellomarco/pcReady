@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { STATUS_META, type TicketStatus } from "@/lib/pcready";
 
@@ -62,6 +63,7 @@ export function DashboardDonut({
   total: number;
   hideLegend?: boolean;
 }) {
+  const { t } = useTranslation("dashboard");
   const r = 38;
   const c = 2 * Math.PI * r;
   let off = 0;
@@ -102,7 +104,7 @@ export function DashboardDonut({
         >
           {total}
         </div>
-        <div className="text-[10px] text-text3 uppercase tracking-wider">Ticket</div>
+        <div className="text-[10px] text-text3 uppercase tracking-wider">{t("stats.ticket", "Ticket")}</div>
       </div>
     </div>
   );

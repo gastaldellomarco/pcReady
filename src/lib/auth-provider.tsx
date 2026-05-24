@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyRole } from "@/lib/get-my-role";
 import type { Session, User } from "@supabase/supabase-js";
 import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
+import i18n from "@/i18n";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -33,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
         supabase
           .from("user_profiles")
-          .select("display_name, avatar_url, password_set")
+          .select("display_name, avatar_url, password_set, language")
           .eq("id", uid)
           .maybeSingle(),
       ]);
@@ -54,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (roleError) throw roleError;
       if (!p) throw new Error("Profilo utente non trovato");
       const displayName = (up as any)?.display_name || p.full_name;
+      const userLang: "it" | "en" = (up as any)?.language === "en" ? "en" : "it";
+      void i18n.changeLanguage(userLang);
 
       setProfile({
         id: p.id,
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar_url: (up as any)?.avatar_url ?? null,
         password_set: (up as any)?.password_set ?? true,
         role: (r?.role as AppRole) ?? "viewer",
+        language: userLang,
       });
     } catch (err: unknown) {
       if (requestId !== profileRequestId.current) return;

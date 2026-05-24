@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,13 +24,14 @@ import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-con
 import { TRIGGER_TYPE_OPTIONS } from "@/hooks/useAutomationRules";
 
 export const Route = createFileRoute("/_app/automations")({
-  head: () => ({ meta: [{ title: "Automazioni — PCReady" }] }),
+  head: () => ({ meta: [{ title: i18n.t("automations:meta.title", "Automazioni — PCReady") }] }),
   component: AutomationsPage,
   errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
 
 function AutomationsPage() {
+  const { t } = useTranslation("automations");
   const {
     rules,
     filteredRules,
@@ -97,17 +100,17 @@ function AutomationsPage() {
 
   // Quick filter pills config
   const errorFilterOptions = [
-    { value: "all" as const, label: "Tutte" },
-    { value: "active" as const, label: "Attive" },
-    { value: "inactive" as const, label: "Inattive" },
-    { value: "errors" as const, label: "Con errori" },
+    { value: "all" as const, label: t("filters.all", "Tutte") },
+    { value: "active" as const, label: t("filters.active", "Attive") },
+    { value: "inactive" as const, label: t("filters.inactive", "Inattive") },
+    { value: "errors" as const, label: t("filters.error", "Con errori") },
   ];
 
   const sortOptions = [
-    { value: "created" as const, label: "Data creazione" },
-    { value: "name" as const, label: "Nome" },
-    { value: "last_run" as const, label: "Ultima esecuzione" },
-    { value: "executions" as const, label: "N. esecuzioni" },
+    { value: "created" as const, label: t("sort.createdAt", "Data creazione") },
+    { value: "name" as const, label: t("sort.name", "Nome") },
+    { value: "last_run" as const, label: t("sort.lastRun", "Ultima esecuzione") },
+    { value: "executions" as const, label: t("sort.executions", "N. esecuzioni") },
   ];
 
   return (
@@ -121,7 +124,7 @@ function AutomationsPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text3" />
           <input
-            placeholder="Cerca regola..."
+            placeholder={t("search.placeholder", "Cerca regola...")}
             className="w-full rounded-md border border-border pl-8 pr-3 py-1.5 text-sm bg-background"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -177,7 +180,7 @@ function AutomationsPage() {
             type="button"
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="rounded-md border border-border px-1.5 py-1.5 text-xs bg-background hover:bg-surface3"
-            title={sortOrder === "asc" ? "Ascendente" : "Discendente"}
+            title={sortOrder === "asc" ? t("sort.ascending", "Ascendente") : t("sort.descending", "Discendente")}
           >
             {sortOrder === "asc" ? "\u2191" : "\u2193"}
           </button>
@@ -189,7 +192,7 @@ function AutomationsPage() {
           value={categoryFilter ?? ""}
           onChange={(e) => setCategoryFilter(e.target.value || null)}
         >
-          <option value="">Tutte le categorie</option>
+          <option value="">{t("filters.allCategories", "Tutte le categorie")}</option>
           {AUTOMATION_CATEGORY_OPTIONS.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -206,7 +209,7 @@ function AutomationsPage() {
             className="gap-1.5"
           >
             <ScrollText className="h-4 w-4" />
-            Log
+            {t("logs.button", "Log")}
           </Button>
           <Button
             variant="secondary"
@@ -216,7 +219,7 @@ function AutomationsPage() {
             className="gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            Nuova regola
+            {t("newRule", "Nuova regola")}
           </Button>
         </div>
       </div>
@@ -225,12 +228,12 @@ function AutomationsPage() {
       <div className="space-y-3">
         {loadingRules && (
           <div className="py-8 text-center text-sm text-text3">
-            Caricamento regole...
+            {t("loading", "Caricamento regole...")}
           </div>
         )}
         {!loadingRules && filteredRules.length === 0 && (
           <div className="py-8 text-center text-sm text-text3">
-            Nessuna regola trovata.{searchQuery ? ' Prova a modificare la ricerca.' : ''}
+            {t("empty.noRules", "Nessuna regola trovata.")}{searchQuery ? ' ' + t("empty.trySearch", "Prova a modificare la ricerca.") : ''}
           </div>
         )}
         {!loadingRules &&
@@ -276,16 +279,16 @@ function AutomationsPage() {
 
       {/* Builder/Wizard Dialog */}
       <Dialog open={builderOpen} onOpenChange={setBuilderOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85dvh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
             <DialogTitle>
-              {editingRule ? "Modifica automazione" : "Nuova automazione"}
+              {editingRule ? t("dialog.editTitle", "Modifica automazione") : t("dialog.newTitle", "Nuova automazione")}
             </DialogTitle>
           </DialogHeader>
-          <div className="p-2 flex gap-2 items-center">
+          <div className="px-6 pt-3 pb-0 flex gap-2 items-center shrink-0 border-b border-border">
             <label
-              className={`cursor-pointer px-2 py-1 rounded ${
-                guidedMode ? "bg-slate-100" : ""
+              className={`cursor-pointer px-3 py-2 text-sm rounded-t border-b-2 transition-colors ${
+                guidedMode ? "border-accent text-accent font-medium" : "border-transparent text-text3 hover:text-foreground"
               }`}
             >
               <input
@@ -294,12 +297,12 @@ function AutomationsPage() {
                 checked={guidedMode}
                 onChange={() => setGuidedMode(true)}
                 className="sr-only"
-              />{" "}
-              Modalita guidata
+              />
+              {t("builder.guided", "Guided mode")}
             </label>
             <label
-              className={`cursor-pointer px-2 py-1 rounded ${
-                !guidedMode ? "bg-slate-100" : ""
+              className={`cursor-pointer px-3 py-2 text-sm rounded-t border-b-2 transition-colors ${
+                !guidedMode ? "border-accent text-accent font-medium" : "border-transparent text-text3 hover:text-foreground"
               }`}
             >
               <input
@@ -308,13 +311,14 @@ function AutomationsPage() {
                 checked={!guidedMode}
                 onChange={() => setGuidedMode(false)}
                 className="sr-only"
-              />{" "}
-              Modalita avanzata
+              />
+              {t("builder.advanced", "Advanced mode")}
             </label>
           </div>
 
+          <div className="flex-1 overflow-y-auto">
           {guidedMode ? (
-            <div className="p-4">
+            <div className="p-6">
               <AutomationWizard
                 initial={
                   editingRule
@@ -343,8 +347,9 @@ function AutomationsPage() {
               onCancel={() => setBuilderOpen(false)}
             />
           ) : (
-            <div className="p-6">Caricamento editor...</div>
+            <div className="p-6">{t("editor.loading", "Caricamento editor...")}</div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -357,13 +362,13 @@ function AutomationsPage() {
       {/* Delete Confirmation */}
       <DestructiveConfirmDialog
         open={!!confirmDeleteRule}
-        title="Elimina automazione"
+        title={t("delete.title", "Elimina automazione")}
         description={
           confirmDeleteRule
-            ? `Sei sicuro di voler eliminare definitivamente "${confirmDeleteRule.name}"? Questa azione non può essere annullata.`
+            ? t("delete.description", 'Sei sicuro di voler eliminare definitivamente "{{name}}"? Questa azione non può essere annullata.', { name: confirmDeleteRule.name })
             : ""
         }
-        confirmLabel="Elimina"
+        confirmLabel={t("delete.confirm", "Elimina")}
         onOpenChange={() => void cancelDeleteRule()}
         onConfirm={() => void confirmDeleteRuleAction()}
       />
@@ -371,14 +376,14 @@ function AutomationsPage() {
       {/* Archive Confirmation */}
       <DestructiveConfirmDialog
         open={!!confirmArchiveRule}
-        title="Archivia automazione"
+        title={t("archive.title", "Archivia automazione")}
         description={
           confirmArchiveRule
-            ? `Archiviare "${confirmArchiveRule.name}"? L'automazione verrà disattivata e nascosta dall'elenco principale. Puoi sempre ripristinarla dalle versioni.`
+            ? t("archive.description", 'Archiviare "{{name}}"? L\'automazione verrà disattivata e nascosta dall\'elenco principale. Puoi sempre ripristinarla dalle versioni.', { name: confirmArchiveRule.name })
             : ""
         }
-        confirmLabel="Archivia"
-        loadingLabel="Archiviazione in corso..."
+        confirmLabel={t("archive.confirm", "Archivia")}
+        loadingLabel={t("archive.loading", "Archiviazione in corso...")}
         onOpenChange={() => void cancelArchiveRule()}
         onConfirm={() => void confirmArchiveRuleAction()}
       />

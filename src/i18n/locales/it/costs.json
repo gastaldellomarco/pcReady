@@ -1,0 +1,87 @@
+{
+  "title": "Gestione costi",
+  "subtitle": "Ticket, manodopera, materiali, contratti e report fatturazione",
+  "meta": {
+    "title": "Costi - PCReady",
+    "description": "Gestione costi ticket, contratti e report fatturazione."
+  },
+  "exportPdf": "Esporta PDF",
+  "exportCsv": "Esporta CSV",
+  "previewPdf": "PDF",
+  "downloadPdf": "Scarica",
+  "exportCsvBtn": "CSV",
+  "stats": {
+    "ticketTotal": "Totale ticket",
+    "labor": "Manodopera",
+    "materials": "Materiali",
+    "billableHours": "Ore fatturabili",
+    "recurring": "Canoni attivi",
+    "estimatedMargin": "Margine stimato"
+  },
+  "filters": {
+    "allClients": "Tutti i clienti",
+    "allTechnicians": "Tutti i tecnici"
+  },
+  "contractForm": {
+    "title": "Contratti / SLA cliente",
+    "save": "Salva contratto",
+    "clientPlaceholder": "Cliente...",
+    "namePlaceholder": "Nome contratto",
+    "feePlaceholder": "Canone",
+    "hoursPlaceholder": "Ore incluse",
+    "extraRatePlaceholder": "Tariffa extra",
+    "defaultName": "Contratto assistenza"
+  },
+  "contracts": {
+    "title": "Contratti attivi e ore extra",
+    "noContracts": "Nessun contratto configurato.",
+    "period": {
+      "monthly": "Mensile",
+      "annual": "Annuale"
+    },
+    "fee": "Canone",
+    "includedHours": "Ore incluse",
+    "usedHours": "Ore usate",
+    "estimatedExtra": "Extra stimato"
+  },
+  "summaryTables": {
+    "perClient": "Costi per cliente",
+    "perTechnician": "Costi per tecnico",
+    "nameHeader": "Nome",
+    "hoursHeader": "Ore",
+    "totalHeader": "Totale",
+    "noData": "Nessun dato"
+  },
+  "detailTable": {
+    "title": "Dettaglio ticket fatturabili",
+    "ticketsInPeriod": "{{count}} ticket nel periodo",
+    "headers": {
+      "ticket": "Ticket",
+      "client": "Cliente",
+      "technician": "Tecnico",
+      "hours": "Ore",
+      "rate": "Tariffa",
+      "labor": "Manodopera",
+      "materials": "Materiali",
+      "total": "Totale",
+      "status": "Stato"
+    },
+    "loading": "Caricamento costi...",
+    "empty": "Nessun costo nel periodo selezionato"
+  },
+  "feedback": {
+    "loadError": "Errore caricamento costi",
+    "insufficientPermissions": "Permessi insufficienti",
+    "selectClient": "Seleziona un cliente",
+    "contractSaved": "Contratto salvato",
+    "contractSaveError": "Errore salvataggio contratto",
+    "csvExported": "CSV costi esportato",
+    "pdfExportError": "Errore export PDF costi"
+  },
+  "fallbacks": {
+    "noName": "Senza nome",
+    "client": "Cliente",
+    "notAssigned": "Non assegnato",
+    "clientNotIndicated": "Cliente non indicato"
+  }
+}

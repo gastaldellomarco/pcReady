@@ -1,0 +1,325 @@
+{
+  "meta": {
+    "title": "Dashboard - PCReady",
+    "description": "Panoramica ticket, pipeline e attivita recente in PCReady."
+  },
+  "title": "Dashboard",
+  "headingDesc": "Panoramica generale delle attivita",
+  "period": "Periodo",
+  "exportPdf": "Esporta PDF",
+  "exportCsv": "Esporta CSV",
+  "widgetSettings": "Gestione Widget",
+  "technicianStatsLoading": "Caricamento statistiche tecnici...",
+  "stats": {
+    "totalTickets": "Ticket totali",
+    "totalDevices": "Dispositivi totali",
+    "activeClients": "Clienti attivi",
+    "avgResolution": "Tempo medio risoluzione",
+    "feedbackAvg": "Soddisfazione clienti",
+    "checklistCompleted": "Checklist completate",
+    "days": "g",
+    "ticket": "Ticket",
+    "totalSuffix": "totali",
+    "inPeriod": "nel periodo",
+    "inProgress": "In lavorazione",
+    "ready": "Pronti",
+    "pending": "In attesa",
+    "slaRespected": "SLA rispettati",
+    "noData": "nessun dato",
+    "avgChecklistTime": "Tempo medio checklist",
+    "perCompletion": "per completamento",
+    "topTemplate": "Template più usato",
+    "instances": "istanze",
+    "pctPerTechnician": "% checklist per tecnico",
+    "completed": "completate",
+    "noAssignee": "nessun assegnatario"
+  },
+  "widgets": {
+    "buttonLabel": "Widget",
+    "criticalEvents": "Eventi critici recenti",
+    "noCriticalEvents": "Nessun evento critico nelle ultime 24h",
+    "overdueTickets": "Ticket scaduti / SLA violati",
+    "noOverdueTickets": "Nessun ticket SLA violato o in scadenza",
+    "recentActivity": "Attività del team",
+    "noActivity": "Nessuna attività nel periodo",
+    "technicianHeatmap": "Carico Lavoro Tecnici",
+    "technicianKpi": "Performance Tecnici",
+    "widgetPanelTitle": "Gestione widget",
+    "widgetPanelDesc": "Trascina per riordinare. Usa l'icona occhio per mostrare/nascondere widget.",
+    "dragToReorder": "Trascina per riordinare",
+    "hideWidget": "Nascondi widget",
+    "showWidget": "Mostra widget",
+    "hide": "Nascondi",
+    "show": "Mostra",
+    "close": "Chiudi",
+    "loading": "Caricamento...",
+    "tableId": "ID",
+    "tableClient": "Cliente",
+    "tableModel": "Modello",
+    "tableStatus": "Stato",
+    "tableAssignee": "Assegnatario",
+    "tableSla": "SLA",
+    "unassigned": "Non assegnato",
+    "slaBreached": "SLA violato",
+    "slaExpiring": "SLA in scadenza",
+    "clientUnknown": "Cliente n/d",
+    "viewAllLogs": "Vedi tutti i log",
+    "noTechnicianData": "Nessun dato tecnico nel periodo selezionato.",
+    "assigned": "Assegnati",
+    "completed": "Completati",
+    "avgTime": "Tempo medio",
+    "na": "N/D",
+    "completion": "Completamento",
+    "overloaded": "Sovraccarico",
+    "highLoad": "Carico elevato",
+    "normalLoad": "Carico normale",
+    "activeTechnicians": "{{count}} tecnici attivi",
+    "periodToday": "Oggi",
+    "periodWeek": "Settimana",
+    "periodMonth": "Mese",
+    "pending": "In attesa",
+    "low": "Basso",
+    "medium": "Medio",
+    "high": "Alto",
+    "stat-cards": {
+      "label": "Statistiche principali",
+      "desc": "Ticket totali, dispositivi, clienti attivi e stati"
+    },
+    "analytics-card": {
+      "label": "Report Mensile",
+      "desc": "Andamento mensile ticket e performance tecnici"
+    },
+    "devices-without-ticket": {
+      "label": "Dispositivi senza ticket",
+      "desc": "Dispositivi senza ticket attivo"
+    },
+    "tickets-without-device": {
+      "label": "Ticket senza dispositivo",
+      "desc": "Ticket senza dispositivo associato"
+    },
+    "trend-chart": {
+      "label": "Trend ticket e asset",
+      "desc": "Andamento ticket aperti vs asset disponibili"
+    },
+    "recent-tickets": {
+      "label": "Ticket recenti",
+      "desc": "Elenco degli ultimi ticket creati"
+    },
+    "status-distribution": {
+      "label": "Distribuzione stati",
+      "desc": "Grafico a ciambella della distribuzione stati"
+    },
+    "technician-heatmap": {
+      "label": "Calore tecnici",
+      "desc": "Mappa di calore chiusure settimanali per tecnico"
+    },
+    "recent-activity": {
+      "label": "Attivita recente",
+      "desc": "Log delle attivita recenti"
+    },
+    "overdue-tickets": {
+      "label": "Ticket scaduti / SLA",
+      "desc": "Ticket oltre la soglia SLA"
+    },
+    "team-activity": {
+      "label": "Attivita del team",
+      "desc": "Breakdown per tecnico"
+    },
+    "technician-stats": {
+      "label": "Statistiche tecnici",
+      "desc": "Statistiche complete dei tecnici"
+    },
+    "critical-events": {
+      "label": "Eventi critici",
+      "desc": "Eventi critici recenti"
+    },
+    "warranty-overview": {
+      "label": "Garanzie",
+      "desc": "Stati garanzia e scadenze prossime"
+    },
+    "maintenance-overview": {
+      "label": "Manutenzioni",
+      "desc": "Prossimi interventi e manutenzioni scadute"
+    }
+  },
+  "analytics": {
+    "overviewTitle": "Panoramica dispositivi & ticket",
+    "overviewDesc": "Trend e widget di riepilogo filtrati per periodo",
+    "loading": "Caricamento analytics...",
+    "monthlyReport": "Report Mensile",
+    "barChart": "Grafico a barre",
+    "lineChart": "Grafico a linee",
+    "export": "Esporta",
+    "exportCsv": "Esporta CSV",
+    "monthlyPdf": "Report Mensile PDF",
+    "opened": "Aperti",
+    "closed": "Chiusi",
+    "avgResolution": "Tempo medio di risoluzione",
+    "avgTime": "Tempo medio",
+    "technicianPerformance": "Performance tecnici",
+    "technicianSubtitle": "Assegnati, completati e tempi medi",
+    "technicianCount": "{{count}} tecnici"
+  },
+  "dateRange": {
+    "today": "Oggi",
+    "last7": "7 giorni",
+    "last30": "30 giorni",
+    "custom": "Personalizzato",
+    "ariaLabel": "Selettore periodo dashboard",
+    "startDate": "Data inizio",
+    "endDate": "Data fine"
+  },
+  "status": {
+    "pending": "In attesa",
+    "in-progress": "In lavorazione",
+    "testing": "Testing",
+    "ready": "Pronto",
+    "completed": "Completato",
+    "archived": "Archiviato"
+  },
+  "warranty": {
+    "title": "Garanzie dispositivi",
+    "inventory": "Inventario",
+    "expiringTitle": "Garanzie in scadenza (prossimi 90 giorni)",
+    "noExpiring": "Nessuna garanzia in scadenza nei prossimi 90 giorni.",
+    "days": "giorni",
+    "expiresIn": "Scade in {{days}} gg",
+    "expired": "Scaduta",
+    "noDevices": "Nessun dispositivo rilevato.",
+    "tableAsset": "Asset",
+    "tableExpiry": "Scadenza",
+    "tableStatus": "Stato",
+    "tableProvider": "Fornitore",
+    "status": {
+      "valid": "In Garanzia",
+      "expiring": "In Scadenza",
+      "urgent": "Urgenti",
+      "expired": "Scaduta",
+      "missing": "N/D"
+    }
+  },
+  "maintenance": {
+    "title": "Manutenzioni Programmate",
+    "upcomingTitle": "Prossime manutenzioni pianificate",
+    "calendar": "Calendario",
+    "device": "Dispositivo",
+    "noEvents": "Nessuna manutenzione pianificata.",
+    "loading": "Caricamento manutenzioni...",
+    "overdueTitle": "Scadute non eseguite",
+    "overdueDesc": "Manutenzioni con prossima scadenza superata e non completate.",
+    "openCalendar": "Apri calendario manutenzioni",
+    "tableIntervention": "Intervento",
+    "tableDevice": "Dispositivo",
+    "tableExpiry": "Scadenza",
+    "tableStatus": "Stato",
+    "status": {
+      "scheduled": "Pianificata",
+      "due_soon": "In scadenza",
+      "overdue": "Scaduta",
+      "completed": "Completata"
+    }
+  },
+  "devicesWithoutTicket": {
+    "title": "Dispositivi senza ticket attivo",
+    "seeDevices": "Vedi dispositivi"
+  },
+  "ticketsWithoutDevice": {
+    "title": "Ticket senza dispositivo associato",
+    "seeTickets": "Vedi ticket"
+  },
+  "trend": {
+    "title": "Trend: Ticket aperti vs Asset disponibili",
+    "openTickets": "Ticket aperti",
+    "availableAssets": "Asset disponibili"
+  },
+  "recentTickets": {
+    "title": "Ticket recenti",
+    "viewAll": "Vedi tutti",
+    "tableId": "ID",
+    "tableAsset": "Asset",
+    "tableStatus": "Stato",
+    "tableAssignee": "Assegnatario",
+    "noTickets": "Nessun ticket. Creane uno con il pulsante in alto."
+  },
+  "statusDistribution": {
+    "title": "Distribuzione stati",
+    "total": "totali",
+    "ticketTotal": "ticket totali"
+  },
+  "recentActivity": {
+    "title": "Attivita recente",
+    "fullLog": "Log completo",
+    "user": "Utente",
+    "system": "Sistema",
+    "actionBy": "Azione eseguita da",
+    "noActivity": "Nessuna attivita"
+  },
+  "technicians": {
+    "statsTitle": "Statistiche Tecnici",
+    "activeTechnicians": "Tecnici attivi",
+    "periodToday": "Oggi",
+    "periodWeek": "Settimana",
+    "periodMonth": "Mese",
+    "technicianLabel": "Tecnico",
+    "assigned": "Assegnati",
+    "pending": "In attesa",
+    "completed": "Completati",
+    "avgTime": "Tempo medio",
+    "completionRate": "Tasso completamento",
+    "overloaded": "Sovraccarico",
+    "highLoad": "Carico elevato",
+    "normalLoad": "Carico normale"
+  },
+  "heatmap": {
+    "title": "Attività settimanale tecnici",
+    "technicians": "tecnici",
+    "loading": "Caricamento...",
+    "ticketsClosed": "ticket chiusi"
+  },
+  "radar": {
+    "volume": "Volume",
+    "speed": "Velocità",
+    "completion": "Completamento",
+    "responsiveness": "Reattività",
+    "reliability": "Affidabilità",
+    "title": "Radar tecnico",
+    "showAll": "Mostra tutti",
+    "loading": "Caricamento...",
+    "technician": "Tecnico"
+  },
+  "portal": {
+    "networkError": "Errore di rete",
+    "welcomeDesc": "Panoramica ticket e richieste recenti.",
+    "openTickets": "Ticket aperti",
+    "inProgress": "In lavorazione",
+    "resolvedThisMonth": "Risolti questo mese",
+    "recentTickets": "Ticket recenti",
+    "noRecentTickets": "Nessun ticket recente",
+    "noTicketsToShow": "Non ci sono ticket da mostrare in questo momento.",
+    "openNewTicket": "Apri nuovo ticket",
+    "downloadDocs": "Scarica documenti",
+    "activeBundles": "Bundle assistenza attivi",
+    "bundleDesc": "Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.",
+    "bundleName": "Bundle assistenza",
+    "bundleFee": "Canone",
+    "slaResponse": "SLA risposta",
+    "autoRenew": "Rinnovo auto",
+    "manualRenew": "Rinnovo manuale",
+    "hoursUsed": "Ore consumate",
+    "remaining": "Residue",
+    "extra": "Extra",
+    "expiry": "Scadenza",
+    "none": "Nessuna"
+  },
+  "help": {
+    "monthlyReport": "Report mensile",
+    "month": "Mese",
+    "openedTickets": "Ticket aperti",
+    "closedTickets": "Ticket chiusi",
+    "avgResolutionDays": "Tempo medio risoluzione giorni",
+    "technicianPerformance": "Performance tecnici",
+    "technician": "Tecnico",
+    "assignedTickets": "Ticket assegnati",
+    "completedTickets": "Ticket completati"
+  }
+}

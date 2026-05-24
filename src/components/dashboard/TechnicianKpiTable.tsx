@@ -1,4 +1,5 @@
 import type { TechnicianKpi } from "@/lib/dashboard-analytics";
+import { useTranslation } from "react-i18next";
 import { formatAvgDays } from "./analytics-format";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,13 +12,14 @@ function workloadColor(assigned: number) {
 }
 
 export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
+  const { t } = useTranslation("dashboard");
   const navigate = useNavigate();
   const safeRows = Array.isArray(rows) ? rows : [];
 
   if (!safeRows.length) {
     return (
       <div className="text-center text-text3 py-6">
-        Nessun dato tecnico nel periodo selezionato.
+        {t("widgets.noTechnicianData", "Nessun dato tecnico nel periodo selezionato.")}
       </div>
     );
   }
@@ -48,18 +50,18 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
               <div className="flex-1">
                 <div className="font-semibold text-sm">{row.full_name}</div>
                 <div className="text-xs text-text3">
-                  Assegnati: {row.assigned} • Completati: {row.completed}
+                  {t("widgets.assigned", "Assegnati")}: {row.assigned} • {t("widgets.completed", "Completati")}: {row.completed}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text3">Tempo medio</div>
-                <div className="text-sm font-semibold">{formatAvgDays(row.avg_days) ?? "N/D"}</div>
+                <div className="text-xs text-text3">{t("widgets.avgTime", "Tempo medio")}</div>
+                <div className="text-sm font-semibold">{formatAvgDays(row.avg_days) ?? t("widgets.na", "N/D")}</div>
               </div>
             </div>
 
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs text-text3">
-                <div>Completamento</div>
+                <div>{t("widgets.completion", "Completamento")}</div>
                 <div className="text-sm font-semibold">{pct}%</div>
               </div>
               <Progress value={pct} className="mt-1" />
@@ -68,10 +70,10 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
             <div className="mt-3">
               <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(row.assigned)}>
                 {row.assigned >= 6
-                  ? "Sovraccarico"
+                  ? t("widgets.overloaded", "Sovraccarico")
                   : row.assigned >= 3
-                    ? "Carico elevato"
-                    : "Carico normale"}
+                    ? t("widgets.highLoad", "Carico elevato")
+                    : t("widgets.normalLoad", "Carico normale")}
               </span>
             </div>
           </div>

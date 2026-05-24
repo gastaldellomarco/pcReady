@@ -1,0 +1,87 @@
+{
+  "title": "Cost Management",
+  "subtitle": "Tickets, labor, materials, contracts, and invoicing reports",
+  "meta": {
+    "title": "Costs - PCReady",
+    "description": "Ticket cost tracking, active contracts, and invoicing reports."
+  },
+  "exportPdf": "Export PDF",
+  "exportCsv": "Export CSV",
+  "previewPdf": "Preview",
+  "downloadPdf": "Download",
+  "exportCsvBtn": "CSV",
+  "stats": {
+    "ticketTotal": "Total Ticket Costs",
+    "labor": "Labor Costs",
+    "materials": "Material Costs",
+    "billableHours": "Billable Hours",
+    "recurring": "Active Contracts",
+    "estimatedMargin": "Estimated Margin"
+  },
+  "filters": {
+    "allClients": "All Clients",
+    "allTechnicians": "All Technicians"
+  },
+  "contractForm": {
+    "title": "Contracts / SLA",
+    "save": "Save Contract",
+    "clientPlaceholder": "Client...",
+    "namePlaceholder": "Contract name",
+    "feePlaceholder": "Fee",
+    "hoursPlaceholder": "Included hours",
+    "extraRatePlaceholder": "Extra rate",
+    "defaultName": "Support contract"
+  },
+  "contracts": {
+    "title": "Active Contracts & Extra Hours",
+    "noContracts": "No contracts configured.",
+    "period": {
+      "monthly": "Monthly",
+      "annual": "Annual"
+    },
+    "fee": "Recurring Fee",
+    "includedHours": "Included Hours",
+    "usedHours": "Used Hours",
+    "estimatedExtra": "Estimated Extra"
+  },
+  "summaryTables": {
+    "perClient": "Costs by Client",
+    "perTechnician": "Costs by Technician",
+    "nameHeader": "Name",
+    "hoursHeader": "Hours",
+    "totalHeader": "Total",
+    "noData": "No data"
+  },
+  "detailTable": {
+    "title": "Billable Ticket Details",
+    "ticketsInPeriod": "{{count}} tickets in period",
+    "headers": {
+      "ticket": "Ticket",
+      "client": "Client",
+      "technician": "Technician",
+      "hours": "Hours",
+      "rate": "Rate",
+      "labor": "Labor",
+      "materials": "Materials",
+      "total": "Total",
+      "status": "Status"
+    },
+    "loading": "Loading costs...",
+    "empty": "No costs in the selected period"
+  },
+  "feedback": {
+    "loadError": "Error loading costs",
+    "insufficientPermissions": "Insufficient permissions",
+    "selectClient": "Select a client",
+    "contractSaved": "Contract saved",
+    "contractSaveError": "Error saving contract",
+    "csvExported": "CSV costs exported",
+    "pdfExportError": "Error exporting PDF costs"
+  },
+  "fallbacks": {
+    "noName": "No name",
+    "client": "Client",
+    "notAssigned": "Not assigned",
+    "clientNotIndicated": "Client not indicated"
+  }
+}

@@ -8,6 +8,7 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useAuth } from "@/lib/auth-context";
@@ -46,6 +47,7 @@ export function TicketAttachments({
   noteId?: string | null;
   compact?: boolean;
 }) {
+  const { t } = useTranslation("tickets");
   const { user, canEdit } = useAuth();
   const attachmentsQuery = useTicketAttachments(ticketId, noteId);
   const attachments = useMemo(
@@ -79,16 +81,16 @@ export function TicketAttachments({
   }, [attachments, compact]);
 
   async function uploadFiles(fileList: FileList | File[]) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const files = Array.from(fileList).filter(Boolean);
     if (!files.length) return;
     try {
       for (const file of files) {
         await uploadMut.mutateAsync({ file, uploadedBy: user?.id });
       }
-      toast.success(files.length === 1 ? "Allegato caricato" : "Allegati caricati");
+      toast.success(files.length === 1 ? t("attachments.uploadSuccess", "Allegato caricato") : t("attachments.uploadSuccessPlural", "Allegati caricati"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore caricamento allegato");
+      toast.error(err?.message || t("attachments.uploadError", "Errore caricamento allegato"));
     }
   }
 
@@ -97,7 +99,7 @@ export function TicketAttachments({
       const url = await getAttachmentSignedUrl(attachment);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err: any) {
-      toast.error(err?.message || "Anteprima non disponibile");
+      toast.error(err?.message || t("attachments.previewError", "Anteprima non disponibile"));
     }
   }
 
@@ -106,7 +108,7 @@ export function TicketAttachments({
       const url = await downloadAttachment(attachment);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err: any) {
-      toast.error(err?.message || "Download non disponibile");
+      toast.error(err?.message || t("attachments.downloadError", "Download non disponibile"));
     }
   }
 
@@ -114,9 +116,9 @@ export function TicketAttachments({
     if (!canEdit) return;
     try {
       await deleteMut.mutateAsync(attachment);
-      toast.success("Allegato eliminato");
+      toast.success(t("attachments.deleteSuccess", "Allegato eliminato"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore eliminazione allegato");
+      toast.error(err?.message || t("attachments.deleteError", "Errore eliminazione allegato"));
     }
   }
 
@@ -125,16 +127,16 @@ export function TicketAttachments({
       {!compact && (
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-[14px] font-bold">Allegati</h3>
+            <h3 className="text-[14px] font-bold">{t("attachments.title", "Allegati")}</h3>
             <p className="text-[12px] text-text3">
-              File, screenshot e documenti collegati al ticket.
+              {t("attachments.description", "File, screenshot e documenti collegati al ticket.")}
             </p>
           </div>
           <span
             className="rounded-full px-2 py-0.5 text-[11px] font-mono text-text3"
             style={{ background: "var(--surface2)" }}
           >
-            {attachments.length} file
+            {t("attachments.count", "{{count}} file", { count: attachments.length })}
           </span>
         </div>
       )}
@@ -156,9 +158,9 @@ export function TicketAttachments({
         >
           <UploadCloud className="h-6 w-6 text-text3" />
           <span className="text-[12.5px] font-semibold">
-            Trascina qui i file o clicca per caricarli
+            {t("attachments.dropZoneText", "Trascina qui i file o clicca per caricarli")}
           </span>
-          <span className="text-[11px] text-text3">Immagini, PDF e documenti</span>
+          <span className="text-[11px] text-text3">{t("attachments.dropZoneHint", "Immagini, PDF e documenti")}</span>
           <input
             type="file"
             multiple
@@ -172,14 +174,14 @@ export function TicketAttachments({
       )}
 
       {attachmentsQuery.isLoading && (
-        <div className="text-[12px] text-text3">Caricamento allegati...</div>
+        <div className="text-[12px] text-text3">{t("attachments.loadingText", "Caricamento allegati...")}</div>
       )}
       {!compact && !attachmentsQuery.isLoading && attachments.length === 0 && (
         <div
           className="rounded-lg border p-4 text-center text-[12px] text-text3"
           style={{ borderColor: "var(--border)" }}
         >
-          Nessun allegato presente
+          {t("attachments.emptyText", "Nessun allegato presente")}
         </div>
       )}
 
@@ -246,14 +248,14 @@ export function TicketAttachments({
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => openPreview(attachment)}
             >
-              <Eye className="h-3 w-3" /> Anteprima
+              <Eye className="h-3 w-3" /> {t("attachments.preview", "Anteprima")}
             </button>
             <button
               type="button"
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => download(attachment)}
             >
-              <Download className="h-3 w-3" /> Download
+              <Download className="h-3 w-3" /> {t("attachments.download", "Download")}
             </button>
             {canEdit && (
               <button
@@ -261,7 +263,7 @@ export function TicketAttachments({
                 className="pc-btn pc-btn-ghost pc-btn-sm text-red-600"
                 onClick={() => remove(attachment)}
               >
-                <Trash2 className="h-3 w-3" /> Elimina
+                <Trash2 className="h-3 w-3" /> {t("attachments.delete", "Elimina")}
               </button>
             )}
           </div>
@@ -270,7 +272,7 @@ export function TicketAttachments({
 
       {compact && attachments.length > 0 && (
         <div className="flex items-center gap-1 text-[11px] text-text3">
-          <Paperclip className="h-3 w-3" /> {attachments.length} allegati nota
+          <Paperclip className="h-3 w-3" /> {t("attachments.noteAttachments", "{{count}} allegati nota", { count: attachments.length })}
         </div>
       )}
     </section>

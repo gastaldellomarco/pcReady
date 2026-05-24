@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "title": "Kanban — PCReady",
+    "description": "Vista Kanban dei ticket per stato di preparazione."
+  },
+  "title": "Kanban Board",
+  "subtitle": "Gestione visuale del flusso di lavoro e dei ticket.",
+  "wipLimits": "Limiti WIP",
+  "setWipLimit": "Imposta limite WIP per {{column}}",
+  "wipWarning": "Attenzione: superato limite WIP per {{column}}!",
+  "emptyState": "Nessun ticket in questa colonna.",
+  "dragHere": "Trascina qui",
+  "expandColumn": "Espandi {{column}}",
+  "compact": "Compatta",
+  "compactTitle": "Vista compatta — nascondi colonne vuote",
+  "syncing": "Sincronizzazione…",
+  "ticketCount": "ticket",
+  "swimlanes": "Swim Lanes",
+  "swimlanesHeader": "Tecnico / Stato",
+  "inColumnSince": "In questa colonna da {{time}}",
+  "assignTitle": "Assegna",
+  "moveTo": "Sposta a",
+  "filters": {
+    "allTechs": "Tutti i tecnici",
+    "myTickets": "Solo i miei",
+    "unassigned": "Non assegnati",
+    "allPriorities": "Tutte le priorità",
+    "allTypes": "Tutti i tipi",
+    "allSla": "Tutti SLA",
+    "clear": "Azzera filtri"
+  },
+  "wipConfig": {
+    "title": "Configura Kanban",
+    "desc": "Limiti WIP e colori sfondo colonne. 0 = nessun limite.",
+    "wipLimitLabel": "Limite WIP",
+    "bgColorLabel": "Colore sfondo",
+    "reset": "Reset default",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "saving": "Salvataggio..."
+  },
+  "bulk": {
+    "selected": "selezionati",
+    "changeStatus": "Cambia stato...",
+    "reassign": "Riassegna...",
+    "priority": "Priorità...",
+    "archive": "Archivia",
+    "deselect": "Deseleziona",
+    "shiftClickHint": "Shift+click sulle card per selezionare",
+    "confirmTitleComplete": "Stai per completare {{count}} ticket",
+    "confirmTitleArchive": "Stai per archiviare {{count}} ticket",
+    "confirmDesc": "Operazione bulk Kanban sui ticket: {{preview}}"
+  },
+  "toasts": {
+    "wipLoadError": "Impossibile caricare i limiti WIP",
+    "techsLoadError": "Impossibile caricare i tecnici",
+    "wipSaveSuccess": "Configurazione Kanban salvata",
+    "wipSaveError": "Impossibile salvare configurazione Kanban",
+    "prioritySuccess": "Priorità aggiornata: {{priority}}",
+    "priorityError": "Errore aggiornamento priorità",
+    "ticketUpdateError": "Errore aggiornamento ticket",
+    "completeEmailError": "Ticket completato, ma errore invio email/verbale",
+    "bulkSuccess": "{{action}}: {{count}} ticket aggiornati",
+    "bulkError": "Operazione bulk non riuscita"
+  }
+}

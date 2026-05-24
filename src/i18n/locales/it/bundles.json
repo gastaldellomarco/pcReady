@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "title": "Bundle assistenza - PCReady",
+    "description": "Pacchetti assistenza, assegnazioni clienti e consumi"
+  },
+  "title": "Bundle assistenza",
+  "pageDescription": "Pacchetti vendibili, SLA, assegnazioni cliente, consumi e fatturazione extra.",
+  "newBundle": "Nuovo bundle",
+  "assignToClient": "Assegna a cliente",
+  "exportCsv": "Export CSV",
+  "editBundle": "Modifica bundle",
+  "editAssignment": "Modifica assegnazione",
+  "assignBundle": "Assegna bundle a cliente",
+  "csvExported": "CSV bundle esportato",
+  "clientName": "Cliente",
+  "csv": {
+    "hoursUsed": "Ore usate",
+    "hoursIncluded": "Ore incluse",
+    "hoursRemaining": "Ore residue",
+    "extraHours": "Extra ore",
+    "extraAmount": "Extra importo",
+    "expiry": "Scadenza"
+  },
+  "tabs": {
+    "catalog": "Catalogo bundle",
+    "assignments": "Assegnazioni clienti",
+    "usage": "Consumi e alert",
+    "billing": "Fatturazione"
+  },
+  "stats": {
+    "activeBundles": "Bundle attivi",
+    "activeAssignments": "Assegnazioni attive",
+    "usageAlert": "Alert consumo",
+    "billableExtra": "Extra fatturabili"
+  },
+  "errors": {
+    "adminOnly": "Solo gli admin possono gestire i bundle",
+    "adminOnlyEdit": "Solo gli admin possono modificare i bundle",
+    "insufficientPermissions": "Permessi insufficienti",
+    "loadClients": "Errore caricamento clienti",
+    "saveBundle": "Errore salvataggio bundle",
+    "updateBundle": "Errore aggiornamento bundle",
+    "saveAssignment": "Errore salvataggio assegnazione",
+    "cancelAssignment": "Errore annullamento assegnazione",
+    "invalidAssignment": "Seleziona un'assegnazione valida",
+    "savePayment": "Errore salvataggio pagamento"
+  },
+  "success": {
+    "bundleSaved": "Bundle salvato",
+    "bundleDeactivated": "Bundle disattivato",
+    "bundleReactivated": "Bundle riattivato",
+    "assignmentSaved": "Assegnazione salvata",
+    "assignmentCancelled": "Assegnazione annullata",
+    "paymentRegistered": "Pagamento registrato"
+  },
+  "badge": {
+    "usage": "Utilizzo",
+    "unlimited": "Illimitato"
+  },
+  "form": {
+    "bundleName": "Nome bundle",
+    "billingType": "Tipo fatturazione",
+    "description": "Descrizione",
+    "fee": "Canone",
+    "currency": "Valuta",
+    "includedHours": "Ore incluse",
+    "unlimitedHours": "Ore illimitate",
+    "extraRate": "Tariffa extra oraria",
+    "slaResponse": "SLA risposta (ore)",
+    "slaResolution": "SLA risoluzione (ore)",
+    "onsiteVisits": "Visite on-site incluse",
+    "unlimitedVisits": "Visite illimitate",
+    "ticketPriority": "Priorità ticket",
+    "remoteSupport": "Supporto remoto",
+    "autoRenew": "Rinnovo automatico",
+    "bundleActive": "Bundle attivo",
+    "cancel": "Annulla",
+    "saving": "Salvataggio...",
+    "save": "Salva"
+  },
+  "assignment": {
+    "client": "Cliente",
+    "bundle": "Bundle",
+    "startDate": "Data inizio",
+    "endDate": "Data fine",
+    "renewalMode": "Modalità rinnovo",
+    "renewalAutomatic": "Automatico",
+    "renewalManual": "Manuale",
+    "autoRenew": "Rinnovo automatico",
+    "selectClient": "Seleziona cliente",
+    "selectBundle": "Seleziona bundle",
+    "customOverrides": "Override personalizzati",
+    "customHint": "Lascia vuoto un campo per usare il valore configurato nel bundle.",
+    "customFee": "Canone custom",
+    "customHours": "Ore incluse custom",
+    "customExtraRate": "Tariffa extra custom",
+    "customSlaResponse": "SLA risposta custom",
+    "customSlaResolution": "SLA risoluzione custom",
+    "customOnsite": "Visite on-site custom",
+    "notes": "Note",
+    "cancel": "Annulla",
+    "saving": "Salvataggio...",
+    "save": "Salva"
+  },
+  "catalog": {
+    "active": "Attivo",
+    "inactive": "Disattivato",
+    "edit": "Modifica",
+    "deactivate": "Disattiva",
+    "reactivate": "Riattiva",
+    "fee": "Canone",
+    "type": "Tipo",
+    "includedHours": "Ore incluse",
+    "extraRate": "Tariffa extra",
+    "slaResponse": "SLA risposta",
+    "slaResolution": "SLA risoluzione",
+    "onsite": "On-site",
+    "remoteSupport": "Supporto remoto",
+    "included": "Incluso",
+    "no": "No",
+    "empty": "Nessun bundle configurato."
+  },
+  "assignments": {
+    "title": "Storico bundle assegnati",
+    "noExpiry": "senza scadenza",
+    "autoRenew": "Automatico",
+    "manualRenew": "Manuale",
+    "empty": "Nessuna assegnazione.",
+    "table": {
+      "client": "Cliente",
+      "bundle": "Bundle",
+      "status": "Stato",
+      "period": "Periodo",
+      "renewal": "Rinnovo",
+      "fee": "Canone",
+      "notes": "Note",
+      "actions": "Azioni"
+    }
+  },
+  "usage": {
+    "title": "Consumi bundle e alert",
+    "warning": "Attenzione",
+    "ok": "OK",
+    "empty": "Nessun consumo registrato.",
+    "monthlyReport": "Report mensile",
+    "noData": "Nessun dato mensile.",
+    "table": {
+      "client": "Cliente",
+      "bundle": "Bundle",
+      "hours": "Ore",
+      "onsite": "On-site",
+      "extra": "Extra",
+      "expiry": "Scadenza",
+      "alert": "Alert"
+    },
+    "monthly": {
+      "month": "Mese",
+      "hours": "Ore",
+      "extra": "Extra"
+    }
+  },
+  "billing": {
+    "title": "Canoni e fatturazione",
+    "billableExtraHours": "Ore extra fatturabili",
+    "selectAssignment": "Assegnazione...",
+    "amountPlaceholder": "Importo",
+    "notesPlaceholder": "Note pagamento...",
+    "registerPayment": "Registra pagamento",
+    "paymentHistory": "Storico canoni pagati",
+    "empty": "Nessun pagamento registrato.",
+    "table": {
+      "client": "Cliente",
+      "bundle": "Bundle",
+      "period": "Periodo",
+      "amount": "Importo",
+      "status": "Stato"
+    },
+    "status": {
+      "pending": "In attesa",
+      "paid": "Pagato",
+      "overdue": "Scaduto",
+      "cancelled": "Annullato"
+    }
+  }
+}

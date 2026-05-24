@@ -10,6 +10,7 @@ export interface AuthProfile {
   avatar_url: string | null;
   password_set: boolean;
   role: AppRole;
+  language: "it" | "en";
 }
 
 interface AuthCtx {

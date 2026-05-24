@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import {
@@ -54,10 +56,10 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 export const Route = createFileRoute("/_app/checklist")({
   head: () => ({
     meta: [
-      { title: "Checklist — PCReady" },
+      { title: i18n.t("checklist:meta.title", "Checklist — PCReady") },
       {
         name: "description",
-        content: "Crea e gestisci checklist personalizzate per la preparazione PC.",
+        content: i18n.t("checklist:meta.description", "Crea e gestisci checklist personalizzate per la preparazione PC."),
       },
     ],
   }),
@@ -80,6 +82,7 @@ interface TechnicianOption {
 }
 
 function ChecklistPage() {
+  const { t } = useTranslation("checklist");
   const { user, canEdit, isAdmin } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [active, setActive] = useState<string | null>(null);
@@ -122,9 +125,9 @@ function ChecklistPage() {
   }, [active, listQuery.isLoading, listQuery.data]);
 
   async function createNew() {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const payload = {
-      name: "Nuovo modello",
+      name: t("defaultName", "Nuovo modello"),
       description: "",
       structure: DEFAULT_STRUCTURE as unknown as Json,
       created_by: user!.id,
@@ -135,14 +138,14 @@ function ChecklistPage() {
       data.id,
       data as unknown as Record<string, unknown>,
       undefined,
-      "Modello checklist creato",
+      t("changeNotes.created", "Modello checklist creato"),
       "create",
     );
     setActive(data.id);
   }
 
   async function setDefault(id: string) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!isAdmin) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
     const template = templates.find((item) => item.id === id);
     await setDefaultMut.mutateAsync(id);
     if (template) {
@@ -151,19 +154,19 @@ function ChecklistPage() {
         id,
         { ...template, is_default: true } as unknown as Record<string, unknown>,
         { is_default: { from: template.is_default, to: true } },
-        "Impostato come modello predefinito",
+        t("changeNotes.setDefault", "Impostato come modello predefinito"),
         "update",
       );
     }
-    toast.success("Modello impostato come predefinito");
+    toast.success(t("toasts.setDefault", "Modello impostato come predefinito"));
   }
 
-  async function duplicate(t: Template) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+  async function duplicate(tmpl: Template) {
+    if (!canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const payload = {
-      name: "Copia di " + t.name,
-      description: t.description || "",
-      structure: t.structure as unknown as Json,
+      name: t("copyOf", "Copia di ") + tmpl.name,
+      description: tmpl.description || "",
+      structure: tmpl.structure as unknown as Json,
       created_by: user!.id,
     };
     const data = await createMut.mutateAsync(payload);
@@ -172,15 +175,15 @@ function ChecklistPage() {
       data.id,
       data as unknown as Record<string, unknown>,
       undefined,
-      "Modello checklist duplicato",
+      t("changeNotes.duplicated", "Modello checklist duplicato"),
       "create",
     );
     setActive(data.id);
-    toast.success("Modello duplicato");
+    toast.success(t("toasts.duplicated", "Modello duplicato"));
   }
 
   async function remove(id: string) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!isAdmin) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
     const template = templates.find((item) => item.id === id);
     if (template) {
       await createVersion(
@@ -188,40 +191,40 @@ function ChecklistPage() {
         id,
         template as unknown as Record<string, unknown>,
         undefined,
-        "Modello checklist eliminato",
+        t("changeNotes.deleted", "Modello checklist eliminato"),
         "delete",
       );
     }
     await deleteMut.mutateAsync(id);
-    toast.success("Modello eliminato");
+    toast.success(t("toasts.deleted", "Modello eliminato"));
     if (active === id) setActive(null);
   }
 
   async function update(
-    t: Template,
+    tmpl: Template,
     patch: Partial<Template>,
-    changeNote = "Modello checklist aggiornato",
+    changeNote = t("changeNotes.updated", "Modello checklist aggiornato"),
   ) {
     const dbPatch: TablesUpdate<"checklist_templates"> = {
       ...patch,
       structure: patch.structure as unknown as Json | undefined,
     };
-    await updateMut.mutateAsync({ id: t.id, patch: dbPatch });
-    const next = { ...t, ...patch } as Template;
+    await updateMut.mutateAsync({ id: tmpl.id, patch: dbPatch });
+    const next = { ...tmpl, ...patch } as Template;
     await createVersion(
       "checklist_templates",
-      t.id,
+      tmpl.id,
       next as unknown as Record<string, unknown>,
       Object.fromEntries(
         Object.entries(patch).map(([key, value]) => [
           key,
-          { from: (t as unknown as Record<string, unknown>)[key], to: value },
+          { from: (tmpl as unknown as Record<string, unknown>)[key], to: value },
         ]),
       ) as Record<string, { from: unknown; to: unknown }>,
       changeNote,
       "update",
     );
-    setTemplates((ts) => ts.map((x) => (x.id === t.id ? ({ ...x, ...patch } as Template) : x)));
+    setTemplates((ts) => ts.map((x) => (x.id === tmpl.id ? ({ ...x, ...patch } as Template) : x)));
   }
 
   const current = templates.find((t) => t.id === active);
@@ -229,7 +232,7 @@ function ChecklistPage() {
   if (listQuery.isError) {
     return (
       <PageFetchError
-        message={errorMessage(listQuery.error, "Impossibile caricare le checklist")}
+        message={errorMessage(listQuery.error, t("toasts.loadChecklists", "Impossibile caricare le checklist"))}
         onRetry={() => void listQuery.refetch()}
       />
     );
@@ -239,10 +242,10 @@ function ChecklistPage() {
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
       <div className="pc-card">
         <div className="pc-card-hd">
-          <span className="pc-card-title">Modelli</span>
+          <span className="pc-card-title">{t("sidebar.templates", "Modelli")}</span>
           {canEdit && (
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={createNew}>
-              <Plus className="w-3 h-3" /> Nuovo
+              <Plus className="w-3 h-3" /> {t("actions.new", "Nuovo")}
             </button>
           )}
         </div>
@@ -251,16 +254,16 @@ function ChecklistPage() {
           {!loading && !templates.length && (
             <PageEmptyState
               className="border-0 shadow-none bg-transparent p-4"
-              title="Nessun modello checklist"
-              description="Creane uno con il pulsante Nuovo in alto per iniziare."
+              title={t("emptyTitle", "Nessun modello checklist")}
+              description={t("emptyDescription", "Creane uno con il pulsante Nuovo in alto per iniziare.")}
             />
           )}
-          {templates.map((t) => {
-            const on = t.id === active;
+          {templates.map((tmpl) => {
+            const on = tmpl.id === active;
             return (
               <button
-                key={t.id}
-                onClick={() => setActive(t.id)}
+                key={tmpl.id}
+                onClick={() => setActive(tmpl.id)}
                 className="text-left p-2.5 rounded-[7px] transition-all"
                 style={{
                   background: on ? "var(--accent2)" : "var(--surface2)",
@@ -272,20 +275,20 @@ function ChecklistPage() {
                     className="text-[13px] font-semibold flex-1 truncate"
                     style={{ color: on ? "var(--accent)" : "var(--text)" }}
                   >
-                    {t.name}
+                    {tmpl.name}
                   </span>
-                  <VersionBadge entityType="checklist_templates" entityId={t.id} />
-                  {t.is_default && (
+                  <VersionBadge entityType="checklist_templates" entityId={tmpl.id} />
+                  {tmpl.is_default && (
                     <Star className="w-3 h-3 fill-current" style={{ color: "var(--warn)" }} />
                   )}
                 </div>
 
-                {t.description && (
-                  <div className="text-[11px] text-text3 truncate mt-0.5">{t.description}</div>
+                {tmpl.description && (
+                  <div className="text-[11px] text-text3 truncate mt-0.5">{tmpl.description}</div>
                 )}
                 <div className="text-[10px] text-text3 font-mono mt-1">
-                  {Object.values(t.structure || {}).reduce((a, c) => a + (c.items?.length || 0), 0)}{" "}
-                  voci
+                  {Object.values(tmpl.structure || {}).reduce((a, c) => a + (c.items?.length || 0), 0)}{" "}
+                  {t("itemsCount", "voci")}
                 </div>
               </button>
             );
@@ -308,7 +311,7 @@ function ChecklistPage() {
         />
       ) : (
         <div className="pc-card flex items-center justify-center min-h-[400px]">
-          <div className="text-text3 text-sm">Seleziona o crea un modello</div>
+          <div className="text-text3 text-sm">{t("selectPrompt", "Seleziona o crea un modello")}</div>
         </div>
       )}
       <VersionHistoryDrawer
@@ -320,14 +323,14 @@ function ChecklistPage() {
       />
       <DestructiveConfirmDialog
         open={!!deleteTemplateTarget}
-        title="Eliminare questo modello?"
+        title={t("deleteDialog.title", "Eliminare questo modello?")}
         description={
           deleteTemplateTarget
-            ? `Il modello "${deleteTemplateTarget.name}" e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata.`
-            : "Il modello e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata."
+            ? t("deleteDialog.description", { name: deleteTemplateTarget.name, defaultValue: "Il modello verra' rimosso." })
+            : t("deleteDialog.descriptionGeneric", "Il modello e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata.")
         }
-        confirmLabel="Elimina modello"
-        loadingLabel="Eliminazione..."
+        confirmLabel={t("deleteDialog.confirm", "Elimina modello")}
+        loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
         onOpenChange={(open) => !open && setDeleteTemplateTarget(null)}
         onConfirm={async () => {
           if (deleteTemplateTarget) await remove(deleteTemplateTarget.id);
@@ -358,6 +361,7 @@ function TemplateEditor({
   onDuplicate: () => void;
   technicians: TechnicianOption[];
 }) {
+  const { t } = useTranslation("checklist");
   const [name, setName] = useState(template.name);
   const [desc, setDesc] = useState(template.description || "");
   const [struct, setStruct] = useState<ChecklistStructure>(template.structure || {});
@@ -380,7 +384,7 @@ function TemplateEditor({
     setPreviewMode(false);
   }, [template.description, template.id, template.name, template.structure]);
 
-  function persist(s: ChecklistStructure, changeNote = "Struttura checklist aggiornata") {
+  function persist(s: ChecklistStructure, changeNote = t("changeNotes.structureUpdated", "Struttura checklist aggiornata")) {
     setStruct(s);
     onUpdate({ structure: s }, changeNote);
   }
@@ -388,40 +392,40 @@ function TemplateEditor({
   function addTab() {
     const key = "sec_" + Math.random().toString(36).slice(2, 8);
     persist(
-      { ...struct, [key]: { label: "Nuova sezione", items: [] } },
-      "Sezione checklist aggiunta",
+      { ...struct, [key]: { label: t("newSection", "Nuova sezione"), items: [] } },
+      t("changeNotes.sectionAdded", "Sezione checklist aggiunta"),
     );
     setActiveTab(key);
   }
   function renameTab(key: string, label: string) {
-    persist({ ...struct, [key]: { ...struct[key], label } }, "Sezione checklist rinominata");
+    persist({ ...struct, [key]: { ...struct[key], label } }, t("changeNotes.sectionRenamed", "Sezione checklist rinominata"));
   }
   function removeTab(key: string) {
     const c = { ...struct };
     delete c[key];
-    persist(c, "Sezione checklist rimossa");
+    persist(c, t("changeNotes.sectionRemoved", "Sezione checklist rimossa"));
     setActiveTab(Object.keys(c)[0] || "");
   }
   function addItem() {
     const id = "i_" + Math.random().toString(36).slice(2, 8);
-    const items = [...(struct[activeTab]?.items || []), { id, text: "Nuova voce" }];
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist aggiunta");
+    const items = [...(struct[activeTab]?.items || []), { id, text: t("newItem", "Nuova voce") }];
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemAdded", "Voce checklist aggiunta"));
   }
   function updateItem(id: string, text: string) {
     const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, text } : i));
     persist(
       { ...struct, [activeTab]: { ...struct[activeTab], items } },
-      "Voce checklist aggiornata",
+      t("changeNotes.itemUpdated", "Voce checklist aggiornata"),
     );
   }
   function updateItemType(id: string, type: "checkbox" | "text" | "number") {
     const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, type } : i));
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Tipo voce modificato");
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemTypeChanged", "Tipo voce modificato"));
   }
   function updateSectionAssignee(key: string, assignedTo: string) {
     persist(
       { ...struct, [key]: { ...struct[key], assigned_to: assignedTo || null } },
-      assignedTo ? "Tecnico assegnato alla sezione" : "Assegnazione sezione rimossa",
+      assignedTo ? t("changeNotes.sectionAssigned", "Tecnico assegnato alla sezione") : t("changeNotes.sectionUnassigned", "Assegnazione sezione rimossa"),
     );
   }
 
@@ -429,12 +433,12 @@ function TemplateEditor({
     const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, required } : i));
     persist(
       { ...struct, [activeTab]: { ...struct[activeTab], items } },
-      required ? "Voce impostata come obbligatoria" : "Voce impostata come opzionale",
+      required ? t("changeNotes.itemRequired", "Voce impostata come obbligatoria") : t("changeNotes.itemOptional", "Voce impostata come opzionale"),
     );
   }
   function removeItem(id: string) {
     const items = struct[activeTab].items.filter((i) => i.id !== id);
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, "Voce checklist rimossa");
+    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemRemoved", "Voce checklist rimossa"));
   }
 
   // -- Drag & drop -----------------------------------------------------------
@@ -472,7 +476,7 @@ function TemplateEditor({
           [srcSec]: { ...struct[srcSec], items: srcItems },
           [targetSection]: { ...struct[targetSection], items: tgtItems },
         },
-        "Voce spostata tra sezioni",
+        t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"),
       );
       return;
     }
@@ -490,7 +494,7 @@ function TemplateEditor({
       const reordered = arrayMove(items, oldIdx, newIdx);
       persist(
         { ...struct, [srcSec]: { ...struct[srcSec], items: reordered } },
-        "Voce checklist riordinata",
+        t("changeNotes.itemReordered", "Voce checklist riordinata"),
       );
     } else {
       // Different section - move before target
@@ -508,7 +512,7 @@ function TemplateEditor({
           [srcSec]: { ...struct[srcSec], items: srcItems },
           [tgtSec]: { ...struct[tgtSec], items: tgtItems },
         },
-        "Voce spostata tra sezioni",
+        t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"),
       );
     }
   }
@@ -527,7 +531,7 @@ function TemplateEditor({
             value={name}
             disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
-            onBlur={() => name !== template.name && onUpdate({ name }, "Nome checklist aggiornato")}
+            onBlur={() => name !== template.name && onUpdate({ name }, t("changeNotes.nameUpdated", "Nome checklist aggiornato"))}
           />
           <div className="ml-auto flex items-center gap-2">
             {/* Preview toggle */}
@@ -535,15 +539,15 @@ function TemplateEditor({
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={() => setPreviewMode((p) => !p)}
-                title={previewMode ? "Torna a modifica" : "Anteprima"}
+                title={previewMode ? t("editToggle", "Torna a modifica") : t("previewToggle", "Anteprima")}
               >
                 {previewMode ? (
                   <>
-                    <EyeOff className="w-3 h-3" /> Modifica
+                    <EyeOff className="w-3 h-3" /> {t("actions.edit", "Modifica")}
                   </>
                 ) : (
                   <>
-                    <Eye className="w-3 h-3" /> Anteprima
+                    <Eye className="w-3 h-3" /> {t("actions.preview", "Anteprima")}
                   </>
                 )}
               </button>
@@ -552,35 +556,35 @@ function TemplateEditor({
             {/* Duplicate */}
             {canEdit && (
               <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onDuplicate}>
-                <Copy className="w-3 h-3" /> Duplica
+                <Copy className="w-3 h-3" /> {t("actions.duplicate", "Duplica")}
               </button>
             )}
 
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onOpenVersions}>
-              <History className="w-3 h-3" /> Versioni
+              <History className="w-3 h-3" /> {t("actions.versions", "Versioni")}
             </button>
 
             {isAdmin && (
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={onSetDefault}
-                title={template.is_default ? "Già predefinito" : "Imposta come predefinito"}
+                title={template.is_default ? t("alreadyDefault", "Già predefinito") : t("setAsDefault", "Imposta come predefinito")}
               >
                 {template.is_default ? (
                   <>
                     <Star className="w-3 h-3 fill-current" style={{ color: "var(--warn)" }} />{" "}
-                    Predefinito
+                    {t("default", "Predefinito")}
                   </>
                 ) : (
                   <>
-                    <StarOff className="w-3 h-3" /> Imposta predefinito
+                    <StarOff className="w-3 h-3" /> {t("setDefault", "Imposta predefinito")}
                   </>
                 )}
               </button>
             )}
             {isAdmin && (
               <button className="pc-btn pc-btn-danger pc-btn-sm" onClick={onDelete}>
-                <Trash2 className="w-3 h-3" /> Elimina
+                <Trash2 className="w-3 h-3" /> {t("delete", "Elimina")}
               </button>
             )}
           </div>
@@ -589,13 +593,13 @@ function TemplateEditor({
         <div className="px-5 pt-4">
           <input
             className="pc-input"
-            placeholder="Descrizione (opzionale)"
+            placeholder={t("descriptionPlaceholder", "Descrizione (opzionale)")}
             value={desc}
             disabled={!canEdit}
             onChange={(e) => setDesc(e.target.value)}
             onBlur={() =>
               desc !== (template.description || "") &&
-              onUpdate({ description: desc }, "Descrizione checklist aggiornata")
+              onUpdate({ description: desc }, t("changeNotes.descriptionUpdated", "Descrizione checklist aggiornata"))
             }
           />
         </div>
@@ -662,7 +666,7 @@ function TemplateEditor({
                 <button
                   onClick={addTab}
                   className="px-2.5 py-2 text-text3 hover:text-accent"
-                  title="Aggiungi sezione"
+                  title={t("addSectionTitle", "Aggiungi sezione")}
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -675,7 +679,7 @@ function TemplateEditor({
             <>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[11px] text-text3 uppercase tracking-wider">
-                  Voci della sezione
+                  {t("sectionItems", "Voci della sezione")}
                 </span>
                 {canEdit && !previewMode && (
                   <button
@@ -685,7 +689,7 @@ function TemplateEditor({
                       setTabLabel(struct[activeTab].label);
                     }}
                   >
-                    <Pencil className="w-3 h-3" /> Rinomina
+                    <Pencil className="w-3 h-3" /> {t("rename", "Rinomina")}
                   </button>
                 )}
                 {canEdit && !previewMode && Object.keys(struct).length > 1 && (
@@ -693,7 +697,7 @@ function TemplateEditor({
                     className="pc-btn pc-btn-danger pc-btn-sm"
                     onClick={() => setDeleteSectionKey(activeTab)}
                   >
-                    <Trash2 className="w-3 h-3" /> Sezione
+                    <Trash2 className="w-3 h-3" /> {t("section", "Sezione")}
                   </button>
                 )}
               </div>
@@ -702,14 +706,14 @@ function TemplateEditor({
                 className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border p-2"
                 style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
-                <span className="text-[12px] font-semibold">Assegna sezione a tecnico</span>
+                <span className="text-[12px] font-semibold">{t("assignTech", "Assegna sezione a tecnico")}</span>
                 {canEdit && !previewMode ? (
                   <select
                     className="pc-input h-8 max-w-[260px] py-0 text-[12px] leading-normal"
                     value={struct[activeTab].assigned_to ?? ""}
                     onChange={(event) => updateSectionAssignee(activeTab, event.target.value)}
                   >
-                    <option value="">— Nessun tecnico specifico —</option>
+                    <option value="">{t("noSpecificTechShort", "— Nessun tecnico specifico —")}</option>
                     {technicians.map((tech) => (
                       <option key={tech.id} value={tech.id}>
                         {tech.full_name}
@@ -719,7 +723,7 @@ function TemplateEditor({
                 ) : (
                   <span className="text-[12px] text-text3">
                     {technicians.find((tech) => tech.id === struct[activeTab].assigned_to)
-                      ?.full_name || "Nessun tecnico specifico"}
+                      ?.full_name || t("noSpecificTech", "Nessun tecnico specifico")}
                   </span>
                 )}
               </div>
@@ -759,7 +763,7 @@ function TemplateEditor({
                             ? [activeDragId.split(":")[0], activeDragId.split(":")[1]]
                             : [activeTab, activeDragId];
                           const found = struct[sec]?.items.find((i) => i.id === itId);
-                          return found?.text || "Voce";
+                          return found?.text || t("item", "Voce");
                         })()}
                       </span>
                     </div>
@@ -773,14 +777,14 @@ function TemplateEditor({
                   className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[7px] text-[12px] text-text3 hover:text-accent transition-colors"
                   style={{ border: "1.5px dashed var(--border2)" }}
                 >
-                  <Plus className="w-3.5 h-3.5" /> Aggiungi voce
+                  <Plus className="w-3.5 h-3.5" /> {t("addItem", "Aggiungi voce")}
                 </button>
               )}
               {!struct[activeTab].items.length && (
                 <div className="text-center py-6 text-text3 text-[12px]">
                   {previewMode
-                    ? "Nessuna voce"
-                    : "Nessuna voce. Aggiungine una con il pulsante sopra."}
+                    ? t("noItems", "Nessuna voce")
+                    : t("noItemsHint", "Nessuna voce. Aggiungine una con il pulsante sopra.")}
                 </div>
               )}
             </>
@@ -789,14 +793,14 @@ function TemplateEditor({
       </div>
       <DestructiveConfirmDialog
         open={!!deleteSectionKey}
-        title="Eliminare questa sezione?"
+        title={t("deleteSectionDialog.title", "Eliminare questa sezione?")}
         description={
           deleteSectionKey && struct[deleteSectionKey]
-            ? `La sezione "${struct[deleteSectionKey].label}" e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.`
-            : "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata."
+            ? t("deleteSectionDialog.description", { label: struct[deleteSectionKey].label, defaultValue: "La sezione verra' rimossa." })
+            : t("deleteSectionDialog.descriptionGeneric", "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.")
         }
-        confirmLabel="Elimina sezione"
-        loadingLabel="Eliminazione..."
+        confirmLabel={t("deleteSectionDialog.confirm", "Elimina sezione")}
+        loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
         onOpenChange={(open) => !open && setDeleteSectionKey(null)}
         onConfirm={async () => {
           if (deleteSectionKey) removeTab(deleteSectionKey);
@@ -826,6 +830,7 @@ function SortableChecklistItem({
   onTypeChange: (id: string, type: "checkbox" | "text" | "number") => void;
   onRequiredChange: (id: string, required: boolean) => void;
 }) {
+  const { t } = useTranslation("checklist");
   const dndId = `${sectionKey}:${item.id}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: dndId,
@@ -852,7 +857,7 @@ function SortableChecklistItem({
           className="pc-btn-icon touch-target cursor-grab"
           {...attributes}
           {...listeners}
-          title="Trascina per riordinare"
+          title={t("dragReorder", "Trascina per riordinare")}
         >
           <GripVertical className="w-3 h-3" />
         </button>
@@ -881,7 +886,7 @@ function SortableChecklistItem({
         <div className="flex-1 flex items-center">
           <input
             className="w-full bg-transparent outline-none text-[13px] border-b border-dashed border-border2 px-1 pb-0.5"
-            placeholder="Inserisci testo..."
+            placeholder={t("textPlaceholder", "Inserisci testo...")}
             disabled
             value=""
           />
@@ -899,7 +904,7 @@ function SortableChecklistItem({
 
       {/* Required badge (preview) */}
       {!inEdit && item.required && (
-        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title="Obbligatoria">
+        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title={t("requiredLabel", "Obbligatoria")}>
           *
         </span>
       )}
@@ -909,7 +914,7 @@ function SortableChecklistItem({
         <button
           className={`pc-btn-icon touch-target ${item.required ? "text-red-500" : "opacity-30"}`}
           onClick={() => onRequiredChange(item.id, !item.required)}
-          title={item.required ? "Obbligatoria" : "Non obbligatoria"}
+          title={item.required ? t("requiredLabel", "Obbligatoria") : t("notRequired", "Non obbligatoria")}
         >
           <Asterisk className="w-3 h-3" />
         </button>
@@ -922,9 +927,9 @@ function SortableChecklistItem({
           value={itemType}
           onChange={(e) => onTypeChange(item.id, e.target.value as "checkbox" | "text" | "number")}
         >
-          <option value="checkbox">Checkbox</option>
-          <option value="text">Testo</option>
-          <option value="number">Numero</option>
+          <option value="checkbox">{t("typeCheckbox", "Checkbox")}</option>
+          <option value="text">{t("typeText", "Testo")}</option>
+          <option value="number">{t("typeNumber", "Numero")}</option>
         </select>
       )}
 
@@ -933,7 +938,7 @@ function SortableChecklistItem({
         <button
           className="pc-btn-icon touch-target flex-shrink-0"
           onClick={() => onRemove(item.id)}
-          title="Rimuovi"
+          title={t("remove", "Rimuovi")}
         >
           <Trash2 className="w-3 h-3" />
         </button>

@@ -4,16 +4,17 @@ import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
-import { downloadPdf, previewPdf } from "@/components/pcready/pdf/export";
 // PDF generation is dynamically imported to avoid bundling heavy @react-pdf/renderer in the client
 import { Download, Eye, FileText, Save, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 export const Route = createFileRoute("/_app/costs")({
   head: () => ({
     meta: [
-      { title: "Costi - PCReady" },
-      { name: "description", content: "Gestione costi ticket, contratti e report fatturazione." },
+      { title: i18n.t("costs:meta.title") },
+      { name: "description", content: i18n.t("costs:meta.description") },
     ],
   }),
   component: CostsPage,
@@ -86,6 +87,7 @@ const emptyContractDraft: ContractDraft = {
 function CostsPage() {
   const { canEdit, profile } = useAuth();
   const canManageCosts = profile?.role === "admin" || profile?.role === "tech";
+  const { t } = useTranslation("costs");
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(defaultDateTo);
   const [clientFilter, setClientFilter] = useState("all");
@@ -121,7 +123,7 @@ function CostsPage() {
       setContracts((contractResult.data ?? []) as ContractRow[]);
       setClients((clientResult.data ?? []) as ClientOption[]);
     } catch (error) {
-      toast.error(errorMessage(error, "Errore caricamento costi"));
+      toast.error(errorMessage(error, t("feedback.loadError", "Errore caricamento costi")));
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ function CostsPage() {
         new Map(
           tickets
             .filter((ticket) => ticket.assignee_id)
-            .map((ticket) => [ticket.assignee_id!, ticket.technician_name || "Senza nome"]),
+            .map((ticket) => [ticket.assignee_id!, ticket.technician_name || t("fallbacks.noName", "Senza nome")]),
         ).entries(),
       ).sort((a, b) => a[1].localeCompare(b[1])),
     [tickets],
@@ -171,20 +173,23 @@ function CostsPage() {
     return { ticketTotal, labor, materials, hours, recurring, estimatedRevenue };
   }, [filteredContracts, filteredTickets]);
 
-  const byClient = useMemo(() => groupCosts(filteredTickets, "client_name"), [filteredTickets]);
+  const byClient = useMemo(
+    () => groupCosts(filteredTickets, "client_name", { client: t("fallbacks.clientNotIndicated", "Cliente non indicato") }),
+    [filteredTickets, t],
+  );
   const byTechnician = useMemo(
-    () => groupCosts(filteredTickets, "technician_name"),
-    [filteredTickets],
+    () => groupCosts(filteredTickets, "technician_name", { technician: t("fallbacks.notAssigned", "Non assegnato") }),
+    [filteredTickets, t],
   );
 
   async function saveContract() {
-    if (!canManageCosts || !canEdit) return toast.error("Permessi insufficienti");
-    if (!draft.client_id) return toast.error("Seleziona un cliente");
+    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!draft.client_id) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
     setBusy(true);
     try {
       const { error } = await (supabase as any).from("client_contracts").insert({
         client_id: draft.client_id,
-        name: draft.name.trim() || "Contratto assistenza",
+        name: draft.name.trim() || t("contractForm.defaultName", "Contratto assistenza"),
         billing_period: draft.billing_period,
         recurring_fee: numberFromDraft(draft.recurring_fee),
         included_hours: numberFromDraft(draft.included_hours),
@@ -196,9 +201,9 @@ function CostsPage() {
       if (error) throw error;
       setDraft(emptyContractDraft);
       await loadData();
-      toast.success("Contratto salvato");
+      toast.success(t("feedback.contractSaved", "Contratto salvato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore salvataggio contratto"));
+      toast.error(errorMessage(error, t("feedback.contractSaveError", "Errore salvataggio contratto")));
     } finally {
       setBusy(false);
     }
@@ -208,15 +213,15 @@ function CostsPage() {
     downloadCsv(
       [
         [
-          "Ticket",
-          "Cliente",
-          "Tecnico",
-          "Ore",
-          "Tariffa",
-          "Manodopera",
-          "Materiali",
-          "Totale",
-          "Stato",
+          t("detailTable.headers.ticket", "Ticket"),
+          t("detailTable.headers.client", "Cliente"),
+          t("detailTable.headers.technician", "Tecnico"),
+          t("detailTable.headers.hours", "Ore"),
+          t("detailTable.headers.rate", "Tariffa"),
+          t("detailTable.headers.labor", "Manodopera"),
+          t("detailTable.headers.materials", "Materiali"),
+          t("detailTable.headers.total", "Totale"),
+          t("detailTable.headers.status", "Stato"),
         ],
         ...filteredTickets.map((ticket) => [
           ticket.ticket_code,
@@ -232,7 +237,7 @@ function CostsPage() {
       ],
       buildDownloadFileName("pcready-costi-ticket", "csv", { dated: true }),
     );
-    toast.success("CSV costi esportato");
+    toast.success(t("feedback.csvExported", "CSV costi esportato"));
   }
 
   async function exportPdf(mode: "preview" | "download") {
@@ -258,7 +263,7 @@ function CostsPage() {
           buildDownloadFileName("pcready-report-costi", "pdf", { dated: true }),
         );
     } catch (error) {
-      toast.error(errorMessage(error, "Errore export PDF costi"));
+      toast.error(errorMessage(error, t("feedback.pdfExportError", "Errore export PDF costi")));
     } finally {
       setPdfBusy(null);
     }
@@ -269,9 +274,9 @@ function CostsPage() {
       <div className="pc-card">
         <div className="pc-card-hd">
           <div>
-            <div className="pc-card-title">Gestione costi</div>
+            <div className="pc-card-title">{t("title", "Gestione costi")}</div>
             <div className="mt-1 text-sm text-text3">
-              Ticket, manodopera, materiali, contratti e report fatturazione
+              {t("subtitle", "Ticket, manodopera, materiali, contratti e report fatturazione")}
             </div>
           </div>
           <TrendingUp className="h-5 w-5 text-text3" />
@@ -295,7 +300,7 @@ function CostsPage() {
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
             >
-              <option value="all">Tutti i clienti</option>
+              <option value="all">{t("filters.allClients", "Tutti i clienti")}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.company_name || client.name}
@@ -307,7 +312,7 @@ function CostsPage() {
               value={technicianFilter}
               onChange={(e) => setTechnicianFilter(e.target.value)}
             >
-              <option value="all">Tutti i tecnici</option>
+              <option value="all">{t("filters.allTechnicians", "Tutti i tecnici")}</option>
               {technicians.map(([id, name]) => (
                 <option key={id} value={id}>
                   {name}
@@ -319,30 +324,30 @@ function CostsPage() {
               onClick={() => exportPdf("preview")}
               disabled={!!pdfBusy}
             >
-              <Eye className="h-3 w-3" /> PDF
+              <Eye className="h-3 w-3" /> {t("previewPdf", "PDF")}
             </button>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => exportPdf("download")}
               disabled={!!pdfBusy}
             >
-              <FileText className="h-3 w-3" /> Scarica
+              <FileText className="h-3 w-3" /> {t("downloadPdf", "Scarica")}
             </button>
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={exportCsv}>
-              <Download className="h-3 w-3" /> CSV
+              <Download className="h-3 w-3" /> {t("exportCsvBtn", "CSV")}
             </button>
           </div>
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <CostStat label="Totale ticket" value={formatCurrency(summary.ticketTotal)} />
-        <CostStat label="Manodopera" value={formatCurrency(summary.labor)} />
-        <CostStat label="Materiali" value={formatCurrency(summary.materials)} />
-        <CostStat label="Ore fatturabili" value={formatHours(summary.hours)} />
-        <CostStat label="Canoni attivi" value={formatCurrency(summary.recurring)} />
+        <CostStat label={t("stats.ticketTotal", "Totale ticket")} value={formatCurrency(summary.ticketTotal)} />
+        <CostStat label={t("stats.labor", "Manodopera")} value={formatCurrency(summary.labor)} />
+        <CostStat label={t("stats.materials", "Materiali")} value={formatCurrency(summary.materials)} />
+        <CostStat label={t("stats.billableHours", "Ore fatturabili")} value={formatHours(summary.hours)} />
+        <CostStat label={t("stats.recurring", "Canoni attivi")} value={formatCurrency(summary.recurring)} />
         <CostStat
-          label="Margine stimato"
+          label={t("stats.estimatedMargin", "Margine stimato")}
           value={formatCurrency(summary.estimatedRevenue - summary.materials)}
           tone="success"
         />
@@ -351,13 +356,13 @@ function CostsPage() {
       {canManageCosts && (
         <div className="pc-card">
           <div className="pc-card-hd">
-            <div className="pc-card-title">Contratti / SLA cliente</div>
+            <div className="pc-card-title">{t("contractForm.title", "Contratti / SLA cliente")}</div>
             <button
               className="pc-btn pc-btn-primary pc-btn-sm"
               onClick={saveContract}
               disabled={busy || !canEdit}
             >
-              <Save className="h-3 w-3" /> Salva contratto
+              <Save className="h-3 w-3" /> {t("contractForm.save", "Salva contratto")}
             </button>
           </div>
           <div className="pc-card-body grid gap-2 md:grid-cols-4 xl:grid-cols-8">
@@ -366,7 +371,7 @@ function CostsPage() {
               value={draft.client_id}
               onChange={(e) => setDraft((v) => ({ ...v, client_id: e.target.value }))}
             >
-              <option value="">Cliente...</option>
+              <option value="">{t("contractForm.clientPlaceholder", "Cliente...")}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.company_name || client.name}
@@ -377,7 +382,7 @@ function CostsPage() {
               className="pc-input xl:col-span-2"
               value={draft.name}
               onChange={(e) => setDraft((v) => ({ ...v, name: e.target.value }))}
-              placeholder="Nome contratto"
+              placeholder={t("contractForm.namePlaceholder", "Nome contratto")}
             />
             <select
               className="pc-input"
@@ -389,8 +394,8 @@ function CostsPage() {
                 }))
               }
             >
-              <option value="monthly">Mensile</option>
-              <option value="annual">Annuale</option>
+              <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+              <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
             </select>
             <input
               className="pc-input"
@@ -399,7 +404,7 @@ function CostsPage() {
               step="0.01"
               value={draft.recurring_fee}
               onChange={(e) => setDraft((v) => ({ ...v, recurring_fee: e.target.value }))}
-              placeholder="Canone"
+              placeholder={t("contractForm.feePlaceholder", "Canone")}
             />
             <input
               className="pc-input"
@@ -408,7 +413,7 @@ function CostsPage() {
               step="0.25"
               value={draft.included_hours}
               onChange={(e) => setDraft((v) => ({ ...v, included_hours: e.target.value }))}
-              placeholder="Ore incluse"
+              placeholder={t("contractForm.hoursPlaceholder", "Ore incluse")}
             />
             <input
               className="pc-input"
@@ -417,23 +422,23 @@ function CostsPage() {
               step="0.01"
               value={draft.extra_hourly_rate}
               onChange={(e) => setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }))}
-              placeholder="Tariffa extra"
+              placeholder={t("contractForm.extraRatePlaceholder", "Tariffa extra")}
             />
           </div>
         </div>
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SummaryTable title="Costi per cliente" rows={byClient} />
-        <SummaryTable title="Costi per tecnico" rows={byTechnician} />
+        <SummaryTable title={t("summaryTables.perClient", "Costi per cliente")} rows={byClient} />
+        <SummaryTable title={t("summaryTables.perTechnician", "Costi per tecnico")} rows={byTechnician} />
       </div>
 
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div>
-            <div className="pc-card-title">Dettaglio ticket fatturabili</div>
+            <div className="pc-card-title">{t("detailTable.title", "Dettaglio ticket fatturabili")}</div>
             <div className="mt-1 text-sm text-text3">
-              {filteredTickets.length} ticket nel periodo
+              {t("detailTable.ticketsInPeriod", { count: filteredTickets.length })}
             </div>
           </div>
         </div>
@@ -442,20 +447,20 @@ function CostsPage() {
             <thead style={{ background: "var(--surface2)" }}>
               <tr>
                 {[
-                  "Ticket",
-                  "Cliente",
-                  "Tecnico",
-                  "Ore",
-                  "Tariffa",
-                  "Manodopera",
-                  "Materiali",
-                  "Totale",
-                ].map((header) => (
+                  { key: "ticket", label: t("detailTable.headers.ticket", "Ticket") },
+                  { key: "client", label: t("detailTable.headers.client", "Cliente") },
+                  { key: "technician", label: t("detailTable.headers.technician", "Tecnico") },
+                  { key: "hours", label: t("detailTable.headers.hours", "Ore") },
+                  { key: "rate", label: t("detailTable.headers.rate", "Tariffa") },
+                  { key: "labor", label: t("detailTable.headers.labor", "Manodopera") },
+                  { key: "materials", label: t("detailTable.headers.materials", "Materiali") },
+                  { key: "total", label: t("detailTable.headers.total", "Totale") },
+                ].map(({ key, label }) => (
                   <th
-                    key={header}
+                    key={key}
                     className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
                   >
-                    {header}
+                    {label}
                   </th>
                 ))}
               </tr>
@@ -464,7 +469,7 @@ function CostsPage() {
               {loading ? (
                 <tr>
                   <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                    Caricamento costi...
+                    {t("detailTable.loading", "Caricamento costi...")}
                   </td>
                 </tr>
               ) : filteredTickets.length ? (
@@ -489,7 +494,7 @@ function CostsPage() {
               ) : (
                 <tr>
                   <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                    Nessun costo nel periodo selezionato
+                    {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
                   </td>
                 </tr>
               )}
@@ -500,7 +505,7 @@ function CostsPage() {
 
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
-          <div className="pc-card-title">Contratti attivi e ore extra</div>
+          <div className="pc-card-title">{t("contracts.title", "Contratti attivi e ore extra")}</div>
         </div>
         <div className="grid gap-3 p-4 lg:grid-cols-2">
           {filteredContracts.map((contract) => {
@@ -520,22 +525,22 @@ function CostsPage() {
                     <div className="text-sm text-text3">
                       {contract.client
                         ? contract.client.company_name || contract.client.name
-                        : "Cliente"}
+                        : t("fallbacks.client", "Cliente")}
                     </div>
                   </div>
                   <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold text-text2">
-                    {contract.billing_period === "monthly" ? "Mensile" : "Annuale"}
+                    {contract.billing_period === "monthly" ? t("contracts.period.monthly", "Mensile") : t("contracts.period.annual", "Annuale")}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <ContractMetric label="Canone" value={formatCurrency(contract.recurring_fee)} />
+                  <ContractMetric label={t("contracts.fee", "Canone")} value={formatCurrency(contract.recurring_fee)} />
                   <ContractMetric
-                    label="Ore incluse"
+                    label={t("contracts.includedHours", "Ore incluse")}
                     value={formatHours(contract.included_hours)}
                   />
-                  <ContractMetric label="Ore usate" value={formatHours(usedHours)} />
+                  <ContractMetric label={t("contracts.usedHours", "Ore usate")} value={formatHours(usedHours)} />
                   <ContractMetric
-                    label="Extra stimato"
+                    label={t("contracts.estimatedExtra", "Extra stimato")}
                     value={formatCurrency(extraHours * money(contract.extra_hourly_rate))}
                   />
                 </div>
@@ -543,7 +548,7 @@ function CostsPage() {
             );
           })}
           {!filteredContracts.length && (
-            <div className="text-sm text-text3">Nessun contratto configurato.</div>
+            <div className="text-sm text-text3">{t("contracts.noContracts", "Nessun contratto configurato.")}</div>
           )}
         </div>
       </div>
@@ -577,6 +582,7 @@ function CostStat({
 }
 
 function SummaryTable({ title, rows }: { title: string; rows: CostGroup[] }) {
+  const { t } = useTranslation("costs");
   return (
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd">
@@ -586,13 +592,13 @@ function SummaryTable({ title, rows }: { title: string; rows: CostGroup[] }) {
         <thead style={{ background: "var(--surface2)" }}>
           <tr>
             <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-              Nome
+              {t("summaryTables.nameHeader", "Nome")}
             </th>
             <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-              Ore
+              {t("summaryTables.hoursHeader", "Ore")}
             </th>
             <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-              Totale
+              {t("summaryTables.totalHeader", "Totale")}
             </th>
           </tr>
         </thead>
@@ -609,7 +615,7 @@ function SummaryTable({ title, rows }: { title: string; rows: CostGroup[] }) {
           {!rows.length && (
             <tr>
               <td className="px-3 py-6 text-center text-text3" colSpan={3}>
-                Nessun dato
+                {t("summaryTables.noData", "Nessun dato")}
               </td>
             </tr>
           )}
@@ -630,10 +636,14 @@ function ContractMetric({ label, value }: { label: string; value: string }) {
 
 type CostGroup = { name: string; hours: number; total: number; materials: number; labor: number };
 
-function groupCosts(rows: TicketCostRow[], key: "client_name" | "technician_name"): CostGroup[] {
+function groupCosts(
+  rows: TicketCostRow[],
+  key: "client_name" | "technician_name",
+  fallbacks?: { technician?: string; client?: string }
+): CostGroup[] {
   const map = new Map<string, CostGroup>();
   rows.forEach((row) => {
-    const name = row[key] || (key === "technician_name" ? "Non assegnato" : "Cliente non indicato");
+    const name = row[key] || (key === "technician_name" ? (fallbacks?.technician ?? "Non assegnato") : (fallbacks?.client ?? "Cliente non indicato"));
     const current = map.get(name) ?? { name, hours: 0, total: 0, materials: 0, labor: 0 };
     current.hours += money(row.billable_hours);
     current.total += money(row.total_cost);
@@ -644,106 +654,6 @@ function groupCosts(rows: TicketCostRow[], key: "client_name" | "technician_name
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
-function CostsReportPdf({
-  rows,
-  summary,
-  period,
-  byClient,
-  byTechnician,
-}: {
-  rows: TicketCostRow[];
-  summary: {
-    ticketTotal: number;
-    labor: number;
-    materials: number;
-    hours: number;
-    recurring: number;
-    estimatedRevenue: number;
-  };
-  period: string;
-  byClient: CostGroup[];
-  byTechnician: CostGroup[];
-}) {
-  const ticketColumns: PdfColumn<TicketCostRow>[] = [
-    { key: "ticket", label: "Ticket", width: "14%", value: (row) => row.ticket_code },
-    { key: "client", label: "Cliente", width: "28%", value: (row) => row.client_name ?? "-" },
-    { key: "tech", label: "Tecnico", width: "20%", value: (row) => row.technician_name ?? "-" },
-    {
-      key: "hours",
-      label: "Ore",
-      width: "10%",
-      mono: true,
-      value: (row) => formatHours(money(row.billable_hours)),
-    },
-    {
-      key: "materials",
-      label: "Materiali",
-      width: "14%",
-      mono: true,
-      value: (row) => formatCurrency(row.material_cost),
-    },
-    {
-      key: "total",
-      label: "Totale",
-      width: "14%",
-      mono: true,
-      value: (row) => formatCurrency(row.total_cost),
-    },
-  ];
-  const groupColumns: PdfColumn<CostGroup>[] = [
-    { key: "name", label: "Nome", width: "55%", value: (row) => row.name },
-    {
-      key: "hours",
-      label: "Ore",
-      width: "20%",
-      mono: true,
-      value: (row) => formatHours(row.hours),
-    },
-    {
-      key: "total",
-      label: "Totale",
-      width: "25%",
-      mono: true,
-      value: (row) => formatCurrency(row.total),
-    },
-  ];
-
-  return (
-    <Document author="PCReady" title="Report costi">
-      <BrandedPage title="Report costi" meta={period}>
-        <StatStrip
-          stats={[
-            {
-              label: "Totale ticket",
-              value: formatCurrency(summary.ticketTotal),
-              color: pdfPalette.accent,
-            },
-            { label: "Manodopera", value: formatCurrency(summary.labor), color: pdfPalette.info },
-            {
-              label: "Materiali",
-              value: formatCurrency(summary.materials),
-              color: pdfPalette.warn,
-            },
-            {
-              label: "Margine stimato",
-              value: formatCurrency(summary.estimatedRevenue - summary.materials),
-              color: pdfPalette.success,
-            },
-          ]}
-        />
-        <PdfSection title="Costi per cliente" meta={`${byClient.length} clienti`}>
-          <PdfTable rows={byClient} columns={groupColumns} />
-        </PdfSection>
-        <PdfSection title="Costi per tecnico" meta={`${byTechnician.length} tecnici`}>
-          <PdfTable rows={byTechnician} columns={groupColumns} />
-        </PdfSection>
-        <PdfSection title="Dettaglio ticket" meta={`${rows.length} ticket`}>
-          <PdfTable rows={rows.slice(0, 40)} columns={ticketColumns} />
-        </PdfSection>
-      </BrandedPage>
-    </Document>
-  );
-}
 
 function money(value: unknown) {
   const n = Number(value ?? 0);

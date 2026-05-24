@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import i18n from "@/i18n";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth-context";
 import {
   useCalendarEvents,
@@ -39,8 +41,8 @@ import type { CalendarView, TechnicianOption } from "@/components/calendar/types
 export const Route = createFileRoute("/_app/calendar")({
   head: () => ({
     meta: [
-      { title: "Calendario" },
-      { name: "description", content: "Calendario condiviso del team" },
+      { title: i18n.t("calendar:meta.title", "Calendario") },
+      { name: "description", content: i18n.t("calendar:meta.description", "Calendario condiviso del team") },
     ],
   }),
   component: CalendarPage,
@@ -49,6 +51,7 @@ export const Route = createFileRoute("/_app/calendar")({
 });
 
 function CalendarPage() {
+  const { t } = useTranslation("calendar");
   const { session, profile, canEdit } = useAuth();
 
   // ── State ────────────────────────────────────────────────────────────────
@@ -98,7 +101,7 @@ function CalendarPage() {
     if (!session?.access_token) return;
     loadTechniciansServerFn({ data: { accessToken: session.access_token } })
       .then((t) => setTechnicians(Array.isArray(t) ? t : []))
-      .catch(() => toast.error("Impossibile caricare i tecnici"));
+      .catch(() => toast.error(t("errors.loadTechnicians", "Impossibile caricare i tecnici")));
   }, [session?.access_token, loadTechniciansServerFn]);
 
   // ── Tech color map ───────────────────────────────────────────────────────
@@ -182,7 +185,7 @@ function CalendarPage() {
         },
       },
       {
-        onError: () => toast.error("Impossibile spostare l'evento"),
+        onError: () => toast.error(t("errors.moveEvent", "Impossibile spostare l'evento")),
       },
     );
   }
@@ -197,7 +200,7 @@ function CalendarPage() {
   // ── Error handling ───────────────────────────────────────────────────────
   useEffect(() => {
     if (eventsQuery.isError) {
-      toast.error("Impossibile caricare gli eventi del calendario");
+      toast.error(t("errors.loadEvents", "Impossibile caricare gli eventi del calendario"));
     }
   }, [eventsQuery.isError]);
 

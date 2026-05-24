@@ -1,6 +1,7 @@
 import { MessageSquare, Paperclip, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
@@ -22,6 +23,7 @@ interface TicketNote {
 }
 
 export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChanged?: () => void }) {
+  const { t } = useTranslation("tickets");
   const { user, canEdit, session } = useAuth();
   const notesQuery = useTicketNotes(ticketId);
   const notes = (notesQuery.data ?? []) as TicketNote[];
@@ -55,9 +57,9 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
 
   async function addNote(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || !canEdit) return toast.error("Permessi insufficienti");
+    if (!user || !canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const text = content.trim();
-    if (!text) return toast.error("Inserisci una nota");
+    if (!text) return toast.error(t("notes.enterNote", "Inserisci una nota"));
     setSubmitting(true);
     try {
       const note = await createNoteMut.mutateAsync({
@@ -71,10 +73,10 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       }
       setContent("");
       setFiles([]);
-      toast.success("Nota aggiunta");
+      toast.success(t("notes.addSuccess", "Nota aggiunta"));
       onChanged?.();
     } catch (err: any) {
-      toast.error(err?.message || "Errore inserimento nota");
+      toast.error(err?.message || t("notes.addError", "Errore inserimento nota"));
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +90,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-text3" />
-          <h3 className="text-[13px] font-bold">Note</h3>
+          <h3 className="text-[13px] font-bold">{t("notes.title", "Note")}</h3>
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-mono text-text3"
             style={{ background: "var(--surface3)" }}
@@ -99,9 +101,9 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       </div>
 
       <div className="mb-3 flex flex-col gap-2">
-        {notesQuery.isLoading && <div className="text-[12px] text-text3">Caricamento note...</div>}
+        {notesQuery.isLoading && <div className="text-[12px] text-text3">{t("notes.loadingText", "Caricamento note...")}</div>}
         {!notesQuery.isLoading && (!notesQuery.data || !notesQuery.data.length) && (
-          <div className="text-[12px] text-text3">Nessuna nota inserita</div>
+          <div className="text-[12px] text-text3">{t("notes.emptyText", "Nessuna nota inserita")}</div>
         )}
         {notesQuery.data?.map((note: any) => (
           <article
@@ -117,13 +119,13 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
                 {note.author?.initials || "??"}
               </span>
               <span className="text-[12px] font-semibold">
-                {note.author?.full_name || "Utente"}
+                {note.author?.full_name || t("timeTracking.user", "Utente")}
               </span>
               <span className="text-[11px] text-text3">{fmtDateTime(note.created_at)}</span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${note.is_internal ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
               >
-                {note.is_internal ? "Interna" : "Visibile cliente"}
+                {note.is_internal ? t("notes.internal", "Interna") : t("notes.visibleToClient", "Visibile cliente")}
               </span>
             </div>
             <p className="whitespace-pre-line text-[12.5px] text-text2">{note.content}</p>
@@ -141,7 +143,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               className="pc-input min-h-20 w-full"
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder="Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico"
+              placeholder={t("notes.placeholder", "Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico")}
             />
             {mentionSuggestions.length > 0 && (
               <div
@@ -166,7 +168,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer">
-              <Paperclip className="h-3 w-3" /> Allegati nota
+              <Paperclip className="h-3 w-3" /> {t("notes.attachFiles", "Allegati nota")}
               <input
                 type="file"
                 multiple
@@ -201,10 +203,10 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
                 checked={!isInternal}
                 onChange={(event) => setIsInternal(!event.target.checked)}
               />
-              Pubblica / visibile al cliente
+              {t("notes.publishVisibleLabel", "Pubblica / visibile al cliente")}
             </label>
             <button type="submit" className="pc-btn pc-btn-primary pc-btn-sm" disabled={submitting}>
-              {submitting ? "Salvataggio..." : "Aggiungi nota"}
+              {submitting ? t("notes.saving", "Salvataggio...") : t("notes.addNote", "Aggiungi nota")}
             </button>
           </div>
         </form>

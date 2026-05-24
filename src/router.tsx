@@ -1,3 +1,4 @@
+import "@/i18n";
 import { createRouter } from "@tanstack/react-router";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
 import { PageSkeleton } from "@/components/page-states";

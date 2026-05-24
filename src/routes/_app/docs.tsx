@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/docs")({
   head: () => ({
     meta: [
-      { title: "API Docs - PCReady" },
-      { name: "description", content: "Documentazione OpenAPI e console Swagger UI." },
+      { title: i18n.t("docs.pageTitle", "API Docs - PCReady") },
+      { name: "description", content: i18n.t("docs.pageDescription", "Documentazione OpenAPI e console Swagger UI.") },
     ],
   }),
   component: ApiDocsPage,
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/_app/docs")({
 });
 
 function ApiDocsPage() {
+  const { t } = useTranslation("common");
   const { loading, profile, session } = useAuth();
   const navigate = useNavigate();
   const canViewDocs = profile?.role === "admin" || profile?.role === "tech";
@@ -87,7 +90,7 @@ function ApiDocsPage() {
             }}
           />
         ) : (
-          <div className="p-6">Caricamento documentazione...</div>
+          <div className="p-6">{t("docs.loading", "Caricamento documentazione...")}</div>
         )}
       </div>
       <style>{swaggerOverrides}</style>

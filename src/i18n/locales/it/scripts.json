@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "title": "Script — PCReady",
+    "description": "Libreria script riutilizzabili: PowerShell, Bash e altri."
+  },
+  "title": "Script e Automazione",
+  "subtitle": "Repository di script per diagnostica e automazione hardware.",
+  "newScript": "Nuovo script",
+  "search": {
+    "placeholder": "Cerca script..."
+  },
+  "allCategories": "Tutte le categorie",
+  "scriptCount": "{{count}} script",
+  "emptyTitle": "Nessuno script ancora",
+  "emptyDescription": "Crea il tuo primo script riutilizzabile. Lo troverai sempre qui pronto da copiare.",
+  "categories": {
+    "all": "Tutti",
+    "diagnostic": "Diagnostica",
+    "utility": "Utility",
+    "install": "Installazione",
+    "security": "Sicurezza"
+  },
+  "card": {
+    "open": "Apri →",
+    "edit": "Modifica",
+    "delete": "Elimina"
+  },
+  "viewer": {
+    "close": "Chiudi",
+    "versions": "Versioni",
+    "download": "Scarica",
+    "copy": "Copia",
+    "emptyScript": "// Script vuoto",
+    "copied": "Script copiato negli appunti"
+  },
+  "editor": {
+    "editTitle": "Modifica script",
+    "newTitle": "Nuovo script",
+    "cancel": "Annulla",
+    "saving": "Salvataggio…",
+    "saveChanges": "Salva modifiche",
+    "createScript": "Crea script",
+    "fieldName": "Nome *",
+    "fieldCategory": "Categoria",
+    "fieldLanguage": "Linguaggio",
+    "fieldIcon": "Icona",
+    "fieldColor": "Colore",
+    "fieldDescription": "Descrizione",
+    "fieldContent": "Contenuto script *",
+    "fieldChangeNote": "Nota modifica (opzionale)",
+    "namePlaceholder": "Reset Windows Update",
+    "descriptionPlaceholder": "Cosa fa questo script?",
+    "contentPlaceholder": "# Il tuo codice qui...",
+    "changeNotePlaceholder": "Descrivi le modifiche apportate...",
+    "errors": {
+      "nameRequired": "Inserisci un nome",
+      "contentRequired": "Lo script è vuoto",
+      "saveFailed": "Errore salvataggio"
+    }
+  },
+  "delete": {
+    "title": "Eliminare questo script?",
+    "description": "Lo script \"{{name}}\" verrà rimosso dalla libreria. L'azione non può essere annullata.",
+    "descriptionGeneric": "Lo script verrà rimosso dalla libreria. L'azione non può essere annullata.",
+    "confirm": "Elimina script",
+    "loading": "Eliminazione..."
+  },
+  "success": {
+    "deleted": "Script eliminato",
+    "created": "Script creato",
+    "updated": "Script aggiornato"
+  }
+}

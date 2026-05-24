@@ -1,15 +1,5 @@
+import { useTranslation } from "react-i18next";
 import type { AdminUserRow } from "@/lib/admin-users";
-
-function fmtElapsed(value: string | null) {
-  if (!value) return "in attesa";
-  const diffMs = Date.now() - new Date(value).getTime();
-  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
-  if (diffMinutes < 60) return `${diffMinutes} min`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} h`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} g`;
-}
 
 export function AdminUserStatusBadge({
   status,
@@ -22,6 +12,19 @@ export function AdminUserStatusBadge({
   busy?: boolean;
   onResend?: () => void;
 }) {
+  const { t } = useTranslation("admin");
+
+  function fmtElapsed(value: string | null) {
+    if (!value) return t("statusBadge.pending", "in attesa");
+    const diffMs = Date.now() - new Date(value).getTime();
+    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+    if (diffMinutes < 60) return `${diffMinutes} min`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} h`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} g`;
+  }
+
   if (status === "invited") {
     return (
       <div className="flex flex-col items-start gap-1">
@@ -32,7 +35,7 @@ export function AdminUserStatusBadge({
             color: "var(--warning, #D97706)",
           }}
         >
-          Invitato da {fmtElapsed(invitedAt ?? null)}
+          {t("statusBadge.invitedAgo", "Invitato da {{elapsed}}").replace("{{elapsed}}", fmtElapsed(invitedAt ?? null))}
         </span>
         {onResend && (
           <button
@@ -41,7 +44,7 @@ export function AdminUserStatusBadge({
             disabled={busy}
             onClick={onResend}
           >
-            Re-invia invito
+            {t("statusBadge.resendInvite", "Re-invia invito")}
           </button>
         )}
       </div>
@@ -57,7 +60,7 @@ export function AdminUserStatusBadge({
         color: active ? "var(--success)" : "var(--danger)",
       }}
     >
-      {active ? "Attivo" : "Disabilitato"}
+      {active ? t("statusBadge.active", "Attivo") : t("statusBadge.disabled", "Disabilitato")}
     </span>
   );
 }

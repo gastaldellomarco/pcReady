@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { checkAdmin } from "@/lib/check-admin";
@@ -26,8 +28,8 @@ export const Route = createFileRoute("/_app/admin")({
   }),
   head: () => ({
     meta: [
-      { title: "Admin Utenti - PCReady" },
-      { name: "description", content: "Gestione utenti, ruoli e stato account." },
+      { title: i18n.t("admin:meta.title", "Admin Utenti - PCReady") },
+      { name: "description", content: i18n.t("admin:meta.description", "Gestione utenti, ruoli e stato account.") },
     ],
   }),
   component: AdminUsersPage,
@@ -36,6 +38,7 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 function AdminUsersPage() {
+  const { t } = useTranslation("admin");
   const { loading, session } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -74,16 +77,16 @@ function AdminUsersPage() {
   }, [loading, session, check, navigate]);
 
   if (loading || serverVerified.loading || !serverVerified.isAdmin) {
-    return <div className="text-text3 text-sm">Verifica permessi...</div>;
+    return <div className="text-text3 text-sm">{t("loading", "Verifica permessi...")}</div>;
   }
 
   return (
     <Tabs defaultValue="users" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="users">Utenti</TabsTrigger>
-        <TabsTrigger value="settings">Impostazioni App</TabsTrigger>
-        <TabsTrigger value="oauth">OAuth / Applicazioni</TabsTrigger>
-        <TabsTrigger value="audit">Audit Log</TabsTrigger>
+        <TabsTrigger value="users">{t("tabs.users", "Utenti")}</TabsTrigger>
+        <TabsTrigger value="settings">{t("tabs.settings", "Impostazioni App")}</TabsTrigger>
+        <TabsTrigger value="oauth">{t("tabs.oauth", "OAuth / Applicazioni")}</TabsTrigger>
+        <TabsTrigger value="audit">{t("tabs.audit", "Audit Log")}</TabsTrigger>
       </TabsList>
       <AdminUsersTab />
       <AdminSettingsTab />

@@ -1,7 +1,9 @@
 import OverflowTable from "@/components/ui/overflow-table";
 
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   Ban,
@@ -50,10 +52,10 @@ import {
 export const Route = createFileRoute("/_app/bundles")({
   head: () => ({
     meta: [
-      { title: "Bundle assistenza - PCReady" },
+      { title: i18n.t("bundles:meta.title", "Bundle assistenza - PCReady") },
       {
         name: "description",
-        content: "Pacchetti assistenza, assegnazioni clienti e consumi",
+        content: i18n.t("bundles:meta.description", "Pacchetti assistenza, assegnazioni clienti e consumi"),
       },
     ],
   }),
@@ -92,6 +94,7 @@ const emptyPaymentDraft: PaymentDraft = {
 };
 
 function BundlesPage() {
+  const { t } = useTranslation("bundles");
   const { profile } = useAuth();
   const isAdmin = profile?.role === "admin";
   const canManageAssignments = profile?.role === "admin" || profile?.role === "tech";
@@ -136,7 +139,7 @@ function BundlesPage() {
         if (error) throw error;
         if (active) setClients((data ?? []) as ClientOption[]);
       } catch (error: unknown) {
-        if (active) toast.error(errorMessage(error, "Errore caricamento clienti"));
+        if (active)       toast.error(errorMessage(error, t("errors.loadClients", "Errore caricamento clienti")));
       } finally {
         if (active) setClientLoading(false);
       }
@@ -182,35 +185,35 @@ function BundlesPage() {
 
   async function saveBundle(data: Partial<AssistanceBundle>) {
     if (!isAdmin) {
-      toast.error("Solo gli admin possono gestire i bundle");
+      toast.error(t("errors.adminOnly", "Solo gli admin possono gestire i bundle"));
       return;
     }
     try {
       if (editingBundle) await updateBundleMutation.mutateAsync({ id: editingBundle.id, data });
       else await createBundleMutation.mutateAsync({ ...data, created_by: profile?.id ?? null });
       resetForms();
-      toast.success("Bundle salvato");
+      toast.success(t("success.bundleSaved", "Bundle salvato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore salvataggio bundle"));
+      toast.error(errorMessage(error, t("errors.saveBundle", "Errore salvataggio bundle")));
     }
   }
 
   async function toggleBundle(bundle: AssistanceBundle) {
     if (!isAdmin) {
-      toast.error("Solo gli admin possono modificare i bundle");
+      toast.error(t("errors.adminOnlyEdit", "Solo gli admin possono modificare i bundle"));
       return;
     }
     try {
       await updateBundleMutation.mutateAsync({ id: bundle.id, data: { active: !bundle.active } });
-      toast.success(bundle.active ? "Bundle disattivato" : "Bundle riattivato");
+      toast.success(bundle.active ? t("success.bundleDeactivated", "Bundle disattivato") : t("success.bundleReactivated", "Bundle riattivato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore aggiornamento bundle"));
+      toast.error(errorMessage(error, t("errors.updateBundle", "Errore aggiornamento bundle")));
     }
   }
 
   async function saveAssignment(data: Partial<ClientBundleAssignment>) {
     if (!canManageAssignments) {
-      toast.error("Permessi insufficienti");
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
     try {
@@ -224,33 +227,33 @@ function BundlesPage() {
         });
       }
       resetForms();
-      toast.success("Assegnazione salvata");
+      toast.success(t("success.assignmentSaved", "Assegnazione salvata"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore salvataggio assegnazione"));
+      toast.error(errorMessage(error, t("errors.saveAssignment", "Errore salvataggio assegnazione")));
     }
   }
 
   async function cancelAssignment(id: string) {
     if (!canManageAssignments) {
-      toast.error("Permessi insufficienti");
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
     try {
       await cancelAssignmentMutation.mutateAsync(id);
-      toast.success("Assegnazione annullata");
+      toast.success(t("success.assignmentCancelled", "Assegnazione annullata"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore annullamento assegnazione"));
+      toast.error(errorMessage(error, t("errors.cancelAssignment", "Errore annullamento assegnazione")));
     }
   }
 
   async function savePayment() {
     if (!canManageAssignments) {
-      toast.error("Permessi insufficienti");
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
     const assignment = assignmentById.get(paymentDraft.client_bundle_assignment_id);
     if (!assignment) {
-      toast.error("Seleziona un'assegnazione valida");
+      toast.error(t("errors.invalidAssignment", "Seleziona un'assegnazione valida"));
       return;
     }
     try {
@@ -269,24 +272,24 @@ function BundlesPage() {
       setPaymentDraft(emptyPaymentDraft);
       const feePayments = await listBundlePayments();
       setPayments(feePayments);
-      toast.success("Pagamento registrato");
+      toast.success(t("success.paymentRegistered", "Pagamento registrato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore salvataggio pagamento"));
+      toast.error(errorMessage(error, t("errors.savePayment", "Errore salvataggio pagamento")));
     }
   }
 
   function exportCsv() {
     const rows = [
       [
-        "Cliente",
-        "Bundle",
-        "Stato",
-        "Ore usate",
-        "Ore incluse",
-        "Ore residue",
-        "Extra ore",
-        "Extra importo",
-        "Scadenza",
+        t("clientName", "Cliente"),
+        t("catalog.type", "Bundle"),
+        t("assignments.table.status", "Stato"),
+        t("csv.hoursUsed", "Ore usate"),
+        t("csv.hoursIncluded", "Ore incluse"),
+        t("csv.hoursRemaining", "Ore residue"),
+        t("csv.extraHours", "Extra ore"),
+        t("csv.extraAmount", "Extra importo"),
+        t("csv.expiry", "Scadenza"),
       ],
       ...usageSummaries.map((summary) => {
         const assignment = assignmentById.get(summary.client_bundle_assignment_id as string);
@@ -304,7 +307,7 @@ function BundlesPage() {
       }),
     ];
     downloadCsv(rows, buildDownloadFileName("pcready-bundle-consumi", "csv", { dated: true }));
-    toast.success("CSV bundle esportato");
+    toast.success(t("csvExported", "CSV bundle esportato"));
   }
 
   const loading =
@@ -316,10 +319,10 @@ function BundlesPage() {
         <div className="pc-card-hd">
           <div>
             <div className="pc-card-title flex items-center gap-2">
-              <Package className="h-5 w-5 text-accent" /> Bundle assistenza
+              <Package className="h-5 w-5 text-accent" /> {t("title", "Bundle assistenza")}
             </div>
             <div className="mt-1 text-sm text-text3">
-              Pacchetti vendibili, SLA, assegnazioni cliente, consumi e fatturazione extra.
+              {t("pageDescription", "Pacchetti vendibili, SLA, assegnazioni cliente, consumi e fatturazione extra.")}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -332,7 +335,7 @@ function BundlesPage() {
                   setCreatingBundle(true);
                 }}
               >
-                <Plus className="h-3 w-3" /> Nuovo bundle
+                <Plus className="h-3 w-3" /> {t("newBundle", "Nuovo bundle")}
               </button>
             )}
             {canManageAssignments && (
@@ -344,24 +347,24 @@ function BundlesPage() {
                   setCreatingAssignment(true);
                 }}
               >
-                <Plus className="h-3 w-3" /> Assegna a cliente
+                <Plus className="h-3 w-3" /> {t("assignToClient", "Assegna a cliente")}
               </button>
             )}
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportCsv}>
-              <Download className="h-3 w-3" /> Export CSV
+              <Download className="h-3 w-3" /> {t("exportCsv", "Export CSV")}
             </button>
           </div>
         </div>
         <div className="pc-card-body grid gap-3 md:grid-cols-4">
-          <BundleStat label="Bundle attivi" value={stats.activeBundles} />
-          <BundleStat label="Assegnazioni attive" value={stats.activeAssignments} />
+          <BundleStat label={t("stats.activeBundles", "Bundle attivi")} value={stats.activeBundles} />
+          <BundleStat label={t("stats.activeAssignments", "Assegnazioni attive")} value={stats.activeAssignments} />
           <BundleStat
-            label="Alert consumo"
+            label={t("stats.usageAlert", "Alert consumo")}
             value={stats.risky}
             tone={stats.risky ? "warning" : "default"}
           />
           <BundleStat
-            label="Extra fatturabili"
+            label={t("stats.billableExtra", "Extra fatturabili")}
             value={formatBundleMoney(stats.extraAmount)}
             tone="success"
           />
@@ -370,16 +373,16 @@ function BundlesPage() {
 
       <div className="flex flex-wrap gap-2">
         <TabButton active={activeTab === "catalog"} onClick={() => setActiveTab("catalog")}>
-          Catalogo bundle
+          {t("tabs.catalog", "Catalogo bundle")}
         </TabButton>
         <TabButton active={activeTab === "assignments"} onClick={() => setActiveTab("assignments")}>
-          Assegnazioni clienti
+          {t("tabs.assignments", "Assegnazioni clienti")}
         </TabButton>
         <TabButton active={activeTab === "usage"} onClick={() => setActiveTab("usage")}>
-          Consumi e alert
+          {t("tabs.usage", "Consumi e alert")}
         </TabButton>
         <TabButton active={activeTab === "billing"} onClick={() => setActiveTab("billing")}>
-          Fatturazione
+          {t("tabs.billing", "Fatturazione")}
         </TabButton>
       </div>
 
@@ -387,7 +390,7 @@ function BundlesPage() {
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">
-              {editingBundle ? "Modifica bundle" : "Nuovo bundle"}
+              {editingBundle ? t("editBundle", "Modifica bundle") : t("newBundle", "Nuovo bundle")}
             </div>
           </div>
           <div className="pc-card-body">
@@ -405,7 +408,7 @@ function BundlesPage() {
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">
-              {editingAssignment ? "Modifica assegnazione" : "Assegna bundle a cliente"}
+              {editingAssignment ? t("editAssignment", "Modifica assegnazione") : t("assignBundle", "Assegna bundle a cliente")}
             </div>
           </div>
           <div className="pc-card-body">
@@ -491,6 +494,7 @@ function CatalogTab({
   onEdit: (bundle: AssistanceBundle) => void;
   onToggle: (bundle: AssistanceBundle) => void;
 }) {
+  const { t } = useTranslation("bundles");
   return (
     <div className="grid gap-3 xl:grid-cols-2">
       {bundles.map((bundle) => (
@@ -504,7 +508,7 @@ function CatalogTab({
                     bundle.active ? "pc-badge pc-badge-ready" : "pc-badge pc-badge-archived"
                   }
                 >
-                  {bundle.active ? "Attivo" : "Disattivato"}
+                  {bundle.active ? t("catalog.active", "Attivo") : t("catalog.inactive", "Disattivato")}
                 </span>
                 <BundlePriorityBadge priority={bundle.ticket_priority} />
               </div>
@@ -515,32 +519,32 @@ function CatalogTab({
             {isAdmin && (
               <div className="flex gap-2">
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onEdit(bundle)}>
-                  <Pencil className="h-3 w-3" /> Modifica
+                  <Pencil className="h-3 w-3" /> {t("catalog.edit", "Modifica")}
                 </button>
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onToggle(bundle)}>
                   {bundle.active ? <Ban className="h-3 w-3" /> : <RefreshCcw className="h-3 w-3" />}
-                  {bundle.active ? "Disattiva" : "Riattiva"}
+                  {bundle.active ? t("catalog.deactivate", "Disattiva") : t("catalog.reactivate", "Riattiva")}
                 </button>
               </div>
             )}
           </div>
           <div className="pc-card-body grid gap-3 md:grid-cols-4">
-            <Metric label="Canone" value={formatBundleMoney(bundle.fee, bundle.currency)} />
-            <Metric label="Tipo" value={BILLING_TYPE_LABEL[bundle.billing_type]} />
-            <Metric label="Ore incluse" value={formatBundleHours(bundle.included_hours)} />
+            <Metric label={t("catalog.fee", "Canone")} value={formatBundleMoney(bundle.fee, bundle.currency)} />
+            <Metric label={t("catalog.type", "Tipo")} value={BILLING_TYPE_LABEL[bundle.billing_type]} />
+            <Metric label={t("catalog.includedHours", "Ore incluse")} value={formatBundleHours(bundle.included_hours)} />
             <Metric
-              label="Tariffa extra"
+              label={t("catalog.extraRate", "Tariffa extra")}
               value={formatBundleMoney(bundle.extra_hourly_rate, bundle.currency)}
             />
-            <Metric label="SLA risposta" value={`${bundle.sla_response_hours} h`} />
-            <Metric label="SLA risoluzione" value={`${bundle.sla_resolution_hours} h`} />
-            <Metric label="On-site" value={formatBundleVisits(bundle.included_onsite_visits)} />
-            <Metric label="Supporto remoto" value={bundle.remote_support ? "Incluso" : "No"} />
+            <Metric label={t("catalog.slaResponse", "SLA risposta")} value={`${bundle.sla_response_hours} h`} />
+            <Metric label={t("catalog.slaResolution", "SLA risoluzione")} value={`${bundle.sla_resolution_hours} h`} />
+            <Metric label={t("catalog.onsite", "On-site")} value={formatBundleVisits(bundle.included_onsite_visits)} />
+            <Metric label={t("catalog.remoteSupport", "Supporto remoto")} value={bundle.remote_support ? t("catalog.included", "Incluso") : t("catalog.no", "No")} />
           </div>
         </div>
       ))}
       {!bundles.length && (
-        <div className="pc-card p-6 text-sm text-text3">Nessun bundle configurato.</div>
+        <div className="pc-card p-6 text-sm text-text3">{t("catalog.empty", "Nessun bundle configurato.")}</div>
       )}
     </div>
   );
@@ -557,17 +561,18 @@ function AssignmentsTab({
   onEdit: (assignment: ClientBundleAssignment) => void;
   onCancel: (id: string) => void;
 }) {
+  const { t } = useTranslation("bundles");
   return (
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd">
-        <div className="pc-card-title">Storico bundle assegnati</div>
+        <div className="pc-card-title">{t("assignments.title", "Storico bundle assegnati")}</div>
       </div>
       <div className="overflow-x-auto">
         <OverflowTable>
           <table className="w-full min-w-[980px] text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
-              {["Cliente", "Bundle", "Stato", "Periodo", "Rinnovo", "Canone", "Note", "Azioni"].map(
+              {[t("assignments.table.client", "Cliente"), t("assignments.table.bundle", "Bundle"), t("assignments.table.status", "Stato"), t("assignments.table.period", "Periodo"), t("assignments.table.renewal", "Rinnovo"), t("assignments.table.fee", "Canone"), t("assignments.table.notes", "Note"), t("assignments.table.actions", "Azioni")].map(
                 (h) => (
                   <th
                     key={h}
@@ -588,9 +593,9 @@ function AssignmentsTab({
                   <BundleStatusBadge status={assignment.status} />
                 </td>
                 <td className="px-3 py-2 font-mono">
-                  {assignment.start_date} → {assignment.end_date ?? "senza scadenza"}
+                  {assignment.start_date} → {assignment.end_date ?? t("assignments.noExpiry", "senza scadenza")}
                 </td>
-                <td className="px-3 py-2">{assignment.auto_renew ? "Automatico" : "Manuale"}</td>
+                <td className="px-3 py-2">{assignment.auto_renew ? t("assignments.autoRenew", "Automatico") : t("assignments.manualRenew", "Manuale")}</td>
                 <td className="px-3 py-2 font-mono">
                   {formatBundleMoney(
                     assignment.custom_fee ?? assignment.bundle?.fee ?? 0,
@@ -623,7 +628,7 @@ function AssignmentsTab({
             {!assignments.length && (
               <tr>
                 <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                  Nessuna assegnazione.
+                  {t("assignments.empty", "Nessuna assegnazione.")}
                 </td>
               </tr>
             )}
@@ -644,18 +649,19 @@ function UsageTab({
   assignmentById: Map<string, ClientBundleAssignment>;
   monthlyUsage: any[];
 }) {
+  const { t } = useTranslation("bundles");
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
-          <div className="pc-card-title">Consumi bundle e alert</div>
+          <div className="pc-card-title">{t("usage.title", "Consumi bundle e alert")}</div>
         </div>
         <div className="overflow-x-auto">
           <OverflowTable>
             <table className="w-full min-w-[1060px] text-[12.5px]">
             <thead style={{ background: "var(--surface2)" }}>
               <tr>
-                {["Cliente", "Bundle", "Ore", "On-site", "Extra", "Scadenza", "Alert"].map((h) => (
+                {[t("usage.table.client", "Cliente"), t("usage.table.bundle", "Bundle"), t("usage.table.hours", "Ore"), t("usage.table.onsite", "On-site"), t("usage.table.extra", "Extra"), t("usage.table.expiry", "Scadenza"), t("usage.table.alert", "Alert")].map((h) => (
                   <th
                     key={h}
                     className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
@@ -685,7 +691,7 @@ function UsageTab({
                       {assignment?.bundle?.name ?? String(summary.bundle_id)}
                     </td>
                     <td className="px-3 py-2 min-w-64">
-                      <BundleUsageBar used={summary.used_hours} total={included} label="Ore" />
+                      <BundleUsageBar used={summary.used_hours} total={included} label={t("usage.table.hours", "Ore")} />
                     </td>
                     <td className="px-3 py-2 font-mono">
                       {summary.onsite_visits ?? 0} /{" "}
@@ -705,10 +711,10 @@ function UsageTab({
                     <td className="px-3 py-2">
                       {hasAlert ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-700">
-                          <AlertTriangle className="h-3 w-3" /> Attenzione
+                          <AlertTriangle className="h-3 w-3" /> {t("usage.warning", "Attenzione")}
                         </span>
                       ) : (
-                        <span className="text-text3">OK</span>
+                        <span className="text-text3">{t("usage.ok", "OK")}</span>
                       )}
                     </td>
                   </tr>
@@ -717,7 +723,7 @@ function UsageTab({
               {!summaries.length && (
                 <tr>
                   <td className="px-3 py-8 text-center text-text3" colSpan={7}>
-                    Nessun consumo registrato.
+                    {t("usage.empty", "Nessun consumo registrato.")}
                   </td>
                 </tr>
               )}
@@ -728,16 +734,16 @@ function UsageTab({
       </div>
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
-          <div className="pc-card-title">Report mensile</div>
+          <div className="pc-card-title">{t("usage.monthlyReport", "Report mensile")}</div>
         </div>
         <div className="max-h-[520px] overflow-auto">
           <OverflowTable>
             <table className="w-full text-[12px]">
             <thead style={{ background: "var(--surface2)" }}>
               <tr>
-                <th className="px-3 py-2 text-left">Mese</th>
-                <th className="px-3 py-2 text-right">Ore</th>
-                <th className="px-3 py-2 text-right">Extra</th>
+                <th className="px-3 py-2 text-left">{t("usage.monthly.month", "Mese")}</th>
+                <th className="px-3 py-2 text-right">{t("usage.monthly.hours", "Ore")}</th>
+                <th className="px-3 py-2 text-right">{t("usage.monthly.extra", "Extra")}</th>
               </tr>
             </thead>
             <tbody>
@@ -759,7 +765,7 @@ function UsageTab({
               {!monthlyUsage.length && (
                 <tr>
                   <td className="px-3 py-6 text-center text-text3" colSpan={3}>
-                    Nessun dato mensile.
+                    {t("usage.noData", "Nessun dato mensile.")}
                   </td>
                 </tr>
               )}
@@ -791,16 +797,17 @@ function BillingTab({
   extraAmount: number;
   busy: boolean;
 }) {
+  const { t } = useTranslation("bundles");
   return (
     <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
       <div className="pc-card">
         <div className="pc-card-hd">
           <div className="pc-card-title flex items-center gap-2">
-            <CreditCard className="h-4 w-4" /> Canoni e fatturazione
+            <CreditCard className="h-4 w-4" /> {t("billing.title", "Canoni e fatturazione")}
           </div>
         </div>
         <div className="pc-card-body space-y-3">
-          <Metric label="Ore extra fatturabili" value={formatBundleMoney(extraAmount)} />
+          <Metric label={t("billing.billableExtraHours", "Ore extra fatturabili")} value={formatBundleMoney(extraAmount)} />
           {canManage && (
             <div className="space-y-2">
               <select
@@ -810,7 +817,7 @@ function BillingTab({
                   setPaymentDraft((v) => ({ ...v, client_bundle_assignment_id: e.target.value }))
                 }
               >
-                <option value="">Assegnazione...</option>
+                <option value="">{t("billing.selectAssignment", "Assegnazione...")}</option>
                 {assignments.map((assignment) => (
                   <option key={assignment.id} value={assignment.id}>
                     {clientName(assignment)} · {assignment.bundle?.name}
@@ -824,7 +831,7 @@ function BillingTab({
                 step="0.01"
                 value={paymentDraft.amount}
                 onChange={(e) => setPaymentDraft((v) => ({ ...v, amount: e.target.value }))}
-                placeholder="Importo"
+                placeholder={t("billing.amountPlaceholder", "Importo")}
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -857,24 +864,24 @@ function BillingTab({
                     }))
                   }
                 >
-                  <option value="pending">In attesa</option>
-                  <option value="paid">Pagato</option>
-                  <option value="overdue">Scaduto</option>
-                  <option value="cancelled">Annullato</option>
+                  <option value="pending">{t("billing.status.pending", "In attesa")}</option>
+                  <option value="paid">{t("billing.status.paid", "Pagato")}</option>
+                  <option value="overdue">{t("billing.status.overdue", "Scaduto")}</option>
+                  <option value="cancelled">{t("billing.status.cancelled", "Annullato")}</option>
                 </select>
               </div>
               <textarea
                 className="pc-input min-h-20"
                 value={paymentDraft.notes}
                 onChange={(e) => setPaymentDraft((v) => ({ ...v, notes: e.target.value }))}
-                placeholder="Note pagamento..."
+                placeholder={t("billing.notesPlaceholder", "Note pagamento...")}
               />
               <button
                 className="pc-btn pc-btn-primary pc-btn-sm w-full"
                 disabled={busy}
                 onClick={onSavePayment}
               >
-                Registra pagamento
+                {t("billing.registerPayment", "Registra pagamento")}
               </button>
             </div>
           )}
@@ -882,13 +889,13 @@ function BillingTab({
       </div>
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
-          <div className="pc-card-title">Storico canoni pagati</div>
+          <div className="pc-card-title">{t("billing.paymentHistory", "Storico canoni pagati")}</div>
         </div>
         <OverflowTable>
           <table className="w-full text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
-              {["Cliente", "Bundle", "Periodo", "Importo", "Stato"].map((h) => (
+              {[t("billing.table.client", "Cliente"), t("billing.table.bundle", "Bundle"), t("billing.table.period", "Periodo"), t("billing.table.amount", "Importo"), t("billing.table.status", "Stato")].map((h) => (
                 <th
                   key={h}
                   className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
@@ -915,7 +922,7 @@ function BillingTab({
             {!payments.length && (
               <tr>
                 <td className="px-3 py-8 text-center text-text3" colSpan={5}>
-                  Nessun pagamento registrato.
+                  {t("billing.empty", "Nessun pagamento registrato.")}
                 </td>
               </tr>
             )}

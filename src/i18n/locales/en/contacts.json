@@ -1,0 +1,91 @@
+{
+  "title": "Contacts",
+  "subtitle": "Manage company contacts and referents.",
+  "newContact": "New Contact",
+  "searchPlaceholder": "Search contact by name, email, or phone...",
+  "filters": {
+    "allCompanies": "All companies",
+    "allRoles": "All roles",
+    "allDepartments": "All departments",
+    "allStatuses": "All statuses",
+    "primary": "Primary contact",
+    "portalActive": "Portal active",
+    "missingEmail": "No email"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "billing": "Billing",
+    "technical": "Technical",
+    "referent": "Primary Contact",
+    "other": "Other"
+  },
+  "page": {
+    "head": {
+      "title": "Contacts - PCReady",
+      "description": "Global view of client contacts and referents."
+    },
+    "title": "Contacts",
+    "contactCount": "{{filtered}}/{{total}} contacts"
+  },
+  "search": {
+    "placeholder": "Search name, company, email, phone, role..."
+  },
+  "contact": {
+    "defaultName": "Contact",
+    "primaryBadge": "Primary",
+    "noClient": "Client not associated",
+    "noRole": "Role not specified",
+    "missingEmail": "Email missing",
+    "missingPhone": "Phone missing",
+    "count": "{{count}} contacts",
+    "editButton": "Edit",
+    "portalButton": "Portal",
+    "deleteButtonTooltip": "Delete contact"
+  },
+  "emptyState": {
+    "noResults": "No contacts found with the current filters."
+  },
+  "editModal": {
+    "title": "Edit contact",
+    "cancelButton": "Cancel",
+    "saveButton": "Save contact",
+    "fullNameLabel": "Full name *",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "roleLabel": "Role",
+    "departmentLabel": "Department",
+    "isPrimaryLabel": "Primary contact"
+  },
+  "portalModal": {
+    "title": "Portal access link",
+    "closeButton": "Close",
+    "copiedButton": "Copied",
+    "copyLinkButton": "Copy link",
+    "contactLabel": "Contact"
+  },
+  "portalBadge": {
+    "active": "Active",
+    "noAccess": "No access"
+  },
+  "deleteDialog": {
+    "title": "Delete this contact?",
+    "descriptionWithName": "The contact \"{{name}}\" will be removed from {{client}}. This action cannot be undone.",
+    "description": "The contact will be removed from the client. This action cannot be undone.",
+    "confirmLabel": "Delete contact",
+    "loadingLabel": "Deleting...",
+    "thisClient": "this client"
+  },
+  "toast": {
+    "noPermission": "Insufficient permissions",
+    "nameRequired": "Contact name is required",
+    "invalidEmail": "Invalid email",
+    "contactUpdated": "Contact updated",
+    "saveError": "Error saving contact",
+    "deleteNoPermission": "Only admins can delete contacts",
+    "contactDeleted": "Contact deleted",
+    "invalidSession": "Invalid session",
+    "portalLinkGenerated": "Portal link generated",
+    "portalLinkError": "Error generating portal link",
+    "copyLinkError": "Unable to copy link"
+  }
+}

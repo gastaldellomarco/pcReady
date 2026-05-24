@@ -1,0 +1,96 @@
+{
+  "title": "Calendario Manutenzioni",
+  "subtitle": "Pianificazione e programmazione degli interventi tecnici.",
+  "newEvent": "Nuovo Evento",
+  "views": {
+    "month": "Mese",
+    "week": "Settimana",
+    "day": "Giorno"
+  },
+  "errors": {
+    "loadTechnicians": "Impossibile caricare i tecnici",
+    "moveEvent": "Impossibile spostare l'evento",
+    "loadEvents": "Impossibile caricare gli eventi del calendario"
+  },
+  "meta": {
+    "title": "Calendario",
+    "description": "Calendario condiviso del team"
+  },
+  "toolbar": {
+    "navPrevTitle": "Mese/settimana/giorno precedente",
+    "navNextTitle": "Mese/settimana/giorno successivo",
+    "today": "Oggi",
+    "weekLabel": "Settimana",
+    "ariaLabelView": "Cambia visualizzazione",
+    "filterAll": "Tutti i tecnici",
+    "colorType": "Tipo",
+    "colorTechnician": "Tecnico",
+    "switchColorType": "Passa a colori per tipo",
+    "switchColorTechnician": "Passa a colori per tecnico",
+    "exportIcalTitle": "Esporta come file iCal (.ics)",
+    "newEvent": "Nuovo evento"
+  },
+  "eventTypes": {
+    "intervention": "Intervento",
+    "deadline": "Scadenza",
+    "appointment": "Appuntamento",
+    "availability": "Disponibilità"
+  },
+  "modal": {
+    "editTitle": "Modifica evento",
+    "newTitle": "Nuovo evento",
+    "titleLabel": "Titolo *",
+    "titlePlaceholder": "Titolo dell'evento",
+    "typeLabel": "Tipo evento",
+    "allDayLabel": "Tutto il giorno",
+    "startDateLabel": "Data inizio *",
+    "startTimeLabel": "Ora inizio",
+    "endDateLabel": "Data fine *",
+    "endTimeLabel": "Ora fine",
+    "assigneeLabel": "Tecnico assegnato",
+    "assigneeNone": "Nessuno",
+    "ticketLabel": "Ticket collegato",
+    "ticketPlaceholder": "Nessun ticket collegato",
+    "ticketRemoveTitle": "Rimuovi collegamento ticket",
+    "ticketHelp": "Il collegamento ticket non può essere modificato da qui.",
+    "durationLabel": "Durata (min)",
+    "durationPlaceholder": "es. 60",
+    "colorLabel": "Colore personalizzato",
+    "colorAuto": "Colore automatico dal tipo evento",
+    "colorReset": "Ripristina",
+    "notesLabel": "Note",
+    "notesPlaceholder": "Note aggiuntive sull'evento...",
+    "confirmDelete": "Confermare l'eliminazione?",
+    "deleteButton": "Elimina",
+    "noButton": "No",
+    "cancelButton": "Annulla",
+    "saveButton": "Salva",
+    "savingButton": "Salvataggio…"
+  },
+  "toasts": {
+    "eventUpdated": "Evento aggiornato",
+    "eventCreated": "Evento creato",
+    "eventDeleted": "Evento eliminato",
+    "updateError": "Errore nell'aggiornamento: {{message}}",
+    "createError": "Errore nella creazione: {{message}}",
+    "deleteError": "Errore nell'eliminazione: {{message}}"
+  },
+  "validation": {
+    "titleRequired": "Il titolo è obbligatorio",
+    "endAfterStart": "La data di fine deve essere successiva alla data di inizio"
+  },
+  "monthView": {
+    "extraOthers": "+{{count}} altri",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mer",
+    "thu": "Gio",
+    "fri": "Ven",
+    "sat": "Sab",
+    "sun": "Dom"
+  },
+  "dayView": {
+    "eventCount": "{{count}} evento",
+    "eventCount_plural": "{{count}} eventi"
+  }
+}

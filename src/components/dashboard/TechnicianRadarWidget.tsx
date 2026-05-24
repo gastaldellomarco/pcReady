@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTechnicianRadarMetrics } from "@/lib/dashboard-analytics";
@@ -26,6 +27,7 @@ export default function TechnicianRadarWidget({
   dateFrom?: string;
   dateTo?: string;
 }) {
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianRadarMetrics);
   const [rows, setRows] = useState<any[]>([]);
@@ -72,27 +74,27 @@ export default function TechnicianRadarWidget({
     if (!selected) return [];
     const n = selected.normalized ?? {};
     const metricKeys: Array<{ key: string; label: string }> = [
-      { key: "volume", label: "Volume" },
-      { key: "velocita", label: "Velocità" },
-      { key: "completamento", label: "Completamento" },
-      { key: "reattivita", label: "Reattività" },
-      { key: "affidabilita", label: "Affidabilità" },
+      { key: "volume", label: t("radar.volume", "Volume") },
+      { key: "velocita", label: t("radar.speed", "Velocità") },
+      { key: "completamento", label: t("radar.completion", "Completamento") },
+      { key: "reattivita", label: t("radar.responsiveness", "Reattività") },
+      { key: "affidabilita", label: t("radar.reliability", "Affidabilità") },
     ];
 
     return metricKeys.map((m) => ({
       metric: m.label,
       value: clamp(Number(n[m.key] ?? 0), 0, 100),
     }));
-  }, [selected]);
+  }, [selected, t]);
 
   const dataAll = useMemo(() => {
     if (!rows || rows.length === 0) return [];
     const metricKeys: Array<{ key: string; label: string }> = [
-      { key: "volume", label: "Volume" },
-      { key: "velocita", label: "Velocità" },
-      { key: "completamento", label: "Completamento" },
-      { key: "reattivita", label: "Reattività" },
-      { key: "affidabilita", label: "Affidabilità" },
+      { key: "volume", label: t("radar.volume", "Volume") },
+      { key: "velocita", label: t("radar.speed", "Velocità") },
+      { key: "completamento", label: t("radar.completion", "Completamento") },
+      { key: "reattivita", label: t("radar.responsiveness", "Reattività") },
+      { key: "affidabilita", label: t("radar.reliability", "Affidabilità") },
     ];
 
     return metricKeys.map((m) => {
@@ -103,7 +105,7 @@ export default function TechnicianRadarWidget({
       }
       return entry;
     });
-  }, [rows]);
+  }, [rows, t]);
 
   const palette = pcReadyChartColors;
 
@@ -111,7 +113,7 @@ export default function TechnicianRadarWidget({
     <Card className="h-full">
       <CardHeader className="flex items-center justify-between">
         <div>
-          <CardTitle>Radar tecnico</CardTitle>
+          <CardTitle>{t("radar.title", "Radar tecnico")}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-sm">
@@ -121,7 +123,7 @@ export default function TechnicianRadarWidget({
               checked={showAll}
               onChange={(e) => setShowAll(e.target.checked)}
             />
-            Mostra tutti
+            {t("radar.showAll", "Mostra tutti")}
           </label>
           <select
             className="pc-select pc-select-sm"
@@ -139,7 +141,7 @@ export default function TechnicianRadarWidget({
       </CardHeader>
       <CardContent className="h-[320px]">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-text3">Caricamento...</div>
+          <div className="h-full flex items-center justify-center text-text3">{t("radar.loading", "Caricamento...")}</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {showAll ? (
@@ -166,7 +168,7 @@ export default function TechnicianRadarWidget({
                 <PolarAngleAxis dataKey="metric" />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} />
                 <Radar
-                  name={selected?.full_name ?? "Tecnico"}
+                  name={selected?.full_name ?? t("radar.technician", "Tecnico")}
                   dataKey="value"
                   stroke={pcReadyChartColors[0]}
                   fill={pcReadyChartColors[0]}

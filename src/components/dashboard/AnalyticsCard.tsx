@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -36,6 +37,7 @@ export function AnalyticsCard({
   onDownloadPdf,
   onDownloadCsv,
 }: AnalyticsCardProps) {
+  const { t } = useTranslation("dashboard");
   const [chartType, setChartType] = useState<ChartStyle>("bar");
   const monthly = analytics?.ticketsByMonth ?? [];
   const technicians = analytics?.technicianKpi ?? [];
@@ -45,7 +47,7 @@ export function AnalyticsCard({
       <div className="pc-card">
         <div className="pc-card-hd">
           <div>
-            <span className="pc-card-title">Report Mensile</span>
+            <span className="pc-card-title">{t("analytics.monthlyReport", "Report Mensile")}</span>
             <div className="text-[11px] text-text3">{periodLabel}</div>
           </div>
           <div className="flex items-center gap-2">
@@ -53,16 +55,16 @@ export function AnalyticsCard({
               <button
                 className={`p-1 rounded ${chartType === "bar" ? "bg-white dark:bg-surface3 shadow-sm" : "text-text3 hover:text-text2"}`}
                 onClick={() => setChartType("bar")}
-                title="Grafico a barre"
-                aria-label="Grafico a barre"
+                title={t("analytics.barChart", "Grafico a barre")}
+                aria-label={t("analytics.barChart", "Grafico a barre")}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
               </button>
               <button
                 className={`p-1 rounded ${chartType === "line" ? "bg-white dark:bg-surface3 shadow-sm" : "text-text3 hover:text-text2"}`}
                 onClick={() => setChartType("line")}
-                title="Grafico a linee"
-                aria-label="Grafico a linee"
+                title={t("analytics.lineChart", "Grafico a linee")}
+                aria-label={t("analytics.lineChart", "Grafico a linee")}
               >
                 <LineChartIcon className="w-3.5 h-3.5" />
               </button>
@@ -70,18 +72,18 @@ export function AnalyticsCard({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" disabled={!analytics || loading}>
-                  Esporta
+                  {t("analytics.export", "Esporta")}
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onDownloadCsv} disabled={!analytics || loading}>
                   <FileDown className="mr-2 h-4 w-4" />
-                  Esporta CSV
+                  {t("analytics.exportCsv", "Esporta CSV")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onDownloadPdf} disabled={!analytics || loading}>
                   <FileText className="mr-2 h-4 w-4" />
-                  Report Mensile PDF
+                  {t("analytics.monthlyPdf", "Report Mensile PDF")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -94,8 +96,8 @@ export function AnalyticsCard({
             <>
               <ChartContainer
                 config={{
-                  opened: { label: "Aperti", color: pcReadyColors.primary },
-                  closed: { label: "Chiusi", color: pcReadyColors.success },
+                  opened: { label: t("analytics.opened", "Aperti"), color: pcReadyColors.primary },
+                  closed: { label: t("analytics.closed", "Chiusi"), color: pcReadyColors.success },
                 }}
                 className="h-[250px] w-full"
               >
@@ -133,9 +135,9 @@ export function AnalyticsCard({
               </ChartContainer>
 
               <div>
-                <div className="text-xs font-semibold mb-2">Tempo medio di risoluzione</div>
+                <div className="text-xs font-semibold mb-2">{t("analytics.avgResolution", "Tempo medio di risoluzione")}</div>
                 <ChartContainer
-                  config={{ avg_days: { label: "Tempo medio", color: pcReadyColors.warning } }}
+                  config={{ avg_days: { label: t("analytics.avgTime", "Tempo medio"), color: pcReadyColors.warning } }}
                   className="h-[190px] w-full"
                 >
                   <LineChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
@@ -144,7 +146,7 @@ export function AnalyticsCard({
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `${value}g`}
+                      tickFormatter={(value) => `${value}${t("stats.days", "g")}`}
                     />
                     <ChartTooltip
                       content={
@@ -169,10 +171,10 @@ export function AnalyticsCard({
       <div className="pc-card">
         <div className="pc-card-hd">
           <div>
-            <span className="pc-card-title">Performance tecnici</span>
-            <div className="text-[11px] text-text3">Assegnati, completati e tempi medi</div>
+            <span className="pc-card-title">{t("analytics.technicianPerformance", "Performance tecnici")}</span>
+            <div className="text-[11px] text-text3">{t("analytics.technicianSubtitle", "Assegnati, completati e tempi medi")}</div>
           </div>
-          <span className="text-[11px] text-text3 font-mono">{technicians.length} tecnici</span>
+          <span className="text-[11px] text-text3 font-mono">{t("analytics.technicianCount", "{{count}} tecnici", { count: technicians.length })}</span>
         </div>
         {loading ? (
           <div className="pc-card-body">

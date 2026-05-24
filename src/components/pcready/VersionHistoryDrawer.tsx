@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { VersionDiffViewer } from "./VersionDiffViewer";
 import { RestoreVersionDialog } from "./RestoreVersionDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 interface VersionHistoryDrawerProps {
   entityType: string;
@@ -25,6 +26,7 @@ export function VersionHistoryDrawer({
   onClose,
   onRestored,
 }: VersionHistoryDrawerProps) {
+  const { t } = useTranslation("checklist");
   const { profile } = useAuth();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export function VersionHistoryDrawer({
 
   const formatAuthor = useCallback(
     (authorId: string | null) => {
-      if (!authorId) return "Sistema";
+      if (!authorId) return t("versionHistory.system", "Sistema");
       return authors[authorId] || authorId;
     },
     [authors],
@@ -64,7 +66,7 @@ export function VersionHistoryDrawer({
       }
     } catch (error) {
       console.error("Error loading versions:", error);
-      toast.error("Errore caricamento versioni");
+      toast.error(t("versionHistory.loadError", "Errore caricamento versioni"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,7 @@ export function VersionHistoryDrawer({
 
   function handleRestore(version: Version) {
     if (profile?.role !== "admin") {
-      toast.error("Solo gli amministratori possono ripristinare versioni");
+      toast.error(t("versionHistory.adminOnly", "Solo gli amministratori possono ripristinare versioni"));
       return;
     }
     setRestoringVersion(version);
@@ -99,11 +101,11 @@ export function VersionHistoryDrawer({
     if (!restoringVersion) return;
     try {
       await restoreVersion(entityType, entityId, restoringVersion, note);
-      toast.success("Versione ripristinata");
+      toast.success(t("versionHistory.restoreSuccess", "Versione ripristinata"));
       onClose();
       onRestored?.();
     } catch (_error) {
-      toast.error("Errore ripristino versione");
+      toast.error(t("versionHistory.restoreError", "Errore ripristino versione"));
     } finally {
       setRestoringVersion(null);
     }
@@ -114,7 +116,7 @@ export function VersionHistoryDrawer({
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent side="right" className="w-[600px] sm:w-[600px]">
           <SheetHeader>
-            <SheetTitle>Storico Versioni</SheetTitle>
+            <SheetTitle>{t("versionHistory.title", "Storico Versioni")}</SheetTitle>
           </SheetHeader>
 
           <div className="flex flex-col gap-4 mt-4">
@@ -127,17 +129,17 @@ export function VersionHistoryDrawer({
                   className="flex-1"
                 >
                   <GitCompare className="w-4 h-4 mr-2" />
-                  Confronta Versioni
+                  {t("versionHistory.compareVersions", "Confronta Versioni")}
                 </Button>
               </div>
             )}
 
             <div className="space-y-3 max-h-[70vh] overflow-y-auto">
               {loading ? (
-                <div className="text-center py-8">Caricamento...</div>
+                <div className="text-center py-8">{t("versionHistory.loading", "Caricamento...")}</div>
               ) : versions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna versione trovata
+                  {t("versionHistory.noVersions", "Nessuna versione trovata")}
                 </div>
               ) : (
                 versions.map((version) => (
@@ -189,7 +191,7 @@ export function VersionHistoryDrawer({
                         onClick={() => setViewingVersion(version)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        Visualizza
+                        {t("versionHistory.view", "Visualizza")}
                       </Button>
                       <Button
                         variant="outline"
@@ -198,7 +200,7 @@ export function VersionHistoryDrawer({
                         disabled={profile?.role !== "admin"}
                       >
                         <RotateCcw className="w-4 h-4 mr-2" />
-                        Ripristina
+                        {t("versionHistory.restore", "Ripristina")}
                       </Button>
                     </div>
                   </div>

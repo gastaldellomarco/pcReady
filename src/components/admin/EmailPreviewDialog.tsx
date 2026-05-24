@@ -1,5 +1,6 @@
 import { Monitor, Smartphone } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ export function EmailPreviewDialog({
   html,
   sampleValues,
 }: EmailPreviewDialogProps) {
+  const { t } = useTranslation("admin");
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
   const renderedSubject = useMemo(
     () => renderTemplate(subject, sampleValues),
@@ -35,7 +37,7 @@ export function EmailPreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Anteprima email</DialogTitle>
+          <DialogTitle>{t("emailPreview.title", "Anteprima email")}</DialogTitle>
           <DialogDescription>{renderedSubject}</DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-end gap-2">
@@ -46,7 +48,7 @@ export function EmailPreviewDialog({
             onClick={() => setViewport("desktop")}
           >
             <Monitor className="mr-2 h-4 w-4" />
-            Desktop
+            {t("emailPreview.desktop", "Desktop")}
           </Button>
           <Button
             type="button"
@@ -55,12 +57,12 @@ export function EmailPreviewDialog({
             onClick={() => setViewport("mobile")}
           >
             <Smartphone className="mr-2 h-4 w-4" />
-            Mobile
+            {t("emailPreview.mobile", "Mobile")}
           </Button>
         </div>
         <div className="flex justify-center rounded-md border bg-muted/40 p-4">
           <iframe
-            title="Anteprima template email"
+            title={t("emailPreview.iframeTitle", "Anteprima template email")}
             className="h-[560px] rounded-md border bg-background"
             style={{ width: viewport === "desktop" ? 720 : 390 }}
             srcDoc={renderedHtml}

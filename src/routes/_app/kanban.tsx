@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
@@ -8,6 +9,7 @@ import queries from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/lib/use-tickets";
+import { useTranslation } from "react-i18next";
 import {
   STATUS_META,
   type TicketPriority,
@@ -51,8 +53,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_app/kanban")({
   head: () => ({
     meta: [
-      { title: "Kanban — PCReady" },
-      { name: "description", content: "Vista Kanban dei ticket per stato di preparazione." },
+      { title: i18n.t("kanban:meta.title", "Kanban — PCReady") },
+      { name: "description", content: i18n.t("kanban:meta.description", "Vista Kanban dei ticket per stato di preparazione.") },
     ],
   }),
   component: KanbanPage,
@@ -123,6 +125,7 @@ function loadStoredFilters(): KanbanFilters {
 }
 
 function KanbanPage() {
+  const { t } = useTranslation(["kanban", "tickets"]);
   useTickets();
   const { canEdit, isAdmin, user, profile, session } = useAuth();
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
@@ -221,10 +224,10 @@ function KanbanPage() {
         setColorDraft(loadedColors);
         setArchiveDays(settings?.archive_after_days ?? 7);
       })
-      .catch((error) => toast.error(errorMessage(error, "Impossibile caricare i limiti WIP")));
+      .catch((error) => toast.error(errorMessage(error, t("toasts.wipLoadError", "Impossibile caricare i limiti WIP"))));
     loadTechnicians({ data: { accessToken: session.access_token } })
       .then((t) => setTechnicians(Array.isArray(t) ? t : []))
-      .catch((error) => toast.error(errorMessage(error, "Impossibile caricare i tecnici")));
+      .catch((error) => toast.error(errorMessage(error, t("toasts.techsLoadError", "Impossibile caricare i tecnici"))));
   }, [session?.access_token, loadKanbanSettings, loadTechnicians]);
 
   function setFilter<K extends keyof KanbanFilters>(key: K, value: KanbanFilters[K]) {
@@ -241,7 +244,7 @@ function KanbanPage() {
   }, []);
 
   async function saveWipSettings() {
-    if (!session?.access_token || !isAdmin) return toast.error("Solo admin");
+    if (!session?.access_token || !isAdmin) return toast.error(t("tickets:toasts.adminOnly", "Solo admin"));
     setSavingWip(true);
     try {
       const result = await saveKanbanSettings({
@@ -254,30 +257,30 @@ function KanbanPage() {
       setWipLimits(result.wip_limits);
       setColumnColors(result.kanban_column_colors ?? {});
       setWipDialogOpen(false);
-      toast.success("Configurazione Kanban salvata");
+      toast.success(t("toasts.wipSaveSuccess", "Configurazione Kanban salvata"));
     } catch (error) {
-      toast.error(errorMessage(error, "Impossibile salvare configurazione Kanban"));
+      toast.error(errorMessage(error, t("toasts.wipSaveError", "Impossibile salvare configurazione Kanban")));
     } finally {
       setSavingWip(false);
     }
   }
 
   async function updatePriority(id: string, priority: TicketPriority) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("tickets:toasts.unauthorized", "Permessi insufficienti"));
     const card = rows.find((r) => r.id === id);
     if (!card || card.priority === priority) return;
     setRows((current) => current.map((row) => (row.id === id ? { ...row, priority } : row)));
     try {
       await updateTicket.mutateAsync({ id, patch: { priority } });
-      toast.success(`Priorita aggiornata: ${PRIORITY_LABEL[priority]}`);
+      toast.success(t("toasts.prioritySuccess", "Priorità aggiornata: {{priority}}", { priority: t("tickets:priority." + priority, PRIORITY_LABEL[priority]) }));
     } catch (err: any) {
       setRows((current) => current.map((row) => (row.id === id ? card : row)));
-      toast.error(err?.message || "Errore aggiornamento priorita");
+      toast.error(err?.message || t("toasts.priorityError", "Errore aggiornamento priorità"));
     }
   }
 
   async function moveTo(id: string, status: TicketStatus, assigneeId?: string | null) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("tickets:toasts.unauthorized", "Permessi insufficienti"));
     const card = rows.find((r) => r.id === id);
     if (!card) return;
     const nextAssigneeId = assigneeId === undefined ? card.assignee_id : assigneeId;
@@ -306,7 +309,7 @@ function KanbanPage() {
     try {
       await updateTicket.mutateAsync({ id, patch: { status, assignee_id: nextAssigneeId } });
     } catch (err: any) {
-      toast.error(err?.message || "Errore aggiornamento ticket");
+      toast.error(err?.message || t("toasts.ticketUpdateError", "Errore aggiornamento ticket"));
       setRows((rs) => rs.map((r) => (r.id === id ? card : r)));
       return;
     }
@@ -319,7 +322,7 @@ function KanbanPage() {
         changed_at: new Date().toISOString(),
         note:
           nextAssigneeId !== card.assignee_id
-            ? `Assegnato a ${nextAssignee?.full_name || "Non assegnato"}`
+            ? t("tickets:history.assignedTo", "Assegnato a {{name}}", { name: nextAssignee?.full_name || t("tickets:unassigned", "Non assegnato") })
             : null,
       });
     }
@@ -336,12 +339,12 @@ function KanbanPage() {
         },
       }).catch((err) => {
         console.error("Failed to complete ticket:", err);
-        toast.error("Ticket completato, ma errore invio email/verbale");
+        toast.error(t("toasts.completeEmailError", "Ticket completato, ma errore invio email/verbale"));
       });
     }
     await (activityQueries.insertActivity as any)({
       type: "user",
-      message: `${card.ticket_code}: stato → "${STATUS_META[status].label}" (kanban)`,
+      message: `${card.ticket_code}: stato → "${t("tickets:status." + status, STATUS_META[status].label)}" (kanban)`,
       ticket_id: card.id,
       actor_id: user!.id,
     });
@@ -352,8 +355,8 @@ function KanbanPage() {
           notification: {
             userId: nextAssigneeId,
             type: "ticket_status_changed",
-            title: `${card.ticket_code}: ${STATUS_META[status].label}`,
-            body: `${card.client} - ${card.device?.model || "Nessun asset"}`,
+            title: `${card.ticket_code}: ${t("tickets:status." + status, STATUS_META[status].label)}`,
+            body: `${card.client} - ${card.device?.model || t("tickets:noAsset", "Nessun asset")}`,
             payload: { ticket_id: card.id, status, assignee_id: nextAssigneeId },
             link: "/kanban",
           },
@@ -369,8 +372,8 @@ function KanbanPage() {
     }
     toast.success(
       nextAssigneeId !== card.assignee_id
-        ? `Spostato in ${STATUS_META[status].label} (${nextAssignee?.full_name || "Non assegnato"})`
-        : `Spostato in ${STATUS_META[status].label}`,
+        ? t("toasts.movedToWithAssignee", "Spostato in {{status}} ({{assignee}})", { status: t("tickets:status." + status, STATUS_META[status].label), assignee: nextAssignee?.full_name || t("tickets:unassigned", "Non assegnato") })
+        : t("toasts.movedTo", "Spostato in {{status}}", { status: t("tickets:status." + status, STATUS_META[status].label) }),
     );
     // React Query invalidation handles refreshing lists
   }
@@ -393,7 +396,7 @@ function KanbanPage() {
   function selectedKanbanCodesPreview() {
     const codes = selectedCards.map((ticket) => ticket.ticket_code);
     const visible = codes.slice(0, 8).join(", ");
-    return codes.length > 8 ? `${visible}, +${codes.length - 8} altri` : visible;
+    return codes.length > 8 ? `${visible}, +${codes.length - 8} ${t("tickets:bulk.others", "altri")}` : visible;
   }
 
   function requestKanbanBulkStatus(status: TicketStatus) {
@@ -401,11 +404,11 @@ function KanbanPage() {
       setBulkConfirmStatus(status);
       return;
     }
-    void applyKanbanBulkPatch({ status }, `cambio stato a ${STATUS_META[status].label}`);
+    void applyKanbanBulkPatch({ status }, t("bulk.changeStatusTo", "cambio stato a {{status}}", { status: t("tickets:status." + status, STATUS_META[status].label) }));
   }
 
   async function applyKanbanBulkPatch(patch: Partial<Card>, actionLabel: string) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("tickets:toasts.unauthorized", "Permessi insufficienti"));
     const ids = Array.from(selectedTicketIds);
     if (!ids.length) return;
     setBulkBusy(true);
@@ -425,7 +428,7 @@ function KanbanPage() {
               to_status: patch.status,
               changed_by: user!.id,
               changed_at: new Date().toISOString(),
-              note: `Operazione bulk Kanban: ${actionLabel}`,
+              note: t("bulk.historyNote", "Operazione bulk Kanban: {{action}}", { action: actionLabel }),
             }),
           ),
         );
@@ -447,9 +450,9 @@ function KanbanPage() {
         ),
       );
       setSelectedTicketIds(new Set());
-      toast.success(`${actionLabel}: ${ids.length} ticket aggiornati`);
+      toast.success(t("toasts.bulkSuccess", "{{action}}: {{count}} ticket aggiornati", { action: actionLabel, count: ids.length }));
     } catch (error) {
-      toast.error(errorMessage(error, "Operazione bulk non riuscita"));
+      toast.error(errorMessage(error, t("toasts.bulkError", "Operazione bulk non riuscita")));
     } finally {
       setBulkBusy(false);
     }
@@ -509,12 +512,12 @@ function KanbanPage() {
       <div className="flex flex-wrap items-center gap-2">
         <Select value={filters.assignee} onValueChange={(value) => setFilter("assignee", value)}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Tutti i tecnici" />
+            <SelectValue placeholder={t("filters.allTechs", "Tutti i tecnici")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tecnici</SelectItem>
-            <SelectItem value="me">Solo i miei</SelectItem>
-            <SelectItem value="unassigned">Non assegnati</SelectItem>
+            <SelectItem value="all">{t("filters.allTechs", "Tutti i tecnici")}</SelectItem>
+            <SelectItem value="me">{t("filters.myTickets", "Solo i miei")}</SelectItem>
+            <SelectItem value="unassigned">{t("filters.unassigned", "Non assegnati")}</SelectItem>
             {(Array.isArray(technicians) ? technicians : []).map((technician) => (
               <SelectItem key={technician.id} value={technician.id}>
                 {technician.full_name}
@@ -525,13 +528,13 @@ function KanbanPage() {
 
         <Select value={filters.priority} onValueChange={(value) => setFilter("priority", value)}>
           <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Priorita" />
+            <SelectValue placeholder={t("tickets:columns.priority", "Priorità")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte</SelectItem>
+            <SelectItem value="all">{t("filters.allPriorities", "Tutte le priorità")}</SelectItem>
             {Object.entries(PRIORITY_LABEL).map(([value, label]) => (
               <SelectItem key={value} value={value}>
-                {label}
+                {t("tickets:priority." + value, label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -539,13 +542,13 @@ function KanbanPage() {
 
         <Select value={filters.type} onValueChange={(value) => setFilter("type", value)}>
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Tipo ticket" />
+            <SelectValue placeholder={t("tickets:columns.type", "Tipo")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="all">{t("filters.allTypes", "Tutti i tipi")}</SelectItem>
             {Object.entries(TICKET_TYPE_LABEL).map(([value, label]) => (
               <SelectItem key={value} value={value}>
-                {label}
+                {t("tickets:type." + value, label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -556,11 +559,11 @@ function KanbanPage() {
           value={filters.clientId}
           selectedOption={
             filters.clientId
-              ? { value: filters.clientId, label: filters.clientLabel || "Cliente" }
+              ? { value: filters.clientId, label: filters.clientLabel || t("tickets:columns.client", "Cliente") }
               : null
           }
-          placeholder="Cliente"
-          emptyLabel="Nessun cliente"
+          placeholder={t("tickets:columns.client", "Cliente")}
+          emptyLabel={t("filters.noClient", "Nessun cliente")}
           loadOptions={loadClientFilterOptions}
           onChange={(value, option) =>
             setFilters((current) => ({
@@ -573,12 +576,12 @@ function KanbanPage() {
 
         <Select value={filters.sla} onValueChange={(value) => setFilter("sla", value as SlaFilter)}>
           <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="SLA" />
+            <SelectValue placeholder={t("tickets:columns.sla", "SLA")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti SLA</SelectItem>
-            <SelectItem value="warning">In scadenza</SelectItem>
-            <SelectItem value="overdue">Violati</SelectItem>
+            <SelectItem value="all">{t("filters.allSla", "Tutti SLA")}</SelectItem>
+            <SelectItem value="warning">{t("tickets:status.expiring", "In scadenza")}</SelectItem>
+            <SelectItem value="overdue">{t("filters.breached", "Violati")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -587,14 +590,14 @@ function KanbanPage() {
           type="date"
           value={filters.dateFrom}
           onChange={(event) => setFilter("dateFrom", event.target.value)}
-          title="Ticket aperti da"
+          title={t("tickets:dateFrom", "Data inizio")}
         />
         <input
           className="pc-input w-full sm:w-36"
           type="date"
           value={filters.dateTo}
           onChange={(event) => setFilter("dateTo", event.target.value)}
-          title="Ticket aperti entro"
+          title={t("tickets:dateTo", "Data fine")}
         />
 
         {hasActiveFilters && (
@@ -603,7 +606,7 @@ function KanbanPage() {
             className="pc-btn pc-btn-ghost pc-btn-sm"
             onClick={() => setFilters(DEFAULT_KANBAN_FILTERS)}
           >
-            <X className="h-3.5 w-3.5" /> Azzera filtri
+            <X className="h-3.5 w-3.5" /> {t("filters.clear", "Azzera filtri")}
           </button>
         )}
 
@@ -611,17 +614,17 @@ function KanbanPage() {
           type="button"
           className={cn("pc-btn pc-btn-sm", compactView ? "pc-btn-primary" : "pc-btn-ghost")}
           onClick={() => setCompactView((prev) => !prev)}
-          title="Vista compatta — nascondi colonne vuote"
+          title={t("compactTitle", "Vista compatta — nascondi colonne vuote")}
         >
           <LayoutList className="h-3.5 w-3.5" />
-          Compatta
+          {t("compact", "Compatta")}
         </button>
 
         <span className="ml-auto text-xs text-text3 font-mono flex items-center gap-2">
           {ticketsLoading ? (
-            <span className="text-[10px] uppercase tracking-wide">Sincronizzazione…</span>
+            <span className="text-[10px] uppercase tracking-wide">{t("syncing", "Sincronizzazione…")}</span>
           ) : null}
-          {filteredRows.length} di {rows.length} ticket
+          {filteredRows.length} {t("tickets:of", "di")} {rows.length} {t("ticketCount", "ticket")}
         </span>
         {isAdmin && (
           <button
@@ -645,7 +648,7 @@ function KanbanPage() {
           onClick={() => setViewMode((mode) => (mode === "columns" ? "swimlanes" : "columns"))}
         >
           <Rows3 className="h-3.5 w-3.5" />
-          Swim Lanes
+          {t("swimlanes", "Swim Lanes")}
         </button>
       </div>
 
@@ -701,14 +704,14 @@ function KanbanPage() {
                   onClick={() => toggleCollapseColumn(s)}
                   className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-2 py-4 transition-all hover:border-text3"
                   style={{ background: columnColors[s] || undefined }}
-                  title={`Espandi ${STATUS_META[s].label}`}
+                  title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + s, STATUS_META[s].label) })}
                 >
                   <span
                     className="h-3 w-3 rounded-full"
                     style={{ background: STATUS_META[s].color }}
                   />
                   <span className="writing-mode-vertical text-[10px] font-bold uppercase tracking-wider text-text3 [writing-mode:vertical-rl]">
-                    {STATUS_META[s].label}
+                    {t("tickets:status." + s, STATUS_META[s].label)}
                   </span>
                   <ChevronRight className="h-4 w-4 text-text3" />
                   <span
@@ -754,7 +757,7 @@ function KanbanPage() {
                       style={{ background: STATUS_META[s].color }}
                     />
                     <span className="text-[12px] font-bold uppercase tracking-wider">
-                      {STATUS_META[s].label}
+                      {t("tickets:status." + s, STATUS_META[s].label)}
                     </span>
                     {!count && !compactView ? (
                       <ChevronDown className="h-3 w-3 text-text3 ml-0.5" />
@@ -826,7 +829,7 @@ function KanbanPage() {
                           compactView ? "text-[11.5px]" : "text-[12.5px] mb-0.5",
                         )}
                       >
-                        {c.device?.model || "Nessun asset"}
+                        {c.device?.model || t("tickets:noAsset", "Nessun asset")}
                       </div>
                       {!compactView && (
                         <div className="text-[11px] text-text3 mb-2">{c.client}</div>
@@ -847,9 +850,9 @@ function KanbanPage() {
                                   event.target.value === "unassigned" ? null : event.target.value,
                                 )
                               }
-                              title="Assegna"
+                              title={t("assignTitle", "Assegna")}
                             >
-                              <option value="unassigned">Non assegnato</option>
+                              <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
                               {technicians.map((technician) => (
                                 <option key={technician.id} value={technician.id}>
                                   {technician.full_name}
@@ -862,11 +865,11 @@ function KanbanPage() {
                               onChange={(event) =>
                                 void updatePriority(c.id, event.target.value as TicketPriority)
                               }
-                              title="Priorità"
+                              title={t("tickets:columns.priority", "Priorità")}
                             >
                               {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
                                 <option key={priority} value={priority}>
-                                  {label}
+                                  {t("tickets:priority." + priority, label)}
                                 </option>
                               ))}
                             </select>
@@ -876,11 +879,11 @@ function KanbanPage() {
                               onChange={(event) =>
                                 void moveTo(c.id, event.target.value as TicketStatus)
                               }
-                              title="Sposta a"
+                              title={t("moveTo", "Sposta a")}
                             >
                               {KANBAN_STATUSES.map((status) => (
                                 <option key={status} value={status}>
-                                  {STATUS_META[status].label}
+                                  {t("tickets:status." + status, STATUS_META[status].label)}
                                 </option>
                               ))}
                             </select>
@@ -890,7 +893,7 @@ function KanbanPage() {
                             className="pc-btn pc-btn-ghost pc-btn-sm h-7"
                             onClick={() => openTicketDetail(c.id)}
                           >
-                            Apri dettaglio
+                            {t("tickets:details", "Apri dettaglio")}
                           </button>
                         </div>
                       )}
@@ -925,7 +928,7 @@ function KanbanPage() {
                       className="text-center py-6 text-[11px] text-text3 rounded-[7px]"
                       style={{ border: "1.5px dashed var(--border2)" }}
                     >
-                      Trascina qui
+                      {t("dragHere", "Trascina qui")}
                     </div>
                   )}
                 </div>
@@ -941,7 +944,7 @@ function KanbanPage() {
           style={{ background: "var(--surface1)", borderColor: "var(--border)" }}
         >
           <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
-            {selectedCards.length} selezionati
+            {selectedCards.length} {t("bulk.selected", "selezionati")}
           </span>
           <select
             className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
@@ -952,10 +955,10 @@ function KanbanPage() {
               if (status) requestKanbanBulkStatus(status);
             }}
           >
-            <option value="">Cambia stato...</option>
+            <option value="">{t("bulk.changeStatus", "Cambia stato...")}</option>
             {KANBAN_STATUSES.concat("archived").map((status) => (
               <option key={status} value={status}>
-                {STATUS_META[status].label}
+                {t("tickets:status." + status, STATUS_META[status].label)}
               </option>
             ))}
           </select>
@@ -968,12 +971,12 @@ function KanbanPage() {
               if (value)
                 void applyKanbanBulkPatch(
                   { assignee_id: value === "unassigned" ? null : value },
-                  "riassegnazione bulk",
+                  t("bulk.reassignAction", "riassegnazione bulk"),
                 );
             }}
           >
-            <option value="">Riassegna...</option>
-            <option value="unassigned">Non assegnato</option>
+            <option value="">{t("bulk.reassign", "Riassegna...")}</option>
+            <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
             {technicians.map((technician) => (
               <option key={technician.id} value={technician.id}>
                 {technician.full_name}
@@ -989,14 +992,14 @@ function KanbanPage() {
               if (priority)
                 void applyKanbanBulkPatch(
                   { priority },
-                  `cambio priorita a ${PRIORITY_LABEL[priority]}`,
+                  t("bulk.changePriorityAction", "cambio priorità a {{priority}}", { priority: t("tickets:priority." + priority, PRIORITY_LABEL[priority]) }),
                 );
             }}
           >
-            <option value="">Priorita...</option>
+            <option value="">{t("bulk.priority", "Priorità...")}</option>
             {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
               <option key={priority} value={priority}>
-                {label}
+                {t("tickets:priority." + priority, label)}
               </option>
             ))}
           </select>
@@ -1006,16 +1009,16 @@ function KanbanPage() {
             disabled={bulkBusy || !canEdit}
             onClick={() => setBulkConfirmStatus("archived")}
           >
-            Archivia
+            {t("bulk.archive", "Archivia")}
           </button>
           <button
             type="button"
             className="pc-btn pc-btn-ghost pc-btn-sm"
             onClick={() => setSelectedTicketIds(new Set())}
           >
-            X Deseleziona
+            X {t("bulk.deselect", "Deseleziona")}
           </button>
-          <span className="text-[10px] text-text3">Shift+click sulle card per selezionare</span>
+          <span className="text-[10px] text-text3">{t("bulk.shiftClickHint", "Shift+click sulle card per selezionare")}</span>
         </div>
       ) : null}
 
@@ -1031,9 +1034,9 @@ function KanbanPage() {
           >
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-[15px] font-bold">Configura Kanban</h3>
+                <h3 className="text-[15px] font-bold">{t("wipConfig.title", "Configura Kanban")}</h3>
                 <p className="text-[12px] text-text3">
-                  Limiti WIP e colori sfondo colonne. 0 = nessun limite.
+                  {t("wipConfig.desc", "Limiti WIP e colori sfondo colonne. 0 = nessun limite.")}
                 </p>
               </div>
               <button className="pc-btn-icon touch-target" onClick={() => setWipDialogOpen(false)}>
@@ -1053,11 +1056,11 @@ function KanbanPage() {
                       style={{ background: STATUS_META[status].color }}
                     />
                     <span className="text-[12px] font-bold uppercase tracking-wide">
-                      {STATUS_META[status].label}
+                      {t("tickets:status." + status, STATUS_META[status].label)}
                     </span>
                   </div>
                   <label className="mb-2 block text-[11px] font-semibold text-text2">
-                    Limite WIP
+                    {t("wipConfig.wipLimitLabel", "Limite WIP")}
                     <input
                       type="number"
                       min={0}
@@ -1073,7 +1076,7 @@ function KanbanPage() {
                     />
                   </label>
                   <label className="block text-[11px] font-semibold text-text2">
-                    Colore sfondo
+                    {t("wipConfig.bgColorLabel", "Colore sfondo")}
                     <div className="mt-1 flex gap-2">
                       <input
                         type="color"
@@ -1108,14 +1111,14 @@ function KanbanPage() {
                   setColorDraft({});
                 }}
               >
-                Reset default
+                {t("wipConfig.reset", "Reset default")}
               </button>
               <button
                 type="button"
                 className="pc-btn pc-btn-ghost"
                 onClick={() => setWipDialogOpen(false)}
               >
-                Annulla
+                {t("wipConfig.cancel", "Annulla")}
               </button>
               <button
                 type="button"
@@ -1123,7 +1126,7 @@ function KanbanPage() {
                 disabled={savingWip}
                 onClick={saveWipSettings}
               >
-                {savingWip ? "Salvataggio..." : "Salva"}
+                {savingWip ? t("wipConfig.saving", "Salvataggio...") : t("wipConfig.save", "Salva")}
               </button>
             </div>
           </div>
@@ -1135,19 +1138,19 @@ function KanbanPage() {
         onOpenChange={(open) => !open && setBulkConfirmStatus(null)}
         title={
           bulkConfirmStatus === "completed"
-            ? `Stai per completare ${selectedCards.length} ticket`
-            : `Stai per archiviare ${selectedCards.length} ticket`
+            ? t("bulk.confirmTitleComplete", "Stai per completare {{count}} ticket", { count: selectedCards.length })
+            : t("bulk.confirmTitleArchive", "Stai per archiviare {{count}} ticket", { count: selectedCards.length })
         }
-        description={`Operazione bulk Kanban sui ticket: ${selectedKanbanCodesPreview()}`}
-        confirmLabel="Conferma"
-        loadingLabel="Aggiornamento..."
+        description={t("bulk.confirmDesc", "Operazione bulk Kanban sui ticket: {{preview}}", { preview: selectedKanbanCodesPreview() })}
+        confirmLabel={t("tickets:confirm", "Conferma")}
+        loadingLabel={t("tickets:updating", "Aggiornamento...")}
         onConfirm={async () => {
           if (!bulkConfirmStatus) return;
           await applyKanbanBulkPatch(
             { status: bulkConfirmStatus },
             bulkConfirmStatus === "completed"
-              ? "completamento bulk"
-              : `cambio stato a ${STATUS_META[bulkConfirmStatus].label}`,
+              ? t("bulk.completeAction", "completamento bulk")
+              : t("bulk.changeStatusTo", "cambio stato a {{status}}", { status: t("tickets:status." + bulkConfirmStatus, STATUS_META[bulkConfirmStatus].label) }),
           );
         }}
       />

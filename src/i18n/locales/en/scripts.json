@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "title": "Scripts — PCReady",
+    "description": "Library of reusable scripts: PowerShell, Bash and more."
+  },
+  "title": "Scripts & Automation",
+  "subtitle": "Repository of scripts for diagnostics and hardware automation.",
+  "newScript": "New script",
+  "search": {
+    "placeholder": "Search script..."
+  },
+  "allCategories": "All categories",
+  "scriptCount": "{{count}} scripts",
+  "emptyTitle": "No scripts yet",
+  "emptyDescription": "Create your first reusable script. You'll always find it here ready to copy.",
+  "categories": {
+    "all": "All",
+    "diagnostic": "Diagnostics",
+    "utility": "Utilities",
+    "install": "Installation",
+    "security": "Security"
+  },
+  "card": {
+    "open": "Open →",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "viewer": {
+    "close": "Close",
+    "versions": "Versions",
+    "download": "Download",
+    "copy": "Copy",
+    "emptyScript": "// Empty script",
+    "copied": "Script copied to clipboard"
+  },
+  "editor": {
+    "editTitle": "Edit script",
+    "newTitle": "New script",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "createScript": "Create script",
+    "fieldName": "Name *",
+    "fieldCategory": "Category",
+    "fieldLanguage": "Language",
+    "fieldIcon": "Icon",
+    "fieldColor": "Color",
+    "fieldDescription": "Description",
+    "fieldContent": "Script content *",
+    "fieldChangeNote": "Change note (optional)",
+    "namePlaceholder": "Reset Windows Update",
+    "descriptionPlaceholder": "What does this script do?",
+    "contentPlaceholder": "# Your code here...",
+    "changeNotePlaceholder": "Describe the changes made...",
+    "errors": {
+      "nameRequired": "Enter a name",
+      "contentRequired": "Script is empty",
+      "saveFailed": "Save error"
+    }
+  },
+  "delete": {
+    "title": "Delete this script?",
+    "description": "The script \"{{name}}\" will be removed from the library. This action cannot be undone.",
+    "descriptionGeneric": "The script will be removed from the library. This action cannot be undone.",
+    "confirm": "Delete script",
+    "loading": "Deleting..."
+  },
+  "success": {
+    "deleted": "Script deleted",
+    "created": "Script created",
+    "updated": "Script updated"
+  }
+}

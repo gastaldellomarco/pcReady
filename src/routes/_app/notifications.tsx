@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { useAuth } from "@/lib/auth-context";
 import {
   deleteReadNotifications,
@@ -30,8 +32,8 @@ import { iconForType, relativeTime } from "@/components/layout/notification-util
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
-      { title: "Notifiche - PCReady" },
-      { name: "description", content: "Inbox completa delle notifiche PCReady." },
+      { title: i18n.t("notifications:meta.title") },
+      { name: "description", content: i18n.t("notifications:meta.description") },
     ],
   }),
   component: NotificationsPage,
@@ -42,6 +44,7 @@ export const Route = createFileRoute("/_app/notifications")({
 const PAGE_SIZE = 20;
 
 function NotificationsPage() {
+  const { t } = useTranslation("notifications");
   const { session } = useAuth();
   const navigate = useNavigate();
   const loadNotifications = useServerFn(listNotifications);
@@ -74,7 +77,7 @@ function NotificationsPage() {
       setRows(result.rows);
       setTotal(result.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Impossibile caricare notifiche");
+      setLoadError(error instanceof Error ? error.message : t("errors.loadFailed", "Impossibile caricare notifiche"));
     } finally {
       setLoading(false);
     }
@@ -99,7 +102,7 @@ function NotificationsPage() {
       if (notification.link) navigate({ to: notification.link });
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Operazione non riuscita");
+      toast.error(error instanceof Error ? error.message : t("toast.operationFailed", "Operazione non riuscita"));
     }
   }
 
@@ -108,9 +111,9 @@ function NotificationsPage() {
     try {
       await markAllRead({ data: { accessToken: session.access_token } });
       await load();
-      toast.success("Notifiche segnate come lette");
+      toast.success(t("toast.markedRead", "Notifiche segnate come lette"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Operazione non riuscita");
+      toast.error(error instanceof Error ? error.message : t("toast.operationFailed", "Operazione non riuscita"));
     }
   }
 
@@ -119,13 +122,24 @@ function NotificationsPage() {
     try {
       await deleteRead({ data: { accessToken: session.access_token } });
       await load();
-      toast.success("Notifiche lette eliminate");
+      toast.success(t("toast.deletedRead", "Notifiche lette eliminate"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Eliminazione non riuscita");
+      toast.error(error instanceof Error ? error.message : t("toast.deleteFailed", "Eliminazione non riuscita"));
     }
   }
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const typeLabel = (type: NotificationType) => {
+    if (type === "ticket_assigned") return t("types.ticket_assigned", "Ticket assegnato");
+    if (type === "ticket_status_changed") return t("types.ticket_status_changed", "Cambio stato ticket");
+    if (type === "ticket_comment") return t("types.ticket_comment", "Commento ticket");
+    if (type === "automation_failed") return t("types.automation_failed", "Automazione fallita");
+    if (type === "device_status_changed") return t("types.device_status_changed", "Cambio stato dispositivo");
+    if (type === "checklist_completed") return t("types.checklist_completed", "Checklist completata");
+    if (type === "user_invited") return t("types.user_invited", "Utente invitato");
+    return t("types.mention", "Menzione");
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
@@ -136,8 +150,8 @@ function NotificationsPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte</SelectItem>
-            <SelectItem value="unread">Non lette</SelectItem>
+            <SelectItem value="all">{t("filters.all", "Tutte")}</SelectItem>
+            <SelectItem value="unread">{t("filters.unread", "Non lette")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={type} onValueChange={(value) => setType(value as typeof type)}>
@@ -145,7 +159,7 @@ function NotificationsPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="all">{t("filters.allTypes", "Tutti i tipi")}</SelectItem>
             {NOTIFICATION_TYPES.map((item) => (
               <SelectItem key={item} value={item}>
                 {typeLabel(item)}
@@ -153,20 +167,20 @@ function NotificationsPage() {
             ))}
           </SelectContent>
         </Select>
-        <span className="ml-auto text-xs text-text3 font-mono">{total} notifiche</span>
+        <span className="ml-auto text-xs text-text3 font-mono">{t("count", { count: total })}</span>
         <Button variant="outline" size="sm" onClick={markAll}>
           <CheckCheck className="h-4 w-4" />
-          Segna tutte
+          {t("actions.markAllRead", "Segna tutte")}
         </Button>
         <Button variant="outline" size="sm" onClick={removeRead}>
           <Trash2 className="h-4 w-4" />
-          Elimina lette
+          {t("actions.deleteRead", "Elimina lette")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Inbox notifiche</CardTitle>
+          <CardTitle>{t("card.title", "Inbox notifiche")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading && (
@@ -212,8 +226,8 @@ function NotificationsPage() {
             <div className="px-4 py-6">
               <PageEmptyState
                 className="border-0 shadow-none bg-transparent"
-                title="Nessuna notifica"
-                description="Non ci sono elementi che corrispondono ai filtri selezionati."
+                title={t("empty.title", "Nessuna notifica")}
+                description={t("empty.description", "Non ci sono elementi che corrispondono ai filtri selezionati.")}
               />
             </div>
           )}
@@ -227,10 +241,10 @@ function NotificationsPage() {
           disabled={page === 0}
           onClick={() => setPage((current) => Math.max(0, current - 1))}
         >
-          Precedente
+          {t("pagination.previous", "Precedente")}
         </Button>
         <span className="text-xs text-text3 font-mono">
-          Pagina {page + 1} di {pageCount}
+          {t("pagination.pageInfo", { current: page + 1, total: pageCount })}
         </span>
         <Button
           variant="outline"
@@ -238,20 +252,11 @@ function NotificationsPage() {
           disabled={page + 1 >= pageCount}
           onClick={() => setPage((current) => current + 1)}
         >
-          Successiva
+          {t("pagination.next", "Successiva")}
         </Button>
       </div>
     </div>
   );
 }
 
-function typeLabel(type: NotificationType) {
-  if (type === "ticket_assigned") return "Ticket assegnato";
-  if (type === "ticket_status_changed") return "Cambio stato ticket";
-  if (type === "ticket_comment") return "Commento ticket";
-  if (type === "automation_failed") return "Automazione fallita";
-  if (type === "device_status_changed") return "Cambio stato dispositivo";
-  if (type === "checklist_completed") return "Checklist completata";
-  if (type === "user_invited") return "Utente invitato";
-  return "Menzione";
-}
+

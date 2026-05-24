@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
@@ -28,6 +29,7 @@ function normalizeWeekCounts(value: unknown) {
 }
 
 export default function TechnicianHeatmapWidget() {
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianWeeklyActivity);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -69,7 +71,7 @@ export default function TechnicianHeatmapWidget() {
     <Card className="dashboard-widget">
       <CardHeader className="flex items-center justify-between">
         <div>
-          <CardTitle>Attività settimanale tecnici</CardTitle>
+          <CardTitle>{t("heatmap.title", "Attività settimanale tecnici")}</CardTitle>
           <div className="text-sm text-text3">{weekLabel}</div>
         </div>
         <div className="flex items-center gap-2">
@@ -79,12 +81,12 @@ export default function TechnicianHeatmapWidget() {
           <Button size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
             {">"}
           </Button>
-          <div className="text-sm text-text3">{technicians.length} tecnici</div>
+          <div className="text-sm text-text3">{technicians.length} {t("heatmap.technicians", "tecnici")}</div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="h-36 flex items-center justify-center text-text3">Caricamento...</div>
+          <div className="h-36 flex items-center justify-center text-text3">{t("heatmap.loading", "Caricamento...")}</div>
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
@@ -98,16 +100,16 @@ export default function TechnicianHeatmapWidget() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {technicians.map((t: any) => (
-                  <div key={t.id} className="grid grid-cols-8 gap-2 items-center p-2 pc-card">
+                {technicians.map((tech: any) => (
+                  <div key={tech.id} className="grid grid-cols-8 gap-2 items-center p-2 pc-card">
                     <div className="font-semibold text-sm">
-                      {t.initials} {t.name}
+                      {tech.initials} {tech.name}
                     </div>
-                    {normalizeWeekCounts(t.counts).map((c: number, i: number) => (
+                    {normalizeWeekCounts(tech.counts).map((c: number, i: number) => (
                       <div
                         key={i}
                         className={`h-10 rounded flex items-center justify-center ${colorForCount(c)}`}
-                        title={`${c} ticket chiusi`}
+                        title={t("heatmap.ticketsClosed", "ticket chiusi") + `: ${c}`}
                       >
                         <div className="text-sm">{c || ""}</div>
                       </div>

@@ -1,0 +1,336 @@
+{
+  "title": "Anagrafica Clienti",
+  "subtitle": "Gestione account clienti, contatti e permessi portale.",
+  "head": {
+    "title": "Clienti - PCReady",
+    "description": "Anagrafica clienti e referenti aziendali."
+  },
+  "newClient": "Nuovo Cliente",
+  "filters": {
+    "all": "Tutti",
+    "withOpenTickets": "Con ticket aperti",
+    "portalActive": "Portale attivo",
+    "search": "Cerca cliente per nome, azienda o email...",
+    "searchExtended": "Cerca per nome, P.IVA, codice fiscale o email..."
+  },
+  "columns": {
+    "name": "Nome",
+    "company": "Azienda / Organizzazione",
+    "email": "Email",
+    "phone": "Telefono",
+    "openTickets": "Ticket Aperti",
+    "portal": "Accesso Portale",
+    "actions": "Azioni"
+  },
+  "list": {
+    "title": "Clienti",
+    "new": "Nuovo",
+    "selectPage": "Seleziona pagina",
+    "selectLabel": "Seleziona",
+    "selectClient": "Seleziona {{name}}",
+    "selectedCount": "{{count}} selezionati",
+    "delete": "Elimina",
+    "incompleteProfile": "Anagrafica da completare",
+    "ticketCount": "{{count}} ticket",
+    "deviceCount": "{{count}} dispositivi",
+    "contactCount": "{{count}} referenti",
+    "empty": "Nessun cliente trovato",
+    "previous": "Precedente",
+    "page": "Pagina {{current}} di {{total}}",
+    "next": "Successiva",
+    "error": "Impossibile caricare i clienti. Controlla la connessione e riprova.",
+    "filterAll": "Tutti",
+    "filterOpenTickets": "Ticket aperti",
+    "filterPortalActive": "Portale attivo"
+  },
+  "form": {
+    "createTitle": "Nuovo Cliente",
+    "editTitle": "Modifica Cliente",
+    "fullName": "Nome Completo",
+    "companyName": "Nome Azienda",
+    "email": "Indirizzo Email",
+    "phone": "Telefono",
+    "address": "Indirizzo Sede",
+    "save": "Salva Cliente",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "saveClient": "Salva cliente",
+    "ragioneSociale": "Ragione sociale *",
+    "partitaIva": "P.IVA",
+    "codiceFiscale": "Codice fiscale",
+    "emailField": "Email",
+    "telefono": "Telefono",
+    "sitoWeb": "Sito web",
+    "websitePlaceholder": "https://azienda.it",
+    "openWebsite": "Apri sito web",
+    "indirizzo": "Indirizzo",
+    "note": "Note",
+    "portalBranding": "Branding portale cliente",
+    "portalName": "Nome portale",
+    "portalNamePlaceholder": "Portale IT - Rossi S.r.l.",
+    "portalColor": "Colore principale",
+    "portalLogoUrl": "URL logo cliente",
+    "portalLogoPlaceholder": "https://.../logo.png",
+    "portalWelcomeMessage": "Messaggio di benvenuto",
+    "portalWelcomePlaceholder": "Benvenuto nel portale assistenza",
+    "portalInfo": "Puoi caricare il logo nel bucket pubblico client-portal-branding e incollare qui l'URL pubblico.",
+    "newClientTitle": "Nuovo cliente",
+    "newClientDescription": "Compila l'anagrafica per creare una nuova scheda cliente."
+  },
+  "portal": {
+    "active": "Attivo",
+    "inactive": "Inattivo",
+    "noAccess": "Nessun accesso",
+    "enablePortal": "Attiva Portale",
+    "disablePortal": "Disattiva Portale",
+    "generatingLink": "Generazione link di accesso...",
+    "linkCopied": "Link copiato negli appunti!",
+    "modalTitle": "Link accesso portale",
+    "contact": "Referente",
+    "link": "Link",
+    "expiresOn": "Scade il {{date}}",
+    "warning": "Condividi questo link direttamente con il cliente. Chiunque lo riceva potra' accedere al portale come questo referente fino alla scadenza o alla revoca.",
+    "close": "Chiudi",
+    "copied": "Copiato",
+    "copyLink": "Copia link"
+  },
+  "detail": {
+    "contactInfoEmpty": "Contatti cliente non compilati",
+    "openTickets": "ticket aperti",
+    "devices": "dispositivi",
+    "contacts": "referenti"
+  },
+  "tabs": {
+    "info": "Informazioni",
+    "contacts": "Referenti",
+    "tickets": "Ticket",
+    "devices": "Dispositivi"
+  },
+  "contacts": {
+    "count": "{{count}} referenti registrati",
+    "importCsv": "Importa da CSV",
+    "newContact": "Nuovo referente",
+    "empty": "Nessun referente associato.",
+    "headers": {
+      "name": "Nome",
+      "role": "Ruolo",
+      "department": "Reparto",
+      "email": "Email",
+      "phone": "Telefono",
+      "portal": "Portale",
+      "actions": "Azioni"
+    },
+    "edit": "Modifica",
+    "link": "Link",
+    "revoke": "Revoca",
+    "deleteTitle": "Elimina referente",
+    "modalTitleEdit": "Modifica referente",
+    "modalTitleNew": "Nuovo referente",
+    "formName": "Nome e cognome *",
+    "formEmail": "Email",
+    "formPhone": "Telefono",
+    "formRole": "Ruolo aziendale",
+    "formDepartment": "Reparto",
+    "formPrimary": "Referente principale",
+    "formNotes": "Note",
+    "save": "Salva referente",
+    "saving": "Salvataggio..."
+  },
+  "tickets": {
+    "count": "{{count}} ticket collegati",
+    "newTicket": "Nuovo ticket",
+    "empty": "Nessun ticket per questo cliente.",
+    "createFirst": "Crea primo ticket",
+    "headers": {
+      "id": "ID",
+      "title": "Titolo",
+      "status": "Stato",
+      "priority": "Priorita",
+      "assignee": "Assegnatario",
+      "date": "Apertura"
+    },
+    "unassigned": "Non assegnato"
+  },
+  "devices": {
+    "addDevice": "Aggiungi dispositivo",
+    "empty": "Nessun dispositivo per questo cliente.",
+    "addFirstDevice": "Aggiungi primo dispositivo",
+    "headers": {
+      "model": "Modello",
+      "assetTag": "Asset tag",
+      "serial": "Seriale produttore",
+      "os": "OS",
+      "status": "Stato",
+      "assignedTo": "Assegnato a",
+      "date": "Inserito"
+    }
+  },
+  "errors": {
+    "selectClientFirst": "Seleziona prima un cliente",
+    "insufficientPermissions": "Permessi insufficienti",
+    "saveClientFirst": "Salva prima il cliente",
+    "sessionInvalid": "Sessione non valida",
+    "cannotCopyLink": "Impossibile copiare il link",
+    "adminOnlyDeleteClients": "Solo admin puo' eliminare clienti",
+    "adminOnlyDeleteContacts": "Solo admin puo' eliminare referenti",
+    "noActiveLinks": "Nessun link attivo da revocare"
+  },
+  "toasts": {
+    "clientUpdated": "Cliente aggiornato",
+    "clientCreated": "Cliente creato",
+    "clientDeleted": "Cliente eliminato",
+    "clientsDeleted": "{{count}} clienti eliminati",
+    "contactUpdated": "Referente aggiornato",
+    "contactAdded": "Referente aggiunto",
+    "contactDeleted": "Referente eliminato",
+    "portalLinkGenerated": "Link portale generato",
+    "portalLinkError": "Errore generazione link portale",
+    "portalLinkRevokeError": "Errore revoca accesso portale",
+    "saveClientError": "Errore salvataggio cliente",
+    "saveContactError": "Errore salvataggio referente",
+    "importCompleted": "Import CSV completato",
+    "importContactsCompleted": "Import referenti completato",
+    "importContactsError": "Errore import referenti",
+    "importCsvError": "Errore import CSV",
+    "importRowError": "Errore import riga",
+    "readCsvError": "Errore lettura CSV"
+  },
+  "statusPill": {
+    "pending": "In attesa",
+    "inProgress": "In corso",
+    "testing": "Test",
+    "ready": "Pronto",
+    "completed": "Completato",
+    "archived": "Archiviato"
+  },
+  "priority": {
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Bassa"
+  },
+  "deviceStatus": {
+    "available": "Disponibile",
+    "assigned": "Assegnato",
+    "maintenance": "Manutenzione",
+    "retired": "Dismesso"
+  },
+  "deviceSummary": {
+    "available": "Disponibili: {{count}}",
+    "assigned": "Assegnati: {{count}}",
+    "maintenance": "Manutenzione: {{count}}",
+    "retired": "Dismessi: {{count}}"
+  },
+  "destructiveDialog": {
+    "defaultTitle": "Confermare l'azione?",
+    "defaultDescription": "Questa azione e' distruttiva e non puo' essere annullata.",
+    "defaultConfirm": "Conferma",
+    "deleteClientTitle": "Eliminare questo cliente?",
+    "deleteClientDescription": "Il cliente \"{{name}}\" verra' rimosso insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.",
+    "deleteClientConfirm": "Elimina cliente",
+    "deleteClientsTitle": "Eliminare i clienti selezionati?",
+    "deleteClientsDescription": "{{count}} clienti verranno rimossi insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.",
+    "deleteClientsConfirm": "Elimina clienti",
+    "deleteContactTitle": "Eliminare questo referente?",
+    "deleteContactDescription": "Il referente \"{{name}}\" verra' rimosso dal cliente. L'azione non puo' essere annullata.",
+    "deleteContactConfirm": "Elimina referente",
+    "revokePortalTitle": "Revocare l'accesso portale?",
+    "revokePortalDescription": "Tutti i link portale attivi per \"{{name}}\" verranno revocati. Il referente non potra' piu' usarli per accedere.",
+    "revokePortalConfirm": "Revoca accesso",
+    "loading": "Operazione in corso..."
+  },
+  "importContacts": {
+    "title": "Import CSV referenti",
+    "uploadLabel": "Carica file .csv",
+    "reading": "Lettura in corso...",
+    "csvHint": "nome,cognome,email,telefono,ruolo_aziendale,reparto,referente_principale",
+    "downloadTemplate": "Scarica template CSV",
+    "templateFileName": "pcready-template-referenti.csv",
+    "importValidRows": "Importa righe valide",
+    "importing": "Import in corso...",
+    "importCompleted": "Import completato",
+    "close": "Chiudi",
+    "previewHeaders": {
+      "row": "Riga",
+      "name": "Nome",
+      "email": "Email",
+      "role": "Ruolo",
+      "department": "Reparto",
+      "action": "Azione",
+      "validation": "Validazione"
+    },
+    "duplicateMode": {
+      "ask": "Duplicati: chiedi",
+      "skip": "Duplicati: salta",
+      "overwrite": "Duplicati: sovrascrivi"
+    },
+    "actions": {
+      "skip": "Salta",
+      "overwrite": "Sovrascrivi"
+    },
+    "validation": {
+      "nameRequired": "Nome obbligatorio",
+      "emailRequired": "Email obbligatoria",
+      "emailInvalid": "Email non valida",
+      "duplicateInCsv": "Duplicato nel CSV",
+      "emailExists": "Email gia' presente",
+      "ok": "OK",
+      "emptyCsv": "CSV vuoto o senza righe valide",
+      "noValidRows": "Nessuna riga valida da importare"
+    },
+    "resultSummary": {
+      "inserts": "Inseriti",
+      "updates": "Aggiornati",
+      "skipped": "Saltati",
+      "errors": "Errori",
+      "rows": "Righe",
+      "insert": "Insert",
+      "update": "Update"
+    },
+    "resultRow": "Riga {{rowNumber}} ({{name}}): {{error}}"
+  },
+  "importClients": {
+    "title": "Import CSV clienti",
+    "uploadLabel": "Carica file .csv",
+    "reading": "Lettura in corso...",
+    "csvHint": "nome, azienda, p.iva, email",
+    "downloadTemplate": "Scarica template CSV",
+    "templateFileName": "pcready-template-clienti.csv",
+    "confirmImport": "Conferma import",
+    "importing": "Import in corso...",
+    "importCompleted": "Import completato",
+    "close": "Chiudi",
+    "steps": {
+      "upload": "Upload",
+      "preview": "Preview",
+      "confirm": "Conferma"
+    },
+    "previewHeaders": {
+      "row": "Riga",
+      "name": "Nome",
+      "company": "Azienda",
+      "vat": "P.IVA",
+      "email": "Email",
+      "action": "Azione",
+      "validation": "Validazione"
+    },
+    "validation": {
+      "nameRequired": "Nome obbligatorio",
+      "duplicateInCsv": "Duplicato nel CSV",
+      "ok": "OK",
+      "emptyCsv": "CSV vuoto o senza righe valide",
+      "noValidRows": "Nessuna riga valida da importare"
+    },
+    "resultSummary": {
+      "inserts": "Inseriti",
+      "updates": "Aggiornati",
+      "errors": "Errori",
+      "rows": "Righe",
+      "insert": "Insert",
+      "update": "Update"
+    },
+    "resultRow": "Riga {{rowNumber}} ({{name}}): {{error}}"
+  },
+  "general": {
+    "ok": "OK"
+  }
+}

@@ -13,6 +13,7 @@ import {
 } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
 import { Eye, RotateCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Row {
   id: string;
@@ -33,6 +34,7 @@ interface Row {
 const PAGE_SIZE = LIST_PAGE_SIZE;
 
 export default function TicketsArchivePage() {
+  const { t } = useTranslation("tickets");
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -56,12 +58,12 @@ export default function TicketsArchivePage() {
         to_status: "pending",
         changed_by: null,
         changed_at: new Date().toISOString(),
-        note: "Riaperto da archivio",
+        note: t("reopenedByArchive", "Riaperto da archivio"),
       });
-      toast.success("Ticket riaperto");
+      toast.success(t("toasts.ticketReopened", "Ticket riaperto"));
       setRows((rs) => rs.filter((r) => r.id !== id));
     } catch (err: any) {
-      toast.error(err?.message || "Errore riapertura ticket");
+      toast.error(err?.message || t("toasts.ticketReopenError", "Errore riapertura ticket"));
     }
   }
 
@@ -70,8 +72,8 @@ export default function TicketsArchivePage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold">Storico ticket</h2>
-        <span className="ml-auto text-xs text-text3 font-mono">{total} risultati</span>
+        <h2 className="text-lg font-semibold">{t("archiveTitle", "Storico ticket")}</h2>
+        <span className="ml-auto text-xs text-text3 font-mono">{total} {t("results", "risultati")}</span>
       </div>
 
       <div className="pc-card overflow-hidden">
@@ -80,17 +82,17 @@ export default function TicketsArchivePage() {
             <thead>
               <tr>
                 {[
-                  "Codice",
-                  "Modello",
-                  "Seriale",
-                  "Cliente",
-                  "Richiedente",
-                  "Priorita",
-                  "Stato",
-                  "Tipo",
-                  "Assegnatario",
-                  "Creato",
-                  "Azioni",
+                  t("columns.id", "Codice"),
+                  t("columns.model", "Modello"),
+                  t("columns.serial", "Seriale"),
+                  t("columns.client", "Cliente"),
+                  t("columns.requester", "Richiedente"),
+                  t("columns.priority", "Priorità"),
+                  t("columns.status", "Stato"),
+                  t("columns.type", "Tipo"),
+                  t("columns.assignee", "Assegnatario"),
+                  t("columns.created", "Creato"),
+                  t("actions", "Azioni"),
                 ].map((h) => (
                   <th
                     key={h}
@@ -103,55 +105,55 @@ export default function TicketsArchivePage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((t) => (
+              {rows.map((ticket) => (
                 <tr
-                  key={t.id}
+                  key={ticket.id}
                   className="border-b cursor-pointer transition-colors hover:bg-surface2"
                   style={{ borderColor: "var(--border)" }}
                 >
                   <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                    {t.ticket_code}
+                    {ticket.ticket_code}
                   </td>
                   <td className="px-[14px] py-[10px] text-[12.5px]">
-                    {t.device?.model || "Nessun asset"}
+                    {ticket.device?.model || t("noAsset", "Nessun asset")}
                   </td>
                   <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                    {t.device?.serial || "-"}
+                    {ticket.device?.serial || "-"}
                   </td>
                   <td className="px-[14px] py-[10px] text-[12.5px]">
-                    {t.client_ref?.name || t.client || "-"}
+                    {ticket.client_ref?.name || ticket.client || "-"}
                   </td>
-                  <td className="px-[14px] py-[10px] text-[12.5px]">{t.requester}</td>
+                  <td className="px-[14px] py-[10px] text-[12.5px]">{ticket.requester}</td>
                   <td className="px-[14px] py-[10px]">
-                    <PriorityLabel p={t.priority} />
+                    <PriorityLabel p={ticket.priority} />
                   </td>
                   <td className="px-[14px] py-[10px]">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <StatusBadge status={t.status} />
+                      <StatusBadge status={ticket.status} />
                     </div>
                   </td>
                   <td className="px-[14px] py-[10px]">
-                    <TicketTypeBadge type={t.ticket_type} />
+                    <TicketTypeBadge type={ticket.ticket_type} />
                   </td>
                   <td className="px-[14px] py-[10px]">
-                    <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />
+                    <AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />
                   </td>
                   <td className="px-[14px] py-[10px] text-[11px] text-text3">
-                    {fmtDate(t.created_at)}
+                    {fmtDate(ticket.created_at)}
                   </td>
                   <td className="px-[14px] py-[10px]">
                     <div className="flex items-center gap-2">
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
-                        onClick={() => openTicketDetail(t.id)}
+                        onClick={() => openTicketDetail(ticket.id)}
                       >
-                        <Eye className="w-3 h-3" /> Dettagli
+                        <Eye className="w-3 h-3" /> {t("details", "Dettagli")}
                       </button>
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
-                        onClick={() => reopen(t.id)}
+                        onClick={() => reopen(ticket.id)}
                       >
-                        <RotateCw className="w-3 h-3" /> Riapri
+                        <RotateCw className="w-3 h-3" /> {t("reopen", "Riapri")}
                       </button>
                     </div>
                   </td>
@@ -160,7 +162,7 @@ export default function TicketsArchivePage() {
               {!rows.length && (
                 <tr>
                   <td colSpan={11} className="text-center py-10 text-text3 text-sm">
-                    Nessun ticket archiviato
+                    {t("noArchivedTickets", "Nessun ticket archiviato")}
                   </td>
                 </tr>
               )}
@@ -175,17 +177,17 @@ export default function TicketsArchivePage() {
           disabled={page === 0}
           onClick={() => setPage((p) => Math.max(0, p - 1))}
         >
-          Precedente
+          {t("prevPage", "Precedente")}
         </button>
         <span className="text-xs text-text3 font-mono">
-          Pagina {page + 1} di {pageCount}
+          {t("page", "Pagina")} {page + 1} {t("of", "di")} {pageCount}
         </span>
         <button
           className="pc-btn pc-btn-ghost pc-btn-sm"
           disabled={page + 1 >= pageCount}
           onClick={() => setPage((p) => p + 1)}
         >
-          Successiva
+          {t("nextPage", "Successiva")}
         </button>
       </div>
     </div>

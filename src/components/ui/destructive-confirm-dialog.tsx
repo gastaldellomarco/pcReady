@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 type DestructiveConfirmDialogProps = {
   open: boolean;
@@ -24,11 +25,14 @@ export function DestructiveConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Elimina",
-  loadingLabel = "Conferma in corso...",
+  confirmLabel: confirmLabelProp,
+  loadingLabel: loadingLabelProp,
   onOpenChange,
   onConfirm,
 }: DestructiveConfirmDialogProps) {
+  const { t } = useTranslation("common");
+  const confirmLabel = confirmLabelProp ?? t("actions.delete", "Elimina");
+  const loadingLabel = loadingLabelProp ?? t("actions.confirming", "Conferma in corso...");
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
@@ -49,7 +53,7 @@ export function DestructiveConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Annulla</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t("actions.cancel", "Annulla")}</AlertDialogCancel>
           <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
             {loading ? loadingLabel : confirmLabel}
           </Button>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { LogOut, Settings, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AuthProfile } from "@/lib/auth-context";
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ export function UserMenu({
   onSignOut,
   onNavigate,
 }: UserMenuProps) {
+  const { t } = useTranslation("common");
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -45,7 +47,7 @@ export function UserMenu({
             className="cursor-pointer"
           >
             <User className="mr-2 h-4 w-4" />
-            Profilo
+            {t("profile.title", "Profilo")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -56,13 +58,13 @@ export function UserMenu({
             className="cursor-pointer"
           >
             <Settings className="mr-2 h-4 w-4" />
-            Impostazioni
+            {t("profile.settings", "Impostazioni")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
-          Esci
+          {t("profile.logout", "Esci")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

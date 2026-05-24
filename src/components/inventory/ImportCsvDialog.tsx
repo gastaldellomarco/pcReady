@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, Download, FileUp } from "lucide-react";
 import { Modal } from "@/components/pcready/Modal";
 import OverflowTable from "@/components/ui/overflow-table";
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function ImportCsvDialog({ open, onClose, onImported }: Props) {
+  const { t } = useTranslation("inventory");
   const { user, canEdit } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [rows, setRows] = useState<PreviewRow[]>([]);
@@ -62,9 +64,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       const preview = validateImportRows(parsed, context.clients, context.devices);
       setRows(preview);
       setStep(2);
-      if (!preview.length) toast.error("CSV vuoto o senza righe valide");
+      if (!preview.length) toast.error(t("importCsv.csvEmpty", "CSV vuoto o senza righe valide"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore lettura CSV");
+      toast.error(error instanceof Error ? error.message : t("importCsv.csvReadError", "Errore lettura CSV"));
     } finally {
       setBusy(false);
     }
@@ -75,8 +77,8 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
   }
 
   async function confirmImport() {
-    if (!canEdit) return toast.error("Permessi insufficienti");
-    if (!stats.valid) return toast.error("Nessuna riga valida da importare");
+    if (!canEdit) return toast.error(t("importCsv.insufficientPermissions", "Permessi insufficienti"));
+    if (!stats.valid) return toast.error(t("importCsv.noValidRows", "Nessuna riga valida da importare"));
 
     setBusy(true);
     setProgress(0);
@@ -87,9 +89,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       });
       setResult(importResult);
       onImported();
-      toast.success("Import CSV completato");
+      toast.success(t("importCsv.importSuccess", "Import CSV completato"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Errore import CSV");
+      toast.error(error instanceof Error ? error.message : t("importCsv.importError", "Errore import CSV"));
     } finally {
       setBusy(false);
     }
@@ -99,20 +101,20 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
     <Modal
       open={open}
       onClose={resetAndClose}
-      title="Import CSV dispositivi"
+      title={t("importCsv.title", "Import CSV dispositivi")}
       size="lg"
       footer={
         <>
-          <button className="pc-btn pc-btn-ghost" onClick={resetAndClose} disabled={busy}>
-            Chiudi
-          </button>
+            <button className="pc-btn pc-btn-ghost" onClick={resetAndClose} disabled={busy}>
+              {t("importCsv.closeBtn", "Chiudi")}
+            </button>
           {step === 2 && (
             <button
               className="pc-btn pc-btn-primary"
               onClick={confirmImport}
               disabled={busy || !stats.valid}
             >
-              Conferma import
+              {t("importCsv.confirmBtn", "Conferma import")}
             </button>
           )}
         </>
@@ -121,9 +123,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-3 gap-2 text-xs">
           {[
-            ["1", "Upload"],
-            ["2", "Preview"],
-            ["3", "Conferma"],
+            ["1", t("importCsv.stepUpload", "Upload")],
+            ["2", t("importCsv.stepPreview", "Preview")],
+            ["3", t("importCsv.stepConfirm", "Conferma")],
           ].map(([n, label]) => (
             <div
               key={n}
@@ -146,12 +148,12 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
             >
               <FileUp className="h-8 w-8 text-text3" />
               <div>
-                <div className="text-sm font-semibold">Carica file .csv</div>
+                <div className="text-sm font-semibold">{t("importCsv.uploadLabel", "Carica file .csv")}</div>
                 <div className="text-xs text-text3">
                   {busy
-                    ? "Lettura in corso..."
+                    ? t("importCsv.uploadBusy", "Lettura in corso...")
                     : fileName ||
-                      "asset_tag, serial, brand, model, category, device_type, os, status, client_name, notes, purchase_date"}
+                      t("importCsv.uploadHint", "asset_tag, serial, brand, model, category, device_type, os, status, client_name, notes, purchase_date")}
                 </div>
               </div>
               <input
@@ -163,7 +165,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
-              <Download className="w-3 h-3" /> Scarica template CSV
+              <Download className="w-3 h-3" /> {t("importCsv.downloadTemplate", "Scarica template CSV")}
             </button>
           </div>
         )}
@@ -171,27 +173,27 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
         {step === 2 && (
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-4 gap-2 text-xs">
-              <SummaryBox label="Insert" value={stats.inserts} />
-              <SummaryBox label="Update" value={stats.updates} />
-              <SummaryBox label="Errori" value={stats.errors} />
-              <SummaryBox label="Righe" value={rows.length} />
+              <SummaryBox label={t("importCsv.summaryInserts", "Insert")} value={stats.inserts} />
+              <SummaryBox label={t("importCsv.summaryUpdates", "Update")} value={stats.updates} />
+              <SummaryBox label={t("importCsv.summaryErrors", "Errori")} value={stats.errors} />
+              <SummaryBox label={t("importCsv.summaryRows", "Righe")} value={rows.length} />
             </div>
             <OverflowTable className="max-h-[360px] overflow-auto rounded-md border">
               <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "var(--surface2)" }}>
                     {[
-                      "Riga",
-                      "Asset tag",
-                      "Seriale",
-                      "Modello",
-                      "Categoria",
-                      "Tipo",
-                      "Cliente",
-                      "Stato",
-                      "Garanzia",
-                      "Azione",
-                      "Validazione",
+                      t("importCsv.colRow", "Riga"),
+                      t("importCsv.colAssetTag", "Asset tag"),
+                      t("importCsv.colSerial", "Seriale"),
+                      t("importCsv.colModel", "Modello"),
+                      t("importCsv.colCategory", "Categoria"),
+                      t("importCsv.colType", "Tipo"),
+                      t("importCsv.colClient", "Cliente"),
+                      t("importCsv.colStatus", "Stato"),
+                      t("importCsv.colWarranty", "Garanzia"),
+                      t("importCsv.colAction", "Azione"),
+                      t("importCsv.colValidation", "Validazione"),
                     ].map((h) => (
                       <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
                         {h}
@@ -246,12 +248,12 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
             </div>
             {result ? (
               <div className="grid grid-cols-3 gap-2">
-                <SummaryBox label="Inseriti" value={result.inserted} />
-                <SummaryBox label="Aggiornati" value={result.updated} />
-                <SummaryBox label="Errori" value={result.errors.length} />
+                <SummaryBox label={t("importCsv.resultInserted", "Inseriti")} value={result.inserted} />
+                <SummaryBox label={t("importCsv.resultUpdated", "Aggiornati")} value={result.updated} />
+                <SummaryBox label={t("importCsv.resultErrors", "Errori")} value={result.errors.length} />
               </div>
             ) : (
-              <div className="text-sm text-text2">Import in corso...</div>
+              <div className="text-sm text-text2">{t("importCsv.importing", "Import in corso...")}</div>
             )}
             {result?.errors.length ? (
               <div
@@ -260,13 +262,13 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               >
                 {result.errors.map((error) => (
                   <div key={`${error.rowNumber}-${error.serial}`}>
-                    Riga {error.rowNumber} ({error.serial || "-"}): {error.error}
+                    {t("importCsv.rowError", "Riga {{row}} ({{serial}}): {{error}}", { row: error.rowNumber, serial: error.serial || "-", error: error.error })}
                   </div>
                 ))}
               </div>
             ) : result ? (
               <div className="flex items-center gap-2 text-sm text-text2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" /> Import completato
+                <CheckCircle2 className="h-4 w-4 text-green-600" /> {t("importCsv.importCompleted", "Import completato")}
               </div>
             ) : null}
           </div>

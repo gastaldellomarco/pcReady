@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +21,7 @@ function portalToken() {
 }
 
 function PortalDashboardPage() {
+  const { t } = useTranslation("dashboard");
   const loadDashboard = useServerFn(getPortalDashboard);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
@@ -36,7 +38,7 @@ function PortalDashboardPage() {
     setError("");
     loadDashboard({ data: { token } })
       .then(setData)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Errore di rete"))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t("portal.networkError", "Errore di rete")))
       .finally(() => setLoading(false));
   }, [loadDashboard]);
 
@@ -68,25 +70,25 @@ function PortalDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold">{data.session.clientName}</h1>
         <p className="text-sm text-muted-foreground">
-          {data.session.branding?.welcomeMessage || "Panoramica ticket e richieste recenti."}
+          {data.session.branding?.welcomeMessage || t("portal.welcomeDesc", "Panoramica ticket e richieste recenti.")}
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Ticket aperti" value={data.stats.open} />
-        <Stat label="In lavorazione" value={data.stats.inProgress} />
-        <Stat label="Risolti questo mese" value={data.stats.resolvedThisMonth} />
+        <Stat label={t("portal.openTickets", "Ticket aperti")} value={data.stats.open} />
+        <Stat label={t("portal.inProgress", "In lavorazione")} value={data.stats.inProgress} />
+        <Stat label={t("portal.resolvedThisMonth", "Risolti questo mese")} value={data.stats.resolvedThisMonth} />
       </div>
       <PortalBundles bundles={data.activeBundles ?? []} />
       <section className="space-y-3">
-        <h2 className="font-semibold">Ticket recenti</h2>
+        <h2 className="font-semibold">{t("portal.recentTickets", "Ticket recenti")}</h2>
         {!data.recentTickets?.length ? (
           <PageEmptyState
             variant="portal"
-            title="Nessun ticket recente"
-            description="Non ci sono ticket da mostrare in questo momento."
+            title={t("portal.noRecentTickets", "Nessun ticket recente")}
+            description={t("portal.noTicketsToShow", "Non ci sono ticket da mostrare in questo momento.")}
           >
             <Button asChild>
-              <a href="/portal/tickets/new">Apri nuovo ticket</a>
+              <a href="/portal/tickets/new">{t("portal.openNewTicket", "Apri nuovo ticket")}</a>
             </Button>
           </PageEmptyState>
         ) : (
@@ -99,10 +101,10 @@ function PortalDashboardPage() {
       </section>
       <div className="flex flex-wrap gap-3">
         <Button asChild>
-          <a href="/portal/tickets/new">Apri nuovo ticket</a>
+          <a href="/portal/tickets/new">{t("portal.openNewTicket", "Apri nuovo ticket")}</a>
         </Button>
         <Button variant="outline" asChild>
-          <a href="/portal/documents">Scarica documenti</a>
+          <a href="/portal/documents">{t("portal.downloadDocs", "Scarica documenti")}</a>
         </Button>
       </div>
     </div>
@@ -110,14 +112,15 @@ function PortalDashboardPage() {
 }
 
 function PortalBundles({ bundles }: { bundles: any[] }) {
+  const { t } = useTranslation("dashboard");
   if (!bundles.length) return null;
 
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-semibold">Bundle assistenza attivi</h2>
+        <h2 className="font-semibold">{t("portal.activeBundles", "Bundle assistenza attivi")}</h2>
         <p className="text-sm text-muted-foreground">
-          Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.
+          {t("portal.bundleDesc", "Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.")}
         </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -130,35 +133,35 @@ function PortalBundles({ bundles }: { bundles: any[] }) {
             <div key={assignment.id} className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold">{bundle.name ?? "Bundle assistenza"}</h3>
+                  <h3 className="font-semibold">{bundle.name ?? t("portal.bundleName", "Bundle assistenza")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Canone{" "}
+                    {t("portal.bundleFee", "Canone")}{" "}
                     {formatBundleMoney(
                       assignment.custom_fee ?? bundle.fee ?? 0,
                       bundle.currency ?? "EUR",
                     )}{" "}
-                    · SLA risposta{" "}
+                    · {t("portal.slaResponse", "SLA risposta")}{" "}
                     {assignment.custom_sla_response_hours ?? bundle.sla_response_hours ?? "-"}h
                   </p>
                 </div>
                 <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold">
-                  {assignment.auto_renew ? "Rinnovo auto" : "Rinnovo manuale"}
+                  {assignment.auto_renew ? t("portal.autoRenew", "Rinnovo auto") : t("portal.manualRenew", "Rinnovo manuale")}
                 </span>
               </div>
               <div className="mt-4">
                 <BundleUsageBar
                   used={usage.used_hours ?? 0}
                   total={includedHours}
-                  label="Ore consumate"
+                  label={t("portal.hoursUsed", "Ore consumate")}
                 />
               </div>
               <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                <PortalBundleMetric label="Residue" value={formatBundleHours(remainingHours)} />
+                <PortalBundleMetric label={t("portal.remaining", "Residue")} value={formatBundleHours(remainingHours)} />
                 <PortalBundleMetric
-                  label="Extra"
+                  label={t("portal.extra", "Extra")}
                   value={formatBundleMoney(usage.extra_amount ?? 0, bundle.currency ?? "EUR")}
                 />
-                <PortalBundleMetric label="Scadenza" value={assignment.end_date ?? "Nessuna"} />
+                <PortalBundleMetric label={t("portal.expiry", "Scadenza")} value={assignment.end_date ?? t("portal.none", "Nessuna")} />
               </div>
             </div>
           );

@@ -5,6 +5,7 @@ import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
 import { pcReadyColors } from "@/lib/design-system";
 import type { TechnicianOption } from "@/lib/technicians";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { SwimLaneRow } from "./SwimLaneRow";
 
 function WipProgressBar({ pct }: { pct: number }) {
@@ -85,6 +86,7 @@ export function SwimLaneView({
   selectedCardIds,
   onCardClick,
 }: SwimLaneViewProps) {
+  const { t } = useTranslation(["kanban", "tickets"]);
   const lanes = useMemo(() => {
     const map = new Map<string | null, SwimLaneCard[]>();
     for (const technician of technicians) map.set(technician.id, []);
@@ -116,7 +118,7 @@ export function SwimLaneView({
                 className="sticky left-0 z-20 w-44 min-w-44 border-b px-3 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-text3"
                 style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
               >
-                Tecnico / Stato
+                {t("swimlanesHeader", "Tecnico / Stato")}
               </th>
               {statuses.map((status) => {
                 const isHidden =
@@ -133,14 +135,14 @@ export function SwimLaneView({
                         type="button"
                         onClick={() => onToggleCollapseColumn(status)}
                         className="flex flex-col items-center gap-0.5 mx-auto cursor-pointer"
-                        title={`Espandi ${STATUS_META[status].label}`}
+                        title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + status, STATUS_META[status].label) })}
                       >
                         <span
                           className="h-2 w-2 rounded-full"
                           style={{ background: STATUS_META[status].color }}
                         />
                         <span className="text-[8px] font-bold uppercase tracking-wider text-text3">
-                          {STATUS_META[status].label.slice(0, 4)}
+                          {t("tickets:status." + status, STATUS_META[status].label).slice(0, 4)}
                         </span>
                       </button>
                     </th>
@@ -164,7 +166,7 @@ export function SwimLaneView({
                         style={{ background: STATUS_META[status].color }}
                       />
                       <span className="text-[12px] font-bold uppercase tracking-wider">
-                        {STATUS_META[status].label}
+                        {t("tickets:status." + status, STATUS_META[status].label)}
                       </span>
                       <span
                         className={cn(

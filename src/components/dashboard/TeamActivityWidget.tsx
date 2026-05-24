@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +10,7 @@ import { getTechnicianStats } from "@/lib/dashboard-analytics";
 type Period = "today" | "week" | "month";
 
 export function TeamActivityWidget() {
+  const { t } = useTranslation("dashboard");
   const [period, setPeriod] = useState<Period>("week");
   const navigate = useNavigate();
   const fetcher = useServerFn(getTechnicianStats);
@@ -46,8 +48,8 @@ export function TeamActivityWidget() {
     <div className="pc-card">
       <div className="pc-card-hd">
         <div>
-          <span className="pc-card-title">Attivita del team</span>
-          <div className="text-[11px] text-text3">{activeCount} tecnici attivi</div>
+          <span className="pc-card-title">{t("widgets.recentActivity", "Attività del team")}</span>
+          <div className="text-[11px] text-text3">{t("widgets.activeTechnicians", "{{count}} tecnici attivi", { count: activeCount })}</div>
         </div>
         <div className="flex items-center gap-1 rounded-md bg-muted p-0.5">
           {(["today", "week", "month"] as Period[]).map((p) => (
@@ -58,7 +60,7 @@ export function TeamActivityWidget() {
               }`}
               onClick={() => setPeriod(p)}
             >
-              {p === "today" ? "Oggi" : p === "week" ? "Settimana" : "Mese"}
+              {p === "today" ? t("widgets.periodToday", "Oggi") : p === "week" ? t("widgets.periodWeek", "Settimana") : t("widgets.periodMonth", "Mese")}
             </button>
           ))}
         </div>
@@ -71,40 +73,40 @@ export function TeamActivityWidget() {
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <div className="text-sm text-text3 py-4 text-center">Nessuna attivita nel periodo</div>
+          <div className="text-sm text-text3 py-4 text-center">{t("widgets.noActivity", "Nessuna attività nel periodo")}</div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {rows.map((t) => (
+            {rows.map((tech) => (
               <div
-                key={t.id}
+                key={tech.id}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] cursor-pointer hover:bg-surface2 transition-colors"
                 style={{ border: "1px solid var(--border)" }}
                 onClick={() =>
-                  navigate({ to: "/_app/tickets", search: { technician: t.id } } as any)
+                  navigate({ to: "/_app/tickets", search: { technician: tech.id } } as any)
                 }
               >
-                <Avatar className="w-8 h-8 text-[11px]">{t.initials}</Avatar>
+                <Avatar className="w-8 h-8 text-[11px]">{tech.initials}</Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate">{t.name}</div>
+                  <div className="font-semibold truncate">{tech.name}</div>
                   <div className="flex items-center gap-2 text-[11px] text-text3">
-                    <span>Assegnati: {t.assigned}</span>
-                    <span>Completati: {t.completed}</span>
-                    <span>In attesa: {t.pending}</span>
+                    <span>{t("widgets.assigned", "Assegnati")}: {tech.assigned}</span>
+                    <span>{t("widgets.completed", "Completati")}: {tech.completed}</span>
+                    <span>{t("widgets.pending", "In attesa")}: {tech.pending}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-16">
                     <Progress
-                      value={t.assigned > 0 ? Math.round((t.completed / t.assigned) * 100) : 0}
+                      value={tech.assigned > 0 ? Math.round((tech.completed / tech.assigned) * 100) : 0}
                       className="h-1.5"
                     />
                   </div>
                   <span
                     className={
-                      "px-1.5 py-0.5 rounded text-[10px] font-medium " + workloadColor(t.assigned)
+                      "px-1.5 py-0.5 rounded text-[10px] font-medium " + workloadColor(tech.assigned)
                     }
                   >
-                    {t.assigned >= 10 ? "Alto" : t.assigned >= 5 ? "Medio" : "Basso"}
+                    {tech.assigned >= 10 ? t("widgets.high", "Alto") : tech.assigned >= 5 ? t("widgets.medium", "Medio") : t("widgets.low", "Basso")}
                   </span>
                 </div>
               </div>

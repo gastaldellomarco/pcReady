@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { GitBranch, Link2, Search, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { openTicketDetail } from "@/lib/use-detail";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/queries/ticketRelations";
 
 export function TicketRelations({ ticketId }: { ticketId: string }) {
+  const { t } = useTranslation("tickets");
   const { user, canEdit } = useAuth();
   const relationsQuery = useTicketRelations(ticketId);
   const createMut = useCreateTicketRelation(ticketId);
@@ -49,14 +51,14 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
   }, [search, ticketId]);
 
   async function addRelation(targetTicketId: string) {
-    if (!user || !canEdit) return toast.error("Permessi insufficienti");
+    if (!user || !canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     try {
       await createMut.mutateAsync({ targetTicketId, relationType, createdBy: user.id });
       setSearch("");
       setOptions([]);
-      toast.success("Ticket collegato");
+      toast.success(t("relations.addSuccess", "Ticket collegato"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore collegamento ticket");
+      toast.error(err?.message || t("relations.addError", "Errore collegamento ticket"));
     }
   }
 
@@ -64,9 +66,9 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
     if (!canEdit) return;
     try {
       await deleteMut.mutateAsync(id);
-      toast.success("Collegamento rimosso");
+      toast.success(t("relations.removeSuccess", "Collegamento rimosso"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore rimozione collegamento");
+      toast.error(err?.message || t("relations.removeError", "Errore rimozione collegamento"));
     }
   }
 
@@ -76,9 +78,9 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
 
   function relationLabel(relation: TicketRelation) {
     if (relation.source_ticket_id === ticketId) return RELATION_LABELS[relation.relation_type];
-    if (relation.relation_type === "blocked_by") return "Blocca";
-    if (relation.relation_type === "duplicate_of") return "Ticket duplicato da";
-    return "Ticket padre di";
+    if (relation.relation_type === "blocked_by") return t("relations.labelBlockedBy", "Blocca");
+    if (relation.relation_type === "duplicate_of") return t("relations.labelDuplicateOf", "Ticket duplicato da");
+    return t("relations.labelParentOf", "Ticket padre di");
   }
 
   const relations = (relationsQuery.data ?? []) as TicketRelation[];
@@ -88,9 +90,9 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-[13px] font-bold">
-            <GitBranch className="h-4 w-4 text-text3" /> Ticket collegati
+            <GitBranch className="h-4 w-4 text-text3" /> {t("relations.title", "Ticket collegati")}
           </h3>
-          <p className="text-[11px] text-text3">Dipendenze, duplicati e subtask.</p>
+          <p className="text-[11px] text-text3">{t("relations.description", "Dipendenze, duplicati e subtask.")}</p>
         </div>
         <span className="rounded-full px-2 py-0.5 text-[11px] font-mono text-text3" style={{ background: "var(--surface2)" }}>
           {relations.length}
@@ -106,11 +108,11 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
           </select>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text3" />
-            <input className="pc-input w-full pl-8" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cerca ticket per codice, titolo o cliente..." />
+            <input className="pc-input w-full pl-8" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("relations.searchPlaceholder", "Cerca ticket per codice, titolo o cliente...")} />
             {search && (
               <div className="absolute left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg" style={{ borderColor: "var(--border)" }}>
-                {loading && <div className="p-3 text-[12px] text-text3">Ricerca...</div>}
-                {!loading && options.length === 0 && <div className="p-3 text-[12px] text-text3">Nessun ticket trovato</div>}
+                {loading && <div className="p-3 text-[12px] text-text3">{t("relations.searchLoading", "Ricerca...")}</div>}
+                {!loading && options.length === 0 && <div className="p-3 text-[12px] text-text3">{t("relations.searchEmpty", "Nessun ticket trovato")}</div>}
                 {options.map((ticket) => (
                   <button key={ticket.id} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[12px] hover:bg-surface2" onClick={() => addRelation(ticket.id)}>
                     <span className="min-w-0">
@@ -127,8 +129,8 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
         </div>
       )}
 
-      {relationsQuery.isLoading && <div className="text-[12px] text-text3">Caricamento collegamenti...</div>}
-      {!relationsQuery.isLoading && relations.length === 0 && <div className="text-[12px] text-text3">Nessun ticket collegato</div>}
+      {relationsQuery.isLoading && <div className="text-[12px] text-text3">{t("relations.loadingText", "Caricamento collegamenti...")}</div>}
+      {!relationsQuery.isLoading && relations.length === 0 && <div className="text-[12px] text-text3">{t("relations.emptyText", "Nessun ticket collegato")}</div>}
       <div className="space-y-2">
         {relations.map((relation) => {
           const ticket = relatedTicket(relation);
@@ -141,7 +143,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
               <StatusBadge status={ticket.status as TicketStatus} />
               {canEdit && (
                 <button className="pc-btn pc-btn-ghost pc-btn-sm text-red-600" onClick={() => removeRelation(relation.id)}>
-                  <Trash2 className="h-3 w-3" /> Rimuovi
+                  <Trash2 className="h-3 w-3" /> {t("relations.remove", "Rimuovi")}
                 </button>
               )}
             </div>

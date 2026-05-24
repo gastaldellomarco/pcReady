@@ -1,4 +1,5 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { MaintenancePage } from "@/components/errors/MaintenancePage";
 import NotFoundPage from "@/components/errors/NotFoundPage";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
@@ -19,16 +20,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PCReady - Gestione preparazione PC" },
+      { title: i18n.t("common:root.title", "PCReady - Gestione preparazione PC") },
       {
         name: "description",
-        content:
+        content: i18n.t(
+          "common:root.description",
           "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario.",
+        ),
       },
-      { property: "og:title", content: "PCReady - Gestione preparazione PC" },
+      { property: "og:title", content: i18n.t("common:root.title", "PCReady - Gestione preparazione PC") },
       {
         property: "og:description",
-        content: "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali.",
+        content: i18n.t(
+          "common:root.ogDescription",
+          "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali.",
+        ),
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

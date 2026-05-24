@@ -1,4 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { PageErrorBoundary } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
@@ -175,10 +177,10 @@ const TechnicianStatsWidgetLazy = lazy(() =>
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard - PCReady" },
+      { title: i18n.t("dashboard:meta.title", "Dashboard - PCReady") },
       {
         name: "description",
-        content: "Panoramica ticket, pipeline e attivita recente in PCReady.",
+        content: i18n.t("dashboard:meta.description", "Panoramica ticket, pipeline e attivita recente in PCReady."),
       },
     ],
   }),
@@ -188,6 +190,7 @@ export const Route = createFileRoute("/_app/dashboard")({
 });
 
 function DashboardPage() {
+  const { t } = useTranslation("dashboard");
   const { setPendingCount } = useTickets();
   const { session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
@@ -241,16 +244,16 @@ function DashboardPage() {
       {/* Header with title and widget settings */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold">Dashboard</h2>
-          <div className="text-xs text-text3">Panoramica generale delle attivita</div>
+          <h2 className="text-lg font-semibold">{t("title")}</h2>
+          <div className="text-xs text-text3">{t("headingDesc")}</div>
         </div>
         <button
           className="pc-btn pc-btn-ghost pc-btn-sm"
           onClick={() => setEditMode(!editMode)}
-          title="Gestione widget"
+          title={t("widgetSettings")}
         >
           <Settings2 className="w-4 h-4 mr-1" />
-          Widget
+          {t("widgets.buttonLabel")}
         </button>
       </div>
 
@@ -326,125 +329,125 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
       return (
         <div key="stat-cards" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <DashboardStatCard
-            label="Ticket totali"
+            label={i18n.t("dashboard:stats.totalTickets", "Ticket totali")}
             value={ctx.total}
             accent="var(--accent)"
-            sub="totali"
+            sub={i18n.t("dashboard:stats.totalSuffix", "totali")}
             icon={<Boxes className="w-5 h-5" />}
             href="/tickets"
           />
           <DashboardStatCard
-            label="Dispositivi totali"
+            label={i18n.t("dashboard:stats.totalDevices", "Dispositivi totali")}
             value={ctx.devices.length}
             accent="var(--accent2)"
-            sub="totali"
+            sub={i18n.t("dashboard:stats.totalSuffix", "totali")}
             icon={<Boxes className="w-5 h-5" />}
             href="/inventory"
           />
           <DashboardStatCard
-            label="Clienti attivi"
+            label={i18n.t("dashboard:stats.activeClients", "Clienti attivi")}
             value={ctx.activeClientsCount}
             accent="var(--purple)"
-            sub="nel periodo"
+            sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             icon={<TrendingUp className="w-5 h-5" />}
             href="/clients"
           />
           <DashboardStatCard
-            label="SLA rispettati"
+            label={i18n.t("dashboard:stats.slaRespected", "SLA rispettati")}
             value={
               ctx.analytics?.summary?.slaRespectedPct == null
-                ? "n/d"
+                ? i18n.t("dashboard:widgets.na", "N/D")
                 : `${ctx.analytics.summary.slaRespectedPct}%`
             }
             accent="var(--success)"
-            sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} nel periodo`}
+            sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} ${i18n.t("dashboard:stats.inPeriod", "nel periodo")}`}
             valueColor="var(--success)"
             icon={<Clock className="w-5 h-5" />}
             href="/tickets"
           />
           <DashboardStatCard
-            label="In lavorazione"
+            label={i18n.t("dashboard:stats.inProgress", "In lavorazione")}
             value={ctx.counts["in-progress"]}
             accent="var(--warn)"
-            sub="nel periodo"
+            sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--accent)"
             icon={<Clock className="w-5 h-5" />}
             href={"/tickets?status=in-progress"}
             highlight
           />
           <DashboardStatCard
-            label="Pronti"
+            label={i18n.t("dashboard:stats.ready", "Pronti")}
             value={ctx.counts.ready}
             accent="var(--success)"
-            sub="nel periodo"
+            sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--success)"
             icon={<CircleCheck className="w-5 h-5" />}
             href="/tickets?status=ready"
           />
           <DashboardStatCard
-            label="In attesa"
+            label={i18n.t("dashboard:stats.pending", "In attesa")}
             value={ctx.counts.pending}
             accent="var(--purple)"
-            sub="nel periodo"
+            sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--purple)"
             icon={<Activity className="w-5 h-5" />}
             href={"/tickets?status=pending"}
             highlight
           />
           <DashboardStatCard
-            label="Checklist completate"
-            value={ctx.checklistStats ? `${ctx.checklistStats.completedPct}%` : "n/d"}
+            label={i18n.t("dashboard:stats.checklistCompleted", "Checklist completate")}
+            value={ctx.checklistStats ? `${ctx.checklistStats.completedPct}%` : i18n.t("dashboard:widgets.na", "N/D")}
             accent="var(--success)"
             sub={
               ctx.checklistStats
-                ? `${ctx.checklistStats.completed}/${ctx.checklistStats.total} totali`
-                : "nessun dato"
+                ? `${ctx.checklistStats.completed}/${ctx.checklistStats.total} ${i18n.t("dashboard:stats.totalSuffix", "totali")}`
+                : i18n.t("dashboard:stats.noData", "nessun dato")
             }
             valueColor="var(--success)"
             icon={<CircleCheck className="w-5 h-5" />}
             href="/tickets"
           />
           <DashboardStatCard
-            label="Soddisfazione clienti"
+            label={i18n.t("dashboard:stats.feedbackAvg", "Soddisfazione clienti")}
             value={
-              ctx.satisfactionStats?.average == null ? "n/d" : `${ctx.satisfactionStats.average}/5`
+              ctx.satisfactionStats?.average == null ? i18n.t("dashboard:widgets.na", "N/D") : `${ctx.satisfactionStats.average}/5`
             }
             accent="var(--success)"
-            sub={ctx.satisfactionStats ? `${ctx.satisfactionStats.count} feedback` : "nessun dato"}
+            sub={ctx.satisfactionStats ? `${ctx.satisfactionStats.count} feedback` : i18n.t("dashboard:stats.noData", "nessun dato")}
             valueColor="var(--success)"
             icon={<CircleCheck className="w-5 h-5" />}
             href="/tickets"
           />
           <DashboardStatCard
-            label="Tempo medio checklist"
-            value={ctx.checklistStats?.avgCompletionLabel ?? "n/d"}
+            label={i18n.t("dashboard:stats.avgChecklistTime", "Tempo medio checklist")}
+            value={ctx.checklistStats?.avgCompletionLabel ?? i18n.t("dashboard:widgets.na", "N/D")}
             accent="var(--accent)"
-            sub="per completamento"
+            sub={i18n.t("dashboard:stats.perCompletion", "per completamento")}
             icon={<Clock className="w-5 h-5" />}
             href="/tickets"
           />
           <DashboardStatCard
-            label="Template più usato"
-            value={ctx.checklistStats?.topTemplate?.title ?? "n/d"}
+            label={i18n.t("dashboard:stats.topTemplate", "Template più usato")}
+            value={ctx.checklistStats?.topTemplate?.title ?? i18n.t("dashboard:widgets.na", "N/D")}
             accent="var(--purple)"
             sub={
               ctx.checklistStats?.topTemplate
-                ? `${ctx.checklistStats.topTemplate.count} istanze`
-                : "nessun dato"
+                ? `${ctx.checklistStats.topTemplate.count} ${i18n.t("dashboard:stats.instances", "istanze")}`
+                : i18n.t("dashboard:stats.noData", "nessun dato")
             }
             icon={<ListChecksIcon className="w-5 h-5" />}
             href="/checklist"
           />
           <DashboardStatCard
-            label="% checklist per tecnico"
+            label={i18n.t("dashboard:stats.pctPerTechnician", "% checklist per tecnico")}
             value={
-              ctx.checklistStats?.topTechnician ? `${ctx.checklistStats.topTechnician.pct}%` : "n/d"
+              ctx.checklistStats?.topTechnician ? `${ctx.checklistStats.topTechnician.pct}%` : i18n.t("dashboard:widgets.na", "N/D")
             }
             accent="var(--success)"
             sub={
               ctx.checklistStats?.topTechnician
-                ? `${ctx.checklistStats.topTechnician.completed}/${ctx.checklistStats.topTechnician.total} completate · ${ctx.checklistStats.topTechnician.id.slice(0, 8)}`
-                : "nessun assegnatario"
+                ? `${ctx.checklistStats.topTechnician.completed}/${ctx.checklistStats.topTechnician.total} ${i18n.t("dashboard:stats.completed", "completate")} · ${ctx.checklistStats.topTechnician.id.slice(0, 8)}`
+                : i18n.t("dashboard:stats.noAssignee", "nessun assegnatario")
             }
             icon={<CircleCheck className="w-5 h-5" />}
             href="/tickets"
@@ -466,25 +469,25 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="warranty-overview" className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
           <div className="pc-card lg:col-span-1">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Garanzie dispositivi</span>
+              <span className="pc-card-title">{i18n.t("dashboard:warranty.title", "Garanzie dispositivi")}</span>
               <Link
                 to="/inventory"
                 search={() => ({ warranty: "all" }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                Inventario <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:warranty.inventory", "Inventario")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="pc-card-body grid grid-cols-2 gap-2 text-xs">
               {(
                 [
-                  ["valid", "In garanzia"],
-                  ["expiring", "In scadenza"],
-                  ["urgent", "Urgenti"],
-                  ["expired", "Scadute"],
-                  ["missing", "N/D"],
+                  ["valid", "warranty.status.valid"],
+                  ["expiring", "warranty.status.expiring"],
+                  ["urgent", "warranty.status.urgent"],
+                  ["expired", "warranty.status.expired"],
+                  ["missing", "warranty.status.missing"],
                 ] as [WarrantyStatus, string][]
-              ).map(([status, label]) => {
+              ).map(([status, key]) => {
                 const meta = WARRANTY_STATUS_META[status];
                 return (
                   <div
@@ -492,7 +495,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     className="rounded-lg border px-3 py-2"
                     style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
                   >
-                    <div className="text-[10px] uppercase text-text3">{label}</div>
+                    <div className="text-[10px] uppercase text-text3">{i18n.t(`dashboard:${key}`)}</div>
                     <div
                       className="mt-1 font-mono text-lg font-semibold"
                       style={{ color: meta.color }}
@@ -506,14 +509,14 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           </div>
           <div className="pc-card min-w-0 lg:col-span-2">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Garanzie in scadenza (prossimi 90 giorni)</span>
+              <span className="pc-card-title">{i18n.t("dashboard:warranty.expiringTitle", "Garanzie in scadenza (prossimi 90 giorni)")}</span>
               <span className="text-[11px] text-text3 font-mono">{expiringRows.length}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[620px]">
                 <thead>
                   <tr>
-                    {["Asset", "Scadenza", "Stato", "Fornitore"].map((h) => (
+                    {[i18n.t("dashboard:warranty.tableAsset", "Asset"), i18n.t("dashboard:warranty.tableExpiry", "Scadenza"), i18n.t("dashboard:warranty.tableStatus", "Stato"), i18n.t("dashboard:warranty.tableProvider", "Fornitore")].map((h) => (
                       <th
                         key={h}
                         className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -545,7 +548,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                         <td className="px-[14px] py-[10px] text-[12px]">
                           {device.warranty_expiry_date ? fmtDate(device.warranty_expiry_date) : "—"}
                           <div className="text-[11px] text-text3">
-                            {days == null ? "" : `${days} giorni`}
+                            {days == null ? "" : `${days} ${i18n.t("dashboard:warranty.days", "giorni")}`}
                           </div>
                         </td>
                         <td className="px-[14px] py-[10px]">
@@ -557,7 +560,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                               borderColor: meta.color,
                             }}
                           >
-                            {meta.label}
+                            {i18n.t(`dashboard:${status === "urgent" ? "warranty.status.urgent" : status === "expiring" ? "warranty.status.expiring" : status === "expired" ? "warranty.status.expired" : status === "valid" ? "warranty.status.valid" : "warranty.status.missing"}`, meta.label)}
                           </span>
                         </td>
                         <td className="px-[14px] py-[10px] text-[12px] text-text2">
@@ -569,7 +572,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   {!expiringRows.length && (
                     <tr>
                       <td colSpan={4} className="py-8 text-center text-sm text-text3">
-                        Nessuna garanzia in scadenza nei prossimi 90 giorni.
+                        {i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
                       </td>
                     </tr>
                   )}
@@ -589,9 +592,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="analytics-card">
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold">Panoramica dispositivi & ticket</h3>
+              <h3 className="text-sm font-semibold">{i18n.t("dashboard:analytics.overviewTitle", "Panoramica dispositivi & ticket")}</h3>
               <div className="text-xs text-text3">
-                Trend e widget di riepilogo filtrati per periodo
+                {i18n.t("dashboard:analytics.overviewDesc", "Trend e widget di riepilogo filtrati per periodo")}
               </div>
             </div>
             <DateRangePicker
@@ -607,7 +610,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             <Suspense
               fallback={
                 <div className="pc-card pc-card-body text-sm text-text3">
-                  Caricamento analytics...
+                  {i18n.t("dashboard:analytics.loading", "Caricamento analytics...")}
                 </div>
               }
             >
@@ -651,7 +654,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="devices-without-ticket" className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Dispositivi senza ticket attivo</span>
+              <span className="pc-card-title">{i18n.t("dashboard:devicesWithoutTicket.title", "Dispositivi senza ticket attivo")}</span>
               <span className="text-[11px] text-text3 font-mono">
                 {ctx.devicesWithoutTicket.length}
               </span>
@@ -675,7 +678,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   search={() => ({ filter: "without_ticket" }) as any}
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                 >
-                  Vedi dispositivi
+                  {i18n.t("dashboard:devicesWithoutTicket.seeDevices", "Vedi dispositivi")}
                 </Link>
               </div>
             </div>
@@ -683,7 +686,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Ticket senza dispositivo associato</span>
+              <span className="pc-card-title">{i18n.t("dashboard:ticketsWithoutDevice.title", "Ticket senza dispositivo associato")}</span>
               <span className="text-[11px] text-text3 font-mono">
                 {ctx.ticketsWithoutDeviceCount}
               </span>
@@ -711,7 +714,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   search={() => ({ filter: "without_device" }) as any}
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                 >
-                  Vedi ticket
+                  {i18n.t("dashboard:ticketsWithoutDevice.seeTickets", "Vedi ticket")}
                 </Link>
               </div>
             </div>
@@ -719,7 +722,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Trend: Ticket aperti vs Asset disponibili</span>
+              <span className="pc-card-title">{i18n.t("dashboard:trend.title", "Trend: Ticket aperti vs Asset disponibili")}</span>
               <span className="text-[11px] text-text3 font-mono">{ctx.periodLabel}</span>
             </div>
             <div className="pc-card-body">
@@ -734,7 +737,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                           ctx.range.days,
                         ),
                         color: "#ef4444",
-                        label: "Ticket aperti",
+                        label: i18n.t("dashboard:trend.openTickets", "Ticket aperti"),
                       },
                       {
                         data: computeDailyCounts(
@@ -743,7 +746,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                           ctx.range.days,
                         ),
                         color: "#10b981",
-                        label: "Asset disponibili",
+                        label: i18n.t("dashboard:trend.availableAssets", "Asset disponibili"),
                       },
                     ]}
                   />
@@ -764,20 +767,20 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="recent-tickets" className="grid grid-cols-1 lg:grid-cols-2 gap-[18px]">
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Ticket recenti</span>
+              <span className="pc-card-title">{i18n.t("dashboard:recentTickets.title", "Ticket recenti")}</span>
               <Link
                 to="/tickets"
                 search={() => ({ export: false }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                Vedi tutti <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
-                    {["ID", "Asset", "Stato", "Assegnatario"].map((h) => (
+                    {[i18n.t("dashboard:recentTickets.tableId", "ID"), i18n.t("dashboard:recentTickets.tableAsset", "Asset"), i18n.t("dashboard:recentTickets.tableStatus", "Stato"), i18n.t("dashboard:recentTickets.tableAssignee", "Assegnatario")].map((h) => (
                       <th
                         key={h}
                         className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -792,27 +795,27 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   </tr>
                 </thead>
                 <tbody>
-                  {ctx.tickets.slice(0, 6).map((t: any) => (
+                  {ctx.tickets.slice(0, 6).map((ticket: any) => (
                     <tr
-                      key={t.id}
+                      key={ticket.id}
                       className="border-b cursor-pointer hover:bg-surface2 transition-colors"
                       style={{ borderColor: "var(--border)" }}
-                      onClick={() => openTicketDetail(t.id)}
+                      onClick={() => openTicketDetail(ticket.id)}
                     >
                       <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                        {t.ticket_code}
+                        {ticket.ticket_code}
                       </td>
                       <td className="px-[14px] py-[10px] text-[12.5px]">
-                        {dashboardDeviceLabel(t)}
-                        <div className="text-[11px] text-text3">{t.client}</div>
+                        {dashboardDeviceLabel(ticket)}
+                        <div className="text-[11px] text-text3">{ticket.client}</div>
                       </td>
                       <td className="px-[14px] py-[10px]">
-                        <StatusBadge status={t.status as TicketStatus} />
+                        <StatusBadge status={ticket.status as TicketStatus} />
                       </td>
                       <td className="px-[14px] py-[10px]">
                         <AssigneeChip
-                          initials={t.assignee?.initials}
-                          name={t.assignee?.full_name}
+                          initials={ticket.assignee?.initials}
+                          name={ticket.assignee?.full_name}
                         />
                       </td>
                     </tr>
@@ -820,7 +823,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   {!ctx.tickets.length && (
                     <tr>
                       <td colSpan={4} className="text-center py-8 text-text3 text-sm">
-                        Nessun ticket. Creane uno con il pulsante in alto.
+                        {i18n.t("dashboard:recentTickets.noTickets", "Nessun ticket. Creane uno con il pulsante in alto.")}
                       </td>
                     </tr>
                   )}
@@ -831,8 +834,8 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card dashboard-widget">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Distribuzione stati</span>
-              <span className="text-[11px] text-text3 font-mono">{ctx.total} totali</span>
+              <span className="pc-card-title">{i18n.t("dashboard:statusDistribution.title", "Distribuzione stati")}</span>
+              <span className="text-[11px] text-text3 font-mono">{ctx.total} {i18n.t("dashboard:statusDistribution.total", "totali")}</span>
             </div>
             <div className="pc-card-body">
               <div className="flex gap-4 items-center lg:items-stretch">
@@ -870,13 +873,13 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                                   background: STATUS_META[d.status].color,
                                 }}
                               />
-                              <span className="text-text2">{STATUS_META[d.status].label}</span>
+                              <span className="text-text2">{i18n.t(`dashboard:status.${d.status}`, STATUS_META[d.status].label)}</span>
                             </div>
                             <div className="font-mono text-text3">{d.n}</div>
                           </Link>
                         ))}
                     </div>
-                    <div className="text-sm text-text3 mt-3">{ctx.total} ticket totali</div>
+                    <div className="text-sm text-text3 mt-3">{ctx.total} {i18n.t("dashboard:statusDistribution.ticketTotal", "ticket totali")}</div>
                   </div>
                 </div>
               </div>
@@ -895,9 +898,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <TechnicianHeatmapWidget />
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">Attivita recente</span>
+              <span className="pc-card-title">{i18n.t("dashboard:recentActivity.title", "Attivita recente")}</span>
               <Link to="/automations" className="pc-btn pc-btn-ghost pc-btn-sm">
-                Log completo <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:recentActivity.fullLog", "Log completo")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="pc-card-body">
@@ -913,8 +916,8 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   >
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                      title={l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}
-                      aria-label={`Azione eseguita da: ${l.actor?.full_name ?? (l.type === "user" ? "Utente" : "Sistema")}`}
+                      title={l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}
+                      aria-label={`${i18n.t("dashboard:recentActivity.actionBy", "Azione eseguita da")}: ${l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}`}
                       style={{
                         background:
                           l.type === "auto"
@@ -940,7 +943,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   </div>
                 ))}
                 {!ctx.dedupLogs.length && (
-                  <div className="text-center text-text3 text-sm py-4">Nessuna attivita</div>
+                  <div className="text-center text-text3 text-sm py-4">{i18n.t("dashboard:recentActivity.noActivity", "Nessuna attivita")}</div>
                 )}
               </div>
             </div>
@@ -972,7 +975,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <Suspense
             fallback={
               <div className="pc-card pc-card-body text-sm text-text3">
-                Caricamento statistiche tecnici...
+                {i18n.t("dashboard:technicianStatsLoading", "Caricamento statistiche tecnici...")}
               </div>
             }
           >
@@ -994,6 +997,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 }
 
 function MaintenanceOverviewWidget() {
+  const { t } = useTranslation("dashboard");
   const query = useQuery({
     queryKey: ["dashboard", "maintenance-overview"],
     queryFn: fetchMaintenanceDashboard,
@@ -1005,16 +1009,16 @@ function MaintenanceOverviewWidget() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
       <div className="pc-card lg:col-span-2">
         <div className="pc-card-hd">
-          <span className="pc-card-title">Prossime manutenzioni pianificate</span>
+          <span className="pc-card-title">{t("maintenance.upcomingTitle", "Prossime manutenzioni pianificate")}</span>
           <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
-            Calendario <ArrowRight className="w-3 h-3" />
+            {t("maintenance.calendar", "Calendario")} <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr>
-                {["Intervento", "Dispositivo", "Scadenza", "Stato"].map((h) => (
+                {[t("maintenance.tableIntervention", "Intervento"), t("maintenance.tableDevice", "Dispositivo"), t("maintenance.tableExpiry", "Scadenza"), t("maintenance.tableStatus", "Stato")].map((h) => (
                   <th
                     key={h}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -1040,7 +1044,7 @@ function MaintenanceOverviewWidget() {
                       {item.title}
                     </td>
                     <td className="px-[14px] py-[10px] text-[12px]">
-                      {item.device?.model || "Dispositivo"}
+                      {item.device?.model || t("maintenance.device", "Dispositivo")}
                       <div className="font-mono text-[11px] text-text3">
                         {item.device?.serial || item.device_id.slice(0, 8)}
                       </div>
@@ -1057,7 +1061,7 @@ function MaintenanceOverviewWidget() {
                           borderColor: meta.color,
                         }}
                       >
-                        {meta.label}
+                        {t(`maintenance.status.${status}`, meta.label)}
                       </span>
                     </td>
                   </tr>
@@ -1067,8 +1071,8 @@ function MaintenanceOverviewWidget() {
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-text3">
                     {query.isLoading
-                      ? "Caricamento manutenzioni..."
-                      : "Nessuna manutenzione pianificata."}
+                      ? t("maintenance.loading", "Caricamento manutenzioni...")
+                      : t("maintenance.noEvents", "Nessuna manutenzione pianificata.")}
                   </td>
                 </tr>
               )}
@@ -1078,7 +1082,7 @@ function MaintenanceOverviewWidget() {
       </div>
       <div className="pc-card">
         <div className="pc-card-hd">
-          <span className="pc-card-title">Scadute non eseguite</span>
+          <span className="pc-card-title">{t("maintenance.overdueTitle", "Scadute non eseguite")}</span>
         </div>
         <div className="pc-card-body">
           <div
@@ -1088,10 +1092,10 @@ function MaintenanceOverviewWidget() {
             {overdueCount}
           </div>
           <div className="mt-1 text-xs text-text3">
-            Manutenzioni con prossima scadenza superata e non completate.
+            {t("maintenance.overdueDesc", "Manutenzioni con prossima scadenza superata e non completate.")}
           </div>
           <Link to="/inventory" className="pc-btn pc-btn-primary pc-btn-sm mt-4">
-            Apri calendario manutenzioni
+            {t("maintenance.openCalendar", "Apri calendario manutenzioni")}
           </Link>
         </div>
       </div>

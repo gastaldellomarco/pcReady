@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
@@ -47,8 +49,8 @@ import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 export const Route = createFileRoute("/_app/tickets")({
   head: () => ({
     meta: [
-      { title: "Ticket PC - PCReady" },
-      { name: "description", content: "Lista dei ticket di preparazione PC con filtri avanzati." },
+      { title: i18n.t("tickets:meta.title", "Ticket PC - PCReady") },
+      { name: "description", content: i18n.t("tickets:meta.description", "Lista dei ticket di preparazione PC con filtri avanzati.") },
     ],
   }),
   component: TicketsPage,
@@ -128,6 +130,7 @@ const EXTENDED_TICKET_COLUMNS: TicketColumnKey[] = [
 ];
 
 function TicketsPage() {
+  const { t } = useTranslation("tickets");
   const { search } = useTickets();
   const { session, user, canEdit } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
@@ -230,9 +233,9 @@ function TicketsPage() {
   const data = rows;
   const listLoading = listQuery.isLoading;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const ticketClient = (t: Row) => t.client_ref?.name || t.client || "-";
-  const ticketModel = (t: Row) => t.device?.model || "Nessun asset";
-  const ticketSerial = (t: Row) => t.device?.serial || null;
+  const ticketClient = (row: Row) => row.client_ref?.name || row.client || "-";
+  const ticketModel = (row: Row) => row.device?.model || t("noAsset", "Nessun asset");
+  const ticketSerial = (row: Row) => row.device?.serial || null;
   const visibleIds = useMemo(() => data.map((ticket) => ticket.id), [data]);
   const selectedRows = useMemo(
     () => data.filter((ticket) => selectedTicketIds.has(ticket.id)),
@@ -262,7 +265,7 @@ function TicketsPage() {
         description: client.email,
       }));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Errore caricamento clienti");
+      toast.error(err instanceof Error ? err.message : t("toasts.loadClientsError", "Errore caricamento clienti"));
       return [];
     }
   }
@@ -287,7 +290,7 @@ function TicketsPage() {
   }
 
   async function exportPdf() {
-    if (!data.length) return toast.error("Nessun ticket da esportare");
+    if (!data.length) return toast.error(t("toasts.noTicketsToExport", "Nessun ticket da esportare"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -302,16 +305,16 @@ function TicketsPage() {
         <TicketListPdf rows={pdfRows()} organizationName={org} />,
         buildDownloadFileName("pcready-ticket", "pdf", { dated: true }),
       );
-      toast.success("PDF ticket esportato");
+      toast.success(t("toasts.pdfExported", "PDF ticket esportato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione PDF"));
+      toast.error(errorMessage(error, t("toasts.pdfExportError", "Errore esportazione PDF")));
     } finally {
       setPdfBusy(null);
     }
   }
 
   async function openPdfPreview() {
-    if (!data.length) return toast.error("Nessun ticket da visualizzare");
+    if (!data.length) return toast.error(t("toasts.noTicketsToView", "Nessun ticket da visualizzare"));
     setPdfBusy("preview");
     try {
       const settings = session?.access_token
@@ -324,7 +327,7 @@ function TicketsPage() {
       ]);
       await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
-      toast.error(errorMessage(error, "Errore anteprima PDF"));
+      toast.error(errorMessage(error, t("toasts.pdfPreviewError", "Errore anteprima PDF")));
     } finally {
       setPdfBusy(null);
     }
@@ -373,7 +376,7 @@ function TicketsPage() {
   }
 
   function selectCurrentClientVisible() {
-    if (!fc) return toast.error("Seleziona prima un filtro cliente");
+    if (!fc) return toast.error(t("toasts.selectClientFilterFirst", "Seleziona prima un filtro cliente"));
     setSelectedTicketIds(
       new Set(data.filter((ticket) => ticket.client_id === fc).map((ticket) => ticket.id)),
     );
@@ -382,11 +385,11 @@ function TicketsPage() {
   function selectedCodesPreview() {
     const codes = selectedRows.map((ticket) => ticket.ticket_code);
     const visible = codes.slice(0, 8).join(", ");
-    return codes.length > 8 ? `${visible}, +${codes.length - 8} altri` : visible;
+    return codes.length > 8 ? `${visible}, ${t("ticketList.moreOthers", { count: codes.length - 8, defaultValue: "+{{count}} altri" })}` : visible;
   }
 
   async function exportSelectedPdf() {
-    if (!selectedRows.length) return toast.error("Nessun ticket selezionato");
+    if (!selectedRows.length) return toast.error(t("toasts.noTicketsSelected", "Nessun ticket selezionato"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -403,9 +406,9 @@ function TicketsPage() {
         />,
         buildDownloadFileName("pcready-ticket-selezionati", "pdf", { dated: true }),
       );
-      toast.success("PDF ticket selezionati esportato");
+      toast.success(t("toasts.pdfSelectedExported", "PDF ticket selezionati esportato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione PDF"));
+      toast.error(errorMessage(error, t("toasts.pdfExportError", "Errore esportazione PDF")));
     } finally {
       setPdfBusy(null);
     }
@@ -425,7 +428,7 @@ function TicketsPage() {
   }
 
   async function applyBulkPatch(patch: Partial<Row>, actionLabel: string) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const ids = Array.from(selectedTicketIds);
     if (!ids.length) return;
     setBulkBusy(true);
@@ -446,18 +449,18 @@ function TicketsPage() {
               to_status: patch.status,
               changed_by: user?.id ?? null,
               changed_at: new Date().toISOString(),
-              note: `Operazione bulk: ${actionLabel}`,
+              note: `${t("toasts.bulkOperation", "Operazione bulk")}: ${actionLabel}`,
             });
           }),
         );
       }
 
       await logBulkOperation(actionLabel, patch as Record<string, unknown>, ids);
-      toast.success(`${actionLabel}: ${ids.length} ticket aggiornati`);
+      toast.success(t("ticketList.bulkUpdated", { label: actionLabel, count: ids.length, defaultValue: "{{label}}: {{count}} ticket aggiornati" }));
       clearSelection();
       await listQuery.refetch();
     } catch (error) {
-      toast.error(errorMessage(error, "Operazione bulk non riuscita"));
+      toast.error(errorMessage(error, t("toasts.bulkError", "Operazione bulk non riuscita")));
     } finally {
       setBulkBusy(false);
     }
@@ -475,7 +478,7 @@ function TicketsPage() {
   async function confirmBulkAction() {
     if (!bulkConfirm) return;
     if (bulkConfirm.type === "archive") {
-      await applyBulkPatch({ status: "archived" }, "archiviazione bulk");
+      await applyBulkPatch({ status: "archived" }, t("toasts.bulkArchive", "archiviazione bulk"));
       return;
     }
     await applyBulkPatch(
@@ -514,7 +517,7 @@ function TicketsPage() {
   const allTicketColumns: TicketColumnDefinition[] = [
     {
       key: "id",
-      label: "ID",
+      label: t("columns.id", "ID"),
       className: "w-[76px] min-w-[76px] max-w-[76px]",
       render: (t) => (
         <div className="truncate font-mono text-[11.5px] text-text3" title={t.ticket_code}>
@@ -524,13 +527,13 @@ function TicketsPage() {
     },
     {
       key: "model",
-      label: "Modello",
+      label: t("columns.model", "Modello"),
       className: "w-[170px] min-w-[150px] max-w-[210px]",
       render: (t) => textCell(ticketModel(t)),
     },
     {
       key: "serial",
-      label: "Seriale",
+      label: t("columns.serial", "Seriale"),
       className: "w-[120px] min-w-[110px] max-w-[150px]",
       render: (t) => (
         <div className="truncate font-mono text-[11px] text-text3" title={ticketSerial(t) || "-"}>
@@ -540,45 +543,45 @@ function TicketsPage() {
     },
     {
       key: "client",
-      label: "Cliente",
+      label: t("columns.client", "Cliente"),
       className: "w-[180px] min-w-[150px] max-w-[230px]",
       render: (t) => textCell(ticketClient(t)),
     },
     {
       key: "requester",
-      label: "Richiedente",
+      label: t("columns.requester", "Richiedente"),
       className: "w-[160px] min-w-[130px] max-w-[210px]",
       render: (t) => textCell(t.requester),
     },
     {
       key: "priority",
-      label: "Priorita",
+      label: t("columns.priority", "Priorità"),
       sortable: true,
       className: "w-[90px] min-w-[80px] max-w-[100px]",
       render: (t) => <PriorityLabel p={t.priority} />,
     },
     {
       key: "status",
-      label: "Stato",
+      label: t("columns.status", "Stato"),
       sortable: true,
       className: "w-[130px] min-w-[120px] max-w-[150px]",
       render: (t) => <StatusBadge status={t.status} />,
     },
     {
       key: "type",
-      label: "Tipo",
+      label: t("columns.type", "Tipo"),
       className: "w-[125px] min-w-[110px] max-w-[145px]",
       render: (t) => <TicketTypeBadge type={t.ticket_type} />,
     },
     {
       key: "assignee",
-      label: "Assegnatario",
+      label: t("columns.assignee", "Assegnatario"),
       className: "w-[150px] min-w-[130px] max-w-[180px]",
       render: (t) => <AssigneeChip initials={t.assignee?.initials} name={t.assignee?.full_name} />,
     },
     {
       key: "created_at",
-      label: "Creato",
+      label: t("columns.created", "Creato"),
       sortable: true,
       className: "w-[95px] min-w-[85px] max-w-[110px]",
       render: (t) => (
@@ -589,7 +592,7 @@ function TicketsPage() {
     },
     {
       key: "sla",
-      label: "SLA",
+      label: t("columns.sla", "SLA"),
       className: "w-[150px] min-w-[140px] max-w-[170px]",
       render: (t) => (
         <SlaBadge
@@ -603,7 +606,7 @@ function TicketsPage() {
     },
     {
       key: "time_open",
-      label: "Tempo aperto",
+      label: t("columns.timeOpen", "Tempo aperto"),
       className: "w-[150px] min-w-[135px] max-w-[170px]",
       render: (t) => (
         <TimeOpenBadge created_at={t.created_at} priority={t.priority} slaLimits={slaLimits} />
@@ -622,7 +625,7 @@ function TicketsPage() {
             borderColor: "var(--border)",
           }}
         >
-          <span className="text-text2">Sono disponibili aggiornamenti alla lista ticket.</span>
+          <span className="text-text2">{t("updatesAvailable", "Sono disponibili aggiornamenti alla lista ticket.")}</span>
           <button
             type="button"
             className="pc-btn pc-btn-primary pc-btn-sm shrink-0"
@@ -630,7 +633,7 @@ function TicketsPage() {
               void listQuery.refetch().then(() => setHasUpdates(false));
             }}
           >
-            Aggiorna
+            {t("meta.updateButton", "Aggiorna")}
           </button>
         </div>
       ) : null}
@@ -640,7 +643,7 @@ function TicketsPage() {
           value={fs}
           onChange={(e) => setFs(e.target.value)}
         >
-          <option value="">Tutti gli stati</option>
+          <option value="">{t("allStates", "Tutti gli stati")}</option>
           {Object.entries(STATUS_META)
             .filter(([k]) => k !== "archived")
             .map(([k, v]) => (
@@ -654,7 +657,7 @@ function TicketsPage() {
           value={fp}
           onChange={(e) => setFp(e.target.value)}
         >
-          <option value="">Tutte le priorita</option>
+          <option value="">{t("allPriorities", "Tutte le priorità")}</option>
           {Object.entries(PRIORITY_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
@@ -666,7 +669,7 @@ function TicketsPage() {
           value={ft}
           onChange={(e) => setFt(e.target.value)}
         >
-          <option value="">Tutti i tipi</option>
+          <option value="">{t("allTypes", "Tutti i tipi")}</option>
           {Object.entries(TICKET_TYPE_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
@@ -677,8 +680,8 @@ function TicketsPage() {
           className="w-[220px]"
           value={fc}
           selectedOption={selectedClient}
-          placeholder="Tutti i clienti"
-          emptyLabel="Nessun cliente"
+          placeholder={t("allClients", "Tutti i clienti")}
+          emptyLabel={t("noClient", "Nessun cliente")}
           loadOptions={loadClientOptsWrapper}
           onChange={(value, option) => {
             setFc(value);
@@ -690,45 +693,45 @@ function TicketsPage() {
           className="pc-input max-w-[155px]"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          title="Data inizio"
+          title={t("meta.dateFrom", "Data inizio")}
         />
         <input
           type="date"
           className="pc-input max-w-[155px]"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          title="Data fine"
+          title={t("meta.dateTo", "Data fine")}
         />
         <select
           className="pc-input max-w-[180px]"
           value={fa}
           onChange={(e) => setFa(e.target.value)}
         >
-          <option value="">Tutti i tecnici</option>
+          <option value="">{t("allTechs", "Tutti i tecnici")}</option>
           {technicians.map((t) => (
             <option key={t.id} value={t.id}>
               {t.full_name}
             </option>
           ))}
         </select>
-        <span className="ml-auto text-xs text-text3 font-mono">
-          {total
-            ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
-            : "0 risultati"}
-        </span>
+          <span className="ml-auto text-xs text-text3 font-mono">
+            {total
+              ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} ${t("meta.of", "di")} ${total}`
+              : t("ticketList.zeroResults", "0 risultati")}
+          </span>
         <button
           onClick={openPdfPreview}
           disabled={!!pdfBusy}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <Eye className="w-3 h-3" /> Anteprima PDF
+          <Eye className="w-3 h-3" /> {t("previewPdf", "Anteprima PDF")}
         </button>
         <Link to="/tickets/archive" className="pc-btn pc-btn-ghost pc-btn-sm">
-          Storico
+          {t("meta.history", "Storico")}
         </Link>
         <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
-          {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}
+          {pdfBusy === "download" ? t("meta.updating", "Esportazione...") : t("exportPdf", "Esporta PDF")}
         </button>
       </div>
 
@@ -738,7 +741,7 @@ function TicketsPage() {
           style={{ background: "var(--surface1)", borderColor: "var(--border)" }}
         >
           <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
-            {selectedCount} selezionati
+            {t("meta.selected", { count: selectedCount, defaultValue: "{{count}} selezionati" })}
           </span>
           <select
             className="pc-input max-w-[170px]"
@@ -746,7 +749,7 @@ function TicketsPage() {
             disabled={bulkBusy || !canEdit}
             onChange={(event) => requestBulkStatus(event.target.value as TicketStatus)}
           >
-            <option value="">Cambia stato...</option>
+            <option value="">{t("changeStatus", "Cambia stato...")}</option>
             {Object.entries(STATUS_META).map(([status, meta]) => (
               <option key={status} value={status}>
                 {meta.label}
@@ -762,12 +765,12 @@ function TicketsPage() {
               if (value)
                 void applyBulkPatch(
                   { assignee_id: value === "unassigned" ? null : value },
-                  "riassegnazione bulk",
+                  t("toasts.bulkReassignment", "riassegnazione bulk"),
                 );
             }}
           >
-            <option value="">Riassegna...</option>
-            <option value="unassigned">Non assegnato</option>
+            <option value="">{t("reassign", "Riassegna...")}</option>
+            <option value="unassigned">{t("unassigned", "Non assegnato")}</option>
             {technicians.map((technician) => (
               <option key={technician.id} value={technician.id}>
                 {technician.full_name}
@@ -783,11 +786,11 @@ function TicketsPage() {
               if (value)
                 void applyBulkPatch(
                   { priority: value },
-                  `cambio priorita a ${PRIORITY_LABEL[value]}`,
+                  t("toasts.priorityChange", { label: PRIORITY_LABEL[value], defaultValue: "cambio priorità a {{label}}" }),
                 );
             }}
           >
-            <option value="">Cambia priorita...</option>
+            <option value="">{t("changePriority", "Cambia priorità...")}</option>
             {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
               <option key={priority} value={priority}>
                 {label}
@@ -800,7 +803,7 @@ function TicketsPage() {
             disabled={bulkBusy || !canEdit}
             onClick={() => setBulkConfirm({ type: "archive" })}
           >
-            Archivia
+            {t("archive", "Archivia")}
           </button>
           <button
             type="button"
@@ -808,26 +811,26 @@ function TicketsPage() {
             disabled={!!pdfBusy}
             onClick={exportSelectedPdf}
           >
-            <FileDown className="w-3 h-3" /> Esporta selezionati
+            <FileDown className="w-3 h-3" /> {t("exportSelected", "Esporta selezionati")}
           </button>
           <button
             type="button"
             className="pc-btn pc-btn-ghost pc-btn-sm ml-auto"
             onClick={clearSelection}
           >
-            X Deseleziona tutto
+            {t("deselectAll", "X Deseleziona tutto")}
           </button>
         </div>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-text3">
-        <span className="font-semibold text-text2">Selezione rapida:</span>
+        <span className="font-semibold text-text2">{t("quickSelect", "Selezione rapida:")}</span>
         <button
           type="button"
           className="pc-btn pc-btn-ghost pc-btn-sm"
           onClick={selectCompletedVisible}
         >
-          Completati visibili
+          {t("completedVisible", "Completati visibili")}
         </button>
         <div className="flex items-center gap-1">
           <button
@@ -835,7 +838,7 @@ function TicketsPage() {
             className="pc-btn pc-btn-ghost pc-btn-sm"
             onClick={() => selectPendingOlderThan(pendingDays)}
           >
-            In attesa da piu di
+            {t("pendingOlderThan", "In attesa da più di")}
           </button>
           <input
             type="number"
@@ -845,7 +848,7 @@ function TicketsPage() {
             value={pendingDays}
             onChange={(event) => setPendingDays(Math.max(1, Number(event.target.value) || 1))}
           />
-          <span>giorni</span>
+          <span>{t("days", "giorni")}</span>
         </div>
         <button
           type="button"
@@ -853,7 +856,7 @@ function TicketsPage() {
           disabled={!fc}
           onClick={selectCurrentClientVisible}
         >
-          Cliente filtrato
+          {t("filteredClient", "Cliente filtrato")}
         </button>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div
@@ -862,8 +865,8 @@ function TicketsPage() {
           >
             {(
               [
-                ["compact", "Compatta"],
-                ["extended", "Estesa"],
+                ["compact", t("compactView", "Compatta")],
+                ["extended", t("extendedView", "Estesa")],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -882,14 +885,14 @@ function TicketsPage() {
           </div>
           <details className="relative">
             <summary className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer list-none">
-              <Columns3 className="w-3 h-3" /> Colonne ({visibleTableColumns.length})
+              <Columns3 className="w-3 h-3" /> {t("columnsMenu", { count: visibleTableColumns.length, defaultValue: "Colonne ({{count}})" })}
             </summary>
             <div
               className="absolute right-0 z-30 mt-2 w-56 rounded-xl border p-2 shadow-lg"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}
             >
               <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wide text-text3">
-                Colonne visibili
+                {t("visibleColumns", "Colonne visibili")}
               </div>
               <div className="max-h-72 space-y-1 overflow-y-auto">
                 {allTicketColumns.map((column) => (
@@ -914,7 +917,7 @@ function TicketsPage() {
 
       {listQuery.isError ? (
         <PageFetchError
-          message="Impossibile caricare i ticket. Controlla la connessione e riprova."
+          message={t("ticketList.loadError", "Impossibile caricare i ticket. Controlla la connessione e riprova.")}
           onRetry={() => listQuery.refetch()}
         />
       ) : (
@@ -935,7 +938,7 @@ function TicketsPage() {
                   >
                     <input
                       type="checkbox"
-                      aria-label="Seleziona tutti i ticket visibili"
+                      aria-label={t("ticketList.selectAllVisible", "Seleziona tutti i ticket visibili")}
                       checked={allVisibleSelected}
                       data-indeterminate={
                         someVisibleSelected && !allVisibleSelected ? "true" : undefined
@@ -991,17 +994,17 @@ function TicketsPage() {
                   />
                 ) : (
                   <>
-                    {data.map((t) => (
+                    {data.map((row) => (
                       <tr
-                        key={t.id}
+                        key={row.id}
                         className="border-b cursor-pointer transition-colors hover:bg-surface2"
                         style={{
                           borderColor: "var(--border)",
-                          background: selectedTicketIds.has(t.id)
+                          background: selectedTicketIds.has(row.id)
                             ? "color-mix(in oklab, var(--accent) 8%, transparent)"
                             : undefined,
                         }}
-                        onClick={() => openTicketDetail(t.id)}
+                        onClick={() => openTicketDetail(row.id)}
                       >
                         <td
                           className="px-[10px] py-[10px]"
@@ -1009,9 +1012,9 @@ function TicketsPage() {
                         >
                           <input
                             type="checkbox"
-                            aria-label={`Seleziona ticket ${t.ticket_code}`}
-                            checked={selectedTicketIds.has(t.id)}
-                            onChange={() => toggleTicketSelection(t.id)}
+                            aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
+                            checked={selectedTicketIds.has(row.id)}
+                            onChange={() => toggleTicketSelection(row.id)}
                           />
                         </td>
                         {visibleTableColumns.map((column) => (
@@ -1019,7 +1022,7 @@ function TicketsPage() {
                             key={column.key}
                             className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
                           >
-                            {column.render(t)}
+                            {column.render(row)}
                           </td>
                         ))}
                       </tr>
@@ -1030,7 +1033,7 @@ function TicketsPage() {
                           colSpan={visibleTableColumns.length + 1}
                           className="text-center py-10 text-text3 text-sm"
                         >
-                          Nessun ticket
+{t("noTickets", "Nessun ticket")}
                         </td>
                       </tr>
                     )}
@@ -1047,17 +1050,17 @@ function TicketsPage() {
           disabled={page === 0}
           onClick={() => setPage((p) => Math.max(0, p - 1))}
         >
-          Precedente
+          {t("prevPage", "Precedente")}
         </button>
         <span className="text-xs text-text3 font-mono">
-          Pagina {page + 1} di {pageCount}
+          {t("page", { current: page + 1, total: pageCount, defaultValue: "Pagina {{current}} di {{total}}" })}
         </span>
         <button
           className="pc-btn pc-btn-ghost pc-btn-sm"
           disabled={page + 1 >= pageCount}
           onClick={() => setPage((p) => p + 1)}
         >
-          Successiva
+          {t("nextPage", "Successiva")}
         </button>
       </div>
 
@@ -1065,9 +1068,9 @@ function TicketsPage() {
         open={!!bulkConfirm}
         onOpenChange={(open) => !open && setBulkConfirm(null)}
         title={bulkConfirmTitle(bulkConfirm, selectedCount)}
-        description={`${bulkConfirmDescription(bulkConfirm, selectedCount)}\nTicket coinvolti: ${selectedCodesPreview()}`}
-        confirmLabel="Conferma"
-        loadingLabel="Aggiornamento..."
+        description={`${bulkConfirmDescription(bulkConfirm, selectedCount)}\n${t("bulk.ticketsInvolved", "Ticket coinvolti")}: ${selectedCodesPreview()}`}
+        confirmLabel={t("confirm", "Conferma")}
+        loadingLabel={t("updating", "Aggiornamento...")}
         onConfirm={confirmBulkAction}
       />
     </div>
@@ -1075,19 +1078,19 @@ function TicketsPage() {
 }
 
 function bulkConfirmTitle(action: BulkConfirmAction | null, count: number) {
-  if (!action) return "Conferma operazione bulk";
-  if (action.type === "archive") return `Stai per archiviare ${count} ticket`;
-  if (action.status === "completed") return `Stai per completare ${count} ticket`;
-  if (action.status === "archived") return `Stai per archiviare ${count} ticket`;
-  return `Stai per cambiare stato a ${count} ticket`;
+  if (!action) return i18n.t("tickets:bulk.confirmTitle", "Conferma operazione bulk");
+  if (action.type === "archive") return i18n.t("tickets:bulk.archiveTitle", { count, defaultValue: "Stai per archiviare {{count}} ticket" });
+  if (action.status === "completed") return i18n.t("tickets:bulk.completeTitle", { count, defaultValue: "Stai per completare {{count}} ticket" });
+  if (action.status === "archived") return i18n.t("tickets:bulk.archiveTitle", { count, defaultValue: "Stai per archiviare {{count}} ticket" });
+  return i18n.t("tickets:bulk.changeStatusTitle", { count, defaultValue: "Stai per cambiare stato a {{count}} ticket" });
 }
 
 function bulkConfirmDescription(action: BulkConfirmAction | null, count: number) {
-  if (!action) return "Conferma l'operazione sui ticket selezionati.";
+  if (!action) return i18n.t("tickets:bulk.confirmDescription", "Conferma l'operazione sui ticket selezionati.");
   if (action.type === "archive") {
-    return `Questa operazione imposta lo stato archived su ${count} ticket selezionati.`;
+    return i18n.t("tickets:bulk.archiveDescription", { count, defaultValue: "Questa operazione imposta lo stato archived su {{count}} ticket selezionati." });
   }
-  return `Questa operazione imposta lo stato ${STATUS_META[action.status].label} su ${count} ticket selezionati.`;
+  return i18n.t("tickets:bulk.changeStatusDescription", { status: STATUS_META[action.status].label, count, defaultValue: "Questa operazione imposta lo stato {{status}} su {{count}} ticket selezionati." });
 }
 
 function SlaBadge({
@@ -1110,27 +1113,27 @@ function SlaBadge({
           bg: "var(--badge-danger-bg)",
           fg: "var(--badge-danger-fg)",
           border: "var(--badge-danger-border)",
-          label: "SLA violato",
+          label: i18n.t("tickets:ticketList.slaViolated", "SLA violato"),
         }
       : sla.status === "warning"
         ? {
             bg: "var(--badge-warning-bg)",
             fg: "var(--badge-warning-fg)",
             border: "var(--badge-warning-border)",
-            label: "In scadenza",
+            label: i18n.t("tickets:ticketList.slaExpiring", "In scadenza"),
           }
         : {
             bg: "var(--badge-success-bg)",
             fg: "var(--badge-success-fg)",
             border: "var(--badge-success-border)",
-            label: "SLA OK",
+            label: i18n.t("tickets:ticketList.slaOk", "SLA OK"),
           };
 
   return (
     <span
       className="inline-flex flex-col gap-0.5 rounded-lg border px-2 py-1 text-[11px] font-medium whitespace-nowrap"
       style={{ background: palette.bg, borderColor: palette.border, color: palette.fg }}
-      title={`Deadline SLA: ${fmtDateTime(sla.deadline)}`}
+      title={i18n.t("tickets:ticketList.slaDeadline", { date: fmtDateTime(sla.deadline), defaultValue: "Deadline SLA: {{date}}" })}
     >
       <span className="font-semibold">{palette.label}</span>
       <span className="font-mono opacity-80">{formatSlaCountdown(sla.deadline)}</span>
@@ -1159,22 +1162,22 @@ function TimeOpenBadge({
     bg = "var(--badge-danger-bg)";
     fg = "var(--badge-danger-fg)";
     border = "var(--badge-danger-border)";
-    label = "SLA scaduto";
+    label = i18n.t("tickets:ticketList.slaExpired", "SLA scaduto");
   } else if (hoursOpen > 72) {
     bg = "var(--badge-danger-bg)";
     fg = "var(--badge-danger-fg)";
     border = "var(--badge-danger-border)";
-    label = "> 3gg";
+    label = i18n.t("tickets:ticketList.slaOver3d", "> 3gg");
   } else if (hoursOpen > 24) {
     bg = "var(--badge-warning-bg)";
     fg = "var(--badge-warning-fg)";
     border = "var(--badge-warning-border)";
-    label = "1-3gg";
+    label = i18n.t("tickets:ticketList.slaBetween1and3d", "1-3gg");
   } else {
     bg = "var(--badge-success-bg)";
     fg = "var(--badge-success-fg)";
     border = "var(--badge-success-border)";
-    label = "< 24h";
+    label = i18n.t("tickets:ticketList.slaUnder24h", "< 24h");
   }
 
   return (
@@ -1185,7 +1188,7 @@ function TimeOpenBadge({
         borderColor: border,
         color: fg,
       }}
-      title={`Creato: ${fmtDateTime(created_at)}`}
+      title={i18n.t("tickets:ticketList.createdTooltip", { date: fmtDateTime(created_at), defaultValue: "Creato: {{date}}" })}
     >
       {formatOpenDuration(created_at)}
       <span className="opacity-70">({label})</span>

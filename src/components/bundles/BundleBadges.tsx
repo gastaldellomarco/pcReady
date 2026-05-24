@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { BUNDLE_PRIORITY_LABEL, BUNDLE_STATUS_LABEL, bundleUsageTone } from "@/lib/bundles";
 import type { BundleStatus, BundleTicketPriority } from "@/lib/bundles";
 import { cn } from "@/lib/utils";
@@ -43,14 +44,15 @@ export function BundlePriorityBadge({ priority }: { priority: BundleTicketPriori
 }
 
 export function BundleUsageBar({ used, total, label }: { used: number | null | undefined; total: number | null | undefined; label?: string }) {
+  const { t } = useTranslation("bundles");
   const usedValue = Number(used ?? 0);
 
   if (total == null) {
     return (
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="font-medium text-text2">{label ?? "Utilizzo"}</span>
-          <span className="text-text3">Illimitato</span>
+          <span className="font-medium text-text2">{label ?? t("badge.usage", "Utilizzo")}</span>
+          <span className="text-text3">{t("badge.unlimited", "Illimitato")}</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-surface2">
           <div className="h-full w-full rounded-full opacity-40" style={{ background: "var(--success, #16a34a)" }} />
@@ -67,7 +69,7 @@ export function BundleUsageBar({ used, total, label }: { used: number | null | u
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="font-medium text-text2">{label ?? "Utilizzo"}</span>
+        <span className="font-medium text-text2">{label ?? t("badge.usage", "Utilizzo")}</span>
         <span className="text-text3">
           {usedValue.toLocaleString("it-IT", { maximumFractionDigits: 2 })} / {totalValue.toLocaleString("it-IT", { maximumFractionDigits: 2 })}
         </span>

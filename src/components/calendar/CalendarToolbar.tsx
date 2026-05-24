@@ -1,6 +1,7 @@
 import { format, getISOWeek } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Download, Palette, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -40,24 +41,7 @@ interface CalendarToolbarProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getDateLabel(date: Date, view: CalendarView): string {
-  switch (view) {
-    case 'month':
-      return format(date, 'MMMM yyyy', { locale: it });
-    case 'week': {
-      const weekNum = getISOWeek(date);
-      return `Settimana ${weekNum} · ${format(date, 'MMMM yyyy', { locale: it })}`;
-    }
-    case 'day':
-      return format(date, 'EEEE d MMMM yyyy', { locale: it });
-  }
-}
-
-const VIEW_OPTIONS: { value: CalendarView; label: string }[] = [
-  { value: 'month', label: 'Mese' },
-  { value: 'week', label: 'Settimana' },
-  { value: 'day', label: 'Giorno' },
-];
+const VIEW_VALUES: CalendarView[] = ['month', 'week', 'day'];
 
 // ---------------------------------------------------------------------------
 // CalendarToolbar
@@ -79,6 +63,21 @@ export function CalendarToolbar({
   onCreateEvent,
   canEdit,
 }: CalendarToolbarProps) {
+  const { t } = useTranslation("calendar");
+
+  function getDateLabel(date: Date, view: CalendarView): string {
+    switch (view) {
+      case 'month':
+        return format(date, 'MMMM yyyy', { locale: it });
+      case 'week': {
+        const weekNum = getISOWeek(date);
+        return `${t("toolbar.weekLabel", "Settimana")} ${weekNum} · ${format(date, 'MMMM yyyy', { locale: it })}`;
+      }
+      case 'day':
+        return format(date, 'EEEE d MMMM yyyy', { locale: it });
+    }
+  }
+
   const dateLabel = getDateLabel(currentDate, view);
 
   return (
@@ -88,14 +87,14 @@ export function CalendarToolbar({
     >
       {/* ── Left: Navigation ─────────────────────────────────── */}
       <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" onClick={onNavigatePrev} title="Mese/settimana/giorno precedente">
+        <Button variant="outline" size="icon" onClick={onNavigatePrev} title={t("toolbar.navPrevTitle", "Mese/settimana/giorno precedente")}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <Button variant="outline" size="icon" onClick={onNavigateNext} title="Mese/settimana/giorno successivo">
+        <Button variant="outline" size="icon" onClick={onNavigateNext} title={t("toolbar.navNextTitle", "Mese/settimana/giorno successivo")}>
           <ChevronRight className="h-4 w-4" />
         </Button>
         <Button variant="outline" size="sm" onClick={onNavigateToday} className="ml-1">
-          Oggi
+          {t("toolbar.today", "Oggi")}
         </Button>
         <span
           className="ml-3 text-sm font-semibold capitalize hidden sm:block"
@@ -111,25 +110,25 @@ export function CalendarToolbar({
           className="flex items-center rounded-md border overflow-hidden"
           style={{ borderColor: pcReadyColors.border }}
           role="group"
-          aria-label="Cambia visualizzazione"
+          aria-label={t("toolbar.ariaLabelView", "Cambia visualizzazione")}
         >
-          {VIEW_OPTIONS.map((opt, i) => (
+          {VIEW_VALUES.map((value, i) => (
             <button
-              key={opt.value}
+              key={value}
               type="button"
-              onClick={() => onViewChange(opt.value)}
+              onClick={() => onViewChange(value)}
               className={cn(
                 'px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none',
                 i > 0 && 'border-l',
-                view === opt.value ? 'text-white' : 'text-gray-600 hover:bg-gray-50',
+                view === value ? 'text-white' : 'text-gray-600 hover:bg-gray-50',
               )}
               style={{
                 borderColor: pcReadyColors.border,
-                background: view === opt.value ? pcReadyColors.primary : undefined,
+                background: view === value ? pcReadyColors.primary : undefined,
               }}
-              aria-pressed={view === opt.value}
+              aria-pressed={view === value}
             >
-              {opt.label}
+              {t(`views.${value}`)}
             </button>
           ))}
         </div>
@@ -144,10 +143,10 @@ export function CalendarToolbar({
             onValueChange={(v) => onFilterTechChange(v === '__all__' ? null : v)}
           >
             <SelectTrigger className="h-9 w-44 text-sm">
-              <SelectValue placeholder="Tutti i tecnici" />
+              <SelectValue placeholder={t("toolbar.filterAll", "Tutti i tecnici")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Tutti i tecnici</SelectItem>
+              <SelectItem value="__all__">{t("toolbar.filterAll", "Tutti i tecnici")}</SelectItem>
               {technicians.map((tech) => (
                 <SelectItem key={tech.id} value={tech.id}>
                   {tech.full_name}
@@ -162,12 +161,12 @@ export function CalendarToolbar({
           variant="outline"
           size="sm"
           onClick={() => onColorModeChange(colorMode === 'type' ? 'technician' : 'type')}
-          title={colorMode === 'type' ? 'Passa a colori per tecnico' : 'Passa a colori per tipo'}
+          title={colorMode === 'type' ? t("toolbar.switchColorTechnician", "Passa a colori per tecnico") : t("toolbar.switchColorType", "Passa a colori per tipo")}
           className="gap-1.5"
         >
           <Palette className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {colorMode === 'type' ? 'Tipo' : 'Tecnico'}
+            {colorMode === 'type' ? t("toolbar.colorType", "Tipo") : t("toolbar.colorTechnician", "Tecnico")}
           </span>
         </Button>
 
@@ -176,7 +175,7 @@ export function CalendarToolbar({
           variant="outline"
           size="sm"
           onClick={onExportIcal}
-          title="Esporta come file iCal (.ics)"
+          title={t("toolbar.exportIcalTitle", "Esporta come file iCal (.ics)")}
           className="gap-1.5"
         >
           <Download className="h-4 w-4" />
@@ -192,7 +191,7 @@ export function CalendarToolbar({
             style={{ background: pcReadyColors.primary, color: '#fff' }}
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuovo evento</span>
+            <span className="hidden sm:inline">{t("toolbar.newEvent", "Nuovo evento")}</span>
           </Button>
         )}
       </div>

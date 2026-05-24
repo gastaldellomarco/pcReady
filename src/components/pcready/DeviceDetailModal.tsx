@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
@@ -247,6 +248,7 @@ type HardwareDraft = {
 
 
 export function DeviceDetailModal() {
+  const { t } = useTranslation("tickets");
   const { id, close } = useDeviceDetail();
   const { session, canEdit } = useAuth();
   const patchDeviceStatus = useServerFn(updateDeviceStatus);
@@ -314,7 +316,7 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (devRes.error) {
-        toast.error(devRes.error.message);
+        toast.error(devRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
         setLoading(false);
         return;
       }
@@ -345,7 +347,7 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (assignRes.error) {
-        toast.error(assignRes.error.message);
+        toast.error(assignRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
         setAssignments([]);
       } else {
         setAssignments((assignRes.data ?? []) as AssignmentRow[]);
@@ -373,7 +375,7 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (ticketsRes.error) {
-        toast.error(ticketsRes.error.message);
+        toast.error(ticketsRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
         setTickets([]);
       } else {
         setTickets((ticketsRes.data ?? []) as TicketRow[]);
@@ -389,7 +391,7 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (histRes.error) {
-        toast.error(histRes.error.message);
+        toast.error(histRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
         setHistoryEntries([]);
       } else {
         setHistoryEntries((histRes.data ?? []) as HistoryRow[]);
@@ -504,12 +506,12 @@ export function DeviceDetailModal() {
   const warrantyBar = warrantyProgress(d ?? {});
   const warrantyRemainingText =
     warrantyDays === null
-      ? "Scadenza non impostata"
+      ? t("device.warranty.notSet", "Scadenza non impostata")
       : warrantyDays < 0
-        ? `Scaduta da ${Math.abs(warrantyDays)} giorni`
+        ? t("device.warranty.expiredDays", { count: Math.abs(warrantyDays), defaultValue: "Scaduta da {{count}} giorni" })
         : warrantyDays === 0
-          ? "Scade oggi"
-          : `Scade tra ${warrantyDays} giorni`;
+          ? t("device.warranty.expiresToday", "Scade oggi")
+          : t("device.warranty.expiresInDays", { count: warrantyDays, defaultValue: "Scade tra {{count}} giorni" });
   const openTickets = tickets.filter((ticket) => !isClosedTicket(ticket));
   const closedTickets = tickets.filter((ticket) => isClosedTicket(ticket));
   const maintenanceTickets = tickets.filter((ticket) =>
@@ -544,9 +546,9 @@ export function DeviceDetailModal() {
         },
       });
       setD({ ...d, status: next });
-      toast.success("Stato dispositivo aggiornato");
+      toast.success(t("device.toasts.statusUpdated", "Stato dispositivo aggiornato"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Aggiornamento stato non riuscito");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.statusUpdateError", "Aggiornamento stato non riuscito"));
     } finally {
       setStatusSaving(false);
       setConfirmStatusOpen(false);
@@ -565,9 +567,9 @@ export function DeviceDetailModal() {
       if (error) throw error;
       setD({ ...d, notes: notesDraft || null });
       setEditingNotes(false);
-      toast.success("Note tecniche aggiornate");
+      toast.success(t("device.toasts.notesUpdated", "Note tecniche aggiornate"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio note");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.notesSaveError", "Errore salvataggio note"));
     } finally {
       setSavingNotes(false);
     }
@@ -585,9 +587,9 @@ export function DeviceDetailModal() {
       if (error) throw error;
       setD({ ...d, ...payload, updated_at: new Date().toISOString() });
       setEditingIdentity(false);
-      toast.success("Codici dispositivo aggiornati");
+      toast.success(t("device.toasts.identityUpdated", "Codici dispositivo aggiornati"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio codici");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.identitySaveError", "Errore salvataggio codici"));
     } finally {
       setSavingIdentity(false);
     }
@@ -609,8 +611,8 @@ export function DeviceDetailModal() {
     }, 50);
     toast.info(
       target === "asset_tag"
-        ? "Campo asset tag pronto per scanner barcode USB/Bluetooth"
-        : "Campo seriale pronto per scanner barcode USB/Bluetooth",
+        ? t("device.barcode.assetTagReady", "Asset tag field ready for USB/Bluetooth barcode scanner")
+        : t("device.barcode.serialReady", "Serial field ready for USB/Bluetooth barcode scanner"),
     );
   }
 
@@ -627,9 +629,7 @@ export function DeviceDetailModal() {
     window.setTimeout(() => {
       document.getElementById(deviceIdentityInputId(barcodeTarget))?.focus();
     }, 50);
-    toast.success(
-      barcodeTarget === "asset_tag" ? "Asset tag letto da barcode" : "Seriale letto da barcode",
-    );
+    toast.success(t("device.toasts.barcodeRead", "Codice letto da barcode"));
   }
 
   async function saveWarranty() {
@@ -647,9 +647,9 @@ export function DeviceDetailModal() {
       if (error) throw error;
       setD({ ...d, ...payload });
       setEditingWarranty(false);
-      toast.success("Garanzia aggiornata");
+      toast.success(t("device.toasts.warrantyUpdated", "Garanzia aggiornata"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio garanzia");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.warrantySaveError", "Errore salvataggio garanzia"));
     } finally {
       setSavingWarranty(false);
     }
@@ -670,10 +670,10 @@ export function DeviceDetailModal() {
   async function saveRepairCost(ticket: TicketRow) {
     if (!canEdit) return;
     const current = ticket.repair_cost == null ? "" : String(ticket.repair_cost);
-    const raw = window.prompt(`Costo riparazione per ${ticket.ticket_code}`, current);
+    const raw = window.prompt(t("device.repairCostPrompt", { code: ticket.ticket_code, defaultValue: "Costo riparazione per {{code}}" }), current);
     if (raw === null) return;
     const value = raw.trim() ? Number(raw.replace(",", ".")) : null;
-    if (value !== null && !Number.isFinite(value)) return toast.error("Costo non valido");
+    if (value !== null && !Number.isFinite(value)) return toast.error(t("device.toasts.invalidCost", "Costo non valido"));
     try {
       const { error } = await supabase
         .from("tickets")
@@ -683,9 +683,9 @@ export function DeviceDetailModal() {
       setTickets((prev) =>
         prev.map((row) => (row.id === ticket.id ? { ...row, repair_cost: value } : row)),
       );
-      toast.success("Costo riparazione aggiornato");
+      toast.success(t("device.toasts.repairCostUpdated", "Costo riparazione aggiornato"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio costo");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.repairCostError", "Errore salvataggio costo"));
     }
   }
 
@@ -698,9 +698,9 @@ export function DeviceDetailModal() {
       if (error) throw error;
       setD({ ...d, ...payload });
       setEditingHardware(false);
-      toast.success("Specifiche hardware aggiornate");
+      toast.success(t("device.toasts.hardwareUpdated", "Specifiche hardware aggiornate"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio hardware");
+      toast.error(err instanceof Error ? err.message : t("device.toasts.hardwareSaveError", "Errore salvataggio hardware"));
     } finally {
       setSavingHardware(false);
     }
@@ -715,7 +715,7 @@ export function DeviceDetailModal() {
 
   function onDeviceStatusSelect(value: string) {
     if (!isDeviceInventoryStatus(value)) {
-      toast.error("Stato dispositivo non valido");
+      toast.error(t("device.toasts.invalidStatus", "Stato dispositivo non valido"));
       return;
     }
     const next = value as DeviceInventoryStatus;
@@ -732,13 +732,13 @@ export function DeviceDetailModal() {
 
   if (loading || !d) {
     return (
-      <Modal open={true} onClose={close} size="lg" title="Scheda asset">
+      <Modal open={true} onClose={close} size="lg" title={t("device.title", "Scheda asset")}>
         <div className="py-10 text-center text-[13px] text-text3">
-          {loading ? "Caricamento cronologia…" : "Dispositivo non trovato."}
+          {loading ? t("device.loading.loading", "Loading history…") : t("device.loading.notFound", "Device not found.")}
         </div>
         <div className="flex justify-end">
           <button className="pc-btn pc-btn-ghost" type="button" onClick={close}>
-            Chiudi
+            {t("device.loading.close", "Close")}
           </button>
         </div>
       </Modal>
@@ -750,7 +750,7 @@ export function DeviceDetailModal() {
       open={true}
       onClose={close}
       size="xl"
-      title={`${d.model} — ${d.asset_tag || d.serial || "senza codice"}`}
+      title={`${d.model} — ${d.asset_tag || d.serial || t("device.noCode", "senza codice")}`}
     >
       <div
         className="mb-4 rounded-xl border p-3"
@@ -766,7 +766,7 @@ export function DeviceDetailModal() {
               {d.model}
             </div>
             <div className="font-mono text-[11px] text-text3">
-              Asset · {d.asset_tag || d.id} · S/N produttore {d.serial || "—"}
+              {t("device.assetLabel", "Asset")} · {d.asset_tag || d.id} · {t("device.serialLabel", "S/N produttore")} {d.serial || "—"}
             </div>
           </div>
           <DeviceStatusPill status={d.status} large />
@@ -774,32 +774,32 @@ export function DeviceDetailModal() {
             className="rounded-full border px-2.5 py-1 text-xs font-semibold"
             style={{ borderColor: "var(--border)", background: "var(--background)" }}
           >
-            {d.client?.name || "Cliente non assegnato"}
+            {d.client?.name || t("device.info.unassignedClient", "Cliente non assegnato")}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => setActiveTab("info")}>
-            Modifica
+            {t("device.edit", "Modifica")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
             onClick={() =>
               navigator.clipboard
                 ?.writeText(`${window.location.origin}/inventory?device=${d.id}`)
-                .then(() => toast.success("Link dispositivo copiato"))
+                .then(() => toast.success(t("device.toasts.linkCopied", "Link dispositivo copiato")))
             }
           >
-            <QrCode className="h-3 w-3" /> Genera QR
+            <QrCode className="h-3 w-3" /> {t("device.generateQR", "Genera QR")}
           </button>
           <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => openCreate()}>
-            <TicketPlus className="h-3 w-3" /> Assegna ticket
+            <TicketPlus className="h-3 w-3" /> {t("device.assignTicket", "Assegna ticket")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
             disabled={statusSaving}
             onClick={() => void commitDeviceStatus("maintenance")}
           >
-            <Wrench className="h-3 w-3" /> Sposta in manutenzione
+            <Wrench className="h-3 w-3" /> {t("device.moveToMaintenance", "Sposta in manutenzione")}
           </button>
         </div>
       </div>
@@ -807,11 +807,11 @@ export function DeviceDetailModal() {
       <div className="mb-4 flex flex-wrap gap-2 border-b" style={{ borderColor: "var(--border)" }}>
         {(
           [
-            ["info", "Informazioni"],
-            ["hardware", "Hardware"],
-            ["maintenance", "Manutenzione"],
-            ["tickets", `Ticket (${tickets.length})`],
-            ["history", "Storico"],
+            ["info", t("device.tabs.info", "Informazioni")],
+            ["hardware", t("device.tabs.hardware", "Hardware")],
+            ["maintenance", t("device.tabs.maintenance", "Manutenzione")],
+            ["tickets", t("device.tabs.tickets", { count: tickets.length, defaultValue: "Ticket ({{count}})" })],
+            ["history", t("device.tabs.history", "Storico")],
           ] as [DeviceDetailTab, string][]
         ).map(([tab, label]) => (
           <button
@@ -833,15 +833,15 @@ export function DeviceDetailModal() {
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="min-w-0">
-              <div className="pc-label">Stato dispositivo</div>
+            <div className="pc-label">{t("device.info.deviceStatus", "Stato dispositivo")}</div>
               {canEdit ? (
                 <Select
                   value={d.status as DeviceInventoryStatus}
                   onValueChange={onDeviceStatusSelect}
                   disabled={statusSaving}
                 >
-                  <SelectTrigger aria-label="Stato dispositivo" className="mt-1 h-9 text-[13px]">
-                    <SelectValue placeholder="Stato" />
+                  <SelectTrigger aria-label={t("device.info.deviceStatus", "Stato dispositivo")} className="mt-1 h-9 text-[13px]">
+                    <SelectValue placeholder={t("device.statusPlaceholder", "Stato")} />
                   </SelectTrigger>
                   <SelectContent>
                     {deviceStatusOptions.map((option) => (
@@ -860,19 +860,19 @@ export function DeviceDetailModal() {
               )}
             </div>
             <div>
-              <div className="pc-label">Ultimo aggiornamento scheda</div>
+              <div className="pc-label">{t("device.info.lastUpdate", "Ultimo aggiornamento scheda")}</div>
               <div className="text-[13px]">{fmtDateTime(d.updated_at)}</div>
             </div>
             <div>
-              <div className="pc-label">Cliente</div>
+              <div className="pc-label">{t("device.info.client", "Cliente")}</div>
               <div className="text-[13px]">{d.client?.name || "—"}</div>
             </div>
             <div>
-              <div className="pc-label">Utente asset (anagrafica)</div>
+              <div className="pc-label">{t("device.info.assetUser", "Utente asset (anagrafica)")}</div>
               <div className="text-[13px]">{d.assigned_to || "—"}</div>
             </div>
             <div>
-              <div className="pc-label">OS</div>
+              <div className="pc-label">{t("device.os", "OS")}</div>
               <div className="text-[13px]">{d.os || "—"}</div>
             </div>
             <div className="sm:col-span-2">
@@ -882,10 +882,9 @@ export function DeviceDetailModal() {
               >
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="pc-label">Codici dispositivo</div>
+                    <div className="pc-label">{t("device.codes", "Codici dispositivo")}</div>
                     <div className="text-[12px] text-text3">
-                      Barcode 1D separato dal QR inventario: seriale produttore e asset tag
-                      interno restano campi distinti.
+                      {t("device.codesHint", "Barcode 1D separato dal QR inventario: seriale produttore e asset tag interno restano campi distinti.")}
                     </div>
                   </div>
                   {canEdit && !editingIdentity ? (
@@ -894,7 +893,7 @@ export function DeviceDetailModal() {
                       className="pc-btn pc-btn-ghost pc-btn-sm"
                       onClick={startIdentityEdit}
                     >
-                      Modifica codici
+                      {t("device.editCodes", "Modifica codici")}
                     </button>
                   ) : null}
                 </div>
@@ -902,7 +901,7 @@ export function DeviceDetailModal() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <IdentityBarcodeField
                       id={deviceIdentityInputId("asset_tag")}
-                      label="Asset tag interno"
+                      label={t("device.assetTag", "Asset tag interno")}
                       value={identityDraft.asset_tag}
                       placeholder="PCR-000001"
                       onChange={(value) =>
@@ -913,9 +912,9 @@ export function DeviceDetailModal() {
                     />
                     <IdentityBarcodeField
                       id={deviceIdentityInputId("serial")}
-                      label="Seriale produttore"
+                      label={t("device.serial", "Seriale produttore")}
                       value={identityDraft.serial}
-                      placeholder="Seriale da etichetta"
+                      placeholder={t("device.serialPlaceholder", "Seriale da etichetta")}
                       onChange={(value) =>
                         setIdentityDraft((prev) => ({ ...prev, serial: value }))
                       }
@@ -930,7 +929,7 @@ export function DeviceDetailModal() {
                         onClick={() => void saveIdentity()}
                       >
                         <Save className="h-3 w-3" />
-                        {savingIdentity ? "Salvataggio..." : "Salva codici"}
+                        {savingIdentity ? t("device.saving", "Salvataggio...") : t("device.saveCodes", "Salva codici")}
                       </button>
                       <button
                         type="button"
@@ -943,22 +942,22 @@ export function DeviceDetailModal() {
                           });
                         }}
                       >
-                        Annulla
+                        {t("device.cancel", "Annulla")}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div>
-                      <div className="pc-label">Brand</div>
+                      <div className="pc-label">{t("device.brand", "Brand")}</div>
                       <div className="text-[13px]">{d.brand || "—"}</div>
                     </div>
                     <div>
-                      <div className="pc-label">Asset tag interno</div>
+                      <div className="pc-label">{t("device.assetTag", "Asset tag interno")}</div>
                       <div className="font-mono text-[13px]">{d.asset_tag || "—"}</div>
                     </div>
                     <div>
-                      <div className="pc-label">Seriale produttore</div>
+                      <div className="pc-label">{t("device.serial", "Seriale produttore")}</div>
                       <div className="font-mono text-[13px]">{d.serial || "—"}</div>
                     </div>
                   </div>
@@ -966,17 +965,17 @@ export function DeviceDetailModal() {
               </div>
             </div>
             <div>
-              <div className="pc-label">Categoria / tipo</div>
+              <div className="pc-label">{t("device.category", "Categoria / tipo")}</div>
               <div className="text-[13px]">
                 {getDeviceCategoryLabel(d.category)} · {d.device_type || "—"}
               </div>
             </div>
             <div>
-              <div className="pc-label">Localizzazione</div>
+              <div className="pc-label">{t("device.location", "Localizzazione")}</div>
               <div className="text-[13px]">{formatLocation(d)}</div>
             </div>
             <div>
-              <div className="pc-label">Creato il / da</div>
+              <div className="pc-label">{t("device.created", "Creato il / da")}</div>
               <div className="text-[13px]">
                 {fmtDateTime(d.created_at)}
                 {d.created_by ? ` · ${resolveName(d.created_by)}` : ""}
@@ -991,7 +990,7 @@ export function DeviceDetailModal() {
               className="mb-4 rounded-lg px-3 py-2.5 text-[12.5px]"
               style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
             >
-              <span className="pc-label">Ultimo evento registrato</span>
+              <span className="pc-label">{t("device.lastEvent", "Ultimo evento registrato")}</span>
               <div className="mt-1 text-text2">
                 <span className="font-semibold text-text">{lastEvent.title}</span>
                 <span className="text-text3"> · {fmtDateTime(lastEvent.at)}</span>
@@ -1008,7 +1007,7 @@ export function DeviceDetailModal() {
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
-                <div className="pc-label">Garanzia</div>
+                <div className="pc-label">{t("device.warranty", "Garanzia")}</div>
                 <div className="mt-1 flex items-center gap-2 text-[12px] text-text2">
                   <span
                     className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
@@ -1026,7 +1025,7 @@ export function DeviceDetailModal() {
               </div>
               {canEdit && !editingWarranty ? (
                 <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={startWarrantyEdit}>
-                  Rinova garanzia
+                  {t("device.renewWarranty", "Rinova garanzia")}
                 </button>
               ) : null}
             </div>
@@ -1034,7 +1033,7 @@ export function DeviceDetailModal() {
             {editingWarranty ? (
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="text-xs">
-                  <span className="pc-label">Data acquisto</span>
+                  <span className="pc-label">{t("device.purchaseDate", "Data acquisto")}</span>
                   <input
                     type="date"
                     className="pc-input mt-1 w-full"
@@ -1045,7 +1044,7 @@ export function DeviceDetailModal() {
                   />
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">Scadenza garanzia</span>
+                  <span className="pc-label">{t("device.warrantyExpiry", "Scadenza garanzia")}</span>
                   <input
                     type="date"
                     className="pc-input mt-1 w-full"
@@ -1056,7 +1055,7 @@ export function DeviceDetailModal() {
                   />
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">Tipo garanzia</span>
+                  <span className="pc-label">{t("device.warrantyType", "Tipo garanzia")}</span>
                   <select
                     className="pc-input mt-1 w-full"
                     value={warrantyDraft.warranty_type}
@@ -1075,25 +1074,25 @@ export function DeviceDetailModal() {
                   </select>
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">Fornitore / URL</span>
+                  <span className="pc-label">{t("device.warrantyProvider", "Fornitore / URL")}</span>
                   <input
                     className="pc-input mt-1 w-full"
                     value={warrantyDraft.warranty_provider}
                     onChange={(e) =>
                       setWarrantyDraft((v) => ({ ...v, warranty_provider: e.target.value }))
                     }
-                    placeholder="Dell, HP, rivenditore o https://..."
+                    placeholder={t("device.warrantyProviderPlaceholder", "Dell, HP, rivenditore o https://...")}
                   />
                 </label>
                 <label className="text-xs md:col-span-2">
-                  <span className="pc-label">Note garanzia / contratto</span>
+                  <span className="pc-label">{t("device.warrantyNotes", "Note garanzia / contratto")}</span>
                   <textarea
                     className="pc-input mt-1 min-h-[70px] w-full"
                     value={warrantyDraft.warranty_notes}
                     onChange={(e) =>
                       setWarrantyDraft((v) => ({ ...v, warranty_notes: e.target.value }))
                     }
-                    placeholder="Numero contratto, condizioni, riferimenti..."
+                    placeholder={t("device.warrantyNotesPlaceholder", "Numero contratto, condizioni, riferimenti...")}
                   />
                 </label>
                 <div className="flex gap-2 md:col-span-2">
@@ -1103,13 +1102,13 @@ export function DeviceDetailModal() {
                     onClick={saveWarranty}
                   >
                     <Save className="h-3 w-3" />{" "}
-                    {savingWarranty ? "Salvataggio..." : "Salva garanzia"}
+                    {savingWarranty ? t("device.saving", "Salvataggio...") : t("device.saveWarranty", "Salva garanzia")}
                   </button>
                   <button
                     className="pc-btn pc-btn-ghost pc-btn-sm"
                     onClick={() => setEditingWarranty(false)}
                   >
-                    Annulla
+                    {t("device.cancel", "Annulla")}
                   </button>
                 </div>
               </div>
@@ -1117,15 +1116,15 @@ export function DeviceDetailModal() {
               <>
                 <div className="grid grid-cols-2 gap-3 text-[12.5px] md:grid-cols-4">
                   <div>
-                    <div className="pc-label">Acquisto</div>
+                    <div className="pc-label">{t("device.purchaseDate", "Acquisto")}</div>
                     <div>{d.purchase_date ? fmtDate(d.purchase_date) : "—"}</div>
                   </div>
                   <div>
-                    <div className="pc-label">Scadenza</div>
+                    <div className="pc-label">{t("device.warrantyExpiry", "Scadenza")}</div>
                     <div>{d.warranty_expiry_date ? fmtDate(d.warranty_expiry_date) : "—"}</div>
                   </div>
                   <div>
-                    <div className="pc-label">Tipo</div>
+                    <div className="pc-label">{t("device.warrantyType", "Tipo")}</div>
                     <div>
                       {WARRANTY_TYPES.find((type) => type.value === d.warranty_type)?.label ??
                         d.warranty_type ??
@@ -1133,7 +1132,7 @@ export function DeviceDetailModal() {
                     </div>
                   </div>
                   <div>
-                    <div className="pc-label">Fornitore</div>
+                    <div className="pc-label">{t("device.warrantyProvider", "Fornitore")}</div>
                     {isProbablyUrl(d.warranty_provider) ? (
                       <a
                         className="text-accent hover:underline"
@@ -1141,7 +1140,7 @@ export function DeviceDetailModal() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Link garanzia
+                        {t("device.warrantyLink", "Link garanzia")}
                       </a>
                     ) : (
                       <div>{d.warranty_provider || "—"}</div>
@@ -1150,7 +1149,7 @@ export function DeviceDetailModal() {
                 </div>
                 <div className="mt-3">
                   <div className="mb-1 flex justify-between text-[11px] text-text3">
-                    <span>Avanzamento copertura</span>
+                    <span>{t("device.coverageProgress", "Avanzamento copertura")}</span>
                     <span>{warrantyRemainingText}</span>
                   </div>
                   <div
@@ -1179,22 +1178,21 @@ export function DeviceDetailModal() {
             className="mb-4 rounded-lg p-3"
             style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
           >
-            <div className="pc-label mb-2">Costi (TCO)</div>
+            <div className="pc-label mb-2">{t("device.tco.title", "Costi (TCO)")}</div>
             <div className="grid grid-cols-3 gap-2 text-[12.5px]">
               <div>
-                <div className="text-text3">Costo acquisto</div>
+                <div className="text-text3">{t("device.tco.purchaseCost", "Costo acquisto")}</div>
                 <div className="font-mono font-semibold">{formatCurrency(purchaseCost)}</div>
               </div>
               <div>
-                <div className="text-text3">Riparazioni</div>
+                <div className="text-text3">{t("device.tco.repairs", "Riparazioni")}</div>
                 <div className="font-mono font-semibold">{formatCurrency(repairCosts)}</div>
                 <div className="text-[11px] text-text3">
-                  {maintenanceTickets.length} ticket manutenzione con {formatCurrency(repairCosts)}{" "}
-                  registrati
+                  {t("device.tco.maintenanceTickets", { count: maintenanceTickets.length, cost: formatCurrency(repairCosts), defaultValue: "{{count}} ticket manutenzione con {{cost}} registrati" })}
                 </div>
               </div>
               <div>
-                <div className="text-text3">TCO stimato</div>
+                <div className="text-text3">{t("device.tco.estimatedTco", "TCO stimato")}</div>
                 <div className="font-mono font-semibold">{formatCurrency(tco)}</div>
               </div>
             </div>
@@ -1205,7 +1203,7 @@ export function DeviceDetailModal() {
             style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
           >
             <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="pc-label">Checklist associate</div>
+              <div className="pc-label">{t("device.checklist.associated", "Checklist associate")}</div>
               <div className="text-xs text-text3 font-mono">{checklistSummaries.length}</div>
             </div>
             <div className="flex flex-col gap-2">
@@ -1236,7 +1234,7 @@ export function DeviceDetailModal() {
                     />
                   </div>
                   <div className="mt-1 text-[11px] text-text3">
-                    Ticket {checklist.ticketCode} · ultima esecuzione{" "}
+                    Ticket {checklist.ticketCode} · {t("device.checklist.lastRun", "ultima esecuzione")}{" "}
                     {fmtDateTime(checklist.updatedAt)}
                   </div>
                 </button>
@@ -1255,14 +1253,14 @@ export function DeviceDetailModal() {
               style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
             >
               <div className="flex-1 min-w-0">
-                <div className="pc-label mb-1">Note tecniche</div>
+                <div className="pc-label mb-1">{t("device.notes.title", "Note tecniche")}</div>
                 {editingNotes ? (
                   <div className="flex flex-col gap-2">
                     <textarea
                       className="pc-input w-full min-h-[80px] text-[12.5px]"
                       value={notesDraft}
                       onChange={(e) => setNotesDraft(e.target.value)}
-                      placeholder="Inserisci note tecniche sul dispositivo..."
+                      placeholder={t("device.notes.placeholder", "Inserisci note tecniche sul dispositivo...")}
                     />
                     <div className="flex gap-2">
                       <button
@@ -1271,7 +1269,7 @@ export function DeviceDetailModal() {
                         onClick={saveNotes}
                       >
                         <Save className="h-3 w-3" />
-                        {savingNotes ? "Salvataggio..." : "Salva"}
+                        {savingNotes ? t("device.saving", "Salvataggio...") : t("device.save", "Salva")}
                       </button>
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -1280,7 +1278,7 @@ export function DeviceDetailModal() {
                           setNotesDraft(d?.notes ?? "");
                         }}
                       >
-                        Annulla
+                        {t("device.cancel", "Annulla")}
                       </button>
                     </div>
                   </div>
@@ -1295,7 +1293,7 @@ export function DeviceDetailModal() {
                   >
                     {d.notes || (
                       <span className="text-text3 italic">
-                        Nessuna nota tecnica{canEdit ? " — clicca per aggiungere" : ""}
+                        {t("device.notes.empty", "Nessuna nota tecnica")}{canEdit ? t("device.notes.clickToAdd", " — clicca per aggiungere") : ""}
                       </span>
                     )}
                   </div>
@@ -1342,11 +1340,9 @@ export function DeviceDetailModal() {
           className="mb-4 p-3 rounded-lg"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
-          <div className="pc-label">Cronologia operativa (unica timeline)</div>
+          <div className="pc-label">{t("device.history.title", "Cronologia operativa (unica timeline)")}</div>
           <p className="text-[11px] text-text3 mt-1 mb-3">
-            Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività
-            dai ticket collegati provengono dal log attività; manutenzioni come ticket di tipo
-            &quot;Manutenzione&quot; o stato dispositivo in manutenzione.
+            {t("device.history.description", "Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività dai ticket collegati provengono dal log attività; manutenzioni come ticket di tipo \"Manutenzione\" o stato dispositivo in manutenzione.")}
           </p>
           <div className="relative max-h-[min(420px,50vh)] overflow-y-auto pl-1">
             <div
@@ -1378,7 +1374,7 @@ export function DeviceDetailModal() {
                     </div>
                     {item.operatorLabel && (
                       <div className="mt-1 text-[11px] text-text3">
-                        Operatore: {item.operatorLabel}
+                        {t("device.history.operator", "Operatore:")} {item.operatorLabel}
                       </div>
                     )}
                     {item.ticketId && (
@@ -1387,7 +1383,7 @@ export function DeviceDetailModal() {
                         className="mt-1.5 text-[11px] font-semibold text-accent hover:underline"
                         onClick={() => openTicketDetail(item.ticketId!)}
                       >
-                        Apri ticket
+                        {t("device.history.openTicket", "Apri ticket")}
                       </button>
                     )}
                   </div>
@@ -1395,7 +1391,7 @@ export function DeviceDetailModal() {
               ))}
               {!timeline.length && (
                 <div className="text-[12.5px] text-text3 py-4 pl-5">
-                  Nessun evento nella cronologia.
+                  {t("device.history.noEvents", "Nessun evento nella cronologia.")}
                 </div>
               )}
             </div>
@@ -1409,9 +1405,9 @@ export function DeviceDetailModal() {
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
           <div className="flex items-center justify-between gap-2">
-            <div className="pc-label">Ticket collegati</div>
+            <div className="pc-label">{t("device.tickets.title", "Ticket collegati")}</div>
             <div className="text-xs text-text3 font-mono">
-              {openTickets.length} ticket aperti · {closedTickets.length} ticket chiusi
+              {t("device.tickets.openCount", { count: openTickets.length, defaultValue: "{{count}} ticket aperti" })} · {t("device.tickets.closedCount", { count: closedTickets.length, defaultValue: "{{count}} ticket chiusi" })}
             </div>
           </div>
           <OverflowTable className="mt-3">
@@ -1420,13 +1416,13 @@ export function DeviceDetailModal() {
                 <thead>
                   <tr>
                     {[
-                      "Codice",
-                      "Titolo",
-                      "Stato",
-                      "Tecnico",
-                      "Data apertura",
-                      "Data chiusura",
-                      "Costo riparazione",
+                      t("device.tickets.code", "Codice"),
+                      t("device.tickets.titleCol", "Titolo"),
+                      t("device.tickets.status", "Stato"),
+                      t("device.tickets.technician", "Tecnico"),
+                      t("device.tickets.openDate", "Data apertura"),
+                      t("device.tickets.closeDate", "Data chiusura"),
+                      t("device.tickets.repairCost", "Costo riparazione"),
                     ].map((h) => (
                       <th
                         key={h}
@@ -1479,7 +1475,7 @@ export function DeviceDetailModal() {
                               onClick={() => void saveRepairCost(ticket)}
                             >
                               {ticket.repair_cost == null
-                                ? "Inserisci"
+                                ? t("device.tickets.insertCost", "Inserisci")
                                 : formatCurrency(ticket.repair_cost)}
                             </button>
                           ) : (
@@ -1492,7 +1488,7 @@ export function DeviceDetailModal() {
                   {!tickets.length && (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-text3">
-                        Nessun ticket collegato a questo dispositivo.
+                        {t("device.tickets.noTickets", "Nessun ticket collegato a questo dispositivo.")}
                       </td>
                     </tr>
                   )}
@@ -1512,13 +1508,9 @@ export function DeviceDetailModal() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma cambio stato</AlertDialogTitle>
+            <AlertDialogTitle>{t("device.confirmStatus.title", "Conferma cambio stato")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Impostare lo stato su{" "}
-              <span className="font-medium text-foreground">
-                {pendingStatus ? DEVICE_STATUS_LABEL[pendingStatus] : "—"}
-              </span>{" "}
-              può impattare disponibilità e assegnazioni. Continuare?
+              {t("device.confirmStatus.description", { status: pendingStatus ? DEVICE_STATUS_LABEL[pendingStatus] : "—", defaultValue: "Impostare lo stato su {{status}} può impattare disponibilità e assegnazioni. Continuare?" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1528,7 +1520,7 @@ export function DeviceDetailModal() {
                 setPendingStatus(null);
               }}
             >
-              Annulla
+              {t("device.cancel", "Annulla")}
             </AlertDialogCancel>
             <AlertDialogAction
               type="button"
@@ -1537,7 +1529,7 @@ export function DeviceDetailModal() {
                 if (pendingStatus) void commitDeviceStatus(pendingStatus);
               }}
             >
-              Conferma
+              {t("device.confirmStatus.confirm", "Conferma")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1548,7 +1540,7 @@ export function DeviceDetailModal() {
         onClose={() => setBarcodeTarget(null)}
         onDetected={applyBarcodeValue}
         mode="barcode-1d"
-        targetLabel={barcodeTarget === "asset_tag" ? "asset tag interno" : "seriale produttore"}
+        targetLabel={barcodeTarget === "asset_tag" ? t("device.assetTag", "asset tag interno") : t("device.serial", "seriale produttore")}
       />
 
       <div className="flex justify-between">
@@ -1563,13 +1555,13 @@ export function DeviceDetailModal() {
             }}
           >
             <TicketPlus className="h-3.5 w-3.5" />
-            Crea ticket con questo dispositivo
+            {t("device.createTicket", "Crea ticket con questo dispositivo")}
           </button>
         ) : (
           <div />
         )}
         <button className="pc-btn pc-btn-ghost" type="button" onClick={close}>
-          Chiudi
+          {t("device.close", "Chiudi")}
         </button>
       </div>
     </Modal>
@@ -1595,6 +1587,7 @@ function DeviceStatusPill({ status, large = false }: { status: string; large?: b
 }
 
 function AssetMetadataPanel({ device }: { device: DeviceRow }) {
+  const { t } = useTranslation("tickets");
   const rows = getAssetMetadataRows(device);
   if (!rows.length) return null;
   return (
@@ -1602,7 +1595,7 @@ function AssetMetadataPanel({ device }: { device: DeviceRow }) {
       className="mb-4 rounded-lg border p-3"
       style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
     >
-      <div className="mb-2 text-sm font-semibold">Metadati asset</div>
+      <div className="mb-2 text-sm font-semibold">{t("device.metadata.title", "Metadati asset")}</div>
       <div className="grid gap-2 md:grid-cols-2">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-3 text-[12.5px]">
@@ -1726,11 +1719,12 @@ function HardwareTab({
   editing: boolean;
   saving: boolean;
   canEdit: boolean;
-  systemHealth: ReturnType<typeof computeSystemHealth>;
+  systemHealth: { label: string; description: string; color: string; background: string };
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const { t } = useTranslation("tickets");
   const update = (key: keyof HardwareDraft, value: string) =>
     setDraft((current) => ({ ...current, [key]: value }));
 
@@ -1748,12 +1742,12 @@ function HardwareTab({
             <Cpu className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <div className="text-sm font-semibold">Stato sistema: {systemHealth.label}</div>
+            <div className="text-sm font-semibold">{t("device.hardware.systemHealth", { label: systemHealth.label, defaultValue: "Stato sistema: {{label}}" })}</div>
             <div className="text-xs text-text3">{systemHealth.description}</div>
           </div>
           {canEdit && !editing ? (
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={onEdit}>
-              Modifica hardware
+              {t("device.editHardware", "Modifica hardware")}
             </button>
           ) : null}
         </div>
@@ -1797,7 +1791,7 @@ function HardwareTab({
               onChange={(v) => update("ram_frequency_mhz", v)}
             />
             <HardwareInput
-              label="Storage tipo"
+              label={t("device.hardware.storageType", "Storage tipo")}
               value={draft.storage_type}
               onChange={(v) => update("storage_type", v)}
             />
@@ -1844,7 +1838,7 @@ function HardwareTab({
               value={draft.screen_type}
               onChange={(v) => update("screen_type", v)}
             />
-            <HardwareInput label="Wi‑Fi" value={draft.wifi} onChange={(v) => update("wifi", v)} />
+            <HardwareInput label={t("device.hardware.wifi", "Wi‑Fi")} value={draft.wifi} onChange={(v) => update("wifi", v)} />
             <HardwareInput
               label="Ethernet"
               value={draft.ethernet}
@@ -1923,10 +1917,10 @@ function HardwareTab({
           </div>
           <div className="mt-3 flex gap-2">
             <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={saving} onClick={onSave}>
-              <Save className="h-3 w-3" /> {saving ? "Salvataggio..." : "Salva hardware"}
+              <Save className="h-3 w-3" /> {saving ? t("device.saving", "Salvataggio...") : t("device.saveHardware", "Salva hardware")}
             </button>
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCancel}>
-              Annulla
+              {t("device.cancel", "Annulla")}
             </button>
           </div>
         </div>

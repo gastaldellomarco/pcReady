@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Download, Printer } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/pcready/Modal";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function QrCodeDialog({ device, onClose }: Props) {
+  const { t } = useTranslation("inventory");
   const [dataUrl, setDataUrl] = useState("");
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function QrCodeDialog({ device, onClose }: Props) {
         if (active) setDataUrl(url);
       })
       .catch((error) =>
-        toast.error(error instanceof Error ? error.message : "Errore generazione QR"),
+        toast.error(error instanceof Error ? error.message : t("qrCode.qrError", "Errore generazione QR")),
       );
 
     return () => {
@@ -51,7 +53,7 @@ export function QrCodeDialog({ device, onClose }: Props) {
   function printLabel() {
     if (!dataUrl || !device) return;
     const win = window.open("", "_blank", "width=520,height=420");
-    if (!win) return toast.error("Popup bloccato: consenti l'apertura per stampare l'etichetta");
+    if (!win) return toast.error(t("qrCode.popupBlocked", "Popup bloccato: consenti l'apertura per stampare l'etichetta"));
 
     win.document.write(labelHtml([{ device, dataUrl }]));
     win.document.close();
@@ -63,14 +65,14 @@ export function QrCodeDialog({ device, onClose }: Props) {
     <Modal
       open={true}
       onClose={onClose}
-      title="QR dispositivo"
+      title={t("qrCode.title", "QR dispositivo")}
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={downloadPng} disabled={!dataUrl}>
-            <Download className="w-3 h-3" /> Scarica PNG
+            <Download className="w-3 h-3" /> {t("qrCode.downloadPng", "Scarica PNG")}
           </button>
           <button className="pc-btn pc-btn-primary" onClick={printLabel} disabled={!dataUrl}>
-            <Printer className="w-3 h-3" /> Stampa etichetta
+            <Printer className="w-3 h-3" /> {t("qrCode.printLabel", "Stampa etichetta")}
           </button>
         </>
       }
@@ -89,7 +91,7 @@ export function QrCodeDialog({ device, onClose }: Props) {
               className="h-64 w-64"
             />
           ) : (
-            <span className="text-sm text-text3">Generazione...</span>
+            <span className="text-sm text-text3">{t("qrCode.generating", "Generazione...")}</span>
           )}
         </div>
         <div className="text-center">

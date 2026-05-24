@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
@@ -115,15 +116,16 @@ interface AssignmentRow {
 
 type DetailTab = "detail" | "checklists" | "notes" | "history" | "attachments";
 
-const DETAIL_TABS: { key: DetailTab; label: string; icon: typeof ListChecks }[] = [
-  { key: "detail", label: "Dettaglio", icon: ListChecks },
-  { key: "checklists", label: "Checklist", icon: CheckCircle2 },
-  { key: "notes", label: "Note", icon: GitBranch },
-  { key: "history", label: "Storico", icon: History },
-  { key: "attachments", label: "Allegati", icon: Paperclip },
+const DETAIL_TABS: { key: DetailTab; labelKey: string; icon: typeof ListChecks }[] = [
+  { key: "detail", labelKey: "detail.tabs.detail", icon: ListChecks },
+  { key: "checklists", labelKey: "detail.tabs.checklists", icon: CheckCircle2 },
+  { key: "notes", labelKey: "detail.tabs.notes", icon: GitBranch },
+  { key: "history", labelKey: "detail.tabs.history", icon: History },
+  { key: "attachments", labelKey: "detail.tabs.attachments", icon: Paperclip },
 ];
 
 export function TicketDetailModal() {
+  const { t } = useTranslation("tickets");
   const { id, close } = useTicketDetail();
   const { canEdit, user, session, isAdmin } = useAuth();
   const notify = useServerFn(createNotification);
@@ -261,7 +263,7 @@ export function TicketDetailModal() {
     try {
       await updateTicket.mutateAsync({ id: ticket.id, patch: dbPatch });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Errore aggiornamento";
+      const message = err instanceof Error ? err.message : t("detail.toasts.updateError", "Errore aggiornamento");
       toast.error(message);
       throw err;
     }
@@ -276,7 +278,7 @@ export function TicketDetailModal() {
       cost_notes: costDraft.cost_notes.trim() || null,
     };
     await update(patch as any);
-    toast.success("Costi ticket aggiornati");
+    toast.success(t("detail.toasts.costsSaved", "Costi ticket aggiornati"));
   }
 
   function useTrackedHoursAsBillable() {
@@ -287,14 +289,14 @@ export function TicketDetailModal() {
   async function saveTitle() {
     if (!canEdit) return;
     const nextTitle = titleDraft.trim();
-    if (!nextTitle) return toast.error("Il titolo non puo' essere vuoto");
+    if (!nextTitle) return toast.error(t("detail.toasts.titleEmpty", "Il titolo non può essere vuoto"));
     await update({ model: nextTitle } as any);
     setEditingTitle(false);
-    toast.success("Titolo aggiornato");
+    toast.success(t("detail.toasts.titleSaved", "Titolo aggiornato"));
   }
 
   async function toggleItem(itemId: string) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
     const cur = { ...(ticket.checklist || {}) } as ChecklistState;
     cur[currentChecklistTab] = {
       ...(cur[currentChecklistTab] || {}),
@@ -332,7 +334,7 @@ export function TicketDetailModal() {
   }
 
   async function advance(next: TicketStatus, auto = false) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
     const previousStatus = ticket.status;
     await update({ status: next });
     try {
@@ -341,11 +343,11 @@ export function TicketDetailModal() {
         to_status: next,
         changed_by: user!.id,
         changed_at: new Date().toISOString(),
-        note: auto ? "Avanzamento automatico via checklist" : null,
+        note: auto ? t("detail.toasts.autoAdvancement", "Avanzamento automatico via checklist") : null,
       });
       await insertActivity({
         type: auto ? "auto" : "user",
-        message: `${ticket.ticket_code}: stato -> "${STATUS_META[next].label}"${auto ? " automaticamente" : ""}`,
+        message: `${ticket.ticket_code}: ${t("detail.statusChange", "Cambio stato")} -> "${STATUS_META[next].label}"${auto ? ` ${t("detail.toasts.autoAdvancement", "automaticamente")}` : ""}`,
         ticket_id: ticket.id,
         actor_id: user!.id,
       });
@@ -361,14 +363,14 @@ export function TicketDetailModal() {
             userId: ticket.assignee_id,
             type: "ticket_status_changed",
             title: `${ticket.ticket_code}: ${STATUS_META[next].label}`,
-            body: auto ? "Stato avanzato automaticamente" : "Stato aggiornato manualmente",
+            body: auto ? t("detail.toasts.autoAdvancement", "Stato avanzato automaticamente") : t("detail.toasts.manualUpdate", "Stato aggiornato manualmente"),
             payload: { ticket_id: ticket.id, status: next },
             link: "/tickets",
           },
         },
       });
     }
-    toast.success(`Stato aggiornato: ${STATUS_META[next].label}`);
+    toast.success(t("detail.toasts.statusUpdated", { label: STATUS_META[next].label, defaultValue: "Stato aggiornato: {{label}}" }));
 
     if (next === "completed" && session?.access_token) {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
@@ -381,18 +383,18 @@ export function TicketDetailModal() {
         },
       }).catch((err) => {
         console.error("Failed to complete ticket:", err);
-        toast.error("Ticket completato, ma errore invio email/verbale");
+        toast.error(t("detail.toasts.completeEmailError", "Ticket completato, ma errore invio email/verbale"));
       });
     }
   }
 
   async function changeAssignee(nextAssigneeId: string) {
     await update({ assignee_id: nextAssigneeId || null } as any);
-    toast.success(nextAssigneeId ? "Tecnico riassegnato" : "Assegnazione rimossa");
+    toast.success(nextAssigneeId ? t("detail.toasts.techReassigned", "Tecnico riassegnato") : t("detail.toasts.assignmentRemoved", "Assegnazione rimossa"));
   }
 
   async function exportCompletionPdf(template: "customer" | "technical") {
-    if (!session?.access_token || !user) return toast.error("Sessione non disponibile");
+    if (!session?.access_token || !user) return toast.error(t("detail.toasts.sessionNotAvailable", "Sessione non disponibile"));
     try {
       const { completeTicketServer } = await import("@/lib/ticket-completion");
       const result = await completeTicketServer({
@@ -405,27 +407,27 @@ export function TicketDetailModal() {
         },
       });
       if (!result.success || !result.pdfUrl)
-        throw new Error(result.error || "Export PDF non riuscito");
+        throw new Error(result.error || t("detail.toasts.pdfExportError", "Export PDF non riuscito"));
       window.open(result.pdfUrl, "_blank", "noopener,noreferrer");
       toast.success(
-        template === "customer" ? "Verbale cliente generato" : "Report tecnico generato",
+        template === "customer" ? t("detail.toasts.customerReportGenerated", "Verbale cliente generato") : t("detail.toasts.technicalReportGenerated", "Report tecnico generato"),
       );
     } catch (err) {
       console.error("Failed to export completion PDF:", err);
-      toast.error(err instanceof Error ? err.message : "Errore export PDF");
+      toast.error(err instanceof Error ? err.message : t("detail.toasts.pdfExportError", "Errore export PDF"));
     }
   }
 
   async function changeDevice(nextDeviceId: string | null) {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
     await update({ device_id: nextDeviceId } as any);
     setDeviceSearch("");
-    toast.success(nextDeviceId ? "Dispositivo collegato" : "Dispositivo scollegato");
+    toast.success(nextDeviceId ? t("detail.toasts.deviceConnected", "Dispositivo collegato") : t("detail.toasts.deviceDisconnected", "Dispositivo scollegato"));
   }
 
   async function attachChecklistTemplate() {
-    if (!canEdit || !user) return toast.error("Permessi insufficienti");
-    if (!checklistTemplateToAttach) return toast.error("Seleziona un template checklist");
+    if (!canEdit || !user) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (!checklistTemplateToAttach) return toast.error(t("detail.toasts.selectTemplate", "Seleziona un template checklist"));
     const template = (checklistTemplatesQuery.data ?? []).find(
       (item: any) => item.id === checklistTemplateToAttach,
     );
@@ -470,9 +472,9 @@ export function TicketDetailModal() {
         );
       }
       setChecklistTemplateToAttach("");
-      toast.success("Checklist collegata al ticket");
+      toast.success(t("detail.toasts.checklistLinked", "Checklist collegata al ticket"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore collegamento checklist");
+      toast.error(err?.message || t("detail.toasts.checklistLinkError", "Errore collegamento checklist"));
     }
   }
 
@@ -482,12 +484,12 @@ export function TicketDetailModal() {
     itemId: string,
     value: string | null,
   ) {
-    if (!canEdit || !user) return toast.error("Permessi insufficienti");
-    if (instance.status === "completed") return toast.error("Checklist gia' completata");
+    if (!canEdit || !user) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (instance.status === "completed") return toast.error(t("detail.toasts.checklistAlreadyCompleted", "Checklist già completata"));
     const assignedTo =
       instance.section_assignments?.[sectionKey] || instance.structure[sectionKey]?.assigned_to;
     if (assignedTo && assignedTo !== user.id && !isAdmin) {
-      return toast.error("Questa sezione e' assegnata a un altro tecnico");
+      return toast.error(t("detail.toasts.checklistSectionAssigned", "Questa sezione è assegnata a un altro tecnico"));
     }
     try {
       await upsertChecklistResponse.mutateAsync({
@@ -497,19 +499,19 @@ export function TicketDetailModal() {
         compiledBy: user.id,
       });
     } catch (err: any) {
-      toast.error(err?.message || "Errore salvataggio risposta");
+      toast.error(err?.message || t("detail.toasts.responseSaveError", "Errore salvataggio risposta"));
     }
   }
 
   async function completeChecklist(instance: TicketChecklistInstanceRow) {
-    if (!canEdit || !user) return toast.error("Permessi insufficienti");
+    if (!canEdit || !user) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
     const progress = computeInstanceProgress(instance);
     if (progress.requiredMissing > 0) {
-      return toast.error(`Compila prima ${progress.requiredMissing} elementi obbligatori`);
+      return toast.error(t("detail.toasts.filledRequired", { count: progress.requiredMissing, defaultValue: "Compila prima {{count}} elementi obbligatori" }));
     }
-    if (!window.confirm("Confermo di aver verificato tutti gli elementi della checklist.")) return;
+    if (!window.confirm(t("detail.section.confirmChecklist", "Confermo di aver verificato tutti gli elementi della checklist."))) return;
     const signatureName =
-      window.prompt("Firma opzionale: nome da mostrare nel report PDF", "") || null;
+      window.prompt(t("detail.section.optionalSignature", "Firma opzionale: nome da mostrare nel report PDF"), "") || null;
     try {
       const completed = await completeChecklistInstance.mutateAsync({
         instanceId: instance.id,
@@ -518,7 +520,7 @@ export function TicketDetailModal() {
       });
       await insertActivity({
         type: "user",
-        message: `${ticket.ticket_code}: checklist "${completed.title}" completata`,
+        message: `${ticket.ticket_code}: ${t("detail.section.completed", "completata")} "${completed.title}"`,
         ticket_id: ticket.id,
         actor_id: user.id,
         entity_type: "ticket_checklist_instance",
@@ -531,7 +533,7 @@ export function TicketDetailModal() {
             notification: {
               userId: ticket.assignee_id,
               type: "checklist_completed",
-              title: `${ticket.ticket_code}: checklist completata`,
+              title: `${ticket.ticket_code}: ${t("detail.section.completed", "checklist completata")}`,
               body: completed.title,
               payload: { ticket_id: ticket.id, checklist_instance_id: completed.id },
               link: "/tickets",
@@ -543,9 +545,9 @@ export function TicketDetailModal() {
         data: { ticketId: ticket.id, checklistName: completed.title },
       }).catch((err) => console.error("Failed to send checklist completed email:", err));
       qc.invalidateQueries({ queryKey: [...QUERY_KEYS.ticket(ticket.id), "status-history"] });
-      toast.success("Checklist completata");
+      toast.success(t("detail.toasts.checklistCompleted", "Checklist completata"));
     } catch (err: any) {
-      toast.error(err?.message || "Errore completamento checklist");
+      toast.error(err?.message || t("detail.toasts.checklistCompleteError", "Errore completamento checklist"));
     }
   }
 
@@ -572,21 +574,21 @@ export function TicketDetailModal() {
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Ticket duplicato");
+      toast.success(t("detail.toasts.ticketDuplicated", "Ticket duplicato"));
       qc.invalidateQueries({ queryKey: QUERY_KEYS.tickets });
       if (data?.id) close();
     } catch (err: any) {
-      toast.error(err?.message || "Errore duplicazione ticket");
+      toast.error(err?.message || t("detail.toasts.duplicateError", "Errore duplicazione ticket"));
     }
   }
 
   async function del() {
     try {
       await deleteTicket.mutateAsync(ticket.id);
-      toast.success("Ticket eliminato");
+      toast.success(t("detail.toasts.ticketDeleted", "Ticket eliminato"));
       close();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Errore cancellazione";
+      const message = err instanceof Error ? err.message : t("detail.toasts.deleteError", "Errore cancellazione");
       toast.error(message);
     }
   }
@@ -604,15 +606,15 @@ export function TicketDetailModal() {
               className="pc-btn pc-btn-danger pc-btn-sm mr-auto"
               onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 className="w-3 h-3" /> Elimina
+              <Trash2 className="w-3 h-3" /> {t("detail.btn.delete", "Elimina")}
             </button>
           )}
           <button className="pc-btn pc-btn-ghost" onClick={close}>
-            Chiudi
+            {t("detail.btn.close", "Chiudi")}
           </button>
           {canEdit && meta.next && (
             <button className="pc-btn pc-btn-primary" onClick={() => advance(meta.next!)}>
-              Avanza {"->"} {STATUS_META[meta.next].label}
+              {t("detail.btn.advanceTo", { label: STATUS_META[meta.next].label, defaultValue: "Avanzo -> {{label}}" })}
             </button>
           )}
         </>
@@ -628,8 +630,8 @@ export function TicketDetailModal() {
               <span className="font-mono text-[12px] font-bold text-accent">
                 {ticket.ticket_code}
               </span>
-              <span className="text-[11px] text-text3">Aperto {openedAgo}</span>
-              <span className="text-[11px] text-text3">Ore lavorate: {totalWorked}</span>
+              <span className="text-[11px] text-text3">{t("detail.subtitle.openedAgo", { time: openedAgo })}</span>
+              <span className="text-[11px] text-text3">{t("detail.subtitle.workedHours", { hours: totalWorked })}</span>
             </div>
             {editingTitle ? (
               <div className="flex gap-2">
@@ -640,7 +642,7 @@ export function TicketDetailModal() {
                   onKeyDown={(event) => event.key === "Enter" && void saveTitle()}
                 />
                 <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={saveTitle}>
-                  Salva
+                  {t("detail.btn.saveTitle", "Salva")}
                 </button>
               </div>
             ) : (
@@ -675,7 +677,7 @@ export function TicketDetailModal() {
               onClick={() => advance("completed")}
               disabled={!canEdit || ticket.status === "completed"}
             >
-              <CheckCircle2 className="h-3 w-3" /> Chiudi ticket
+              <CheckCircle2 className="h-3 w-3" /> {t("detail.btn.closeTicket", "Chiudi ticket")}
             </button>
             <select
               className="pc-input h-8 min-w-[150px] w-auto px-3 py-0 text-[12px] leading-none"
@@ -683,7 +685,7 @@ export function TicketDetailModal() {
               disabled={!canEdit}
               onChange={(event) => changeAssignee(event.target.value)}
             >
-              <option value="">Riassegna...</option>
+              <option value="">{t("detail.btn.reassign", "Riassegna...")}</option>
               {technicians.map((tech) => (
                 <option key={tech.id} value={tech.id}>
                   {tech.full_name}
@@ -695,36 +697,36 @@ export function TicketDetailModal() {
               onClick={duplicateTicket}
               disabled={!canEdit}
             >
-              <Copy className="h-3 w-3" /> Duplica
+              <Copy className="h-3 w-3" /> {t("detail.btn.duplicate", "Duplica")}
             </button>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => exportCompletionPdf("customer")}
             >
-              <Printer className="h-3 w-3" /> PDF cliente
+              <Printer className="h-3 w-3" /> {t("detail.btn.customerPdf", "PDF cliente")}
             </button>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => exportCompletionPdf("technical")}
             >
-              <Printer className="h-3 w-3" /> PDF tecnico
+              <Printer className="h-3 w-3" /> {t("detail.btn.technicalPdf", "PDF tecnico")}
             </button>
           </div>
         </div>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-4">
-        <Metric label="Stato" value={<StatusBadge status={ticket.status} />} />
-        <Metric label="Priorita" value={PRIORITY_LABEL[ticket.priority]} />
+        <Metric label={t("detail.metrics.status", "Stato")} value={<StatusBadge status={ticket.status} />} />
+        <Metric label={t("detail.metrics.priority", "Priorità")} value={PRIORITY_LABEL[ticket.priority]} />
         <Metric
-          label="Checklist"
+          label={t("detail.metrics.checklist", "Checklist")}
           value={`${overallProgress.done}/${overallProgress.total}`}
           hint={`${overallProgress.pct}%`}
         />
         <Metric
-          label="SLA"
+          label={t("detail.metrics.sla", "SLA")}
           value={
-            sla.status === "overdue" ? "Violato" : sla.status === "warning" ? "In scadenza" : "OK"
+            sla.status === "overdue" ? t("detail.sla.violated", "Violato") : sla.status === "warning" ? t("detail.sla.expiring", "In scadenza") : t("detail.sla.ok", "OK")
           }
           hint={formatSlaCountdown(sla.deadline)}
         />
@@ -732,7 +734,7 @@ export function TicketDetailModal() {
 
       <div className="mb-4 border-b" style={{ borderColor: "var(--border)" }}>
         <div className="flex flex-wrap gap-1">
-          {DETAIL_TABS.map(({ key, label, icon: Icon }) => {
+          {DETAIL_TABS.map(({ key, labelKey, icon: Icon }) => {
             const active = mainTab === key;
             return (
               <button
@@ -744,7 +746,7 @@ export function TicketDetailModal() {
                   borderColor: active ? "var(--accent)" : "transparent",
                 }}
               >
-                <Icon className="h-3.5 w-3.5" /> {label}
+                <Icon className="h-3.5 w-3.5" /> {t(labelKey)}
               </button>
             );
           })}
@@ -755,25 +757,25 @@ export function TicketDetailModal() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-[1.4fr_.9fr]">
             <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
-              <h3 className="mb-3 text-[13px] font-bold">Informazioni ticket</h3>
+              <h3 className="mb-3 text-[13px] font-bold">{t("detail.section.ticketInfo", "Informazioni ticket")}</h3>
               <div className="grid grid-cols-2 gap-3">
                 <Info
-                  label="Descrizione"
+                  label={t("detail.section.description", "Descrizione")}
                   value={<span className="whitespace-pre-line">{ticket.notes || "-"}</span>}
                 />
-                <Info label="Tipo" value={<TicketTypeBadge type={ticket.ticket_type} />} />
-                <Info label="Cliente" value={ticket.client} />
-                <Info label="Richiedente" value={ticket.requester} />
-                <Info label="Data apertura" value={fmtDate(ticket.created_at)} />
-                <Info label="Prima risposta" value={fmtDateTime(ticket.sla_response_at)} />
+                <Info label={t("detail.section.type", "Tipo")} value={<TicketTypeBadge type={ticket.ticket_type} />} />
+                <Info label={t("detail.section.client", "Cliente")} value={ticket.client} />
+                <Info label={t("detail.section.requester", "Richiedente")} value={ticket.requester} />
+                <Info label={t("detail.section.openDate", "Data apertura")} value={fmtDate(ticket.created_at)} />
+                <Info label={t("detail.section.firstResponse", "Prima risposta")} value={fmtDateTime(ticket.sla_response_at)} />
                 <Info
-                  label="Software"
+                  label={t("detail.section.software", "Software")}
                   value={<span className="text-xs">{ticket.software || "-"}</span>}
                 />
               </div>
             </section>
             <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
-              <h3 className="mb-3 text-[13px] font-bold">Tecnico e azioni</h3>
+              <h3 className="mb-3 text-[13px] font-bold">{t("detail.section.technicianActions", "Tecnico e azioni")}</h3>
               <div className="mb-3 rounded-lg p-3" style={{ background: "var(--surface2)" }}>
                 <AssigneeChip
                   initials={ticket.assignee?.initials}
@@ -785,19 +787,19 @@ export function TicketDetailModal() {
                   className="pc-btn pc-btn-primary pc-btn-sm"
                   onClick={() => setMainTab("notes")}
                 >
-                  <GitBranch className="h-3 w-3" /> Aggiungi nota
+                  <GitBranch className="h-3 w-3" /> {t("detail.section.addNote", "Aggiungi nota")}
                 </button>
                 <button
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                   onClick={() => setMainTab("attachments")}
                 >
-                  <Paperclip className="h-3 w-3" /> Carica allegato
+                  <Paperclip className="h-3 w-3" /> {t("detail.section.uploadAttachment", "Carica allegato")}
                 </button>
                 <button
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                   onClick={() => setMainTab("history")}
                 >
-                  <History className="h-3 w-3" /> Vedi storico
+                  <History className="h-3 w-3" /> {t("detail.section.viewHistory", "Vedi storico")}
                 </button>
               </div>
             </section>
@@ -805,9 +807,9 @@ export function TicketDetailModal() {
 
           <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-[13px] font-bold">Dispositivi collegati</h3>
+              <h3 className="text-[13px] font-bold">{t("detail.section.connectedDevices", "Dispositivi collegati")}</h3>
               <span className="text-[11px] text-text3">
-                {ticket.device_id ? "1 dispositivo attivo" : "Nessun dispositivo"}
+                {ticket.device_id ? t("detail.device.activeCount", "1 dispositivo attivo") : t("detail.device.noDevice", "Nessun dispositivo")}
               </span>
             </div>
             {ticket.device_id && (
@@ -828,7 +830,7 @@ export function TicketDetailModal() {
                     className="pc-btn pc-btn-ghost pc-btn-sm ml-auto"
                     onClick={() => changeDevice(null)}
                   >
-                    <X className="h-3 w-3" /> Scollega
+                    <X className="h-3 w-3" /> {t("detail.btn.unlink", "Scollega")}
                   </button>
                 )}
               </div>
@@ -839,16 +841,16 @@ export function TicketDetailModal() {
                   className="pc-input w-full"
                   value={deviceSearch}
                   onChange={(event) => setDeviceSearch(event.target.value)}
-                  placeholder="Collega dispositivo: cerca per nome, seriale o assegnatario..."
+                  placeholder={t("detail.section.searchDevice", "Collega dispositivo: cerca per nome, seriale o assegnatario...")}
                 />
                 {deviceSearch && (
                   <div
                     className="absolute left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg"
                     style={{ borderColor: "var(--border)" }}
                   >
-                    {deviceLoading && <div className="p-3 text-[12px] text-text3">Ricerca...</div>}
+                    {deviceLoading && <div className="p-3 text-[12px] text-text3">{t("detail.section.searching", "Ricerca...")}</div>}
                     {!deviceLoading && deviceOptions.length === 0 && (
-                      <div className="p-3 text-[12px] text-text3">Nessun dispositivo trovato</div>
+                      <div className="p-3 text-[12px] text-text3">{t("detail.section.noDeviceFound", "Nessun dispositivo trovato")}</div>
                     )}
                     {deviceOptions.map((device) => (
                       <button
@@ -876,15 +878,14 @@ export function TicketDetailModal() {
           <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-[13px] font-bold">Costi e fatturazione</h3>
+                <h3 className="text-[13px] font-bold">{t("detail.section.costsBilling", "Costi e fatturazione")}</h3>
                 <p className="text-[11px] text-text3">
-                  Manodopera: {formatMoney(ticket.labor_cost)} · Materiali:{" "}
-                  {formatMoney(ticket.material_cost)} · Totale: {formatMoney(ticket.total_cost)}
+                  {formatMoney(ticket.labor_cost)} · {formatMoney(ticket.material_cost)} · {formatMoney(ticket.total_cost)}
                 </p>
               </div>
               {canEdit && (
                 <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={saveCosts}>
-                  Salva costi
+                  {t("detail.btn.saveCosts", "Salva costi")}
                 </button>
               )}
             </div>
@@ -896,16 +897,19 @@ export function TicketDetailModal() {
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="text-[12px] font-bold text-text2">
-                      Bundle attivo: {bundleInfoQuery.data.assignment.bundle.name}
+                      {t("detail.section.bundleActive", { name: bundleInfoQuery.data.assignment.bundle.name, defaultValue: "Bundle attivo: {{name}}" })}
                     </div>
                     <div className="text-[11px] text-text3">
-                      SLA risposta {bundleInfoQuery.data.assignment.bundle.sla_response_hours}h ·
-                      risoluzione {bundleInfoQuery.data.assignment.bundle.sla_resolution_hours}h ·
-                      extra ticket {formatBundleMoney(Number(ticket.bundle_extra_amount ?? 0))}
+                      {t("detail.section.bundleSla", {
+                        response: bundleInfoQuery.data.assignment.bundle.sla_response_hours,
+                        resolution: bundleInfoQuery.data.assignment.bundle.sla_resolution_hours,
+                        cost: formatBundleMoney(Number(ticket.bundle_extra_amount ?? 0)),
+                        defaultValue: "SLA risposta {{response}}h · risoluzione {{resolution}}h · extra ticket {{cost}}"
+                      })}
                     </div>
                   </div>
                   <span className="rounded-full bg-accent/10 px-2 py-1 text-[11px] font-bold text-accent">
-                    {formatBundleHours(ticket.bundle_extra_hours ?? 0)} extra
+                    {t("detail.section.extraHours", { hours: formatBundleHours(ticket.bundle_extra_hours ?? 0), defaultValue: "{{hours}} extra" })}
                   </span>
                 </div>
                 <BundleUsageBar
@@ -915,13 +919,13 @@ export function TicketDetailModal() {
                     bundleInfoQuery.data.assignment.custom_included_hours ??
                     bundleInfoQuery.data.assignment.bundle.included_hours
                   }
-                  label="Consumo ore bundle cliente"
+                  label={t("detail.section.hourlyConsumption", "Consumo ore bundle cliente")}
                 />
               </div>
             )}
             <div className="grid gap-3 md:grid-cols-4">
               <label className="text-[12px] font-semibold text-text2">
-                Ore fatturabili
+                {t("detail.section.billableHours", "Ore fatturabili")}
                 <input
                   className="pc-input mt-1"
                   type="number"
@@ -935,7 +939,7 @@ export function TicketDetailModal() {
                 />
               </label>
               <label className="text-[12px] font-semibold text-text2">
-                Tariffa oraria
+                {t("detail.section.hourlyRate", "Tariffa oraria")}
                 <input
                   className="pc-input mt-1"
                   type="number"
@@ -949,7 +953,7 @@ export function TicketDetailModal() {
                 />
               </label>
               <label className="text-[12px] font-semibold text-text2">
-                Materiali / ricambi
+                {t("detail.section.materials", "Materiali / ricambi")}
                 <input
                   className="pc-input mt-1"
                   type="number"
@@ -964,7 +968,7 @@ export function TicketDetailModal() {
               </label>
               <div className="rounded-lg bg-surface2 p-3">
                 <div className="text-[10px] font-bold uppercase tracking-wide text-text3">
-                  Totale stimato
+                  {t("detail.section.estimatedTotal", "Totale stimato")}
                 </div>
                 <div className="mt-1 text-lg font-bold">
                   {formatMoney(
@@ -978,12 +982,12 @@ export function TicketDetailModal() {
                   disabled={!canEdit}
                   onClick={useTrackedHoursAsBillable}
                 >
-                  Usa ore tracciate ({totalWorked})
+                  {t("detail.btn.useTrackedHours", { hours: totalWorked, defaultValue: "Usa ore tracciate ({{hours}})" })}
                 </button>
               </div>
             </div>
             <label className="mt-3 block text-[12px] font-semibold text-text2">
-              Note costi
+              {t("detail.section.costNotes", "Note costi")}
               <textarea
                 className="pc-input mt-1 min-h-[70px]"
                 disabled={!canEdit}
@@ -991,7 +995,7 @@ export function TicketDetailModal() {
                 onChange={(event) =>
                   setCostDraft((current) => ({ ...current, cost_notes: event.target.value }))
                 }
-                placeholder="Dettagli materiali, ricambi, accordi di fatturazione..."
+                placeholder={t("detail.section.costNotesPlaceholder", "Dettagli materiali, ricambi, accordi di fatturazione...")}
               />
             </label>
           </section>
@@ -999,9 +1003,9 @@ export function TicketDetailModal() {
           <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-[13px] font-bold">Checklist inline</h3>
+                <h3 className="text-[13px] font-bold">{t("detail.section.inlineChecklist", "Checklist inline")}</h3>
                 <p className="text-[11px] text-text3">
-                  {overallProgress.done}/{overallProgress.total} elementi completati
+                  {t("detail.section.itemsCompleted", { done: overallProgress.done, total: overallProgress.total, defaultValue: "{{done}}/{{total}} elementi completati" })}
                 </p>
               </div>
               <div
@@ -1070,7 +1074,7 @@ export function TicketDetailModal() {
               })}
               {!struct[currentChecklistTab]?.items?.length && (
                 <div className="py-6 text-center text-[12px] text-text3">
-                  Nessuna voce in questa sezione
+                  {t("detail.section.noItems", "Nessuna voce in questa sezione")}
                 </div>
               )}
             </div>
@@ -1080,7 +1084,6 @@ export function TicketDetailModal() {
 
       {mainTab === "checklists" && (
         <TicketChecklistPanel
-          ticket={ticket}
           instances={(checklistInstancesQuery.data ?? []) as TicketChecklistInstanceRow[]}
           instancesLoading={checklistInstancesQuery.isLoading}
           templates={(checklistTemplatesQuery.data ?? []) as any[]}
@@ -1115,10 +1118,10 @@ export function TicketDetailModal() {
 
       <DestructiveConfirmDialog
         open={deleteOpen}
-        title="Eliminare questo ticket?"
-        description={`Il ticket ${ticket.ticket_code} verra' rimosso definitivamente. L'azione non puo' essere annullata.`}
-        confirmLabel="Elimina ticket"
-        loadingLabel="Eliminazione..."
+        title={t("detail.deleteTitle", "Eliminare questo ticket?")}
+        description={t("detail.deleteDescription", { code: ticket.ticket_code, defaultValue: "Il ticket {{code}} verrà rimosso definitivamente. L'azione non può essere annullata." })}
+        confirmLabel={t("detail.deleteConfirm", "Elimina ticket")}
+        loadingLabel={t("detail.deleteLoading", "Eliminazione...")}
         onOpenChange={setDeleteOpen}
         onConfirm={del}
       />
@@ -1127,7 +1130,6 @@ export function TicketDetailModal() {
 }
 
 function TicketChecklistPanel({
-  ticket,
   instances,
   instancesLoading,
   templates,
@@ -1141,7 +1143,6 @@ function TicketChecklistPanel({
   canEdit,
   isAdmin,
 }: {
-  ticket: TicketRow;
   instances: TicketChecklistInstanceRow[];
   instancesLoading: boolean;
   templates: Array<{ id: string; name: string; is_default?: boolean }>;
@@ -1160,14 +1161,15 @@ function TicketChecklistPanel({
   canEdit: boolean;
   isAdmin: boolean;
 }) {
+  const { t } = useTranslation("tickets");
   return (
     <div className="space-y-4">
       <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-[13px] font-bold">Checklist collegate</h3>
+            <h3 className="text-[13px] font-bold">{t("detail.section.linkedChecklists", "Checklist collegate")}</h3>
             <p className="text-[11px] text-text3">
-              Le checklist vengono istanziate come snapshot indipendente dal template.
+              {t("detail.section.linkedChecklistsDesc", "Le checklist vengono istanziate come snapshot indipendente dal template.")}
             </p>
           </div>
           {canEdit && (
@@ -1177,11 +1179,11 @@ function TicketChecklistPanel({
                 value={selectedTemplateId}
                 onChange={(event) => onSelectedTemplateIdChange(event.target.value)}
               >
-                <option value="">— Collega checklist —</option>
+                <option value="">{t("detail.btn.attachChecklist", "— Collega checklist —")}</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>
                     {template.name}
-                    {template.is_default ? " (predefinito)" : ""}
+                    {template.is_default ? t("createTicket.templateDefault", " (predefinito)") : ""}
                   </option>
                 ))}
               </select>
@@ -1190,18 +1192,18 @@ function TicketChecklistPanel({
                 disabled={!selectedTemplateId}
                 onClick={onAttachTemplate}
               >
-                Collega
+                {t("detail.btn.addChecklist", "Collega")}
               </button>
             </div>
           )}
         </div>
-        {instancesLoading && <div className="text-[12px] text-text3">Caricamento checklist...</div>}
+        {instancesLoading && <div className="text-[12px] text-text3">{t("detail.section.checklistLoading", "Caricamento checklist...")}</div>}
         {!instancesLoading && !instances.length && (
           <div
             className="rounded-lg border p-6 text-center text-[12px] text-text3"
             style={{ borderColor: "var(--border)" }}
           >
-            Nessuna checklist collegata a questo ticket.
+            {t("detail.section.noChecklistsLinked", "Nessuna checklist collegata a questo ticket.")}
           </div>
         )}
         <div className="space-y-3">
@@ -1226,14 +1228,14 @@ function TicketChecklistPanel({
                         }}
                       >
                         {instance.status === "completed"
-                          ? "Completata"
+                          ? t("detail.section.completed", "Completata")
                           : instance.status === "in_progress"
-                            ? "In corso"
-                            : "Da compilare"}
+                            ? t("detail.section.inProgress", "In corso")
+                            : t("detail.section.toFill", "Da compilare")}
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-text3">
-                      Ticket {ticket.ticket_code} · {progress.done}/{progress.total} elementi ·{" "}
+                      {t("detail.section.itemsCount", { done: progress.done, total: progress.total, defaultValue: "{{done}}/{{total}} elementi" })} ·{" "}
                       {progress.pct}%
                     </div>
                   </div>
@@ -1251,7 +1253,7 @@ function TicketChecklistPanel({
                       className="pc-btn pc-btn-ghost pc-btn-sm"
                       onClick={() => window.print()}
                     >
-                      <Printer className="h-3 w-3" /> Esporta PDF
+                      <Printer className="h-3 w-3" /> {t("detail.btn.exportPdf", "Esporta PDF")}
                     </button>
                     {canEdit && instance.status !== "completed" && (
                       <button
@@ -1259,12 +1261,12 @@ function TicketChecklistPanel({
                         disabled={progress.requiredMissing > 0}
                         title={
                           progress.requiredMissing > 0
-                            ? "Compila prima tutti gli elementi obbligatori"
-                            : "Completa checklist"
+                            ? t("detail.section.fillRequiredItems", "Compila prima tutti gli elementi obbligatori")
+                            : t("detail.section.completeChecklistHint", "Completa checklist")
                         }
                         onClick={() => onComplete(instance)}
                       >
-                        <CheckCircle2 className="h-3 w-3" /> Completa checklist
+                        <CheckCircle2 className="h-3 w-3" /> {t("detail.btn.completeChecklist", "Completa checklist")}
                       </button>
                     )}
                   </div>
@@ -1288,9 +1290,9 @@ function TicketChecklistPanel({
                             <div className="text-[12.5px] font-bold">{section.label}</div>
                             <div className="text-[11px] text-text3">
                               {assignedTech
-                                ? `Assegnata a ${assignedTech.full_name}`
-                                : "Nessun tecnico specifico"}
-                              {sectionLocked ? " · sola lettura per te" : ""}
+                                ? t("detail.section.assignedTo", { name: assignedTech.full_name, defaultValue: "Assegnata a {{name}}" })
+                                : t("detail.section.noTechnicianAssigned", "Nessun tecnico specifico")}
+                              {sectionLocked ? ` · ${t("detail.section.readOnly", "sola lettura per te")}` : ""}
                             </div>
                           </div>
                         </div>
@@ -1319,7 +1321,7 @@ function TicketChecklistPanel({
                           })}
                           {!section.items.length && (
                             <div className="text-[12px] text-text3">
-                              Nessuna voce in questa sezione
+                              {t("detail.section.noItems", "Nessuna voce in questa sezione")}
                             </div>
                           )}
                         </div>
@@ -1332,8 +1334,8 @@ function TicketChecklistPanel({
                     className="mt-3 rounded-lg border p-2 text-[11px] text-text3"
                     style={{ borderColor: "var(--border)" }}
                   >
-                    Completata {fmtDateTime(instance.completed_at)}
-                    {instance.signature_name ? ` · Firma: ${instance.signature_name}` : ""}
+                    {t("detail.section.completedAt", { date: fmtDateTime(instance.completed_at), defaultValue: "Completata {{date}}" })}
+                    {instance.signature_name ? ` · ${t("detail.section.signedBy", { name: instance.signature_name, defaultValue: "Firma: {{name}}" })}` : ""}
                   </div>
                 )}
               </div>
@@ -1360,12 +1362,13 @@ function ChecklistResponseInput({
   compiledByLabel?: string;
   onSave: (value: string | null) => void;
 }) {
+  const { t } = useTranslation("tickets");
   const itemType = item.type || "checkbox";
   const done = isResponseComplete(item, value);
   const commonMeta = response ? (
     <span className="text-[10.5px] text-text3">
-      salvato da {compiledByLabel || response.compiled_by || "utente"} ·{" "}
-      {fmtDateTime(response.compiled_at)}
+      {t("detail.section.savedBy", { name: compiledByLabel || response.compiled_by || "utente", defaultValue: "salvato da {{name}}" })} ·{" "}
+      {t("detail.section.atTime", { date: fmtDateTime(response.compiled_at), defaultValue: "{{date}}" })}
     </span>
   ) : null;
 
@@ -1387,7 +1390,7 @@ function ChecklistResponseInput({
           defaultValue={value}
           disabled={disabled}
           onChange={(event) => onSave(event.target.value)}
-          placeholder={itemType === "number" ? "Valore numerico" : "Risposta"}
+          placeholder={itemType === "number" ? "0" : ""}
         />
       </label>
     );
@@ -1470,14 +1473,15 @@ function Metric({
 }
 
 function TicketHistory({ timeline, loading }: { timeline: TimelineItem[]; loading: boolean }) {
-  if (loading) return <div className="text-[12px] text-text3">Caricamento storico...</div>;
+  const { t } = useTranslation("tickets");
+  if (loading) return <div className="text-[12px] text-text3">{t("detail.relative.loading", "Caricamento")}...</div>;
   if (!timeline.length)
     return (
       <div
         className="rounded-lg border p-6 text-center text-[12px] text-text3"
         style={{ borderColor: "var(--border)" }}
       >
-        Nessun evento storico disponibile
+        {t("detail.section.noHistory", "Nessun evento storico disponibile")}
       </div>
     );
   return (
@@ -1573,11 +1577,11 @@ function formatRelativeTime(value: string) {
   if (!Number.isFinite(created)) return "-";
   const diffMs = Date.now() - created;
   const minutes = Math.max(1, Math.floor(diffMs / 60000));
-  if (minutes < 60) return `${minutes} min fa`;
+  if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ore fa`;
+  if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} giorni fa`;
+  if (days < 30) return `${days}g`;
   const months = Math.floor(days / 30);
-  return `${months} mesi fa`;
+  return `${months}M`;
 }

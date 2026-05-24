@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "title": "Kanban — PCReady",
+    "description": "Kanban board for tickets by preparation status."
+  },
+  "title": "Kanban Board",
+  "subtitle": "Visual management of workflow and tickets.",
+  "wipLimits": "WIP Limits",
+  "setWipLimit": "Set WIP limit for {{column}}",
+  "wipWarning": "Warning: WIP limit exceeded for {{column}}!",
+  "emptyState": "No tickets in this column.",
+  "dragHere": "Drag here",
+  "expandColumn": "Expand {{column}}",
+  "compact": "Compact",
+  "compactTitle": "Compact view — hide empty columns",
+  "syncing": "Syncing…",
+  "ticketCount": "tickets",
+  "swimlanes": "Swim Lanes",
+  "swimlanesHeader": "Technician / Status",
+  "inColumnSince": "In this column for {{time}}",
+  "assignTitle": "Assign",
+  "moveTo": "Move to",
+  "filters": {
+    "allTechs": "All technicians",
+    "myTickets": "Only mine",
+    "unassigned": "Unassigned",
+    "allPriorities": "All priorities",
+    "allTypes": "All types",
+    "allSla": "All SLA",
+    "clear": "Clear filters"
+  },
+  "wipConfig": {
+    "title": "Configure Kanban",
+    "desc": "WIP limits and column background colors. 0 = no limit.",
+    "wipLimitLabel": "WIP Limit",
+    "bgColorLabel": "Background color",
+    "reset": "Reset default",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "bulk": {
+    "selected": "selected",
+    "changeStatus": "Change status...",
+    "reassign": "Reassign...",
+    "priority": "Priority...",
+    "archive": "Archive",
+    "deselect": "Deselect",
+    "shiftClickHint": "Shift+click cards to select",
+    "confirmTitleComplete": "You are about to complete {{count}} tickets",
+    "confirmTitleArchive": "You are about to archive {{count}} tickets",
+    "confirmDesc": "Bulk Kanban operation on tickets: {{preview}}"
+  },
+  "toasts": {
+    "wipLoadError": "Unable to load WIP limits",
+    "techsLoadError": "Unable to load technicians",
+    "wipSaveSuccess": "Kanban configuration saved",
+    "wipSaveError": "Unable to save Kanban configuration",
+    "prioritySuccess": "Priority updated: {{priority}}",
+    "priorityError": "Priority update error",
+    "ticketUpdateError": "Ticket update error",
+    "completeEmailError": "Ticket completed, but error sending email/report",
+    "bulkSuccess": "{{action}}: {{count}} tickets updated",
+    "bulkError": "Bulk operation failed"
+  }
+}

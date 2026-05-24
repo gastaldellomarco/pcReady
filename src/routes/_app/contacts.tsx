@@ -7,6 +7,8 @@ import queries, { type GlobalContactRow } from "@/lib/queries/clients";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import {
   Briefcase,
   Building2,
@@ -29,8 +31,8 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 export const Route = createFileRoute("/_app/contacts")({
   head: () => ({
     meta: [
-      { title: "Referenti - PCReady" },
-      { name: "description", content: "Vista globale dei referenti cliente." },
+      { title: i18n.t("contacts:page.head.title") },
+      { name: "description", content: i18n.t("contacts:page.head.description") },
     ],
   }),
   component: ContactsPage,
@@ -48,6 +50,7 @@ type ContactForm = {
 };
 
 function ContactsPage() {
+  const { t } = useTranslation("contacts");
   const { canEdit, profile, session } = useAuth();
   const canDelete = profile?.role === "admin";
   const canManagePortalAccess = profile?.role === "admin" || profile?.role === "tech";
@@ -149,9 +152,9 @@ function ContactsPage() {
   }
 
   async function saveEdit() {
-    if (!editing || !canEdit) return toast.error("Permessi insufficienti");
-    if (!form.full_name.trim()) return toast.error("Nome referente obbligatorio");
-    if (form.email.trim() && !isValidEmail(form.email)) return toast.error("Email non valida");
+    if (!editing || !canEdit) return toast.error(t("toast.noPermission", "Permessi insufficienti"));
+    if (!form.full_name.trim()) return toast.error(t("toast.nameRequired", "Nome referente obbligatorio"));
+    if (form.email.trim() && !isValidEmail(form.email)) return toast.error(t("toast.invalidEmail", "Email non valida"));
     setBusy(true);
     try {
       if (form.is_primary) {
@@ -177,25 +180,25 @@ function ContactsPage() {
       if (error) throw error;
       setEditing(null);
       await qc.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Referente aggiornato");
+      toast.success(t("toast.contactUpdated", "Referente aggiornato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore salvataggio referente"));
+      toast.error(errorMessage(error, t("toast.saveError", "Errore salvataggio referente")));
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteContact(contact: GlobalContactRow) {
-    if (!canDelete) return toast.error("Solo admin puo' eliminare referenti");
+    if (!canDelete) return toast.error(t("toast.deleteNoPermission", "Solo admin può eliminare referenti"));
     const { error } = await supabase.from("client_contacts").delete().eq("id", contact.id);
     if (error) return toast.error(error.message);
     await qc.invalidateQueries({ queryKey: ["clients"] });
-    toast.success("Referente eliminato");
+    toast.success(t("toast.contactDeleted", "Referente eliminato"));
   }
 
   async function generateContactPortalLink(contact: GlobalContactRow) {
-    if (!session?.access_token) return toast.error("Sessione non valida");
-    if (!canManagePortalAccess) return toast.error("Permessi insufficienti");
+    if (!session?.access_token) return toast.error(t("toast.invalidSession", "Sessione non valida"));
+    if (!canManagePortalAccess) return toast.error(t("toast.noPermission", "Permessi insufficienti"));
     setBusy(true);
     setCopiedPortalLink(false);
     try {
@@ -204,9 +207,9 @@ function ContactsPage() {
       });
       setPortalLink(result);
       await qc.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Link portale generato");
+      toast.success(t("toast.portalLinkGenerated", "Link portale generato"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore generazione link portale"));
+      toast.error(errorMessage(error, t("toast.portalLinkError", "Errore generazione link portale")));
     } finally {
       setBusy(false);
     }
@@ -219,7 +222,7 @@ function ContactsPage() {
       setCopiedPortalLink(true);
       setTimeout(() => setCopiedPortalLink(false), 2000);
     } catch {
-      toast.error("Impossibile copiare il link");
+      toast.error(t("toast.copyLinkError", "Impossibile copiare il link"));
     }
   }
 
@@ -227,9 +230,12 @@ function ContactsPage() {
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd">
         <div>
-          <div className="pc-card-title">Referenti</div>
+          <div className="pc-card-title">{t("page.title", "Referenti")}</div>
           <div className="mt-1 text-sm text-text3">
-            {filteredContacts.length}/{contacts.length} referenti
+            {t("page.contactCount", "{{filtered}}/{{total}} referenti", {
+              filtered: filteredContacts.length,
+              total: contacts.length,
+            })}
           </div>
         </div>
         <Users className="h-5 w-5 text-text3" />
@@ -248,7 +254,7 @@ function ContactsPage() {
             className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
             value={q}
             onChange={(event) => setQ(event.target.value)}
-            placeholder="Cerca nome, azienda, email, telefono, ruolo..."
+            placeholder={t("search.placeholder", "Cerca nome, azienda, email, telefono, ruolo...")}
           />
         </div>
         <select
@@ -256,7 +262,7 @@ function ContactsPage() {
           value={clientFilter}
           onChange={(event) => setClientFilter(event.target.value)}
         >
-          <option value="all">Tutte le aziende</option>
+          <option value="all">{t("filters.allCompanies", "Tutte le aziende")}</option>
           {clients.map((client) => (
             <option key={client.id} value={client.id}>
               {clientName(client)}
@@ -268,7 +274,7 @@ function ContactsPage() {
           value={roleFilter}
           onChange={(event) => setRoleFilter(event.target.value)}
         >
-          <option value="all">Tutti i ruoli</option>
+          <option value="all">{t("filters.allRoles", "Tutti i ruoli")}</option>
           {roles.map((role) => (
             <option key={role} value={role}>
               {role}
@@ -280,7 +286,7 @@ function ContactsPage() {
           value={departmentFilter}
           onChange={(event) => setDepartmentFilter(event.target.value)}
         >
-          <option value="all">Tutti i reparti</option>
+          <option value="all">{t("filters.allDepartments", "Tutti i reparti")}</option>
           {departments.map((department) => (
             <option key={department} value={department}>
               {department}
@@ -292,10 +298,10 @@ function ContactsPage() {
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
         >
-          <option value="all">Tutti gli stati</option>
-          <option value="primary">Referente principale</option>
-          <option value="portalActive">Portale attivo</option>
-          <option value="missingEmail">Senza email</option>
+          <option value="all">{t("filters.allStatuses", "Tutti gli stati")}</option>
+          <option value="primary">{t("filters.primary", "Referente principale")}</option>
+          <option value="portalActive">{t("filters.portalActive", "Portale attivo")}</option>
+          <option value="missingEmail">{t("filters.missingEmail", "Senza email")}</option>
         </select>
       </div>
 
@@ -322,11 +328,11 @@ function ContactsPage() {
               >
                 <Building2 className="h-4 w-4 shrink-0 text-text3" />
                 <span className="truncate text-sm font-bold text-text">
-                  {clientGroupName(group.client)}
+                  {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
                 </span>
               </button>
               <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
-                {group.rows.length} referenti
+                {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
               </span>
             </div>
             <div className="grid gap-3 p-3 xl:grid-cols-2">
@@ -357,7 +363,7 @@ function ContactsPage() {
             className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
             style={{ borderColor: "var(--border)" }}
           >
-            Nessun referente trovato con i filtri correnti.
+            {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
           </div>
         )}
       </div>
@@ -379,14 +385,17 @@ function ContactsPage() {
       />
       <DestructiveConfirmDialog
         open={!!deleteTarget}
-        title="Eliminare questo referente?"
+        title={t("deleteDialog.title", "Eliminare questo referente?")}
         description={
           deleteTarget
-            ? `Il referente "${contactLabel(deleteTarget)}" verra' rimosso da ${deleteTarget.client ? clientName(deleteTarget.client) : "questo cliente"}. L'azione non puo' essere annullata.`
-            : "Il referente verra' rimosso dal cliente. L'azione non puo' essere annullata."
+            ? t("deleteDialog.descriptionWithName", 'Il referente "{{name}}" verrà rimosso da {{client}}. L\'azione non può essere annullata.', {
+                name: contactLabel(deleteTarget),
+                client: deleteTarget.client ? clientName(deleteTarget.client) : t("deleteDialog.thisClient", "questo cliente"),
+              })
+            : t("deleteDialog.description", "Il referente verrà rimosso dal cliente. L'azione non può essere annullata.")
         }
-        confirmLabel="Elimina referente"
-        loadingLabel="Eliminazione..."
+        confirmLabel={t("deleteDialog.confirmLabel", "Elimina referente")}
+        loadingLabel={t("deleteDialog.loadingLabel", "Eliminazione...")}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         onConfirm={async () => {
           if (deleteTarget) await deleteContact(deleteTarget);
@@ -417,7 +426,8 @@ function GlobalContactCard({
   onGeneratePortalLink: () => void;
   onDelete: () => void;
 }) {
-  const name = contactLabel(contact) || "Referente";
+  const { t } = useTranslation("contacts");
+  const name = contactLabel(contact) || t("contact.defaultName", "Referente");
 
   return (
     <div
@@ -438,7 +448,7 @@ function GlobalContactCard({
             </button>
             {contact.is_primary && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warn-bg px-2 py-0.5 text-[10px] font-bold text-warn">
-                <Star className="h-3 w-3" /> Principale
+                <Star className="h-3 w-3" /> {t("contact.primaryBadge", "Principale")}
               </span>
             )}
             <PortalBadge active={contact.portal_active} />
@@ -446,16 +456,16 @@ function GlobalContactCard({
           <button
             className="mt-1 inline-flex max-w-full items-center gap-1 text-left text-[12px] font-semibold text-text2 hover:text-accent"
             onClick={onOpenClient}
-            title={contact.client ? clientName(contact.client) : "Cliente non associato"}
+            title={contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
           >
             <Building2 className="h-3 w-3 shrink-0" />
             <span className="truncate">
-              {contact.client ? clientName(contact.client) : "Cliente non associato"}
+              {contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
             </span>
           </button>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-text3">
             <span className="inline-flex items-center gap-1">
-              <Briefcase className="h-3 w-3" /> {contact.job_title || "Ruolo non indicato"}
+              <Briefcase className="h-3 w-3" /> {contact.job_title || t("contact.noRole", "Ruolo non indicato")}
             </span>
             {contact.department && (
               <span className="inline-flex items-center gap-1">
@@ -482,7 +492,7 @@ function GlobalContactCard({
             className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] text-text3"
             style={{ borderColor: "var(--border)" }}
           >
-            <Mail className="h-3.5 w-3.5" /> Email mancante
+            <Mail className="h-3.5 w-3.5" /> {t("contact.missingEmail", "Email mancante")}
           </span>
         )}
         {contact.phone ? (
@@ -500,27 +510,27 @@ function GlobalContactCard({
             className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] text-text3"
             style={{ borderColor: "var(--border)" }}
           >
-            <Phone className="h-3.5 w-3.5" /> Telefono mancante
+            <Phone className="h-3.5 w-3.5" /> {t("contact.missingPhone", "Telefono mancante")}
           </span>
         )}
       </div>
 
       <div className="mt-4 flex flex-wrap justify-end gap-1.5">
         <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canEdit} onClick={onEdit}>
-          <Pencil className="h-3 w-3" /> Modifica
+          <Pencil className="h-3 w-3" /> {t("contact.editButton", "Modifica")}
         </button>
         <button
           className="pc-btn pc-btn-ghost pc-btn-xs"
           disabled={!canManagePortalAccess || busy}
           onClick={onGeneratePortalLink}
         >
-          <Link2 className="h-3 w-3" /> Portale
+          <Link2 className="h-3 w-3" /> {t("contact.portalButton", "Portale")}
         </button>
         <button
           className="pc-btn-icon touch-target"
           disabled={!canDelete}
           onClick={onDelete}
-          title="Elimina referente"
+          title={t("contact.deleteButtonTooltip", "Elimina referente")}
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -546,24 +556,25 @@ function EditContactModal({
   onClose: () => void;
   onSave: () => void;
 }) {
+  const { t } = useTranslation("contacts");
   return (
     <Modal
       open={!!editing}
       onClose={onClose}
-      title="Modifica referente"
+      title={t("editModal.title", "Modifica referente")}
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={onClose} disabled={busy}>
-            Annulla
+            {t("editModal.cancelButton", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" onClick={onSave} disabled={busy || !canEdit}>
-            Salva referente
+            {t("editModal.saveButton", "Salva referente")}
           </button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Field label="Nome e cognome *">
+        <Field label={t("editModal.fullNameLabel", "Nome e cognome *")}>
           <input
             className="pc-input"
             value={form.full_name}
@@ -572,7 +583,7 @@ function EditContactModal({
             }
           />
         </Field>
-        <Field label="Email">
+        <Field label={t("editModal.emailLabel", "Email")}>
           <input
             className="pc-input"
             type="email"
@@ -580,14 +591,14 @@ function EditContactModal({
             onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
           />
         </Field>
-        <Field label="Telefono">
+        <Field label={t("editModal.phoneLabel", "Telefono")}>
           <input
             className="pc-input"
             value={form.phone}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
           />
         </Field>
-        <Field label="Ruolo">
+        <Field label={t("editModal.roleLabel", "Ruolo")}>
           <input
             className="pc-input"
             value={form.job_title}
@@ -596,7 +607,7 @@ function EditContactModal({
             }
           />
         </Field>
-        <Field label="Reparto">
+        <Field label={t("editModal.departmentLabel", "Reparto")}>
           <input
             className="pc-input"
             value={form.department}
@@ -613,7 +624,7 @@ function EditContactModal({
               setForm((current) => ({ ...current, is_primary: event.target.checked }))
             }
           />
-          Referente principale
+          {t("editModal.isPrimaryLabel", "Referente principale")}
         </label>
       </div>
     </Modal>
@@ -636,24 +647,25 @@ function PortalLinkModal({
   onClose: () => void;
   onCopy: () => void;
 }) {
+  const { t } = useTranslation("contacts");
   return (
     <Modal
       open={!!portalLink}
       onClose={onClose}
-      title="Link accesso portale"
+      title={t("portalModal.title", "Link accesso portale")}
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={onClose}>
-            Chiudi
+            {t("portalModal.closeButton", "Chiudi")}
           </button>
           <button className="pc-btn pc-btn-primary" onClick={onCopy}>
             {copied ? (
               <>
-                <CheckCircle2 className="w-3 h-3" /> Copiato
+                <CheckCircle2 className="w-3 h-3" /> {t("portalModal.copiedButton", "Copiato")}
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3" /> Copia link
+                <Copy className="w-3 h-3" /> {t("portalModal.copyLinkButton", "Copia link")}
               </>
             )}
           </button>
@@ -663,7 +675,7 @@ function PortalLinkModal({
       {portalLink && (
         <div className="flex flex-col gap-3">
           <div>
-            <div className="pc-label">Referente</div>
+            <div className="pc-label">{t("portalModal.contactLabel", "Referente")}</div>
             <div className="text-[13px] font-semibold">{portalLink.contactName}</div>
             <div className="text-[12px] text-text3">{portalLink.clientName}</div>
           </div>
@@ -689,6 +701,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function PortalBadge({ active }: { active: boolean }) {
+  const { t } = useTranslation("contacts");
   return (
     <span
       className="inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold"
@@ -697,7 +710,7 @@ function PortalBadge({ active }: { active: boolean }) {
         color: active ? "#15803d" : "var(--text3)",
       }}
     >
-      {active ? "Attivo" : "Nessun accesso"}
+      {active ? t("portalBadge.active", "Attivo") : t("portalBadge.noAccess", "Nessun accesso")}
     </span>
   );
 }

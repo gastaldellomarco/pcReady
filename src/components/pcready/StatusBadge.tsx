@@ -7,21 +7,25 @@ import {
   TICKET_TYPE_META,
   type TicketType,
 } from "@/lib/pcready";
+import { useTranslation } from "react-i18next";
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
+  const { t } = useTranslation("tickets");
   const m = STATUS_META[status];
-  return <span className={`pc-badge ${m.cls}`}>{m.label}</span>;
+  return <span className={`pc-badge ${m.cls}`}>{t("status." + status, m.label)}</span>;
 }
 
 export function PriorityLabel({ p }: { p: TicketPriority }) {
-  return <span className={`pc-pri-${p}`}>{PRIORITY_LABEL[p]}</span>;
+  const { t } = useTranslation("tickets");
+  return <span className={`pc-pri-${p}`}>{t("priority." + p, PRIORITY_LABEL[p])}</span>;
 }
 
 export function TicketTypeBadge({ type }: { type: TicketType }) {
+  const { t } = useTranslation("tickets");
   const meta = TICKET_TYPE_META[type];
   return (
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.cls}`}>
-      {meta.label}
+      {t("type." + type, meta.label)}
     </span>
   );
 }

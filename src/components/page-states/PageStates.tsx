@@ -6,6 +6,7 @@ import { Inbox, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export type PageStateVariant = "app" | "portal";
 
@@ -16,7 +17,7 @@ function shellClass(variant: PageStateVariant) {
 }
 
 export function PageFetchError({
-  title = "Impossibile completare la richiesta",
+  title: titleProp,
   message,
   onRetry,
   variant = "app",
@@ -28,6 +29,8 @@ export function PageFetchError({
   variant?: PageStateVariant;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
+  const title = titleProp ?? t("pageStates.fetchError", "Impossibile completare la richiesta");
   return (
     <div className={cn(shellClass(variant), className)}>
       <h2 className="text-base font-semibold text-destructive">{title}</h2>
@@ -43,7 +46,7 @@ export function PageFetchError({
         {onRetry && (
           <Button type="button" variant="default" size="sm" onClick={onRetry}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Riprova
+            {t("pageStates.retry", "Riprova")}
           </Button>
         )}
         <Button
@@ -52,7 +55,7 @@ export function PageFetchError({
           size="sm"
           onClick={() => window.location.reload()}
         >
-          Ricarica pagina
+          {t("pageStates.reload", "Ricarica pagina")}
         </Button>
       </div>
     </div>
@@ -114,11 +117,12 @@ export function PageSkeleton({
   variant?: PageStateVariant;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div
       className={cn("flex flex-col gap-4 p-1", className)}
       aria-busy
-      aria-label="Caricamento pagina"
+      aria-label={t("pageStates.loadingPage", "Caricamento pagina")}
     >
       <Skeleton className="h-8 w-48 max-w-[40%]" />
       <Skeleton className="h-10 w-full max-w-md" />
@@ -136,6 +140,7 @@ export function ListSkeleton({
   variant?: PageStateVariant;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   const cardClass =
     variant === "portal"
       ? "rounded-lg border border-border bg-card p-4 space-y-2"
@@ -145,7 +150,7 @@ export function ListSkeleton({
     <div
       className={cn("flex flex-col gap-3", className)}
       aria-busy
-      aria-label="Caricamento in corso"
+      aria-label={t("pageStates.loadingInProgress", "Caricamento in corso")}
     >
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={cardClass}>
@@ -195,13 +200,14 @@ export function TableSkeleton({
   variant?: PageStateVariant;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   const wrap =
     variant === "portal"
       ? "rounded-lg border border-border bg-card overflow-hidden"
       : "pc-card overflow-hidden";
 
   return (
-    <div className={cn(wrap, className)} aria-busy aria-label="Caricamento tabella">
+    <div className={cn(wrap, className)} aria-busy aria-label={t("pageStates.loadingTable", "Caricamento tabella")}>
       {showToolbar && (
         <div className="flex flex-wrap gap-2 border-b border-border p-3">
           <Skeleton className="h-9 w-40" />
@@ -242,13 +248,14 @@ export function CardGridSkeleton({
   variant?: PageStateVariant;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   const cardClass =
     variant === "portal"
       ? "rounded-lg border border-border bg-card p-4 space-y-3"
       : "pc-card p-4 space-y-3";
 
   return (
-    <div className={cn(columnsClass, className)} aria-busy aria-label="Caricamento schede">
+    <div className={cn(columnsClass, className)} aria-busy aria-label={t("pageStates.loadingCards", "Caricamento schede")}>
       {Array.from({ length: cards }).map((_, i) => (
         <div key={i} className={cardClass}>
           <Skeleton className="h-5 w-2/3" />

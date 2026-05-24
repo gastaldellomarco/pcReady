@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, X, Shield, User } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/_app/oauth/consent")({
 
 function OAuthConsentPage() {
   const { session, profile, loading } = useAuth();
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const search = useSearch({ from: "/_app/oauth/consent" });
   const validateRequest = useServerFn(validateOAuthRequest);
@@ -65,7 +67,7 @@ function OAuthConsentPage() {
         setValidation(result);
       } catch (error) {
         console.error("Validation error:", error);
-        toast.error("Richiesta OAuth non valida");
+        toast.error(t("oauth.invalidRequest", "Richiesta OAuth non valida"));
         navigate({ to: "/dashboard", replace: true });
       } finally {
         setValidating(false);
@@ -90,7 +92,7 @@ function OAuthConsentPage() {
       window.location.href = result.redirectUrl;
     } catch (error) {
       console.error("Grant error:", error);
-      toast.error("Errore durante l'autorizzazione");
+      toast.error(t("oauth.grantError", "Errore durante l'autorizzazione"));
     } finally {
       setGranting(false);
     }
@@ -107,7 +109,7 @@ function OAuthConsentPage() {
       window.location.href = result.redirectUrl;
     } catch (error) {
       console.error("Deny error:", error);
-      toast.error("Errore durante il rifiuto");
+      toast.error(t("oauth.denyError", "Errore durante il rifiuto"));
     } finally {
       setDenying(false);
     }
@@ -118,7 +120,7 @@ function OAuthConsentPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Validazione richiesta...</p>
+          <p className="mt-2 text-muted-foreground">{t("oauth.validating", "Validazione richiesta...")}</p>
         </div>
       </div>
     );
@@ -131,9 +133,9 @@ function OAuthConsentPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <X className="mx-auto h-12 w-12 text-destructive" />
-              <h3 className="mt-2 text-lg font-semibold">Richiesta non valida</h3>
+              <h3 className="mt-2 text-lg font-semibold">{t("oauth.invalidTitle", "Richiesta non valida")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                La richiesta di autorizzazione OAuth non è valida.
+                {t("oauth.invalidDescription", "La richiesta di autorizzazione OAuth non è valida.")}
               </p>
             </div>
           </CardContent>
@@ -149,8 +151,8 @@ function OAuthConsentPage() {
           <div className="mx-auto mb-4">
             <Shield className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">PCReady</CardTitle>
-          <CardDescription>Autorizzazione richiesta da un'applicazione esterna</CardDescription>
+          <CardTitle className="text-2xl">{t("oauth.appName", "PCReady")}</CardTitle>
+          <CardDescription>{t("oauth.externalApp", "Autorizzazione richiesta da un'applicazione esterna")}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -177,7 +179,7 @@ function OAuthConsentPage() {
 
           {/* Scopes */}
           <div>
-            <h4 className="font-semibold mb-3">Permessi richiesti</h4>
+            <h4 className="font-semibold mb-3">{t("oauth.requestedPermissions", "Permessi richiesti")}</h4>
             <div className="space-y-2">
               {validation.requestedScopes.map((scope) => (
                 <div key={scope} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -202,15 +204,15 @@ function OAuthConsentPage() {
               disabled={denying || granting}
               className="flex-1"
             >
-              {denying ? "Annullamento..." : "Nega"}
+              {denying ? t("oauth.cancelling", "Annullamento...") : t("oauth.deny", "Nega")}
             </Button>
             <Button onClick={handleGrant} disabled={denying || granting} className="flex-1">
-              {granting ? "Autorizzazione..." : "Autorizza"}
+              {granting ? t("oauth.authorizing", "Autorizzazione...") : t("oauth.authorize", "Autorizza")}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra.
+            {t("oauth.consentDescription", "Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra.")}
           </p>
         </CardContent>
       </Card>

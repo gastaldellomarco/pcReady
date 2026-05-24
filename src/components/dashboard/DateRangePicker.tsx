@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarDays } from "lucide-react";
 
 type DateRangePickerProps = {
@@ -10,6 +11,7 @@ type DateRangePickerProps = {
 type QuickPreset = "today" | "7days" | "30days" | "custom";
 
 export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
+  const { t } = useTranslation("dashboard");
   const activePreset = useMemo<QuickPreset>(() => {
     if (from === today() && to === today()) return "today";
     if (from === subtractDays(6) && to === today()) return "7days";
@@ -50,17 +52,17 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
   }
 
   const presets: { key: QuickPreset; label: string }[] = [
-    { key: "today", label: "Oggi" },
-    { key: "7days", label: "7 giorni" },
-    { key: "30days", label: "30 giorni" },
-    { key: "custom", label: "Personalizzato" },
+    { key: "today", label: t("dateRange.today", "Oggi") },
+    { key: "7days", label: t("dateRange.last7", "7 giorni") },
+    { key: "30days", label: t("dateRange.last30", "30 giorni") },
+    { key: "custom", label: t("dateRange.custom", "Personalizzato") },
   ];
 
   return (
     <div
       className="flex flex-wrap items-center gap-2 rounded-[8px] border px-2 py-1.5"
       style={{ background: "var(--surface)", borderColor: "var(--border2)" }}
-      aria-label="Selettore periodo dashboard"
+      aria-label={t("dateRange.ariaLabel", "Selettore periodo dashboard")}
     >
       <CalendarDays className="h-4 w-4 text-text3" aria-hidden="true" />
       <div className="flex items-center gap-1">
@@ -86,7 +88,7 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
             type="date"
             value={from}
             max={to}
-            aria-label="Data inizio"
+            aria-label={t("dateRange.startDate", "Data inizio")}
             onChange={(event) => handleFromChange(event.target.value)}
           />
           <span className="text-[12px] text-text3" aria-hidden="true">
@@ -97,7 +99,7 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
             type="date"
             value={to}
             min={from}
-            aria-label="Data fine"
+            aria-label={t("dateRange.endDate", "Data fine")}
             onChange={(event) => handleToChange(event.target.value)}
           />
         </div>

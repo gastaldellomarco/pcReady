@@ -1,31 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { NOTIFICATION_TYPES } from "@/lib/notifications";
 import type { ActionDef, ActionType } from "@/types/automation";
 
 function uid(prefix = "a") {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
-
-const ACTION_TYPES = [
-  { value: "send_email", label: "Invia email" },
-  { value: "update_ticket_status", label: "Aggiorna stato ticket" },
-  { value: "create_notification", label: "Notifica in-app" },
-  { value: "update_device_status", label: "Aggiorna stato dispositivo" },
-  { value: "assign_ticket", label: "Assegna ticket" },
-] as const;
-
-const TICKET_STATUSES = [
-  { value: "pending", label: "In attesa" },
-  { value: "in-progress", label: "In corso" },
-  { value: "testing", label: "In test" },
-  { value: "ready", label: "Pronto" },
-] as const;
-
-const DEVICE_STATUSES = [
-  { value: "available", label: "Disponibile" },
-  { value: "assigned", label: "Assegnato" },
-  { value: "maintenance", label: "Manutenzione" },
-  { value: "retired", label: "Dismesso" },
-] as const;
 
 function defaultConfigForType(type: string): Record<string, unknown> {
   switch (type) {
@@ -51,6 +30,30 @@ export default function ActionsStep({
   value: ActionDef[];
   onChange: (v: ActionDef[]) => void;
 }) {
+  const { t } = useTranslation("automations");
+
+  const ACTION_TYPES = [
+    { value: "send_email", label: t("actions.types.send_email", "Send email") },
+    { value: "update_ticket_status", label: t("actions.types.update_ticket_status", "Update ticket status") },
+    { value: "create_notification", label: t("actions.types.create_notification", "In-app notification") },
+    { value: "update_device_status", label: t("actions.types.update_device_status", "Update device status") },
+    { value: "assign_ticket", label: t("actions.types.assign_ticket", "Assign ticket") },
+  ] as const;
+
+  const TICKET_STATUSES = [
+    { value: "pending", label: t("actions.ticketStatus.statuses.pending", "Pending") },
+    { value: "in-progress", label: t("actions.ticketStatus.statuses.in-progress", "In progress") },
+    { value: "testing", label: t("actions.ticketStatus.statuses.testing", "Testing") },
+    { value: "ready", label: t("actions.ticketStatus.statuses.ready", "Ready") },
+  ] as const;
+
+  const DEVICE_STATUSES = [
+    { value: "available", label: t("actions.deviceStatus.statuses.available", "Available") },
+    { value: "assigned", label: t("actions.deviceStatus.statuses.assigned", "Assigned") },
+    { value: "maintenance", label: t("actions.deviceStatus.statuses.maintenance", "Maintenance") },
+    { value: "retired", label: t("actions.deviceStatus.statuses.retired", "Retired") },
+  ] as const;
+
   const addAction = () => {
     onChange([
       ...(value || []),
@@ -80,14 +83,12 @@ export default function ActionsStep({
 
   return (
     <div>
-      <h3 className="text-lg font-semibold">Azioni</h3>
+      <h3 className="text-lg font-semibold">{t("actions.title", "Actions")}</h3>
       <p className="text-sm text-text3">
-        Definisci le azioni eseguite dal runtime (Supabase / email).
+        {t("actions.subtitle", "Define the actions executed by the runtime (Supabase / email).")}
       </p>
       <p className="mt-1 text-xs text-text3">
-        Ticket e dispositivo: lascia vuoto l&apos;ID se il trigger invia{" "}
-        <code className="text-xs">ticket_id</code> / <code className="text-xs">device_id</code> nel
-        payload.
+        {t("actions.payloadNote", "Ticket and device: leave the ID empty if the trigger sends ticket_id / device_id in the payload.")}
       </p>
 
       <div className="mt-3 space-y-4">
@@ -106,23 +107,23 @@ export default function ActionsStep({
                 ))}
               </select>
               <button type="button" onClick={() => remove(a.id)} className="text-sm text-rose-600">
-                Rimuovi
+                {t("actions.remove", "Remove")}
               </button>
             </div>
 
             {a.type === "send_email" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="text-xs sm:col-span-2">
-                  Destinatario (opzionale se nel payload trigger)
+                  {t("actions.email.recipient", "Recipient (optional if in trigger payload)")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.to as string) ?? ""}
                     onChange={(e) => updateConfig(a.id, { to: e.target.value })}
-                    placeholder="cliente@esempio.it"
+                    placeholder={t("actions.email.recipientPlaceholder", "client@example.com")}
                   />
                 </label>
                 <label className="text-xs sm:col-span-2">
-                  Oggetto
+                  {t("actions.email.subject", "Subject")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.subject as string) ?? ""}
@@ -130,7 +131,7 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs sm:col-span-2">
-                  Corpo
+                  {t("actions.email.body", "Body")}
                   <textarea
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     rows={3}
@@ -144,7 +145,7 @@ export default function ActionsStep({
                     checked={Boolean(a.config?.is_html)}
                     onChange={(e) => updateConfig(a.id, { is_html: e.target.checked })}
                   />
-                  Corpo è HTML
+                  {t("actions.email.isHtml", "Body is HTML")}
                 </label>
               </div>
             )}
@@ -152,7 +153,7 @@ export default function ActionsStep({
             {a.type === "update_ticket_status" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="text-xs">
-                  Ticket ID
+                  {t("actions.ticketStatus.ticketId", "Ticket ID")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm font-mono"
                     value={(a.config?.ticket_id as string) ?? ""}
@@ -161,7 +162,7 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs">
-                  Stato
+                  {t("actions.ticketStatus.status", "Status")}
                   <select
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.status as string) ?? "ready"}
@@ -180,30 +181,30 @@ export default function ActionsStep({
             {a.type === "create_notification" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="text-xs">
-                  User ID (auth / profile)
+                  {t("actions.notification.userId", "User ID (auth / profile)")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm font-mono"
                     value={(a.config?.user_id as string) ?? ""}
                     onChange={(e) => updateConfig(a.id, { user_id: e.target.value })}
-                    placeholder="UUID — o usa assignee_id nel payload"
+                    placeholder={t("actions.notification.userIdPlaceholder", "UUID — or use assignee_id in payload")}
                   />
                 </label>
                 <label className="text-xs">
-                  Tipo
+                  {t("actions.notification.type", "Type")}
                   <select
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.type as string) ?? "ticket_status_changed"}
                     onChange={(e) => updateConfig(a.id, { type: e.target.value })}
                   >
-                    {NOTIFICATION_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    {NOTIFICATION_TYPES.map((nt) => (
+                      <option key={nt} value={nt}>
+                        {nt}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="text-xs sm:col-span-2">
-                  Titolo
+                  {t("actions.notification.title", "Title")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.title as string) ?? ""}
@@ -211,7 +212,7 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs sm:col-span-2">
-                  Messaggio
+                  {t("actions.notification.message", "Message")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.body as string) ?? ""}
@@ -219,12 +220,12 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs sm:col-span-2">
-                  Link
+                  {t("actions.notification.link", "Link")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.link as string) ?? ""}
                     onChange={(e) => updateConfig(a.id, { link: e.target.value })}
-                    placeholder="/tickets"
+                    placeholder={t("actions.notification.linkPlaceholder", "/tickets")}
                   />
                 </label>
               </div>
@@ -233,7 +234,7 @@ export default function ActionsStep({
             {a.type === "update_device_status" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="text-xs">
-                  Device ID
+                  {t("actions.deviceStatus.deviceId", "Device ID")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm font-mono"
                     value={(a.config?.device_id as string) ?? ""}
@@ -242,7 +243,7 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs">
-                  Stato
+                  {t("actions.deviceStatus.status", "Status")}
                   <select
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm"
                     value={(a.config?.status as string) ?? "available"}
@@ -261,7 +262,7 @@ export default function ActionsStep({
             {a.type === "assign_ticket" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="text-xs">
-                  Ticket ID
+                  {t("actions.assignTicket.ticketId", "Ticket ID")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm font-mono"
                     value={(a.config?.ticket_id as string) ?? ""}
@@ -270,12 +271,12 @@ export default function ActionsStep({
                   />
                 </label>
                 <label className="text-xs">
-                  Assegnatario (profile / user UUID)
+                  {t("actions.assignTicket.assignee", "Assignee (profile / user UUID)")}
                   <input
                     className="mt-0.5 w-full rounded border px-2 py-1 text-sm font-mono"
                     value={(a.config?.assignee_id as string) ?? ""}
                     onChange={(e) => updateConfig(a.id, { assignee_id: e.target.value })}
-                    placeholder="UUID"
+                    placeholder={t("actions.assignTicket.assigneePlaceholder", "UUID")}
                   />
                 </label>
               </div>
@@ -290,7 +291,7 @@ export default function ActionsStep({
           onClick={addAction}
           className="rounded bg-slate-100 px-3 py-1 text-sm"
         >
-          Aggiungi azione
+          {t("actions.addAction", "Add action")}
         </button>
       </div>
     </div>

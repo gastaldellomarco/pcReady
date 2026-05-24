@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { IScannerControls } from "@zxing/browser";
 import { Modal } from "@/components/pcready/Modal";
 
@@ -29,6 +30,7 @@ export function BarcodeScanner({
   targetLabel = "seriale o asset tag",
   mode = "inventory",
 }: Props) {
+  const { t } = useTranslation("inventory");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
@@ -75,7 +77,7 @@ export function BarcodeScanner({
         if (controls) controlsRef.current = controls;
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Impossibile avviare la fotocamera");
+        setError(err instanceof Error ? err.message : t("barcodeScanner.cameraError", "Impossibile avviare la fotocamera"));
       });
 
     return () => {
@@ -101,7 +103,7 @@ export function BarcodeScanner({
     <Modal
       open={open}
       onClose={handleClose}
-      title={mode === "barcode-1d" ? "Leggi barcode 1D" : "Scansiona codice inventario"}
+      title={mode === "barcode-1d" ? t("barcodeScanner.title1d", "Leggi barcode 1D") : t("barcodeScanner.title", "Scansiona codice inventario")}
       size="lg"
     >
       <div className="flex flex-col gap-3">

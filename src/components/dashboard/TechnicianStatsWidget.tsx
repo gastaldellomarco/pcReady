@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
@@ -11,6 +12,7 @@ import { getTechnicianStats } from "@/lib/dashboard-analytics";
 type Period = "today" | "week" | "month";
 
 export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period }) {
+  const { t } = useTranslation("dashboard");
   const [period, setPeriod] = useState<Period>(defaultPeriod);
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -65,8 +67,8 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
     <Card>
       <CardHeader className="flex items-center justify-between">
         <div>
-          <CardTitle>Statistiche Tecnici</CardTitle>
-          <div className="text-sm text-text3">Tecnici attivi: {activeCount}</div>
+          <CardTitle>{t("technicians.statsTitle", "Statistiche Tecnici")}</CardTitle>
+          <div className="text-sm text-text3">{t("technicians.activeTechnicians", "Tecnici attivi")}: {activeCount}</div>
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-md bg-muted p-1">
@@ -76,7 +78,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               }
               onClick={() => setPeriod("today")}
             >
-              Oggi
+              {t("technicians.periodToday", "Oggi")}
             </button>
             <button
               className={
@@ -84,7 +86,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               }
               onClick={() => setPeriod("week")}
             >
-              Settimana
+              {t("technicians.periodWeek", "Settimana")}
             </button>
             <button
               className={
@@ -92,7 +94,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               }
               onClick={() => setPeriod("month")}
             >
-              Mese
+              {t("technicians.periodMonth", "Mese")}
             </button>
           </div>
         </div>
@@ -106,59 +108,59 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
               <div className="w-80 h-24 rounded-lg bg-surface2 animate-pulse" />
             </div>
           ) : (
-            rows.map((t) => (
+            rows.map((tech) => (
               <div
-                key={t.id}
+                key={tech.id}
                 className="min-w-[220px] pc-card p-3 cursor-pointer flex-shrink-0"
                 onClick={() =>
-                  navigate({ to: "/_app/tickets", search: { technician: t.id } } as any)
+                  navigate({ to: "/_app/tickets", search: { technician: tech.id } } as any)
                 }
               >
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-9 h-9">{t.initials}</Avatar>
+                  <Avatar className="w-9 h-9">{tech.initials}</Avatar>
                   <div>
-                    <div className="font-semibold text-sm">{t.name}</div>
-                    <div className="text-xs text-text3">{t.title || "Tecnico"}</div>
+                    <div className="font-semibold text-sm">{tech.name}</div>
+                    <div className="text-xs text-text3">{tech.title || t("technicians.technicianLabel", "Tecnico")}</div>
                   </div>
                   <div className="ml-auto text-right">
-                    <div className="text-xs text-text3">Assegnati</div>
-                    <div className="font-semibold">{t.assigned}</div>
+                    <div className="text-xs text-text3">{t("technicians.assigned", "Assegnati")}</div>
+                    <div className="font-semibold">{tech.assigned}</div>
                   </div>
                 </div>
 
                 <div className="mt-3">
                   <div className="flex items-center justify-between text-xs text-text3">
-                    <div>In attesa: {t.pending}</div>
-                    <div>Completati: {t.completed}</div>
+                    <div>{t("technicians.pending", "In attesa")}: {tech.pending}</div>
+                    <div>{t("technicians.completed", "Completati")}: {tech.completed}</div>
                   </div>
 
                   <div className="mt-2 text-xs text-text3">
-                    Tempo medio: {formatDuration(t.avg_resolution_ms)}
+                    {t("technicians.avgTime", "Tempo medio")}: {formatDuration(tech.avg_resolution_ms)}
                   </div>
 
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-xs text-text3">
-                      <div>Tasso completamento</div>
+                      <div>{t("technicians.completionRate", "Tasso completamento")}</div>
                       <div className="text-sm font-semibold">
-                        {t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0}
+                        {tech.assigned ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100) : 0}
                         %
                       </div>
                     </div>
                     <Progress
                       value={
-                        t.assigned ? Math.round((t.completed / Math.max(1, t.assigned)) * 100) : 0
+                        tech.assigned ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100) : 0
                       }
                       className="mt-1"
                     />
                   </div>
 
                   <div className="mt-3">
-                    <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(t.assigned)}>
-                      {t.assigned >= 10
-                        ? "Sovraccarico"
-                        : t.assigned >= 5
-                          ? "Carico elevato"
-                          : "Carico normale"}
+                    <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(tech.assigned)}>
+                      {tech.assigned >= 10
+                        ? t("technicians.overloaded", "Sovraccarico")
+                        : tech.assigned >= 5
+                          ? t("technicians.highLoad", "Carico elevato")
+                          : t("technicians.normalLoad", "Carico normale")}
                     </span>
                   </div>
                 </div>

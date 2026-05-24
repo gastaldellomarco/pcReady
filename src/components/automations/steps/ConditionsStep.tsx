@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Plus, X, ArrowUp, ArrowDown } from "lucide-react";
 import type { ConditionDef, ConditionType } from "@/types/automation";
@@ -6,18 +7,6 @@ function uid(prefix = "c") {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-const OPERATORS = [
-  { value: "field_equals", label: "Campo uguale a" },
-  { value: "field_not_equals", label: "Campo diverso da" },
-  { value: "field_greater_than", label: "Maggiore di" },
-  { value: "field_less_than", label: "Minore di" },
-  { value: "field_contains", label: "Contiene" },
-  { value: "field_starts_with", label: "Inizia con" },
-  { value: "field_ends_with", label: "Finisce con" },
-  { value: "priority_high", label: "Priorita alta" },
-  { value: "tag_contains", label: "Tag contiene" },
-];
-
 export default function ConditionsStep({
   value,
   onChange,
@@ -25,6 +14,20 @@ export default function ConditionsStep({
   value: ConditionDef[];
   onChange: (v: ConditionDef[]) => void;
 }) {
+  const { t } = useTranslation("automations");
+
+  const OPERATORS = [
+    { value: "field_equals", label: t("conditions.operators.field_equals", "Field equals") },
+    { value: "field_not_equals", label: t("conditions.operators.field_not_equals", "Field not equals") },
+    { value: "field_greater_than", label: t("conditions.operators.field_greater_than", "Greater than") },
+    { value: "field_less_than", label: t("conditions.operators.field_less_than", "Less than") },
+    { value: "field_contains", label: t("conditions.operators.field_contains", "Contains") },
+    { value: "field_starts_with", label: t("conditions.operators.field_starts_with", "Starts with") },
+    { value: "field_ends_with", label: t("conditions.operators.field_ends_with", "Ends with") },
+    { value: "priority_high", label: t("conditions.operators.priority_high", "High priority") },
+    { value: "tag_contains", label: t("conditions.operators.tag_contains", "Tag contains") },
+  ];
+
   const addCondition = () => {
     onChange([
       ...(value || []),
@@ -60,9 +63,9 @@ export default function ConditionsStep({
 
   return (
     <div>
-      <h3 className="text-lg font-semibold">Condizioni</h3>
+      <h3 className="text-lg font-semibold">{t("conditions.title", "Conditions")}</h3>
       <p className="text-sm text-text3">
-        Aggiungi condizioni opzionali che devono essere soddisfatte per eseguire le azioni.
+        {t("conditions.subtitle", "Add optional conditions that must be met to execute the actions.")}
       </p>
 
       <div className="mt-4 space-y-2">
@@ -72,7 +75,7 @@ export default function ConditionsStep({
               <div className="flex items-center gap-2 py-1">
                 <div className="h-px flex-1 bg-border" />
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-text3">
-                  E
+                  {t("conditions.and", "AND")}
                 </span>
                 <div className="h-px flex-1 bg-border" />
               </div>
@@ -98,7 +101,7 @@ export default function ConditionsStep({
                 <>
                   <input
                     className="rounded-md border border-border px-2 py-1.5 text-xs bg-background w-28"
-                    placeholder="Campo"
+                    placeholder={t("conditions.fieldPlaceholder", "Field")}
                     value={c.config?.field ?? ""}
                     onChange={(e) =>
                       update(c.id, {
@@ -108,7 +111,7 @@ export default function ConditionsStep({
                   />
                   <input
                     className="rounded-md border border-border px-2 py-1.5 text-xs bg-background w-28"
-                    placeholder="Valore"
+                    placeholder={t("conditions.valuePlaceholder", "Value")}
                     value={c.config?.value ?? ""}
                     onChange={(e) =>
                       update(c.id, {
@@ -124,7 +127,7 @@ export default function ConditionsStep({
                   onClick={() => moveUp(c.id)}
                   disabled={index === 0}
                   className="rounded p-1 text-text3 hover:bg-surface3 disabled:opacity-30"
-                  title="Sposta su"
+                  title={t("conditions.moveUp", "Move up")}
                 >
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
@@ -133,7 +136,7 @@ export default function ConditionsStep({
                   onClick={() => moveDown(c.id)}
                   disabled={index === (value || []).length - 1}
                   className="rounded p-1 text-text3 hover:bg-surface3 disabled:opacity-30"
-                  title="Sposta giu"
+                  title={t("conditions.moveDown", "Move down")}
                 >
                   <ArrowDown className="h-3.5 w-3.5" />
                 </button>
@@ -141,7 +144,7 @@ export default function ConditionsStep({
                   type="button"
                   onClick={() => remove(c.id)}
                   className="rounded p-1 text-red-600 hover:bg-red-50"
-                  title="Rimuovi"
+                  title={t("conditions.remove", "Remove")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -158,13 +161,13 @@ export default function ConditionsStep({
           className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-xs font-medium text-text3 hover:border-accent hover:text-accent transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
-          Aggiungi condizione
+          {t("conditions.addCondition", "Add condition")}
         </button>
       </div>
 
       {(value || []).length === 0 && (
         <div className="mt-3 rounded-lg border border-dashed border-border bg-background/40 p-4 text-center text-xs text-text3">
-          Nessuna condizione — la regola si attivera sempre quando il trigger e soddisfatto.
+          {t("conditions.noConditions", "No conditions — the rule will always trigger when the event occurs.")}
         </div>
       )}
     </div>

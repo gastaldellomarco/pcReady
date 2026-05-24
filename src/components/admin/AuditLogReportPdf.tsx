@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   BrandedPage,
   PdfSection,
@@ -22,10 +23,11 @@ export function AuditLogReportPdf({
   filterSummary: string;
   totalCount: number;
 }) {
+  const { t } = useTranslation("admin");
   const columns: PdfColumn<ActivityLogEntry>[] = [
     {
       key: "date",
-      label: "Data/Ora",
+      label: t("auditReport.colDateTime", "Data/Ora"),
       width: "16%",
       mono: true,
       value: (row) => {
@@ -35,36 +37,36 @@ export function AuditLogReportPdf({
     },
     {
       key: "actor",
-      label: "Utente",
+      label: t("auditReport.colUser", "Utente"),
       width: "14%",
-      value: (row) => row.actor_name || "Sistema",
+      value: (row) => row.actor_name || t("auditReport.actorSystem", "Sistema"),
     },
     {
       key: "action",
-      label: "Azione",
+      label: t("auditReport.colAction", "Azione"),
       width: "14%",
       value: (row) => row.action_type || row.type,
     },
     {
       key: "message",
-      label: "Dettaglio",
+      label: t("auditReport.colDetail", "Dettaglio"),
       width: "32%",
       value: (row) => row.message,
     },
     {
       key: "entity",
-      label: "Entita",
+      label: t("auditReport.colEntity", "Entità"),
       width: "12%",
       value: (row) => row.entity_type || "-",
     },
     {
       key: "severity",
-      label: "Esito",
+      label: t("auditReport.colOutcome", "Esito"),
       width: "12%",
       value: (row) => {
-        if (row.severity === "critical") return "ERRORE";
-        if (row.severity === "warning") return "WARNING";
-        return "OK";
+        if (row.severity === "critical") return t("auditReport.outcomeError", "ERRORE");
+        if (row.severity === "warning") return t("auditReport.outcomeWarning", "WARNING");
+        return t("auditReport.outcomeOk", "OK");
       },
     },
   ];
@@ -89,13 +91,13 @@ export function AuditLogReportPdf({
     // PDF lib not loaded yet — render a lightweight placeholder or nothing.
     return (
       <BrandedPage
-        title="Report Audit Log"
-        meta={`${dateLabel} - ${totalCount} eventi | Export: ${exportUser}`}
+        title={t("auditReport.title", "Report Audit Log")}
+        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", { dateLabel, count: totalCount, user: exportUser })}
         organizationName={organizationName}
       >
         <PdfSection
-          title="Log di Audit"
-          meta={`${totalCount} eventi trovati${filterSummary !== "nessun filtro" ? ` | Filtri: ${filterSummary}` : ""}`}
+          title={t("auditReport.sectionTitle", "Log di Audit")}
+          meta={`${t("auditReport.events", "{{count}} eventi", { count: totalCount })}${filterSummary !== t("auditReport.noFilter", "nessun filtro") ? ` ${t("auditReport.filterPrefix", " | Filtri: {{summary}}", { summary: filterSummary })}` : ""}`}
         >
           <PdfTable rows={entries.slice(0, 100)} columns={columns} />
         </PdfSection>
@@ -106,15 +108,15 @@ export function AuditLogReportPdf({
   const { Document } = pdfModule;
 
   return (
-    <Document author={organizationName || "PCReady"} title="Report Audit Log">
+    <Document author={organizationName || "PCReady"} title={t("auditReport.title", "Report Audit Log")}>
       <BrandedPage
-        title="Report Audit Log"
-        meta={`${dateLabel} - ${totalCount} eventi | Export: ${exportUser}`}
+        title={t("auditReport.title", "Report Audit Log")}
+        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", { dateLabel, count: totalCount, user: exportUser })}
         organizationName={organizationName}
       >
         <PdfSection
-          title="Log di Audit"
-          meta={`${totalCount} eventi trovati${filterSummary !== "nessun filtro" ? ` | Filtri: ${filterSummary}` : ""}`}
+          title={t("auditReport.sectionTitle", "Log di Audit")}
+          meta={`${t("auditReport.events", "{{count}} eventi", { count: totalCount })}${filterSummary !== t("auditReport.noFilter", "nessun filtro") ? ` ${t("auditReport.filterPrefix", " | Filtri: {{summary}}", { summary: filterSummary })}` : ""}`}
         >
           <PdfTable rows={entries.slice(0, 100)} columns={columns} />
         </PdfSection>

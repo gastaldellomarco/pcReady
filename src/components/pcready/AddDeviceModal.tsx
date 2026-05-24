@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
@@ -43,6 +44,7 @@ type BarcodeTarget = "asset_tag" | "serial";
 export function AddDeviceModal() {
   const { addDeviceOpen, addDeviceInitialSerial, addDeviceClient, closeAddDevice } = useTickets();
   const { user, canEdit, session } = useAuth();
+  const { t } = useTranslation("tickets");
   const loadSettings = useServerFn(getPublicAppSettings);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [osOptions, setOsOptions] = useState<string[]>(OS_OPTIONS);
@@ -153,9 +155,9 @@ export function AddDeviceModal() {
   function focusBarcodeTarget(target: BarcodeTarget) {
     form.setFocus(target);
     toast.info(
-      target === "asset_tag"
-        ? "Campo asset tag pronto per scanner barcode USB/Bluetooth"
-        : "Campo seriale pronto per scanner barcode USB/Bluetooth",
+      barcodeTarget === "asset_tag"
+        ? t("addDevice.toasts.assetTagReady", "Campo asset tag pronto per scanner barcode USB/Bluetooth")
+        : t("addDevice.toasts.serialReady", "Campo seriale pronto per scanner barcode USB/Bluetooth"),
     );
   }
 
@@ -171,21 +173,21 @@ export function AddDeviceModal() {
     form.setFocus(barcodeTarget);
     setBarcodeTarget(null);
     toast.success(
-      barcodeTarget === "asset_tag" ? "Asset tag compilato da barcode" : "Seriale compilato da barcode",
+      barcodeTarget === "asset_tag" ? t("addDevice.toasts.assetTagBarcode", "Asset tag compilato da barcode") : t("addDevice.toasts.serialBarcode", "Seriale compilato da barcode"),
     );
   }
 
   const submit = form.handleSubmit(async (values) => {
-    if (!canEdit) return toast.error("Permessi insufficienti");
+    if (!canEdit) return toast.error(t("addDevice.toasts.insufficientPermissions", "Permessi insufficienti"));
     setBusy(true);
     try {
       if (!(clients && clients.length) && !addDeviceClient) {
-        toast.error("Nessun cliente disponibile — crea o seleziona un cliente prima di aggiungere dispositivi");
+        toast.error(t("addDevice.toasts.noClientAvailable", "Nessun cliente disponibile — crea o seleziona un cliente prima di aggiungere dispositivi"));
         return;
       }
       const client = clients.find((c) => c.id === values.client_id) || addDeviceClient;
       if (!client) {
-        toast.error("Seleziona un cliente");
+        toast.error(t("addDevice.toasts.selectClient", "Seleziona un cliente"));
         return;
       }
 
@@ -224,10 +226,10 @@ export function AddDeviceModal() {
       const insertActivity = activityQueries.insertActivity as any;
       await insertActivity({
         type: "user",
-        message: `Dispositivo ${data.asset_tag || data.serial || values.model} aggiunto all'inventario`,
+        message: t("addDevice.activityAdded", { tag: data.asset_tag || data.serial || values.model, defaultValue: "Dispositivo {{tag}} aggiunto all'inventario" }),
         actor_id: user!.id,
       });
-      toast.success("Dispositivo aggiunto all'inventario");
+      toast.success(t("addDevice.toasts.addedToInventory", "Dispositivo aggiunto all'inventario"));
       form.reset({
         category: DEFAULT_DEVICE_CATEGORY,
         device_type: DEFAULT_DEVICE_TYPE,
@@ -244,7 +246,7 @@ export function AddDeviceModal() {
       });
       closeAddDevice();
     } catch (e: unknown) {
-      const msg = errorMessage(e, "Errore creazione dispositivo");
+      const msg = errorMessage(e, t("addDevice.toasts.createError", "Errore creazione dispositivo"));
       // show more visible error for debugging
       toast.error(msg);
       console.error("AddDevice error:", e);
@@ -284,10 +286,10 @@ export function AddDeviceModal() {
       if (first) {
         const [field, err] = first as [string, any];
         if (field) form.setFocus(field as any);
-        const message = err?.message || "Compila i campi obbligatori prima di procedere";
+        const message = err?.message || t("addDevice.toasts.validationRequired", "Compila i campi obbligatori prima di procedere");
         toast.error(message);
       } else {
-        toast.error("Compila i campi obbligatori prima di procedere");
+        toast.error(t("addDevice.toasts.validationRequired", "Compila i campi obbligatori prima di procedere"));
       }
       return;
     }
@@ -299,15 +301,15 @@ export function AddDeviceModal() {
     <Modal
       open={addDeviceOpen}
       onClose={closeAddDevice}
-      title="Aggiungi dispositivo"
+      title={t("addDevice.title", "Aggiungi dispositivo")}
       size="lg"
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={closeAddDevice}>
-            Annulla
+            {t("addDevice.cancel", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" disabled={busy} onClick={onAddClick}>
-            {busy ? "Creazione..." : "Aggiungi dispositivo"}
+            {busy ? t("addDevice.adding", "Creazione...") : t("addDevice.addDevice", "Aggiungi dispositivo")}
           </button>
         </>
       }
@@ -320,16 +322,15 @@ export function AddDeviceModal() {
           <div className="flex items-start gap-2">
             <Barcode className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
             <div>
-              <div className="font-semibold text-text">Barcode 1D per inserimento rapido</div>
+              <div className="font-semibold text-text">{t("addDevice.barcodeTitle", "Barcode 1D per inserimento rapido")}</div>
               <div className="text-text3">
-                Funzione diversa dal QR code inventario: usa scanner USB/Bluetooth o camera per
-                compilare asset tag interno e seriale produttore.
+                {t("addDevice.barcodeDescription", "Funzione diversa dal QR code inventario: usa scanner USB/Bluetooth o camera per compilare asset tag interno e seriale produttore.")}
               </div>
             </div>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="Categoria *">
+          <Field label={t("addDevice.fieldCategory", "Categoria *")}>
             <select className="pc-input" {...form.register("category")}>
               {DEVICE_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
@@ -338,7 +339,7 @@ export function AddDeviceModal() {
               ))}
             </select>
           </Field>
-          <Field label="Tipo *">
+          <Field label={t("addDevice.fieldType", "Tipo *")}>
             <select className="pc-input" {...form.register("device_type")}>
               {selectedTypes.map((type) => (
                 <option key={type} value={type}>
@@ -354,7 +355,7 @@ export function AddDeviceModal() {
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="Asset tag interno">
+          <Field label={t("addDevice.fieldAssetTag", "Asset tag interno")}>
             <div className="flex gap-2">
               <input
                 className="pc-input min-w-0 font-mono"
@@ -383,9 +384,9 @@ export function AddDeviceModal() {
               </button>
             </div>
           </Field>
-          <Field label="Brand">
+          <Field label={t("addDevice.fieldBrand", "Brand")}>
             <select className="pc-input" {...form.register("brand")}>
-              <option value="">— Nessun brand —</option>
+              <option value="">{t("addDevice.noBrand", "— Nessun brand —")}</option>
               {brandOptions.map((brand) => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -393,7 +394,7 @@ export function AddDeviceModal() {
               ))}
             </select>
           </Field>
-          <Field label="Modello *">
+          <Field label={t("addDevice.fieldModel", "Modello *")}>
             <input
               className="pc-input"
               {...form.register("model")}
@@ -403,7 +404,7 @@ export function AddDeviceModal() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.model.message}</p>
             )}
           </Field>
-          <Field label="Seriale produttore">
+          <Field label={t("addDevice.fieldSerial", "Seriale produttore")}>
             <div className="flex gap-2">
               <input
                 className="pc-input min-w-0 font-mono"
@@ -439,18 +440,18 @@ export function AddDeviceModal() {
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="Cliente *">
+          <Field label={t("addDevice.fieldClient", "Cliente *")}>
             {addDeviceClient?.lockClient ? (
               <div
                 className="flex min-h-10 items-center rounded-md border px-3 text-sm font-semibold"
                 style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
-                Cliente: {addDeviceClient.name}
+                {t("addDevice.clientLocked", { name: addDeviceClient.name, defaultValue: "Cliente: {{name}}" })}
                 <input type="hidden" {...form.register("client_id")} />
               </div>
             ) : (
               <select className="pc-input" {...form.register("client_id")}>
-                {!(clients ?? []).length && <option value="">Nessun cliente disponibile</option>}
+                {!(clients ?? []).length && <option value="">{t("addDevice.noClientAvailable", "Nessun cliente disponibile")}</option>}
                 {(Array.isArray(clients) ? clients : []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.company_name || c.name}
@@ -464,14 +465,14 @@ export function AddDeviceModal() {
               </p>
             )}
           </Field>
-          <Field label="Utente finale">
+          <Field label={t("addDevice.fieldEndUser", "Utente finale")}>
             <input className="pc-input" {...form.register("end_user")} />
           </Field>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-          <Field label="OS">
+          <Field label={t("addDevice.fieldOs", "OS")}>
             <select className="pc-input" {...form.register("os")}>
-              <option value="">— Non applicabile —</option>
+              <option value="">{t("addDevice.notApplicable", "— Non applicabile —")}</option>
               {osOptions.map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -480,7 +481,7 @@ export function AddDeviceModal() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.os.message}</p>
             )}
           </Field>
-          <Field label="Costo acquisto">
+          <Field label={t("addDevice.fieldPurchaseCost", "Costo acquisto")}>
             <input
               className="pc-input"
               type="number"
@@ -498,7 +499,7 @@ export function AddDeviceModal() {
           </Field>
         </div>
         <DynamicDeviceFields category={selectedCategory} form={form} />
-        <Field label="Note">
+        <Field label={t("addDevice.fieldNotes", "Note")}>
           <textarea className="pc-input min-h-[90px]" {...form.register("notes")} />
         </Field>
       </div>
@@ -507,7 +508,7 @@ export function AddDeviceModal() {
         onClose={() => setBarcodeTarget(null)}
         onDetected={applyBarcodeValue}
         mode="barcode-1d"
-        targetLabel={barcodeTarget === "asset_tag" ? "asset tag interno" : "seriale produttore"}
+        targetLabel={barcodeTarget === "asset_tag" ? t("addDevice.fieldAssetTag", "asset tag interno") : t("addDevice.fieldSerial", "seriale produttore")}
       />
       {/* Temporary debug panel: shows validation errors and current values for easier troubleshooting */}
       {Object.keys(form.formState.errors).length > 0 && (
@@ -535,27 +536,28 @@ function DynamicDeviceFields({
   category: DeviceCategory;
   form: UseFormReturn<DeviceFormInput, unknown, DeviceInput>;
 }) {
+  const { t } = useTranslation("tickets");
   if (category === "printing") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-        <Field label="IP">
+        <Field label={t("addDevice.fieldIp", "IP")}>
           <input
             className="pc-input font-mono"
             {...form.register("ip_address")}
             placeholder="192.168.1.50"
           />
         </Field>
-        <Field label="Tecnologia">
+        <Field label={t("addDevice.fieldTechnology", "Tecnologia")}>
           <input
             className="pc-input"
             {...form.register("print_technology")}
             placeholder="Laser, inkjet..."
           />
         </Field>
-        <Field label="Modello toner">
+        <Field label={t("addDevice.fieldTonerModel", "Modello toner")}>
           <input className="pc-input" {...form.register("toner_model")} />
         </Field>
-        <Field label="Contatore pagine">
+        <Field label={t("addDevice.fieldPageCount", "Contatore pagine")}>
           <input className="pc-input" type="number" min="0" {...form.register("page_count")} />
         </Field>
       </div>
@@ -572,28 +574,28 @@ function DynamicDeviceFields({
             placeholder="192.168.1.1"
           />
         </Field>
-        <Field label="MAC address">
+        <Field label={t("addDevice.fieldMacAddress", "MAC address")}>
           <input
             className="pc-input font-mono"
             {...form.register("mac_address")}
             placeholder="00:11:22:33:44:55"
           />
         </Field>
-        <Field label="Firmware">
+        <Field label={t("addDevice.fieldFirmware", "Firmware")}>
           <input className="pc-input" {...form.register("firmware_version")} />
         </Field>
-        <Field label="Numero porte">
+        <Field label={t("addDevice.fieldPortCount", "Numero porte")}>
           <input className="pc-input" type="number" min="0" {...form.register("port_count")} />
         </Field>
-        <Field label="VLAN">
+        <Field label={t("addDevice.fieldVlan", "VLAN")}>
           <input className="pc-input" {...form.register("vlan_config")} placeholder="10, 20, 30" />
         </Field>
-        <Field label="Scadenza licenza">
+        <Field label={t("addDevice.fieldLicenseExpiry", "Scadenza licenza")}>
           <input className="pc-input" type="date" {...form.register("license_expiry")} />
         </Field>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...form.register("poe_supported")} />
-          PoE supportato
+          {t("addDevice.fieldPoe", "PoE supportato")}
         </label>
       </div>
     );
@@ -602,23 +604,23 @@ function DynamicDeviceFields({
   if (category === "server_infra") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-        <Field label="IP">
+        <Field label={t("addDevice.fieldIp", "IP")}>
           <input className="pc-input font-mono" {...form.register("ip_address")} />
         </Field>
-        <Field label="Rack position">
+        <Field label={t("addDevice.fieldRackPosition", "Rack position")}>
           <input
             className="pc-input"
             {...form.register("rack_position")}
             placeholder="Rack A / U12"
           />
         </Field>
-        <Field label="CPU">
+        <Field label={t("addDevice.fieldCpu", "CPU")}>
           <input className="pc-input" {...form.register("cpu_name")} />
         </Field>
-        <Field label="RAM GB">
+      <Field label={t("addDevice.fieldRamGb", "RAM GB")}>
           <input className="pc-input" type="number" min="0" {...form.register("ram_gb")} />
         </Field>
-        <Field label="Storage GB">
+        <Field label={t("addDevice.fieldStorageGb", "Storage GB")}>
           <input
             className="pc-input"
             type="number"
@@ -626,7 +628,7 @@ function DynamicDeviceFields({
             {...form.register("storage_capacity_gb")}
           />
         </Field>
-        <Field label="Ruolo server">
+        <Field label={t("addDevice.fieldServerRole", "Ruolo server")}>
           <input
             className="pc-input"
             {...form.register("server_role")}
@@ -639,13 +641,13 @@ function DynamicDeviceFields({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
-      <Field label="CPU">
+      <Field label={t("addDevice.fieldCpu", "CPU")}>
         <input className="pc-input" {...form.register("cpu_name")} />
       </Field>
-      <Field label="RAM GB">
+      <Field label={t("addDevice.fieldRamGb", "RAM GB")}>
         <input className="pc-input" type="number" min="0" {...form.register("ram_gb")} />
       </Field>
-      <Field label="Disco GB">
+      <Field label={t("addDevice.fieldStorageGb", "Disco GB")}>
         <input
           className="pc-input"
           type="number"
@@ -653,7 +655,7 @@ function DynamicDeviceFields({
           {...form.register("storage_capacity_gb")}
         />
       </Field>
-      <Field label="Tipo disco">
+      <Field label={t("addDevice.fieldStorageType", "Tipo disco")}>
         <input
           className="pc-input"
           {...form.register("storage_type")}

@@ -1,0 +1,112 @@
+{
+  "sidebar": {
+    "theme": "Theme",
+    "language": "Language",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "loading": "Loading...",
+    "redirecting": "Redirecting...",
+    "organization": "Organization",
+    "navigation": "PCReady Navigation",
+    "mainMenu": "Main application menu",
+    "openMenu": "Open menu",
+    "inventory": "Inventory",
+    "newTicket": "New Ticket"
+  },
+  "nav": {
+    "main": "Main",
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "kanban": "Kanban",
+    "calendar": "Calendar",
+    "configuration": "Configuration",
+    "checklist": "Checklist",
+    "automations": "Automations",
+    "scripts": "Scripts",
+    "clients": "Clients",
+    "contacts": "Contacts",
+    "costs": "Costs",
+    "bundles": "Bundles",
+    "inventory": "Inventory",
+    "docs": "API Docs",
+    "admin": "Admin / Users"
+  },
+  "pageTitle": {
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "kanban": "Kanban Board",
+    "checklist": "Checklist Setup",
+    "automations": "Automations",
+    "scripts": "Scripts",
+    "clients": "Clients",
+    "contacts": "Contacts",
+    "costs": "Costs",
+    "bundles": "Service Bundles",
+    "inventory": "Inventory",
+    "docs": "API Docs",
+    "admin": "Admin / Users",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "calendar": "Calendar"
+  },
+  "role": {
+    "admin": "Administrator",
+    "tech": "Technician",
+    "viewer": "Viewer"
+  },
+  "search": {
+    "placeholder": "Search tickets, model, serial..."
+  },
+  "language": {
+    "italian": "Italiano",
+    "english": "English",
+    "saveError": "Error saving language preference"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "logout": "Log out",
+    "personalData": "Personal data",
+    "updated": "Profile successfully updated"
+  },
+  "root": {
+    "title": "PCReady - PC preparation management",
+    "description": "Complete management of PC preparation and configuration: tickets, checklists, automations, and inventory.",
+    "ogDescription": "Tickets, checklists, automations, and inventory for your business PCs."
+  },
+  "oauth": {
+    "invalidRequest": "Invalid OAuth request",
+    "grantError": "Error during authorization",
+    "denyError": "Error during denial",
+    "validating": "Validating request...",
+    "invalidTitle": "Invalid request",
+    "invalidDescription": "The OAuth authorization request is not valid.",
+    "externalApp": "Authorization requested by an external application",
+    "requestedPermissions": "Requested permissions",
+    "cancelling": "Cancelling...",
+    "deny": "Deny",
+    "authorizing": "Authorizing...",
+    "authorize": "Authorize",
+    "consentDescription": "By authorizing, you allow the application to access your data as described above."
+  },
+  "docs": {
+    "pageTitle": "API Docs - PCReady",
+    "pageDescription": "OpenAPI documentation and Swagger UI console.",
+    "loading": "Loading documentation..."
+  },
+  "actions": {
+    "delete": "Delete",
+    "confirming": "Confirming...",
+    "cancel": "Cancel"
+  },
+  "pageStates": {
+    "fetchError": "Unable to complete request",
+    "retry": "Retry",
+    "reload": "Reload page",
+    "loadingPage": "Loading page",
+    "loadingInProgress": "Loading in progress",
+    "loadingTable": "Loading table",
+    "loadingCards": "Loading cards"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { fmtDateTime } from "@/lib/pcready";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -10,6 +11,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function TicketCard({ ticket }: { ticket: any }) {
+  const { t } = useTranslation("tickets");
   return (
     <a
       href={`/portal/tickets/${ticket.id}`}
@@ -19,7 +21,7 @@ export function TicketCard({ ticket }: { ticket: any }) {
         <div>
           <p className="font-mono text-xs text-muted-foreground">{ticket.ticket_code}</p>
           <h3 className="mt-1 font-semibold">
-            {ticket.title || ticket.model || "Ticket assistenza"}
+            {ticket.title || ticket.model || t("card.titleFallback", "Ticket assistenza")}
           </h3>
           {ticket.public_notes && (
             <p className="mt-2 text-sm text-muted-foreground">{ticket.public_notes}</p>
@@ -32,10 +34,10 @@ export function TicketCard({ ticket }: { ticket: any }) {
         </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <span>Priorità: {ticket.priority}</span>
-        {ticket.assignee?.full_name ? <span>Tecnico: {ticket.assignee.full_name}</span> : null}
-        <span>Aperto: {fmtDateTime(ticket.created_at)}</span>
-        {ticket.closed_at ? <span>Chiuso: {fmtDateTime(ticket.closed_at)}</span> : null}
+        <span>{t("card.priority", "Priorità:")} {ticket.priority}</span>
+        {ticket.assignee?.full_name ? <span>{t("card.technician", "Tecnico:")} {ticket.assignee.full_name}</span> : null}
+        <span>{t("card.opened", "Aperto:")} {fmtDateTime(ticket.created_at)}</span>
+        {ticket.closed_at ? <span>{t("card.closed", "Chiuso:")} {fmtDateTime(ticket.closed_at)}</span> : null}
       </div>
     </a>
   );

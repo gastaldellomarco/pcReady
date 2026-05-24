@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   Dialog,
@@ -55,12 +56,7 @@ interface EventModalProps {
 // Constants
 // ---------------------------------------------------------------------------
 
-const EVENT_TYPE_OPTIONS: { value: CalendarEventType; label: string }[] = [
-  { value: "intervention", label: "Intervento" },
-  { value: "deadline", label: "Scadenza" },
-  { value: "appointment", label: "Appuntamento" },
-  { value: "availability", label: "Disponibilità" },
-];
+const EVENT_TYPE_VALUES: CalendarEventType[] = ["intervention", "deadline", "appointment", "availability"];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -97,6 +93,7 @@ export function EventModal({
   canEdit,
   onSaved,
 }: EventModalProps) {
+  const { t } = useTranslation("calendar");
   const isEdit = !!event;
   const baseDate = defaultDate ?? new Date();
 
@@ -149,7 +146,7 @@ export function EventModal({
     const next: Record<string, string> = {};
 
     if (!title.trim()) {
-      next.title = "Il titolo è obbligatorio";
+      next.title = t("validation.titleRequired", "Il titolo è obbligatorio");
     }
 
     const startMs = allDay
@@ -160,7 +157,7 @@ export function EventModal({
       : new Date(`${endDate}T${endTime}:00`).getTime();
 
     if (startMs >= endMs) {
-      next.end = "La data di fine deve essere successiva alla data di inizio";
+      next.end = t("validation.endAfterStart", "La data di fine deve essere successiva alla data di inizio");
     }
 
     setErrors(next);
@@ -196,11 +193,11 @@ export function EventModal({
         { id: event.id, data: payload },
         {
           onSuccess: () => {
-            toast.success("Evento aggiornato");
+            toast.success(t("toasts.eventUpdated", "Evento aggiornato"));
             onSaved();
             onClose();
           },
-          onError: (err) => toast.error(`Errore nell'aggiornamento: ${err.message}`),
+          onError: (err) => toast.error(t("toasts.updateError", "Errore nell'aggiornamento: {{message}}", { message: err.message })),
         },
       );
     } else {
@@ -208,11 +205,11 @@ export function EventModal({
         { data: payload, createdBy: currentUserId },
         {
           onSuccess: () => {
-            toast.success("Evento creato");
+            toast.success(t("toasts.eventCreated", "Evento creato"));
             onSaved();
             onClose();
           },
-          onError: (err) => toast.error(`Errore nella creazione: ${err.message}`),
+          onError: (err) => toast.error(t("toasts.createError", "Errore nella creazione: {{message}}", { message: err.message })),
         },
       );
     }
@@ -223,11 +220,11 @@ export function EventModal({
     if (!event) return;
     deleteMutation.mutate(event.id, {
       onSuccess: () => {
-        toast.success("Evento eliminato");
+        toast.success(t("toasts.eventDeleted", "Evento eliminato"));
         onSaved();
         onClose();
       },
-      onError: (err) => toast.error(`Errore nell'eliminazione: ${err.message}`),
+      onError: (err) => toast.error(t("toasts.deleteError", "Errore nell'eliminazione: {{message}}", { message: err.message })),
     });
   }
 
@@ -247,18 +244,18 @@ export function EventModal({
     >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Modifica evento" : "Nuovo evento"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("modal.editTitle", "Modifica evento") : t("modal.newTitle", "Nuovo evento")}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-1">
           {/* ── Titolo ─────────────────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label htmlFor="em-title">Titolo *</Label>
+            <Label htmlFor="em-title">{t("modal.titleLabel", "Titolo *")}</Label>
             <Input
               id="em-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titolo dell'evento"
+              placeholder={t("modal.titlePlaceholder", "Titolo dell'evento")}
               disabled={!canEdit || isPending}
             />
             {errors.title && (
@@ -270,7 +267,7 @@ export function EventModal({
 
           {/* ── Tipo evento ────────────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label>Tipo evento</Label>
+            <Label>{t("modal.typeLabel", "Tipo evento")}</Label>
             <Select
               value={eventType}
               onValueChange={(v) => setEventType(v as CalendarEventType)}
@@ -280,14 +277,14 @@ export function EventModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
+                {EVENT_TYPE_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
                     <span className="flex items-center gap-2">
                       <span
                         className="w-2 h-2 rounded-full shrink-0"
-                        style={{ background: EVENT_TYPE_COLORS[opt.value].fg }}
+                        style={{ background: EVENT_TYPE_COLORS[value].fg }}
                       />
-                      {opt.label}
+                      {EVENT_TYPE_COLORS[value].label}
                     </span>
                   </SelectItem>
                 ))}
@@ -304,14 +301,14 @@ export function EventModal({
               disabled={!canEdit || isPending}
             />
             <Label htmlFor="em-allday" className="cursor-pointer font-normal">
-              Tutto il giorno
+              {t("modal.allDayLabel", "Tutto il giorno")}
             </Label>
           </div>
 
           {/* ── Date / time ────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="em-start-date">Data inizio *</Label>
+              <Label htmlFor="em-start-date">{t("modal.startDateLabel", "Data inizio *")}</Label>
               <Input
                 id="em-start-date"
                 type="date"
@@ -322,7 +319,7 @@ export function EventModal({
             </div>
             {!allDay && (
               <div className="grid gap-1.5">
-                <Label htmlFor="em-start-time">Ora inizio</Label>
+                <Label htmlFor="em-start-time">{t("modal.startTimeLabel", "Ora inizio")}</Label>
                 <Input
                   id="em-start-time"
                   type="time"
@@ -336,7 +333,7 @@ export function EventModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="em-end-date">Data fine *</Label>
+              <Label htmlFor="em-end-date">{t("modal.endDateLabel", "Data fine *")}</Label>
               <Input
                 id="em-end-date"
                 type="date"
@@ -347,7 +344,7 @@ export function EventModal({
             </div>
             {!allDay && (
               <div className="grid gap-1.5">
-                <Label htmlFor="em-end-time">Ora fine</Label>
+                <Label htmlFor="em-end-time">{t("modal.endTimeLabel", "Ora fine")}</Label>
                 <Input
                   id="em-end-time"
                   type="time"
@@ -367,17 +364,17 @@ export function EventModal({
 
           {/* ── Tecnico assegnato ──────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label>Tecnico assegnato</Label>
+            <Label>{t("modal.assigneeLabel", "Tecnico assegnato")}</Label>
             <Select
               value={assigneeId ?? "__none__"}
               onValueChange={(v) => setAssigneeId(v === "__none__" ? null : v)}
               disabled={!canEdit || isPending}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Nessuno" />
+                <SelectValue placeholder={t("modal.assigneeNone", "Nessuno")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">Nessuno</SelectItem>
+                <SelectItem value="__none__">{t("modal.assigneeNone", "Nessuno")}</SelectItem>
                 {technicians.map((tech) => (
                   <SelectItem key={tech.id} value={tech.id}>
                     <span className="flex items-center gap-2">
@@ -397,13 +394,13 @@ export function EventModal({
 
           {/* ── Ticket collegato ───────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label htmlFor="em-ticket">Ticket collegato</Label>
+            <Label htmlFor="em-ticket">{t("modal.ticketLabel", "Ticket collegato")}</Label>
             <div className="flex gap-2">
               <Input
                 id="em-ticket"
                 value={ticketCode}
                 readOnly
-                placeholder="Nessun ticket collegato"
+                placeholder={t("modal.ticketPlaceholder", "Nessun ticket collegato")}
                 className="flex-1 bg-muted/30 cursor-default"
               />
               {ticketId && (
@@ -413,7 +410,7 @@ export function EventModal({
                   size="icon"
                   onClick={clearTicket}
                   disabled={!canEdit || isPending}
-                  title="Rimuovi collegamento ticket"
+                  title={t("modal.ticketRemoveTitle", "Rimuovi collegamento ticket")}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -421,14 +418,14 @@ export function EventModal({
             </div>
             {!ticketId && (
               <p className="text-xs" style={{ color: pcReadyColors.textMuted }}>
-                Il collegamento ticket non può essere modificato da qui.
+                {t("modal.ticketHelp", "Il collegamento ticket non può essere modificato da qui.")}
               </p>
             )}
           </div>
 
           {/* ── Durata stimata ─────────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label htmlFor="em-duration">Durata (min)</Label>
+            <Label htmlFor="em-duration">{t("modal.durationLabel", "Durata (min)")}</Label>
             <Input
               id="em-duration"
               type="number"
@@ -436,14 +433,14 @@ export function EventModal({
               step="15"
               value={estimatedMinutes}
               onChange={(e) => setEstimatedMinutes(e.target.value)}
-              placeholder="es. 60"
+              placeholder={t("modal.durationPlaceholder", "es. 60")}
               disabled={!canEdit || isPending}
             />
           </div>
 
           {/* ── Colore personalizzato ──────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label htmlFor="em-color">Colore personalizzato</Label>
+            <Label htmlFor="em-color">{t("modal.colorLabel", "Colore personalizzato")}</Label>
             <div className="flex items-center gap-3">
               <input
                 id="em-color"
@@ -455,7 +452,7 @@ export function EventModal({
                 style={{ borderColor: pcReadyColors.border }}
               />
               <span className="text-sm" style={{ color: pcReadyColors.textSecondary }}>
-                {color || "Colore automatico dal tipo evento"}
+                {color || t("modal.colorAuto", "Colore automatico dal tipo evento")}
               </span>
               {color && canEdit && (
                 <Button
@@ -466,7 +463,7 @@ export function EventModal({
                   disabled={isPending}
                   className="ml-auto"
                 >
-                  Ripristina
+                  {t("modal.colorReset", "Ripristina")}
                 </Button>
               )}
             </div>
@@ -474,12 +471,12 @@ export function EventModal({
 
           {/* ── Note ──────────────────────────────────────────── */}
           <div className="grid gap-1.5">
-            <Label htmlFor="em-notes">Note</Label>
+            <Label htmlFor="em-notes">{t("modal.notesLabel", "Note")}</Label>
             <Textarea
               id="em-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Note aggiuntive sull'evento..."
+              placeholder={t("modal.notesPlaceholder", "Note aggiuntive sull'evento...")}
               rows={3}
               disabled={!canEdit || isPending}
             />
@@ -494,7 +491,7 @@ export function EventModal({
               {confirmDelete ? (
                 <>
                   <span className="text-sm font-medium" style={{ color: pcReadyColors.danger }}>
-                    Confermare l'eliminazione?
+                    {t("modal.confirmDelete", "Confermare l'eliminazione?")}
                   </span>
                   <Button
                     type="button"
@@ -503,7 +500,7 @@ export function EventModal({
                     onClick={handleDelete}
                     disabled={isPending}
                   >
-                    Elimina
+                    {t("modal.deleteButton", "Elimina")}
                   </Button>
                   <Button
                     type="button"
@@ -512,7 +509,7 @@ export function EventModal({
                     onClick={() => setConfirmDelete(false)}
                     disabled={isPending}
                   >
-                    No
+                    {t("modal.noButton", "No")}
                   </Button>
                 </>
               ) : (
@@ -525,14 +522,14 @@ export function EventModal({
                   style={{ color: pcReadyColors.danger, borderColor: pcReadyColors.danger }}
                 >
                   <Trash2 className="h-4 w-4 mr-1.5" />
-                  Elimina
+                  {t("modal.deleteButton", "Elimina")}
                 </Button>
               )}
             </div>
           )}
 
           <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-            Annulla
+            {t("modal.cancelButton", "Annulla")}
           </Button>
 
           {canEdit && (
@@ -542,7 +539,7 @@ export function EventModal({
               disabled={isPending}
               style={{ background: pcReadyColors.primary, color: "#fff" }}
             >
-              {isPending ? "Salvataggio…" : "Salva"}
+              {isPending ? t("modal.savingButton", "Salvataggio…") : t("modal.saveButton", "Salva")}
             </Button>
           )}
         </DialogFooter>

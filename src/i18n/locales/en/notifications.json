@@ -1,0 +1,53 @@
+{
+  "title": "Notifications Center",
+  "subtitle": "Manage alerts, warranty expirations, and activities.",
+  "meta": {
+    "title": "Notifications - PCReady",
+    "description": "Complete PCReady notification inbox."
+  },
+  "filters": {
+    "all": "All",
+    "unread": "Unread",
+    "allTypes": "All types"
+  },
+  "types": {
+    "ticket_assigned": "Ticket assigned",
+    "ticket_status_changed": "Ticket status changed",
+    "ticket_comment": "Ticket comment",
+    "automation_failed": "Automation failed",
+    "device_status_changed": "Device status changed",
+    "checklist_completed": "Checklist completed",
+    "user_invited": "User invited",
+    "mention": "Mention",
+    "warranty_expiry": "Warranty expiring soon",
+    "maintenance_due": "Maintenance scheduled",
+    "system_alert": "System alert",
+    "other": "Notification"
+  },
+  "card": {
+    "title": "Notification inbox"
+  },
+  "actions": {
+    "markAllRead": "Mark all read",
+    "deleteRead": "Delete read"
+  },
+  "count": "{{count}} notifications",
+  "empty": {
+    "title": "No notifications",
+    "description": "There are no items matching the selected filters."
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageInfo": "Page {{current}} of {{total}}"
+  },
+  "toast": {
+    "markedRead": "Notifications marked as read",
+    "deletedRead": "Read notifications deleted",
+    "operationFailed": "Operation failed",
+    "deleteFailed": "Deletion failed"
+  },
+  "errors": {
+    "loadFailed": "Unable to load notifications"
+  }
+}

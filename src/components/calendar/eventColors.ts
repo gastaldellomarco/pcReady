@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import { pcReadyColors } from '@/lib/design-system';
 import type { CalendarEventType } from '@/lib/queries/calendar';
 
@@ -9,25 +10,25 @@ export const EVENT_TYPE_COLORS: Record<
     bg: pcReadyColors.primaryLight,
     fg: pcReadyColors.primary,
     border: pcReadyColors.primary,
-    label: 'Intervento',
+    label: i18n.t("calendar:eventTypes.intervention", "Intervento"),
   },
   deadline: {
     bg: pcReadyColors.dangerLight,
     fg: pcReadyColors.danger,
     border: pcReadyColors.danger,
-    label: 'Scadenza',
+    label: i18n.t("calendar:eventTypes.deadline", "Scadenza"),
   },
   appointment: {
     bg: pcReadyColors.infoLight,
     fg: pcReadyColors.info,
     border: pcReadyColors.info,
-    label: 'Appuntamento',
+    label: i18n.t("calendar:eventTypes.appointment", "Appuntamento"),
   },
   availability: {
     bg: pcReadyColors.successLight,
     fg: pcReadyColors.success,
     border: pcReadyColors.success,
-    label: 'Disponibilità',
+    label: i18n.t("calendar:eventTypes.availability", "Disponibilità"),
   },
 };
 

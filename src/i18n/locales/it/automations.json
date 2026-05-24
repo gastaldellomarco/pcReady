@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "title": "Automazioni — PCReady"
+  },
+  "title": "Automazioni",
+  "subtitle": "Regole di automazione e flussi di lavoro in tempo reale.",
+  "newRule": "Nuova regola",
+  "search": {
+    "placeholder": "Cerca regola..."
+  },
+  "filters": {
+    "all": "Tutte",
+    "active": "Attive",
+    "inactive": "Inattive",
+    "error": "Con errori",
+    "allCategories": "Tutte le categorie"
+  },
+  "sort": {
+    "createdAt": "Data creazione",
+    "name": "Nome",
+    "lastRun": "Ultima esecuzione",
+    "executions": "N. esecuzioni",
+    "ascending": "Ascendente",
+    "descending": "Discendente"
+  },
+  "loading": "Caricamento regole...",
+  "empty": {
+    "noRules": "Nessuna regola trovata.",
+    "trySearch": "Prova a modificare la ricerca."
+  },
+  "builder": {
+    "guided": "Modalità guidata",
+    "advanced": "Modalità avanzata"
+  },
+  "editor": {
+    "loading": "Caricamento editor..."
+  },
+  "dialog": {
+    "editTitle": "Modifica automazione",
+    "newTitle": "Nuova automazione"
+  },
+  "delete": {
+    "title": "Elimina automazione",
+    "description": "Sei sicuro di voler eliminare definitivamente \"{{name}}\"? Questa azione non può essere annullata.",
+    "confirm": "Elimina"
+  },
+  "archive": {
+    "title": "Archivia automazione",
+    "description": "Archiviare \"{{name}}\"? L'automazione verrà disattivata e nascosta dall'elenco principale. Puoi sempre ripristinarla dalle versioni.",
+    "confirm": "Archivia",
+    "loading": "Archiviazione in corso..."
+  },
+  "logs": {
+    "button": "Log"
+  },
+  "wizard": {
+    "steps": {
+      "trigger": "Trigger",
+      "triggerDesc": "Evento scatenante",
+      "conditions": "Condizioni",
+      "conditionsDesc": "Filtri opzionali",
+      "actions": "Azioni",
+      "actionsDesc": "Cosa eseguire",
+      "schedule": "Schedule",
+      "scheduleDesc": "Pianificazione",
+      "review": "Riepilogo",
+      "reviewDesc": "Verifica e salva"
+    },
+    "validation": {
+      "selectTrigger": "Seleziona un trigger",
+      "addAction": "Aggiungi almeno un'azione",
+      "incompleteRule": "Regola incompleta",
+      "summary": "Quando \"{{trigger}}\", esegui {{actions}}.",
+      "fixErrors": "Correggi i seguenti errori prima di salvare:",
+      "warnings": "Avvisi:",
+      "errorSection": "{{section}}"
+    },
+    "changeNote": "Nota modifica",
+    "changeNotePlaceholder": "Descrivi cosa è cambiato in questa versione...",
+    "testRule": "Testa regola",
+    "cancel": "Annulla",
+    "back": "Indietro",
+    "next": "Avanti",
+    "save": "Salva regola"
+  },
+  "trigger": {
+    "title": "Trigger",
+    "subtitle": "Scegli l'evento che attiverà questa regola di automazione.",
+    "warrantyDaysLabel": "Giorni prima della scadenza",
+    "warrantyDaysHelp": "Esempio: 30 invia l'alert quando la garanzia scade entro 30 giorni.",
+    "cronLabel": "Espressione Cron",
+    "cronPlaceholder": "es. 0 8 * * * (ogni giorno alle 8:00)",
+    "cronHelp": "Formato standard cron a 5 campi: minuto ora giorno mese giorno-settimana",
+    "options": {
+      "ticket_created": "Ticket creato",
+      "ticket_created_desc": "Quando un nuovo ticket viene aperto",
+      "ticket_updated": "Ticket aggiornato",
+      "ticket_updated_desc": "Quando un ticket esistente viene modificato",
+      "checklist_completed": "Checklist completata",
+      "checklist_completed_desc": "Quando una checklist di preparazione viene completata",
+      "sla_warning": "SLA in scadenza",
+      "sla_warning_desc": "Quando un ticket si avvicina alla scadenza SLA",
+      "sla_breached": "SLA violato",
+      "sla_breached_desc": "Quando un ticket supera la scadenza SLA",
+      "warranty_expiring_soon": "Garanzia in scadenza",
+      "warranty_expiring_soon_desc": "Quando una garanzia dispositivo scade entro N giorni",
+      "warranty_expired": "Garanzia scaduta",
+      "warranty_expired_desc": "Quando un dispositivo supera la data di scadenza garanzia",
+      "scheduled": "Schedulato",
+      "scheduled_desc": "Esecuzione pianificata con espressione cron",
+      "manual": "Manuale",
+      "manual_desc": "Eseguita solo manualmente o da un trigger esterno"
+    }
+  },
+  "conditions": {
+    "title": "Condizioni",
+    "subtitle": "Aggiungi condizioni opzionali che devono essere soddisfatte per eseguire le azioni.",
+    "addCondition": "Aggiungi condizione",
+    "noConditions": "Nessuna condizione — la regola si attiverà sempre quando il trigger è soddisfatto.",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "remove": "Rimuovi",
+    "fieldPlaceholder": "Campo",
+    "valuePlaceholder": "Valore",
+    "and": "E",
+    "operators": {
+      "field_equals": "Campo uguale a",
+      "field_not_equals": "Campo diverso da",
+      "field_greater_than": "Maggiore di",
+      "field_less_than": "Minore di",
+      "field_contains": "Contiene",
+      "field_starts_with": "Inizia con",
+      "field_ends_with": "Finisce con",
+      "priority_high": "Priorità alta",
+      "tag_contains": "Tag contiene"
+    }
+  },
+  "actions": {
+    "title": "Azioni",
+    "subtitle": "Definisci le azioni eseguite dal runtime (Supabase / email).",
+    "payloadNote": "Ticket e dispositivo: lascia vuoto l'ID se il trigger invia ticket_id / device_id nel payload.",
+    "addAction": "Aggiungi azione",
+    "remove": "Rimuovi",
+    "types": {
+      "send_email": "Invia email",
+      "update_ticket_status": "Aggiorna stato ticket",
+      "create_notification": "Notifica in-app",
+      "update_device_status": "Aggiorna stato dispositivo",
+      "assign_ticket": "Assegna ticket"
+    },
+    "email": {
+      "recipient": "Destinatario (opzionale se nel payload trigger)",
+      "recipientPlaceholder": "cliente@esempio.it",
+      "subject": "Oggetto",
+      "body": "Corpo",
+      "isHtml": "Corpo è HTML"
+    },
+    "ticketStatus": {
+      "ticketId": "Ticket ID",
+      "status": "Stato",
+      "statuses": {
+        "pending": "In attesa",
+        "in-progress": "In corso",
+        "testing": "In test",
+        "ready": "Pronto"
+      }
+    },
+    "notification": {
+      "userId": "User ID (auth / profile)",
+      "userIdPlaceholder": "UUID — o usa assignee_id nel payload",
+      "type": "Tipo",
+      "title": "Titolo",
+      "message": "Messaggio",
+      "link": "Link",
+      "linkPlaceholder": "/tickets"
+    },
+    "deviceStatus": {
+      "deviceId": "Device ID",
+      "status": "Stato",
+      "statuses": {
+        "available": "Disponibile",
+        "assigned": "Assegnato",
+        "maintenance": "Manutenzione",
+        "retired": "Dismesso"
+      }
+    },
+    "assignTicket": {
+      "ticketId": "Ticket ID",
+      "assignee": "Assegnatario (profile / user UUID)",
+      "assigneePlaceholder": "UUID"
+    }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Imposta la schedulazione (opzionale).",
+    "typeLabel": "Tipo",
+    "types": {
+      "none": "Nessuna",
+      "cron": "Cron",
+      "interval": "Intervallo"
+    },
+    "cronExpression": "Expression"
+  },
+  "review": {
+    "title": "Riepilogo",
+    "subtitle": "Verifica la configurazione della regola prima di salvarla.",
+    "nameLabel": "Nome regola",
+    "namePlaceholder": "Assegna un nome alla regola",
+    "descriptionLabel": "Descrizione",
+    "descriptionPlaceholder": "Descrivi brevemente cosa fa questa regola",
+    "categoryLabel": "Categoria",
+    "noCategory": "Nessuna categoria",
+    "previewTitle": "Anteprima regola",
+    "incompleteConfig": "Configurazione incompleta",
+    "triggerLabel": "Trigger",
+    "notConfigured": "Non configurato",
+    "conditionsLabel": "Condizioni",
+    "actionsLabel": "Azioni",
+    "scheduleLabel": "Schedule",
+    "cronPrefix": "Cron: ",
+    "intervalPrefix": "Intervallo: ogni ",
+    "conditionFieldEquals": "Campo \"{{field}}\" = \"{{value}}\"",
+    "conditionFieldNotEquals": "Campo \"{{field}}\" != \"{{value}}\"",
+    "conditionFieldGreaterThan": "Campo \"{{field}}\" > \"{{value}}\"",
+    "conditionFieldLessThan": "Campo \"{{field}}\" < \"{{value}}\"",
+    "conditionFieldContains": "Campo \"{{field}}\" contiene \"{{value}}\"",
+    "conditionFieldStartsWith": "Campo \"{{field}}\" inizia con \"{{value}}\"",
+    "conditionFieldEndsWith": "Campo \"{{field}}\" finisce con \"{{value}}\"",
+    "conditionPriorityHigh": "Priorità alta",
+    "conditionTagContains": "Tag contiene \"{{value}}\""
+  }
+}

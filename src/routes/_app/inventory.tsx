@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import i18n from "@/i18n";
+import { useTranslation } from "react-i18next";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useServerFn } from "@tanstack/react-start";
@@ -36,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
+import { downloadPdf, InventoryPdf } from "@/components/pcready/pdf/dynamic";
 import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
 import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
@@ -75,10 +78,10 @@ import {
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
     meta: [
-      { title: "Inventario - PCReady" },
+      { title: i18n.t("inventory:meta.title", "Inventario - PCReady") },
       {
         name: "description",
-        content: "Inventario completo dei dispositivi gestiti, con seriali e stato.",
+        content: i18n.t("inventory:meta.description", "Inventario completo dei dispositivi gestiti, con seriali e stato."),
       },
     ],
   }),
@@ -144,6 +147,7 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
 const PAGE_SIZE = LIST_PAGE_SIZE;
 
 function InventoryPage() {
+  const { t } = useTranslation("inventory");
   const { openAddDevice, openCreate } = useTickets();
   const qc = useQueryClient();
   const { session } = useAuth();
@@ -264,7 +268,7 @@ function InventoryPage() {
   }
 
   async function exportPdf() {
-    if (!data.length) return toast.error("Nessun dispositivo da esportare");
+    if (!data.length) return toast.error(t("toast.noDevicesToExport"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -279,16 +283,16 @@ function InventoryPage() {
         <InventoryPdf rows={pdfRows()} organizationName={org} />,
         buildDownloadFileName("pcready-inventario", "pdf", { dated: true }),
       );
-      toast.success("PDF inventario esportato");
+      toast.success(t("toast.pdfExported"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione PDF"));
+      toast.error(errorMessage(error, t("toast.pdfExportError")));
     } finally {
       setPdfBusy(null);
     }
   }
 
   async function openPdfPreview() {
-    if (!data.length) return toast.error("Nessun dispositivo da visualizzare");
+    if (!data.length) return toast.error(t("toast.noDevicesToPreview"));
     setPdfBusy("preview");
     try {
       const settings = session?.access_token
@@ -301,20 +305,20 @@ function InventoryPage() {
       ]);
       await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
     } catch (error) {
-      toast.error(errorMessage(error, "Errore anteprima PDF"));
+      toast.error(errorMessage(error, t("toast.pdfPreviewError")));
     } finally {
       setPdfBusy(null);
     }
   }
 
   async function printSelectedLabels() {
-    if (!selectedRows.length) return toast.error("Seleziona almeno un dispositivo");
+    if (!selectedRows.length) return toast.error(t("toast.selectAtLeastOneDevice"));
     setLabelsBusy(true);
     try {
       const items = await buildLabelItems(selectedRows.map(toQrDevice));
       printLabelBatch(items);
     } catch (error) {
-      toast.error(errorMessage(error, "Errore stampa etichette"));
+      toast.error(errorMessage(error, t("toast.labelPrintError")));
     } finally {
       setLabelsBusy(false);
     }
@@ -337,15 +341,15 @@ function InventoryPage() {
         return;
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Errore ricerca dispositivo");
+      toast.error(err instanceof Error ? err.message : t("toast.deviceSearchError"));
       return;
     }
 
     setQ(code);
-    toast("Dispositivo non trovato", {
-      description: `Seriale rilevato: ${code}`,
+    toast(t("toast.deviceNotFound"), {
+      description: t("toast.serialDetected", { code }),
       action: {
-        label: "Crea",
+        label: t("toast.create"),
         onClick: () => openAddDevice(code),
       },
     });
@@ -397,10 +401,10 @@ function InventoryPage() {
             : r,
         ),
       );
-      toast.success(`Stato aggiornato a ${DEVICE_STATUS_META[nextStatus].label}`);
+      toast.success(t("toast.statusUpdated", { status: t("status." + nextStatus, DEVICE_STATUS_META[nextStatus].label) }));
       void qc.invalidateQueries({ queryKey: ["inventory"] });
     } catch (error) {
-      toast.error(errorMessage(error, "Errore aggiornamento stato"));
+      toast.error(errorMessage(error, t("toast.statusUpdateError")));
     } finally {
       setStatusSavingId(null);
     }
@@ -428,13 +432,13 @@ function InventoryPage() {
     setBulkStatusOpen(false);
     setSelectedIds(new Set());
     void qc.invalidateQueries({ queryKey: ["inventory"] });
-    toast.success(`${success} dispositivi aggiornati${fail ? `, ${fail} errori` : ""}`);
+    toast.success(t("toast.bulkStatusUpdated", { success, failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "" }));
   }
 
   async function openCompareDevices() {
     const ids = [...selectedIds];
     if (ids.length < 2 || ids.length > 3)
-      return toast.error("Seleziona 2 o 3 dispositivi da confrontare");
+      return toast.error(t("toast.selectTwoOrThree"));
     setCompareBusy(true);
     try {
       const { data: rows, error } = await supabase
@@ -447,7 +451,7 @@ function InventoryPage() {
       setCompareRows((rows ?? []) as CompareDevice[]);
       setCompareOpen(true);
     } catch (error) {
-      toast.error(errorMessage(error, "Errore confronto dispositivi"));
+      toast.error(errorMessage(error, t("toast.compareError")));
     } finally {
       setCompareBusy(false);
     }
@@ -476,11 +480,11 @@ function InventoryPage() {
     setBulkTargetClientName("");
     setSelectedIds(new Set());
     void qc.invalidateQueries({ queryKey: ["inventory"] });
-    toast.success(`${success} dispositivi aggiornati${fail ? `, ${fail} errori` : ""}`);
+    toast.success(t("toast.bulkStatusUpdated", { success, failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "" }));
   }
 
   async function exportSelectedPdf() {
-    if (!selectedRows.length) return toast.error("Nessun dispositivo selezionato");
+    if (!selectedRows.length) return toast.error(t("toast.noDeviceSelected"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -491,9 +495,9 @@ function InventoryPage() {
         <InventoryPdf rows={selectedRows.map(toPdfRow)} organizationName={org} />,
         buildDownloadFileName("pcready-inventario-selezionati", "pdf", { dated: true }),
       );
-      toast.success("PDF esportato");
+      toast.success(t("toast.pdfSimpleExported"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione PDF"));
+      toast.error(errorMessage(error, t("toast.pdfExportError")));
     } finally {
       setPdfBusy(null);
     }
@@ -521,7 +525,7 @@ function InventoryPage() {
   }
 
   async function exportWarrantyPdf() {
-    if (!data.length) return toast.error("Nessun dispositivo da esportare");
+    if (!data.length) return toast.error(t("toast.noDevicesToExport"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -535,9 +539,9 @@ function InventoryPage() {
         />,
         buildDownloadFileName("pcready-report-garanzie", "pdf", { dated: true }),
       );
-      toast.success("Report garanzie esportato");
+      toast.success(t("toast.warrantyReportExported"));
     } catch (error) {
-      toast.error(errorMessage(error, "Errore esportazione report garanzie"));
+      toast.error(errorMessage(error, t("toast.warrantyReportError")));
     } finally {
       setPdfBusy(null);
     }
@@ -551,10 +555,10 @@ function InventoryPage() {
           value={fs}
           onChange={(e) => setFs(e.target.value)}
         >
-          <option value="">Tutti gli stati</option>
+          <option value="">{t("filters.allStates")}</option>
           {Object.entries(DEVICE_STATUS_META).map(([k, v]) => (
             <option key={k} value={k}>
-              {v.label}
+              {t("status." + k, v.label)}
             </option>
           ))}
         </select>
@@ -563,7 +567,7 @@ function InventoryPage() {
           value={fos}
           onChange={(e) => setFos(e.target.value)}
         >
-          <option value="">Tutti gli OS</option>
+          <option value="">{t("filters.allOs")}</option>
           {osOptions.map((o) => (
             <option key={o}>{o}</option>
           ))}
@@ -573,7 +577,7 @@ function InventoryPage() {
           value={fcategory}
           onChange={(e) => setFcategory(e.target.value)}
         >
-          <option value="">Tutte le categorie</option>
+          <option value="">{t("filters.allCategories")}</option>
           {DEVICE_CATEGORIES.map((category) => (
             <option key={category} value={category}>
               {DEVICE_CATEGORY_LABELS[category]}
@@ -585,7 +589,7 @@ function InventoryPage() {
           value={ftype}
           onChange={(e) => setFtype(e.target.value)}
         >
-          <option value="">Tutti i tipi</option>
+          <option value="">{t("filters.allTypes")}</option>
           {(fcategory
             ? getDeviceTypes(fcategory as DeviceCategory)
             : DEVICE_CATEGORIES.flatMap((category) => getDeviceTypes(category))
@@ -597,7 +601,7 @@ function InventoryPage() {
         </select>
         <input
           className="pc-input lg:max-w-[260px]"
-          placeholder="Cerca asset tag, seriale, modello, tipo..."
+          placeholder={t("filters.searchPlaceholder")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -606,31 +610,31 @@ function InventoryPage() {
           value={updatedBeforeDays ?? ""}
           onChange={(e) => setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)}
         >
-          <option value="">Tutte le date</option>
-          <option value="7">Non aggiornati da &gt; 7 giorni</option>
-          <option value="14">Non aggiornati da &gt; 14 giorni</option>
-          <option value="30">Non aggiornati da &gt; 30 giorni</option>
-          <option value="60">Non aggiornati da &gt; 60 giorni</option>
+          <option value="">{t("filters.allDates")}</option>
+          <option value="7">{t("filters.notUpdated7")}</option>
+          <option value="14">{t("filters.notUpdated14")}</option>
+          <option value="30">{t("filters.notUpdated30")}</option>
+          <option value="60">{t("filters.notUpdated60")}</option>
         </select>
         <select
           className="pc-input lg:max-w-[190px]"
           value={warrantyFilter}
           onChange={(e) => setWarrantyFilter(e.target.value as WarrantyFilter)}
         >
-          <option value="all">Tutte le garanzie</option>
-          <option value="valid">In garanzia</option>
-          <option value="expiring">In scadenza</option>
-          <option value="urgent">Urgente</option>
-          <option value="expired">Scaduta</option>
-          <option value="missing">Senza garanzia</option>
+          <option value="all">{t("filters.allWarranties")}</option>
+          <option value="valid">{t("filters.warrantyValid")}</option>
+          <option value="expiring">{t("filters.warrantyExpiring")}</option>
+          <option value="urgent">{t("filters.warrantyUrgent")}</option>
+          <option value="expired">{t("filters.warrantyExpired")}</option>
+          <option value="missing">{t("filters.warrantyMissing")}</option>
         </select>
         <button
           type="button"
           className={`pc-btn pc-btn-sm ${maintenanceDueFilter ? "pc-btn-primary" : "pc-btn-ghost"}`}
           onClick={() => setMaintenanceDueFilter((value) => !value)}
-          title="Mostra solo dispositivi con manutenzione in scadenza entro 30 giorni"
+          title={t("filters.maintenanceDueTooltip")}
         >
-          <Wrench className="w-3 h-3" /> In scadenza 30g
+          <Wrench className="w-3 h-3" /> {t("filters.maintenanceDue30d")}
         </button>
         <div
           className="grid grid-cols-2 rounded-lg border sm:col-span-2 lg:flex"
@@ -641,38 +645,38 @@ function InventoryPage() {
             className={`pc-btn pc-btn-sm ${view === "list" ? "pc-btn-primary" : "pc-btn-ghost"}`}
             onClick={() => setView("list")}
           >
-            Lista
+            {t("viewToggle.list")}
           </button>
           <button
             type="button"
             className={`pc-btn pc-btn-sm ${view === "calendar" ? "pc-btn-primary" : "pc-btn-ghost"}`}
             onClick={() => setView("calendar")}
           >
-            <CalendarDays className="w-3 h-3" /> Calendario manutenzioni
+            <CalendarDays className="w-3 h-3" /> {t("viewToggle.calendar")}
           </button>
         </div>
         <span className="self-center text-xs text-text3 font-mono lg:ml-auto">
           {total
-            ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} di ${total}`
-            : "0 dispositivi"}
+            ? t("counts.range", { from: page * PAGE_SIZE + 1, to: page * PAGE_SIZE + data.length, total })
+            : t("counts.zeroDevices")}
         </span>
         <button
           onClick={openPdfPreview}
           disabled={!!pdfBusy}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <Eye className="w-3 h-3" /> Anteprima PDF
+          <Eye className="w-3 h-3" /> {t("actions.previewPdf")}
         </button>
         <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
-          {pdfBusy === "download" ? "Esportazione..." : "Esporta PDF"}
+          {pdfBusy === "download" ? t("actions.exporting") : t("actions.exportPdf")}
         </button>
         <button
           onClick={exportWarrantyPdf}
           disabled={!!pdfBusy}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <FileDown className="w-3 h-3" /> Report garanzie
+          <FileDown className="w-3 h-3" /> {t("actions.warrantyReport")}
         </button>
         <button
           onClick={printSelectedLabels}
@@ -681,17 +685,17 @@ function InventoryPage() {
         >
           <Printer className="w-3 h-3" />
           {labelsBusy
-            ? "Preparazione..."
-            : `Stampa etichette${selectedRows.length ? ` (${selectedRows.length})` : ""}`}
+            ? t("actions.preparing")
+            : `${t("actions.printLabels")}${selectedRows.length ? ` (${selectedRows.length})` : ""}`}
         </button>
         <button onClick={() => setScannerOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <ScanLine className="w-3 h-3" /> Scansiona
+          <ScanLine className="w-3 h-3" /> {t("actions.scan")}
         </button>
         <button onClick={() => setImportOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <Upload className="w-3 h-3" /> Import CSV
+          <Upload className="w-3 h-3" /> {t("actions.importCsv")}
         </button>
         <button onClick={() => openAddDevice()} className="pc-btn pc-btn-primary pc-btn-sm">
-          <Plus className="w-3 h-3" /> Aggiungi dispositivo
+          <Plus className="w-3 h-3" /> {t("actions.addDevice")}
         </button>
       </div>
       {selectedIds.size > 0 && (
@@ -700,13 +704,13 @@ function InventoryPage() {
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
           <span className="text-[12px] font-semibold text-text3 font-mono mr-1">
-            {selectedIds.size} selezionat{" "}
+            {t("counts.selected", { count: selectedIds.size })}
             {data.length > selectedIds.size ? (
               <button
                 className="text-accent hover:underline text-[11px] ml-1"
                 onClick={() => setSelectedIds(new Set(data.map((r) => r.id)))}
               >
-                Seleziona pagina
+                {t("counts.selectPage")}
               </button>
             ) : null}
           </span>
@@ -717,7 +721,7 @@ function InventoryPage() {
             onClick={() => setBulkStatusOpen(true)}
           >
             <CheckCircle2 className="h-3 w-3" />
-            Cambia stato
+            {t("actions.changeStatus")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -725,7 +729,7 @@ function InventoryPage() {
             onClick={exportSelectedPdf}
           >
             <FileDown className="h-3 w-3" />
-            Esporta PDF
+            {t("actions.exportSelected")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -733,7 +737,7 @@ function InventoryPage() {
             onClick={openCompareDevices}
           >
             <Columns3 className="h-3 w-3" />
-            Confronta
+            {t("actions.compare")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -741,14 +745,14 @@ function InventoryPage() {
             onClick={() => setBulkClientOpen(true)}
           >
             <ClipboardList className="h-3 w-3" />
-            Assegna utente
+            {t("actions.assignUser")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm text-destructive"
             onClick={() => setSelectedIds(new Set())}
           >
             <X className="h-3 w-3" />
-            Deseleziona
+            {t("actions.deselect")}
           </button>
         </div>
       )}
@@ -756,14 +760,14 @@ function InventoryPage() {
         <MaintenanceCalendarView onOpenDevice={openDeviceDetail} />
       ) : listQuery.isError ? (
         <PageFetchError
-          message="Impossibile caricare l\'inventario. Controlla la connessione e riprova."
+          message={t("error.pageFetch")}
           onRetry={() => listQuery.refetch()}
         />
       ) : (
         <>
           <div className="grid gap-3 md:hidden">
             {listLoading ? (
-              <div className="pc-card pc-card-body text-sm text-text3">Caricamento inventario...</div>
+              <div className="pc-card pc-card-body text-sm text-text3">{t("loading.inventory")}</div>
             ) : data.length ? (
               data.map((r) => (
                 <DeviceMobileCard
@@ -783,7 +787,7 @@ function InventoryPage() {
               ))
             ) : (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
-                Nessun dispositivo. Tocca <b>Aggiungi dispositivo</b> per iniziare.
+                <span dangerouslySetInnerHTML={{ __html: t("empty.mobile") }} />
               </div>
             )}
           </div>
@@ -798,24 +802,24 @@ function InventoryPage() {
                   >
                     <input
                       type="checkbox"
-                      aria-label="Seleziona pagina"
+                      aria-label={t("ariaLabels.selectPage")}
                       checked={allPageSelected}
                       onChange={(event) => togglePageSelected(event.target.checked)}
                     />
                   </th>
                   {[
-                    "Asset tag",
-                    "Seriale produttore",
-                    "Modello",
-                    "Categoria",
-                    "Tipo",
-                    "OS",
-                    "Stato",
-                    "Garanzia",
-                    "Cliente",
-                    "Utente",
-                    "Aggiornato",
-                    "Azioni",
+                    t("columns.assetTag", "Asset tag"),
+                    t("columns.serial", "Seriale produttore"),
+                    t("columns.model", "Modello"),
+                    t("columns.category", "Categoria"),
+                    t("columns.deviceType", "Tipo"),
+                    t("columns.os", "OS"),
+                    t("columns.status", "Stato"),
+                    t("columns.warranty", "Garanzia"),
+                    t("columns.client", "Cliente"),
+                    t("columns.user", "Utente"),
+                    t("columns.updated", "Aggiornato"),
+                    t("columns.actions", "Azioni"),
                   ].map((h) => (
                     <th
                       key={h}
@@ -845,7 +849,7 @@ function InventoryPage() {
                         >
                           <input
                             type="checkbox"
-                            aria-label={`Seleziona ${r.serial || r.id}`}
+                             aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
                             checked={selectedIds.has(r.id)}
                             onChange={(event) => toggleSelected(r.id, event.target.checked)}
                           />
@@ -860,10 +864,10 @@ function InventoryPage() {
                           <div>{r.model}</div>
                           {r.has_maintenance_due_soon ? (
                             <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                              <Wrench className="h-3 w-3" /> Manutenzione{" "}
+                              <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
                               {r.next_maintenance_due_date
                                 ? fmtDate(r.next_maintenance_due_date)
-                                : "in scadenza"}
+                                : t("maintenance.expiring")}
                             </div>
                           ) : null}
                         </td>
@@ -906,8 +910,8 @@ function InventoryPage() {
                           <div className="flex items-center gap-1">
                             <button
                               className="pc-btn-icon touch-target"
-                              title="Crea ticket con questo dispositivo"
-                              aria-label={`Crea ticket per ${r.serial || r.id}`}
+                              title={t("actions.createTicket")}
+                              aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
                               onClick={() => {
                                 openDeviceDetail(r.id);
                                 setTimeout(() => openCreate(), 200);
@@ -917,8 +921,8 @@ function InventoryPage() {
                             </button>
                             <button
                               className="pc-btn-icon touch-target"
-                              title="QR dispositivo"
-                              aria-label={`QR ${r.serial || r.id}`}
+                              title={t("actions.qr")}
+                              aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
                               onClick={() => setQrDevice(toQrDevice(r))}
                             >
                               <QrCode className="h-3.5 w-3.5" />
@@ -930,7 +934,7 @@ function InventoryPage() {
                     {!data.length && (
                       <tr>
                         <td colSpan={13} className="text-center py-12 text-text3 text-sm">
-                          Nessun dispositivo. Clicca <b>Aggiungi dispositivo</b> per iniziare.
+                          <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
                         </td>
                       </tr>
                     )}
@@ -949,17 +953,17 @@ function InventoryPage() {
             disabled={page === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
           >
-            Precedente
+            {t("actions.previous")}
           </button>
           <span className="text-xs text-text3 font-mono">
-            Pagina {page + 1} di {pageCount}
+            {t("counts.page", { page: page + 1, total: pageCount })}
           </span>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
             disabled={page + 1 >= pageCount}
             onClick={() => setPage((p) => p + 1)}
           >
-            Successiva
+            {t("actions.next")}
           </button>
         </div>
       )}
@@ -992,9 +996,9 @@ function InventoryPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cambia stato in blocco</AlertDialogTitle>
+            <AlertDialogTitle>{t("bulkStatus.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedIds.size} dispositivi selezionati. Scegli il nuovo stato:
+              {t("bulkStatus.description", { count: selectedIds.size })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <select
@@ -1004,14 +1008,14 @@ function InventoryPage() {
           >
             {Object.entries(DEVICE_STATUS_META).map(([k, v]) => (
               <option key={k} value={k}>
-                {v.label}
+                {t("status." + k, v.label)}
               </option>
             ))}
           </select>
           <AlertDialogFooter>
-            <AlertDialogCancel type="button">Annulla</AlertDialogCancel>
+            <AlertDialogCancel type="button">{t("actions.cancel")}</AlertDialogCancel>
             <AlertDialogAction type="button" disabled={bulkBusy} onClick={handleBulkStatusChange}>
-              {bulkBusy ? "Aggiornamento..." : `Applica a ${selectedIds.size} dispositivi`}
+              {bulkBusy ? t("actions.updating") : t("actions.applyTo", { count: selectedIds.size })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1026,26 +1030,25 @@ function InventoryPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Assegna utente in blocco</AlertDialogTitle>
+            <AlertDialogTitle>{t("bulkClient.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedIds.size} dispositivi selezionati. Inserisci il nome utente da assegnare
-              (anagrafica):
+              {t("bulkClient.description", { count: selectedIds.size })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
             className="pc-input w-full"
-            placeholder="Nome utente (es. Mario Rossi)"
+            placeholder={t("bulkClient.placeholder")}
             value={bulkTargetClientName}
             onChange={(e) => setBulkTargetClientName(e.target.value)}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel type="button">Annulla</AlertDialogCancel>
+            <AlertDialogCancel type="button">{t("actions.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               type="button"
               disabled={bulkBusy || !bulkTargetClientName.trim()}
               onClick={handleBulkAssignClient}
             >
-              {bulkBusy ? "Aggiornamento..." : `Applica a ${selectedIds.size} dispositivi`}
+              {bulkBusy ? t("actions.updating") : t("actions.applyTo", { count: selectedIds.size })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1055,6 +1058,7 @@ function InventoryPage() {
 }
 
 function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: string) => void }) {
+  const { t, i18n } = useTranslation("inventory");
   const [monthStart, setMonthStart] = useState(() => {
     const date = new Date();
     date.setDate(1);
@@ -1095,7 +1099,7 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
         if (!cancelled) setItems(rows);
       })
       .catch((error) =>
-        toast.error(error instanceof Error ? error.message : "Errore calendario manutenzioni"),
+        toast.error(error instanceof Error ? error.message : t("toast.calendarError")),
       )
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -1137,15 +1141,15 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd flex-wrap gap-2">
         <div>
-          <span className="pc-card-title">Calendario manutenzioni</span>
+          <span className="pc-card-title">{t("maintenance.calendarTitle")}</span>
           <div className="text-xs text-text3">
-            {monthStart.toLocaleDateString("it-IT", { month: "long", year: "numeric" })} ·{" "}
-            {items.length} interventi
+            {monthStart.toLocaleDateString(i18n.language, { month: "long", year: "numeric" })} ·{" "}
+            {t("counts.interventions", { count: items.length })}
           </div>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => moveMonth(-1)}>
-            Mese prec.
+            {t("maintenance.prevMonth")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -1153,17 +1157,17 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
               setMonthStart(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
             }
           >
-            Oggi
+            {t("maintenance.today")}
           </button>
           <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => moveMonth(1)}>
-            Mese succ.
+            {t("maintenance.nextMonth")}
           </button>
           <select
             className="pc-input max-w-[190px]"
             value={assignedTo}
             onChange={(event) => setAssignedTo(event.target.value)}
           >
-            <option value="">Tutti i tecnici</option>
+            <option value="">{t("filters.allTechnicians")}</option>
             {technicians.map((tech) => (
               <option key={tech.id} value={tech.id}>
                 {tech.name}
@@ -1174,18 +1178,18 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
             className="pc-input max-w-[180px]"
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
-            placeholder="Tipo manutenzione"
+            placeholder={t("filters.maintenanceTypePlaceholder")}
           />
           <select
             className="pc-input max-w-[170px]"
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as MaintenanceStatus | "all")}
           >
-            <option value="all">Tutti gli stati</option>
-            <option value="scheduled">Programmata</option>
-            <option value="due_soon">In scadenza</option>
-            <option value="overdue">Scaduta</option>
-            <option value="completed">Completata</option>
+            <option value="all">{t("filters.allStatuses")}</option>
+            <option value="scheduled">{t("filters.maintenanceScheduled")}</option>
+            <option value="due_soon">{t("filters.maintenanceDueSoon")}</option>
+            <option value="overdue">{t("filters.maintenanceOverdue")}</option>
+            <option value="completed">{t("filters.maintenanceCompleted")}</option>
           </select>
         </div>
       </div>
@@ -1198,7 +1202,7 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
               <div
                 className={`mb-2 text-xs font-semibold ${isToday ? "text-accent" : "text-text3"}`}
               >
-                {new Date(day).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit" })}
+                {new Date(day).toLocaleDateString(i18n.language, { weekday: "short", day: "2-digit" })}
               </div>
               <div className="flex flex-col gap-1.5">
                 {dayItems.map((item) => {
@@ -1215,7 +1219,7 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
                       <div className="font-semibold" style={{ color: meta.color }}>
                         {item.title}
                       </div>
-                      <div className="text-text2">{item.device?.model || "Dispositivo"}</div>
+                       <div className="text-text2">{item.device?.model || t("maintenance.device")}</div>
                       <div className="font-mono text-text3">
                         {item.device?.serial || item.device_id.slice(0, 8)}
                       </div>
@@ -1231,7 +1235,7 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
         })}
       </div>
       {loading ? (
-        <div className="p-3 text-center text-sm text-text3">Caricamento calendario...</div>
+        <div className="p-3 text-center text-sm text-text3">{t("loading.calendar")}</div>
       ) : null}
     </div>
   );
@@ -1246,32 +1250,33 @@ function CompareDevicesModal({
   rows: CompareDevice[];
   onClose: () => void;
 }) {
+  const { t } = useTranslation("inventory");
   const specs: [string, (row: CompareDevice) => string][] = [
-    ["Brand / modello", (row) => `${row.brand || "—"} ${row.model}`.trim()],
-    ["Asset tag", (row) => row.asset_tag || "—"],
-    ["Categoria", (row) => getDeviceCategoryLabel(row.category)],
-    ["Tipo", (row) => row.device_type || "—"],
-    ["Seriale", (row) => row.serial || "—"],
-    ["Stato", (row) => DEVICE_STATUS_META[row.status]?.label || row.status],
-    ["Cliente", (row) => row.client?.name || "—"],
-    ["CPU", (row) => row.cpu_name || "—"],
-    ["Frequenza CPU", (row) => (row.cpu_frequency_ghz ? `${row.cpu_frequency_ghz} GHz` : "—")],
-    ["Core", (row) => (row.cpu_cores ? String(row.cpu_cores) : "—")],
-    ["RAM", (row) => (row.ram_gb ? `${row.ram_gb} GB ${row.ram_type || ""}`.trim() : "—")],
+    [t("compare.specs.brandModel"), (row) => `${row.brand || "—"} ${row.model}`.trim()],
+    [t("compare.specs.assetTag"), (row) => row.asset_tag || "—"],
+    [t("compare.specs.category"), (row) => getDeviceCategoryLabel(row.category)],
+    [t("compare.specs.type"), (row) => row.device_type || "—"],
+    [t("compare.specs.serial"), (row) => row.serial || "—"],
+    [t("compare.specs.status"), (row) => DEVICE_STATUS_META[row.status]?.label || row.status],
+    [t("compare.specs.client"), (row) => row.client?.name || "—"],
+    [t("compare.specs.cpu"), (row) => row.cpu_name || "—"],
+    [t("compare.specs.cpuFrequency"), (row) => (row.cpu_frequency_ghz ? `${row.cpu_frequency_ghz} GHz` : "—")],
+    [t("compare.specs.cores"), (row) => (row.cpu_cores ? String(row.cpu_cores) : "—")],
+    [t("compare.specs.ram"), (row) => (row.ram_gb ? `${row.ram_gb} GB ${row.ram_type || ""}`.trim() : "—")],
     [
-      "Storage",
+      t("compare.specs.storage"),
       (row) =>
         row.storage_capacity_gb
           ? `${row.storage_capacity_gb} GB ${row.storage_type || ""}`.trim()
           : "—",
     ],
-    ["Drive", (row) => (row.storage_drive_count ? String(row.storage_drive_count) : "—")],
+    [t("compare.specs.drive"), (row) => (row.storage_drive_count ? String(row.storage_drive_count) : "—")],
     [
-      "OS",
+      t("compare.specs.os"),
       (row) => [row.os, row.os_version, row.os_architecture].filter(Boolean).join(" · ") || "—",
     ],
     [
-      "Schermo",
+      t("compare.specs.screen"),
       (row) =>
         [
           row.screen_size_inches ? `${row.screen_size_inches}"` : null,
@@ -1282,14 +1287,14 @@ function CompareDevicesModal({
           .join(" · ") || "—",
     ],
     [
-      "Connettività",
+      t("compare.specs.connectivity"),
       (row) => [row.wifi, row.ethernet, row.bluetooth].filter(Boolean).join(" · ") || "—",
     ],
-    ["Garanzia", (row) => WARRANTY_STATUS_META[getWarrantyStatus(row.warranty_expiry_date)].label],
+    [t("compare.specs.warranty"), (row) => WARRANTY_STATUS_META[getWarrantyStatus(row.warranty_expiry_date)].label],
   ];
 
   return (
-    <Modal open={open} onClose={onClose} title="Confronto dispositivi" size="xl">
+    <Modal open={open} onClose={onClose} title={t("compare.title")} size="xl">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -1298,7 +1303,7 @@ function CompareDevicesModal({
                 className="border-b px-3 py-2 text-left text-xs uppercase text-text3"
                 style={{ borderColor: "var(--border)" }}
               >
-                Specifica
+                {t("compare.spec")}
               </th>
               {rows.map((row) => (
                 <th
@@ -1335,7 +1340,7 @@ function CompareDevicesModal({
       </div>
       <div className="mt-4 flex justify-end">
         <button className="pc-btn pc-btn-ghost" onClick={onClose}>
-          Chiudi
+          {t("actions.close")}
         </button>
       </div>
     </Modal>
@@ -1343,19 +1348,20 @@ function CompareDevicesModal({
 }
 
 function WarrantyBadge({ expiryDate }: { expiryDate: string | null }) {
+  const { t } = useTranslation("inventory");
   const status = getWarrantyStatus(expiryDate);
   const meta = WARRANTY_STATUS_META[status];
   const days = daysUntil(expiryDate);
   const title =
-    days === null ? "Nessuna scadenza garanzia impostata" : `Scade il ${fmtDate(expiryDate!)}`;
+    days === null ? t("warrantyBadge.noExpiry") : t("warrantyBadge.expiresOn", { date: fmtDate(expiryDate!) });
   const subtitle =
     days === null
       ? null
       : days < 0
-        ? `${Math.abs(days)} gg fa`
+        ? t("warrantyBadge.daysAgo", { count: Math.abs(days) })
         : days === 0
-          ? "oggi"
-          : `${days} gg`;
+          ? t("warrantyBadge.today")
+          : t("warrantyBadge.daysLeft", { count: days });
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
@@ -1387,13 +1393,19 @@ function DeviceMobileCard({
   onCreateTicket: () => void;
   onQr: () => void;
 }) {
+  const { t } = useTranslation("inventory");
   return (
-    <article className="pc-card p-3">
-      <div className="flex items-start gap-3">
+    <article
+      className="pc-card pc-card-body flex flex-col transition-all duration-200"
+      style={{
+        border: selected ? "1px solid var(--accent)" : "1px solid var(--border)",
+        background: selected ? "var(--surface)" : "var(--surface)",
+      }}
+    >
+      <div className="flex items-start gap-2.5">
         <input
           type="checkbox"
-          className="mt-1 h-5 w-5"
-          aria-label={`Seleziona ${row.asset_tag || row.serial || row.id}`}
+          aria-label={t("columns.selectDevice", "Seleziona dispositivo")}
           checked={selected}
           onChange={(event) => onSelect(event.target.checked)}
         />
@@ -1401,32 +1413,32 @@ function DeviceMobileCard({
           <div className="break-anywhere text-sm font-semibold">{row.model}</div>
           <div className="mt-1 font-mono text-[11px] text-text3">
             {row.asset_tag || row.id.slice(0, 8)}
-            {row.serial ? ` · S/N ${row.serial}` : ""}
+            {row.serial ? ` · ${t("columns.serial")} ${row.serial}` : ""}
           </div>
         </button>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
         <div>
-          <div className="pc-label">Categoria</div>
+          <div className="pc-label">{t("columns.category", "Categoria")}</div>
           <div>{getDeviceCategoryLabel(row.category)}</div>
         </div>
         <div>
-          <div className="pc-label">Tipo</div>
+          <div className="pc-label">{t("columns.deviceType", "Tipo")}</div>
           <div>{row.device_type || "-"}</div>
         </div>
         <div>
-          <div className="pc-label">Cliente</div>
+          <div className="pc-label">{t("columns.client", "Cliente")}</div>
           <div className="break-anywhere">{row.client?.name || "-"}</div>
         </div>
         <div>
-          <div className="pc-label">Garanzia</div>
+          <div className="pc-label">{t("columns.warranty", "Garanzia")}</div>
           <WarrantyBadge expiryDate={row.warranty_expiry_date} />
         </div>
       </div>
       {row.has_maintenance_due_soon ? (
         <div className="mt-3 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
           <Wrench className="h-3 w-3" />
-          Manutenzione {row.next_maintenance_due_date ? fmtDate(row.next_maintenance_due_date) : "in scadenza"}
+          {t("maintenance.dueSoon", "Manutenzione")} {row.next_maintenance_due_date ? fmtDate(row.next_maintenance_due_date) : t("maintenance.expiring", "in scadenza")}
         </div>
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1439,11 +1451,11 @@ function DeviceMobileCard({
         />
         <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCreateTicket}>
           <TicketPlus className="h-3.5 w-3.5" />
-          Ticket
+          {t("actions.ticket")}
         </button>
         <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onQr}>
           <QrCode className="h-3.5 w-3.5" />
-          QR
+          {t("actions.qr")}
         </button>
       </div>
     </article>
@@ -1463,6 +1475,7 @@ function DeviceStatusBadge({
   saving: boolean;
   onStatusChange: (id: string, next: DeviceStatus) => void | Promise<void>;
 }) {
+  const { t } = useTranslation("inventory");
   const meta = DEVICE_STATUS_META[status];
   const readOnlyAssigned = hasActiveAssignment && status === "assigned";
 
@@ -1470,17 +1483,17 @@ function DeviceStatusBadge({
     return (
       <span
         className="pc-badge"
-        title="Assegnazione ticket attiva: per coerenza modifica lo stato dal flusso ticket."
+        title={t("details.readOnlyAssigned", "Assegnazione ticket attiva: per coerenza modifica lo stato dal flusso ticket.")}
         style={{ color: meta.color, background: `${meta.color}26` }}
       >
-        {meta.label}
+        {t("status." + status, meta.label)}
       </span>
     );
   }
 
   return (
     <select
-      aria-label="Stato dispositivo"
+      aria-label={t("columns.status", "Stato dispositivo")}
       className="pc-badge cursor-pointer max-w-[155px] disabled:opacity-60 disabled:cursor-wait"
       style={{
         color: meta.color,
@@ -1498,7 +1511,7 @@ function DeviceStatusBadge({
       {(Object.entries(DEVICE_STATUS_META) as [DeviceStatus, { label: string }][]).map(
         ([key, v]) => (
           <option key={key} value={key}>
-            {v.label}
+            {t("status." + key, v.label)}
           </option>
         ),
       )}

@@ -17,6 +17,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Eye, EyeOff, X } from "lucide-react";
 import type { WidgetLayoutItem, WidgetId } from "./widget-registry";
 import { DASHBOARD_WIDGETS } from "./widget-registry";
+import { useTranslation } from "react-i18next";
 
 interface WidgetSettingsPanelProps {
   allWidgets: WidgetLayoutItem[];
@@ -32,6 +33,7 @@ function SortableWidgetItem({
   widget: WidgetLayoutItem;
   onToggleVisibility: (widgetId: WidgetId) => void;
 }) {
+  const { t } = useTranslation("dashboard");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   });
@@ -54,7 +56,7 @@ function SortableWidgetItem({
         className="touch-target cursor-grab touch-none text-text3 hover:text-text2 active:cursor-grabbing"
         {...attributes}
         {...listeners}
-        aria-label="Trascina per riordinare"
+        aria-label={t("widgets.dragToReorder", "Trascina per riordinare")}
       >
         <GripVertical className="w-4 h-4" />
       </button>
@@ -67,8 +69,8 @@ function SortableWidgetItem({
           widget.visible ? "text-accent" : "text-text3"
         }`}
         onClick={() => onToggleVisibility(widget.id)}
-        aria-label={widget.visible ? "Nascondi widget" : "Mostra widget"}
-        title={widget.visible ? "Nascondi" : "Mostra"}
+        aria-label={widget.visible ? t("widgets.hideWidget", "Nascondi widget") : t("widgets.showWidget", "Mostra widget")}
+        title={widget.visible ? t("widgets.hide", "Nascondi") : t("widgets.show", "Mostra")}
       >
         {widget.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
       </button>
@@ -82,6 +84,7 @@ export function WidgetSettingsPanel({
   onToggleVisibility,
   onClose,
 }: WidgetSettingsPanelProps) {
+  const { t } = useTranslation("dashboard");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -106,18 +109,18 @@ export function WidgetSettingsPanel({
         style={{ background: "var(--surface)" }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">Gestione widget</h3>
+          <h3 className="text-sm font-semibold">{t("widgets.widgetPanelTitle", "Gestione widget")}</h3>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm p-1"
             onClick={onClose}
-            aria-label="Chiudi"
+            aria-label={t("widgets.close", "Chiudi")}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4">
           <p className="text-[11px] text-text3 mb-3">
-            Trascina per riordinare. Usa l'icona occhio per mostrare/nascondere widget.
+            {t("widgets.widgetPanelDesc", "Trascina per riordinare. Usa l'icona occhio per mostrare/nascondere widget.")}
           </p>
           <DndContext
             sensors={sensors}

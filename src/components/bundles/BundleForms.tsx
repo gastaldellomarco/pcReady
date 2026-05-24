@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BILLING_TYPE_LABEL,
   BUNDLE_PRIORITY_LABEL,
@@ -143,6 +144,7 @@ export function BundleForm({
   onCancel: () => void;
   busy?: boolean;
 }) {
+  const { t } = useTranslation("bundles");
   const [form, setForm] = useState<BundleFormState>(() => bundleInitialState(initial));
 
   useEffect(() => {
@@ -179,7 +181,7 @@ export function BundleForm({
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
         <label className={labelClass}>
-          Nome bundle
+          {t("form.bundleName", "Nome bundle")}
           <input
             className={fieldClass}
             value={form.name}
@@ -189,7 +191,7 @@ export function BundleForm({
           />
         </label>
         <label className={labelClass}>
-          Tipo fatturazione
+          {t("form.billingType", "Tipo fatturazione")}
           <select
             className={fieldClass}
             value={form.billing_type}
@@ -204,7 +206,7 @@ export function BundleForm({
           </select>
         </label>
         <label className="space-y-1.5 text-sm font-medium text-text2 md:col-span-2">
-          Descrizione
+          {t("form.description", "Descrizione")}
           <textarea
             className={`${fieldClass} min-h-24`}
             value={form.description}
@@ -213,7 +215,7 @@ export function BundleForm({
           />
         </label>
         <label className={labelClass}>
-          Canone
+          {t("form.fee", "Canone")}
           <input
             className={fieldClass}
             type="number"
@@ -225,7 +227,7 @@ export function BundleForm({
           />
         </label>
         <label className={labelClass}>
-          Valuta
+          {t("form.currency", "Valuta")}
           <input
             className={fieldClass}
             value={form.currency}
@@ -235,7 +237,7 @@ export function BundleForm({
           />
         </label>
         <div className={labelClass}>
-          Ore incluse
+          {t("form.includedHours", "Ore incluse")}
           <input
             className={fieldClass}
             type="number"
@@ -255,11 +257,11 @@ export function BundleForm({
               onChange={(event) => patch({ unlimited_hours: event.target.checked })}
               disabled={busy}
             />
-            Ore illimitate
+            {t("form.unlimitedHours", "Ore illimitate")}
           </label>
         </div>
         <label className={labelClass}>
-          Tariffa extra oraria
+          {t("form.extraRate", "Tariffa extra oraria")}
           <input
             className={fieldClass}
             type="number"
@@ -271,7 +273,7 @@ export function BundleForm({
           />
         </label>
         <label className={labelClass}>
-          SLA risposta (ore)
+          {t("form.slaResponse", "SLA risposta (ore)")}
           <input
             className={fieldClass}
             type="number"
@@ -283,7 +285,7 @@ export function BundleForm({
           />
         </label>
         <label className={labelClass}>
-          SLA risoluzione (ore)
+          {t("form.slaResolution", "SLA risoluzione (ore)")}
           <input
             className={fieldClass}
             type="number"
@@ -295,7 +297,7 @@ export function BundleForm({
           />
         </label>
         <div className={labelClass}>
-          Visite on-site incluse
+          {t("form.onsiteVisits", "Visite on-site incluse")}
           <input
             className={fieldClass}
             type="number"
@@ -315,11 +317,11 @@ export function BundleForm({
               onChange={(event) => patch({ unlimited_onsite_visits: event.target.checked })}
               disabled={busy}
             />
-            Visite illimitate
+            {t("form.unlimitedVisits", "Visite illimitate")}
           </label>
         </div>
         <label className={labelClass}>
-          Priorità ticket
+          {t("form.ticketPriority", "Priorità ticket")}
           <select
             className={fieldClass}
             value={form.ticket_priority}
@@ -346,7 +348,7 @@ export function BundleForm({
             onChange={(event) => patch({ remote_support: event.target.checked })}
             disabled={busy}
           />
-          Supporto remoto
+          {t("form.remoteSupport", "Supporto remoto")}
         </label>
         <label className="flex items-center gap-2 text-sm text-text2">
           <input
@@ -356,7 +358,7 @@ export function BundleForm({
             onChange={(event) => patch({ auto_renew: event.target.checked })}
             disabled={busy}
           />
-          Rinnovo automatico
+          {t("form.autoRenew", "Rinnovo automatico")}
         </label>
         <label className="flex items-center gap-2 text-sm text-text2">
           <input
@@ -366,7 +368,7 @@ export function BundleForm({
             onChange={(event) => patch({ active: event.target.checked })}
             disabled={busy}
           />
-          Bundle attivo
+          {t("form.bundleActive", "Bundle attivo")}
         </label>
       </div>
 
@@ -377,14 +379,14 @@ export function BundleForm({
           onClick={onCancel}
           disabled={busy}
         >
-          Annulla
+          {t("form.cancel", "Annulla")}
         </button>
         <button
           type="submit"
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           disabled={busy}
         >
-          {busy ? "Salvataggio..." : "Salva"}
+          {busy ? t("form.saving", "Salvataggio...") : t("form.save", "Salva")}
         </button>
       </div>
     </form>
@@ -406,6 +408,7 @@ export function AssignmentForm({
   onCancel: () => void;
   busy?: boolean;
 }) {
+  const { t } = useTranslation("bundles");
   const [form, setForm] = useState<AssignmentFormState>(() => assignmentInitialState(initial));
   const selectedBundle = useMemo(
     () => bundles.find((bundle) => bundle.id === form.bundle_id) ?? null,
@@ -449,7 +452,7 @@ export function AssignmentForm({
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
         <label className={labelClass}>
-          Cliente
+          {t("assignment.client", "Cliente")}
           <select
             className={fieldClass}
             value={form.client_id}
@@ -457,7 +460,7 @@ export function AssignmentForm({
             required
             disabled={busy}
           >
-            <option value="">Seleziona cliente</option>
+            <option value="">{t("assignment.selectClient", "Seleziona cliente")}</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>
                 {clientLabel(client)}
@@ -466,7 +469,7 @@ export function AssignmentForm({
           </select>
         </label>
         <label className={labelClass}>
-          Bundle
+          {t("assignment.bundle", "Bundle")}
           <select
             className={fieldClass}
             value={form.bundle_id}
@@ -474,7 +477,7 @@ export function AssignmentForm({
             required
             disabled={busy}
           >
-            <option value="">Seleziona bundle</option>
+            <option value="">{t("assignment.selectBundle", "Seleziona bundle")}</option>
             {bundles.map((bundle) => (
               <option key={bundle.id} value={bundle.id}>
                 {bundle.name}
@@ -483,7 +486,7 @@ export function AssignmentForm({
           </select>
         </label>
         <label className={labelClass}>
-          Data inizio
+          {t("assignment.startDate", "Data inizio")}
           <input
             className={fieldClass}
             type="date"
@@ -494,7 +497,7 @@ export function AssignmentForm({
           />
         </label>
         <label className={labelClass}>
-          Data fine
+          {t("assignment.endDate", "Data fine")}
           <input
             className={fieldClass}
             type="date"
@@ -504,15 +507,15 @@ export function AssignmentForm({
           />
         </label>
         <label className={labelClass}>
-          Modalità rinnovo
+          {t("assignment.renewalMode", "Modalità rinnovo")}
           <select
             className={fieldClass}
             value={form.renewal_mode}
             onChange={(event) => patch({ renewal_mode: event.target.value })}
             disabled={busy}
           >
-            <option value="automatic">Automatico</option>
-            <option value="manual">Manuale</option>
+            <option value="automatic">{t("assignment.renewalAutomatic", "Automatico")}</option>
+            <option value="manual">{t("assignment.renewalManual", "Manuale")}</option>
           </select>
         </label>
         <label className="flex items-center gap-2 pt-7 text-sm text-text2">
@@ -523,20 +526,20 @@ export function AssignmentForm({
             onChange={(event) => patch({ auto_renew: event.target.checked })}
             disabled={busy}
           />
-          Rinnovo automatico
+          {t("assignment.autoRenew", "Rinnovo automatico")}
         </label>
       </div>
 
       <div className="rounded-xl border border-border bg-surface2/40 p-4">
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-text2">Override personalizzati</h3>
+          <h3 className="text-sm font-semibold text-text2">{t("assignment.customOverrides", "Override personalizzati")}</h3>
           <p className={hintClass}>
-            Lascia vuoto un campo per usare il valore configurato nel bundle.
+            {t("assignment.customHint", "Lascia vuoto un campo per usare il valore configurato nel bundle.")}
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <label className={labelClass}>
-            Canone custom
+            {t("assignment.customFee", "Canone custom")}
             <input
               className={fieldClass}
               type="number"
@@ -548,7 +551,7 @@ export function AssignmentForm({
             />
           </label>
           <label className={labelClass}>
-            Ore incluse custom
+            {t("assignment.customHours", "Ore incluse custom")}
             <input
               className={fieldClass}
               type="number"
@@ -560,7 +563,7 @@ export function AssignmentForm({
             />
           </label>
           <label className={labelClass}>
-            Tariffa extra custom
+            {t("assignment.customExtraRate", "Tariffa extra custom")}
             <input
               className={fieldClass}
               type="number"
@@ -572,7 +575,7 @@ export function AssignmentForm({
             />
           </label>
           <label className={labelClass}>
-            SLA risposta custom
+            {t("assignment.customSlaResponse", "SLA risposta custom")}
             <input
               className={fieldClass}
               type="number"
@@ -584,7 +587,7 @@ export function AssignmentForm({
             />
           </label>
           <label className={labelClass}>
-            SLA risoluzione custom
+            {t("assignment.customSlaResolution", "SLA risoluzione custom")}
             <input
               className={fieldClass}
               type="number"
@@ -596,7 +599,7 @@ export function AssignmentForm({
             />
           </label>
           <label className={labelClass}>
-            Visite on-site custom
+            {t("assignment.customOnsite", "Visite on-site custom")}
             <input
               className={fieldClass}
               type="number"
@@ -611,7 +614,7 @@ export function AssignmentForm({
       </div>
 
       <label className="space-y-1.5 text-sm font-medium text-text2">
-        Note
+        {t("assignment.notes", "Note")}
         <textarea
           className={`${fieldClass} min-h-24`}
           value={form.notes}
@@ -627,14 +630,14 @@ export function AssignmentForm({
           onClick={onCancel}
           disabled={busy}
         >
-          Annulla
+          {t("assignment.cancel", "Annulla")}
         </button>
         <button
           type="submit"
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           disabled={busy}
         >
-          {busy ? "Salvataggio..." : "Salva"}
+          {busy ? t("assignment.saving", "Salvataggio...") : t("assignment.save", "Salva")}
         </button>
       </div>
     </form>

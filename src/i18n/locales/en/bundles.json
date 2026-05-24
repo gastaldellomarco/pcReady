@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "title": "Assistance Bundles - PCReady",
+    "description": "Support packages, client assignments and usage"
+  },
+  "title": "Assistance Bundles",
+  "pageDescription": "Sellable packages, SLA, client assignments, usage, and extra billing.",
+  "newBundle": "New bundle",
+  "assignToClient": "Assign to client",
+  "exportCsv": "Export CSV",
+  "editBundle": "Edit bundle",
+  "editAssignment": "Edit assignment",
+  "assignBundle": "Assign bundle to client",
+  "csvExported": "Bundle CSV exported",
+  "clientName": "Client",
+  "csv": {
+    "hoursUsed": "Hours used",
+    "hoursIncluded": "Hours included",
+    "hoursRemaining": "Hours remaining",
+    "extraHours": "Extra hours",
+    "extraAmount": "Extra amount",
+    "expiry": "Expiry"
+  },
+  "tabs": {
+    "catalog": "Bundle Catalog",
+    "assignments": "Client Assignments",
+    "usage": "Usage & Alerts",
+    "billing": "Billing"
+  },
+  "stats": {
+    "activeBundles": "Active Bundles",
+    "activeAssignments": "Active Assignments",
+    "usageAlert": "Usage Alert",
+    "billableExtra": "Billable Extra"
+  },
+  "errors": {
+    "adminOnly": "Only admins can manage bundles",
+    "adminOnlyEdit": "Only admins can edit bundles",
+    "insufficientPermissions": "Insufficient permissions",
+    "loadClients": "Error loading clients",
+    "saveBundle": "Error saving bundle",
+    "updateBundle": "Error updating bundle",
+    "saveAssignment": "Error saving assignment",
+    "cancelAssignment": "Error cancelling assignment",
+    "invalidAssignment": "Select a valid assignment",
+    "savePayment": "Error saving payment"
+  },
+  "success": {
+    "bundleSaved": "Bundle saved",
+    "bundleDeactivated": "Bundle deactivated",
+    "bundleReactivated": "Bundle reactivated",
+    "assignmentSaved": "Assignment saved",
+    "assignmentCancelled": "Assignment cancelled",
+    "paymentRegistered": "Payment registered"
+  },
+  "badge": {
+    "usage": "Usage",
+    "unlimited": "Unlimited"
+  },
+  "form": {
+    "bundleName": "Bundle name",
+    "billingType": "Billing type",
+    "description": "Description",
+    "fee": "Fee",
+    "currency": "Currency",
+    "includedHours": "Included hours",
+    "unlimitedHours": "Unlimited hours",
+    "extraRate": "Extra hourly rate",
+    "slaResponse": "SLA response (hours)",
+    "slaResolution": "SLA resolution (hours)",
+    "onsiteVisits": "On-site visits included",
+    "unlimitedVisits": "Unlimited visits",
+    "ticketPriority": "Ticket priority",
+    "remoteSupport": "Remote support",
+    "autoRenew": "Auto-renew",
+    "bundleActive": "Active bundle",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save"
+  },
+  "assignment": {
+    "client": "Client",
+    "bundle": "Bundle",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "renewalMode": "Renewal mode",
+    "renewalAutomatic": "Automatic",
+    "renewalManual": "Manual",
+    "autoRenew": "Auto-renew",
+    "selectClient": "Select client",
+    "selectBundle": "Select bundle",
+    "customOverrides": "Custom overrides",
+    "customHint": "Leave a field empty to use the value configured in the bundle.",
+    "customFee": "Custom fee",
+    "customHours": "Custom included hours",
+    "customExtraRate": "Custom extra rate",
+    "customSlaResponse": "Custom SLA response",
+    "customSlaResolution": "Custom SLA resolution",
+    "customOnsite": "Custom on-site visits",
+    "notes": "Notes",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save"
+  },
+  "catalog": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "fee": "Fee",
+    "type": "Type",
+    "includedHours": "Included Hours",
+    "extraRate": "Extra Rate",
+    "slaResponse": "SLA Response",
+    "slaResolution": "SLA Resolution",
+    "onsite": "On-site",
+    "remoteSupport": "Remote Support",
+    "included": "Included",
+    "no": "No",
+    "empty": "No bundles configured."
+  },
+  "assignments": {
+    "title": "Assigned Bundle History",
+    "noExpiry": "no expiry",
+    "autoRenew": "Automatic",
+    "manualRenew": "Manual",
+    "empty": "No assignments.",
+    "table": {
+      "client": "Client",
+      "bundle": "Bundle",
+      "status": "Status",
+      "period": "Period",
+      "renewal": "Renewal",
+      "fee": "Fee",
+      "notes": "Notes",
+      "actions": "Actions"
+    }
+  },
+  "usage": {
+    "title": "Bundle Usage & Alerts",
+    "warning": "Warning",
+    "ok": "OK",
+    "empty": "No usage recorded.",
+    "monthlyReport": "Monthly Report",
+    "noData": "No monthly data.",
+    "table": {
+      "client": "Client",
+      "bundle": "Bundle",
+      "hours": "Hours",
+      "onsite": "On-site",
+      "extra": "Extra",
+      "expiry": "Expiry",
+      "alert": "Alert"
+    },
+    "monthly": {
+      "month": "Month",
+      "hours": "Hours",
+      "extra": "Extra"
+    }
+  },
+  "billing": {
+    "title": "Fees & Billing",
+    "billableExtraHours": "Billable Extra Hours",
+    "selectAssignment": "Assignment...",
+    "amountPlaceholder": "Amount",
+    "notesPlaceholder": "Payment notes...",
+    "registerPayment": "Register Payment",
+    "paymentHistory": "Paid Fees History",
+    "empty": "No payments recorded.",
+    "table": {
+      "client": "Client",
+      "bundle": "Bundle",
+      "period": "Period",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
+    }
+  }
+}

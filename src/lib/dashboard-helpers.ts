@@ -1,10 +1,11 @@
+import i18n from "@/i18n";
 import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 
 export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
   const rows = [
-    ["Report mensile"],
-    ["Mese", "Ticket aperti", "Ticket chiusi", "Tempo medio risoluzione giorni"],
+    [i18n.t("dashboard:help.monthlyReport", "Report mensile")],
+    [i18n.t("dashboard:help.month", "Mese"), i18n.t("dashboard:help.openedTickets", "Ticket aperti"), i18n.t("dashboard:help.closedTickets", "Ticket chiusi"), i18n.t("dashboard:help.avgResolutionDays", "Tempo medio risoluzione giorni")],
     ...analytics.ticketsByMonth.map((row) => [
       row.label,
       row.opened,
@@ -12,8 +13,8 @@ export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
       row.avg_days ?? "",
     ]),
     [],
-    ["Performance tecnici"],
-    ["Tecnico", "Ticket assegnati", "Ticket completati", "Tempo medio risoluzione giorni"],
+    [i18n.t("dashboard:help.technicianPerformance", "Performance tecnici")],
+    [i18n.t("dashboard:help.technician", "Tecnico"), i18n.t("dashboard:help.assignedTickets", "Ticket assegnati"), i18n.t("dashboard:help.completedTickets", "Ticket completati"), i18n.t("dashboard:help.avgResolutionDays", "Tempo medio risoluzione giorni")],
     ...analytics.technicianKpi.map((row) => [
       row.full_name,
       row.assigned,

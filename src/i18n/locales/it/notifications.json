@@ -1,0 +1,53 @@
+{
+  "title": "Centro Notifiche",
+  "subtitle": "Gestione avvisi, scadenze garanzie ed attività.",
+  "meta": {
+    "title": "Notifiche - PCReady",
+    "description": "Inbox completa delle notifiche PCReady."
+  },
+  "filters": {
+    "all": "Tutte",
+    "unread": "Non lette",
+    "allTypes": "Tutti i tipi"
+  },
+  "types": {
+    "ticket_assigned": "Ticket assegnato",
+    "ticket_status_changed": "Cambio stato ticket",
+    "ticket_comment": "Commento ticket",
+    "automation_failed": "Automazione fallita",
+    "device_status_changed": "Cambio stato dispositivo",
+    "checklist_completed": "Checklist completata",
+    "user_invited": "Utente invitato",
+    "mention": "Menzione",
+    "warranty_expiry": "Garanzia in scadenza",
+    "maintenance_due": "Manutenzione programmata",
+    "system_alert": "Avviso di sistema",
+    "other": "Notifica"
+  },
+  "card": {
+    "title": "Inbox notifiche"
+  },
+  "actions": {
+    "markAllRead": "Segna tutte",
+    "deleteRead": "Elimina lette"
+  },
+  "count": "{{count}} notifiche",
+  "empty": {
+    "title": "Nessuna notifica",
+    "description": "Non ci sono elementi che corrispondono ai filtri selezionati."
+  },
+  "pagination": {
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageInfo": "Pagina {{current}} di {{total}}"
+  },
+  "toast": {
+    "markedRead": "Notifiche segnate come lette",
+    "deletedRead": "Notifiche lette eliminate",
+    "operationFailed": "Operazione non riuscita",
+    "deleteFailed": "Eliminazione non riuscita"
+  },
+  "errors": {
+    "loadFailed": "Impossibile caricare notifiche"
+  }
+}

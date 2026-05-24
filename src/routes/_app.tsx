@@ -3,6 +3,8 @@ import { PageErrorBoundary } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 // Ensure a safe global fallback so accidental bare references don't crash rendering
 try {
   (globalThis as any).organizationName =
@@ -36,6 +38,7 @@ import {
   Euro,
   CalendarDays,
   Package,
+  Languages,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTickets } from "@/lib/use-tickets";
@@ -45,6 +48,8 @@ import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
 import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import { getPublicAppSettings, setClientAppSettings } from "@/lib/app-settings";
 import { getMfaClientStatus } from "@/lib/mfa-client";
+import { updateMyProfile } from "@/lib/user-profile";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -142,17 +147,26 @@ function resolveNavigationGroups({
 }): ResolvedNavigationGroup[] {
   return NAVIGATION_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => {
-      const roleAllowed = !item.requiredRoles || item.requiredRoles.includes(profile.role);
-      const visibilityAllowed =
-        !item.visibility ||
-        item.visibility === "all" ||
-        (item.visibility === "mobile" && isMobile) ||
-        (item.visibility === "desktop" && !isMobile);
-      const featureEnabled = !item.featureFlag || enabledFeatureFlags.includes(item.featureFlag);
+    label: i18n.t("common:nav." + group.id, group.label),
+    items: group.items
+      .filter((item) => {
+        const roleAllowed = !item.requiredRoles || item.requiredRoles.includes(profile.role);
+        const visibilityAllowed =
+          !item.visibility ||
+          item.visibility === "all" ||
+          (item.visibility === "mobile" && isMobile) ||
+          (item.visibility === "desktop" && !isMobile);
+        const featureEnabled = !item.featureFlag || enabledFeatureFlags.includes(item.featureFlag);
 
-      return roleAllowed && visibilityAllowed && featureEnabled;
-    }),
+        return roleAllowed && visibilityAllowed && featureEnabled;
+      })
+      .map((item) => ({
+        ...item,
+        label: i18n.t("common:nav." + item.to.replace("/", ""), item.label),
+        title: item.title
+          ? i18n.t("common:pageTitle." + item.to.replace("/", ""), item.title)
+          : undefined,
+      })),
   })).filter((group) => group.items.length > 0);
 }
 
@@ -162,7 +176,26 @@ function resolveNavigationBadge(item: NavigationItem, pendingCount: number) {
   return undefined;
 }
 
-const PAGE_TITLES: Record<string, string> = {
+const PAGE_TITLE_KEYS: Record<string, string> = {
+  "/dashboard": "pageTitle.dashboard",
+  "/tickets": "pageTitle.tickets",
+  "/kanban": "pageTitle.kanban",
+  "/checklist": "pageTitle.checklist",
+  "/automations": "pageTitle.automations",
+  "/scripts": "pageTitle.scripts",
+  "/clients": "pageTitle.clients",
+  "/contacts": "pageTitle.contacts",
+  "/costs": "pageTitle.costs",
+  "/bundles": "pageTitle.bundles",
+  "/inventory": "pageTitle.inventory",
+  "/docs": "pageTitle.docs",
+  "/admin": "pageTitle.admin",
+  "/profile": "pageTitle.profile",
+  "/notifications": "pageTitle.notifications",
+  "/calendar": "pageTitle.calendar",
+};
+
+const PAGE_TITLE_FALLBACKS: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/tickets": "Ticket PC",
   "/kanban": "Kanban Board",
@@ -185,6 +218,7 @@ function AppLayout() {
   const { session, profile, loading, profileLoading, authError, refreshProfile, signOut } =
     useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
   const { theme, setTheme, isDark } = useTheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -257,11 +291,13 @@ function AppLayout() {
   }, [navigate, profile, route, session]);
 
   useEffect(() => {
-    const titleKey = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
-    const currentPageTitle = titleKey ? PAGE_TITLES[titleKey] : "PCReady";
+    const titleKey = Object.keys(PAGE_TITLE_FALLBACKS).find((k) => route.startsWith(k));
+    const currentPageTitle = titleKey
+      ? t(PAGE_TITLE_KEYS[titleKey], PAGE_TITLE_FALLBACKS[titleKey])
+      : "PCReady";
     const org = organizationName || "PCReady";
     document.title = currentPageTitle ? `${currentPageTitle} - ${org}` : org;
-  }, [route, organizationName]);
+  }, [route, organizationName, i18n.language]);
 
   useEffect(() => {
     if (!loading && session && profile && !profile.password_set) {
@@ -288,12 +324,12 @@ function AppLayout() {
   }
 
   if (!profile.password_set) {
-    return <AuthLoadingScreen message="Reindirizzamento..." />;
+    return <AuthLoadingScreen message={t("sidebar.redirecting", "Reindirizzamento...")} />;
   }
 
   const avc = avatarColors(profile.initials);
-  const title = Object.keys(PAGE_TITLES).find((k) => route.startsWith(k));
-  const pageTitle = title ? PAGE_TITLES[title] : "PCReady";
+  const title = Object.keys(PAGE_TITLE_FALLBACKS).find((k) => route.startsWith(k));
+  const pageTitle = title ? t(PAGE_TITLE_KEYS[title], PAGE_TITLE_FALLBACKS[title]) : "PCReady";
   const navigationGroups = resolveNavigationGroups({
     profile,
     isMobile,
@@ -340,8 +376,8 @@ function AppLayout() {
             color: "var(--text)",
           }}
         >
-          <SheetTitle className="sr-only">Navigazione PCReady</SheetTitle>
-          <SheetDescription className="sr-only">Menu principale dell'applicazione</SheetDescription>
+          <SheetTitle className="sr-only">{t("sidebar.navigation", "Navigazione PCReady")}</SheetTitle>
+          <SheetDescription className="sr-only">{t("sidebar.mainMenu", "Menu principale dell'applicazione")}</SheetDescription>
           {sidebarContent}
         </SheetContent>
       </Sheet>
@@ -356,7 +392,7 @@ function AppLayout() {
             <button
               className="pc-btn-icon touch-target"
               onClick={() => setMobileNavOpen(true)}
-              title="Apri menu"
+              title={t("sidebar.openMenu", "Apri menu")}
             >
               <Menu className="w-4 h-4" />
             </button>
@@ -371,18 +407,18 @@ function AppLayout() {
             <SearchBox />
             <NotificationBell />
             <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm hidden sm:inline-flex">
-              <Boxes className="w-3 h-3" /> Inventario
+              <Boxes className="w-3 h-3" /> {t("sidebar.inventory", "Inventario")}
             </Link>
             <button
               onClick={() => openCreate()}
               className="pc-btn pc-btn-primary pc-btn-sm hidden sm:inline-flex"
             >
-              <Plus className="w-3 h-3" /> Nuovo Ticket
+              <Plus className="w-3 h-3" /> {t("sidebar.newTicket", "Nuovo Ticket")}
             </button>
             <button
               onClick={() => openCreate()}
               className="pc-btn-icon touch-target sm:hidden"
-              aria-label="Nuovo ticket"
+              aria-label={t("sidebar.newTicket", "Nuovo ticket")}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -434,6 +470,7 @@ function SidebarContent({
   onNavigate,
   onSignOut,
 }: SidebarContentProps) {
+  const { t } = useTranslation("common");
   const deploymentLabel = viteDeploymentLabel();
 
   return (
@@ -496,12 +533,12 @@ function SidebarContent({
                 {theme === "dark" && <Moon className="w-3 h-3" />}
                 {theme === "system" && <Monitor className="w-3 h-3" />}
                 <span>
-                  {theme === "light" && "Chiaro"}
-                  {theme === "dark" && "Scuro"}
-                  {theme === "system" && "Sistema"}
+                  {theme === "light" && t("sidebar.light", "Chiaro")}
+                  {theme === "dark" && t("sidebar.dark", "Scuro")}
+                  {theme === "system" && t("sidebar.system", "Sistema")}
                 </span>
               </span>
-              <span className="text-[10px] opacity-60">Tema</span>
+              <span className="text-[10px] opacity-60">{t("sidebar.theme", "Tema")}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -514,7 +551,7 @@ function SidebarContent({
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Sun className="w-4 h-4" />
-              <span>Chiaro</span>
+              <span>{t("sidebar.light", "Chiaro")}</span>
               {theme === "light" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
@@ -526,7 +563,7 @@ function SidebarContent({
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Moon className="w-4 h-4" />
-              <span>Scuro</span>
+              <span>{t("sidebar.dark", "Scuro")}</span>
               {theme === "dark" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
@@ -538,7 +575,7 @@ function SidebarContent({
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
               <Monitor className="w-4 h-4" />
-              <span>Sistema</span>
+              <span>{t("sidebar.system", "Sistema")}</span>
               {theme === "system" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
                   ✓
@@ -547,6 +584,7 @@ function SidebarContent({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <LanguageSelector />
         <div className="flex items-center justify-between gap-2">
           <UserMenu
             profile={profile}
@@ -599,6 +637,7 @@ function NavLinkItem({ to, label, icon: Icon, active, badge, onClick }: NavLinkI
 }
 
 function SearchBox() {
+  const { t } = useTranslation("common");
   const { search, setSearch } = useTickets();
   return (
     <div
@@ -609,7 +648,7 @@ function SearchBox() {
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Cerca ticket, modello, seriale..."
+        placeholder={t("search.placeholder", "Cerca ticket, modello, seriale...")}
         className="bg-transparent outline-none text-[13px] w-44"
       />
     </div>
@@ -617,5 +656,84 @@ function SearchBox() {
 }
 
 function roleLabel(r: string) {
-  return r === "admin" ? "Amministratore" : r === "tech" ? "Tecnico" : "Visualizzatore";
+  return r === "admin"
+    ? i18n.t("common:role.admin", "Amministratore")
+    : r === "tech"
+      ? i18n.t("common:role.tech", "Tecnico")
+      : i18n.t("common:role.viewer", "Visualizzatore");
+}
+
+function LanguageSelector() {
+  const { session, refreshProfile } = useAuth();
+  const { t } = useTranslation("common");
+  const saveProfile = useServerFn(updateMyProfile);
+  const currentLang = i18n.language?.startsWith("en") ? "en" : "it";
+
+  async function handleLanguageChange(lang: "it" | "en") {
+    if (lang === currentLang) return;
+    void i18n.changeLanguage(lang);
+    if (!session?.access_token) return;
+    try {
+      await saveProfile({
+        data: {
+          accessToken: session.access_token,
+          profile: { language: lang },
+        },
+      });
+      await refreshProfile();
+    } catch {
+      toast.error(t("language.saveError", "Errore durante il salvataggio della lingua"));
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="flex items-center justify-between rounded-[7px] px-[10px] py-[6px] text-[11px] font-semibold cursor-pointer transition-colors w-full"
+          style={{
+            background: "var(--surface2)",
+            border: "1px solid var(--border2)",
+            color: "var(--text2)",
+          }}
+        >
+          <span className="flex items-center gap-2">
+            <Languages className="w-3 h-3" />
+            <span>{currentLang === "it" ? t("language.italian", "Italiano") : t("language.english", "English")}</span>
+          </span>
+          <span className="text-[10px] opacity-60">{t("sidebar.language")}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-[200px]"
+        style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+      >
+        <DropdownMenuItem
+          onClick={() => handleLanguageChange("it")}
+          className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
+        >
+          <span>🇮🇹</span>
+          <span>{t("language.italian", "Italiano")}</span>
+          {currentLang === "it" && (
+            <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
+              ✓
+            </span>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleLanguageChange("en")}
+          className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
+        >
+          <span>🇬🇧</span>
+          <span>{t("language.english", "English")}</span>
+          {currentLang === "en" && (
+            <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
+              ✓
+            </span>
+          )}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

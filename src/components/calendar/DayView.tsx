@@ -9,6 +9,7 @@ import {
   parseISO,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 import type { CalendarEvent } from '@/lib/queries/calendar';
 import { EVENT_TYPE_COLORS } from './eventColors';
@@ -95,6 +96,7 @@ export function DayView({
   onSlotClick,
   onEventClick,
 }: DayViewProps) {
+  const { t } = useTranslation("calendar");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const today = isToday(currentDate);
@@ -132,7 +134,7 @@ export function DayView({
         </div>
 
         <div className="ml-auto text-sm" style={{ color: pcReadyColors.textSecondary }}>
-          {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventi'}
+          {t("dayView.eventCount", "{{count}} evento", { count: dayEvents.length })}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { Eye, Mail, RotateCcw, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -61,6 +62,7 @@ export function EmailTemplateEditor({
   const [mode, setMode] = useState<"html" | "text">("html");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const { t } = useTranslation("admin");
   const [testEmail, setTestEmail] = useState(adminEmail);
   const htmlRef = useRef<HTMLTextAreaElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
@@ -115,7 +117,7 @@ export function EmailTemplateEditor({
 
     if (!ref) {
       void navigator.clipboard?.writeText(token);
-      toast.success(`${token} copiato`);
+      toast.success(t("emailTemplate.variables.copied", "{{token}} copiato", { token }));
       return;
     }
 
@@ -145,40 +147,42 @@ export function EmailTemplateEditor({
               <h3 className="text-base font-semibold">{EMAIL_EVENT_LABELS[template.event_type]}</h3>
               {isDirtyFromDefault && (
                 <Badge variant="outline" className="text-yellow-600 border-yellow-500/50">
-                  Modificato dal default
+                  {t("emailTemplate.badge.modified", "Modificato dal default")}
                 </Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Ultima modifica: {formatDate(template.last_modified_at)} da{" "}
-              {template.last_modified_by_name || "Sistema"}
+              {t("emailTemplate.lastModified", "Ultima modifica: {{date}} da {{name}}", {
+                date: formatDate(template.last_modified_at),
+                name: template.last_modified_by_name || t("emailTemplate.system", "Sistema"),
+              })}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="template-active" className="text-sm">
-              Attivo
+              {t("emailTemplate.labels.active", "Attivo")}
             </Label>
             <Switch id="template-active" checked={isActive} onCheckedChange={setIsActive} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email-subject">Oggetto</Label>
+          <Label htmlFor="email-subject">{t("emailTemplate.labels.subject", "Oggetto")}</Label>
           <Input
             id="email-subject"
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
-            placeholder="[{{organization_name}}] Oggetto email"
+            placeholder={t("emailTemplate.labels.subjectPlaceholder", "[{{org}}] Oggetto email", { org: organizationName })}
           />
         </div>
 
         <Tabs value={mode} onValueChange={(value) => setMode(value as "html" | "text")}>
           <TabsList>
-            <TabsTrigger value="html">HTML</TabsTrigger>
-            <TabsTrigger value="text">Testo puro</TabsTrigger>
+            <TabsTrigger value="html">{t("emailTemplate.labels.htmlTab", "HTML")}</TabsTrigger>
+            <TabsTrigger value="text">{t("emailTemplate.labels.textTab", "Testo puro")}</TabsTrigger>
           </TabsList>
           <TabsContent value="html" className="mt-3 space-y-2">
-            <Label htmlFor="email-body-html">Corpo HTML</Label>
+            <Label htmlFor="email-body-html">{t("emailTemplate.labels.htmlLabel", "Corpo HTML")}</Label>
             <Textarea
               ref={htmlRef}
               id="email-body-html"
@@ -188,7 +192,7 @@ export function EmailTemplateEditor({
             />
           </TabsContent>
           <TabsContent value="text" className="mt-3 space-y-2">
-            <Label htmlFor="email-body-text">Corpo testo puro</Label>
+            <Label htmlFor="email-body-text">{t("emailTemplate.labels.textLabel", "Corpo testo puro")}</Label>
             <Textarea
               ref={textRef}
               id="email-body-text"
@@ -214,11 +218,11 @@ export function EmailTemplateEditor({
             disabled={saving}
           >
             <Save className="mr-2 h-4 w-4" />
-            {saving ? "Salvataggio..." : "Salva template"}
+            {saving ? t("emailTemplate.buttons.saving", "Salvataggio...") : t("emailTemplate.buttons.save", "Salva template")}
           </Button>
           <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye className="mr-2 h-4 w-4" />
-            Anteprima
+            {t("emailTemplate.buttons.preview", "Anteprima")}
           </Button>
           <Button
             type="button"
@@ -227,14 +231,14 @@ export function EmailTemplateEditor({
             disabled={saving || !isDirtyFromDefault}
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            Ripristina default
+            {t("emailTemplate.buttons.reset", "Ripristina default")}
           </Button>
           <div className="flex min-w-[260px] flex-1 items-center gap-2">
             <Input
               type="email"
               value={testEmail}
               onChange={(event) => setTestEmail(event.target.value)}
-              placeholder="email test"
+              placeholder={t("emailTemplate.test.placeholder", "email test")}
             />
             <Button
               type="button"
@@ -243,7 +247,7 @@ export function EmailTemplateEditor({
               onClick={() => onSendTest(template.event_type, testEmail)}
             >
               <Mail className="mr-2 h-4 w-4" />
-              {sending ? "Invio..." : "Test"}
+              {sending ? t("emailTemplate.buttons.sending", "Invio...") : t("emailTemplate.buttons.test", "Test")}
             </Button>
           </div>
         </div>
@@ -251,8 +255,8 @@ export function EmailTemplateEditor({
 
       <aside className="space-y-3 rounded-md border p-3">
         <div>
-          <div className="text-sm font-semibold">Variabili disponibili</div>
-          <p className="text-xs text-muted-foreground">Clicca per inserirle nell'editor attivo.</p>
+          <div className="text-sm font-semibold">{t("emailTemplate.variables.title", "Variabili disponibili")}</div>
+          <p className="text-xs text-muted-foreground">{t("emailTemplate.variables.description", "Clicca per inserirle nell'editor attivo.")}</p>
         </div>
         <div className="space-y-2">
           {variables.map((variable) => (
@@ -281,15 +285,14 @@ export function EmailTemplateEditor({
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent className="max-w-md xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Ripristinare il template di default?</AlertDialogTitle>
+            <AlertDialogTitle>{t("emailTemplate.resetDialog.title", "Ripristinare il template di default?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Le modifiche non salvate nell'editor verranno sostituite dai valori di default. Il
-              ripristino non verrà salvato nel database finché non clicchi "Salva template".
+              {t("emailTemplate.resetDialog.description", "Le modifiche non salvate nell'editor verranno sostituite dai valori di default. Il ripristino non verrà salvato nel database finché non clicchi \"Salva template\".")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetToDefault}>Ripristina default</AlertDialogAction>
+            <AlertDialogCancel>{t("emailTemplate.resetDialog.cancel", "Annulla")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetToDefault}>{t("emailTemplate.resetDialog.confirm", "Ripristina default")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

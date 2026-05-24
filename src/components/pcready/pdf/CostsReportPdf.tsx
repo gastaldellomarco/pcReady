@@ -1,7 +1,6 @@
 import { Document } from "@react-pdf/renderer";
-import { BrandedPage, PdfSection, PdfTable, type PdfColumn } from "@/components/pcready/pdf/shared";
+import { BrandedPage, PdfSection, PdfTable, type PdfColumn, StatStrip } from "@/components/pcready/pdf/shared";
 import { pdfPalette } from "@/components/pcready/pdf/theme";
-import React from "react";
 
 type TicketCostRow = {
   id: string;
@@ -107,12 +106,35 @@ export function CostsReportPdf({
   return (
     <Document author="PCReady" title="Report costi">
       <BrandedPage title="Report costi" meta={period}>
-        <>
-          <div />
-        </>
-        <>
-          <div />
-        </>
+        <StatStrip
+          stats={[
+            {
+              label: "Totale ticket",
+              value: formatCurrency(summary.ticketTotal),
+              color: pdfPalette.accent,
+            },
+            { label: "Manodopera", value: formatCurrency(summary.labor), color: pdfPalette.info },
+            {
+              label: "Materiali",
+              value: formatCurrency(summary.materials),
+              color: pdfPalette.warn,
+            },
+            {
+              label: "Margine stimato",
+              value: formatCurrency(summary.estimatedRevenue - summary.materials),
+              color: pdfPalette.success,
+            },
+          ]}
+        />
+        <PdfSection title="Costi per cliente" meta={`${byClient.length} clienti`}>
+          <PdfTable rows={byClient} columns={groupColumns} />
+        </PdfSection>
+        <PdfSection title="Costi per tecnico" meta={`${byTechnician.length} tecnici`}>
+          <PdfTable rows={byTechnician} columns={groupColumns} />
+        </PdfSection>
+        <PdfSection title="Dettaglio ticket" meta={`${rows.length} ticket`}>
+          <PdfTable rows={rows.slice(0, 40)} columns={ticketColumns} />
+        </PdfSection>
       </BrandedPage>
     </Document>
   );

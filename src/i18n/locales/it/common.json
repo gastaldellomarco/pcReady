@@ -1,0 +1,113 @@
+{
+  "sidebar": {
+    "theme": "Tema",
+    "language": "Lingua",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "system": "Sistema",
+    "loading": "Caricamento...",
+    "redirecting": "Reindirizzamento...",
+    "organization": "Organizzazione",
+    "navigation": "Navigazione PCReady",
+    "mainMenu": "Menu principale dell'applicazione",
+    "openMenu": "Apri menu",
+    "inventory": "Inventario",
+    "newTicket": "Nuovo Ticket"
+  },
+  "nav": {
+    "main": "Principale",
+    "dashboard": "Dashboard",
+    "tickets": "Ticket PC",
+    "kanban": "Kanban",
+    "calendar": "Calendario",
+    "configuration": "Configurazione",
+    "checklist": "Checklist",
+    "automations": "Automazioni",
+    "scripts": "Script",
+    "clients": "Clienti",
+    "contacts": "Referenti",
+    "costs": "Costi",
+    "bundles": "Bundle",
+    "inventory": "Inventario",
+    "docs": "API Docs",
+    "admin": "Admin / Utenti"
+  },
+  "pageTitle": {
+    "dashboard": "Dashboard",
+    "tickets": "Ticket PC",
+    "kanban": "Kanban Board",
+    "checklist": "Checklist Setup",
+    "automations": "Automazioni",
+    "scripts": "Script",
+    "clients": "Clienti",
+    "contacts": "Referenti",
+    "costs": "Costi",
+    "bundles": "Bundle assistenza",
+    "inventory": "Inventario",
+    "docs": "API Docs",
+    "admin": "Admin / Utenti",
+    "profile": "Profilo",
+    "notifications": "Notifiche",
+    "calendar": "Calendario"
+  },
+  "role": {
+    "admin": "Amministratore",
+    "tech": "Tecnico",
+    "viewer": "Visualizzatore"
+  },
+  "search": {
+    "placeholder": "Cerca ticket, modello, seriale..."
+  },
+  "language": {
+    "italian": "Italiano",
+    "english": "English",
+    "saveError": "Errore durante il salvataggio della lingua"
+  },
+  "profile": {
+    "title": "Profilo",
+    "settings": "Impostazioni",
+    "logout": "Esci",
+    "personalData": "Dati personali",
+    "updated": "Profilo aggiornato con successo"
+  },
+  "root": {
+    "title": "PCReady - Gestione preparazione PC",
+    "description": "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario.",
+    "ogDescription": "Ticket, checklist, automazioni e inventario per i tuoi PC aziendali."
+  },
+  "oauth": {
+    "invalidRequest": "Richiesta OAuth non valida",
+    "grantError": "Errore durante l'autorizzazione",
+    "denyError": "Errore durante il rifiuto",
+    "validating": "Validazione richiesta...",
+    "invalidTitle": "Richiesta non valida",
+    "invalidDescription": "La richiesta di autorizzazione OAuth non è valida.",
+    "appName": "PCReady",
+    "externalApp": "Autorizzazione richiesta da un'applicazione esterna",
+    "requestedPermissions": "Permessi richiesti",
+    "cancelling": "Annullamento...",
+    "deny": "Nega",
+    "authorizing": "Autorizzazione...",
+    "authorize": "Autorizza",
+    "consentDescription": "Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra."
+  },
+  "docs": {
+    "pageTitle": "API Docs - PCReady",
+    "pageDescription": "Documentazione OpenAPI e console Swagger UI.",
+    "loading": "Caricamento documentazione..."
+  },
+  "actions": {
+    "delete": "Elimina",
+    "confirming": "Conferma in corso...",
+    "cancel": "Annulla"
+  },
+  "pageStates": {
+    "fetchError": "Impossibile completare la richiesta",
+    "retry": "Riprova",
+    "reload": "Ricarica pagina",
+    "loadingPage": "Caricamento pagina",
+    "loadingInProgress": "Caricamento in corso",
+    "loadingTable": "Caricamento tabella",
+    "loadingCards": "Caricamento schede"
+  }
+}

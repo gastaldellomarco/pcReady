@@ -17,6 +17,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { useTranslation } from "react-i18next";
 
 import type { CalendarEvent } from "@/lib/queries/calendar";
 import { pcReadyColors } from "@/lib/design-system";
@@ -94,6 +95,7 @@ function DroppableDay({
   onDayClick,
   onEventClick,
 }: DroppableDayProps) {
+  const { t } = useTranslation("calendar");
   const dateKey = format(date, "yyyy-MM-dd");
   const { setNodeRef, isOver } = useDroppable({ id: `day-${dateKey}`, data: { date } });
 
@@ -150,7 +152,7 @@ function DroppableDay({
             className="text-xs px-1.5 cursor-default"
             style={{ color: pcReadyColors.textSecondary }}
           >
-            +{extra} altri
+            {t("monthView.extraOthers", "+{{count}} altri", { count: extra })}
           </span>
         )}
       </div>
@@ -162,7 +164,7 @@ function DroppableDay({
 // MonthView
 // ---------------------------------------------------------------------------
 
-const DAY_HEADERS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+const DAY_HEADER_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 export function MonthView({
   currentDate,
@@ -173,6 +175,7 @@ export function MonthView({
   onEventClick,
   onEventDrop,
 }: MonthViewProps) {
+  const { t } = useTranslation("calendar");
   const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
 
   // Build the 6×7 grid of days
@@ -229,9 +232,9 @@ export function MonthView({
           className="grid grid-cols-7 border-l border-t"
           style={{ borderColor: pcReadyColors.border }}
         >
-          {DAY_HEADERS.map((header) => (
+          {DAY_HEADER_KEYS.map((key) => (
             <div
-              key={header}
+              key={key}
               className="text-center text-xs font-semibold py-2 border-r border-b"
               style={{
                 color: pcReadyColors.textSecondary,
@@ -239,7 +242,7 @@ export function MonthView({
                 borderColor: pcReadyColors.border,
               }}
             >
-              {header}
+              {t(`monthView.${key}`)}
             </div>
           ))}
         </div>
