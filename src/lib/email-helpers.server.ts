@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { mergeAppSettingsRows } from "@/lib/app-settings";
-import { sendEmail } from "@/lib/email-templates.server";
+import { sendEmail, EMAIL_TEMPLATE_SELECT } from "@/lib/email-templates.server";
 import type { EmailEventType } from "@/types/email";
 
 type EmailTemplateRow = {
@@ -28,7 +28,7 @@ export async function getEmailTemplateByEvent(
 ): Promise<EmailTemplateRow | null> {
   const { data, error } = await supabaseAdmin
     .from("email_templates" as any)
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .eq("event_type", eventType)
     .eq("is_active", true)
     .maybeSingle();

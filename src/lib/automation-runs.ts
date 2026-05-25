@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { AUTOMATION_RUN_LOG_SELECT } from "./automation-runs.server";
 
 export type RunLogStatus = "success" | "error" | "dry_run" | "skipped";
 export type ActionResultStatus = "success" | "error" | "skipped";
@@ -83,7 +84,7 @@ export const listAutomationRunLogs = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await supabaseAdmin
       .from("automation_run_logs" as any)
-      .select("*")
+      .select(AUTOMATION_RUN_LOG_SELECT)
       .eq("automation_id", input.automationId)
       .order("triggered_at", { ascending: false })
       .limit(20);
@@ -108,7 +109,9 @@ export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("automation_run_logs" as any)
-      .select("*, automation_flows!inner(name)")
+      .select(
+        `${AUTOMATION_RUN_LOG_SELECT}, automation_flows!inner(name)`,
+      )
       .order("triggered_at", { ascending: false })
       .limit(200);
 

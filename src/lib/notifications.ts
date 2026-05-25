@@ -66,6 +66,10 @@ export const createNotification = createServerFn({ method: "POST" })
     return createNotificationForUser(notification);
   });
 
+// ── Explicit field select matching NotificationRow ──
+const NOTIFICATION_SELECT =
+  "id, user_id, type, title, body, payload, link, read_at, created_at";
+
 export const listNotifications = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof ListNotificationsSchema>) => data)
   .handler(async ({ data }) => {
@@ -77,7 +81,7 @@ export const listNotifications = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("notifications" as any)
-      .select("*", { count: "exact" })
+      .select(NOTIFICATION_SELECT, { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 

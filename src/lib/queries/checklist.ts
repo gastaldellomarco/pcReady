@@ -5,6 +5,10 @@ import type { ChecklistStructure } from "@/lib/pcready";
 import { parseChecklistStructure } from "@/types/checklist-structure";
 import { QUERY_KEYS } from "./keys";
 
+const CHECKLIST_INSTANCE_SELECT =
+  "id, ticket_id, template_id, title, structure, status, assigned_to, section_assignments, completed_by, completion_confirmed, signature_name, created_at, updated_at, completed_at";
+const CHECKLIST_RESPONSE_SELECT = "id, instance_id, item_key, value, compiled_by, compiled_at";
+
 export interface ChecklistTemplateRow {
   id: string;
   name: string;
@@ -162,7 +166,9 @@ export async function fetchTicketChecklistInstances(
   if (!ticketId) return [];
   const { data, error } = await (supabase as any)
     .from("ticket_checklist_instances")
-    .select("*, responses:ticket_checklist_responses(*)")
+    .select(
+      `${CHECKLIST_INSTANCE_SELECT}, responses:ticket_checklist_responses(${CHECKLIST_RESPONSE_SELECT})`,
+    )
     .eq("ticket_id", ticketId)
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -199,7 +205,9 @@ export async function createTicketChecklistInstanceFromTemplate(params: {
       assigned_to: params.assignedTo ?? null,
       section_assignments: sectionAssignmentsFromStructure(structure) as Json,
     })
-    .select("*, responses:ticket_checklist_responses(*)")
+    .select(
+      `${CHECKLIST_INSTANCE_SELECT}, responses:ticket_checklist_responses(${CHECKLIST_RESPONSE_SELECT})`,
+    )
     .single();
   if (error) throw error;
   return mapInstance(data);
@@ -223,7 +231,7 @@ export async function upsertTicketChecklistResponse(params: {
       },
       { onConflict: "instance_id,item_key" },
     )
-    .select("*")
+    .select(CHECKLIST_RESPONSE_SELECT)
     .single();
   if (error) throw error;
 
@@ -251,7 +259,9 @@ export async function completeTicketChecklistInstance(params: {
       completed_at: new Date().toISOString(),
     })
     .eq("id", params.instanceId)
-    .select("*, responses:ticket_checklist_responses(*)")
+    .select(
+      `${CHECKLIST_INSTANCE_SELECT}, responses:ticket_checklist_responses(${CHECKLIST_RESPONSE_SELECT})`,
+    )
     .single();
   if (error) throw error;
   return mapInstance(data);

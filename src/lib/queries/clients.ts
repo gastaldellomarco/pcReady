@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
 
@@ -46,6 +46,22 @@ export function useClientsList(params: ClientsListParams) {
   return useQuery({
     queryKey: ["clients", params.q || "", params.page ?? 0, params.pageSize ?? LIST_PAGE_SIZE],
     queryFn: () => fetchClientsList(params),
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useClientsInfiniteList(params: Omit<ClientsListParams, "page">) {
+  const pageSize = params.pageSize ?? LIST_PAGE_SIZE;
+  return useInfiniteQuery({
+    queryKey: ["clients", "infinite", params.q || "", pageSize],
+    queryFn: ({ pageParam }) => fetchClientsList({ ...params, page: pageParam, pageSize }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.data || lastPage.data.length < pageSize) return undefined;
+      return allPages.length;
+    },
     staleTime: LIST_QUERY_STALE_MS,
     gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
@@ -190,23 +206,77 @@ export function useContactPortalAccess(contactIds: string[]) {
   });
 }
 
-export async function fetchGlobalContacts() {
-  const { data, error } = await supabase
+export type GlobalContactsParams = { q?: string; page?: number; pageSize?: number };
+
+export async function fetchGlobalContacts(params?: GlobalContactsParams) {
+  const PAGE_SIZE = params?.pageSize;
+  const page = params?.page;
+  let query = supabase
     .from("client_contacts")
     .select(
       "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, client:clients(id, name, company_name, portal_enabled)",
     )
     .order("full_name");
+  const term = (params?.q || "").trim().replace(/[,%]/g, "");
+  if (term) {
+    const { data: matchingClients, error: clientsError } = await supabase
+      .from("clients")
+      .select("id")
+      .or(`name.ilike.%${term}%,company_name.ilike.%${term}%`)
+      .limit(500);
+    if (clientsError) throw clientsError;
+    const matchingClientIds = (matchingClients ?? []).map((row: any) => row.id).filter(Boolean);
+    const filters = [
+      `full_name.ilike.%${term}%`,
+      `first_name.ilike.%${term}%`,
+      `last_name.ilike.%${term}%`,
+      `email.ilike.%${term}%`,
+      `phone.ilike.%${term}%`,
+      `job_title.ilike.%${term}%`,
+      `department.ilike.%${term}%`,
+    ];
+    if (matchingClientIds.length) {
+      filters.push(`client_id.in.(${matchingClientIds.join(",")})`);
+    }
+    query = query.or(filters.join(","));
+  }
+  if (PAGE_SIZE != null && page != null) {
+    query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  }
+  const { data, error } = await query;
   if (error) throw error;
   const rows = (data ?? []) as any[];
   const access = await fetchContactPortalAccess(rows.map((row) => row.id));
   return rows.map((row) => ({ ...row, portal_active: !!access[row.id] })) as GlobalContactRow[];
 }
 
-export function useGlobalContacts() {
+export function useGlobalContacts(params?: GlobalContactsParams) {
   return useQuery({
-    queryKey: ["clients", "contacts", "global"],
-    queryFn: fetchGlobalContacts,
+    queryKey: ["clients", "contacts", "global", params?.q || ""],
+    queryFn: () => fetchGlobalContacts(params),
+  });
+}
+
+export type GlobalContactsListParams = GlobalContactsParams & { page?: number; pageSize?: number };
+
+export async function fetchGlobalContactsPage(params?: GlobalContactsListParams) {
+  return fetchGlobalContacts({ ...params, page: params?.page ?? 0, pageSize: params?.pageSize ?? LIST_PAGE_SIZE });
+}
+
+export function useGlobalContactsInfiniteList(params?: Omit<GlobalContactsListParams, "page">) {
+  const pageSize = params?.pageSize ?? LIST_PAGE_SIZE;
+  return useInfiniteQuery({
+    queryKey: ["clients", "contacts", "global", "infinite", params?.q || "", pageSize],
+    queryFn: ({ pageParam }) =>
+      fetchGlobalContacts({ ...params, page: pageParam, pageSize }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < pageSize) return undefined;
+      return allPages.length;
+    },
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -397,6 +467,7 @@ export function useDeleteContact() {
 export default {
   fetchClientsList,
   useClientsList,
+  useClientsInfiniteList,
   fetchClientContacts,
   useClientContacts,
   fetchClientStats,
@@ -405,6 +476,8 @@ export default {
   useContactPortalAccess,
   fetchGlobalContacts,
   useGlobalContacts,
+  fetchGlobalContactsPage,
+  useGlobalContactsInfiniteList,
   fetchClientTickets,
   useClientTickets,
   fetchClientDevices,

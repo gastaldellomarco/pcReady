@@ -21,7 +21,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
@@ -47,13 +47,28 @@ function ContactsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const generatePortalLink = useServerFn(generatePortalAccessLink);
-  const { useGlobalContacts } = queries as any;
-  const contactsQuery = useGlobalContacts();
-  const contacts = useMemo(
-    () => (contactsQuery.data ?? []) as GlobalContactRow[],
-    [contactsQuery.data],
-  );
+  const { useGlobalContactsInfiniteList } = queries as any;
   const [q, setQ] = useState("");
+  const listQuery = useGlobalContactsInfiniteList({ q });
+  const contacts = useMemo(
+    () => (listQuery.data?.pages ?? []).flat() as GlobalContactRow[],
+    [listQuery.data],
+  );
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && listQuery.hasNextPage) {
+          void listQuery.fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage]);
   const [clientFilter, setClientFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
@@ -99,18 +114,6 @@ function ContactsPage() {
     [contacts],
   );
   const filteredContacts = contacts.filter((contact) => {
-    const term = q.trim().toLowerCase();
-    const haystack = [
-      contactLabel(contact),
-      contact.email ?? "",
-      contact.phone ?? "",
-      contact.job_title ?? "",
-      contact.department ?? "",
-      contact.client ? clientName(contact.client) : "",
-    ]
-      .join(" ")
-      .toLowerCase();
-    if (term && !haystack.includes(term)) return false;
     if (clientFilter !== "all" && contact.client_id !== clientFilter) return false;
     if (roleFilter !== "all" && contact.job_title !== roleFilter) return false;
     if (departmentFilter !== "all" && contact.department !== departmentFilter) return false;
@@ -348,7 +351,7 @@ function ContactsPage() {
             </div>
           </section>
         ))}
-        {!filteredContacts.length && (
+        {!filteredContacts.length && !listQuery.isLoading && (
           <div
             className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
             style={{ borderColor: "var(--border)" }}
@@ -356,6 +359,17 @@ function ContactsPage() {
             {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
           </div>
         )}
+        {listQuery.isLoading && (
+          <div className="py-8 text-center text-sm text-text3">
+            {t("loading", "Caricamento referenti...")}
+          </div>
+        )}
+        {listQuery.isFetchingNextPage && (
+          <div className="py-4 text-center text-sm text-text3">
+            {t("loadingMore", "Caricamento altri referenti...")}
+          </div>
+        )}
+        <div ref={sentinelRef} className="h-px" />
       </div>
 
       <EditContactModal

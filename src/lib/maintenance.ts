@@ -1,6 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pcReadyColors } from "@/lib/design-system";
 
+const MAINTENANCE_SCHEDULE_SELECT =
+  "id, device_id, title, description, recurrence, next_due_date, last_done_date, assigned_to, auto_create_ticket, ticket_template, created_at";
+const MAINTENANCE_HISTORY_SELECT = "id, schedule_id, device_id, completed_at, completed_by, notes";
+
 export type MaintenanceRecurrence = "once" | "weekly" | "monthly" | "quarterly" | "yearly";
 export type MaintenanceStatus = "scheduled" | "due_soon" | "overdue" | "completed";
 
@@ -123,7 +127,9 @@ export async function fetchTechnicianOptions(): Promise<TechnicianOption[]> {
 export async function fetchDeviceMaintenanceSchedules(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("maintenance_schedules")
-    .select("*, assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)")
+    .select(
+      `${MAINTENANCE_SCHEDULE_SELECT}, assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)`,
+    )
     .eq("device_id", deviceId)
     .order("next_due_date", { ascending: true });
   if (error) throw error;
@@ -133,7 +139,7 @@ export async function fetchDeviceMaintenanceSchedules(deviceId: string) {
 export async function fetchMaintenanceHistory(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("maintenance_history")
-    .select("*")
+    .select(MAINTENANCE_HISTORY_SELECT)
     .eq("device_id", deviceId)
     .order("completed_at", { ascending: false });
   if (error) throw error;
@@ -162,7 +168,7 @@ export async function createMaintenanceSchedule(payload: {
       auto_create_ticket: payload.auto_create_ticket ?? false,
       ticket_template: payload.ticket_template ?? null,
     })
-    .select("*")
+    .select(MAINTENANCE_SCHEDULE_SELECT)
     .single();
   if (error) throw error;
   return data as MaintenanceSchedule;
@@ -205,7 +211,7 @@ export async function fetchMaintenanceCalendar(params: {
   let query = (supabase as any)
     .from("maintenance_schedules")
     .select(
-      "*, device:devices(id, model, serial, client:clients(name)), assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)",
+      `${MAINTENANCE_SCHEDULE_SELECT}, device:devices(id, model, serial, client:clients(name)), assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)`,
     )
     .gte("next_due_date", params.from)
     .lte("next_due_date", params.to)
@@ -226,7 +232,7 @@ export async function fetchMaintenanceDashboard() {
   const { data, error } = await (supabase as any)
     .from("maintenance_schedules")
     .select(
-      "*, device:devices(id, model, serial, client:clients(name)), assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)",
+      `${MAINTENANCE_SCHEDULE_SELECT}, device:devices(id, model, serial, client:clients(name)), assignee:user_profiles!maintenance_schedules_assigned_to_fkey(display_name)`,
     )
     .order("next_due_date", { ascending: true })
     .limit(25);

@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/admin-users.server";
 import { getAppSettings } from "@/lib/app-settings";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+
+export const EMAIL_TEMPLATE_SELECT =
+  "id, event_type, subject, body_html, body_text, variables, is_active, last_modified_at, last_modified_by, created_at";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_EVENT_TYPES,
@@ -121,7 +124,7 @@ export async function listEmailTemplatesServer({ accessToken }: { accessToken: s
 
   const { data, error } = await supabaseAdmin
     .from("email_templates" as any)
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .order("event_type");
   if (error) throw error;
 
@@ -141,7 +144,7 @@ export async function getEmailTemplateServer({
 
   const { data, error } = await supabaseAdmin
     .from("email_templates" as any)
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .eq("event_type", parsedEvent)
     .single();
   if (error) throw error;
@@ -174,7 +177,7 @@ export async function updateEmailTemplateServer(data: z.input<typeof TemplateUpd
       },
       { onConflict: "event_type" },
     )
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .single();
   if (error) throw error;
 
@@ -189,7 +192,7 @@ export async function sendTestEmailServer(data: z.input<typeof TestEmailSchema>)
 
   const { data: template, error } = await supabaseAdmin
     .from("email_templates" as any)
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .eq("event_type", validated.eventType)
     .single();
   if (error) throw error;
@@ -245,7 +248,7 @@ export async function createDefaultEmailTemplateServer(data: z.input<typeof Crea
       },
       { onConflict: "event_type" },
     )
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .single();
   if (error) throw error;
 
@@ -273,7 +276,7 @@ export async function resetEmailTemplateServer(data: z.input<typeof ResetTemplat
       },
       { onConflict: "event_type" },
     )
-    .select("*")
+    .select(EMAIL_TEMPLATE_SELECT)
     .single();
   if (error) throw error;
 

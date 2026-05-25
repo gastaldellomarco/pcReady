@@ -2,9 +2,9 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import queries from "@/lib/queries/inventory";
+import queries, { useInventoryInfiniteList } from "@/lib/queries/inventory";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
@@ -141,7 +141,7 @@ function InventoryPage() {
   const loadSettings = useServerFn(getPublicAppSettings);
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [fs, setFs] = useState("");
   const [fos, setFos] = useState("");
   const [fcategory, setFcategory] = useState("");
@@ -179,14 +179,12 @@ function InventoryPage() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareBusy, setCompareBusy] = useState(false);
   const [compareRows, setCompareRows] = useState<CompareDevice[]>([]);
-  const { useInventoryList } = queries as any;
-  const listQuery = useInventoryList({
+  const listQuery = useInventoryInfiniteList({
     status: fs || undefined,
     os: fos || undefined,
     category: fcategory || undefined,
     deviceType: ftype || undefined,
     q,
-    page,
     pageSize: PAGE_SIZE,
     withoutTicket: withoutTicketFilter,
     warrantyStatus: warrantyFilter,
@@ -213,14 +211,26 @@ function InventoryPage() {
 
   useEffect(() => {
     if (listQuery.data) {
-      setRows(listQuery.data.data as Row[]);
-      setTotal(listQuery.data.count ?? 0);
+      setRows(listQuery.data.pages.flatMap((p) => p.data) as Row[]);
+      setTotal(listQuery.data.pages[0]?.count ?? 0);
     }
   }, [listQuery.data]);
 
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
-    setPage(0);
-  }, [fs, fos, fcategory, ftype, q, warrantyFilter, maintenanceDueFilter]);
+    const el = loadMoreRef.current;
+    if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void listQuery.fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage, view]);
 
   useEffect(() => {
     setFtype("");
@@ -228,7 +238,8 @@ function InventoryPage() {
 
   const data = rows;
   const listLoading = listQuery.isLoading;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const isFetchingMore = listQuery.isFetchingNextPage;
+  const loadedCount = data.length;
   const selectedRows = data.filter((row) => selectedIds.has(row.id));
   const allPageSelected = data.length > 0 && data.every((row) => selectedIds.has(row.id));
 
@@ -643,7 +654,7 @@ function InventoryPage() {
         </div>
         <span className="self-center text-xs text-text3 font-mono lg:ml-auto">
           {total
-            ? t("counts.range", { from: page * PAGE_SIZE + 1, to: page * PAGE_SIZE + data.length, total })
+            ? t("counts.range", { from: 1, to: loadedCount, total })
             : t("counts.zeroDevices")}
         </span>
         <button
@@ -933,24 +944,15 @@ function InventoryPage() {
         </>
       )}
       {view === "list" && (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            className="pc-btn pc-btn-ghost pc-btn-sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            {t("actions.previous")}
-          </button>
-          <span className="text-xs text-text3 font-mono">
-            {t("counts.page", { page: page + 1, total: pageCount })}
-          </span>
-          <button
-            className="pc-btn pc-btn-ghost pc-btn-sm"
-            disabled={page + 1 >= pageCount}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t("actions.next")}
-          </button>
+        <div ref={loadMoreRef} className="flex items-center justify-center py-3">
+          {isFetchingMore && (
+            <span className="text-sm text-text3">{t("loading.more", "Caricamento altri...")}</span>
+          )}
+          {!listQuery.hasNextPage && loadedCount > 0 && (
+            <span className="text-xs text-text3 font-mono">
+              {t("counts.allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+            </span>
+          )}
         </div>
       )}
       <QrCodeDialog device={qrDevice} onClose={() => setQrDevice(null)} />

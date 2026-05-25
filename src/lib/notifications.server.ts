@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEVICE_STATUS_LABEL } from "@/lib/pcready";
+
+const NOTIFICATION_INSERT_SELECT = "id, user_id, type, title, body, payload, link, read_at, created_at";
 import {
   CreateNotificationSchema,
   type CreateNotificationParams,
@@ -55,7 +57,7 @@ export async function createNotificationForUser(params: CreateNotificationParams
       payload: input.payload ?? null,
       link: input.link ?? null,
     })
-    .select("*")
+    .select(NOTIFICATION_INSERT_SELECT)
     .single();
 
   if (error) {

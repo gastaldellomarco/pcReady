@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { WarrantyFilter } from "@/lib/warranty";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
@@ -235,11 +235,51 @@ export function useCreateDevicesBulk() {
   });
 }
 
+export function useInventoryInfiniteList(params: DevicesListParams) {
+  const needsAssignedFilter = !!params.withoutTicket;
+  const assignedQuery = useAllAssignedDeviceIds(needsAssignedFilter);
+
+  return useInfiniteQuery({
+    queryKey: [
+      "inventory",
+      "infinite",
+      params.status || "",
+      params.os || "",
+      params.category || "",
+      params.deviceType || "",
+      params.q || "",
+      params.withoutTicket ? "without" : "",
+      params.updatedBefore || "",
+      params.updatedAfter || "",
+      params.client_id || "",
+      params.warrantyStatus || "all",
+      params.maintenanceDueSoon ? "maintenance-due" : "",
+      needsAssignedFilter ? assignedQuery.dataUpdatedAt : 0,
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchDevicesList({
+        ...params,
+        page: pageParam as number,
+        assignedIdsForFilter: needsAssignedFilter ? assignedQuery.data : undefined,
+      }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
+        ? allPages.length
+        : undefined,
+    initialPageParam: 0,
+    enabled: !needsAssignedFilter || assignedQuery.isSuccess,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 export default {
   fetchAllAssignedDeviceIds,
   useAllAssignedDeviceIds,
   fetchDevicesList,
   useInventoryList,
+  useInventoryInfiniteList,
   fetchDeviceBySerial,
   createDevice,
   createDevicesBulk,

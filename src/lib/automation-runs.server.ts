@@ -2,6 +2,9 @@ import { z } from "zod";
 import { promises as dns } from "dns";
 import ipaddr from "ipaddr.js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export const AUTOMATION_RUN_LOG_SELECT =
+  "id, automation_id, triggered_at, triggered_by, status, duration_ms, trigger_payload, actions_executed, error_message, is_dry_run";
 import { sendEmail } from "@/lib/email-templates.server";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
 import {
@@ -108,7 +111,7 @@ export async function saveAutomationRun(input: SaveAutomationRunInput): Promise<
       error_message: input.errorMessage,
       is_dry_run: input.isDryRun,
     })
-    .select("*")
+    .select(AUTOMATION_RUN_LOG_SELECT)
     .single();
   if (insertError) throw insertError;
   return log as unknown as AutomationRunLog;

@@ -31,6 +31,10 @@ type TicketCostRow = {
   tracked_minutes: number | null;
 };
 
+// ── Explicit field select for ticket_cost_summary view ──
+const COST_SUMMARY_SELECT =
+  "id, ticket_code, client_id, client_name, assignee_id, technician_name, status, priority, ticket_type, created_at, completed_at, billable_hours, hourly_rate, material_cost, labor_cost, total_cost, tracked_minutes";
+
 type ClientOption = { id: string; name: string; company_name: string | null };
 type ContractRow = {
   id: string;
@@ -95,7 +99,7 @@ function CostsPage() {
       const [ticketResult, contractResult, clientResult] = await Promise.all([
         (supabase as any)
           .from("ticket_cost_summary")
-          .select("*")
+          .select(COST_SUMMARY_SELECT)
           .gte("created_at", dateFrom)
           .lte("created_at", `${dateTo}T23:59:59.999Z`)
           .order("created_at", { ascending: false }),

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QUERY_KEYS } from "./keys";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
@@ -332,6 +332,68 @@ export function useAddTicketStatusHistory() {
   });
 }
 
+export function useTicketsInfiniteList(params: TicketsListParams) {
+  return useInfiniteQuery({
+    queryKey: [
+      ...QUERY_KEYS.tickets,
+      "infinite",
+      params.status || "",
+      params.priority || "",
+      params.ticket_type || "",
+      params.client_id || "",
+      params.assignee_id || "",
+      params.q || "",
+      params.dateFrom || "",
+      params.dateTo || "",
+      params.sortBy ?? "created_at",
+      params.sortDir ?? "desc",
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchTicketsList({ ...params, page: pageParam as number }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
+        ? allPages.length
+        : undefined,
+    initialPageParam: 0,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+const ARCHIVED_TICKET_LIST_SELECT =
+  "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
+
+export async function fetchArchivedTicketsList(params: { page?: number; pageSize?: number }) {
+  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
+  const page = params.page ?? 0;
+
+  const { data, count, error } = await supabase
+    .from("tickets")
+    .select(ARCHIVED_TICKET_LIST_SELECT, { count: "exact" })
+    .eq("status", "archived" as any)
+    .order("created_at", { ascending: false })
+    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  if (error) throw error;
+  return { data: (data ?? []) as any[], count: count ?? 0 };
+}
+
+export function useArchivedTicketsInfiniteList(params: { pageSize?: number }) {
+  return useInfiniteQuery({
+    queryKey: [...QUERY_KEYS.tickets, "archived", "infinite"],
+    queryFn: ({ pageParam }) =>
+      fetchArchivedTicketsList({ ...params, page: pageParam as number }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
+        ? allPages.length
+        : undefined,
+    initialPageParam: 0,
+    staleTime: LIST_QUERY_STALE_MS,
+    gcTime: LIST_QUERY_GC_MS,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 export default {
   loadClientOptions,
   fetchClientById,
@@ -352,6 +414,9 @@ export default {
   useDeleteTicket,
   fetchTicketsList,
   useTicketsList,
+  useTicketsInfiniteList,
+  fetchArchivedTicketsList,
+  useArchivedTicketsInfiniteList,
   addTicketStatusHistory,
   useAddTicketStatusHistory,
 };

@@ -1,7 +1,7 @@
 import OverflowTable from "@/components/ui/overflow-table";
 
-import { useEffect, useState } from "react";
-import queries from "@/lib/queries/tickets";
+import { useEffect, useRef, useMemo } from "react";
+import { useArchivedTicketsInfiniteList, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { openTicketDetail } from "@/lib/use-detail";
 import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
@@ -35,25 +35,39 @@ const PAGE_SIZE = LIST_PAGE_SIZE;
 
 export default function TicketsArchivePage() {
   const { t } = useTranslation("tickets");
-  const [rows, setRows] = useState<Row[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const { useTicketsList, useUpdateTicket } = queries as any;
-  const ticketsQuery = useTicketsList({ status: "archived", page, pageSize: PAGE_SIZE });
+  const listQuery = useArchivedTicketsInfiniteList({ pageSize: PAGE_SIZE });
   const updateTicket = useUpdateTicket();
 
+  const rows = useMemo(
+    () => listQuery.data?.pages.flatMap((p) => p.data) as Row[] ?? [],
+    [listQuery.data],
+  );
+  const total = listQuery.data?.pages[0]?.count ?? 0;
+  const loadedCount = rows.length;
+  const isFetchingMore = listQuery.isFetchingNextPage;
+
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
-    if (ticketsQuery.data) {
-      setRows(ticketsQuery.data.data as Row[]);
-      setTotal(ticketsQuery.data.count ?? 0);
-    }
-  }, [ticketsQuery.data]);
+    const el = loadMoreRef.current;
+    if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void listQuery.fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage]);
 
   async function reopen(id: string) {
     try {
       await updateTicket.mutateAsync({ id, patch: { status: "pending" } });
-      await (queries as any).addTicketStatusHistory(id, {
+      await addTicketStatusHistory(id, {
         from_status: "archived",
         to_status: "pending",
         changed_by: null,
@@ -61,13 +75,11 @@ export default function TicketsArchivePage() {
         note: t("reopenedByArchive", "Riaperto da archivio"),
       });
       toast.success(t("toasts.ticketReopened", "Ticket riaperto"));
-      setRows((rs) => rs.filter((r) => r.id !== id));
+      await listQuery.refetch();
     } catch (err: any) {
       toast.error(err?.message || t("toasts.ticketReopenError", "Errore riapertura ticket"));
     }
   }
-
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-4">
@@ -159,10 +171,17 @@ export default function TicketsArchivePage() {
                   </td>
                 </tr>
               ))}
-              {!rows.length && (
+              {!rows.length && !listQuery.isLoading && (
                 <tr>
                   <td colSpan={11} className="text-center py-10 text-text3 text-sm">
                     {t("noArchivedTickets", "Nessun ticket archiviato")}
+                  </td>
+                </tr>
+              )}
+              {listQuery.isLoading && (
+                <tr>
+                  <td colSpan={11} className="text-center py-10 text-text3 text-sm">
+                    {t("loading", "Caricamento...")}
                   </td>
                 </tr>
               )}
@@ -171,24 +190,16 @@ export default function TicketsArchivePage() {
         </OverflowTable>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-        >
-          {t("prevPage", "Precedente")}
-        </button>
-        <span className="text-xs text-text3 font-mono">
-          {t("page", "Pagina")} {page + 1} {t("of", "di")} {pageCount}
-        </span>
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page + 1 >= pageCount}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          {t("nextPage", "Successiva")}
-        </button>
+      {/* Infinite scroll sentinel */}
+      <div ref={loadMoreRef} className="flex items-center justify-center py-3">
+        {isFetchingMore && (
+          <span className="text-sm text-text3">{t("loadingMore", "Caricamento altri...")}</span>
+        )}
+        {!listQuery.hasNextPage && loadedCount > 0 && (
+          <span className="text-xs text-text3 font-mono">
+            {t("allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+          </span>
+        )}
       </div>
     </div>
   );

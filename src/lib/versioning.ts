@@ -1,6 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { randomUUID } from "@/lib/random-uuid";
 
+const ENTITY_VERSION_SELECT =
+  "id, entity_type, entity_id, version_number, operation, snapshot, previous_snapshot, changed_fields, change_note, created_at, created_by, app_version, request_id";
+
 const supabaseAny = supabase as any;
 
 export type VersionOperation = "create" | "update" | "restore" | "delete";
@@ -163,7 +166,7 @@ export async function getVersions(entityType: string, entityId: string): Promise
   try {
     const { data, error } = await supabaseAny
       .from("entity_versions")
-      .select("*")
+      .select(ENTITY_VERSION_SELECT)
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .order("version_number", { ascending: false });
@@ -218,7 +221,7 @@ export async function restoreEntityVersion(
 
   const { data: versionData, error: versionError } = await supabaseAny
     .from("entity_versions")
-    .select("*")
+    .select(ENTITY_VERSION_SELECT)
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
     .eq("version_number", targetVersionNumber)

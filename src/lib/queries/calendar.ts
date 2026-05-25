@@ -142,6 +142,10 @@ export async function fetchCalendarEvents(
   return ((data ?? []) as RawCalendarEventRow[]).map(mapRawToCalendarEvent);
 }
 
+// ── Explicit field select matching CalendarEvent (no joins on mutation returns) ──
+const CALENDAR_EVENT_SELECT =
+  "id, title, description, start_at, end_at, all_day, event_type, ticket_id, assignee_id, color, estimated_duration_minutes, notes, created_by, created_at, updated_at";
+
 export async function createCalendarEvent(
   data: CreateCalendarEventData,
   createdBy: string,
@@ -149,7 +153,7 @@ export async function createCalendarEvent(
   const { data: row, error } = await supabase
     .from("calendar_events")
     .insert({ ...data, created_by: createdBy })
-    .select("*")
+    .select(CALENDAR_EVENT_SELECT)
     .single();
 
   if (error) throw error;
@@ -170,7 +174,7 @@ export async function updateCalendarEvent(
     .from("calendar_events")
     .update(data)
     .eq("id", id)
-    .select("*")
+    .select(CALENDAR_EVENT_SELECT)
     .single();
 
   if (error) throw error;

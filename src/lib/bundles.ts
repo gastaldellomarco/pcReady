@@ -148,6 +148,27 @@ export const BUNDLE_STATUS_LABEL: Record<BundleStatus, string> = {
   renewed: "Rinnovato",
 };
 
+// ── Explicit field selects ──────────────────────────────────────────────
+const BUNDLE_SELECT =
+  "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_at, updated_at, created_by";
+
+const BUNDLE_JOIN = `bundle:assistance_bundles(${BUNDLE_SELECT})`;
+const CLIENT_JOIN = "client:clients(id,name,company_name,email)";
+
+const ASSIGNMENT_SELECT =
+  "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
+
+const USAGE_SUMMARY_SELECT =
+  "client_bundle_assignment_id, assignment_id, client_id, bundle_id, status, start_date, end_date, effective_fee, effective_included_hours, effective_extra_hourly_rate, effective_sla_response_hours, effective_sla_resolution_hours, effective_included_onsite_visits, used_hours, extra_hours, remaining_hours, onsite_visits, used_onsite_visits, remaining_onsite_visits, extra_amount, usage_percent, currency, bundle_name, client_name, company_name";
+
+const MONTHLY_USAGE_SELECT =
+  "client_bundle_assignment_id, client_id, usage_month, used_hours, extra_hours, extra_amount, onsite_visits";
+
+const PAYMENT_SELECT =
+  "id, client_bundle_assignment_id, client_id, amount, currency, period_start, period_end, paid_at, status, notes, created_at, created_by";
+
+// ──────────────────────────────────────────────────────────────────────
+
 export const BUNDLE_QUERY_KEYS = {
   all: ["bundles"] as const,
   lists: () => [...BUNDLE_QUERY_KEYS.all, "list"] as const,
@@ -208,7 +229,7 @@ export function computeEndDate(startDate: string, billingType: BundleBillingType
 export async function listBundles(includeInactive = true) {
   let query = (supabase as any)
     .from("assistance_bundles")
-    .select("*")
+    .select(BUNDLE_SELECT)
     .order("active", { ascending: false })
     .order("name", { ascending: true });
   if (!includeInactive) query = query.eq("active", true);
@@ -221,7 +242,7 @@ export async function createBundle(data: Partial<AssistanceBundle>) {
   const { data: row, error } = await (supabase as any)
     .from("assistance_bundles")
     .insert(data)
-    .select("*")
+    .select(BUNDLE_SELECT)
     .single();
   if (error) throw error;
   return row as AssistanceBundle;
@@ -232,7 +253,7 @@ export async function updateBundle(id: string, data: Partial<AssistanceBundle>) 
     .from("assistance_bundles")
     .update(data)
     .eq("id", id)
-    .select("*")
+    .select(BUNDLE_SELECT)
     .single();
   if (error) throw error;
   return row as AssistanceBundle;
@@ -245,7 +266,7 @@ export async function deactivateBundle(id: string) {
 export async function listClientBundleAssignments(clientId?: string | null) {
   let query = (supabase as any)
     .from("client_bundle_assignments")
-    .select("*, bundle:assistance_bundles(*), client:clients(id,name,company_name,email)")
+    .select(`${ASSIGNMENT_SELECT}, ${BUNDLE_JOIN}, ${CLIENT_JOIN}`)
     .order("start_date", { ascending: false });
   if (clientId) query = query.eq("client_id", clientId);
   const { data, error } = await query;
@@ -257,7 +278,7 @@ export async function createClientBundleAssignment(data: Partial<ClientBundleAss
   const { data: row, error } = await (supabase as any)
     .from("client_bundle_assignments")
     .insert(data)
-    .select("*, bundle:assistance_bundles(*), client:clients(id,name,company_name,email)")
+    .select(`${ASSIGNMENT_SELECT}, ${BUNDLE_JOIN}, ${CLIENT_JOIN}`)
     .single();
   if (error) throw error;
   return row as ClientBundleAssignment;
@@ -271,7 +292,7 @@ export async function updateClientBundleAssignment(
     .from("client_bundle_assignments")
     .update(data)
     .eq("id", id)
-    .select("*, bundle:assistance_bundles(*), client:clients(id,name,company_name,email)")
+    .select(`${ASSIGNMENT_SELECT}, ${BUNDLE_JOIN}, ${CLIENT_JOIN}`)
     .single();
   if (error) throw error;
   return row as ClientBundleAssignment;
@@ -284,7 +305,7 @@ export async function cancelClientBundleAssignment(id: string) {
 export async function listBundleUsageSummaries(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_assignment_usage_summary")
-    .select("*")
+    .select(USAGE_SUMMARY_SELECT)
     .order("client_bundle_assignment_id", { ascending: true });
   if (clientId) query = query.eq("client_id", clientId);
   const { data, error } = await query;
@@ -295,7 +316,7 @@ export async function listBundleUsageSummaries(clientId?: string | null) {
 export async function listBundleMonthlyUsage(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_monthly_usage")
-    .select("*")
+    .select(MONTHLY_USAGE_SELECT)
     .order("usage_month", { ascending: false });
   if (clientId) query = query.eq("client_id", clientId);
   const { data, error } = await query;
@@ -307,7 +328,7 @@ export async function listBundlePayments(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_fee_payments")
     .select(
-      "*, assignment:client_bundle_assignments(*, bundle:assistance_bundles(*), client:clients(id,name,company_name,email))",
+      `${PAYMENT_SELECT}, assignment:client_bundle_assignments(${ASSIGNMENT_SELECT}, ${BUNDLE_JOIN}, ${CLIENT_JOIN})`,
     )
     .order("created_at", { ascending: false });
   if (clientId) query = query.eq("client_id", clientId);
@@ -320,7 +341,7 @@ export async function createBundlePayment(data: Partial<BundlePayment>) {
   const { data: row, error } = await (supabase as any)
     .from("bundle_fee_payments")
     .insert(data)
-    .select("*")
+    .select(PAYMENT_SELECT)
     .single();
   if (error) throw error;
   return row as BundlePayment;
@@ -343,12 +364,12 @@ export async function fetchTicketBundleInfo(ticketId: string): Promise<TicketBun
   const [assignmentResult, summaryResult] = await Promise.all([
     (supabase as any)
       .from("client_bundle_assignments")
-      .select("*, bundle:assistance_bundles(*), client:clients(id,name,company_name,email)")
+      .select(`${ASSIGNMENT_SELECT}, ${BUNDLE_JOIN}, ${CLIENT_JOIN}`)
       .eq("id", assignmentId)
       .maybeSingle(),
     (supabase as any)
       .from("bundle_assignment_usage_summary")
-      .select("*")
+      .select(USAGE_SUMMARY_SELECT)
       .eq("assignment_id", assignmentId)
       .maybeSingle(),
   ]);

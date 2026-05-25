@@ -66,7 +66,8 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
           "id, created_at, closed_at, status, assignee_id, priority, sla_deadline, sla_breached",
         )
         .gte("created_at", data.dateFrom)
-        .lt("created_at", data.dateTo),
+        .lt("created_at", data.dateTo)
+        .limit(5000),
       supabaseAdmin
         .from("ticket_status_history")
         .select("ticket_id, changed_at")
@@ -452,7 +453,8 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
       )
       .in("status", ["in-progress", "pending", "testing", "ready"] as any)
       .or(`sla_breached.eq.true,sla_deadline.lte.${warningCutoff},updated_at.lt.${cutoff}`)
-      .order("sla_deadline", { ascending: true, nullsFirst: false });
+      .order("sla_deadline", { ascending: true, nullsFirst: false })
+      .limit(500);
 
     if (error) throw error;
 
@@ -502,7 +504,8 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     // include `status` so we can treat archived tickets as closed even when closed_at is null
     const ticketsQ = supabaseAdmin
       .from("tickets")
-      .select("id, assignee_id, created_at, closed_at, status");
+      .select("id, assignee_id, created_at, closed_at, status")
+      .limit(5000);
     if (dateFrom) ticketsQ.gte("created_at", dateFrom);
     if (dateTo) ticketsQ.lt("created_at", dateTo);
     const ticketsRes = await ticketsQ;

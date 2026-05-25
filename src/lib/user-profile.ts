@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Theme } from "./theme";
 import type { DashboardLayout } from "@/components/dashboard/widget-registry";
 
+const USER_PROFILE_SELECT =
+  "id, display_name, avatar_url, phone, timezone, language, preferred_theme, notify_ticket_assigned, notify_ticket_status_changed, notify_automation_failed, notify_device_status_changed, notify_checklist_completed, notify_mentions, notify_ticket_completed, email_notify_ticket_assigned, email_notify_ticket_status_changed, email_notify_ticket_completed, email_notify_automation_failed, email_notify_device_status_changed, email_notify_checklist_completed, email_notify_mentions, notification_digest, webhook_url, last_notification_sent_at, password_set, dashboard_layout, created_at, updated_at";
+
 export interface UserProfile {
   id: string;
   display_name: string | null;
@@ -141,7 +144,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const fallbackName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente";
     const { data: profile, error } = await supabaseAdmin
       .from("user_profiles")
-      .select("*")
+      .select(USER_PROFILE_SELECT)
       .eq("id", user.id)
       .maybeSingle();
 
@@ -155,7 +158,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       const { data: inserted, error: insertError } = await supabaseAdmin
         .from("user_profiles")
         .insert({ id: user.id, display_name: fallbackName })
-        .select("*")
+        .select(USER_PROFILE_SELECT)
         .single();
       if (insertError) {
         console.error("[getMyProfile] failed to create user profile:", insertError);

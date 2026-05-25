@@ -4,7 +4,7 @@ import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { ListSkeleton, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -181,9 +181,7 @@ function ClientsPage() {
   const canManagePortalAccess = profile?.role === "admin" || profile?.role === "tech";
   const generatePortalLink = useServerFn(generatePortalAccessLink);
   const revokePortalLink = useServerFn(revokePortalAccessLink);
-  const [clients, setClients] = useState<ClientRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
+  const [extraClients, setExtraClients] = useState<ClientRow[]>([]);
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -218,14 +216,14 @@ function ClientsPage() {
   const [busy, setBusy] = useState(false);
 
   const {
-    useClientsList,
+    useClientsInfiniteList,
     useClientContacts,
     useClientStats,
     useContactPortalAccess,
     useClientTickets,
     useClientDevices,
   } = queries as any;
-  const listQuery = useClientsList({ q, page, pageSize: PAGE_SIZE });
+  const listQuery = useClientsInfiniteList({ q, pageSize: PAGE_SIZE });
   const {
     useCreateClient,
     useUpdateClient,
@@ -243,30 +241,61 @@ function ClientsPage() {
   const createContactMut = useCreateContact();
   const updateContactMut = useUpdateContact();
   const deleteContactMut = useDeleteContact();
+  const clients = useMemo(() => {
+    const fromPages = (listQuery.data?.pages ?? []).flatMap(
+      (p) => (p.data ?? []) as ClientRow[],
+    );
+    if (!extraClients.length) return fromPages;
+    const pageIds = new Set(fromPages.map((c) => c.id));
+    const uniqueExtras = extraClients.filter((c) => !pageIds.has(c.id));
+    return [...uniqueExtras, ...fromPages];
+  }, [listQuery.data, extraClients]);
+  const total = useMemo(
+    () => listQuery.data?.pages[0]?.count ?? 0,
+    [listQuery.data],
+  );
+  const hasNextPage = listQuery.hasNextPage;
+  const isFetchingNextPage = listQuery.isFetchingNextPage;
   const clientIds = useMemo(() => clients.map((client) => client.id), [clients]);
   const statsQuery = useClientStats(clientIds);
 
   useEffect(() => {
-    if (listQuery.data) {
-      const arr = listQuery.data.data as ClientRow[];
-      setClients(arr);
-      setTotal(listQuery.data.count ?? 0);
-      setSelectedId((cur) => {
-        if (routeSearch.clientId && arr.some((c) => c.id === routeSearch.clientId)) {
-          return routeSearch.clientId;
+    if (!clients.length) return;
+    setSelectedId((cur) => {
+      if (routeSearch.clientId && clients.some((c) => c.id === routeSearch.clientId)) {
+        return routeSearch.clientId;
+      }
+      return cur && clients.some((c) => c.id === cur) ? cur : clients[0]?.id || null;
+    });
+    setSelectedIds((current) => {
+      const loadedIds = new Set(clients.map((c) => c.id));
+      const next = new Set<string>();
+      for (const id of current) {
+        if (loadedIds.has(id)) next.add(id);
+      }
+      return next;
+    });
+  }, [clients, routeSearch.clientId]);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void listQuery.fetchNextPage();
         }
-        return cur && arr.some((c) => c.id === cur) ? cur : arr[0]?.id || null;
-      });
-      setSelectedIds((current) => {
-        const pageIds = new Set(arr.map((c) => c.id));
-        const next = new Set<string>();
-        for (const id of current) {
-          if (pageIds.has(id)) next.add(id);
-        }
-        return next;
-      });
-    }
-  }, [listQuery.data, routeSearch.clientId]);
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, listQuery.fetchNextPage]);
+
+  useEffect(() => {
+    setExtraClients([]);
+  }, [q]);
 
   useEffect(() => {
     if (routeSearch.tab) setActiveTab(routeSearch.tab as ClientTab);
@@ -284,8 +313,8 @@ function ClientsPage() {
       .then(({ data, error }) => {
         if (cancelled || error || !data) return;
         const row = data as ClientRow;
-        setClients((current) =>
-          current.some((client) => client.id === row.id) ? current : [row, ...current],
+        setExtraClients((current) =>
+          current.some((c) => c.id === row.id) ? current : [row, ...current],
         );
         setSelectedId(row.id);
       });
@@ -293,10 +322,6 @@ function ClientsPage() {
       cancelled = true;
     };
   }, [clients, routeSearch.clientId]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [q, listFilter]);
 
   useEffect(() => {
     setActiveTab((routeSearch.tab as ClientTab | undefined) ?? "info");
@@ -349,7 +374,6 @@ function ClientsPage() {
       return Boolean(client.portal_enabled) || clientStats.portalActive;
     return true;
   });
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const listLoading = listQuery.isLoading;
   const allPageSelected =
     displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
@@ -763,26 +787,18 @@ function ClientsPage() {
           )}
         </div>
         <div
-          className="flex items-center justify-end gap-2 border-t px-3 py-2"
+          className="flex items-center justify-between gap-2 border-t px-3 py-2"
           style={{ borderColor: "var(--border)" }}
         >
-          <button
-            className="pc-btn pc-btn-ghost pc-btn-sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            {t("list.previous", "Precedente")}
-          </button>
           <span className="font-mono text-xs text-text3">
-            {t("list.page", { defaultValue: "Pagina {{current}} di {{total}}", current: page + 1, total: pageCount })}
+            {displayedClients.length}/{total}
           </span>
-          <button
-            className="pc-btn pc-btn-ghost pc-btn-sm"
-            disabled={page + 1 >= pageCount}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t("list.next", "Successiva")}
-          </button>
+          {isFetchingNextPage && (
+            <span className="text-xs text-text3">
+              {t("list.loadingMore", "Caricamento...")}
+            </span>
+          )}
+          <div ref={sentinelRef} className="h-px w-full" />
         </div>
       </div>
 

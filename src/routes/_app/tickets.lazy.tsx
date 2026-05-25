@@ -1,12 +1,12 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import i18n from "@/i18n";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
-import { addTicketStatusHistory, loadClientOptions, useTicketsList } from "@/lib/queries/tickets";
+import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList } from "@/lib/queries/tickets";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
@@ -127,7 +127,6 @@ function TicketsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [selectedClient, setSelectedClient] = useState<AsyncAutocompleteOption | null>(null);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
   const [fs, setFs] = useState("");
   const [fp, setFp] = useState("");
   const [ft, setFt] = useState("");
@@ -151,7 +150,8 @@ function TicketsPage() {
   );
   const loadSettings = useServerFn(getPublicAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
-  const listQuery = useTicketsList({
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const listQuery = useTicketsInfiniteList({
     status: fs || undefined,
     priority: fp || undefined,
     ticket_type: ft || undefined,
@@ -162,16 +162,31 @@ function TicketsPage() {
     dateTo: dateTo || undefined,
     sortBy,
     sortDir,
-    page,
     pageSize: PAGE_SIZE,
   });
 
   useEffect(() => {
     if (listQuery.data) {
-      setRows(listQuery.data.data as Row[]);
-      setTotal(listQuery.data.count ?? 0);
+      setRows(listQuery.data.pages.flatMap((p) => p.data) as Row[]);
+      setTotal(listQuery.data.pages[0]?.count ?? 0);
     }
   }, [listQuery.data]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void listQuery.fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage]);
 
   useEffect(() => {
     try {
@@ -181,11 +196,7 @@ function TicketsPage() {
     } catch {
       /* ignore in non-browser contexts */
     }
-  }, [fs, fp, ft, fc, search, page]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [fs, fp, ft, fc, fa, dateFrom, dateTo, sortBy, sortDir, search]);
+  }, [fs, fp, ft, fc, search]);
 
   useEffect(() => {
     const channel = supabase
@@ -222,7 +233,8 @@ function TicketsPage() {
 
   const data = rows;
   const listLoading = listQuery.isLoading;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const isFetchingMore = listQuery.isFetchingNextPage;
+  const loadedCount = data.length;
   const ticketClient = (row: Row) => row.client_ref?.name || row.client || "-";
   const ticketModel = (row: Row) => row.device?.model || t("noAsset", "Nessun asset");
   const ticketSerial = (row: Row) => row.device?.serial || null;
@@ -705,7 +717,7 @@ function TicketsPage() {
         </select>
           <span className="ml-auto text-xs text-text3 font-mono">
             {total
-              ? `${page * PAGE_SIZE + 1}-${page * PAGE_SIZE + data.length} ${t("meta.of", "di")} ${total}`
+              ? `${loadedCount} ${t("meta.of", "di")} ${total}`
               : t("ticketList.zeroResults", "0 risultati")}
           </span>
         <button
@@ -1033,24 +1045,15 @@ function TicketsPage() {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-end gap-2">
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-        >
-          {t("prevPage", "Precedente")}
-        </button>
-        <span className="text-xs text-text3 font-mono">
-          {t("page", { current: page + 1, total: pageCount, defaultValue: "Pagina {{current}} di {{total}}" })}
-        </span>
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          disabled={page + 1 >= pageCount}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          {t("nextPage", "Successiva")}
-        </button>
+      <div ref={loadMoreRef} className="flex items-center justify-center py-3">
+        {isFetchingMore && (
+          <span className="text-sm text-text3">{t("loadingMore", "Caricamento altri...")}</span>
+        )}
+        {!listQuery.hasNextPage && loadedCount > 0 && (
+          <span className="text-xs text-text3 font-mono">
+            {t("allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+          </span>
+        )}
       </div>
 
       <DestructiveConfirmDialog

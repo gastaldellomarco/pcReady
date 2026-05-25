@@ -520,7 +520,11 @@ function ScriptEditor({
       let oldData: any = null;
       if (initial) {
         // Fetch current data for diff
-        const { data } = await supabase.from("scripts").select("*").eq("id", initial.id).single();
+        const { data } = await supabase
+          .from("scripts")
+          .select("id, name, category, description, language, content, icon, color, created_by, created_at, updated_at")
+          .eq("id", initial.id)
+          .single();
         oldData = data as any;
       }
 
@@ -532,7 +536,7 @@ function ScriptEditor({
         const { data: inserted, error } = await supabase
           .from("scripts")
           .insert({ ...newData, created_by: user!.id })
-          .select()
+          .select("id")
           .single();
         if (error) throw error;
         newData.id = (inserted as any).id; // For versioning

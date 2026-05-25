@@ -1,5 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
+
+const BUNDLE_SELECT = "id, name, description, billing_type, total_hours, total_visits, total_amount, unit_label, active, priority, created_by, created_at";
+const BUNDLE_ASSIGNMENT_SELECT = "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
+const BUNDLE_USAGE_SUMMARY_SELECT = "client_bundle_assignment_id, client_id, bundle_id, used_hours, onsite_visits, extra_hours, extra_amount, remaining_hours, remaining_onsite_visits, usage_percent";
 import { getPortalSession } from "@/lib/portal-auth.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
@@ -37,18 +41,21 @@ export async function getPortalDashboardServer(input: { token: string }) {
 
   const { data: bundleAssignments, error: bundleAssignmentsError } = await supabaseAdmin
     .from("client_bundle_assignments" as any)
-    .select("*, bundle:assistance_bundles(*)")
+    .select(
+      `${BUNDLE_ASSIGNMENT_SELECT}, bundle:assistance_bundles(${BUNDLE_SELECT})`,
+    )
     .eq("client_id", session.clientId)
     .eq("status", "active")
     .lte("start_date", new Date().toISOString().slice(0, 10))
-    .order("end_date", { ascending: true, nullsFirst: true });
+    .order("end_date", { ascending: true, nullsFirst: true })
+    .limit(50);
   if (bundleAssignmentsError) throw bundleAssignmentsError;
 
   const assignmentIds = ((bundleAssignments ?? []) as any[]).map((assignment) => assignment.id);
   const { data: usageSummaries, error: usageSummariesError } = assignmentIds.length
     ? await supabaseAdmin
         .from("bundle_assignment_usage_summary" as any)
-        .select("*")
+    .select(BUNDLE_USAGE_SUMMARY_SELECT)
         .in("client_bundle_assignment_id", assignmentIds)
     : { data: [], error: null };
   if (usageSummariesError) throw usageSummariesError;
@@ -114,7 +121,7 @@ export async function listPortalTicketsServer(input: {
   if (term)
     query = query.or(`ticket_code.ilike.%${term}%,model.ilike.%${term}%,notes.ilike.%${term}%`);
 
-  query = query.order(input.sortBy || "created_at", { ascending: input.sortDir === "asc" });
+  query = query.order(input.sortBy || "created_at", { ascending: input.sortDir === "asc" }).limit(200);
   const { data: tickets, error } = await query;
   if (error) throw error;
   return {
@@ -325,7 +332,8 @@ export async function listPortalDevicesServer(input: { token: string }) {
     .from("devices" as any)
     .select("id, model, serial, os, status, assigned_to, updated_at")
     .eq("client_id", session.clientId)
-    .order("model", { ascending: true });
+    .order("model", { ascending: true })
+    .limit(200);
   if (error) throw error;
   const deviceIds = ((devices ?? []) as any[]).map((device) => device.id);
   const { data: tickets, error: ticketError } = deviceIds.length
@@ -446,7 +454,8 @@ export async function getPortalProfileOverviewServer(input: { token: string }) {
         )
         .eq("client_id", session.clientId)
         .eq("status", "active")
-        .order("start_date", { ascending: false }),
+        .order("start_date", { ascending: false })
+        .limit(20),
     ],
   );
 
@@ -519,7 +528,8 @@ export async function listPortalDocumentsServer(input: { token: string }) {
       "id, storage_bucket, storage_path, file_name, file_size, mime_type, created_at, ticket:tickets!inner(id, ticket_code, model, client_id, status, closed_at, completed_at)",
     )
     .eq("ticket.client_id", session.clientId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (attachmentsError) {
     console.error("[portal-documents] attachment query failed", {

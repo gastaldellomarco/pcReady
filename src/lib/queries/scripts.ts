@@ -3,10 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type ScriptsListParams = { q?: string; category?: string };
 
+// ── Explicit field select (excludes heavy `content` field loaded on-demand) ──
+const SCRIPTS_LIST_SELECT =
+  "id, name, category, description, language, icon, color, created_by, created_at, updated_at";
+
 export async function fetchScriptsList() {
   const { data, error } = await supabase
     .from("scripts")
-    .select("*")
+    .select(SCRIPTS_LIST_SELECT)
     .order("category", { ascending: true })
     .order("name", { ascending: true });
   if (error) throw error;
