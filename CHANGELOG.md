@@ -13,6 +13,17 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## [1.1.1] - 2026-05-25
+
+### Added
+- Add device management, login, profile, and ticket functionalities
+- Add automation form hook and action/condition adapters
+
+### Changed
+- Add device management, login, profile, and ticket functionalities
+- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
+- Add automation form hook and action/condition adapters
+
 ## [1.1.0] - 2026-05-24
 
 ### Added
@@ -130,5 +141,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 [1.0.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.23.0...v1.0.0
 
-[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...HEAD
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
+
+[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
