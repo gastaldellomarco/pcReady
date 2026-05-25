@@ -72,42 +72,52 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() => import('./routes/portal/index.lazy').then((d) => d.Route))
 const PortalProfileRoute = PortalProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/profile.lazy').then((d) => d.Route),
+)
 const PortalDevicesRoute = PortalDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/devices.lazy').then((d) => d.Route),
+)
 const PortalDashboardRoute = PortalDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/dashboard.lazy').then((d) => d.Route),
+)
 const AuthSetPasswordRoute = AuthSetPasswordRouteImport.update({
   id: '/set-password',
   path: '/set-password',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/auth.set-password.lazy').then((d) => d.Route),
+)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/callback',
   path: '/callback',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() => import('./routes/auth.callback.lazy').then((d) => d.Route))
 const Auth2faChallengeRoute = Auth2faChallengeRouteImport.update({
   id: '/2fa-challenge',
   path: '/2fa-challenge',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/auth.2fa-challenge.lazy').then((d) => d.Route),
+)
 const AppTicketsRoute = AppTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/tickets.lazy').then((d) => d.Route))
 const AppScriptsRoute = AppScriptsRouteImport.update({
   id: '/scripts',
   path: '/scripts',
@@ -117,67 +127,77 @@ const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/profile.lazy').then((d) => d.Route))
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/notifications.lazy').then((d) => d.Route),
+)
 const AppKanbanRoute = AppKanbanRouteImport.update({
   id: '/kanban',
   path: '/kanban',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/kanban.lazy').then((d) => d.Route))
 const AppInventoryRoute = AppInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/inventory.lazy').then((d) => d.Route),
+)
 const AppDocsRoute = AppDocsRouteImport.update({
   id: '/docs',
   path: '/docs',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/docs.lazy').then((d) => d.Route))
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/dashboard.lazy').then((d) => d.Route),
+)
 const AppCostsRoute = AppCostsRouteImport.update({
   id: '/costs',
   path: '/costs',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/costs.lazy').then((d) => d.Route))
 const AppContactsRoute = AppContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/contacts.lazy').then((d) => d.Route))
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/clients.lazy').then((d) => d.Route))
 const AppChecklistRoute = AppChecklistRouteImport.update({
   id: '/checklist',
   path: '/checklist',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/checklist.lazy').then((d) => d.Route),
+)
 const AppCalendarRoute = AppCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/calendar.lazy').then((d) => d.Route))
 const AppBundlesRoute = AppBundlesRouteImport.update({
   id: '/bundles',
   path: '/bundles',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() => import('./routes/_app/bundles.lazy').then((d) => d.Route))
 const AppAutomationsRoute = AppAutomationsRouteImport.update({
   id: '/automations',
   path: '/automations',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/automations.lazy').then((d) => d.Route),
+)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -187,7 +207,9 @@ const PortalTicketsIndexRoute = PortalTicketsIndexRouteImport.update({
   id: '/tickets/',
   path: '/tickets/',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/tickets/index.lazy').then((d) => d.Route),
+)
 const PortalDocumentsIndexRoute = PortalDocumentsIndexRouteImport.update({
   id: '/documents/',
   path: '/documents/',
@@ -197,22 +219,30 @@ const PortalTicketsNewRoute = PortalTicketsNewRouteImport.update({
   id: '/tickets/new',
   path: '/tickets/new',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/tickets/new.lazy').then((d) => d.Route),
+)
 const PortalTicketsTicketIdRoute = PortalTicketsTicketIdRouteImport.update({
   id: '/tickets/$ticketId',
   path: '/tickets/$ticketId',
   getParentRoute: () => PortalRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/portal/tickets/$ticketId.lazy').then((d) => d.Route),
+)
 const AppTicketsArchiveRoute = AppTicketsArchiveRouteImport.update({
   id: '/tickets_/archive',
   path: '/tickets/archive',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/tickets_.archive.lazy').then((d) => d.Route),
+)
 const AppOauthConsentRoute = AppOauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/oauth.consent.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
