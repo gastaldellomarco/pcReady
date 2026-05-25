@@ -50,3 +50,6 @@ backups/
 .venv
 .sixth
 .junie
+supabase/.temp/cli-latest
+supabase/.temp/cli-latest
+e2e/screenshots/tickets-diagnostic.png

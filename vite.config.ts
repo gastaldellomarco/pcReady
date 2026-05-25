@@ -113,7 +113,13 @@ export default defineConfig(({ command, mode }) => {
       coverage: {
         provider: "v8",
         reporter: ["text", "lcov"],
-        include: ["src/lib/inventory-import.ts", "src/lib/notifications.server.ts"],
+        include: [
+          "src/lib/inventory-import.ts",
+          "src/lib/notifications.server.ts",
+          "src/components/pcready/CreateTicketModal.tsx",
+          "src/components/kanban/SwimLaneView.tsx",
+          "src/components/admin/AdminUsersTab.tsx",
+        ],
         exclude: ["**/*.d.ts", "**/*.test.ts", "**/*.test.tsx"],
         thresholds: {
           lines: 60,
