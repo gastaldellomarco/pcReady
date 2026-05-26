@@ -1,4 +1,5 @@
 import OverflowTable from "@/components/ui/overflow-table";
+import { useVirtualList } from "@/hooks/useVirtualList";
 
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { ListSkeleton, PageFetchError } from "@/components/page-states";
@@ -378,6 +379,12 @@ function ClientsPage() {
   const listLoading = listQuery.isLoading;
   const allPageSelected =
     displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
+  const { containerRef: cardContainerRef, virtualizer: cardVirtualizer, virtualItems: virtualCards, totalSize: cardTotalSize } = useVirtualList({
+    count: displayedClients.length,
+    estimateSize: 130,
+    overscan: 5,
+    threshold: 50,
+  });
 
   function openAddDeviceForSelectedClient() {
     if (!selected) return toast.error(t("errors.selectClientFirst", "Seleziona prima un cliente"));
@@ -707,7 +714,7 @@ function ClientsPage() {
             </div>
           )}
         </div>
-        <div className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3">
+        <div ref={cardContainerRef} className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3">
           {listQuery.isError ? (
             <PageFetchError
               message={t("list.error", "Impossibile caricare i clienti. Controlla la connessione e riprova.")}
@@ -715,6 +722,83 @@ function ClientsPage() {
             />
           ) : listLoading ? (
             <ListSkeleton rows={8} variant="app" className="gap-2" />
+          ) : displayedClients.length > 50 ? (
+            <div style={{ height: cardTotalSize, position: 'relative' }}>
+              {virtualCards.map((virtualCard) => {
+                const client = displayedClients[virtualCard.index];
+                const clientStats = stats[client.id] ?? {
+                  openTickets: 0,
+                  devices: 0,
+                  contacts: 0,
+                  portalActive: false,
+                };
+                const name = client.company_name || client.name;
+                return (
+                  <div
+                    key={virtualCard.key}
+                    ref={cardVirtualizer.measureElement}
+                    data-index={virtualCard.index}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      transform: `translateY(${virtualCard.start}px)`,
+                      left: 0,
+                      right: 0,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="w-full rounded-md border p-3 text-left transition-colors hover:bg-surface2"
+                      style={{
+                        borderColor: client.id === selectedId ? "var(--accent)" : "var(--border)",
+                        background: client.id === selectedId ? "var(--accent2)" : "var(--surface)",
+                      }}
+                      onClick={() => {
+                        setSelectedId(client.id);
+                        void navigate({
+                          to: "/clients",
+                          search: { clientId: client.id, tab: undefined },
+                        });
+                      }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={t("list.selectClient", { defaultValue: "Seleziona {{name}}", name })}
+                          checked={selectedIds.has(client.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={(event) => toggleSelected(client.id, event.target.checked)}
+                        />
+                        <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-text3" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[13px] font-bold">{name}</div>
+                          <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
+                            {client.vat_number || client.email || client.phone || t("list.incompleteProfile", "Anagrafica da completare")}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        <SmallMetric
+                          tone={clientStats.openTickets > 0 ? "danger" : "muted"}
+                          icon={<Ticket className="h-3 w-3" />}
+                          label={t("list.ticketCount", { defaultValue: "{{count}} ticket", count: clientStats.openTickets })}
+                        />
+                        <SmallMetric
+                          tone="muted"
+                          icon={<HardDrive className="h-3 w-3" />}
+                          label={t("list.deviceCount", { defaultValue: "{{count}} dispositivi", count: clientStats.devices })}
+                        />
+                        <SmallMetric
+                          tone="muted"
+                          icon={<Users className="h-3 w-3" />}
+                          label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <>
               {displayedClients.map((client) => {
@@ -754,10 +838,7 @@ function ClientsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[13px] font-bold">{name}</div>
                         <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
-                          {client.vat_number ||
-                            client.email ||
-                            client.phone ||
-                            t("list.incompleteProfile", "Anagrafica da completare")}
+                          {client.vat_number || client.email || client.phone || t("list.incompleteProfile", "Anagrafica da completare")}
                         </div>
                       </div>
                     </div>

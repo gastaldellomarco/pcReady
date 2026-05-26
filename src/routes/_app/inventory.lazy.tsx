@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualList } from "@/hooks/useVirtualList";
 import { useQueryClient } from "@tanstack/react-query";
 import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
@@ -182,6 +183,19 @@ function InventoryPage() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareBusy, setCompareBusy] = useState(false);
   const [compareRows, setCompareRows] = useState<CompareDevice[]>([]);
+  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 40,
+    overscan: 15,
+    threshold: 50,
+  });
+  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 212,
+    overscan: 5,
+    threshold: 20,
+  });
+
   const listQuery = useInventoryInfiniteList({
     status: fs || undefined,
     os: fos || undefined,
@@ -245,6 +259,8 @@ function InventoryPage() {
   const loadedCount = data.length;
   const selectedRows = data.filter((row) => selectedIds.has(row.id));
   const allPageSelected = data.length > 0 && data.every((row) => selectedIds.has(row.id));
+
+  // virtualItems, virtualTotalSize, mobileVirtualItems, mobileVirtualTotalSize are from useVirtualList hooks
 
   const activeFilterRecord: Record<string, any> = {
     status: fs || undefined,
@@ -754,36 +770,86 @@ function InventoryPage() {
         />
       ) : (
         <>
-          <div className="grid gap-3 md:hidden">
+          <div
+            ref={mobileContainerRef}
+            className="md:hidden"
+            style={{
+              maxHeight: data.length > 20 ? 'calc(100vh - 200px)' : undefined,
+              overflow: data.length > 20 ? 'auto' : undefined,
+            }}
+          >
             {listLoading ? (
               <div className="pc-card pc-card-body text-sm text-text3">{t("loading.inventory")}</div>
-            ) : data.length ? (
-              data.map((r) => (
-                <DeviceMobileCard
-                  key={r.id}
-                  row={r}
-                  selected={selectedIds.has(r.id)}
-                  saving={statusSavingId === r.id}
-                  onOpen={() => openDeviceDetail(r.id)}
-                  onSelect={(checked) => toggleSelected(r.id, checked)}
-                  onStatusChange={handleStatusChange}
-                  onCreateTicket={() => {
-                    openDeviceDetail(r.id);
-                    setTimeout(() => openCreate(), 200);
-                  }}
-                  onQr={() => setQrDevice(toQrDevice(r))}
-                />
-              ))
-            ) : (
+            ) : !data.length ? (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
                 <span dangerouslySetInnerHTML={{ __html: t("empty.mobile") }} />
+              </div>
+            ) : data.length > 20 ? (
+              <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+                {mobileVirtualItems.map((virtualItem) => {
+                  const r = data[virtualItem.index];
+                  return (
+                    <div
+                      key={r.id}
+                      ref={mobileVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        left: 0,
+                        right: 0,
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <DeviceMobileCard
+                        row={r}
+                        selected={selectedIds.has(r.id)}
+                        saving={statusSavingId === r.id}
+                        onOpen={() => openDeviceDetail(r.id)}
+                        onSelect={(checked) => toggleSelected(r.id, checked)}
+                        onStatusChange={handleStatusChange}
+                        onCreateTicket={() => {
+                          openDeviceDetail(r.id);
+                          setTimeout(() => openCreate(), 200);
+                        }}
+                        onQr={() => setQrDevice(toQrDevice(r))}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {data.map((r) => (
+                  <DeviceMobileCard
+                    key={r.id}
+                    row={r}
+                    selected={selectedIds.has(r.id)}
+                    saving={statusSavingId === r.id}
+                    onOpen={() => openDeviceDetail(r.id)}
+                    onSelect={(checked) => toggleSelected(r.id, checked)}
+                    onStatusChange={handleStatusChange}
+                    onCreateTicket={() => {
+                      openDeviceDetail(r.id);
+                      setTimeout(() => openCreate(), 200);
+                    }}
+                    onQr={() => setQrDevice(toQrDevice(r))}
+                  />
+                ))}
               </div>
             )}
           </div>
           <div className="pc-card hidden overflow-hidden md:block">
-            <div className="overflow-x-auto">
+            <div
+              ref={tableContainerRef}
+              className="overflow-x-auto"
+              style={{
+                maxHeight: 'calc(100vh - 180px)',
+                overflow: 'auto',
+              }}
+            >
               <table className="w-full min-w-[1180px]">
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
                   <th
                     className="w-10 px-[14px] py-[9px] text-left border-b"
@@ -823,111 +889,224 @@ function InventoryPage() {
               <tbody>
                 {listLoading ? (
                   <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
-                ) : (
+                ) : !data.length ? (
+                  <tr>
+                    <td colSpan={13} className="text-center py-12 text-text3 text-sm">
+                      <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
+                    </td>
+                  </tr>
+                ) : data.length > 50 ? (
                   <>
-                    {data.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-b hover:bg-surface2 transition-colors cursor-pointer"
-                        style={{ borderColor: "var(--border)" }}
-                        onClick={() => openDeviceDetail(r.id)}
-                      >
-                        <td
-                          className="px-[14px] py-[10px]"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                             aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
-                            checked={selectedIds.has(r.id)}
-                            onChange={(event) => toggleSelected(r.id, event.target.checked)}
-                          />
-                        </td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                          {r.asset_tag || r.id.slice(0, 8)}
-                        </td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                          {r.serial || "-"}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">
-                          <div>{r.model}</div>
-                          {r.has_maintenance_due_soon ? (
-                            <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                              <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
-                              {r.next_maintenance_due_date
-                                ? fmtDate(r.next_maintenance_due_date)
-                                : t("maintenance.expiring")}
-                            </div>
-                          ) : null}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                          {getDeviceCategoryLabel(r.category)}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                          {r.device_type || "-"}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                          {r.os || "-"}
-                        </td>
-                        <td
-                          className="px-[14px] py-[10px]"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <DeviceStatusBadge
-                            deviceId={r.id}
-                            status={r.status}
-                            hasActiveAssignment={!!r.has_active_assignment}
-                            saving={statusSavingId === r.id}
-                            onStatusChange={handleStatusChange}
-                          />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <WarrantyBadge expiryDate={r.warranty_expiry_date} />
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
-                        <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                        <td
-                          className="px-[14px] py-[10px] text-[11px] text-text3"
-                          title={r.updated_at}
-                        >
-                          {fmtDate(r.updated_at)}
-                        </td>
-                        <td
-                          className="px-[14px] py-[10px]"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <div className="flex items-center gap-1">
-                            <button
-                              className="pc-btn-icon touch-target"
-                              title={t("actions.createTicket")}
-                              aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
-                              onClick={() => {
-                                openDeviceDetail(r.id);
-                                setTimeout(() => openCreate(), 200);
-                              }}
-                            >
-                              <TicketPlus className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              className="pc-btn-icon touch-target"
-                              title={t("actions.qr")}
-                              aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
-                              onClick={() => setQrDevice(toQrDevice(r))}
-                            >
-                              <QrCode className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {!data.length && (
-                      <tr>
-                        <td colSpan={13} className="text-center py-12 text-text3 text-sm">
-                          <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
-                        </td>
+                    {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                      <tr style={{ height: virtualItems[0].start, visibility: 'hidden' }}>
+                        <td colSpan={13} />
                       </tr>
                     )}
+                    {virtualItems.map((virtualItem) => {
+                      const r = data[virtualItem.index];
+                      return (
+                        <tr
+                          key={r.id}
+                          ref={rowVirtualizer.measureElement}
+                          className="border-b hover:bg-surface2 transition-colors cursor-pointer"
+                          style={{ borderColor: "var(--border)" }}
+                          onClick={() => openDeviceDetail(r.id)}
+                        >
+                          <td
+                            className="px-[14px] py-[10px]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
+                              checked={selectedIds.has(r.id)}
+                              onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                            />
+                          </td>
+                          <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                            {r.asset_tag || r.id.slice(0, 8)}
+                          </td>
+                          <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                            {r.serial || "-"}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12.5px]">
+                            <div>{r.model}</div>
+                            {r.has_maintenance_due_soon ? (
+                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
+                                {r.next_maintenance_due_date
+                                  ? fmtDate(r.next_maintenance_due_date)
+                                  : t("maintenance.expiring")}
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                            {getDeviceCategoryLabel(r.category)}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                            {r.device_type || "-"}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                            {r.os || "-"}
+                          </td>
+                          <td
+                            className="px-[14px] py-[10px]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <DeviceStatusBadge
+                              deviceId={r.id}
+                              status={r.status}
+                              hasActiveAssignment={!!r.has_active_assignment}
+                              saving={statusSavingId === r.id}
+                              onStatusChange={handleStatusChange}
+                            />
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <WarrantyBadge expiryDate={r.warranty_expiry_date} />
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
+                          <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
+                          <td
+                            className="px-[14px] py-[10px] text-[11px] text-text3"
+                            title={r.updated_at}
+                          >
+                            {fmtDate(r.updated_at)}
+                          </td>
+                          <td
+                            className="px-[14px] py-[10px]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <div className="flex items-center gap-1">
+                              <button
+                                className="pc-btn-icon touch-target"
+                                title={t("actions.createTicket")}
+                                aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
+                                onClick={() => {
+                                  openDeviceDetail(r.id);
+                                  setTimeout(() => openCreate(), 200);
+                                }}
+                              >
+                                <TicketPlus className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                className="pc-btn-icon touch-target"
+                                title={t("actions.qr")}
+                                aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
+                                onClick={() => setQrDevice(toQrDevice(r))}
+                              >
+                                <QrCode className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {virtualItems.length > 0 && (() => {
+                      const lastItem = virtualItems[virtualItems.length - 1];
+                      const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
+                      return bottomHeight > 0 ? (
+                        <tr style={{ height: bottomHeight, visibility: 'hidden' }}>
+                          <td colSpan={13} />
+                        </tr>
+                      ) : null;
+                    })()}
                   </>
+                ) : (
+                  data.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="border-b hover:bg-surface2 transition-colors cursor-pointer"
+                      style={{ borderColor: "var(--border)" }}
+                      onClick={() => openDeviceDetail(r.id)}
+                    >
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
+                          checked={selectedIds.has(r.id)}
+                          onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                        {r.asset_tag || r.id.slice(0, 8)}
+                      </td>
+                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                        {r.serial || "-"}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12.5px]">
+                        <div>{r.model}</div>
+                        {r.has_maintenance_due_soon ? (
+                          <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                            <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
+                            {r.next_maintenance_due_date
+                              ? fmtDate(r.next_maintenance_due_date)
+                              : t("maintenance.expiring")}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                        {getDeviceCategoryLabel(r.category)}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                        {r.device_type || "-"}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                        {r.os || "-"}
+                      </td>
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <DeviceStatusBadge
+                          deviceId={r.id}
+                          status={r.status}
+                          hasActiveAssignment={!!r.has_active_assignment}
+                          saving={statusSavingId === r.id}
+                          onStatusChange={handleStatusChange}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <WarrantyBadge expiryDate={r.warranty_expiry_date} />
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
+                      <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
+                      <td
+                        className="px-[14px] py-[10px] text-[11px] text-text3"
+                        title={r.updated_at}
+                      >
+                        {fmtDate(r.updated_at)}
+                      </td>
+                      <td
+                        className="px-[14px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1">
+                          <button
+                            className="pc-btn-icon touch-target"
+                            title={t("actions.createTicket")}
+                            aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
+                            onClick={() => {
+                              openDeviceDetail(r.id);
+                              setTimeout(() => openCreate(), 200);
+                            }}
+                          >
+                            <TicketPlus className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            className="pc-btn-icon touch-target"
+                            title={t("actions.qr")}
+                            aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
+                            onClick={() => setQrDevice(toQrDevice(r))}
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

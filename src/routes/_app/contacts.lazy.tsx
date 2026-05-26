@@ -26,6 +26,7 @@ import type React from "react";
 import { toast } from "sonner";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { errorMessage } from "@/lib/errors";
+import { useVirtualList } from "@/hooks/useVirtualList";
 
 export const Route = createLazyFileRoute("/_app/contacts")({
   component: ContactsPage,
@@ -55,9 +56,24 @@ function ContactsPage() {
     () => (listQuery.data?.pages ?? []).flat() as GlobalContactRow[],
     [listQuery.data],
   );
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const desktopSentinelRef = useRef<HTMLDivElement>(null);
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = sentinelRef.current;
+    const el = desktopSentinelRef.current;
+    if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && listQuery.hasNextPage) {
+          void listQuery.fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage]);
+  useEffect(() => {
+    const el = mobileSentinelRef.current;
     if (!el || !listQuery.hasNextPage || listQuery.isFetchingNextPage) return;
     const obs = new IntersectionObserver(
       (entries) => {
@@ -132,6 +148,18 @@ function ContactsPage() {
       return map;
     }, new Map<string, { client: GlobalContactRow["client"]; rows: GlobalContactRow[] }>()),
   ).sort((a, b) => clientGroupName(a[1].client).localeCompare(clientGroupName(b[1].client)));
+  const { containerRef: sectionContainerRef, virtualizer: sectionVirtualizer, virtualItems: virtualSections, totalSize: sectionTotalSize } = useVirtualList({
+    count: groupedContacts.length,
+    estimateSize: 300,
+    overscan: 3,
+    threshold: 20,
+  });
+  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+    count: filteredContacts.length,
+    estimateSize: 240,
+    overscan: 5,
+    threshold: 20,
+  });
 
   function openEdit(contact: GlobalContactRow) {
     setEditing(contact);
@@ -299,60 +327,131 @@ function ContactsPage() {
         </select>
       </div>
 
-      <div className="space-y-4 p-4">
-        {groupedContacts.map(([clientId, group]) => (
-          <section
-            key={clientId}
-            className="rounded-xl border"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <div
-              className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
-              style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+      <div className="hidden md:block">
+        <div ref={sectionContainerRef} className="space-y-4 p-4" style={{ maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>
+        {groupedContacts.length > 20 ? (
+          <div style={{ height: sectionTotalSize, position: 'relative' }}>
+            {virtualSections.map((virtualSection) => {
+              const [, group] = groupedContacts[virtualSection.index];
+              return (
+                <div
+                  key={virtualSection.key}
+                  ref={sectionVirtualizer.measureElement}
+                  data-index={virtualSection.index}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    transform: `translateY(${virtualSection.start}px)`,
+                    left: 0,
+                    right: 0,
+                    paddingBottom: '16px',
+                  }}
+                >
+                  <section className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+                      style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                    >
+                      <button
+                        className="inline-flex min-w-0 items-center gap-2 text-left"
+                        onClick={() =>
+                          group.client &&
+                          void navigate({
+                            to: "/clients",
+                            search: { clientId: group.client.id, tab: "contacts" },
+                          })
+                        }
+                      >
+                        <Building2 className="h-4 w-4 shrink-0 text-text3" />
+                        <span className="truncate text-sm font-bold text-text">
+                          {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
+                        </span>
+                      </button>
+                      <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
+                        {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
+                      </span>
+                    </div>
+                    <div className="grid gap-3 p-3 xl:grid-cols-2">
+                      {group.rows.map((contact) => (
+                        <GlobalContactCard
+                          key={contact.id}
+                          contact={contact}
+                          busy={busy}
+                          canDelete={canDelete}
+                          canEdit={canEdit}
+                          canManagePortalAccess={canManagePortalAccess}
+                          onOpenClient={() =>
+                            void navigate({
+                              to: "/clients",
+                              search: { clientId: contact.client_id, tab: "contacts" },
+                            })
+                          }
+                          onEdit={() => openEdit(contact)}
+                          onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                          onDelete={() => setDeleteTarget(contact)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          groupedContacts.map(([clientId, group]) => (
+            <section
+              key={clientId}
+              className="rounded-xl border"
+              style={{ borderColor: "var(--border)" }}
             >
-              <button
-                className="inline-flex min-w-0 items-center gap-2 text-left"
-                onClick={() =>
-                  group.client &&
-                  void navigate({
-                    to: "/clients",
-                    search: { clientId: group.client.id, tab: "contacts" },
-                  })
-                }
+              <div
+                className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
-                <Building2 className="h-4 w-4 shrink-0 text-text3" />
-                <span className="truncate text-sm font-bold text-text">
-                  {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
-                </span>
-              </button>
-              <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
-                {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
-              </span>
-            </div>
-            <div className="grid gap-3 p-3 xl:grid-cols-2">
-              {group.rows.map((contact) => (
-                <GlobalContactCard
-                  key={contact.id}
-                  contact={contact}
-                  busy={busy}
-                  canDelete={canDelete}
-                  canEdit={canEdit}
-                  canManagePortalAccess={canManagePortalAccess}
-                  onOpenClient={() =>
+                <button
+                  className="inline-flex min-w-0 items-center gap-2 text-left"
+                  onClick={() =>
+                    group.client &&
                     void navigate({
                       to: "/clients",
-                      search: { clientId: contact.client_id, tab: "contacts" },
+                      search: { clientId: group.client.id, tab: "contacts" },
                     })
                   }
-                  onEdit={() => openEdit(contact)}
-                  onGeneratePortalLink={() => generateContactPortalLink(contact)}
-                  onDelete={() => setDeleteTarget(contact)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-        {!filteredContacts.length && !listQuery.isLoading && (
+                >
+                  <Building2 className="h-4 w-4 shrink-0 text-text3" />
+                  <span className="truncate text-sm font-bold text-text">
+                    {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
+                  </span>
+                </button>
+                <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
+                  {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
+                </span>
+              </div>
+              <div className="grid gap-3 p-3 xl:grid-cols-2">
+                {group.rows.map((contact) => (
+                  <GlobalContactCard
+                    key={contact.id}
+                    contact={contact}
+                    busy={busy}
+                    canDelete={canDelete}
+                    canEdit={canEdit}
+                    canManagePortalAccess={canManagePortalAccess}
+                    onOpenClient={() =>
+                      void navigate({
+                        to: "/clients",
+                        search: { clientId: contact.client_id, tab: "contacts" },
+                      })
+                    }
+                    onEdit={() => openEdit(contact)}
+                    onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                    onDelete={() => setDeleteTarget(contact)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
+        {!filteredContacts.length && !listQuery.isLoading && groupedContacts.length === 0 && (
           <div
             className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
             style={{ borderColor: "var(--border)" }}
@@ -360,7 +459,7 @@ function ContactsPage() {
             {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
           </div>
         )}
-        {listQuery.isLoading && (
+          {listQuery.isLoading && (
           <div className="py-8 text-center text-sm text-text3">
             {t("loading", "Caricamento referenti...")}
           </div>
@@ -370,7 +469,94 @@ function ContactsPage() {
             {t("loadingMore", "Caricamento altri referenti...")}
           </div>
         )}
-        <div ref={sentinelRef} className="h-px" />
+        <div ref={desktopSentinelRef} className="h-px" />
+      </div>
+      </div>
+
+      <div ref={mobileContainerRef} className="md:hidden" style={{
+        maxHeight: filteredContacts.length > 20 ? 'calc(100vh - 200px)' : undefined,
+        overflow: filteredContacts.length > 20 ? 'auto' : undefined,
+      }}>
+        {filteredContacts.length > 20 ? (
+          <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+            {mobileVirtualItems.map((virtualItem) => {
+              const contact = filteredContacts[virtualItem.index];
+              return (
+                <div
+                  key={contact.id}
+                  ref={mobileVirtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    transform: `translateY(${virtualItem.start}px)`,
+                    left: 0,
+                    right: 0,
+                    marginBottom: '12px',
+                  }}
+                >
+                  <GlobalContactCard
+                    contact={contact}
+                    busy={busy}
+                    canDelete={canDelete}
+                    canEdit={canEdit}
+                    canManagePortalAccess={canManagePortalAccess}
+                    onOpenClient={() =>
+                      void navigate({
+                        to: '/clients',
+                        search: { clientId: contact.client_id, tab: 'contacts' },
+                      })
+                    }
+                    onEdit={() => openEdit(contact)}
+                    onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                    onDelete={() => setDeleteTarget(contact)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : !filteredContacts.length && !listQuery.isLoading ? (
+          <div className="p-4">
+            <div
+              className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              {t('emptyState.noResults', 'Nessun referente trovato con i filtri correnti.')}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 p-4">
+            {filteredContacts.map((contact) => (
+              <GlobalContactCard
+                key={contact.id}
+                contact={contact}
+                busy={busy}
+                canDelete={canDelete}
+                canEdit={canEdit}
+                canManagePortalAccess={canManagePortalAccess}
+                onOpenClient={() =>
+                  void navigate({
+                    to: '/clients',
+                    search: { clientId: contact.client_id, tab: 'contacts' },
+                  })
+                }
+                onEdit={() => openEdit(contact)}
+                onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                onDelete={() => setDeleteTarget(contact)}
+              />
+            ))}
+          </div>
+        )}
+        {listQuery.isLoading && (
+          <div className="p-4 text-center text-sm text-text3">
+            {t('loading', 'Caricamento referenti...')}
+          </div>
+        )}
+        {listQuery.isFetchingNextPage && (
+          <div className="p-4 text-center text-sm text-text3">
+            {t('loadingMore', 'Caricamento altri referenti...')}
+          </div>
+        )}
+        <div ref={mobileSentinelRef} className="h-px" />
       </div>
 
       <EditContactModal

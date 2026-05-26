@@ -2,6 +2,7 @@ import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import i18n from "@/i18n";
 import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualList } from "@/hooks/useVirtualList";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -154,6 +155,18 @@ function TicketsPage() {
   const loadSettings = useServerFn(getPublicAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 40,
+    overscan: 15,
+    threshold: 50,
+  });
+  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 220,
+    overscan: 5,
+    threshold: 20,
+  });
   const listQuery = useTicketsInfiniteList({
     status: fs || undefined,
     priority: fp || undefined,
@@ -591,6 +604,8 @@ function TicketsPage() {
     },
   ];
   const visibleTableColumns = allTicketColumns.filter((column) => visibleColumns.has(column.key));
+  const colSpan = visibleTableColumns.length + 1;
+  // virtualItems, virtualTotalSize are from useVirtualList hook
 
   return (
     <div className="flex flex-col gap-4">
@@ -891,8 +906,74 @@ function TicketsPage() {
           onRetry={() => listQuery.refetch()}
         />
       ) : (
-        <div className="pc-card overflow-hidden">
-          <div className="overflow-x-auto">
+        <>
+          <div
+            ref={mobileContainerRef}
+            className="md:hidden"
+            style={{
+              maxHeight: data.length > 20 ? 'calc(100vh - 200px)' : undefined,
+              overflow: data.length > 20 ? 'auto' : undefined,
+            }}
+          >
+            {listLoading ? (
+              <TableSkeletonRows
+                rows={5}
+                columns={1}
+                cellClassName="px-[14px] py-[10px]"
+              />
+            ) : !data.length ? (
+              <div className="pc-card pc-card-body text-center text-sm text-text3">
+                {t("noTickets", "Nessun ticket")}
+              </div>
+            ) : data.length > 20 ? (
+              <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+                {mobileVirtualItems.map((virtualItem) => {
+                  const ticket = data[virtualItem.index];
+                  return (
+                    <div
+                      key={ticket.id}
+                      ref={mobileVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        left: 0,
+                        right: 0,
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <TicketMobileCard
+                        ticket={ticket}
+                        selected={selectedTicketIds.has(ticket.id)}
+                        slaLimits={slaLimits}
+                        onOpen={() => openTicketDetail(ticket.id)}
+                        onToggleSelect={() => toggleTicketSelection(ticket.id)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {data.map((ticket) => (
+                  <TicketMobileCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    selected={selectedTicketIds.has(ticket.id)}
+                    slaLimits={slaLimits}
+                    onOpen={() => openTicketDetail(ticket.id)}
+                    onToggleSelect={() => toggleTicketSelection(ticket.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="hidden md:block pc-card overflow-hidden">
+            <div
+              ref={tableContainerRef}
+              className="overflow-x-auto"
+              style={{ maxHeight: 'calc(100vh - 180px)', overflow: 'auto' }}
+            >
             <table
               className={
                 tableView === "compact"
@@ -900,7 +981,7 @@ function TicketsPage() {
                   : "w-full min-w-[1420px] table-fixed"
               }
             >
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
                   <th
                     className="w-10 px-[10px] py-[9px] text-left border-b"
@@ -959,60 +1040,109 @@ function TicketsPage() {
                 {listLoading ? (
                   <TableSkeletonRows
                     rows={12}
-                    columns={visibleTableColumns.length + 1}
+                    columns={colSpan}
                     cellClassName="px-[14px] py-[10px]"
                   />
-                ) : (
+                ) : !data.length ? (
+                  <tr>
+                    <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
+                      {t("noTickets", "Nessun ticket")}
+                    </td>
+                  </tr>
+                ) : data.length > 50 ? (
                   <>
-                    {data.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: selectedTicketIds.has(row.id)
-                            ? "color-mix(in oklab, var(--accent) 8%, transparent)"
-                            : undefined,
-                        }}
-                        onClick={() => openTicketDetail(row.id)}
-                      >
-                        <td
-                          className="px-[10px] py-[10px]"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
-                            checked={selectedTicketIds.has(row.id)}
-                            onChange={() => toggleTicketSelection(row.id)}
-                          />
-                        </td>
-                        {visibleTableColumns.map((column) => (
-                          <td
-                            key={column.key}
-                            className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
-                          >
-                            {column.render(row)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                    {!data.length && (
-                      <tr>
-                        <td
-                          colSpan={visibleTableColumns.length + 1}
-                          className="text-center py-10 text-text3 text-sm"
-                        >
-{t("noTickets", "Nessun ticket")}
-                        </td>
+                    {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                      <tr style={{ height: virtualItems[0].start, visibility: 'hidden' }}>
+                        <td colSpan={colSpan} />
                       </tr>
                     )}
+                    {virtualItems.map((virtualItem) => {
+                      const row = data[virtualItem.index];
+                      return (
+                        <tr
+                          key={row.id}
+                          ref={rowVirtualizer.measureElement}
+                          className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                          style={{
+                            borderColor: "var(--border)",
+                            background: selectedTicketIds.has(row.id)
+                              ? "color-mix(in oklab, var(--accent) 8%, transparent)"
+                              : undefined,
+                          }}
+                          onClick={() => openTicketDetail(row.id)}
+                        >
+                          <td
+                            className="px-[10px] py-[10px]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
+                              checked={selectedTicketIds.has(row.id)}
+                              onChange={() => toggleTicketSelection(row.id)}
+                            />
+                          </td>
+                          {visibleTableColumns.map((column) => (
+                            <td
+                              key={column.key}
+                              className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                            >
+                              {column.render(row)}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                    {virtualItems.length > 0 && (() => {
+                      const lastItem = virtualItems[virtualItems.length - 1];
+                      const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
+                      return bottomHeight > 0 ? (
+                        <tr style={{ height: bottomHeight, visibility: 'hidden' }}>
+                          <td colSpan={colSpan} />
+                        </tr>
+                      ) : null;
+                    })()}
                   </>
+                ) : (
+                  data.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                      style={{
+                        borderColor: "var(--border)",
+                        background: selectedTicketIds.has(row.id)
+                          ? "color-mix(in oklab, var(--accent) 8%, transparent)"
+                          : undefined,
+                      }}
+                      onClick={() => openTicketDetail(row.id)}
+                    >
+                      <td
+                        className="px-[10px] py-[10px]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
+                          checked={selectedTicketIds.has(row.id)}
+                          onChange={() => toggleTicketSelection(row.id)}
+                        />
+                      </td>
+                      {visibleTableColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                        >
+                          {column.render(row)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
         </div>
+        </>
       )}
       <div ref={loadMoreRef} className="flex items-center justify-center py-3">
         {isFetchingMore && (
@@ -1175,6 +1305,83 @@ function TimeOpenBadge({
       {formatOpenDuration(created_at)}
       <span className="opacity-70">({label})</span>
     </span>
+  );
+}
+
+function TicketMobileCard({
+  ticket,
+  selected,
+  slaLimits,
+  onOpen,
+  onToggleSelect,
+}: {
+  ticket: Row;
+  selected: boolean;
+  slaLimits?: SlaLimits;
+  onOpen: () => void;
+  onToggleSelect: () => void;
+}) {
+  const { t } = useTranslation("tickets");
+  const ticketClient = ticket.client_ref?.name || ticket.client || "-";
+  const ticketSerial = ticket.device?.serial || null;
+
+  return (
+    <article
+      className="pc-card pc-card-body flex flex-col transition-all duration-200"
+      style={{
+        border: selected ? "1px solid var(--accent)" : "1px solid var(--border)",
+        background: selected ? "color-mix(in oklab, var(--accent) 8%, var(--surface))" : "var(--surface)",
+      }}
+    >
+      <div className="flex items-start gap-2.5">
+        <input
+          type="checkbox"
+          aria-label={t("ticketList.selectTicket", { code: ticket.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
+          checked={selected}
+          onChange={onToggleSelect}
+        />
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={onOpen}>
+          <div className="break-anywhere text-sm font-semibold">{ticket.ticket_code}</div>
+          <div className="mt-1 font-mono text-[11px] text-text3">
+            {ticket.device?.model || t("noAsset", "Nessun asset")}
+            {ticketSerial ? ` · ${ticketSerial}` : ""}
+          </div>
+        </button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+        <div>
+          <div className="pc-label">{t("columns.client", "Cliente")}</div>
+          <div className="break-anywhere">{ticketClient}</div>
+        </div>
+        <div>
+          <div className="pc-label">{t("columns.requester", "Richiedente")}</div>
+          <div className="truncate">{ticket.requester}</div>
+        </div>
+        <div>
+          <div className="pc-label">{t("columns.type", "Tipo")}</div>
+          <TicketTypeBadge type={ticket.ticket_type} />
+        </div>
+        <div>
+          <div className="pc-label">{t("columns.assignee", "Assegnatario")}</div>
+          <AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <PriorityLabel p={ticket.priority} />
+        <StatusBadge status={ticket.status} />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-text3">
+        <span>{t("columns.created", "Creato")}: {fmtDate(ticket.created_at)}</span>
+        <TimeOpenBadge created_at={ticket.created_at} priority={ticket.priority} slaLimits={slaLimits} />
+        <SlaBadge
+          created_at={ticket.created_at}
+          priority={ticket.priority}
+          slaLimits={slaLimits}
+          deadline={ticket.due_date || ticket.sla_deadline}
+          breached={ticket.sla_breached}
+        />
+      </div>
+    </article>
   );
 }
 
