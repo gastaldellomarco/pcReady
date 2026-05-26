@@ -90,6 +90,13 @@ export function AdminUsersTab() {
     currentUserId: user?.id,
   });
 
+  const emailRegister = inviteForm.register("email");
+  const watchedEmail = inviteForm.watch("email");
+  const watchedFullName = inviteForm.watch("fullName");
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const clientEmailInvalid = watchedEmail && !EMAIL_RE.test(watchedEmail);
+  const isInviteButtonEnabled = !inviteBusy && !!watchedFullName && !!watchedEmail && EMAIL_RE.test(watchedEmail) && inviteForm.formState.isValid;
+
   const { settings } = useAdminAppSettings({ accessToken, isAdmin });
 
   return (
@@ -103,14 +110,25 @@ export function AdminUsersTab() {
           <input
             className="pc-input"
             type="email"
-            {...inviteForm.register("email")}
+            {...emailRegister}
+            onBlur={(e) => {
+              // preserve react-hook-form's onBlur and also trigger validation explicitly
+              try {
+                (emailRegister.onBlur as any)?.(e);
+              } catch (_) {
+                // ignore
+              }
+              void inviteForm.trigger("email");
+            }}
             placeholder={t("users.invite.emailPlaceholder", "utente@azienda.it")}
           />
-          {inviteForm.formState.errors.email && (
+          {inviteForm.formState.errors.email ? (
             <p className="text-sm text-destructive mt-1">
               {String(inviteForm.formState.errors.email?.message)}
             </p>
-          )}
+          ) : clientEmailInvalid ? (
+            <p className="text-sm text-destructive mt-1">{t("users.invite.invalidEmail", "Inserisci un'email valida")}</p>
+          ) : null}
         </div>
         <div className="flex-1 min-w-[180px]">
           <label className="pc-label">{t("users.invite.nameLabel", "Nome")}</label>
@@ -137,7 +155,7 @@ export function AdminUsersTab() {
         </div>
         <button
           className="pc-btn pc-btn-primary"
-          disabled={inviteBusy || !inviteForm.formState.isValid}
+          disabled={!isInviteButtonEnabled}
           type="submit"
         >
           <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? t("users.invite.submitting", "Invio...") : t("users.invite.submit", "Invita")}

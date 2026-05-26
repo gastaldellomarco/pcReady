@@ -136,6 +136,8 @@
       "exportButton": "Export all data",
       "exportingButton": "Exporting...",
       "protectedText": "Data protected with automatic daily backups"
+    ,
+    "readOnlyBadge": "Managed by provider"
     },
     "appSettings": {
       "title": "Application Settings",

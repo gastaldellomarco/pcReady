@@ -118,11 +118,13 @@ export function AdminSettingsTab() {
                   label="Frequenza"
                   value="Giornaliero automatico"
                   detail="Backup gestiti da Supabase"
+                  readOnly
                 />
                 <BackupMetric
                   label="Retention"
                   value="30 giorni Pro / 7 giorni Free"
                   detail="In base al piano Supabase"
+                  readOnly
                 />
                 <BackupMetric
                   label="Ultimo backup"
@@ -133,16 +135,19 @@ export function AdminSettingsTab() {
                   label="RPO"
                   value="< 24 ore"
                   detail="Per backup automatici giornalieri"
+                  readOnly
                 />
                 <BackupMetric
                   label="RTO"
                   value="< 4 ore"
                   detail="Ripristino coordinato con il supporto"
+                  readOnly
                 />
                 <BackupMetric
                   label="Emergenze"
                   value={settings?.support_email || "Email supporto non configurata"}
                   detail="Contatto operativo per restore e incidenti"
+                  readOnly
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
