@@ -24,6 +24,8 @@ function Calendar({
 
   return (
     <DayPicker
+      // Force Italian locale by default so date labels match app formatting
+      locale={"it-IT"}
       showOutsideDays={showOutsideDays}
       className={cn(
         "bg-background group/calendar p-3 [--cell-size:2rem] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
@@ -33,7 +35,8 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString("default", { month: "short" }),
+        formatMonthDropdown: (date) => date.toLocaleString("it-IT", { month: "short" }),
+        formatWeekdayName: (d, opts) => d.toLocaleDateString("it-IT", { weekday: "short" }),
         ...formatters,
       }}
       classNames={{
