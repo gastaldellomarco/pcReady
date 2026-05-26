@@ -429,17 +429,40 @@ export function AdminUsersTab() {
           if (!open) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("users.delete.title", "Rimuovi utente")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("users.delete.description", "Sei sicuro di voler eliminare")}{" "}
-              <strong>{deleteTarget?.email || deleteTarget?.full_name}</strong>?
+              {/* render translation which contains HTML (<strong>{{email}}</strong>) */}
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: t("users.delete.description", { email: deleteTarget?.email ?? "", interpolation: { escapeValue: false } }),
+                }}
+              />
+              <div className="mt-2">
+                <div className="font-semibold">{deleteTarget?.full_name || deleteTarget?.email}</div>
+                <div className="font-mono text-sm text-text3">{deleteTarget?.email}</div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("users.delete.cancel", "Annulla")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemove}>{t("users.delete.confirm", "Conferma")}</AlertDialogAction>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                // protect against accidental self-delete
+                if (deleteTarget.id === user?.id) {
+                  toast.error(t("users.delete.cannotSelf", "Non è possibile eliminare l'utente amministratore attualmente loggato"));
+                  setDeleteTarget(null);
+                  return;
+                }
+                await confirmRemove();
+              }}
+              disabled={busyId === deleteTarget?.id || deleteTarget?.id === user?.id}
+            >
+              {t("users.delete.confirm", "Elimina")}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -452,7 +475,7 @@ export function AdminUsersTab() {
           }
         }}
       >
-        <AlertDialogContent className="max-w-lg xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {bulkAction === "disable" ? t("users.bulkDialog.disableTitle", "Disabilita utenti") : t("users.bulkDialog.enableTitle", "Riabilita utenti")}
