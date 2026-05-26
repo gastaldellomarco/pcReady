@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { getEntityLabel } from "@/lib/entity-labels";
 import {
   BrandedPage,
   PdfSection,
@@ -57,7 +58,7 @@ export function AuditLogReportPdf({
       key: "entity",
       label: t("auditReport.colEntity", "Entità"),
       width: "12%",
-      value: (row) => row.entity_type || "-",
+      value: (row) => getEntityLabel(row.entity_type),
     },
     {
       key: "severity",

@@ -63,6 +63,7 @@ import {
 } from "@/lib/audit-log";
 import { Route } from "@/routes/_app/admin";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
+import { getEntityLabel } from "@/lib/entity-labels";
 
 // Represents the shape of the search params validated by the admin route
 type AdminSearch = {
@@ -184,21 +185,7 @@ function getSeverityIcon(severity: string | null | undefined) {
   }
 }
 
-function getEntityLabel(entityType: string | null | undefined): string {
-  const map: Record<string, string> = {
-    ticket: "Ticket",
-    client: "Cliente",
-    device: "Dispositivo",
-    user: "Utente",
-    technician: "Tecnico",
-    automation: "Automazione",
-    system: "Sistema",
-    oauth: "OAuth",
-    setting: "Impostazione",
-    email_template: "Email Template",
-  };
-  return entityType ? (map[entityType.toLowerCase()] ?? entityType) : "-";
-}
+// `getEntityLabel` moved to shared helper in src/lib/entity-labels.ts
 
 function formatTimestamp(iso: string): { date: string; time: string } {
   const d = new Date(iso);
