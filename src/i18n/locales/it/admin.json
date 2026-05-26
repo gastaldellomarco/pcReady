@@ -13,6 +13,11 @@
   },
   "loading": "Verifica permessi...",
   "unauthorized": "Accesso non autorizzato.",
+      "mfaBanner": {
+        "allUsers": "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA",
+        "admins": "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA",
+        "goToSettings": "Vai alle impostazioni"
+      },
   "users": {
     "mfa": {
       "active": "Attivo",
@@ -265,6 +270,7 @@
       "description": "Applicazioni autorizzate ad accedere ai dati PCReady",
       "notaLabel": "Nota:",
       "notaText": "Per la gestione del consenso OAuth degli utenti, vedere",
+      "notaDocsLink": "documentazione (Consenso OAuth)",
       "loading": "Caricamento client...",
       "empty": "Nessun client registrato",
       "clientIdLabel": "Client ID: {{id}}",

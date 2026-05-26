@@ -440,15 +440,13 @@ export function AdminOAuthTab() {
         <CardContent>
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>{t("oauth.clientList.notaLabel", "Nota:")}</strong> {t("oauth.clientList.notaText", "Per la gestione del consenso OAuth degli utenti, vedere")}{" "}
-              <a
-                href="https://github.com/your-repo/issues/31"
-                target="_blank"
-                rel="noopener noreferrer"
+              <strong>{t("oauth.clientList.notaLabel", "Nota:")}</strong> {t("oauth.clientList.notaText", "Per la gestione del consenso OAuth degli utenti, vedere")} {" "}
+              <Link
+                to="/docs"
                 className="underline hover:no-underline"
               >
-                issue #31: Admin: Pagina OAuth Consent per autorizzazione membri
-              </a>
+                {t("oauth.clientList.notaDocsLink", "documentazione (OAuth Consent)")}
+              </Link>
             </p>
           </div>
           {loadingClients ? (

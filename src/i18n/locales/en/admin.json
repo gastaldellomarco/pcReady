@@ -53,6 +53,11 @@
       "colCreated": "Created on",
       "colAccess": "Access",
       "col2fa": "2FA",
+      "mfaBanner": {
+        "allUsers": "The 2FA policy requires all users: {{count}} users have not yet configured 2FA",
+        "admins": "The 2FA policy requires admin users: {{count}} admins have not yet configured 2FA",
+        "goToSettings": "Go to settings"
+      },
       "colStatus": "Status",
       "colActions": "Actions"
     },
@@ -265,6 +270,7 @@
       "description": "Applications authorized to access PCReady data",
       "notaLabel": "Note:",
       "notaText": "For user OAuth consent management, see",
+      "notaDocsLink": "documentation (OAuth consent)",
       "loading": "Loading clients...",
       "empty": "No clients registered",
       "clientIdLabel": "Client ID: {{id}}",

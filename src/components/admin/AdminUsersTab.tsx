@@ -1,4 +1,4 @@
-﻿import { MailPlus, Search, Trash2, UserX, UserCheck } from "lucide-react";
+﻿import { MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { TableSkeletonRows } from "@/components/page-states";
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth, type AppRole } from "@/lib/auth-context";
+import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 import { fmtDateTime } from "@/lib/pcready";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import { ADMIN_ROLES, adminRoleLabel } from "@/lib/admin/admin-constants";
@@ -26,11 +27,24 @@ import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
 import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
 import { Badge } from "@/components/ui/badge";
 
-function MfaStatusBadge({ enabled, required }: { enabled: boolean; required: boolean }) {
+function MfaStatusBadge({ enabled, required, role }: { enabled: boolean; required: boolean; role?: string }) {
   const { t } = useTranslation("admin");
   if (enabled) return <Badge className="bg-emerald-600">{t("users.mfa.active", "Attivo")}</Badge>;
   if (required) return <Badge className="bg-amber-500 text-white">{t("users.mfa.required", "Richiesto")}</Badge>;
-  return <Badge variant="secondary">{t("users.mfa.notActive", "Non attivo")}</Badge>;
+  // emphasize admins without 2FA
+  if (role === "admin")
+    return (
+      <Badge className="bg-red-600 flex items-center gap-1">
+        <AlertTriangle className="w-3.5 h-3.5" />
+        {t("users.mfa.notActive", "Non attivo")}
+      </Badge>
+    );
+  return (
+    <Badge variant="secondary" className="flex items-center gap-1">
+      <AlertTriangle className="w-3.5 h-3.5" />
+      {t("users.mfa.notActive", "Non attivo")}
+    </Badge>
+  );
 }
 
 export function AdminUsersTab() {
@@ -75,6 +89,8 @@ export function AdminUsersTab() {
     isAdmin,
     currentUserId: user?.id,
   });
+
+  const { settings } = useAdminAppSettings({ accessToken, isAdmin });
 
   return (
     <TabsContent value="users" className="space-y-5">
@@ -159,6 +175,34 @@ export function AdminUsersTab() {
       </div>
 
       <div className="pc-card overflow-hidden">
+        {/* MFA policy banner: show when policy requires MFA and there are users missing it */}
+        {settings && (
+          (() => {
+            const totalWithout = (rows ?? []).filter((r) => !r.mfa_enabled).length;
+            const adminsWithout = (rows ?? []).filter((r) => r.role === "admin" && !r.mfa_enabled).length;
+            if (settings.mfa_require_all_users && totalWithout > 0) {
+              return (
+                <div className="px-4 py-3 border-b bg-amber-50 border-amber-200 text-amber-900">
+                  {t("users.mfaBanner.allUsers", "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA", { count: totalWithout })} {" "}
+                  <a href="/admin" className="underline">
+                    {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
+                  </a>
+                </div>
+              );
+            }
+            if (settings.mfa_require_admin_users && adminsWithout > 0) {
+              return (
+                <div className="px-4 py-3 border-b bg-red-50 border-red-200 text-red-900">
+                  {t("users.mfaBanner.admins", "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA", { count: adminsWithout })} {" "}
+                  <a href="/admin" className="underline">
+                    {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
+                  </a>
+                </div>
+              );
+            }
+            return null;
+          })()
+        )}
         {selectedIds.size > 0 && (
           <div className="px-4 py-3 border-b bg-surface2 border-border flex items-center gap-3">
             <div className="text-sm text-text3">{t("users.bulk.selected", "{{count}} selezionati", { count: selectedIds.size })}</div>
@@ -374,7 +418,7 @@ export function AdminUsersTab() {
                     )}
                   </td>
                   <td className="px-[14px] py-[10px]">
-                    <MfaStatusBadge enabled={row.mfa_enabled} required={row.mfa_required} />
+                    <MfaStatusBadge enabled={row.mfa_enabled} required={row.mfa_required} role={row.role} />
                   </td>
                   <td className="px-[14px] py-[10px]">
                     <AdminUserStatusBadge
