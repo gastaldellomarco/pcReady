@@ -45,6 +45,7 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 import { downloadCsv } from "@/lib/downloads";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/clients")({
   component: ClientsPage,
@@ -2639,6 +2640,3 @@ function formatPortalExpiry(expiresAt: string): string {
   }
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

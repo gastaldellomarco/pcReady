@@ -5,10 +5,8 @@ import { getMyRole } from "@/lib/get-my-role";
 import type { Session, User } from "@supabase/supabase-js";
 import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
 import i18n from "@/i18n";
+import { errorMessage } from "@/lib/errors";
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);

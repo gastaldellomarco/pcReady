@@ -127,6 +127,10 @@
     "autoRenew": "Automatico",
     "manualRenew": "Manuale",
     "empty": "Nessuna assegnazione.",
+    "delete": "Elimina",
+    "confirmDelete": "Eliminare questa assegnazione?",
+    "deleted": "Assegnazione eliminata",
+    "deleteError": "Errore eliminazione assegnazione",
     "table": {
       "client": "Cliente",
       "bundle": "Bundle",
@@ -165,17 +169,31 @@
     "billableExtraHours": "Ore extra fatturabili",
     "selectAssignment": "Assegnazione...",
     "amountPlaceholder": "Importo",
+    "periodStartLabel": "Inizio periodo",
+    "periodEndLabel": "Fine periodo",
+    "paidAtLabel": "Data pagamento",
     "notesPlaceholder": "Note pagamento...",
     "registerPayment": "Registra pagamento",
     "paymentHistory": "Storico canoni pagati",
     "empty": "Nessun pagamento registrato.",
+    "validation": {
+      "assignmentRequired": "Seleziona un'assegnazione",
+      "amountPositive": "L'importo deve essere > 0"
+    },
+    "assignmentLabel": "Assegnazione",
+    "amountLabel": "Importo (€)",
     "table": {
       "client": "Cliente",
       "bundle": "Bundle",
       "period": "Periodo",
       "amount": "Importo",
-      "status": "Stato"
+      "status": "Stato",
+      "actions": "Azioni"
     },
+    "delete": "Elimina",
+    "confirmDelete": "Eliminare questo pagamento?",
+    "deleted": "Pagamento eliminato",
+    "deleteError": "Errore eliminazione pagamento",
     "status": {
       "pending": "In attesa",
       "paid": "Pagato",

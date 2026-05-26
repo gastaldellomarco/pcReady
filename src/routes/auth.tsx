@@ -18,6 +18,7 @@ import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message"
 import { toast } from "sonner";
 import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -40,9 +41,6 @@ export const Route = createFileRoute("/auth")({
   ),
 });
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function AuthPage() {
   const { session, profile, loading, profileLoading } = useAuth();

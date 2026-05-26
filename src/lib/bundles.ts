@@ -302,6 +302,11 @@ export async function cancelClientBundleAssignment(id: string) {
   return updateClientBundleAssignment(id, { status: "cancelled" });
 }
 
+export async function deleteClientBundleAssignment(id: string) {
+  const { error } = await (supabase as any).from("client_bundle_assignments").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function listBundleUsageSummaries(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_assignment_usage_summary")
@@ -345,6 +350,11 @@ export async function createBundlePayment(data: Partial<BundlePayment>) {
     .single();
   if (error) throw error;
   return row as BundlePayment;
+}
+
+export async function deleteBundlePayment(id: string) {
+  const { error } = await (supabase as any).from("bundle_fee_payments").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function fetchTicketBundleInfo(ticketId: string): Promise<TicketBundleInfo> {
@@ -460,10 +470,26 @@ export function useCancelBundleAssignmentMutation() {
   });
 }
 
+export function useDeleteBundleAssignmentMutation() {
+  const invalidate = useInvalidateBundles();
+  return useMutation({
+    mutationFn: deleteClientBundleAssignment,
+    onSuccess: invalidate,
+  });
+}
+
 export function useCreateBundlePaymentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
     mutationFn: createBundlePayment,
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteBundlePaymentMutation() {
+  const invalidate = useInvalidateBundles();
+  return useMutation({
+    mutationFn: deleteBundlePayment,
     onSuccess: invalidate,
   });
 }

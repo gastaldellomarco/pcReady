@@ -47,6 +47,7 @@ import {
 } from "@/components/pcready/AsyncAutocomplete";
 import { Rows3, ChevronDown, ChevronRight, LayoutList, Clock, Settings2, X } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/kanban")({
   component: KanbanPage,
@@ -1193,9 +1194,6 @@ function UnassignedBadge() {
   );
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 /** WIP progress bar with color thresholds: green <70%, yellow 70-90%, red >=90% */
 function WipProgressBar({ pct }: { pct: number }) {

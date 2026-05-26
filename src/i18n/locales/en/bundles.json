@@ -127,6 +127,10 @@
     "autoRenew": "Automatic",
     "manualRenew": "Manual",
     "empty": "No assignments.",
+    "delete": "Delete",
+    "confirmDelete": "Delete this assignment?",
+    "deleted": "Assignment deleted",
+    "deleteError": "Error deleting assignment",
     "table": {
       "client": "Client",
       "bundle": "Bundle",
@@ -165,17 +169,31 @@
     "billableExtraHours": "Billable Extra Hours",
     "selectAssignment": "Assignment...",
     "amountPlaceholder": "Amount",
+    "periodStartLabel": "Period start",
+    "periodEndLabel": "Period end",
+    "paidAtLabel": "Payment date",
     "notesPlaceholder": "Payment notes...",
     "registerPayment": "Register Payment",
     "paymentHistory": "Paid Fees History",
     "empty": "No payments recorded.",
+    "validation": {
+      "assignmentRequired": "Select an assignment",
+      "amountPositive": "Amount must be > 0"
+    },
+    "assignmentLabel": "Assignment",
+    "amountLabel": "Amount (€)",
     "table": {
       "client": "Client",
       "bundle": "Bundle",
       "period": "Period",
       "amount": "Amount",
-      "status": "Status"
+      "status": "Status",
+      "actions": "Actions"
     },
+    "delete": "Delete",
+    "confirmDelete": "Delete this payment?",
+    "deleted": "Payment deleted",
+    "deleteError": "Error deleting payment",
     "status": {
       "pending": "Pending",
       "paid": "Paid",

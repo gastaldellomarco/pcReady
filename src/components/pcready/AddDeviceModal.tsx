@@ -24,10 +24,8 @@ import { useTickets } from "@/lib/use-tickets";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { Barcode, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/errors";
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function normalizeOptions(values: unknown): string[] {
   return Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [];

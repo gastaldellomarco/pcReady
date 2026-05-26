@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/auth/set-password")({
   component: SetPasswordPage,
@@ -162,6 +163,3 @@ function SetPasswordPage() {
   );
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

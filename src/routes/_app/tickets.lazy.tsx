@@ -45,6 +45,7 @@ import {
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { insertActivity } from "@/lib/queries/activity";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/tickets")({
   component: TicketsPage,
@@ -1177,6 +1178,3 @@ function TimeOpenBadge({
   );
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

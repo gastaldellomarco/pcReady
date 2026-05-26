@@ -14,14 +14,12 @@ import {
   rememberChallengeStarted,
 } from "@/lib/mfa-client";
 import { logMfaAuditEvent, verifyBackupCode } from "@/lib/mfa";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/auth/2fa-challenge")({
   component: TwoFactorChallengePage,
 });
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function TwoFactorChallengePage() {
   const { session, user, loading } = useAuth();

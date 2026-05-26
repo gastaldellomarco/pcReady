@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/contacts")({
   component: ContactsPage,
@@ -767,6 +768,3 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

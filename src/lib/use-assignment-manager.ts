@@ -3,10 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ClientBundleAssignment } from "./bundles";
 import type { UseMutationResult } from "@tanstack/react-query";
-
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
+import { errorMessage } from "./errors";
 
 interface AssignmentMutations {
   create: UseMutationResult<unknown, Error, Partial<ClientBundleAssignment>>;

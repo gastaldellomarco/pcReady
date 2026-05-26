@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   RefreshCcw,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,8 +32,7 @@ import {
   formatBundleHours,
   formatBundleMoney,
   formatBundleVisits,
-  listBundleMonthlyUsage,
-  listBundlePayments,
+
   type AssistanceBundle,
   type BundlePayment,
   type BundleUsageSummary,
@@ -44,9 +44,16 @@ import {
   useCreateBundleAssignmentMutation,
   useCreateBundleMutation,
   useCreateBundlePaymentMutation,
+  useDeleteBundleAssignmentMutation,
+  useDeleteBundlePaymentMutation,
   useUpdateBundleAssignmentMutation,
   useUpdateBundleMutation,
 } from "@/lib/bundles";
+import { useAssignmentManager } from "@/lib/use-assignment-manager";
+import { useBundleManager } from "@/lib/use-bundle-manager";
+import { useBillingManager, type PaymentDraft } from "@/lib/use-billing-manager";
+import { useMonthlyUsage } from "@/lib/use-monthly-usage";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/bundles")({
   component: BundlesPage,
@@ -59,27 +66,6 @@ type ClientOption = {
   company_name: string | null;
   email: string | null;
 };
-type PaymentDraft = {
-  client_bundle_assignment_id: string;
-  amount: string;
-  currency: string;
-  period_start: string;
-  period_end: string;
-  paid_at: string;
-  status: "pending" | "paid" | "overdue" | "cancelled";
-  notes: string;
-};
-
-const emptyPaymentDraft: PaymentDraft = {
-  client_bundle_assignment_id: "",
-  amount: "0",
-  currency: "EUR",
-  period_start: "",
-  period_end: "",
-  paid_at: "",
-  status: "pending",
-  notes: "",
-};
 
 function BundlesPage() {
   const { t } = useTranslation("bundles");
@@ -89,23 +75,22 @@ function BundlesPage() {
   const [activeTab, setActiveTab] = useState<BundleTab>("catalog");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
-  const [creatingBundle, setCreatingBundle] = useState(false);
-  const [editingBundle, setEditingBundle] = useState<AssistanceBundle | null>(null);
-  const [creatingAssignment, setCreatingAssignment] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState<ClientBundleAssignment | null>(null);
-  const [monthlyUsage, setMonthlyUsage] = useState<any[]>([]);
-  const [payments, setPayments] = useState<BundlePayment[]>([]);
-  const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(emptyPaymentDraft);
-
   const bundlesQuery = useBundles(true);
   const assignmentsQuery = useBundleAssignments();
   const usageQuery = useBundleUsageSummaries();
+
+  const monthlyUsage = useMonthlyUsage({
+    assignmentsDataUpdatedAt: assignmentsQuery.dataUpdatedAt,
+    usageDataUpdatedAt: usageQuery.dataUpdatedAt,
+  });
   const createBundleMutation = useCreateBundleMutation();
   const updateBundleMutation = useUpdateBundleMutation();
   const createAssignmentMutation = useCreateBundleAssignmentMutation();
   const updateAssignmentMutation = useUpdateBundleAssignmentMutation();
   const cancelAssignmentMutation = useCancelBundleAssignmentMutation();
+  const deleteAssignmentMutation = useDeleteBundleAssignmentMutation();
   const createPaymentMutation = useCreateBundlePaymentMutation();
+  const deletePaymentMutation = useDeleteBundlePaymentMutation();
 
   const bundles = useMemo(() => bundlesQuery.data ?? [], [bundlesQuery.data]);
   const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
@@ -114,6 +99,36 @@ function BundlesPage() {
   const assignmentById = useMemo(() => {
     return new Map(assignments.map((assignment) => [assignment.id, assignment]));
   }, [assignments]);
+
+  const bundleManager = useBundleManager({
+    isAdmin,
+    userId: profile?.id ?? null,
+    mutations: {
+      create: createBundleMutation,
+      update: updateBundleMutation,
+    },
+  });
+
+  const assignmentManager = useAssignmentManager({
+    canManage: canManageAssignments,
+    userId: profile?.id ?? null,
+    mutations: {
+      create: createAssignmentMutation,
+      update: updateAssignmentMutation,
+      cancel: cancelAssignmentMutation,
+      remove: deleteAssignmentMutation,
+    },
+  });
+
+  const billing = useBillingManager({
+    canManage: canManageAssignments,
+    userId: profile?.id ?? null,
+    assignmentById,
+    mutations: {
+      create: createPaymentMutation,
+      remove: deletePaymentMutation,
+    },
+  });
 
   useEffect(() => {
     let active = true;
@@ -138,15 +153,7 @@ function BundlesPage() {
   }, []);
 
   useEffect(() => {
-    Promise.all([listBundleMonthlyUsage(), listBundlePayments()])
-      .then(([usage, feePayments]) => {
-        setMonthlyUsage(usage as any[]);
-        setPayments(feePayments);
-      })
-      .catch(() => {
-        setMonthlyUsage([]);
-        setPayments([]);
-      });
+    billing.refreshPayments();
   }, [assignmentsQuery.dataUpdatedAt, usageQuery.dataUpdatedAt]);
 
   const stats = useMemo(() => {
@@ -164,106 +171,9 @@ function BundlesPage() {
     return { activeBundles, activeAssignments, risky, extraAmount };
   }, [assignments, bundles, usageSummaries]);
 
-  function resetForms() {
-    setCreatingBundle(false);
-    setEditingBundle(null);
-    setCreatingAssignment(false);
-    setEditingAssignment(null);
-  }
-
-  async function saveBundle(data: Partial<AssistanceBundle>) {
-    if (!isAdmin) {
-      toast.error(t("errors.adminOnly", "Solo gli admin possono gestire i bundle"));
-      return;
-    }
-    try {
-      if (editingBundle) await updateBundleMutation.mutateAsync({ id: editingBundle.id, data });
-      else await createBundleMutation.mutateAsync({ ...data, created_by: profile?.id ?? null });
-      resetForms();
-      toast.success(t("success.bundleSaved", "Bundle salvato"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("errors.saveBundle", "Errore salvataggio bundle")));
-    }
-  }
-
-  async function toggleBundle(bundle: AssistanceBundle) {
-    if (!isAdmin) {
-      toast.error(t("errors.adminOnlyEdit", "Solo gli admin possono modificare i bundle"));
-      return;
-    }
-    try {
-      await updateBundleMutation.mutateAsync({ id: bundle.id, data: { active: !bundle.active } });
-      toast.success(bundle.active ? t("success.bundleDeactivated", "Bundle disattivato") : t("success.bundleReactivated", "Bundle riattivato"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("errors.updateBundle", "Errore aggiornamento bundle")));
-    }
-  }
-
-  async function saveAssignment(data: Partial<ClientBundleAssignment>) {
-    if (!canManageAssignments) {
-      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
-      return;
-    }
-    try {
-      if (editingAssignment) {
-        await updateAssignmentMutation.mutateAsync({ id: editingAssignment.id, data });
-      } else {
-        await createAssignmentMutation.mutateAsync({
-          ...data,
-          status: "active",
-          created_by: profile?.id ?? null,
-        });
-      }
-      resetForms();
-      toast.success(t("success.assignmentSaved", "Assegnazione salvata"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("errors.saveAssignment", "Errore salvataggio assegnazione")));
-    }
-  }
-
-  async function cancelAssignment(id: string) {
-    if (!canManageAssignments) {
-      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
-      return;
-    }
-    try {
-      await cancelAssignmentMutation.mutateAsync(id);
-      toast.success(t("success.assignmentCancelled", "Assegnazione annullata"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("errors.cancelAssignment", "Errore annullamento assegnazione")));
-    }
-  }
-
-  async function savePayment() {
-    if (!canManageAssignments) {
-      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
-      return;
-    }
-    const assignment = assignmentById.get(paymentDraft.client_bundle_assignment_id);
-    if (!assignment) {
-      toast.error(t("errors.invalidAssignment", "Seleziona un'assegnazione valida"));
-      return;
-    }
-    try {
-      await createPaymentMutation.mutateAsync({
-        client_bundle_assignment_id: assignment.id,
-        client_id: assignment.client_id,
-        amount: numberValue(paymentDraft.amount),
-        currency: paymentDraft.currency || "EUR",
-        period_start: paymentDraft.period_start || null,
-        period_end: paymentDraft.period_end || null,
-        paid_at: paymentDraft.paid_at || null,
-        status: paymentDraft.status,
-        notes: paymentDraft.notes.trim() || null,
-        created_by: profile?.id ?? null,
-      });
-      setPaymentDraft(emptyPaymentDraft);
-      const feePayments = await listBundlePayments();
-      setPayments(feePayments);
-      toast.success(t("success.paymentRegistered", "Pagamento registrato"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("errors.savePayment", "Errore salvataggio pagamento")));
-    }
+  function resetAllForms() {
+    bundleManager.resetForms();
+    assignmentManager.resetForms();
   }
 
   function exportCsv() {
@@ -318,9 +228,9 @@ function BundlesPage() {
               <button
                 className="pc-btn pc-btn-primary pc-btn-sm"
                 onClick={() => {
-                  resetForms();
+                  resetAllForms();
                   setActiveTab("catalog");
-                  setCreatingBundle(true);
+                  bundleManager.startCreate();
                 }}
               >
                 <Plus className="h-3 w-3" /> {t("newBundle", "Nuovo bundle")}
@@ -330,9 +240,9 @@ function BundlesPage() {
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={() => {
-                  resetForms();
+                  resetAllForms();
                   setActiveTab("assignments");
-                  setCreatingAssignment(true);
+                  assignmentManager.startCreate();
                 }}
               >
                 <Plus className="h-3 w-3" /> {t("assignToClient", "Assegna a cliente")}
@@ -374,41 +284,41 @@ function BundlesPage() {
         </TabButton>
       </div>
 
-      {(creatingBundle || editingBundle) && activeTab === "catalog" && (
+      {(bundleManager.creating || bundleManager.editing) && activeTab === "catalog" && (
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">
-              {editingBundle ? t("editBundle", "Modifica bundle") : t("newBundle", "Nuovo bundle")}
+              {bundleManager.editing ? t("editBundle", "Modifica bundle") : t("newBundle", "Nuovo bundle")}
             </div>
           </div>
           <div className="pc-card-body">
             <BundleForm
-              initial={editingBundle}
-              onSubmit={saveBundle}
-              onCancel={resetForms}
-              busy={createBundleMutation.isPending || updateBundleMutation.isPending}
+              initial={bundleManager.editing}
+              onSubmit={bundleManager.save}
+              onCancel={resetAllForms}
+              busy={bundleManager.busy}
             />
           </div>
         </div>
       )}
 
-      {(creatingAssignment || editingAssignment) && activeTab === "assignments" && (
+      {(assignmentManager.creating || assignmentManager.editing) && activeTab === "assignments" && (
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">
-              {editingAssignment ? t("editAssignment", "Modifica assegnazione") : t("assignBundle", "Assegna bundle a cliente")}
+              {assignmentManager.editing ? t("editAssignment", "Modifica assegnazione") : t("assignBundle", "Assegna bundle a cliente")}
             </div>
           </div>
           <div className="pc-card-body">
             <AssignmentForm
               bundles={bundles.filter(
-                (bundle) => bundle.active || bundle.id === editingAssignment?.bundle_id,
+                (bundle) => bundle.active || bundle.id === assignmentManager.editing?.bundle_id,
               )}
               clients={clients}
-              initial={editingAssignment}
-              onSubmit={saveAssignment}
-              onCancel={resetForms}
-              busy={createAssignmentMutation.isPending || updateAssignmentMutation.isPending}
+              initial={assignmentManager.editing}
+              onSubmit={assignmentManager.save}
+              onCancel={() => assignmentManager.resetForms()}
+              busy={assignmentManager.busy}
             />
           </div>
         </div>
@@ -423,7 +333,7 @@ function BundlesPage() {
               bundles={bundles}
               isAdmin={isAdmin}
               onEdit={setEditingBundleWithTab}
-              onToggle={toggleBundle}
+              onToggle={bundleManager.toggle}
             />
           )}
           {activeTab === "assignments" && (
@@ -431,7 +341,9 @@ function BundlesPage() {
               assignments={assignments}
               canManage={canManageAssignments}
               onEdit={setEditingAssignmentWithTab}
-              onCancel={cancelAssignment}
+              onCancel={assignmentManager.cancel}
+              onDelete={assignmentManager.remove}
+              busy={assignmentManager.busy}
             />
           )}
           {activeTab === "usage" && usageQuery.isError ? (
@@ -451,13 +363,14 @@ function BundlesPage() {
           {activeTab === "billing" && (
             <BillingTab
               assignments={assignments}
-              payments={payments}
-              paymentDraft={paymentDraft}
-              setPaymentDraft={setPaymentDraft}
-              onSavePayment={savePayment}
+              payments={billing.payments}
+              paymentDraft={billing.paymentDraft}
+              setPaymentDraft={billing.setPaymentDraft}
+              onSavePayment={billing.savePayment}
+              onDeletePayment={billing.deletePayment}
               canManage={canManageAssignments}
               extraAmount={stats.extraAmount}
-              busy={createPaymentMutation.isPending}
+              busy={billing.busy}
             />
           )}
         </>
@@ -466,15 +379,15 @@ function BundlesPage() {
   );
 
   function setEditingBundleWithTab(bundle: AssistanceBundle) {
-    resetForms();
+    resetAllForms();
     setActiveTab("catalog");
-    setEditingBundle(bundle);
+    bundleManager.startEdit(bundle);
   }
 
   function setEditingAssignmentWithTab(assignment: ClientBundleAssignment) {
-    resetForms();
+    resetAllForms();
     setActiveTab("assignments");
-    setEditingAssignment(assignment);
+    assignmentManager.startEdit(assignment);
   }
 }
 
@@ -548,13 +461,17 @@ function CatalogTab({
 function AssignmentsTab({
   assignments,
   canManage,
+  busy,
   onEdit,
   onCancel,
+  onDelete,
 }: {
   assignments: ClientBundleAssignment[];
   canManage: boolean;
+  busy: boolean;
   onEdit: (assignment: ClientBundleAssignment) => void;
   onCancel: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("bundles");
   return (
@@ -613,6 +530,16 @@ function AssignmentsTab({
                           onClick={() => onCancel(assignment.id)}
                         >
                           <Ban className="h-3 w-3" />
+                        </button>
+                      )}
+                      {assignment.status !== "active" && (
+                        <button
+                          className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
+                          onClick={() => onDelete(assignment.id)}
+                          disabled={busy}
+                          title={t("assignments.delete", "Elimina")}
+                        >
+                          <Trash2 className="h-3 w-3" />
                         </button>
                       )}
                     </div>
@@ -779,6 +706,7 @@ function BillingTab({
   paymentDraft,
   setPaymentDraft,
   onSavePayment,
+  onDeletePayment,
   canManage,
   extraAmount,
   busy,
@@ -788,11 +716,55 @@ function BillingTab({
   paymentDraft: PaymentDraft;
   setPaymentDraft: React.Dispatch<React.SetStateAction<PaymentDraft>>;
   onSavePayment: () => void;
+  onDeletePayment: (id: string) => void;
   canManage: boolean;
   extraAmount: number;
   busy: boolean;
 }) {
   const { t } = useTranslation("bundles");
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  function validatePaymentDraft(): boolean {
+    const errs: Record<string, string | null> = {};
+    if (!paymentDraft.client_bundle_assignment_id) {
+      errs.client_bundle_assignment_id = t("billing.validation.assignmentRequired", "Seleziona un'assegnazione");
+    }
+    const amount = Number(paymentDraft.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      errs.amount = t("billing.validation.amountPositive", "L'importo deve essere > 0");
+    }
+    setErrors(errs);
+    setTouched({ client_bundle_assignment_id: true, amount: true });
+    return Object.keys(errs).length === 0;
+  }
+
+  function clearFieldError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function touchField(field: string) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  // Reset inline errors when the parent clears the form after a successful save
+  useEffect(() => {
+    if (!paymentDraft.client_bundle_assignment_id && paymentDraft.amount === "0") {
+      setErrors({});
+      setTouched({});
+    }
+  }, [paymentDraft.client_bundle_assignment_id, paymentDraft.amount]);
+
+  function handleSavePayment() {
+    if (!validatePaymentDraft()) return;
+    onSavePayment();
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
       <div className="pc-card">
@@ -805,50 +777,86 @@ function BillingTab({
           <Metric label={t("billing.billableExtraHours", "Ore extra fatturabili")} value={formatBundleMoney(extraAmount)} />
           {canManage && (
             <div className="space-y-2">
-              <select
-                className="pc-input"
-                value={paymentDraft.client_bundle_assignment_id}
-                onChange={(e) =>
-                  setPaymentDraft((v) => ({ ...v, client_bundle_assignment_id: e.target.value }))
-                }
-              >
-                <option value="">{t("billing.selectAssignment", "Assegnazione...")}</option>
-                {assignments.map((assignment) => (
-                  <option key={assignment.id} value={assignment.id}>
-                    {clientName(assignment)} · {assignment.bundle?.name}
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("billing.assignmentLabel", "Assegnazione")}
+                <select
+                  className="pc-input"
+                  value={paymentDraft.client_bundle_assignment_id}
+                  onBlur={() => touchField("client_bundle_assignment_id")}
+                  onChange={(e) => {
+                    clearFieldError("client_bundle_assignment_id");
+                    setPaymentDraft((v) => ({ ...v, client_bundle_assignment_id: e.target.value }));
+                  }}
+                >
+                  <option value="" disabled>
+                    {t("billing.selectAssignment", "Seleziona assegnazione...")}
                   </option>
-                ))}
-              </select>
-              <input
-                className="pc-input"
-                type="number"
-                min="0"
-                step="0.01"
-                value={paymentDraft.amount}
-                onChange={(e) => setPaymentDraft((v) => ({ ...v, amount: e.target.value }))}
-                placeholder={t("billing.amountPlaceholder", "Importo")}
-              />
+                  {assignments.map((assignment) => (
+                    <option key={assignment.id} value={assignment.id}>
+                      {clientName(assignment)} · {assignment.bundle?.name}
+                    </option>
+                  ))}
+                </select>
+                {touched.client_bundle_assignment_id && errors.client_bundle_assignment_id && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.client_bundle_assignment_id}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("billing.amountLabel", "Importo (€)")}
+                <input
+                  className="pc-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentDraft.amount}
+                  onBlur={() => touchField("amount")}
+                  onChange={(e) => {
+                    clearFieldError("amount");
+                    setPaymentDraft((v) => ({ ...v, amount: e.target.value }));
+                  }}
+                  placeholder={t("billing.amountPlaceholder", "0")}
+                />
+                {touched.amount && errors.amount && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.amount}
+                  </p>
+                )}
+              </label>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  className="pc-input"
-                  type="date"
-                  value={paymentDraft.period_start}
-                  onChange={(e) => setPaymentDraft((v) => ({ ...v, period_start: e.target.value }))}
-                />
-                <input
-                  className="pc-input"
-                  type="date"
-                  value={paymentDraft.period_end}
-                  onChange={(e) => setPaymentDraft((v) => ({ ...v, period_end: e.target.value }))}
-                />
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("billing.periodStartLabel", "Inizio periodo")}
+                  <input
+                    className="pc-input"
+                    type="date"
+                    lang="it"
+                    value={paymentDraft.period_start}
+                    onChange={(e) => setPaymentDraft((v) => ({ ...v, period_start: e.target.value }))}
+                  />
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("billing.periodEndLabel", "Fine periodo")}
+                  <input
+                    className="pc-input"
+                    type="date"
+                    lang="it"
+                    value={paymentDraft.period_end}
+                    onChange={(e) => setPaymentDraft((v) => ({ ...v, period_end: e.target.value }))}
+                  />
+                </label>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  className="pc-input"
-                  type="date"
-                  value={paymentDraft.paid_at}
-                  onChange={(e) => setPaymentDraft((v) => ({ ...v, paid_at: e.target.value }))}
-                />
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("billing.paidAtLabel", "Data pagamento")}
+                  <input
+                    className="pc-input"
+                    type="date"
+                    lang="it"
+                    value={paymentDraft.paid_at}
+                    onChange={(e) => setPaymentDraft((v) => ({ ...v, paid_at: e.target.value }))}
+                  />
+                </label>
                 <select
                   className="pc-input"
                   value={paymentDraft.status}
@@ -873,8 +881,8 @@ function BillingTab({
               />
               <button
                 className="pc-btn pc-btn-primary pc-btn-sm w-full"
-                disabled={busy}
-                onClick={onSavePayment}
+                disabled={busy || !paymentDraft.client_bundle_assignment_id}
+                onClick={handleSavePayment}
               >
                 {t("billing.registerPayment", "Registra pagamento")}
               </button>
@@ -890,7 +898,7 @@ function BillingTab({
           <table className="w-full text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
-              {[t("billing.table.client", "Cliente"), t("billing.table.bundle", "Bundle"), t("billing.table.period", "Periodo"), t("billing.table.amount", "Importo"), t("billing.table.status", "Stato")].map((h) => (
+              {[t("billing.table.client", "Cliente"), t("billing.table.bundle", "Bundle"), t("billing.table.period", "Periodo"), t("billing.table.amount", "Importo"), t("billing.table.status", "Stato"), t("billing.table.actions", "Azioni")].map((h) => (
                 <th
                   key={h}
                   className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
@@ -911,12 +919,24 @@ function BillingTab({
                 <td className="px-3 py-2 font-mono">
                   {formatBundleMoney(payment.amount, payment.currency)}
                 </td>
-                <td className="px-3 py-2">{payment.status}</td>
+                <td className="px-3 py-2">{t(`billing.status.${payment.status}`, payment.status)}</td>
+                <td className="px-3 py-2">
+                  {canManage && (
+                    <button
+                      className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
+                      onClick={() => onDeletePayment(payment.id)}
+                      disabled={busy}
+                      title={t("billing.delete", "Elimina")}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {!payments.length && (
               <tr>
-                <td className="px-3 py-8 text-center text-text3" colSpan={5}>
+                <td className="px-3 py-8 text-center text-text3" colSpan={6}>
                   {t("billing.empty", "Nessun pagamento registrato.")}
                 </td>
               </tr>
@@ -1015,11 +1035,4 @@ function daysUntil(date: string | null) {
   return Math.ceil((end - Date.now()) / 86400000);
 }
 
-function numberValue(value: string) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-}
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

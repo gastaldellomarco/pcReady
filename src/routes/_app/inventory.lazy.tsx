@@ -62,6 +62,8 @@ import {
   type MaintenanceStatus,
   type TechnicianOption,
 } from "@/lib/maintenance";
+import { errorMessage } from "@/lib/errors";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1523,9 +1525,6 @@ function DeviceStatusBadge({
   );
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function toQrDevice(row: Row): QrDevice {
   return { id: row.id, serial: row.asset_tag || row.serial, model: row.model };

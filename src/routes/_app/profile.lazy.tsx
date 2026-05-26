@@ -1,5 +1,6 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { errorMessage, ListSkeleton, PageFetchError } from "@/components/page-states";
+import { ListSkeleton, PageFetchError } from "@/components/page-states";
+import { errorMessage } from "@/lib/errors";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";

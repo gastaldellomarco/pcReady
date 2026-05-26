@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { openTicketDetail } from "@/lib/use-detail";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
@@ -1324,6 +1325,3 @@ function formatHours(value: unknown) {
   return `${money(value).toLocaleString("it-IT", { maximumFractionDigits: 2 })} h`;
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}

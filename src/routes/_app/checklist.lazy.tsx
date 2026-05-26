@@ -2,11 +2,11 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  errorMessage,
   ListSkeleton,
   PageEmptyState,
   PageFetchError,
 } from "@/components/page-states";
+import { errorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import queries from "@/lib/queries/checklist";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";

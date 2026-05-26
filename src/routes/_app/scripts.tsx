@@ -34,6 +34,7 @@ import { createVersion } from "@/lib/versioning";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
@@ -100,9 +101,6 @@ const LANG_EXT: Record<string, string> = {
   javascript: "js",
 };
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function computeChangedFields(oldData: any, newData: any) {
   const changed: Record<string, { old: any; new: any }> = {};
