@@ -4,7 +4,7 @@ import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import queries, { useInventoryInfiniteList } from "@/lib/queries/inventory";
+import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { useTickets } from "@/lib/use-tickets";
 import { openDeviceDetail } from "@/lib/use-detail";
@@ -21,7 +21,6 @@ import { useAuth } from "@/lib/auth-context";
 import {
   Plus,
   FileDown,
-  Eye,
   QrCode,
   Upload,
   ScanLine,
@@ -35,6 +34,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ExportPdf } from "@/components/ExportPdf";
 import type { DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 import { downloadPdf, InventoryPdf } from "@/components/pcready/pdf/dynamic";
 import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
@@ -148,6 +148,7 @@ function InventoryPage() {
   const [ftype, setFtype] = useState("");
   const [q, setQ] = useState("");
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [qrDevice, setQrDevice] = useState<QrDevice | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -243,6 +244,34 @@ function InventoryPage() {
   const selectedRows = data.filter((row) => selectedIds.has(row.id));
   const allPageSelected = data.length > 0 && data.every((row) => selectedIds.has(row.id));
 
+  const activeFilterRecord: Record<string, any> = {
+    status: fs || undefined,
+    os: fos || undefined,
+    category: fcategory || undefined,
+    deviceType: ftype || undefined,
+    q: q || undefined,
+    warrantyStatus: warrantyFilter,
+    maintenanceDueSoon: maintenanceDueFilter,
+    withoutTicket: withoutTicketFilter || undefined,
+    updatedBefore: updatedBeforeDays
+      ? new Date(Date.now() - updatedBeforeDays * 24 * 60 * 60 * 1000).toISOString()
+      : undefined,
+  };
+
+  const filterSummary = useMemo(() => {
+    const lines: string[] = [];
+    if (fs) lines.push(`Stato: ${t("status." + fs, DEVICE_STATUS_META[fs as DeviceStatus]?.label || fs)}`);
+    if (fos) lines.push(`OS: ${fos}`);
+    if (fcategory) lines.push(`Categoria: ${getDeviceCategoryLabel(fcategory)}`);
+    if (ftype) lines.push(`Tipo: ${ftype}`);
+    if (warrantyFilter !== "all") lines.push(`Garanzia: ${t("filters.warranty" + warrantyFilter.charAt(0).toUpperCase() + warrantyFilter.slice(1), warrantyFilter)}`);
+    if (maintenanceDueFilter) lines.push(t("filters.maintenanceDue30d"));
+    if (withoutTicketFilter) lines.push(t("filters.withoutTicket", "Senza ticket"));
+    if (updatedBeforeDays) lines.push(t("filters.notUpdatedX", { days: updatedBeforeDays }));
+    if (q) lines.push(`Ricerca: "${q}"`);
+    return lines.length ? lines : [`Nessun filtro attivo per dispositivo`];
+  }, [fs, fos, fcategory, ftype, warrantyFilter, maintenanceDueFilter, withoutTicketFilter, updatedBeforeDays, q, t]);
+
   function pdfRows(): DevicePdfRow[] {
     return data.map((r) => ({
       id: r.id,
@@ -264,48 +293,12 @@ function InventoryPage() {
     }));
   }
 
-  async function exportPdf() {
-    if (!data.length) return toast.error(t("toast.noDevicesToExport"));
-    setPdfBusy("download");
-    try {
-      const settings = session?.access_token
-        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-        : null;
-      const org = settings?.organization_name;
-      const [{ downloadPdf }, { InventoryPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/pcready/pdf/InventoryPdf"),
-      ]);
-      await downloadPdf(
-        <InventoryPdf rows={pdfRows()} organizationName={org} />,
-        buildDownloadFileName("pcready-inventario", "pdf", { dated: true }),
-      );
-      toast.success(t("toast.pdfExported"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("toast.pdfExportError")));
-    } finally {
-      setPdfBusy(null);
-    }
+  async function exportPdfSuccess() {
+    toast.success(t("toast.pdfExported"));
   }
 
-  async function openPdfPreview() {
-    if (!data.length) return toast.error(t("toast.noDevicesToPreview"));
-    setPdfBusy("preview");
-    try {
-      const settings = session?.access_token
-        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-        : null;
-      const org = settings?.organization_name;
-      const [{ previewPdf }, { InventoryPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/pcready/pdf/InventoryPdf"),
-      ]);
-      await previewPdf(<InventoryPdf rows={pdfRows()} organizationName={org} />);
-    } catch (error) {
-      toast.error(errorMessage(error, t("toast.pdfPreviewError")));
-    } finally {
-      setPdfBusy(null);
-    }
+  function exportPdfError(err: Error) {
+    toast.error(errorMessage(err, t("toast.pdfExportError")));
   }
 
   async function printSelectedLabels() {
@@ -658,15 +651,12 @@ function InventoryPage() {
             : t("counts.zeroDevices")}
         </span>
         <button
-          onClick={openPdfPreview}
-          disabled={!!pdfBusy}
+          onClick={() => setExportModalOpen(true)}
+          disabled={!data.length}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <Eye className="w-3 h-3" /> {t("actions.previewPdf")}
-        </button>
-        <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
-          {pdfBusy === "download" ? t("actions.exporting") : t("actions.exportPdf")}
+          {t("actions.exportPdf")}
         </button>
         <button
           onClick={exportWarrantyPdf}
@@ -1041,6 +1031,32 @@ function InventoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ExportPdf<Row, DevicePdfRow>
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        entityLabel="dispositivo"
+        renderPdf={async (rows, orgName) => {
+          const { InventoryPdf: Ip } = await import("@/components/pcready/pdf/InventoryPdf");
+          return <Ip rows={rows} organizationName={orgName} />;
+        }}
+        mapRow={toPdfRow}
+        fileName={buildDownloadFileName("pcready-inventario", "pdf", { dated: true })}
+        fetchAll={async (filters) => {
+          const params: any = { ...filters };
+          if (filters.withoutTicket) {
+            params.assignedIdsForFilter = await fetchAllAssignedDeviceIds();
+          }
+          const result = await fetchAllDevicesList(params);
+          return result as unknown as { data: Row[]; count: number };
+        }}
+        currentPageRows={data as Row[]}
+        activeFilters={activeFilterRecord}
+        filterSummary={filterSummary}
+        totalFilteredCount={total}
+        onSuccess={exportPdfSuccess}
+        onError={exportPdfError}
+      />
     </div>
   );
 }

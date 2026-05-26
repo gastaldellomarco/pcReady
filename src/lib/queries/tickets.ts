@@ -364,6 +364,58 @@ export function useTicketsInfiniteList(params: TicketsListParams) {
 const ARCHIVED_TICKET_LIST_SELECT =
   "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
 
+const TICKET_LIST_SELECT =
+  "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
+
+/**
+ * Fetch ALL matching tickets without pagination (for PDF export).
+ * Reuses the same filtering logic as fetchTicketsList but omits .range().
+ */
+export async function fetchAllTicketsList(params: TicketsListParams) {
+  let query = supabase
+    .from("tickets")
+    .select(TICKET_LIST_SELECT, { count: "exact" })
+    .not("status", "eq", "archived" as any);
+
+  const sortBy = params.sortBy ?? "created_at";
+  const sortDir = params.sortDir ?? "desc";
+  if (sortBy === "priority") {
+    query = query.order("priority", { ascending: sortDir === "asc" });
+  } else if (sortBy === "status") {
+    query = query.order("status", { ascending: sortDir === "asc" });
+  } else {
+    query = query.order("created_at", { ascending: sortDir === "asc" });
+  }
+
+  if (params.status && params.status !== "archived")
+    query = query.eq("status", params.status as any);
+  if (params.priority) query = query.eq("priority", params.priority as any);
+  if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
+  if (params.client_id) query = query.eq("client_id", params.client_id as any);
+  if (params.assignee_id) query = query.eq("assignee_id", params.assignee_id as any);
+  if (params.dateFrom) query = query.gte("created_at", params.dateFrom);
+  if (params.dateTo) query = query.lte("created_at", params.dateTo + "T23:59:59.999Z");
+  const q = (params.q || "").trim().replace(/[,%]/g, "");
+  if (q) query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
+
+  // No .range() — fetches all matching rows
+  const { data, count, error } = await query;
+  if (error) throw error;
+
+  const result = (data ?? []) as any[];
+  if (sortBy === "priority") {
+    const dir = sortDir === "asc" ? 1 : -1;
+    result.sort(
+      (a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir,
+    );
+  } else if (sortBy === "status") {
+    const dir = sortDir === "asc" ? 1 : -1;
+    result.sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
+  }
+
+  return { data: result, count: count ?? 0 };
+}
+
 export async function fetchArchivedTicketsList(params: { page?: number; pageSize?: number }) {
   const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
@@ -413,6 +465,7 @@ export default {
   useUpdateTicket,
   useDeleteTicket,
   fetchTicketsList,
+  fetchAllTicketsList,
   useTicketsList,
   useTicketsInfiniteList,
   fetchArchivedTicketsList,

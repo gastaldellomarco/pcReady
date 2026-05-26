@@ -3,9 +3,11 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
-import { Download, Eye, FileText, Save, TrendingUp } from "lucide-react";
+import { Download, FileDown, Save, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { ExportPdf } from "@/components/ExportPdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
@@ -90,8 +92,10 @@ function CostsPage() {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState<"preview" | "download" | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(emptyContractDraft);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailEntity, setDetailEntity] = useState<{ type: "client" | "technician"; name: string } | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -233,33 +237,32 @@ function CostsPage() {
     toast.success(t("feedback.csvExported", "CSV costi esportato"));
   }
 
-  async function exportPdf(mode: "preview" | "download") {
-    setPdfBusy(mode);
-    try {
-      const [{ previewPdf, downloadPdf }, { CostsReportPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/pcready/pdf/CostsReportPdf"),
-      ]);
-      const doc = (
-        <CostsReportPdf
-          rows={filteredTickets}
-          summary={summary}
-          period={`${dateFrom} - ${dateTo}`}
-          byClient={byClient.slice(0, 8)}
-          byTechnician={byTechnician.slice(0, 8)}
-        />
-      );
-      if (mode === "preview") await previewPdf(doc);
-      else
-        await downloadPdf(
-          doc,
-          buildDownloadFileName("pcready-report-costi", "pdf", { dated: true }),
-        );
-    } catch (error) {
-      toast.error(errorMessage(error, t("feedback.pdfExportError", "Errore export PDF costi")));
-    } finally {
-      setPdfBusy(null);
+  const activeFilterRecord: Record<string, any> = {
+    dateFrom,
+    dateTo,
+    client_id: clientFilter !== "all" ? clientFilter : undefined,
+    assignee_id: technicianFilter !== "all" ? technicianFilter : undefined,
+  };
+
+  const filterSummary = useMemo(() => {
+    const lines: string[] = [];
+    lines.push(`Periodo: ${dateFrom} – ${dateTo}`);
+    if (clientFilter !== "all") {
+      const client = clients.find((c) => c.id === clientFilter);
+      lines.push(`Cliente: ${client?.company_name || client?.name || clientFilter}`);
     }
+    if (technicianFilter !== "all") {
+      lines.push(`Tecnico: filtrato`);
+    }
+    return lines;
+  }, [dateFrom, dateTo, clientFilter, technicianFilter, clients]);
+
+  async function exportPdfSuccess() {
+    toast.success(t("feedback.pdfExported", "Report costi esportato"));
+  }
+
+  function exportPdfError(err: Error) {
+    toast.error(errorMessage(err, t("feedback.pdfExportError", "Errore export PDF costi")));
   }
 
   return (
@@ -275,7 +278,7 @@ function CostsPage() {
           <TrendingUp className="h-5 w-5 text-text3" />
         </div>
         <div className="pc-card-body">
-          <div className="grid gap-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto_auto]">
+          <div className="grid gap-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
             <input
               className="pc-input"
               type="date"
@@ -314,17 +317,9 @@ function CostsPage() {
             </select>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
-              onClick={() => exportPdf("preview")}
-              disabled={!!pdfBusy}
+              onClick={() => setExportModalOpen(true)}
             >
-              <Eye className="h-3 w-3" /> {t("previewPdf", "PDF")}
-            </button>
-            <button
-              className="pc-btn pc-btn-ghost pc-btn-sm"
-              onClick={() => exportPdf("download")}
-              disabled={!!pdfBusy}
-            >
-              <FileText className="h-3 w-3" /> {t("downloadPdf", "Scarica")}
+              <FileDown className="h-3 w-3" /> {t("downloadPdf", "Esporta PDF")}
             </button>
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={exportCsv}>
               <Download className="h-3 w-3" /> {t("exportCsvBtn", "CSV")}
@@ -545,6 +540,36 @@ function CostsPage() {
           )}
         </div>
       </div>
+
+      <ExportPdf<TicketCostRow, TicketCostRow>
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        entityLabel="ticket"
+        renderPdf={async (rows) => {
+          const { CostsReportPdf } = await import("@/components/pcready/pdf/CostsReportPdf");
+          return <CostsReportPdf
+            rows={rows}
+            summary={summary}
+            period={`${dateFrom} - ${dateTo}`}
+            byClient={byClient.slice(0, 8)}
+            byTechnician={byTechnician.slice(0, 8)}
+          />;
+        }}
+        mapRow={(row) => row}
+        fileName={buildDownloadFileName("pcready-report-costi", "pdf", { dated: true })}
+        fetchAll={async (filters) => {
+          let data = tickets;
+          if (filters.client_id) data = data.filter((t) => t.client_id === filters.client_id);
+          if (filters.assignee_id) data = data.filter((t) => t.assignee_id === filters.assignee_id);
+          return { data, count: data.length };
+        }}
+        currentPageRows={filteredTickets}
+        activeFilters={activeFilterRecord}
+        filterSummary={filterSummary}
+        totalFilteredCount={filteredTickets.length}
+        onSuccess={exportPdfSuccess}
+        onError={exportPdfError}
+      />
     </div>
   );
 }

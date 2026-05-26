@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useTickets } from "@/lib/use-tickets";
-import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList } from "@/lib/queries/tickets";
+import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList, fetchAllTicketsList } from "@/lib/queries/tickets";
+import { ExportPdf } from "@/components/ExportPdf";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/use-detail";
@@ -33,7 +34,7 @@ import {
   TicketTypeBadge,
 } from "@/components/pcready/StatusBadge";
 import { toast } from "sonner";
-import { ArrowUpDown, Columns3, Eye, FileDown } from "lucide-react";
+import { ArrowUpDown, Columns3, FileDown } from "lucide-react";
 import type { TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { buildDownloadFileName } from "@/lib/downloads";
@@ -139,6 +140,7 @@ function TicketsPage() {
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [slaLimits, setSlaLimits] = useState<SlaLimits>(DEFAULT_SLA_LIMITS);
   const [pdfBusy, setPdfBusy] = useState<"download" | "preview" | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState<BulkConfirmAction | null>(null);
@@ -286,52 +288,25 @@ function TicketsPage() {
     };
   }
 
-  function pdfRows(): TicketPdfRow[] {
-    return data.map(rowToPdf);
+  const activeFilterRecord: Record<string, any> = {
+    status: fs || undefined,
+    priority: fp || undefined,
+    ticket_type: ft || undefined,
+    client_id: fc || undefined,
+    assignee_id: fa || undefined,
+    q: search || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    sortBy,
+    sortDir,
+  };
+
+  async function exportSuccessToast() {
+    toast.success(t("toasts.pdfExported", "PDF ticket esportato"));
   }
 
-  async function exportPdf() {
-    if (!data.length) return toast.error(t("toasts.noTicketsToExport", "Nessun ticket da esportare"));
-    setPdfBusy("download");
-    try {
-      const settings = session?.access_token
-        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-        : null;
-      const org = settings?.organization_name;
-      const [{ downloadPdf }, { TicketListPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/pcready/pdf/TicketListPdf"),
-      ]);
-      await downloadPdf(
-        <TicketListPdf rows={pdfRows()} organizationName={org} />,
-        buildDownloadFileName("pcready-ticket", "pdf", { dated: true }),
-      );
-      toast.success(t("toasts.pdfExported", "PDF ticket esportato"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("toasts.pdfExportError", "Errore esportazione PDF")));
-    } finally {
-      setPdfBusy(null);
-    }
-  }
-
-  async function openPdfPreview() {
-    if (!data.length) return toast.error(t("toasts.noTicketsToView", "Nessun ticket da visualizzare"));
-    setPdfBusy("preview");
-    try {
-      const settings = session?.access_token
-        ? await loadSettings({ data: { accessToken: session.access_token } }).catch(() => null)
-        : null;
-      const org = settings?.organization_name;
-      const [{ previewPdf }, { TicketListPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/pcready/pdf/TicketListPdf"),
-      ]);
-      await previewPdf(<TicketListPdf rows={pdfRows()} organizationName={org} />);
-    } catch (error) {
-      toast.error(errorMessage(error, t("toasts.pdfPreviewError", "Errore anteprima PDF")));
-    } finally {
-      setPdfBusy(null);
-    }
+  function exportErrorHandler(error: Error) {
+    toast.error(errorMessage(error, t("toasts.pdfExportError", "Errore esportazione PDF")));
   }
 
   function toggleTicketSelection(id: string) {
@@ -720,19 +695,12 @@ function TicketsPage() {
               ? `${loadedCount} ${t("meta.of", "di")} ${total}`
               : t("ticketList.zeroResults", "0 risultati")}
           </span>
-        <button
-          onClick={openPdfPreview}
-          disabled={!!pdfBusy}
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-        >
-          <Eye className="w-3 h-3" /> {t("previewPdf", "Anteprima PDF")}
-        </button>
         <Link to="/tickets/archive" className="pc-btn pc-btn-ghost pc-btn-sm">
           {t("meta.history", "Storico")}
         </Link>
-        <button onClick={exportPdf} disabled={!!pdfBusy} className="pc-btn pc-btn-ghost pc-btn-sm">
+        <button onClick={() => setExportModalOpen(true)} disabled={!data.length} className="pc-btn pc-btn-ghost pc-btn-sm">
           <FileDown className="w-3 h-3" />
-          {pdfBusy === "download" ? t("meta.updating", "Esportazione...") : t("exportPdf", "Esporta PDF")}
+          {t("exportPdf", "Esporta PDF")}
         </button>
       </div>
 
@@ -1064,6 +1032,27 @@ function TicketsPage() {
         confirmLabel={t("confirm", "Conferma")}
         loadingLabel={t("updating", "Aggiornamento...")}
         onConfirm={confirmBulkAction}
+      />
+
+      <ExportPdf<Row, TicketPdfRow>
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        entityLabel="ticket"
+        renderPdf={async (rows, orgName) => {
+          const { TicketListPdf: Tlp } = await import("@/components/pcready/pdf/TicketListPdf");
+          return <Tlp rows={rows} organizationName={orgName} />;
+        }}
+        mapRow={rowToPdf}
+        fileName={buildDownloadFileName("pcready-ticket", "pdf", { dated: true })}
+        fetchAll={async (filters) => {
+          const result = await fetchAllTicketsList(filters as any);
+          return result as unknown as { data: Row[]; count: number };
+        }}
+        currentPageRows={data as Row[]}
+        activeFilters={activeFilterRecord}
+        totalFilteredCount={total}
+        onSuccess={exportSuccessToast}
+        onError={exportErrorHandler}
       />
     </div>
   );

@@ -78,6 +78,24 @@
     "csvExported": "CSV costi esportato",
     "pdfExportError": "Errore export PDF costi"
   },
+  "detailDialog": {
+    "clientTitle": "Dettaglio ticket per cliente",
+    "technicianTitle": "Dettaglio ticket per tecnico",
+    "entityLabel": "{{entity}}: {{name}}",
+    "ticketCount": "{{count}} ticket nel periodo",
+    "close": "Chiudi",
+    "empty": "Nessun ticket trovato",
+    "headers": {
+      "ticket": "Ticket",
+      "client": "Cliente",
+      "technician": "Tecnico",
+      "hours": "Ore",
+      "rate": "Tariffa",
+      "labor": "Manodopera",
+      "materials": "Materiali",
+      "total": "Totale"
+    }
+  },
   "fallbacks": {
     "noName": "Senza nome",
     "client": "Cliente",

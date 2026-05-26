@@ -55,6 +55,83 @@ export function useAllAssignedDeviceIds(enabled: boolean) {
   });
 }
 
+/**
+ * Fetch ALL matching devices without pagination (for PDF export).
+ * Reuses the same filtering logic as fetchDevicesList but omits .range().
+ */
+export async function fetchAllDevicesList(params: DevicesListParams) {
+  let dueMaintenanceDeviceIds: string[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  if (params.maintenanceDueSoon) {
+    const { data: dueRows, error: dueError } = await (supabase as any)
+      .from("maintenance_schedules")
+      .select("device_id")
+      .gte("next_due_date", today)
+      .lte("next_due_date", in30Days);
+    if (dueError && dueError.code !== "42P01") throw dueError;
+    dueMaintenanceDeviceIds = [
+      ...new Set(((dueRows ?? []) as Array<{ device_id: string }>).map((row) => row.device_id)),
+    ];
+    if (!dueMaintenanceDeviceIds.length) return { data: [], count: 0 };
+  }
+
+  let query = supabase
+    .from("devices")
+    .select(
+      "id, asset_tag, serial, model, os, status, category, device_type, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, client:clients(name)",
+      { count: "exact" },
+    )
+    .order("updated_at", { ascending: false });
+
+  if (params.status) query = query.eq("status", params.status as any);
+  if (params.os) query = query.eq("os", params.os as any);
+  if (params.category) query = query.eq("category", params.category as any);
+  if (params.deviceType) query = query.eq("device_type", params.deviceType as any);
+  const term = (params.q || "").trim().replace(/[,%]/g, "");
+  if (term)
+    query = query.or(
+      `asset_tag.ilike.%${term}%,serial.ilike.%${term}%,model.ilike.%${term}%,assigned_to.ilike.%${term}%,device_type.ilike.%${term}%`,
+    );
+
+  const assignedIdsForFilter = params.assignedIdsForFilter;
+  if (params.withoutTicket && assignedIdsForFilter?.length) {
+    query = query.not("id", "in", `(${assignedIdsForFilter.join(",")})`);
+  }
+  if (params.maintenanceDueSoon && dueMaintenanceDeviceIds.length) {
+    query = query.in("id", dueMaintenanceDeviceIds as any);
+  }
+
+  if (params.updatedBefore) {
+    query = query.lt("updated_at", params.updatedBefore);
+  }
+  if (params.updatedAfter) {
+    query = query.gt("updated_at", params.updatedAfter);
+  }
+  if (params.client_id) {
+    query = query.eq("client_id", params.client_id as any);
+  }
+
+  const warrantyStatus = params.warrantyStatus;
+  if (warrantyStatus && warrantyStatus !== "all") {
+    const today = new Date().toISOString().slice(0, 10);
+    const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const in90 = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
+    if (warrantyStatus === "missing") query = query.is("warranty_expiry_date", null);
+    if (warrantyStatus === "expired") query = query.lt("warranty_expiry_date", today);
+    if (warrantyStatus === "urgent")
+      query = query.gte("warranty_expiry_date", today).lte("warranty_expiry_date", in30);
+    if (warrantyStatus === "expiring")
+      query = query.gt("warranty_expiry_date", in30).lte("warranty_expiry_date", in90);
+    if (warrantyStatus === "valid") query = query.gt("warranty_expiry_date", in90);
+  }
+
+  // No .range() — fetches all matching rows
+  const { data, count, error } = await query;
+  if (error) throw error;
+  return { data: (data ?? []) as any[], count: count ?? 0 };
+}
+
 export async function fetchDevicesList(params: DevicesListParams) {
   const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
@@ -278,6 +355,7 @@ export default {
   fetchAllAssignedDeviceIds,
   useAllAssignedDeviceIds,
   fetchDevicesList,
+  fetchAllDevicesList,
   useInventoryList,
   useInventoryInfiniteList,
   fetchDeviceBySerial,

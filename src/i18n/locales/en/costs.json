@@ -78,6 +78,24 @@
     "csvExported": "CSV costs exported",
     "pdfExportError": "Error exporting PDF costs"
   },
+  "detailDialog": {
+    "clientTitle": "Ticket detail by client",
+    "technicianTitle": "Ticket detail by technician",
+    "entityLabel": "{{entity}}: {{name}}",
+    "ticketCount": "{{count}} tickets in period",
+    "close": "Close",
+    "empty": "No tickets found",
+    "headers": {
+      "ticket": "Ticket",
+      "client": "Client",
+      "technician": "Technician",
+      "hours": "Hours",
+      "rate": "Rate",
+      "labor": "Labor",
+      "materials": "Materials",
+      "total": "Total"
+    }
+  },
   "fallbacks": {
     "noName": "No name",
     "client": "Client",

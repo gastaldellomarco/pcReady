@@ -53,3 +53,5 @@ backups/
 supabase/.temp/cli-latest
 supabase/.temp/cli-latest
 e2e/screenshots/tickets-diagnostic.png
+.vscode
+/supabase/.temp
