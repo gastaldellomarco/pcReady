@@ -3,13 +3,14 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
-import { Download, FileDown, Pencil, Save, Trash2, TrendingUp, X } from "lucide-react";
+import { Download, FileDown, Info, Pencil, Save, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { openTicketDetail } from "@/lib/use-detail";
 import { errorMessage } from "@/lib/errors";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
@@ -534,6 +535,7 @@ function CostsPage() {
           label={t("stats.estimatedMargin", "Margine stimato")}
           value={formatCurrency(summary.estimatedRevenue - summary.materials)}
           tone="success"
+          helpText={t("stats.marginFormula", "Canoni attivi + Totale ticket − Costi materiali")}
         />
       </div>
 
@@ -1185,17 +1187,35 @@ function CostStat({
   label,
   value,
   tone = "default",
+  helpText,
 }: {
   label: string;
   value: string;
   tone?: "default" | "success";
+  helpText?: string;
 }) {
   return (
     <div
       className="rounded-xl border p-4"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
-      <div className="text-[11px] font-bold uppercase tracking-wide text-text3">{label}</div>
+      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-text3">
+        {label}
+        {helpText && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help">
+                  <Info className="h-3.5 w-3.5 text-text3 hover:text-text2 transition-colors" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed">
+                {helpText}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
       <div
         className="mt-2 text-xl font-bold"
         style={{ color: tone === "success" ? "var(--success)" : "var(--text)" }}

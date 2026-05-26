@@ -16,7 +16,8 @@
     "materials": "Materiali",
     "billableHours": "Ore fatturabili",
     "recurring": "Canoni attivi",
-    "estimatedMargin": "Margine stimato"
+    "estimatedMargin": "Margine stimato",
+    "marginFormula": "Canoni attivi + Totale ticket − Costi materiali"
   },
   "filters": {
     "allClients": "Tutti i clienti",

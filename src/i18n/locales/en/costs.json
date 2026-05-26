@@ -16,7 +16,8 @@
     "materials": "Material Costs",
     "billableHours": "Billable Hours",
     "recurring": "Active Contracts",
-    "estimatedMargin": "Estimated Margin"
+    "estimatedMargin": "Estimated Margin",
+    "marginFormula": "Active contracts + Total ticket costs − Material costs"
   },
   "filters": {
     "allClients": "All Clients",

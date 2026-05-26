@@ -8,6 +8,8 @@ import {
   Ban,
   CreditCard,
   Download,
+  Filter,
+  History,
   Package,
   Pencil,
   Plus,
@@ -75,6 +77,7 @@ function BundlesPage() {
   const [activeTab, setActiveTab] = useState<BundleTab>("catalog");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
+  const [showAllAssignments, setShowAllAssignments] = useState(false);
   const bundlesQuery = useBundles(true);
   const assignmentsQuery = useBundleAssignments();
   const usageQuery = useBundleUsageSummaries();
@@ -94,6 +97,10 @@ function BundlesPage() {
 
   const bundles = useMemo(() => bundlesQuery.data ?? [], [bundlesQuery.data]);
   const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
+  const filteredAssignments = useMemo(() => {
+    const data = assignmentsQuery.data ?? [];
+    return showAllAssignments ? data : data.filter((a) => a.status === "active");
+  }, [assignmentsQuery.data, showAllAssignments]);
   const usageSummaries = useMemo(() => usageQuery.data ?? [], [usageQuery.data]);
 
   const assignmentById = useMemo(() => {
@@ -338,12 +345,16 @@ function BundlesPage() {
           )}
           {activeTab === "assignments" && (
             <AssignmentsTab
-              assignments={assignments}
+              assignments={filteredAssignments}
               canManage={canManageAssignments}
               onEdit={setEditingAssignmentWithTab}
               onCancel={assignmentManager.cancel}
               onDelete={assignmentManager.remove}
+              onViewUsage={() => setActiveTab("usage")}
               busy={assignmentManager.busy}
+              showAll={showAllAssignments}
+              onToggleShowAll={() => setShowAllAssignments((v) => !v)}
+              hasHidden={!showAllAssignments && filteredAssignments.length === 0 && assignments.length > 0}
             />
           )}
           {activeTab === "usage" && usageQuery.isError ? (
@@ -465,6 +476,10 @@ function AssignmentsTab({
   onEdit,
   onCancel,
   onDelete,
+  onViewUsage,
+  showAll,
+  onToggleShowAll,
+  hasHidden,
 }: {
   assignments: ClientBundleAssignment[];
   canManage: boolean;
@@ -472,12 +487,24 @@ function AssignmentsTab({
   onEdit: (assignment: ClientBundleAssignment) => void;
   onCancel: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewUsage: (assignment: ClientBundleAssignment) => void;
+  showAll: boolean;
+  onToggleShowAll: () => void;
+  hasHidden: boolean;
 }) {
   const { t } = useTranslation("bundles");
   return (
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd">
         <div className="pc-card-title">{t("assignments.title", "Storico bundle assegnati")}</div>
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+          onClick={onToggleShowAll}
+          title={showAll ? t("assignments.showActiveOnly", "Mostra solo attivi") : t("assignments.showAll", "Mostra tutti")}
+        >
+          <Filter className="h-3 w-3" />
+          {showAll ? t("assignments.showActiveOnly", "Solo attivi") : t("assignments.showAll", "Mostra tutti")}
+        </button>
       </div>
       <div className="overflow-x-auto">
         <OverflowTable>
@@ -521,13 +548,22 @@ function AssignmentsTab({
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
                         onClick={() => onEdit(assignment)}
+                        title={t("assignments.edit", "Modifica assegnazione")}
                       >
                         <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-sm"
+                        onClick={() => onViewUsage(assignment)}
+                        title={t("assignments.viewUsage", "Storico consumo")}
+                      >
+                        <History className="h-3 w-3" />
                       </button>
                       {assignment.status === "active" && (
                         <button
                           className="pc-btn pc-btn-ghost pc-btn-sm"
                           onClick={() => onCancel(assignment.id)}
+                          title={t("assignments.cancel", "Annulla assegnazione")}
                         >
                           <Ban className="h-3 w-3" />
                         </button>
@@ -550,7 +586,9 @@ function AssignmentsTab({
             {!assignments.length && (
               <tr>
                 <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                  {t("assignments.empty", "Nessuna assegnazione.")}
+                  {hasHidden
+                    ? t("assignments.emptyActive", "Nessuna assegnazione attiva.")
+                    : t("assignments.empty", "Nessuna assegnazione.")}
                 </td>
               </tr>
             )}
