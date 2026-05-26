@@ -43,7 +43,8 @@
     "saveAssignment": "Error saving assignment",
     "cancelAssignment": "Error cancelling assignment",
     "invalidAssignment": "Select a valid assignment",
-    "savePayment": "Error saving payment"
+    "savePayment": "Error saving payment",
+    "loadUsageData": "Error loading usage data. Please reload the page."
   },
   "success": {
     "bundleSaved": "Bundle saved",

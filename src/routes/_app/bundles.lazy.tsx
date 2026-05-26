@@ -434,7 +434,14 @@ function BundlesPage() {
               onCancel={cancelAssignment}
             />
           )}
-          {activeTab === "usage" && (
+          {activeTab === "usage" && usageQuery.isError ? (
+            <div className="pc-card p-8 text-center">
+              <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-amber-500" />
+              <p className="text-sm text-text3">
+                {t("errors.loadUsageData", "Errore caricamento dati consumi. Ricarica la pagina.")}
+              </p>
+            </div>
+          ) : activeTab === "usage" && (
             <UsageTab
               summaries={usageSummaries}
               assignmentById={assignmentById}

@@ -50,7 +50,8 @@
     "nameHeader": "Nome",
     "hoursHeader": "Ore",
     "totalHeader": "Totale",
-    "noData": "Nessun dato"
+    "noData": "Nessun dato",
+    "clickHint": "Clicca per dettaglio"
   },
   "detailTable": {
     "title": "Dettaglio ticket fatturabili",
@@ -67,7 +68,10 @@
       "status": "Stato"
     },
     "loading": "Caricamento costi...",
-    "empty": "Nessun costo nel periodo selezionato"
+    "empty": "Nessun costo nel periodo selezionato",
+    "groupByNone": "Nessun raggruppamento",
+    "groupByClient": "Raggruppa per cliente",
+    "groupByTechnician": "Raggruppa per tecnico"
   },
   "feedback": {
     "loadError": "Errore caricamento costi",
@@ -85,6 +89,8 @@
     "ticketCount": "{{count}} ticket nel periodo",
     "close": "Chiudi",
     "empty": "Nessun ticket trovato",
+    "exportCsvBtn": "CSV",
+    "csvExported": "CSV dettaglio esportato",
     "headers": {
       "ticket": "Ticket",
       "client": "Cliente",

@@ -43,7 +43,8 @@
     "saveAssignment": "Errore salvataggio assegnazione",
     "cancelAssignment": "Errore annullamento assegnazione",
     "invalidAssignment": "Seleziona un'assegnazione valida",
-    "savePayment": "Errore salvataggio pagamento"
+    "savePayment": "Errore salvataggio pagamento",
+    "loadUsageData": "Errore caricamento dati consumi. Ricarica la pagina."
   },
   "success": {
     "bundleSaved": "Bundle salvato",

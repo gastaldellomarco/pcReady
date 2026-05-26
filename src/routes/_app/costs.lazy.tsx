@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { openTicketDetail } from "@/lib/use-detail";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
@@ -96,6 +97,7 @@ function CostsPage() {
   const [draft, setDraft] = useState<ContractDraft>(emptyContractDraft);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<{ type: "client" | "technician"; name: string } | null>(null);
+  const [detailGroupBy, setDetailGroupBy] = useState<"none" | "client" | "technician">("none");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -179,6 +181,51 @@ function CostsPage() {
     [filteredTickets, t],
   );
 
+  const detailTickets = useMemo(() => {
+    if (!detailEntity) return [] as TicketCostRow[];
+    const key = detailEntity.type === "client" ? "client_name" : "technician_name";
+    const fallback = detailEntity.type === "technician"
+      ? t("fallbacks.notAssigned", "Non assegnato")
+      : t("fallbacks.clientNotIndicated", "Cliente non indicato");
+    return filteredTickets.filter((ticket) => {
+      const name = ticket[key] || fallback;
+      return name === detailEntity.name;
+    });
+  }, [detailEntity, filteredTickets, t]);
+
+  const detailTotals = useMemo(() => {
+    const hours = detailTickets.reduce((sum, t) => sum + money(t.billable_hours), 0);
+    const labor = detailTickets.reduce((sum, t) => sum + money(t.labor_cost), 0);
+    const materials = detailTickets.reduce((sum, t) => sum + money(t.material_cost), 0);
+    const total = detailTickets.reduce((sum, t) => sum + money(t.total_cost), 0);
+    return { hours, labor, materials, total };
+  }, [detailTickets]);
+
+  const groupedDetail = useMemo(() => {
+    if (detailGroupBy === "none") return null;
+    const key = detailGroupBy === "client" ? "client_name" : "technician_name";
+    const fallback = detailGroupBy === "technician"
+      ? t("fallbacks.notAssigned", "Non assegnato")
+      : t("fallbacks.clientNotIndicated", "Cliente non indicato");
+    const groups = groupCosts(filteredTickets, key, { technician: fallback, client: fallback });
+    return groups.map((group) => ({
+      name: group.name,
+      hours: group.hours,
+      labor: group.labor,
+      materials: group.materials,
+      total: group.total,
+      tickets: filteredTickets.filter((t) => {
+        const name = t[key] || fallback;
+        return name === group.name;
+      }),
+    }));
+  }, [detailGroupBy, filteredTickets, t]);
+
+  function openDetail(type: "client" | "technician", name: string) {
+    setDetailEntity({ type, name });
+    setDetailOpen(true);
+  }
+
   async function saveContract() {
     if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     if (!draft.client_id) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
@@ -246,7 +293,7 @@ function CostsPage() {
 
   const filterSummary = useMemo(() => {
     const lines: string[] = [];
-    lines.push(`Periodo: ${dateFrom} – ${dateTo}`);
+    lines.push(`Periodo: ${dateFrom} - ${dateTo}`);
     if (clientFilter !== "all") {
       const client = clients.find((c) => c.id === clientFilter);
       lines.push(`Cliente: ${client?.company_name || client?.name || clientFilter}`);
@@ -264,6 +311,44 @@ function CostsPage() {
   function exportPdfError(err: Error) {
     toast.error(errorMessage(err, t("feedback.pdfExportError", "Errore export PDF costi")));
   }
+
+  function detailExportCsv() {
+    if (!detailTickets.length) return;
+    downloadCsv(
+      [
+        [
+          t("detailTable.headers.ticket", "Ticket"),
+          t("detailTable.headers.client", "Cliente"),
+          t("detailTable.headers.technician", "Tecnico"),
+          t("detailTable.headers.hours", "Ore"),
+          t("detailTable.headers.rate", "Tariffa"),
+          t("detailTable.headers.labor", "Manodopera"),
+          t("detailTable.headers.materials", "Materiali"),
+          t("detailTable.headers.total", "Totale"),
+          t("detailTable.headers.status", "Stato"),
+        ],
+        ...detailTickets.map((ticket) => [
+          ticket.ticket_code,
+          ticket.client_name ?? "-",
+          ticket.technician_name ?? "-",
+          ticket.billable_hours ?? 0,
+          ticket.hourly_rate ?? 0,
+          ticket.labor_cost ?? 0,
+          ticket.material_cost ?? 0,
+          ticket.total_cost ?? 0,
+          ticket.status,
+        ]),
+      ],
+      buildDownloadFileName("pcready-costi-dettaglio", "csv", { dated: true }),
+    );
+    toast.success(t("detailDialog.csvExported", "CSV dettaglio esportato"));
+  }
+
+  const detailDialogTitle = detailEntity
+    ? detailEntity.type === "client"
+      ? t("detailDialog.clientTitle", "Dettaglio ticket per cliente")
+      : t("detailDialog.technicianTitle", "Dettaglio ticket per tecnico")
+    : "";
 
   return (
     <div className="flex flex-col gap-4">
@@ -417,16 +502,33 @@ function CostsPage() {
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SummaryTable title={t("summaryTables.perClient", "Costi per cliente")} rows={byClient} />
-        <SummaryTable title={t("summaryTables.perTechnician", "Costi per tecnico")} rows={byTechnician} />
+        <SummaryTable
+          title={t("summaryTables.perClient", "Costi per cliente")}
+          rows={byClient}
+          onRowClick={(name) => openDetail("client", name)}
+        />
+        <SummaryTable
+          title={t("summaryTables.perTechnician", "Costi per tecnico")}
+          rows={byTechnician}
+          onRowClick={(name) => openDetail("technician", name)}
+        />
       </div>
 
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div>
             <div className="pc-card-title">{t("detailTable.title", "Dettaglio ticket fatturabili")}</div>
-            <div className="mt-1 text-sm text-text3">
-              {t("detailTable.ticketsInPeriod", { count: filteredTickets.length })}
+            <div className="mt-1 flex items-center gap-3 text-sm text-text3">
+              <span>{t("detailTable.ticketsInPeriod", { count: filteredTickets.length })}</span>
+              <select
+                className="pc-input text-xs w-auto"
+                value={detailGroupBy}
+                onChange={(e) => setDetailGroupBy(e.target.value as "none" | "client" | "technician")}
+              >
+                <option value="none">{t("detailTable.groupByNone", "Nessun raggruppamento")}</option>
+                <option value="client">{t("detailTable.groupByClient", "Raggruppa per cliente")}</option>
+                <option value="technician">{t("detailTable.groupByTechnician", "Raggruppa per tecnico")}</option>
+              </select>
             </div>
           </div>
         </div>
@@ -460,7 +562,66 @@ function CostsPage() {
                     {t("detailTable.loading", "Caricamento costi...")}
                   </td>
                 </tr>
-              ) : filteredTickets.length ? (
+              ) : filteredTickets.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-text3" colSpan={8}>
+                    {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
+                  </td>
+                </tr>
+              ) : groupedDetail ? (
+                groupedDetail.map((group) => (
+                  <Fragment key={group.name}>
+                    <tr
+                      className="border-t bg-surface2 cursor-pointer transition-colors"
+                      style={{ borderColor: "var(--border)" }}
+                      tabIndex={0}
+                      role="button"
+                      onClick={() => openDetail(detailGroupBy === "client" ? "client" : "technician", group.name)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openDetail(detailGroupBy === "client" ? "client" : "technician", group.name);
+                        }
+                      }}
+                    >
+                      <td className="px-3 py-2 font-bold" colSpan={3}>
+                        {group.name} ({group.tickets.length})
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono font-bold">
+                        {formatHours(group.hours)}
+                      </td>
+                      <td className="px-3 py-2" />
+                      <td className="px-3 py-2 text-right font-mono font-bold">
+                        {formatCurrency(group.labor)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono font-bold">
+                        {formatCurrency(group.materials)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono font-bold">
+                        {formatCurrency(group.total)}
+                      </td>
+                    </tr>
+                    {group.tickets.map((ticket) => (
+                      <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <td className="px-3 py-2 pl-8 font-mono font-semibold text-accent">
+                          {ticket.ticket_code}
+                        </td>
+                        <td className="px-3 py-2">{ticket.client_name || "-"}</td>
+                        <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatHours(money(ticket.billable_hours))}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.hourly_rate)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono font-bold">
+                          {formatCurrency(ticket.total_cost)}
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))
+              ) : (
                 filteredTickets.map((ticket) => (
                   <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                     <td className="px-3 py-2 font-mono font-semibold text-accent">
@@ -479,12 +640,6 @@ function CostsPage() {
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                    {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
@@ -570,6 +725,120 @@ function CostsPage() {
         onSuccess={exportPdfSuccess}
         onError={exportPdfError}
       />
+
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-4">
+              <DialogTitle>{detailDialogTitle}</DialogTitle>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm shrink-0"
+                onClick={detailExportCsv}
+                disabled={detailTickets.length === 0}
+              >
+                <Download className="h-3 w-3" /> {t("detailDialog.exportCsvBtn", "CSV")}
+              </button>
+            </div>
+            <DialogDescription>
+              {detailEntity
+                ? t("detailDialog.entityLabel", "{{entity}}: {{name}}", {
+                    entity: detailEntity.type === "client"
+                      ? t("summaryTables.perClient", "Cliente")
+                      : t("summaryTables.perTechnician", "Tecnico"),
+                    name: detailEntity.name,
+                  }) + " \u2022 " + t("detailDialog.ticketCount", { count: detailTickets.length })
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            {detailTickets.length > 0 ? (
+              <table className="w-full min-w-[720px] text-[12.5px]">
+                <thead style={{ background: "var(--surface2)" }}>
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.ticket", "Ticket")}
+                    </th>
+                    {detailEntity?.type === "technician" && (
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailDialog.headers.client", "Cliente")}
+                      </th>
+                    )}
+                    {detailEntity?.type === "client" && (
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailDialog.headers.technician", "Tecnico")}
+                      </th>
+                    )}
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.hours", "Ore")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.rate", "Tariffa")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.labor", "Manodopera")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.materials", "Materiali")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("detailDialog.headers.total", "Totale")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailTickets.map((ticket) => (
+                    <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                      <td className="px-3 py-2 font-mono font-semibold text-accent">
+                        <button
+                          type="button"
+                          className="cursor-pointer hover:underline"
+                          onClick={() => openTicketDetail(ticket.id)}
+                        >
+                          {ticket.ticket_code}
+                        </button>
+                      </td>
+                      {detailEntity?.type === "technician" && (
+                        <td className="px-3 py-2">{ticket.client_name || "-"}</td>
+                      )}
+                      {detailEntity?.type === "client" && (
+                        <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
+                      )}
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatHours(money(ticket.billable_hours))}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.hourly_rate)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
+                      <td className="px-3 py-2 text-right font-mono font-bold">
+                        {formatCurrency(ticket.total_cost)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 font-bold" style={{ borderColor: "var(--text3)" }}>
+                    <td className="px-3 py-2 text-[10.5px] uppercase text-text3">
+                      {t("detailTable.headers.total", "Totale")} ({detailTickets.length})
+                    </td>
+                    {detailEntity?.type === "technician" && <td className="px-3 py-2" />}
+                    {detailEntity?.type === "client" && <td className="px-3 py-2" />}
+                    <td className="px-3 py-2 text-right font-mono">{formatHours(detailTotals.hours)}</td>
+                    <td className="px-3 py-2" />
+                    <td className="px-3 py-2 text-right font-mono">{formatCurrency(detailTotals.labor)}</td>
+                    <td className="px-3 py-2 text-right font-mono">{formatCurrency(detailTotals.materials)}</td>
+                    <td className="px-3 py-2 text-right font-mono font-bold">{formatCurrency(detailTotals.total)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            ) : (
+              <div className="py-8 text-center text-text3">
+                {t("detailDialog.empty", "Nessun ticket trovato")}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -599,12 +868,25 @@ function CostStat({
   );
 }
 
-function SummaryTable({ title, rows }: { title: string; rows: CostGroup[] }) {
+function SummaryTable({
+  title,
+  rows,
+  onRowClick,
+}: {
+  title: string;
+  rows: CostGroup[];
+  onRowClick?: (name: string) => void;
+}) {
   const { t } = useTranslation("costs");
   return (
     <div className="pc-card overflow-hidden">
       <div className="pc-card-hd">
         <div className="pc-card-title">{title}</div>
+        {onRowClick && rows.length > 0 && (
+          <div className="text-[10.5px] text-text3">
+            {t("summaryTables.clickHint", "Clicca per dettaglio")}
+          </div>
+        )}
       </div>
       <table className="w-full text-[12.5px]">
         <thead style={{ background: "var(--surface2)" }}>
@@ -622,7 +904,20 @@ function SummaryTable({ title, rows }: { title: string; rows: CostGroup[] }) {
         </thead>
         <tbody>
           {rows.slice(0, 8).map((row) => (
-            <tr key={row.name} className="border-t" style={{ borderColor: "var(--border)" }}>
+            <tr
+              key={row.name}
+              className={`border-t ${onRowClick ? "cursor-pointer transition-colors hover:bg-surface2" : ""}`}
+              style={{ borderColor: "var(--border)" }}
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? "button" : undefined}
+              onClick={() => onRowClick?.(row.name)}
+              onKeyDown={(e) => {
+                if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onRowClick(row.name);
+                }
+              }}
+            >
               <td className="px-3 py-2 font-semibold">{row.name}</td>
               <td className="px-3 py-2 text-right font-mono">{formatHours(row.hours)}</td>
               <td className="px-3 py-2 text-right font-mono font-bold">
