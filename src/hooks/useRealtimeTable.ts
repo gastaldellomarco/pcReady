@@ -25,7 +25,7 @@ export function useRealtimeTable<T>(
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- caller controls refresh via deps
+    // caller controls refresh via deps
   }, deps);
 
   const channelSuffix = useRef(randomUUID()).current;

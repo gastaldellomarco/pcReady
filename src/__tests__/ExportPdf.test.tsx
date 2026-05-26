@@ -1,23 +1,16 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import * as React from "react";
 import userEvent from "@testing-library/user-event";
 
 // ── Mock @/components/ui/dialog ────────────────────────────────────────
 // Radix Dialog uses portals; mock to render children inline when open=true
 vi.mock("@/components/ui/dialog", () => {
-  const React = require("react");
   return {
-    Dialog: ({
-      open,
-      children,
-      onOpenChange,
-    }: {
-      open: boolean;
-      children: React.ReactNode;
-      onOpenChange?: (open: boolean) => void;
-    }) => (open ? <div data-testid="dialog">{children}</div> : null),
+    Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+      open ? <div data-testid="dialog">{children}</div> : null,
     DialogContent: ({ children }: { children: React.ReactNode; className?: string }) => (
       <div data-testid="dialog-content">{children}</div>
     ),
@@ -76,7 +69,6 @@ vi.mock("sonner", () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────
 import { ExportPdf } from "@/components/ExportPdf";
-import { EXPORT_WARNING_THRESHOLD } from "@/lib/queries/list-config";
 
 // ── Test helpers ────────────────────────────────────────────────────────
 interface TestRow {

@@ -72,7 +72,6 @@ vi.mock("@/components/admin/AdminUserStatusBadge", () => ({
 }));
 
 vi.mock("@/components/ui/alert-dialog", () => {
-  // eslint-disable-next-line react/display-name
   const FakeDialog = ({
     open,
     children,
