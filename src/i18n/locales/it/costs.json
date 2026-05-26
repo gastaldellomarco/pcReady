@@ -25,11 +25,22 @@
   "contractForm": {
     "title": "Contratti / SLA cliente",
     "save": "Salva contratto",
-    "clientPlaceholder": "Cliente...",
-    "namePlaceholder": "Nome contratto",
-    "feePlaceholder": "Canone",
-    "hoursPlaceholder": "Ore incluse",
-    "extraRatePlaceholder": "Tariffa extra",
+    "update": "Aggiorna contratto",
+    "editing": "Modifica in corso",
+    "cancelEdit": "Annulla",
+    "clientLabel": "Cliente",
+    "clientPlaceholder": "Seleziona cliente...",
+    "nameLabel": "Nome contratto",
+    "namePlaceholder": "es. Contratto base",
+    "billingPeriodLabel": "Fatturazione",
+    "feeLabel": "Canone (€)",
+    "feePlaceholder": "0",
+    "hoursLabel": "Ore incluse",
+    "hoursPlaceholder": "0",
+    "extraRateLabel": "Tariffa extra/h (€)",
+    "extraRatePlaceholder": "0",
+    "startDateLabel": "Data inizio",
+    "endDateLabel": "Data fine",
     "defaultName": "Contratto assistenza"
   },
   "contracts": {
@@ -78,9 +89,40 @@
     "insufficientPermissions": "Permessi insufficienti",
     "selectClient": "Seleziona un cliente",
     "contractSaved": "Contratto salvato",
+    "contractUpdated": "Contratto aggiornato",
     "contractSaveError": "Errore salvataggio contratto",
     "csvExported": "CSV costi esportato",
     "pdfExportError": "Errore export PDF costi"
+  },
+  "validation": {
+    "clientRequired": "Seleziona un cliente",
+    "nameRequired": "Inserisci un nome contratto",
+    "feeInvalid": "Il canone deve essere ≥ 0",
+    "hoursInvalid": "Le ore incluse devono essere > 0",
+    "extraRateInvalid": "La tariffa extra deve essere ≥ 0",
+    "startDateRequired": "Inserisci la data inizio",
+    "endDateBeforeStart": "La data fine deve essere ≥ data inizio"
+  },
+  "contractTable": {
+    "headers": {
+      "client": "Cliente",
+      "name": "Contratto",
+      "period": "Periodo",
+      "fee": "Canone",
+      "hours": "Ore",
+      "status": "Stato",
+      "dates": "Date",
+      "actions": "Azioni"
+    },
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "confirmDelete": "Eliminare questo contratto?",
+    "deleted": "Contratto eliminato",
+    "deleteError": "Errore eliminazione contratto",
+    "statusActive": "Attivo",
+    "statusPaused": "In pausa",
+    "statusExpired": "Scaduto",
+    "statusDraft": "Bozza"
   },
   "detailDialog": {
     "clientTitle": "Dettaglio ticket per cliente",

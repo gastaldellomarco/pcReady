@@ -3,7 +3,7 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
-import { Download, FileDown, Save, TrendingUp } from "lucide-react";
+import { Download, FileDown, Pencil, Save, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
@@ -95,6 +95,9 @@ function CostsPage() {
   const [busy, setBusy] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(emptyContractDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<{ type: "client" | "technician"; name: string } | null>(null);
   const [detailGroupBy, setDetailGroupBy] = useState<"none" | "client" | "technician">("none");
@@ -226,12 +229,108 @@ function CostsPage() {
     setDetailOpen(true);
   }
 
-  async function saveContract() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (!draft.client_id) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
+  function startEdit(contract: ContractRow) {
+    setEditingId(contract.id);
+    setErrors({});
+    setTouched({});
+    setDraft({
+      client_id: contract.client_id,
+      name: contract.name,
+      billing_period: contract.billing_period,
+      recurring_fee: String(contract.recurring_fee),
+      included_hours: String(contract.included_hours),
+      extra_hourly_rate: String(contract.extra_hourly_rate),
+      start_date: contract.start_date,
+      end_date: contract.end_date ?? "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setErrors({});
+    setTouched({});
+    setDraft(emptyContractDraft);
+  }
+
+  async function deleteContract(id: string) {
+    if (!window.confirm(t("contractTable.confirmDelete", "Eliminare questo contratto?"))) return;
     setBusy(true);
     try {
-      const { error } = await (supabase as any).from("client_contracts").insert({
+      const { error } = await (supabase as any).from("client_contracts").delete().eq("id", id);
+      if (error) throw error;
+      if (id === editingId) {
+        setEditingId(null);
+        setDraft(emptyContractDraft);
+        setErrors({});
+        setTouched({});
+      }
+      await loadData();
+      toast.success(t("contractTable.deleted", "Contratto eliminato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("contractTable.deleteError", "Errore eliminazione contratto")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function validateDraft(): boolean {
+    const errs: Record<string, string | null> = {};
+    if (!draft.client_id) {
+      errs.client_id = t("validation.clientRequired", "Seleziona un cliente");
+    }
+    if (!draft.name.trim()) {
+      errs.name = t("validation.nameRequired", "Inserisci un nome contratto");
+    }
+    const fee = money(draft.recurring_fee);
+    if (fee < 0) {
+      errs.recurring_fee = t("validation.feeInvalid", "Il canone deve essere ≥ 0");
+    }
+    const hours = money(draft.included_hours);
+    if (hours <= 0) {
+      errs.included_hours = t("validation.hoursInvalid", "Le ore incluse devono essere > 0");
+    }
+    const extraRate = money(draft.extra_hourly_rate);
+    if (extraRate < 0) {
+      errs.extra_hourly_rate = t("validation.extraRateInvalid", "La tariffa extra deve essere ≥ 0");
+    }
+    if (!draft.start_date) {
+      errs.start_date = t("validation.startDateRequired", "Inserisci la data inizio");
+    }
+    if (draft.end_date && draft.start_date && draft.end_date < draft.start_date) {
+      errs.end_date = t("validation.endDateBeforeStart", "La data fine deve essere ≥ data inizio");
+    }
+    setErrors(errs);
+    setTouched({
+      client_id: true,
+      name: true,
+      recurring_fee: true,
+      included_hours: true,
+      extra_hourly_rate: true,
+      start_date: true,
+      end_date: true,
+    });
+    return Object.keys(errs).length === 0;
+  }
+
+  function clearFieldError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function touchField(field: string) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  async function saveContract() {
+    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!validateDraft()) return;
+    setBusy(true);
+    try {
+      const payload = {
         client_id: draft.client_id,
         name: draft.name.trim() || t("contractForm.defaultName", "Contratto assistenza"),
         billing_period: draft.billing_period,
@@ -241,11 +340,22 @@ function CostsPage() {
         start_date: draft.start_date || defaultDateFrom,
         end_date: draft.end_date || null,
         status: "active",
-      });
+      };
+      let error;
+      if (editingId) {
+        ({ error } = await (supabase as any).from("client_contracts").update(payload).eq("id", editingId));
+      } else {
+        ({ error } = await (supabase as any).from("client_contracts").insert(payload));
+      }
       if (error) throw error;
       setDraft(emptyContractDraft);
+      setEditingId(null);
+      setErrors({});
+      setTouched({});
       await loadData();
-      toast.success(t("feedback.contractSaved", "Contratto salvato"));
+      toast.success(editingId
+        ? t("feedback.contractUpdated", "Contratto aggiornato")
+        : t("feedback.contractSaved", "Contratto salvato"));
     } catch (error) {
       toast.error(errorMessage(error, t("feedback.contractSaveError", "Errore salvataggio contratto")));
     } finally {
@@ -429,75 +539,302 @@ function CostsPage() {
       {canManageCosts && (
         <div className="pc-card">
           <div className="pc-card-hd">
-            <div className="pc-card-title">{t("contractForm.title", "Contratti / SLA cliente")}</div>
-            <button
-              className="pc-btn pc-btn-primary pc-btn-sm"
-              onClick={saveContract}
-              disabled={busy || !canEdit}
-            >
-              <Save className="h-3 w-3" /> {t("contractForm.save", "Salva contratto")}
-            </button>
+            <div className="pc-card-title">
+              {t("contractForm.title", "Contratti / SLA cliente")}
+              {editingId && (
+                <span className="ml-2 text-xs font-normal text-accent">
+                  {t("contractForm.editing", "Modifica in corso")}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  className="pc-btn pc-btn-ghost pc-btn-sm"
+                  onClick={cancelEdit}
+                  disabled={busy}
+                >
+                  <X className="h-3 w-3" /> {t("contractForm.cancelEdit", "Annulla")}
+                </button>
+              )}
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                onClick={saveContract}
+                disabled={busy || !canEdit || !draft.client_id}
+              >
+                <Save className="h-3 w-3" />{" "}
+                {editingId
+                  ? t("contractForm.update", "Aggiorna contratto")
+                  : t("contractForm.save", "Salva contratto")}
+              </button>
+            </div>
           </div>
-          <div className="pc-card-body grid gap-2 md:grid-cols-4 xl:grid-cols-8">
-            <select
-              className="pc-input xl:col-span-2"
-              value={draft.client_id}
-              onChange={(e) => setDraft((v) => ({ ...v, client_id: e.target.value }))}
-            >
-              <option value="">{t("contractForm.clientPlaceholder", "Cliente...")}</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.company_name || client.name}
+          <div className="pc-card-body grid gap-3 md:grid-cols-2 xl:grid-cols-8">
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.clientLabel", "Cliente")}
+              <select
+                className="pc-input"
+                value={draft.client_id}
+                onBlur={() => touchField("client_id")}
+                onChange={(e) => {
+                  clearFieldError("client_id");
+                  setDraft((v) => ({ ...v, client_id: e.target.value }));
+                }}
+              >
+                <option value="" disabled>
+                  {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
                 </option>
-              ))}
-            </select>
-            <input
-              className="pc-input xl:col-span-2"
-              value={draft.name}
-              onChange={(e) => setDraft((v) => ({ ...v, name: e.target.value }))}
-              placeholder={t("contractForm.namePlaceholder", "Nome contratto")}
-            />
-            <select
-              className="pc-input"
-              value={draft.billing_period}
-              onChange={(e) =>
-                setDraft((v) => ({
-                  ...v,
-                  billing_period: e.target.value as ContractDraft["billing_period"],
-                }))
-              }
-            >
-              <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
-              <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
-            </select>
-            <input
-              className="pc-input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={draft.recurring_fee}
-              onChange={(e) => setDraft((v) => ({ ...v, recurring_fee: e.target.value }))}
-              placeholder={t("contractForm.feePlaceholder", "Canone")}
-            />
-            <input
-              className="pc-input"
-              type="number"
-              min="0"
-              step="0.25"
-              value={draft.included_hours}
-              onChange={(e) => setDraft((v) => ({ ...v, included_hours: e.target.value }))}
-              placeholder={t("contractForm.hoursPlaceholder", "Ore incluse")}
-            />
-            <input
-              className="pc-input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={draft.extra_hourly_rate}
-              onChange={(e) => setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }))}
-              placeholder={t("contractForm.extraRatePlaceholder", "Tariffa extra")}
-            />
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company_name || client.name}
+                  </option>
+                ))}
+              </select>
+              {touched.client_id && errors.client_id && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.client_id}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.nameLabel", "Nome contratto")}
+              <input
+                className="pc-input"
+                value={draft.name}
+                onBlur={() => touchField("name")}
+                onChange={(e) => {
+                  clearFieldError("name");
+                  setDraft((v) => ({ ...v, name: e.target.value }));
+                }}
+                placeholder={t("contractForm.namePlaceholder", "es. Contratto base")}
+              />
+              {touched.name && errors.name && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.name}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.billingPeriodLabel", "Fatturazione")}
+              <select
+                className="pc-input"
+                value={draft.billing_period}
+                onChange={(e) =>
+                  setDraft((v) => ({
+                    ...v,
+                    billing_period: e.target.value as ContractDraft["billing_period"],
+                  }))
+                }
+              >
+                <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+                <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
+              </select>
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.feeLabel", "Canone (€)")}
+              <input
+                className="pc-input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={draft.recurring_fee}
+                onBlur={() => touchField("recurring_fee")}
+                onChange={(e) => {
+                  clearFieldError("recurring_fee");
+                  setDraft((v) => ({ ...v, recurring_fee: e.target.value }));
+                }}
+                placeholder={t("contractForm.feePlaceholder", "0")}
+              />
+              {touched.recurring_fee && errors.recurring_fee && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.recurring_fee}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.hoursLabel", "Ore incluse")}
+              <input
+                className="pc-input"
+                type="number"
+                min="0"
+                step="0.25"
+                value={draft.included_hours}
+                onBlur={() => touchField("included_hours")}
+                onChange={(e) => {
+                  clearFieldError("included_hours");
+                  setDraft((v) => ({ ...v, included_hours: e.target.value }));
+                }}
+                placeholder={t("contractForm.hoursPlaceholder", "0")}
+              />
+              {touched.included_hours && errors.included_hours && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.included_hours}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.extraRateLabel", "Tariffa extra/h (€)")}
+              <input
+                className="pc-input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={draft.extra_hourly_rate}
+                onBlur={() => touchField("extra_hourly_rate")}
+                onChange={(e) => {
+                  clearFieldError("extra_hourly_rate");
+                  setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }));
+                }}
+                placeholder={t("contractForm.extraRatePlaceholder", "0")}
+              />
+              {touched.extra_hourly_rate && errors.extra_hourly_rate && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.extra_hourly_rate}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.startDateLabel", "Data inizio")}
+              <input
+                className="pc-input"
+                type="date"
+                value={draft.start_date}
+                min={defaultDateFrom}
+                onBlur={() => touchField("start_date")}
+                onChange={(e) => {
+                  clearFieldError("start_date");
+                  clearFieldError("end_date");
+                  setDraft((v) => ({ ...v, start_date: e.target.value }));
+                }}
+              />
+              {touched.start_date && errors.start_date && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.start_date}</p>
+              )}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-text2">
+              {t("contractForm.endDateLabel", "Data fine")}
+              <input
+                className="pc-input"
+                type="date"
+                value={draft.end_date}
+                min={draft.start_date || undefined}
+                onBlur={() => touchField("end_date")}
+                onChange={(e) => {
+                  clearFieldError("end_date");
+                  setDraft((v) => ({ ...v, end_date: e.target.value }));
+                }}
+              />
+              {touched.end_date && errors.end_date && (
+                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.end_date}</p>
+              )}
+            </label>
           </div>
+          {filteredContracts.length > 0 && (
+            <div className="border-t overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+              <table className="w-full min-w-[800px] text-[12.5px]">
+                <thead style={{ background: "var(--surface2)" }}>
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.client", "Cliente")}
+                    </th>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.name", "Contratto")}
+                    </th>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.period", "Periodo")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.fee", "Canone")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.hours", "Ore")}
+                    </th>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.status", "Stato")}
+                    </th>
+                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.dates", "Date")}
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                      {t("contractTable.headers.actions", "Azioni")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredContracts.map((contract) => (
+                    <tr
+                      key={contract.id}
+                      className="border-t"
+                      style={{
+                        borderColor: "var(--border)",
+                        background: editingId === contract.id ? "var(--accent-alpha)" : undefined,
+                      }}
+                    >
+                      <td className="px-3 py-2 text-sm">
+                        {contract.client?.company_name || contract.client?.name || t("fallbacks.client", "Cliente")}
+                      </td>
+                      <td className="px-3 py-2 font-medium">{contract.name}</td>
+                      <td className="px-3 py-2">
+                        <span className="text-xs rounded-full bg-surface2 px-2 py-0.5">
+                          {contract.billing_period === "monthly"
+                            ? t("contracts.period.monthly", "Mensile")
+                            : t("contracts.period.annual", "Annuale")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(contract.recurring_fee)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{formatHours(contract.included_hours)}</td>
+                      <td className="px-3 py-2">
+                        <span
+                          className="text-xs rounded-full px-2 py-0.5 font-bold"
+                          style={{
+                            background:
+                              contract.status === "active"
+                                ? "var(--success-alpha)"
+                                : contract.status === "paused"
+                                  ? "var(--warning-alpha)"
+                                  : "var(--surface2)",
+                            color:
+                              contract.status === "active"
+                                ? "var(--success)"
+                                : contract.status === "paused"
+                                  ? "var(--warning)"
+                                  : "var(--text3)",
+                          }}
+                        >
+                          {contract.status === "active"
+                            ? t("contractTable.statusActive", "Attivo")
+                            : contract.status === "paused"
+                              ? t("contractTable.statusPaused", "In pausa")
+                              : contract.status === "expired"
+                                ? t("contractTable.statusExpired", "Scaduto")
+                                : t("contractTable.statusDraft", "Bozza")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-text3">
+                        {new Date(contract.start_date).toLocaleDateString("it-IT")}
+                        {contract.end_date
+                          ? ` \u2192 ${new Date(contract.end_date).toLocaleDateString("it-IT")}`
+                          : ""}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            className="pc-btn pc-btn-ghost pc-btn-xs"
+                            onClick={() => startEdit(contract)}
+                            disabled={busy}
+                            title={t("contractTable.edit", "Modifica")}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
+                            onClick={() => deleteContract(contract.id)}
+                            disabled={busy}
+                            title={t("contractTable.delete", "Elimina")}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

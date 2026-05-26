@@ -25,11 +25,22 @@
   "contractForm": {
     "title": "Contracts / SLA",
     "save": "Save Contract",
-    "clientPlaceholder": "Client...",
-    "namePlaceholder": "Contract name",
-    "feePlaceholder": "Fee",
-    "hoursPlaceholder": "Included hours",
-    "extraRatePlaceholder": "Extra rate",
+    "update": "Update Contract",
+    "editing": "Editing",
+    "cancelEdit": "Cancel",
+    "clientLabel": "Client",
+    "clientPlaceholder": "Select client...",
+    "nameLabel": "Contract name",
+    "namePlaceholder": "e.g. Basic plan",
+    "billingPeriodLabel": "Billing",
+    "feeLabel": "Fee (€)",
+    "feePlaceholder": "0",
+    "hoursLabel": "Included hours",
+    "hoursPlaceholder": "0",
+    "extraRateLabel": "Extra rate/h (€)",
+    "extraRatePlaceholder": "0",
+    "startDateLabel": "Start date",
+    "endDateLabel": "End date",
     "defaultName": "Support contract"
   },
   "contracts": {
@@ -78,9 +89,40 @@
     "insufficientPermissions": "Insufficient permissions",
     "selectClient": "Select a client",
     "contractSaved": "Contract saved",
+    "contractUpdated": "Contract updated",
     "contractSaveError": "Error saving contract",
     "csvExported": "CSV costs exported",
     "pdfExportError": "Error exporting PDF costs"
+  },
+  "validation": {
+    "clientRequired": "Select a client",
+    "nameRequired": "Enter a contract name",
+    "feeInvalid": "Fee must be ≥ 0",
+    "hoursInvalid": "Included hours must be > 0",
+    "extraRateInvalid": "Extra rate must be ≥ 0",
+    "startDateRequired": "Enter a start date",
+    "endDateBeforeStart": "End date must be ≥ start date"
+  },
+  "contractTable": {
+    "headers": {
+      "client": "Client",
+      "name": "Contract",
+      "period": "Period",
+      "fee": "Fee",
+      "hours": "Hours",
+      "status": "Status",
+      "dates": "Dates",
+      "actions": "Actions"
+    },
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Delete this contract?",
+    "deleted": "Contract deleted",
+    "deleteError": "Error deleting contract",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "statusExpired": "Expired",
+    "statusDraft": "Draft"
   },
   "detailDialog": {
     "clientTitle": "Ticket detail by client",
