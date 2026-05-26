@@ -13,6 +13,39 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## [1.2.0] - 2026-05-26
+
+### Added
+- Enhance localization for bundles and costs with additional assignment management features
+- Add delete functionality for client bundle assignments and payments
+- Refactor entity label handling and introduce useAssignmentManager hook
+- Enhance calendar and input components for Italian locale support
+- Add read-only badge to BackupMetric and enhance email validation in AdminUsersTab
+- Enhance contract management with editing, validation, and deletion features
+- Update ESLint configuration and dependencies, enhance test mocks, and clean up code
+- Add MFA policy banners and enhance OAuth consent documentation links
+- Enhance localization files with additional error messages and hints for usage and costs
+- Enhance AlertDialog component with improved positioning and HTML translation support
+- Implement advanced PDF export functionality with support for exporting all filtered results
+- Implement infinite scrolling for clients, contacts, tickets, inventory, and scripts
+
+### Changed
+- Enhance localization for bundles and costs with additional assignment management features
+- Add delete functionality for client bundle assignments and payments
+- Refactor entity label handling and introduce useAssignmentManager hook
+- Enhance calendar and input components for Italian locale support
+- Add read-only badge to BackupMetric and enhance email validation in AdminUsersTab
+- Enhance contract management with editing, validation, and deletion features
+- Update ESLint configuration and dependencies, enhance test mocks, and clean up code
+- Add MFA policy banners and enhance OAuth consent documentation links
+- Enhance localization files with additional error messages and hints for usage and costs
+- Clear failed test results and remove obsolete error context files
+- Enhance AlertDialog component with improved positioning and HTML translation support
+- Implement advanced PDF export functionality with support for exporting all filtered results
+- Add tests for SwimLaneView component and fix Playwright test issues
+- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
+- Implement infinite scrolling for clients, contacts, tickets, inventory, and scripts
+
 ## [1.1.1] - 2026-05-25
 
 ### Added
@@ -143,5 +176,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
 
-[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...HEAD
 [1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
+
+[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...v1.2.0
