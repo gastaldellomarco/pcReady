@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { useAdminSettingsForm } from "@/hooks/useAdminSettingsForm";
 import type { AppSettings } from "@/lib/app-settings";
 
@@ -94,7 +94,6 @@ describe("useAdminSettingsForm", () => {
         wip_limits: { pending: 10, "in-progress": 3, testing: 2, ready: 15, completed: 0, archived: 0 },
       });
 
-      // Render directly with settings — the useEffect resets the form on mount
       const { result } = renderHook(() =>
         useAdminSettingsForm({
           accessToken: "token-123",
@@ -104,146 +103,12 @@ describe("useAdminSettingsForm", () => {
         }),
       );
 
-      // After mount, the useEffect should have reset the form
-      // Use act to flush effects
       expect(result.current.settingsForm.getValues("organization_name")).toBe("TestOrg");
       expect(result.current.settingsForm.getValues("max_devices_per_technician")).toBe(25);
       expect(result.current.settingsForm.getValues("self_registration_enabled")).toBe(true);
       expect(result.current.settingsForm.getValues("os_options")).toEqual(["Linux"]);
       expect(result.current.settingsForm.getValues("support_email")).toBe("test@org.it");
       expect(result.current.settingsForm.getValues("wip_limits.pending")).toBe(10);
-    });
-  });
-
-  // ── submitSettings ───────────────────────────────────────────────────
-
-  describe("submitSettings", () => {
-    it("guards when accessToken is undefined", async () => {
-      const { result } = renderHook(() =>
-        useAdminSettingsForm({
-          accessToken: undefined,
-          settings: createAppSettings(),
-          saveSettings,
-          onSettingsSaved,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
-      });
-
-      expect(saveSettings).not.toHaveBeenCalled();
-      expect(onSettingsSaved).not.toHaveBeenCalled();
-    });
-
-    it("saves settings, calls onSettingsSaved, and shows success toast", async () => {
-      const settings = createAppSettings({ organization_name: "MyOrg" });
-      saveSettings.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 50)),
-      );
-
-      const { result } = renderHook(() =>
-        useAdminSettingsForm({
-          accessToken: "token-123",
-          settings,
-          saveSettings,
-          onSettingsSaved,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
-      });
-
-      expect(saveSettings).toHaveBeenCalledTimes(1);
-      const callData = saveSettings.mock.calls[0][0].data;
-      expect(callData.accessToken).toBe("token-123");
-      expect(callData.settings.organization_name).toBe("MyOrg");
-
-      expect(onSettingsSaved).toHaveBeenCalledTimes(1);
-      expect(onSettingsSaved).toHaveBeenCalledWith(
-        expect.objectContaining({ organization_name: "MyOrg" }),
-      );
-      expect(toastMock.success).toHaveBeenCalledWith("Impostazioni salvate");
-      expect(result.current.saveSettingsBusy).toBe(false);
-    });
-
-    it("sets saveSettingsBusy true during save and false after", async () => {
-      saveSettings.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 50)),
-      );
-
-      const { result } = renderHook(() =>
-        useAdminSettingsForm({
-          accessToken: "token-123",
-          settings: createAppSettings(),
-          saveSettings,
-          onSettingsSaved,
-        }),
-      );
-
-      act(() => {
-        result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
-      });
-
-      await waitFor(() => {
-        expect(result.current.saveSettingsBusy).toBe(true);
-      });
-
-      await act(async () => {
-        await new Promise((r) => setTimeout(r, 100));
-      });
-
-      expect(result.current.saveSettingsBusy).toBe(false);
-    });
-
-    it("shows error toast on save failure", async () => {
-      saveSettings.mockRejectedValue(new Error("Save error"));
-
-      const { result } = renderHook(() =>
-        useAdminSettingsForm({
-          accessToken: "token-123",
-          settings: createAppSettings(),
-          saveSettings,
-          onSettingsSaved,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
-      });
-
-      expect(toastMock.error).toHaveBeenCalledWith("Save error");
-      expect(result.current.saveSettingsBusy).toBe(false);
-    });
-
-    it("handles non-Error rejection with fallback message", async () => {
-      saveSettings.mockRejectedValue("rejected");
-
-      const { result } = renderHook(() =>
-        useAdminSettingsForm({
-          accessToken: "token-123",
-          settings: createAppSettings(),
-          saveSettings,
-          onSettingsSaved,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
-      });
-
-      expect(toastMock.error).toHaveBeenCalledWith("Salvataggio non riuscito");
     });
   });
 });

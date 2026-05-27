@@ -93,7 +93,7 @@ export function useAdminSettingsForm(args: {
       mfa_require_all_users: settings?.mfa_require_all_users ?? false,
       mfa_grace_period_days: settings?.mfa_grace_period_days ?? 7,
     } as any);
-  }, [settings, settingsForm]);
+  }, [settings]);
 
   async function submitSettings(values: z.input<typeof AppSettingsSchema>) {
     if (!accessToken) return;

@@ -247,6 +247,8 @@ function setupUseAdminUsers(overrides: Record<string, unknown> = {}) {
     inviteForm: {
       register: vi.fn((name: string) => ({ name, onChange: vi.fn(), onBlur: vi.fn(), ref: vi.fn() })),
       handleSubmit: vi.fn((fn: (vals: unknown) => void) => (e: React.FormEvent) => { e.preventDefault(); fn({ email: "test@test.it", fullName: "Test", role: "editor" }); }),
+      watch: vi.fn(() => ""),
+      trigger: vi.fn(),
       formState: { errors: {}, isValid: true },
       reset: vi.fn(),
     },
@@ -337,6 +339,8 @@ describe("AdminUsersTab", () => {
       inviteForm: {
         register: vi.fn((name: string) => ({ name })),
         handleSubmit: vi.fn(),
+        watch: vi.fn(() => ""),
+        trigger: vi.fn(),
         formState: { errors: { email: { message: "Email non valida" } }, isValid: false },
         reset: vi.fn(),
       },
@@ -358,6 +362,8 @@ describe("AdminUsersTab", () => {
       inviteForm: {
         register: vi.fn((name: string) => ({ name })),
         handleSubmit,
+        watch: vi.fn(() => ""),
+        trigger: vi.fn(),
         formState: { errors: {}, isValid: true },
         reset: vi.fn(),
       },
