@@ -38,7 +38,6 @@ function AutomationsPage() {
     dryRunRule,
     dryRunDialogOpen,
     setDryRunDialogOpen,
-    runningRuleId,
     builderOpen,
     setBuilderOpen,
     searchQuery,
@@ -242,7 +241,7 @@ function AutomationsPage() {
               logsOpen={logsOpenRuleId === rule.id}
               logs={logsByRule[rule.id] ?? []}
               logsLoading={loadingLogsRuleId === rule.id}
-              running={runningRuleId === rule.id}
+              running={false}
               onToggle={() => void toggleRule(rule)}
               onEdit={() => openEditDialog(rule)}
               onExpandToggle={() =>

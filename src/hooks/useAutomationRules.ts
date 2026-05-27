@@ -71,8 +71,6 @@ export function useAutomationRules() {
   const [kpis, setKpis] = useState<AutomationDashboardKpis | null>(null);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [versionHistoryRuleId, setVersionHistoryRuleId] = useState<string | null>(null);
-  const [_runningRuleId, _setRunningRuleId] = useState<string | null>(null);
-  const runningRuleId = _runningRuleId;
 
   // Sub-hooks
   const filters = useAutomationFilters(rules, runStats);
@@ -452,8 +450,6 @@ export function useAutomationRules() {
     setExpandedRuleId,
     versionHistoryRuleId,
     setVersionHistoryRuleId,
-    runningRuleId,
-
     // Actions
     toggleRule,
     duplicateRule,
