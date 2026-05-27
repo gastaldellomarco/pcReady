@@ -93,6 +93,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
           className="pc-input mt-1 w-full"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
+          aria-label="Titolo"
           required
         />
       </div>
@@ -102,6 +103,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
           className="pc-input mt-1 min-h-32 w-full"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
+          aria-label="Descrizione"
           required
         />
       </div>
@@ -112,6 +114,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
             className="pc-input mt-1 w-full"
             value={requestType}
             onChange={(event) => setRequestType(event.target.value as typeof requestType)}
+            aria-label="Tipo"
           >
             <option value="technical_issue">Problema tecnico</option>
             <option value="request">Richiesta</option>
@@ -124,6 +127,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
             className="pc-input mt-1 w-full"
             value={category}
             onChange={(event) => setCategory(event.target.value)}
+            aria-label="Categoria"
           >
             {(categories.length ? categories : ["Assistenza tecnica"]).map((item) => (
               <option key={item} value={item}>
@@ -140,6 +144,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
             onChange={(event) =>
               setUrgency(event.target.value as "low" | "normal" | "high" | "urgent")
             }
+            aria-label="Urgenza"
           >
             <option value="low">Bassa</option>
             <option value="normal">Media</option>
@@ -154,6 +159,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
           className="pc-input mt-1 w-full"
           value={deviceId}
           onChange={(event) => setDeviceId(event.target.value)}
+          aria-label="Dispositivo coinvolto"
         >
           <option value="">Nessuno / non so</option>
           {devices.map((device) => (
@@ -170,6 +176,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
           type="file"
           multiple
           accept="image/*,.log,.txt,.pdf"
+          aria-label="Allegati opzionali"
           onChange={(event) =>
             void handleFiles(event.target.files).catch((error) => toast.error(error.message))
           }

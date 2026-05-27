@@ -110,6 +110,7 @@ export default defineConfig(({ command, mode }) => {
     test: {
       environment: "node",
       globals: true,
+      setupFiles: ["src/__tests__/setup.ts"],
       include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
       coverage: {
         provider: "v8",

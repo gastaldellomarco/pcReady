@@ -145,7 +145,7 @@ export function AdminUsersTab() {
         </div>
         <div className="min-w-[160px]">
           <label className="pc-label">{t("users.invite.roleLabel", "Ruolo")}</label>
-          <select className="pc-input" {...inviteForm.register("role")}>
+          <select className="pc-input" {...inviteForm.register("role")} aria-label={t("users.invite.roleLabel", "Ruolo")}>
             {ADMIN_ROLES.map((item) => (
               <option key={item} value={item}>
                 {adminRoleLabel(item)}
@@ -179,6 +179,7 @@ export function AdminUsersTab() {
           className="pc-input max-w-[180px]"
           value={role}
           onChange={(event) => setRole(event.target.value)}
+          aria-label={t("users.search.allRoles", "Tutti i ruoli")}
         >
           <option value="">{t("users.search.allRoles", "Tutti i ruoli")}</option>
           {ADMIN_ROLES.map((item) => (
@@ -229,6 +230,7 @@ export function AdminUsersTab() {
                 className="pc-input max-w-[160px]"
                 value={bulkRole}
                 onChange={(e) => setBulkRole(e.target.value as AppRole)}
+                aria-label={t("users.bulk.roleLabel", "Ruolo in blocco")}
               >
                 {ADMIN_ROLES.map((r) => (
                   <option key={r} value={r}>
@@ -357,6 +359,7 @@ export function AdminUsersTab() {
               <th
                 className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
                 style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                aria-label={t("users.table.selectAll", "Seleziona tutti")}
               >
                 <Checkbox
                   checked={filtered.length > 0 && selectedIds.size === filtered.length}

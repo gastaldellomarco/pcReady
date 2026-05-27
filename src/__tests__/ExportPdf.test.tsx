@@ -69,6 +69,7 @@ vi.mock("sonner", () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────
 import { ExportPdf } from "@/components/ExportPdf";
+import { axe } from "vitest-axe";
 
 // ── Test helpers ────────────────────────────────────────────────────────
 interface TestRow {
@@ -468,5 +469,12 @@ describe("ExportPdf", () => {
     });
 
     expect(screen.getByText("Nessun filtro attivo per costo")).toBeTruthy();
+  });
+
+  // ── Test 16: Accessibilità ────────────────────────────────────────────
+  it("non ha violazioni a11y", async () => {
+    const { container } = renderExportPdf();
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

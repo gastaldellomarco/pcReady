@@ -106,6 +106,7 @@ vi.mock("@/components/pcready/AsyncAutocomplete", () => ({
             disabled={disabled}
             value={selectedOption?.label || value || ""}
             placeholder={placeholder}
+            aria-label={placeholder}
             onChange={async (e) => {
               const opts = await loadOptions(e.target.value);
               if (opts.length > 0) onChange(opts[0].value, null);
@@ -136,7 +137,7 @@ vi.mock("@/components/pcready/Modal", () => ({
     }) => {
       if (!open) return null;
       return (
-        <div data-testid="modal" role="dialog">
+        <div data-testid="modal" role="dialog" aria-label={title}>
           <h2 data-testid="modal-title">{title}</h2>
           <div data-testid="modal-body">{children}</div>
           <div data-testid="modal-footer">{footer}</div>
@@ -207,6 +208,7 @@ vi.mock("@/lib/pcready", async () => {
 // ── Import del componente dopo i mock ──────────────────────────────────
 import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { toast } from "sonner";
+import { axe } from "vitest-axe";
 
 async function renderModal() {
   // Apri la modale
@@ -526,5 +528,12 @@ describe("CreateTicketModal", () => {
     // Il campo dispositivo (autocomplete per device) non dovrebbe essere renderizzato
     const autocompletes = screen.queryAllByTestId(/autocomplete.*[Dd]ispositivo/);
     expect(autocompletes.length).toBe(0);
+  });
+
+  // ── Test 11: Accessibilità ───────────────────────────────────────────
+  it("non ha violazioni a11y quando aperta", async () => {
+    const { container } = await renderModal();
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

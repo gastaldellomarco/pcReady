@@ -56,6 +56,7 @@ vi.mock("@/components/admin/AdminUserRoleEditor", () => ({
         disabled={disabled}
         value={role}
         onChange={(e) => onChange(e.target.value as AppRole)}
+        aria-label="Ruolo utente"
       >
         <option value="admin">Admin</option>
         <option value="editor">Editor</option>
@@ -151,6 +152,7 @@ vi.mock("@/components/ui/checkbox", () => ({
       data-testid="checkbox"
       checked={checked}
       onChange={(e) => onCheckedChange?.(e.target.checked)}
+      aria-label={checked ? "Deseleziona" : "Seleziona"}
     />
   ),
 }));
@@ -193,8 +195,9 @@ vi.mock("@/lib/downloads", () => ({
   downloadCsv: vi.fn(),
 }));
 
-// ── Import del componente dopo i mock ──────────────────────────────────
+// ── Import dopo i mock ──────────────────────────────────────────────────
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
+import { axe } from "vitest-axe";
 
 const MOCK_ROWS = [
   {
@@ -455,5 +458,12 @@ describe("AdminUsersTab", () => {
     // Clicca il primo bottone delete
     await userEvent.click(deleteButtons[0]);
     expect(remove).toHaveBeenCalled();
+  });
+
+  // ── Test 11: Accessibilità ────────────────────────────────────────────
+  it("non ha violazioni a11y", async () => {
+    const { container } = renderTab();
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

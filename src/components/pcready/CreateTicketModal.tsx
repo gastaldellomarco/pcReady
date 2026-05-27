@@ -358,6 +358,7 @@ export function CreateTicketModal() {
             <select
               className="pc-input"
               value={f.ticket_category}
+              aria-label={t("createTicket.fieldCategory", "Categoria")}
               onChange={(e) => setF({ ...f, ticket_category: e.target.value })}
             >
               <option value="">{t("createTicket.noCategory", "— Nessuna —")}</option>
@@ -372,6 +373,7 @@ export function CreateTicketModal() {
             <select
               className="pc-input"
               value={f.ticket_type}
+              aria-label={t("createTicket.fieldTicketType", "Tipo ticket")}
               onChange={(e) => {
                 const ticketType = e.target.value as TicketType;
                 setF({
@@ -412,6 +414,7 @@ export function CreateTicketModal() {
               <input
                 className="pc-input"
                 value={f.requester}
+                aria-label={t("createTicket.freeRequesterPlaceholder", "Nome richiedente non censito")}
                 onChange={(e) => setF({ ...f, requester: e.target.value })}
                 placeholder={t("createTicket.freeRequesterPlaceholder", "Nome richiedente non censito")}
               />
@@ -454,6 +457,7 @@ export function CreateTicketModal() {
             <select
               className="pc-input"
               value={f.priority}
+              aria-label={t("createTicket.fieldPriority", "Priorità")}
               onChange={(e) => setF({ ...f, priority: e.target.value as TicketPriority })}
             >
               {Object.entries(PRIORITY_LABEL).map(([k, v]) => (
@@ -469,6 +473,7 @@ export function CreateTicketModal() {
             <select
               className="pc-input"
               value={f.assignee_id}
+              aria-label={t("createTicket.fieldAssignee", "Assegna a")}
               onChange={(e) => setF({ ...f, assignee_id: e.target.value })}
             >
               <option value="">{t("createTicket.noAssignee", "— Non assegnato —")}</option>
@@ -486,15 +491,16 @@ export function CreateTicketModal() {
               <textarea
                 className="pc-input min-h-[72px]"
                 value={f.software}
+                aria-label={t("createTicket.fieldSoftware", "Software richiesti")}
                 onChange={(e) => setF({ ...f, software: e.target.value })}
                 placeholder={t("createTicket.softwarePlaceholder", "Microsoft 365, Adobe CC, VS Code...")}
               />
             </Field>
             <Field label={t("createTicket.fieldChecklist", "Collega checklist")}>
-              <div className="flex gap-2">
-                <select
+              <div className="flex gap-2">                  <select
                   className="pc-input"
                   value={templatePickerId}
+                  aria-label={t("createTicket.fieldChecklist", "Collega checklist")}
                   onChange={(e) => setTemplatePickerId(e.target.value)}
                 >
                   {!templates.length && <option value="">{t("createTicket.noTemplate", "— Nessun template disponibile —")}</option>}
@@ -546,6 +552,7 @@ export function CreateTicketModal() {
           <textarea
             className={`pc-input ${f.ticket_type === "device" ? "min-h-[72px]" : "min-h-[132px]"}`}
             value={f.notes}
+            aria-label={f.ticket_type === "device" ? t("createTicket.fieldNotes", "Note") : t("createTicket.fieldProblemDesc", "Descrizione problema")}
             onChange={(e) => setF({ ...f, notes: e.target.value })}
           />
         </Field>

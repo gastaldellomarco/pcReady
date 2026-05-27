@@ -32,6 +32,7 @@ vi.mock("@/lib/utils", () => ({
 
 // ── Import reale del componente dopo i mock ────────────────────────────
 import { SwimLaneView, type SwimLaneCard } from "@/components/kanban/SwimLaneView";
+import { axe } from "vitest-axe";
 import { SwimLaneRow } from "@/components/kanban/SwimLaneRow";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { WipLimits } from "@/lib/app-settings";
@@ -204,6 +205,13 @@ describe("SwimLaneView", () => {
 
     const rows = screen.getAllByTestId("swimlane-row");
     expect(rows.length).toBe(1); // solo unassigned
+  });
+
+  // ── Test 8: Accessibilità ────────────────────────────────────────────
+  it("non ha violazioni a11y", async () => {
+    const { container } = renderSwimLane();
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });
 

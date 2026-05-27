@@ -13,7 +13,7 @@ jobs:
       # Choose budget phase: phase1, phase2, phase3. Can be set as repo var LHCI_BUDGET_STAGE
       BUDGET_STAGE: ${{ vars.LHCI_BUDGET_STAGE || 'phase1' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Post-deploy healthcheck
         run: |
@@ -28,7 +28,7 @@ jobs:
         run: npx @lhci/cli healthcheck --fatal
 
       - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v11
+        uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
             ${{ env.LHCI_URL }}
