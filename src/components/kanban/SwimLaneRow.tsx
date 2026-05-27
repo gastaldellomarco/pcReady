@@ -345,12 +345,10 @@ function TicketCard({
             <UnassignedBadge />
           )}
         </div>
-        {!compactView && (
-          <div className="flex flex-col items-end gap-1">
-            <SlaMiniLabel card={card} />
-            <TimeInColumnLabel updatedAt={card.updated_at} />
-          </div>
-        )}
+        <div className="flex flex-col items-end gap-1">
+          <SlaMiniLabel card={card} compactView={compactView} />
+          {!compactView && <TimeInColumnLabel updatedAt={card.updated_at} />}
+        </div>
       </div>
     </div>
   );
@@ -369,22 +367,33 @@ function slaIndicator(card: SwimLaneCard) {
   return { color: pcReadyColors.success, label: "SLA OK", status: "ok" };
 }
 
-function SlaMiniLabel({ card }: { card: SwimLaneCard }) {
+function SlaMiniLabel({ card, compactView }: { card: SwimLaneCard; compactView?: boolean }) {
   const { t } = useTranslation(["tickets"]);
   const indicator = slaIndicator(card);
   const deadline = card.due_date || card.sla_deadline;
-  const translatedLabel = indicator.status === "overdue"
-    ? t("sla.breached", indicator.label)
-    : indicator.status === "warning"
-      ? t("status.expiring", indicator.label)
-      : t("sla.ok", indicator.label);
+  // Hide OK badges — only show warning/overdue
+  if (indicator.status === "ok") return null;
+  const countdown = deadline
+    ? formatSlaCountdown(deadline)
+    : indicator.status === "overdue"
+      ? t("sla.breached", indicator.label)
+      : t("status.expiring", indicator.label);
+  const isOverdue = indicator.status === "overdue";
   return (
     <span
-      className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
-      style={{ background: `${indicator.color}22`, color: indicator.color }}
-      title={deadline ? formatSlaCountdown(deadline) : translatedLabel}
+      className={cn(
+        "rounded-full px-1.5 py-0.5 font-semibold whitespace-nowrap",
+        compactView ? "text-[9px]" : "text-[9.5px]",
+        isOverdue && "border",
+      )}
+      style={{
+        background: `${indicator.color}22`,
+        color: indicator.color,
+        ...(isOverdue ? { borderColor: indicator.color, borderWidth: "1px" } : {}),
+      }}
+      title={countdown}
     >
-      {translatedLabel}
+      {countdown}
     </span>
   );
 }

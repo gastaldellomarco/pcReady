@@ -377,6 +377,11 @@
     "deleteDescription": "Ticket {{code}} will be permanently removed. This action cannot be undone.",
     "deleteConfirm": "Delete ticket",
     "deleteLoading": "Deleting...",
+    "nav": {
+      "prev": "Previous ticket",
+      "next": "Next ticket",
+      "useArrows": "Use ← → keyboard arrows"
+    },
     "toasts": {
       "updateError": "Update error",
       "costsSaved": "Ticket costs updated",

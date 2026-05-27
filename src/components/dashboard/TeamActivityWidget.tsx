@@ -5,6 +5,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
 type Period = "today" | "week" | "month";
@@ -49,7 +56,21 @@ export function TeamActivityWidget() {
       <div className="pc-card-hd">
         <div>
           <span className="pc-card-title">{t("widgets.recentActivity", "Attività del team")}</span>
-          <div className="text-[11px] text-text3">{t("widgets.activeTechnicians", "{{count}} tecnici attivi", { count: activeCount })}</div>
+          <div className="text-[11px] text-text3 flex items-center gap-1">
+            {t("widgets.activeTechnicians", "{{count}} tecnici attivi", { count: activeCount })}
+            <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0} role="button" aria-label={t("widgets.activeTooltipAria", "Info: criterio tecnici attivi")}>
+                  <Info className="h-3 w-3 cursor-help" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[220px] text-xs">
+                <p>{t("widgets.activeTooltip", "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti")}</p>
+              </TooltipContent>
+            </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div className="flex items-center gap-1 rounded-md bg-muted p-0.5">
           {(["today", "week", "month"] as Period[]).map((p) => (

@@ -357,6 +357,11 @@
     "deleteDescription": "Il ticket {{code}} verrà rimosso definitivamente. L'azione non può essere annullata.",
     "deleteConfirm": "Elimina ticket",
     "deleteLoading": "Eliminazione...",
+    "nav": {
+      "prev": "Ticket precedente",
+      "next": "Ticket successivo",
+      "useArrows": "Usa ← → da tastiera"
+    },
     "toasts": {
       "updateError": "Errore aggiornamento",
       "costsSaved": "Costi ticket aggiornati",

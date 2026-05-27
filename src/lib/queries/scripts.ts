@@ -17,6 +17,18 @@ export async function fetchScriptsList() {
   return (data ?? []) as any[];
 }
 
+const SCRIPT_DETAIL_SELECT = `${SCRIPTS_LIST_SELECT}, content`;
+
+export async function fetchScriptById(id: string) {
+  const { data, error } = await supabase
+    .from("scripts")
+    .select(SCRIPT_DETAIL_SELECT)
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data as any;
+}
+
 export function useScriptsList() {
   return useQuery({ queryKey: ["scripts"], queryFn: () => fetchScriptsList() });
 }
@@ -73,6 +85,7 @@ export function useUpdateScript() {
 
 export default {
   fetchScriptsList,
+  fetchScriptById,
   useScriptsList,
   useDeleteScript,
   useCreateScript,

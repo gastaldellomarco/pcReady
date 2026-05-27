@@ -243,6 +243,67 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Pure computation: merge KPI data, profiles, roles, and open-ticket counts
+ * into the technician stats rows consumed by TeamActivityWidget and TechnicianStatsWidget.
+ * Extracted for testability.
+ */
+export function computeTechnicianStats(
+  kpiData: any[],
+  roles: any[],
+  profiles: any[],
+  openTicketsData: any[],
+): any[] {
+  const kpiById = new Map<string | null, any>();
+  for (const row of kpiData) {
+    kpiById.set(row.technician_id ?? null, row);
+  }
+
+  const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
+
+  const openCountByTech = new Map<string, number>();
+  for (const t of openTicketsData ?? []) {
+    const tid = t.assignee_id as string;
+    openCountByTech.set(tid, (openCountByTech.get(tid) ?? 0) + 1);
+  }
+
+  const out: any[] = [];
+  for (const p of profiles ?? []) {
+    if (!assignableIds.has(p.id)) continue;
+    const row = kpiById.get(p.id) ?? null;
+    const assigned = row ? Number(row.assigned ?? 0) : 0;
+    const completed = row ? Number(row.completed ?? 0) : 0;
+    const avg_days = row && row.avg_days != null ? Number(row.avg_days) : null;
+    const avg_resolution_ms = avg_days == null ? null : Math.round(avg_days * 24 * 3600 * 1000);
+    const openTickets = openCountByTech.get(p.id) ?? 0;
+    const full_name = p.full_name || "Non assegnato";
+    const initials =
+      (p.initials as string) ||
+      (full_name || "")
+        .split(" ")
+        .map((s: string) => s[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+    const pending = openTickets;
+    const active = assigned > 0 || openTickets > 0;
+    out.push({
+      id: p.id,
+      name: full_name,
+      initials,
+      assigned,
+      completed,
+      pending,
+      avg_days,
+      avg_resolution_ms,
+      active,
+      title: null,
+    });
+  }
+
+  return out;
+}
+
 export const getTechnicianStats = createServerFn({ method: "GET" })
   .inputValidator((data: any) => data)
   .handler(async ({ data }): Promise<any[]> => {
@@ -286,46 +347,22 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
     if (rolesError) throw rolesError;
     if (profilesError) throw profilesError;
 
-    const kpiById = new Map<string | null, any>();
-    ((technicianRes.data ?? []) as any[]).forEach((row) =>
-      kpiById.set(row.technician_id ?? null, row),
+    const techIds = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+    const { data: openTicketsData } = techIds.length
+      ? await supabaseAdmin
+          .from("tickets")
+          .select("assignee_id")
+          .in("assignee_id", techIds)
+          .or("status.neq.completed,status.neq.archived")
+          .limit(5000)
+      : { data: [] as any[] };
+
+    return computeTechnicianStats(
+      (technicianRes.data ?? []) as any[],
+      roles ?? [],
+      profiles ?? [],
+      openTicketsData ?? [],
     );
-
-    const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
-
-    const out: any[] = [];
-    for (const p of profiles ?? []) {
-      if (!assignableIds.has(p.id)) continue;
-      const row = kpiById.get(p.id) ?? null;
-      const assigned = row ? Number(row.assigned ?? 0) : 0;
-      const completed = row ? Number(row.completed ?? 0) : 0;
-      const avg_days = row && row.avg_days != null ? Number(row.avg_days) : null;
-      const avg_resolution_ms = avg_days == null ? null : Math.round(avg_days * 24 * 3600 * 1000);
-      const full_name = p.full_name || "Non assegnato";
-      const initials =
-        (p.initials as string) ||
-        (full_name || "")
-          .split(" ")
-          .map((s: string) => s[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase();
-      const pending = Math.max(0, assigned - completed);
-      out.push({
-        id: p.id,
-        name: full_name,
-        initials,
-        assigned,
-        completed,
-        pending,
-        avg_days,
-        avg_resolution_ms,
-        active: assigned > 0,
-        title: null,
-      });
-    }
-
-    return out;
   });
 
 export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })

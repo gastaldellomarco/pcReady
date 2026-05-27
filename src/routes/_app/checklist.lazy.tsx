@@ -512,15 +512,27 @@ function TemplateEditor({
   return (
     <>
       <div className="pc-card">
-        <div className="pc-card-hd flex-wrap gap-2">
-          <input
-            className="pc-input max-w-[280px] !text-[14px] !font-semibold"
-            value={name}
-            disabled={!canEdit}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => name !== template.name && onUpdate({ name }, t("changeNotes.nameUpdated", "Nome checklist aggiornato"))}
-          />
-          <div className="ml-auto flex items-center gap-2">
+        <div className="pc-card-hd flex flex-col gap-2">
+          {/* Row 1: title + default badge */}
+          <div className="flex items-center gap-2">
+            <input
+              className="pc-input max-w-[280px] !text-[14px] !font-semibold"
+              value={name}
+              disabled={!canEdit}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => name !== template.name && onUpdate({ name }, t("changeNotes.nameUpdated", "Nome checklist aggiornato"))}
+            />
+            {template.is_default && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold flex-shrink-0"
+                style={{ background: "var(--warn-bg, #fef9e7)", color: "var(--warn)", border: "1px solid var(--warn-border, #f59e0b40)" }}
+              >
+                <Star className="w-3 h-3 fill-current" /> {t("default", "Predefinito")}
+              </span>
+            )}
+          </div>
+          {/* Row 2: action buttons */}
+          <div className="flex items-center gap-2">
             {/* Preview toggle */}
             {canEdit && (
               <button
@@ -551,22 +563,13 @@ function TemplateEditor({
               <History className="w-3 h-3" /> {t("actions.versions", "Versioni")}
             </button>
 
-            {isAdmin && (
+            {isAdmin && !template.is_default && (
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={onSetDefault}
-                title={template.is_default ? t("alreadyDefault", "Già predefinito") : t("setAsDefault", "Imposta come predefinito")}
+                title={t("setAsDefault", "Imposta come predefinito")}
               >
-                {template.is_default ? (
-                  <>
-                    <Star className="w-3 h-3 fill-current" style={{ color: "var(--warn)" }} />{" "}
-                    {t("default", "Predefinito")}
-                  </>
-                ) : (
-                  <>
-                    <StarOff className="w-3 h-3" /> {t("setDefault", "Imposta predefinito")}
-                  </>
-                )}
+                <StarOff className="w-3 h-3" /> {t("setDefault", "Imposta predefinito")}
               </button>
             )}
             {isAdmin && (

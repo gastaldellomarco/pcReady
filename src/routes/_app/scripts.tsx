@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import i18n from "@/i18n";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
 import { supabase } from "@/integrations/supabase/client";
-import queries from "@/lib/queries/scripts";
+import queries, { fetchScriptById } from "@/lib/queries/scripts";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/pcready/Modal";
 import {
@@ -26,6 +26,8 @@ import {
   Code2,
   FileCode,
   History,
+  Check,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +37,15 @@ import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer"
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { errorMessage } from "@/lib/errors";
+import CodeMirror from "@uiw/react-codemirror";
+import { python } from "@codemirror/lang-python";
+import { sql } from "@codemirror/lang-sql";
+import { javascript } from "@codemirror/lang-javascript";
+import { StreamLanguage } from "@codemirror/language";
+import { shell } from "@codemirror/legacy-modes/mode/shell";
+import { powerShell } from "@codemirror/legacy-modes/mode/powershell";
+import { useTheme } from "@/hooks/use-theme";
+import type { Extension } from "@codemirror/state";
 
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
@@ -100,6 +111,26 @@ const LANG_EXT: Record<string, string> = {
   sql: "sql",
   javascript: "js",
 };
+
+/** Returns the CodeMirror language extension for a given script language. */
+function getLangExtension(language: string): Extension {
+  switch (language) {
+    case "powershell":
+      return StreamLanguage.define(powerShell as any);
+    case "bash":
+      return StreamLanguage.define(shell as any);
+    case "cmd":
+      return StreamLanguage.define(shell as any);
+    case "python":
+      return python();
+    case "sql":
+      return sql();
+    case "javascript":
+      return javascript();
+    default:
+      return python();
+  }
+}
 
 
 function computeChangedFields(oldData: any, newData: any) {
@@ -262,6 +293,9 @@ function ScriptsPage() {
             setViewer(null);
             setVersionHistoryOpen(true);
           }}
+          onSaved={() => {
+            void listQuery.refetch();
+          }}
         />
       )}
       {(editor || createOpen) && (
@@ -391,84 +425,294 @@ function ScriptViewer({
   script,
   onClose,
   onOpenVersions,
+  onSaved,
 }: {
   script: ScriptRow;
   onClose: () => void;
   onOpenVersions: () => void;
+  onSaved: () => void;
 }) {
   const { t } = useTranslation("scripts");
+  const { canEdit } = useAuth();
+  const { isDark } = useTheme();
+  const langExtension = useMemo(() => getLangExtension(script.language), [script.language]);
   const Icon = ICONS[script.icon || ""] || Terminal;
   const color = script.color || "#1B4FD8";
+  const [content, setContent] = useState<string | null>(null);
+  const [loadingContent, setLoadingContent] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(script.name);
+  const [editDescription, setEditDescription] = useState(script.description || "");
+  const [editContent, setEditContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [dirtyConfirm, setDirtyConfirm] = useState(false);
+
+  const fetchContent = useCallback(async () => {
+    setLoadingContent(true);
+    setLoadError(false);
+    try {
+      const full = await fetchScriptById(script.id);
+      const raw = full?.content ?? null;
+      setContent(raw);
+      setEditContent(raw || "");
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoadingContent(false);
+    }
+  }, [script.id]);
+
+  useEffect(() => {
+    void fetchContent();
+  }, [fetchContent]);
+
+  const hasContent = content && content.trim().length > 0;
+  const dirty =
+    editName !== script.name ||
+    editDescription !== (script.description || "") ||
+    editContent !== (content ?? "");
+
+  function enterEdit() {
+    setEditName(script.name);
+    setEditDescription(script.description || "");
+    setEditContent(content ?? "");
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    if (dirty) {
+      setDirtyConfirm(true);
+      return;
+    }
+    setEditing(false);
+  }
+
+  function forceCancelEdit() {
+    setDirtyConfirm(false);
+    setEditing(false);
+  }
 
   function copy() {
-    navigator.clipboard.writeText(script.content);
+    navigator.clipboard.writeText(content ?? "");
     toast.success(t("viewer.copied", "Script copiato negli appunti"));
   }
 
   function download() {
     const ext = LANG_EXT[script.language] || "txt";
-    downloadText(script.content, buildDownloadFileName(script.name, ext));
+    downloadText(content ?? "", buildDownloadFileName(script.name, ext));
+  }
+
+  async function save() {
+    if (!editName.trim()) return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
+    if (!editContent.trim()) return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
+    setSaving(true);
+    try {
+      const newData: any = {
+        name: editName,
+        description: editDescription || null,
+        content: editContent,
+      };
+
+      // Fetch current data for diff
+      const { data: oldData } = await supabase
+        .from("scripts")
+        .select("id, name, category, description, language, content, icon, color, created_by, created_at, updated_at")
+        .eq("id", script.id)
+        .single();
+
+      const { error } = await supabase.from("scripts").update(newData).eq("id", script.id);
+      if (error) throw error;
+
+      // Versioning
+      const rawChanged = computeChangedFields(oldData, newData);
+      const changedFields = rawChanged
+        ? (Object.fromEntries(
+            Object.entries(rawChanged).map(([k, v]) => [
+              k,
+              { from: (v as any).old, to: (v as any).new },
+            ]),
+          ) as Record<string, { from: unknown; to: unknown }>)
+        : undefined;
+
+      await createVersion(
+        "scripts",
+        script.id,
+        newData,
+        changedFields,
+        t("viewer.changeNote", "Modificato dal visualizzatore"),
+        "update",
+      );
+
+      // Update local state (onSaved refetch will sync the list)
+      setContent(editContent);
+
+      toast.success(t("success.updated", "Script aggiornato"));
+      setEditing(false);
+      onSaved();
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, t("editor.errors.saveFailed", "Errore salvataggio")));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <Modal
-      open
-      onClose={onClose}
-      size="lg"
-      title=""
-      footer={
-        <>
-          <button className="pc-btn pc-btn-ghost" onClick={onClose}>
-            {t("viewer.close", "Chiudi")}
-          </button>
-          <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
-            <History className="w-3 h-3" /> {t("viewer.versions", "Versioni")}
-          </button>
-          <button className="pc-btn pc-btn-ghost" onClick={download}>
-            <Download className="w-3 h-3" /> {t("viewer.download", "Scarica")}
-          </button>
-          <button className="pc-btn pc-btn-primary" onClick={copy}>
-            <Copy className="w-3 h-3" /> {t("viewer.copy", "Copia")}
-          </button>
-        </>
-      }
-    >
-      <div className="flex items-start gap-3 mb-4">
-        <div
-          className="w-12 h-12 rounded-[12px] flex items-center justify-center flex-shrink-0"
-          style={{ background: color + "1A", color }}
-        >
-          <Icon className="w-6 h-6" />
-        </div>
-        <div className="flex-1">
-          <h2
-            className="text-[18px] font-bold leading-tight"
-            style={{ fontFamily: "var(--font-head)" }}
-          >
-            {script.name}
-          </h2>
-          <div className="flex items-center gap-2 mt-1 text-[11px] text-text3 font-mono uppercase tracking-wider">
-            <span>{script.category}</span>
-            <span>·</span>
-            <span>{script.language}</span>
-          </div>
-          {script.description && (
-            <p className="text-[13px] text-text2 mt-2 leading-snug">{script.description}</p>
-          )}
-        </div>
-      </div>
-      <pre
-        className="text-[12px] font-mono p-4 rounded-[10px] overflow-x-auto whitespace-pre-wrap break-words leading-relaxed"
-        style={{
-          background: "var(--surface2)",
-          border: "1px solid var(--border)",
-          color: "var(--text)",
-          maxHeight: "55vh",
-        }}
+    <>
+      <Modal
+        open
+        onClose={editing && dirty ? cancelEdit : onClose}
+        size="lg"
+        title=""
+        footer={
+          <>
+            {editing ? (
+              <>
+                <button className="pc-btn pc-btn-ghost" onClick={cancelEdit} disabled={saving}>
+                  <X className="w-3 h-3" /> {t("viewer.cancel", "Annulla")}
+                </button>
+                <button
+                  className="pc-btn pc-btn-primary"
+                  onClick={save}
+                  disabled={saving || !dirty}
+                >
+                  {saving ? (
+                    t("editor.saving", "Salvataggio…")
+                  ) : (
+                    <>
+                      <Check className="w-3 h-3" /> {t("viewer.save", "Salva")}
+                    </>
+                  )}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="pc-btn pc-btn-ghost" onClick={onClose}>
+                  {t("viewer.close", "Chiudi")}
+                </button>
+                <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
+                  <History className="w-3 h-3" /> {t("viewer.versions", "Versioni")}
+                </button>
+                {canEdit && (
+                  <button className="pc-btn pc-btn-ghost" onClick={enterEdit} disabled={loadingContent}>
+                    <Pencil className="w-3 h-3" /> {t("viewer.edit", "Modifica")}
+                  </button>
+                )}
+                <button className="pc-btn pc-btn-ghost" onClick={download} disabled={!hasContent}>
+                  <Download className="w-3 h-3" /> {t("viewer.download", "Scarica")}
+                </button>
+                <button className="pc-btn pc-btn-primary" onClick={copy} disabled={!hasContent}>
+                  <Copy className="w-3 h-3" /> {t("viewer.copy", "Copia")}
+                </button>
+              </>
+            )}
+          </>
+        }
       >
-        {script.content || t("viewer.emptyScript", "// Script vuoto")}
-      </pre>
-    </Modal>
+        <div className="flex items-start gap-3 mb-4">
+          <div
+            className="w-12 h-12 rounded-[12px] flex items-center justify-center flex-shrink-0"
+            style={{ background: color + "1A", color }}
+          >
+            <Icon className="w-6 h-6" />
+          </div>
+          <div className="flex-1">
+            {editing ? (
+              <input
+                className="pc-input !text-[18px] !font-bold max-w-[420px]"
+                style={{ fontFamily: "var(--font-head)" }}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder={t("editor.namePlaceholder", "Nome script")}
+                aria-label={t("editor.fieldName", "Nome")}
+              />
+            ) : (
+              <h2
+                className="text-[18px] font-bold leading-tight"
+                style={{ fontFamily: "var(--font-head)" }}
+              >
+                {script.name}
+              </h2>
+            )}
+            <div className="flex items-center gap-2 mt-1 text-[11px] text-text3 font-mono uppercase tracking-wider">
+              <span>{script.category}</span>
+              <span>·</span>
+              <span>{script.language}</span>
+            </div>
+            {editing ? (
+              <textarea
+                className="pc-input min-h-[44px] mt-2 text-[13px]"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder={t("editor.descriptionPlaceholder", "Cosa fa questo script?")}
+                aria-label={t("editor.fieldDescription", "Descrizione")}
+              />
+            ) : (
+              script.description && (
+                <p className="text-[13px] text-text2 mt-2 leading-snug">{script.description}</p>
+              )
+            )}
+          </div>
+        </div>
+        {editing ? (
+          <div className="flex flex-col gap-2">
+            <label className="pc-label">{t("editor.fieldContent", "Contenuto script *")}</label>
+            <div
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius, 8px)",
+                overflow: "hidden",
+              }}
+            >
+              <CodeMirror
+                value={editContent}
+                onChange={(val) => setEditContent(val)}
+                extensions={[langExtension]}
+                theme={isDark ? "dark" : "light"}
+                height="360px"
+                basicSetup={{
+                  lineNumbers: true,
+                  foldGutter: true,
+                  autocompletion: false,
+                  highlightActiveLine: true,
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <pre
+            className="text-[12px] font-mono p-4 rounded-[10px] overflow-x-auto whitespace-pre-wrap break-words leading-relaxed"
+            style={{
+              background: "var(--surface2)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
+              maxHeight: "55vh",
+            }}
+          >
+            {loadingContent ? (
+              <span className="text-text3">{t("viewer.loading", "Caricamento...")}</span>
+            ) : loadError ? (
+              <span className="text-destructive">{t("viewer.loadError", "Errore nel caricamento del contenuto.")}</span>
+            ) : hasContent ? (
+              content
+            ) : (
+              <span className="text-text3 italic">
+                {t("viewer.emptyHint", "Nessun codice inserito. Clicca su Modifica per aggiungere il contenuto dello script.")}
+              </span>
+            )}
+          </pre>
+        )}
+      </Modal>
+      <DestructiveConfirmDialog
+        open={dirtyConfirm}
+        title={t("viewer.discardTitle", "Modifiche non salvate")}
+        description={t("viewer.discardDescription", "Hai modifiche non salvate. Vuoi davvero annullare?")}
+        confirmLabel={t("viewer.discardConfirm", "Annulla modifiche")}
+        loadingLabel={t("viewer.discarding", "Annullamento...")}
+        onOpenChange={(open) => !open && setDirtyConfirm(false)}
+        onConfirm={async () => forceCancelEdit()}
+      />
+    </>
   );
 }
 

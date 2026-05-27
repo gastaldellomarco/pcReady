@@ -31,7 +31,18 @@
     "download": "Scarica",
     "copy": "Copia",
     "emptyScript": "// Script vuoto",
-    "copied": "Script copiato negli appunti"
+    "copied": "Script copiato negli appunti",
+    "edit": "Modifica",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "changeNote": "Modificato dal visualizzatore",
+    "loading": "Caricamento...",
+    "loadError": "Errore nel caricamento del contenuto.",
+    "emptyHint": "Nessun codice inserito. Clicca su Modifica per aggiungere il contenuto dello script.",
+    "discardTitle": "Modifiche non salvate",
+    "discardDescription": "Hai modifiche non salvate. Vuoi davvero annullare?",
+    "discardConfirm": "Annulla modifiche",
+    "discarding": "Annullamento..."
   },
   "editor": {
     "editTitle": "Modifica script",

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
@@ -32,6 +32,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/queries/keys";
 import {
   Archive,
+  ArrowLeft,
+  ArrowRight,
   Check,
   CheckCircle2,
   Clock,
@@ -127,7 +129,7 @@ const DETAIL_TABS: { key: DetailTab; labelKey: string; icon: typeof ListChecks }
 
 export function TicketDetailModal() {
   const { t } = useTranslation("tickets");
-  const { id, close } = useTicketDetail();
+  const { id, close, prevId, nextId, index, total, navigatePrev: navPrev, navigateNext: navNext } = useTicketDetail();
   const { canEdit, user, session, isAdmin } = useAuth();
   const notify = useServerFn(createNotification);
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
@@ -231,6 +233,23 @@ export function TicketDetailModal() {
       cancelled = true;
     };
   }, [deviceSearch, ticketQuery.data]);
+
+  // Keyboard navigation: ArrowLeft / ArrowRight when modal is open
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Don't navigate when user is typing in an input
+      const tag = (event.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((event.target as HTMLElement)?.isContentEditable) return;
+      if (event.key === "ArrowLeft") { event.preventDefault(); navPrev(); }
+      if (event.key === "ArrowRight") { event.preventDefault(); navNext(); }
+    },
+    [navPrev, navNext],
+  );
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   if (!id || ticketQuery.isLoading || !ticketQuery.data) return null;
   const ticket = ticketQuery.data as TicketRow;
@@ -625,6 +644,32 @@ export function TicketDetailModal() {
         className="sticky top-0 z-10 -mx-[22px] -mt-[20px] mb-4 border-b bg-surface px-[22px] py-4"
         style={{ borderColor: "var(--border)" }}
       >
+        {total > 1 && (
+          <div className="mb-2 flex items-center gap-1">
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              disabled={!prevId}
+              onClick={navPrev}
+              title={t("detail.nav.prev", "Ticket precedente")}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </button>
+            <span className="mx-1 text-[11px] font-mono font-semibold text-text2 tabular-nums">
+              {index}/{total}
+            </span>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              disabled={!nextId}
+              onClick={navNext}
+              title={t("detail.nav.next", "Ticket successivo")}
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+            <span className="ml-1 text-[10px] text-text3">
+              {t("detail.nav.useArrows", "Usa ← → da tastiera")}
+            </span>
+          </div>
+        )}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-2">

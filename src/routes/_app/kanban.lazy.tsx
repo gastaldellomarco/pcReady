@@ -18,7 +18,7 @@ import {
   computeSlaStatus,
   formatSlaCountdown,
 } from "@/lib/pcready";
-import { openTicketDetail } from "@/lib/detail-navigation";
+import { setTicketContext } from "@/lib/detail-navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
@@ -370,6 +370,63 @@ function KanbanPage() {
     // React Query invalidation handles refreshing lists
   }
 
+  const filteredRows = useMemo(() => {
+    const baseRows = Array.isArray(rows) ? rows : [];
+    return baseRows.filter((row) => {
+      const matchesAssignee =
+        filters.assignee === "all" ||
+        (filters.assignee === "me" && row.assignee_id === profile?.id) ||
+        (filters.assignee === "unassigned" && !row.assignee_id) ||
+        row.assignee_id === filters.assignee;
+      const matchesPriority = filters.priority === "all" || row.priority === filters.priority;
+      const matchesType = filters.type === "all" || row.ticket_type === filters.type;
+      const matchesClient = !filters.clientId || row.client_id === filters.clientId;
+      const slaStatus = slaIndicator(row).status;
+      const matchesSla = filters.sla === "all" || slaStatus === filters.sla;
+      const createdAt = row.created_at ? new Date(row.created_at).getTime() : null;
+      const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`).getTime() : null;
+      const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`).getTime() : null;
+      const matchesDateFrom = !from || (createdAt != null && createdAt >= from);
+      const matchesDateTo = !to || (createdAt != null && createdAt <= to);
+      return (
+        matchesAssignee &&
+        matchesPriority &&
+        matchesType &&
+        matchesClient &&
+        matchesSla &&
+        matchesDateFrom &&
+        matchesDateTo
+      );
+    });
+  }, [filters, profile?.id, rows]);
+
+  const selectedCards = useMemo(
+    () => rows.filter((row) => selectedTicketIds.has(row.id)),
+    [rows, selectedTicketIds],
+  );
+
+  const visibleStatuses = useMemo(
+    () => KANBAN_STATUSES.filter((s) => !collapsedColumns.has(s)),
+    [collapsedColumns],
+  );
+
+  const hasActiveFilters =
+    filters.assignee !== "all" ||
+    filters.priority !== "all" ||
+    filters.type !== "all" ||
+    !!filters.clientId ||
+    filters.sla !== "all" ||
+    !!filters.dateFrom ||
+    !!filters.dateTo;
+
+  const handleOpenTicket = useCallback(
+    (ticketId: string) => {
+      const orderedIds = filteredRows.map((r) => r.id);
+      setTicketContext(ticketId, orderedIds);
+    },
+    [filteredRows],
+  );
+
   function handleKanbanCardClick(event: MouseEvent, ticketId: string) {
     if (event.shiftKey) {
       event.preventDefault();
@@ -382,7 +439,7 @@ function KanbanPage() {
       });
       return;
     }
-    openTicketDetail(ticketId);
+    handleOpenTicket(ticketId);
   }
 
   function selectedKanbanCodesPreview() {
@@ -449,55 +506,6 @@ function KanbanPage() {
       setBulkBusy(false);
     }
   }
-
-  const filteredRows = useMemo(() => {
-    const baseRows = Array.isArray(rows) ? rows : [];
-    return baseRows.filter((row) => {
-      const matchesAssignee =
-        filters.assignee === "all" ||
-        (filters.assignee === "me" && row.assignee_id === profile?.id) ||
-        (filters.assignee === "unassigned" && !row.assignee_id) ||
-        row.assignee_id === filters.assignee;
-      const matchesPriority = filters.priority === "all" || row.priority === filters.priority;
-      const matchesType = filters.type === "all" || row.ticket_type === filters.type;
-      const matchesClient = !filters.clientId || row.client_id === filters.clientId;
-      const slaStatus = slaIndicator(row).status;
-      const matchesSla = filters.sla === "all" || slaStatus === filters.sla;
-      const createdAt = row.created_at ? new Date(row.created_at).getTime() : null;
-      const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`).getTime() : null;
-      const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`).getTime() : null;
-      const matchesDateFrom = !from || (createdAt != null && createdAt >= from);
-      const matchesDateTo = !to || (createdAt != null && createdAt <= to);
-      return (
-        matchesAssignee &&
-        matchesPriority &&
-        matchesType &&
-        matchesClient &&
-        matchesSla &&
-        matchesDateFrom &&
-        matchesDateTo
-      );
-    });
-  }, [filters, profile?.id, rows]);
-
-  const selectedCards = useMemo(
-    () => rows.filter((row) => selectedTicketIds.has(row.id)),
-    [rows, selectedTicketIds],
-  );
-
-  const visibleStatuses = useMemo(
-    () => KANBAN_STATUSES.filter((s) => !collapsedColumns.has(s)),
-    [collapsedColumns],
-  );
-
-  const hasActiveFilters =
-    filters.assignee !== "all" ||
-    filters.priority !== "all" ||
-    filters.type !== "all" ||
-    !!filters.clientId ||
-    filters.sla !== "all" ||
-    !!filters.dateFrom ||
-    !!filters.dateTo;
 
   return (
     <div className="flex flex-col gap-4">
@@ -881,7 +889,7 @@ function KanbanPage() {
                           <button
                             type="button"
                             className="pc-btn pc-btn-ghost pc-btn-sm h-7"
-                            onClick={() => openTicketDetail(c.id)}
+                            onClick={() => setTicketContext(c.id, filteredRows.map((r) => r.id))}
                           >
                             {t("tickets:details", "Apri dettaglio")}
                           </button>
@@ -903,12 +911,10 @@ function KanbanPage() {
                             <UnassignedBadge />
                           )}
                         </div>
-                        {!compactView && (
-                          <div className="flex flex-col items-end gap-1">
-                            <SlaMiniLabel card={c} />
-                            <TimeInColumnLabel updatedAt={c.updated_at} />
-                          </div>
-                        )}
+                        <div className="flex flex-col items-end gap-1">
+                          <SlaMiniLabel card={c} compactView={compactView} />
+                          {!compactView && <TimeInColumnLabel updatedAt={c.updated_at} />}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1168,19 +1174,28 @@ function normalizeColor(value: string) {
   return match ? match[0] : "#ffffff";
 }
 
-function SlaMiniLabel({ card }: { card: Card }) {
+function SlaMiniLabel({ card, compactView }: { card: Card; compactView?: boolean }) {
   const indicator = slaIndicator(card);
   const deadline = card.due_date || card.sla_deadline;
+  // Hide OK badges — only show warning/overdue
+  if (indicator.status === "ok") return null;
+  const countdown = deadline ? formatSlaCountdown(deadline) : indicator.label;
+  const isOverdue = indicator.status === "overdue";
   return (
     <span
-      className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
+      className={cn(
+        "rounded-full px-1.5 py-0.5 font-semibold whitespace-nowrap",
+        compactView ? "text-[9px]" : "text-[9.5px]",
+        isOverdue && "border",
+      )}
       style={{
         background: `${indicator.color}22`,
         color: indicator.color,
+        ...(isOverdue ? { borderColor: indicator.color, borderWidth: "1px" } : {}),
       }}
-      title={deadline ? formatSlaCountdown(deadline) : indicator.label}
+      title={countdown}
     >
-      {indicator.label}
+      {countdown}
     </span>
   );
 }

@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceStrict } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
 type Period = "today" | "week" | "month";
@@ -68,7 +75,21 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
       <CardHeader className="flex items-center justify-between">
         <div>
           <CardTitle>{t("technicians.statsTitle", "Statistiche Tecnici")}</CardTitle>
-          <div className="text-sm text-text3">{t("technicians.activeTechnicians", "Tecnici attivi")}: {activeCount}</div>
+          <div className="text-sm text-text3 flex items-center gap-1">
+            {t("technicians.activeTechnicians", "Tecnici attivi")}: {activeCount}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0} role="button" aria-label={t("technicians.activeTooltipAria", "Info: criterio tecnici attivi")}>
+                    <Info className="h-3 w-3 cursor-help" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                  <p>{t("technicians.activeTooltip", "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-md bg-muted p-1">
