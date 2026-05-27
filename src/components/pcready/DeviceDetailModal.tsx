@@ -61,6 +61,7 @@ import {
   TicketPlus,
   Wrench,
 } from "lucide-react";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import {
@@ -1035,23 +1036,21 @@ export function DeviceDetailModal() {
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="text-xs">
                   <span className="pc-label">{t("device.purchaseDate", "Data acquisto")}</span>
-                  <input
-                    type="date"
-                    className="pc-input mt-1 w-full"
+                  <DatePickerInput
+                    className="mt-1 w-full"
                     value={warrantyDraft.purchase_date}
-                    onChange={(e) =>
-                      setWarrantyDraft((v) => ({ ...v, purchase_date: e.target.value }))
+                    onChange={(v) =>
+                      setWarrantyDraft((prev) => ({ ...prev, purchase_date: v }))
                     }
                   />
                 </label>
                 <label className="text-xs">
                   <span className="pc-label">{t("device.warrantyExpiry", "Scadenza garanzia")}</span>
-                  <input
-                    type="date"
-                    className="pc-input mt-1 w-full"
+                  <DatePickerInput
+                    className="mt-1 w-full"
                     value={warrantyDraft.warranty_expiry_date}
-                    onChange={(e) =>
-                      setWarrantyDraft((v) => ({ ...v, warranty_expiry_date: e.target.value }))
+                    onChange={(v) =>
+                      setWarrantyDraft((prev) => ({ ...prev, warranty_expiry_date: v }))
                     }
                   />
                 </label>
@@ -1883,12 +1882,14 @@ function HardwareTab({
               value={draft.vlan_config}
               onChange={(v) => update("vlan_config", v)}
             />
-            <HardwareInput
-              label="Scadenza licenza"
-              type="date"
-              value={draft.license_expiry}
-              onChange={(v) => update("license_expiry", v)}
-            />
+            <label className="text-xs">
+              <span className="pc-label">Scadenza licenza</span>
+              <DatePickerInput
+                className="mt-1 w-full"
+                value={draft.license_expiry}
+                onChange={(v) => update("license_expiry", v)}
+              />
+            </label>
             <HardwareInput
               label="Rack position"
               value={draft.rack_position}

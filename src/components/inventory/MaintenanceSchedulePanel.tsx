@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { CalendarDays, CheckCircle2, Plus, Wrench } from "lucide-react";
 import OverflowTable from "@/components/ui/overflow-table";
 import { toast } from "sonner";
@@ -182,11 +183,10 @@ export function MaintenanceSchedulePanel({
             </label>
             <label className="text-xs">
               <span className="pc-label">{t("maintenance.fieldNextDue", "Prossima scadenza")}</span>
-              <input
-                type="date"
-                className="pc-input mt-1 w-full"
+              <DatePickerInput
+                className="mt-1 w-full"
                 value={draft.next_due_date}
-                onChange={(e) => setDraft((v) => ({ ...v, next_due_date: e.target.value }))}
+                onChange={(v) => setDraft((prev) => ({ ...prev, next_due_date: v }))}
               />
             </label>
             <label className="text-xs">

@@ -339,19 +339,32 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             icon={<TrendingUp className="w-5 h-5" />}
             href="/clients"
           />
-          <DashboardStatCard
-            label={i18n.t("dashboard:stats.slaRespected", "SLA rispettati")}
-            value={
-              ctx.analytics?.summary?.slaRespectedPct == null
-                ? i18n.t("dashboard:widgets.na", "N/D")
-                : `${ctx.analytics.summary.slaRespectedPct}%`
-            }
-            accent="var(--success)"
-            sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} ${i18n.t("dashboard:stats.inPeriod", "nel periodo")}`}
-            valueColor="var(--success)"
-            icon={<Clock className="w-5 h-5" />}
-            href="/tickets"
-          />
+          {(() => {
+            const slaPct = ctx.analytics?.summary?.slaRespectedPct;
+            const slaColor =
+              slaPct == null
+                ? undefined
+                : slaPct >= 90
+                  ? "var(--success)"
+                  : slaPct >= 60
+                    ? "var(--warning)"
+                    : "var(--danger)";
+            return (
+              <DashboardStatCard
+                label={i18n.t("dashboard:stats.slaRespected", "SLA rispettati")}
+                value={
+                  slaPct == null
+                    ? i18n.t("dashboard:widgets.na", "N/D")
+                    : `${slaPct}%`
+                }
+                accent={slaColor ?? "var(--accent)"}
+                sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} ${i18n.t("dashboard:stats.inPeriod", "nel periodo")}`}
+                valueColor={slaColor}
+                icon={<Clock className="w-5 h-5" />}
+                href="/tickets"
+              />
+            );
+          })()}
           <DashboardStatCard
             label={i18n.t("dashboard:stats.inProgress", "In lavorazione")}
             value={ctx.counts["in-progress"]}

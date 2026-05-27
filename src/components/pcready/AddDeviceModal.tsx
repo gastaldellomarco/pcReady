@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm, type UseFormReturn } from "react-hook-form";
+import { useForm, Controller, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
 import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
@@ -22,6 +22,7 @@ import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
 import { useTickets } from "@/hooks/use-tickets";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Barcode, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/lib/errors";
@@ -589,7 +590,16 @@ function DynamicDeviceFields({
           <input className="pc-input" {...form.register("vlan_config")} placeholder="10, 20, 30" />
         </Field>
         <Field label={t("addDevice.fieldLicenseExpiry", "Scadenza licenza")}>
-          <input className="pc-input" type="date" {...form.register("license_expiry")} />
+          <Controller
+            name="license_expiry"
+            control={form.control}
+            render={({ field }) => (
+              <DatePickerInput
+                value={field.value ?? ""}
+                onChange={field.onChange}
+              />
+            )}
+          />
         </Field>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...form.register("poe_supported")} />

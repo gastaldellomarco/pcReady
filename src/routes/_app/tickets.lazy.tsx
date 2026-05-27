@@ -44,6 +44,7 @@ import {
   type AsyncAutocompleteOption,
 } from "@/components/pcready/AsyncAutocomplete";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { insertActivity } from "@/lib/queries/activity";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import { errorMessage } from "@/lib/errors";
@@ -680,18 +681,16 @@ function TicketsPage() {
             setSelectedClient(option);
           }}
         />
-        <input
-          type="date"
-          className="pc-input max-w-[155px]"
+        <DatePickerInput
+          className="max-w-[155px]"
           value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
+          onChange={setDateFrom}
           title={t("meta.dateFrom", "Data inizio")}
         />
-        <input
-          type="date"
-          className="pc-input max-w-[155px]"
+        <DatePickerInput
+          className="max-w-[155px]"
           value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
+          onChange={setDateTo}
           title={t("meta.dateTo", "Data fine")}
         />
         <select

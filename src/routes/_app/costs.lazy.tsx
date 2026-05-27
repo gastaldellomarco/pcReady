@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { openTicketDetail } from "@/lib/detail-navigation";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { errorMessage } from "@/lib/errors";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -476,17 +477,13 @@ function CostsPage() {
         </div>
         <div className="pc-card-body">
           <div className="grid gap-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
-            <input
-              className="pc-input"
-              type="date"
+            <DatePickerInput
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={setDateFrom}
             />
-            <input
-              className="pc-input"
-              type="date"
+            <DatePickerInput
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={setDateTo}
             />
             <select
               className="pc-input"
@@ -689,16 +686,14 @@ function CostsPage() {
             </label>
             <label className="space-y-1 text-sm font-medium text-text2">
               {t("contractForm.startDateLabel", "Data inizio")}
-              <input
-                className="pc-input"
-                type="date"
+              <DatePickerInput
                 value={draft.start_date}
-                min={defaultDateFrom}
+                minDate={defaultDateFrom}
                 onBlur={() => touchField("start_date")}
-                onChange={(e) => {
+                onChange={(v) => {
                   clearFieldError("start_date");
                   clearFieldError("end_date");
-                  setDraft((v) => ({ ...v, start_date: e.target.value }));
+                  setDraft((prev) => ({ ...prev, start_date: v }));
                 }}
               />
               {touched.start_date && errors.start_date && (
@@ -707,15 +702,13 @@ function CostsPage() {
             </label>
             <label className="space-y-1 text-sm font-medium text-text2">
               {t("contractForm.endDateLabel", "Data fine")}
-              <input
-                className="pc-input"
-                type="date"
+              <DatePickerInput
                 value={draft.end_date}
-                min={draft.start_date || undefined}
+                minDate={draft.start_date || undefined}
                 onBlur={() => touchField("end_date")}
-                onChange={(e) => {
+                onChange={(v) => {
                   clearFieldError("end_date");
-                  setDraft((v) => ({ ...v, end_date: e.target.value }));
+                  setDraft((prev) => ({ ...prev, end_date: v }));
                 }}
               />
               {touched.end_date && errors.end_date && (

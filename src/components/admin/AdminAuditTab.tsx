@@ -24,6 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
@@ -883,26 +884,24 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               </select>
 
               {/* Date from/to */}
-              <Input
-                type="date"
+              <DatePickerInput
                 value={auditFilters.dateFrom ? auditFilters.dateFrom.slice(0, 10) : ""}
-                onChange={(e) =>
+                onChange={(v) =>
                   setFilter(
                     "dateFrom",
-                    e.target.value ? new Date(e.target.value).toISOString() : undefined,
+                    v ? new Date(v).toISOString() : undefined,
                   )
                 }
                 className="max-w-[140px] text-xs"
                 placeholder="Da"
               />
-              <Input
-                type="date"
+              <DatePickerInput
                 value={auditFilters.dateTo ? auditFilters.dateTo.slice(0, 10) : ""}
-                onChange={(e) =>
+                onChange={(v) =>
                   setFilter(
                     "dateTo",
-                    e.target.value
-                      ? new Date(e.target.value + "T23:59:59.999Z").toISOString()
+                    v
+                      ? new Date(v + "T23:59:59.999Z").toISOString()
                       : undefined,
                   )
                 }

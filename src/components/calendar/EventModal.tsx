@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -309,11 +310,10 @@ export function EventModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="em-start-date">{t("modal.startDateLabel", "Data inizio *")}</Label>
-              <Input
+              <DatePickerInput
                 id="em-start-date"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
                 disabled={!canEdit || isPending}
               />
             </div>
@@ -334,11 +334,10 @@ export function EventModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="em-end-date">{t("modal.endDateLabel", "Data fine *")}</Label>
-              <Input
+              <DatePickerInput
                 id="em-end-date"
-                type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={setEndDate}
                 disabled={!canEdit || isPending}
               />
             </div>

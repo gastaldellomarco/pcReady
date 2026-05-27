@@ -41,6 +41,7 @@ import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { createNotification } from "@/lib/notifications";
 import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import {
   AsyncAutocomplete,
   type AsyncAutocompleteOption,
@@ -576,18 +577,16 @@ function KanbanPage() {
           </SelectContent>
         </Select>
 
-        <input
-          className="pc-input w-full sm:w-36"
-          type="date"
+        <DatePickerInput
+          className="w-full sm:w-36"
           value={filters.dateFrom}
-          onChange={(event) => setFilter("dateFrom", event.target.value)}
+          onChange={(v) => setFilter("dateFrom", v)}
           title={t("tickets:dateFrom", "Data inizio")}
         />
-        <input
-          className="pc-input w-full sm:w-36"
-          type="date"
+        <DatePickerInput
+          className="w-full sm:w-36"
           value={filters.dateTo}
-          onChange={(event) => setFilter("dateTo", event.target.value)}
+          onChange={(v) => setFilter("dateTo", v)}
           title={t("tickets:dateTo", "Data fine")}
         />
 

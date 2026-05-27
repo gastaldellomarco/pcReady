@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 
 import { LoadingSkeleton } from "@/components/RouteHelpers";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { BundleForm, AssignmentForm } from "@/components/bundles/BundleForms";
 import {
   BundlePriorityBadge,
@@ -865,34 +866,25 @@ function BillingTab({
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-1 text-sm font-medium text-text2">
                   {t("billing.periodStartLabel", "Inizio periodo")}
-                  <input
-                    className="pc-input"
-                    type="date"
-                    lang="it"
+                  <DatePickerInput
                     value={paymentDraft.period_start}
-                    onChange={(e) => setPaymentDraft((v) => ({ ...v, period_start: e.target.value }))}
+                    onChange={(v) => setPaymentDraft((prev) => ({ ...prev, period_start: v }))}
                   />
                 </label>
                 <label className="space-y-1 text-sm font-medium text-text2">
                   {t("billing.periodEndLabel", "Fine periodo")}
-                  <input
-                    className="pc-input"
-                    type="date"
-                    lang="it"
+                  <DatePickerInput
                     value={paymentDraft.period_end}
-                    onChange={(e) => setPaymentDraft((v) => ({ ...v, period_end: e.target.value }))}
+                    onChange={(v) => setPaymentDraft((prev) => ({ ...prev, period_end: v }))}
                   />
                 </label>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-1 text-sm font-medium text-text2">
                   {t("billing.paidAtLabel", "Data pagamento")}
-                  <input
-                    className="pc-input"
-                    type="date"
-                    lang="it"
+                  <DatePickerInput
                     value={paymentDraft.paid_at}
-                    onChange={(e) => setPaymentDraft((v) => ({ ...v, paid_at: e.target.value }))}
+                    onChange={(v) => setPaymentDraft((prev) => ({ ...prev, paid_at: v }))}
                   />
                 </label>
                 <select

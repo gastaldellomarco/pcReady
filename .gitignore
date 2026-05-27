@@ -56,3 +56,9 @@ e2e/screenshots/tickets-diagnostic.png
 .vscode
 /supabase/.temp
 test-results/
+
+# Storybook
+storybook-static/
+
+# Windows null device (accidental redirects like `cmd > nul`)
+nul

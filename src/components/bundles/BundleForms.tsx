@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import {
   BILLING_TYPE_LABEL,
   BUNDLE_PRIORITY_LABEL,
@@ -487,22 +488,20 @@ export function AssignmentForm({
         </label>
         <label className={labelClass}>
           {t("assignment.startDate", "Data inizio")}
-          <input
+          <DatePickerInput
             className={fieldClass}
-            type="date"
             value={form.start_date}
-            onChange={(event) => patch({ start_date: event.target.value, end_date: "" })}
+            onChange={(v) => patch({ start_date: v, end_date: "" })}
             required
             disabled={busy}
           />
         </label>
         <label className={labelClass}>
           {t("assignment.endDate", "Data fine")}
-          <input
+          <DatePickerInput
             className={fieldClass}
-            type="date"
             value={form.end_date}
-            onChange={(event) => patch({ end_date: event.target.value })}
+            onChange={(v) => patch({ end_date: v })}
             disabled={busy}
           />
         </label>
