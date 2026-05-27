@@ -16,6 +16,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.2.0] - 2026-05-26
 
 ### Added
+
 - Enhance localization for bundles and costs with additional assignment management features
 - Add delete functionality for client bundle assignments and payments
 - Refactor entity label handling and introduce useAssignmentManager hook
@@ -30,6 +31,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Implement infinite scrolling for clients, contacts, tickets, inventory, and scripts
 
 ### Changed
+
 - Enhance localization for bundles and costs with additional assignment management features
 - Add delete functionality for client bundle assignments and payments
 - Refactor entity label handling and introduce useAssignmentManager hook
@@ -43,27 +45,29 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Enhance AlertDialog component with improved positioning and HTML translation support
 - Implement advanced PDF export functionality with support for exporting all filtered results
 - Add tests for SwimLaneView component and fix Playwright test issues
-- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
 - Implement infinite scrolling for clients, contacts, tickets, inventory, and scripts
 
 ## [1.1.1] - 2026-05-25
 
 ### Added
+
 - Add device management, login, profile, and ticket functionalities
 - Add automation form hook and action/condition adapters
 
 ### Changed
+
 - Add device management, login, profile, and ticket functionalities
-- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
 - Add automation form hook and action/condition adapters
 
 ## [1.1.0] - 2026-05-24
 
 ### Added
+
 - Implement progressive Lighthouse budget strategy with dynamic PDF generation
 - Implement post-deploy healthcheck and update Lighthouse CI configuration; add healthcheck script and improve form state management
 
 ### Changed
+
 - Add Italian localization for scripts and tickets
 - Add comprehensive documentation for Barcode Inventory Management and Device Taxonomy System
 - Implement progressive Lighthouse budget strategy with dynamic PDF generation
@@ -73,6 +77,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.0] - 2026-05-21
 
 ### Added
+
 - Add caching for Bun dependencies in release and test workflows
 - Automate changelog generation and link validation during release process; update scripts for improved functionality
 - Implement realtime connection monitoring and UI feedback; add ConnectionBanner component and hooks for connection status
@@ -110,6 +115,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Enhance AutomationBuilder with edge selection and condition/action nodes
 
 ### Changed
+
 - Add caching for Bun dependencies in release and test workflows
 - Automate changelog generation and link validation during release process; update scripts for improved functionality
 - Implement realtime connection monitoring and UI feedback; add ConnectionBanner component and hooks for connection status
@@ -163,20 +169,18 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Enhance AutomationBuilder with edge selection and condition/action nodes
 
 ### Fixed
+
 - Show error message on client list fetch failure
 
 ## [0.23.0] - 2025-05-19
 
 ### Changed
+
 - feat: implement maintenance mode configuration and enhance form state management; add deployment documentation and tests
 
 [0.23.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.19.0...vv0.23.0
-
 [1.0.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.23.0...v1.0.0
-
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
-
 [1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
-
 [Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...v1.2.0

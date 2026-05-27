@@ -1,5 +1,9 @@
+/**
+ * useDashboardData: hook orchestratore per i dati della dashboard.
+ * COME COMPONE: useDashboardDateRange + useDashboardAnalytics + fetching snapshot.
+ * STESSA INTERFACCIA flat per backward compatibility con dashboard.lazy.tsx.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,22 +12,25 @@ import {
   type DashboardLogRow,
   type DashboardTicketRow,
 } from "@/lib/queries/dashboard";
-import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
-import {
-  defaultDateRange,
-  endOfDayIso,
-  formatPeriodLabel,
-  startOfDayIso,
-} from "@/lib/dashboard-helpers";
+import { useDashboardAnalytics } from "./useDashboardAnalytics";
+import { useDashboardDateRange } from "./useDashboardDateRange";
 
 export function useDashboardData(args: {
   accessToken: string | undefined;
   setPendingCount: (n: number) => void;
 }) {
   const { accessToken, setPendingCount } = args;
-  const loadAnalytics = useServerFn(getDashboardAnalytics);
 
-  const defaultRange = useMemo(() => defaultDateRange(), []);
+  // --- Sub-hooks ---
+  const { dateFrom, setDateFrom, dateTo, setDateTo, range, periodLabel } =
+    useDashboardDateRange();
+
+  const { analytics, analyticsLoading } = useDashboardAnalytics({
+    accessToken,
+    range,
+  });
+
+  // --- Snapshot data ---
   const [tickets, setTickets] = useState<DashboardTicketRow[]>([]);
   const [logs, setLogs] = useState<DashboardLogRow[]>([]);
   const [devices, setDevices] = useState<DashboardDeviceRow[]>([]);
@@ -31,10 +38,6 @@ export function useDashboardData(args: {
   const [warrantyDevices, setWarrantyDevices] = useState<DashboardDeviceRow[]>([]);
   const [ticketsWithoutDeviceCount, setTicketsWithoutDeviceCount] = useState<number>(0);
   const [activeClientsCount, setActiveClientsCount] = useState<number>(0);
-  const [dateFrom, setDateFrom] = useState(defaultRange.from);
-  const [dateTo, setDateTo] = useState(defaultRange.to);
-  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const dedupLogs = useMemo(() => {
     const arr = Array.isArray(logs) ? logs : [];
@@ -48,21 +51,6 @@ export function useDashboardData(args: {
     }
     return out;
   }, [logs]);
-
-  const range = useMemo(() => {
-    const from = startOfDayIso(dateFrom);
-    const to = endOfDayIso(dateTo);
-    return {
-      from,
-      to,
-      days: Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000)),
-    };
-  }, [dateFrom, dateTo]);
-
-  const periodLabel = useMemo(
-    () => formatPeriodLabel(range.from, range.to),
-    [range.from, range.to],
-  );
 
   const snap = useDashboardSnapshot({ from: range.from, to: range.to });
   const refetchDashboard = snap.refetch;
@@ -92,6 +80,7 @@ export function useDashboardData(args: {
     }
   }, [snap.data]);
 
+  // Real-time subscriptions
   useEffect(() => {
     const tables = [
       "tickets",
@@ -112,17 +101,6 @@ export function useDashboardData(args: {
       void supabase.removeChannel(channel);
     };
   }, [refetchDashboard, range.from, range.to]);
-
-  useEffect(() => {
-    if (!accessToken) return;
-    setAnalyticsLoading(true);
-    loadAnalytics({
-      data: { accessToken, dateFrom: range.from, dateTo: range.to },
-    })
-      .then((data) => setAnalytics(data))
-      .catch(() => setAnalytics(null))
-      .finally(() => setAnalyticsLoading(false));
-  }, [accessToken, loadAnalytics, range.from, range.to]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { pending: 0, "in-progress": 0, testing: 0, ready: 0 };

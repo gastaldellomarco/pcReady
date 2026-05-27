@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState, useRef, createElement } from "react";
-import type { ReactElement } from "react";
-import type { DocumentProps } from "@react-pdf/renderer";
+/**
+ * useAdminAudit: hook orchestratore per il log di audit.
+ * COME COMPONE: useAdminAuditData + useAdminAuditFilters + useAdminAuditExport.
+ * STESSA INTERFACCIA flat per backward compatibility con AdminAuditTab.tsx.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import {
   getAuditLog,
-  exportAuditLog,
   getAuditLogKpi,
   getAuditLogUsers,
   type ActivityLogEntry,
@@ -14,12 +16,11 @@ import {
   type AuditLogKpi,
   type AuditLogUserOption,
 } from "@/lib/audit-log";
-import { downloadCsv } from "@/lib/downloads";
-// PDF exporter and AuditLogReportPdf are dynamically imported when needed to avoid bundling @react-pdf on the client
+import { useAdminAuditFilters } from "./useAdminAuditFilters";
+import { useAdminAuditExport } from "./useAdminAuditExport";
 
+export type { DatePreset } from "./useAdminAuditFilters";
 export type ViewMode = "table" | "timeline";
-
-export type DatePreset = "today" | "yesterday" | "last7" | "last30" | "custom" | "";
 
 export function useAdminAudit(args: {
   accessToken: string | undefined;
@@ -36,15 +37,14 @@ export function useAdminAudit(args: {
     onFiltersChange,
   } = args;
   const loadAuditLog = useServerFn(getAuditLog);
-  const exportAudit = useServerFn(exportAuditLog);
   const loadKpi = useServerFn(getAuditLogKpi);
   const loadUsers = useServerFn(getAuditLogUsers);
 
+  // --- Data state ---
   const [auditEntries, setAuditEntries] = useState<ActivityLogEntry[]>([]);
   const [auditTotal, setAuditTotal] = useState(0);
   const [auditPage, setAuditPage] = useState(1);
   const [auditPageSize, setAuditPageSize] = useState(initialPageSize);
-  const [auditFilters, setAuditFilters] = useState<AuditLogFilters>({});
   const [loadingAudit, setLoadingAudit] = useState(false);
 
   // KPI
@@ -62,9 +62,6 @@ export function useAdminAudit(args: {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
-  // Date preset
-  const [datePreset, setDatePreset] = useState<DatePreset>("");
-
   // Column selection for export
   const [selectedColumns, setSelectedColumns] = useState<string[]>([
     "date",
@@ -75,36 +72,7 @@ export function useAdminAudit(args: {
     "ticket",
   ]);
 
-  const initialLoadDone = useRef(false);
-
-  // Load KPI
-  const fetchKpi = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
-    setLoadingKpi(true);
-    try {
-      const data = await loadKpi({ data: { accessToken } });
-      setKpi(data);
-    } catch {
-      // Silently fail for KPI
-    } finally {
-      setLoadingKpi(false);
-    }
-  }, [accessToken, isAdmin, loadKpi]);
-
-  // Load user options
-  const fetchUsers = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
-    setLoadingUsers(true);
-    try {
-      const data = await loadUsers({ data: { accessToken } });
-      setUserOptions(data);
-    } catch {
-      // Silently fail
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [accessToken, isAdmin, loadUsers]);
-
+  // --- Sub-hooks ---
   const loadAudit = useCallback(
     async (page = 1, filters: AuditLogFilters = {}) => {
       if (!accessToken || !isAdmin) return;
@@ -132,67 +100,55 @@ export function useAdminAudit(args: {
     [accessToken, isAdmin, loadAuditLog, auditPageSize, onFiltersChange],
   );
 
-  // Debounced search reload
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const updateSearch = useCallback(
-    (search: string) => {
-      const newFilters = { ...auditFilters, search: search || undefined };
-      setAuditFilters(newFilters);
-      if (searchTimer.current) clearTimeout(searchTimer.current);
-      searchTimer.current = setTimeout(() => {
-        loadAudit(1, newFilters);
-      }, 400);
-    },
-    [auditFilters, loadAudit],
-  );
+  const {
+    auditFilters,
+    setAuditFilters,
+    datePreset,
+    updateSearch,
+    applyDatePreset,
+    resetFilters,
+  } = useAdminAuditFilters({
+    loadAudit,
+    initialFilters: initFilters,
+  });
 
-  const applyDatePreset = useCallback(
-    (preset: DatePreset) => {
-      setDatePreset(preset);
-      const now = new Date();
-      let dateFrom: string | undefined;
-      let dateTo: string | undefined;
+  const { handleExportCsv, handleExportPdf, getTimelineGroups } = useAdminAuditExport({
+    accessToken,
+    auditFilters,
+    auditEntries,
+    auditTotal,
+  });
 
-      switch (preset) {
-        case "today": {
-          dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-          break;
-        }
-        case "yesterday": {
-          const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          dateFrom = new Date(
-            yesterday.getFullYear(),
-            yesterday.getMonth(),
-            yesterday.getDate(),
-          ).toISOString();
-          dateTo = new Date(
-            yesterday.getFullYear(),
-            yesterday.getMonth(),
-            yesterday.getDate(),
-            23,
-            59,
-            59,
-            999,
-          ).toISOString();
-          break;
-        }
-        case "last7": {
-          dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-          break;
-        }
-        case "last30": {
-          dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-          break;
-        }
-      }
+  // --- KPI ---
+  const fetchKpi = useCallback(async () => {
+    if (!accessToken || !isAdmin) return;
+    setLoadingKpi(true);
+    try {
+      const data = await loadKpi({ data: { accessToken } });
+      setKpi(data);
+    } catch {
+      // Silently fail for KPI
+    } finally {
+      setLoadingKpi(false);
+    }
+  }, [accessToken, isAdmin, loadKpi]);
 
-      const newFilters = { ...auditFilters, dateFrom, dateTo };
-      setAuditFilters(newFilters);
-      loadAudit(1, newFilters);
-    },
-    [auditFilters, loadAudit],
-  );
+  // --- Users ---
+  const fetchUsers = useCallback(async () => {
+    if (!accessToken || !isAdmin) return;
+    setLoadingUsers(true);
+    try {
+      const data = await loadUsers({ data: { accessToken } });
+      setUserOptions(data);
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [accessToken, isAdmin, loadUsers]);
 
+  // Initial load
+  const initialLoadDone = useRef(false);
   useEffect(() => {
     if (!initialLoadDone.current && accessToken && isAdmin) {
       initialLoadDone.current = true;
@@ -201,98 +157,6 @@ export function useAdminAudit(args: {
       void fetchUsers();
     }
   }, [accessToken, isAdmin, loadAudit, fetchKpi, fetchUsers, initFilters]);
-
-  async function handleExportCsv() {
-    if (!accessToken) return;
-    try {
-      const data = await exportAudit({
-        data: {
-          accessToken,
-          filters: auditFilters,
-        },
-      });
-
-      downloadCsv(data.csv, data.filename);
-      toast.success("File CSV esportato");
-    } catch (error) {
-      toast.error(getAdminErrorMessage(error, "Esportazione CSV non riuscita"));
-    }
-  }
-
-  async function handleExportPdf() {
-    if (!accessToken) return;
-    if (auditEntries.length === 0) {
-      toast.error("Nessun log da esportare");
-      return;
-    }
-    toast.info("Generazione report PDF...");
-    try {
-      const filterParts: string[] = [];
-      if (auditFilters.actionType) filterParts.push(`azione:${auditFilters.actionType}`);
-      if (auditFilters.user) filterParts.push(`utente:${auditFilters.user}`);
-      if (auditFilters.entityType) filterParts.push(`entita:${auditFilters.entityType}`);
-      if (auditFilters.dateFrom || auditFilters.dateTo) {
-        const from = auditFilters.dateFrom
-          ? new Date(auditFilters.dateFrom).toLocaleDateString("it-IT")
-          : "...";
-        const to = auditFilters.dateTo
-          ? new Date(auditFilters.dateTo).toLocaleDateString("it-IT")
-          : "...";
-        filterParts.push(`date:${from}-${to}`);
-      }
-
-      const dateLabel = new Date().toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-
-      const [{ downloadPdf }, { AuditLogReportPdf }] = await Promise.all([
-        import("@/components/pcready/pdf/export"),
-        import("@/components/admin/AuditLogReportPdf"),
-      ]);
-
-      const pdfElement = createElement(AuditLogReportPdf, {
-        entries: auditEntries,
-        dateLabel,
-        organizationName: (globalThis as any).organizationName || "PCReady",
-        exportUser: "Admin",
-        filterSummary: filterParts.join(" | ") || "nessun filtro",
-        totalCount: auditTotal,
-      });
-
-      await downloadPdf(
-        pdfElement as unknown as ReactElement<DocumentProps>,
-        `pcready-audit-report-${new Date().toISOString().slice(0, 10)}.pdf`,
-      );
-      toast.success("Report PDF generato");
-    } catch (error) {
-      toast.error(getAdminErrorMessage(error, "Generazione PDF non riuscita"));
-    }
-  }
-
-  function resetFilters() {
-    setAuditFilters({});
-    setDatePreset("");
-    loadAudit(1, {});
-  }
-
-  // Group entries by day for timeline view
-  function getTimelineGroups(): Map<string, ActivityLogEntry[]> {
-    const groups = new Map<string, ActivityLogEntry[]>();
-    for (const entry of auditEntries) {
-      const date = new Date(entry.created_at);
-      const key = date.toLocaleDateString("it-IT", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(entry);
-    }
-    return groups;
-  }
 
   const totalPages = Math.ceil(auditTotal / auditPageSize) || 1;
 

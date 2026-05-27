@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,6 +15,7 @@ import {
   updateAdminUser,
   type AdminUserRow,
 } from "@/lib/admin-users";
+import { useAdminUsersFilters } from "@/hooks/useAdminUsersFilters";
 
 export function useAdminUsers(args: {
   accessToken: string | undefined;
@@ -39,8 +40,9 @@ export function useAdminUsers(args: {
   const [bulkAction, setBulkAction] = useState<"disable" | "enable" | null>(null);
   const [bulkRole, setBulkRole] = useState<AppRole>("viewer");
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRow | null>(null);
-  const [q, setQ] = useState("");
-  const [role, setRole] = useState("");
+
+  const filters = useAdminUsersFilters(rows);
+  const { q, setQ, role, setRole, filtered } = filters;
 
   const inviteForm = useForm<AdminUserInviteInput>({
     resolver: zodResolver(AdminUserInviteSchema),
@@ -64,15 +66,6 @@ export function useAdminUsers(args: {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return rows.filter((row) => {
-      const matchesText = !needle || `${row.full_name} ${row.email}`.toLowerCase().includes(needle);
-      const matchesRole = !role || row.role === role;
-      return matchesText && matchesRole;
-    });
-  }, [q, role, rows]);
 
   async function saveRole(row: AdminUserRow, nextRole: AppRole) {
     if (!accessToken || row.role === nextRole) return;

@@ -29,7 +29,7 @@ package-lock.json
 .nyc_output
 coverage/
 backups/
-
+src/routeTree.gen.ts
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
@@ -55,3 +55,4 @@ supabase/.temp/cli-latest
 e2e/screenshots/tickets-diagnostic.png
 .vscode
 /supabase/.temp
+test-results/

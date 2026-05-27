@@ -148,6 +148,10 @@
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.06);
+
+  /* Mobile primitives */
+  --mobile-gap: 12px;
+  --touch-target-size: 44px;
 }
 
 .dark {
@@ -225,6 +229,12 @@
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
+  html,
+  body,
+  #root {
+    min-width: 0;
+    overflow-x: hidden;
+  }
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -239,9 +249,42 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text3);
   }
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
+  @media (min-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 13px;
+    }
+  }
+
+  @keyframes pc-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .pc-anim-in {
+    animation: pc-fade-in 0.25s ease both;
+  }
 }
 
-/* ───── PCReady component utilities ───── */
 @layer components {
   .pc-card {
     background: var(--surface);
@@ -285,6 +328,9 @@
     white-space: nowrap;
     cursor: pointer;
     font-family: var(--font-body);
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
   }
   .pc-btn:disabled {
     opacity: 0.5;
@@ -325,6 +371,12 @@
     color: var(--success);
     border: 1px solid var(--success);
   }
+  .pc-btn-sm,
+  .pc-btn-xs,
+  .pc-btn-icon {
+    min-height: 40px;
+    min-width: 40px;
+  }
   .pc-btn-sm {
     padding: 4px 10px;
     font-size: 11.5px;
@@ -355,8 +407,8 @@
   .pc-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px; /* increased gap for readability */
-    padding: 4px 10px; /* slightly larger padding */
+    gap: 8px;
+    padding: 4px 10px;
     border-radius: 9999px;
     font-size: 12px;
     font-weight: 600;
@@ -388,7 +440,6 @@
     background: var(--success-bg);
     color: var(--success);
   }
-  /* Make completed and archived visually consistent with the palette */
   .pc-badge-completed {
     background: var(--success-light);
     color: var(--success);
@@ -398,49 +449,8 @@
     background: var(--surface2);
     color: var(--text2);
     border: 1px solid var(--border);
-
   }
 
-  /* end .pc-badge-archived */
-:root {
-  --mobile-gap: 12px;
-  --touch-target-size: 44px;
-}
-
-/* Mobile primitives */
-:root {
-  --mobile-gap: 12px;
-  --touch-target-size: 44px;
-}
-
-@layer utilities {
-  .min-touch {
-    min-width: var(--touch-target-size);
-    min-height: var(--touch-target-size);
-  }
-
-  .touch-target {
-    min-width: var(--touch-target-size);
-    min-height: var(--touch-target-size);
-    padding: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .safe-area {
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
-  .overflow-x-auto-table {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-  
   .pc-input {
     padding: 8px 11px;
     border: 1px solid var(--border2);
@@ -454,6 +464,7 @@
       border-color 0.18s ease,
       box-shadow 0.18s ease;
     width: 100%;
+    min-height: 42px;
   }
   select.pc-input {
     background: var(--surface2);
@@ -467,6 +478,7 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
   }
+
   .pc-label {
     font-size: 11px;
     font-weight: 700;
@@ -539,6 +551,17 @@
     font-size: 11px;
     color: var(--text2);
   }
+  .pc-chip-ava {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 8.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .pc-ticket-type-device {
     background: color-mix(in oklab, var(--accent) 14%, transparent);
     color: var(--accent);
@@ -559,88 +582,13 @@
     color: var(--purple);
     border: 1px solid color-mix(in oklab, var(--purple) 24%, transparent);
   }
-  .pc-chip-ava {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 8.5px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
 
-  /* Dashboard widgets should size to content and avoid large empty areas */
   .dashboard-widget {
     height: auto !important;
     min-height: 120px;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* center content vertically when small */
-  }
-}
-
-@keyframes pc-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.pc-anim-in {
-  animation: pc-fade-in 0.25s ease both;
-}
-
-@layer base {
-  html,
-  body,
-  #root {
-    min-width: 0;
-    overflow-x: hidden;
-  }
-
-  button,
-  [role="button"],
-  input,
-  select,
-  textarea {
-    touch-action: manipulation;
-  }
-
-  input,
-  select,
-  textarea {
-    font-size: max(16px, 1rem);
-  }
-
-  @media (min-width: 640px) {
-    input,
-    select,
-    textarea {
-      font-size: 13px;
-    }
-  }
-}
-
-@layer components {
-  .pc-btn {
-    min-height: 40px;
-    min-width: 40px;
     justify-content: center;
-  }
-
-  .pc-btn-sm,
-  .pc-btn-xs,
-  .pc-btn-icon {
-    min-height: 40px;
-    min-width: 40px;
-  }
-
-  .pc-input {
-    min-height: 42px;
   }
 
   .pc-card,
@@ -653,25 +601,20 @@
     .pc-card {
       border-radius: 10px;
     }
-
     .pc-card-hd {
       align-items: flex-start;
       flex-wrap: wrap;
       padding: 12px 14px;
     }
-
     .pc-card-body {
       padding: 14px;
     }
-
     .pc-stat {
       padding: 14px;
     }
-
     .pc-stat-val {
       font-size: 22px;
     }
-
     .pc-badge {
       max-width: 100%;
       white-space: normal;
@@ -680,12 +623,38 @@
 }
 
 @layer utilities {
+  .min-touch {
+    min-width: var(--touch-target-size);
+    min-height: var(--touch-target-size);
+  }
+
+  .touch-target {
+    min-width: var(--touch-target-size);
+    min-height: var(--touch-target-size);
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .overflow-x-auto-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
   .safe-area-bottom {
     padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
   }
 
-  .overflow-x-auto,
-  .overflow-x-auto-table {
+  .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }

@@ -57,11 +57,7 @@ export function AdminOAuthTab() {
     updateClientStatus,
     rotateClientSecret,
     actionBusyId,
-    lifecycleOpenFor,
-    lifecycleData,
-    lifecycleLoading,
-    openLifecycle,
-    closeLifecycle,
+    lifecycle,
   } = useAdminOAuthClients({ accessToken, isAdmin });
 
   const [rotateTarget, setRotateTarget] = useState<OAuthClientInfo | null>(null);
@@ -502,7 +498,7 @@ export function AdminOAuthTab() {
                           variant="outline"
                           size="sm"
                           disabled={busy}
-                          onClick={() => void openLifecycle(client.clientId)}
+                          onClick={() => void lifecycle.openLifecycle(client.clientId)}
                         >
                           <History className="h-3.5 w-3.5 mr-1" />
                           {t("oauth.clientList.history", "Storico")}
@@ -575,7 +571,7 @@ export function AdminOAuthTab() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!lifecycleOpenFor} onOpenChange={(o) => !o && closeLifecycle()}>
+      <Dialog open={!!lifecycle.lifecycleOpenFor} onOpenChange={(o) => !o && lifecycle.closeLifecycle()}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto xs:fixed xs:inset-0 xs:m-0 xs:max-w-full xs:h-full xs:rounded-none xs:overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("oauth.lifecycle.title", "Storico client OAuth")}</DialogTitle>
@@ -583,13 +579,13 @@ export function AdminOAuthTab() {
               {t("oauth.lifecycle.description", "Consensi utenti, codici di autorizzazione recenti e azioni amministrative.")}
             </DialogDescription>
           </DialogHeader>
-          {lifecycleLoading ? (
+          {lifecycle.lifecycleLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{t("oauth.lifecycle.loading", "Caricamento...")}</p>
-          ) : lifecycleData && lifecycleOpenFor ? (
+          ) : lifecycle.lifecycleData && lifecycle.lifecycleOpenFor ? (
             <div className="space-y-6 text-sm">
               <div>
-                <h4 className="font-semibold mb-2">{t("oauth.lifecycle.consentsTitle", "Consensi ({{count}})", { count: lifecycleData.consents.length })}</h4>
-                {lifecycleData.consents.length === 0 ? (
+                <h4 className="font-semibold mb-2">{t("oauth.lifecycle.consentsTitle", "Consensi ({{count}})", { count: lifecycle.lifecycleData.consents.length })}</h4>
+                {lifecycle.lifecycleData.consents.length === 0 ? (
                   <p className="text-muted-foreground text-xs">{t("oauth.lifecycle.consentsEmpty", "Nessun consenso registrato.")}</p>
                 ) : (
                   <OverflowTable className="max-h-48 overflow-y-auto">
@@ -603,7 +599,7 @@ export function AdminOAuthTab() {
                         </tr>
                       </thead>
                       <tbody>
-                        {lifecycleData.consents.map((c) => (
+                        {lifecycle.lifecycleData.consents.map((c) => (
                           <tr key={`${c.userId}-${c.grantedAt}`} className="border-t">
                             <td className="p-2 align-top">
                               {c.userName || (
@@ -628,7 +624,7 @@ export function AdminOAuthTab() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">{t("oauth.lifecycle.authCodesTitle", "Codici di autorizzazione (recenti)")}</h4>
-                {lifecycleData.authorizationEvents.length === 0 ? (
+                {lifecycle.lifecycleData.authorizationEvents.length === 0 ? (
                   <p className="text-muted-foreground text-xs">{t("oauth.lifecycle.authCodesEmpty", "Nessun codice registrato.")}</p>
                 ) : (
                   <OverflowTable className="max-h-40 overflow-y-auto">
@@ -641,7 +637,7 @@ export function AdminOAuthTab() {
                         </tr>
                       </thead>
                       <tbody>
-                        {lifecycleData.authorizationEvents.map((row, i) => (
+                        {lifecycle.lifecycleData.authorizationEvents.map((row, i) => (
                           <tr key={`${row.createdAt}-${i}`} className="border-t">
                             <td className="p-2 whitespace-nowrap">{fmtDateTime(row.createdAt)}</td>
                             <td className="p-2 whitespace-nowrap">{fmtDateTime(row.expiresAt)}</td>
@@ -657,11 +653,11 @@ export function AdminOAuthTab() {
               </div>
               <div>
                 <h4 className="font-semibold mb-2">{t("oauth.lifecycle.adminAuditTitle", "Audit amministrativo")}</h4>
-                {lifecycleData.adminEvents.length === 0 ? (
+                {lifecycle.lifecycleData.adminEvents.length === 0 ? (
                   <p className="text-muted-foreground text-xs">{t("oauth.lifecycle.adminAuditEmpty", "Nessuna voce.")}</p>
                 ) : (
                   <ul className="border rounded-md divide-y max-h-40 overflow-y-auto text-xs">
-                    {lifecycleData.adminEvents.map((ev) => (
+                    {lifecycle.lifecycleData.adminEvents.map((ev) => (
                       <li key={ev.id} className="p-2">
                         <div className="text-muted-foreground">{fmtDateTime(ev.createdAt)}</div>
                         <div>{ev.message}</div>
@@ -678,7 +674,7 @@ export function AdminOAuthTab() {
             </div>
           ) : null}
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={closeLifecycle}>
+            <Button type="button" variant="secondary" onClick={lifecycle.closeLifecycle}>
               {t("oauth.lifecycle.close", "Chiudi")}
             </Button>
           </DialogFooter>

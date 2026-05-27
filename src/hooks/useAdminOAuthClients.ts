@@ -10,13 +10,12 @@ import {
   createOAuthClient,
   setOAuthClientStatus,
   rotateOAuthClientSecret,
-  getOAuthClientLifecycle,
   type OAuthClientCreated,
   type OAuthClientInfo,
-  type OAuthClientLifecyclePayload,
   type OAuthClientStatus,
 } from "@/lib/oauth-consent";
 import type { OAuthScope } from "@/lib/oauth-scopes";
+import { useAdminOAuthLifecycle } from "@/hooks/useAdminOAuthLifecycle";
 
 export function useAdminOAuthClients(args: { accessToken: string | undefined; isAdmin: boolean }) {
   const { accessToken, isAdmin } = args;
@@ -24,7 +23,6 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
   const createClient = useServerFn(createOAuthClient);
   const setStatusFn = useServerFn(setOAuthClientStatus);
   const rotateFn = useServerFn(rotateOAuthClientSecret);
-  const lifecycleFn = useServerFn(getOAuthClientLifecycle);
 
   const [clients, setClients] = useState<OAuthClientInfo[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
@@ -36,9 +34,8 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     (OAuthClientCreated & { exampleRedirectUri: string }) | null
   >(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
-  const [lifecycleOpenFor, setLifecycleOpenFor] = useState<string | null>(null);
-  const [lifecycleData, setLifecycleData] = useState<OAuthClientLifecyclePayload | null>(null);
-  const [lifecycleLoading, setLifecycleLoading] = useState(false);
+
+  const lifecycle = useAdminOAuthLifecycle({ accessToken });
 
   const oauthForm = useForm<OAuthClientInput>({
     resolver: zodResolver(OAuthClientSchema),
@@ -150,27 +147,6 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     }
   }
 
-  async function openLifecycle(clientId: string) {
-    if (!accessToken) return;
-    setLifecycleOpenFor(clientId);
-    setLifecycleLoading(true);
-    setLifecycleData(null);
-    try {
-      const payload = await lifecycleFn({ data: { accessToken, clientId } });
-      setLifecycleData(payload);
-    } catch (error) {
-      toast.error(getAdminErrorMessage(error, "Impossibile caricare lo storico"));
-      setLifecycleOpenFor(null);
-    } finally {
-      setLifecycleLoading(false);
-    }
-  }
-
-  function closeLifecycle() {
-    setLifecycleOpenFor(null);
-    setLifecycleData(null);
-  }
-
   return {
     clients,
     loadingClients,
@@ -186,10 +162,6 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     updateClientStatus,
     rotateClientSecret,
     actionBusyId,
-    lifecycleOpenFor,
-    lifecycleData,
-    lifecycleLoading,
-    openLifecycle,
-    closeLifecycle,
+    lifecycle,
   };
 }
