@@ -1,41 +1,40 @@
-import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import queries from "@/lib/queries/automations";
-import { useAuth } from "@/lib/auth-context";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import {
-  AutomationRuleSchema,
-  AutomationRunLogSchema,
-  type AutomationFlow,
-  type FlowDefinitionMeta,
-  type WizardFlowPayload,
-  type ActionDef,
-} from "@/types/automation";
-import type { AutomationRule, AutomationFlowDefinition } from "@/types/automation";
+  getRuleTriggerType,
+  TRIGGER_TYPE_LABELS,
+  TRIGGER_TYPE_OPTIONS,
+} from "@/lib/automation-constants";
 import {
   getAutomationRunStats,
   runAutomationNow,
   type AutomationDashboardKpis,
   type AutomationRunStats,
 } from "@/lib/automation-runs";
-import { randomUUID } from "@/lib/random-uuid";
-import { createVersion } from "@/lib/versioning";
+import { buildFlowDefinition } from "@/lib/automations/flow-builder";
 import {
   validateWizardPayload,
   summarizeErrors,
   groupErrorsBySection,
   getSectionLabel,
 } from "@/lib/automations/flow-validation";
-import { useAutomationFilters } from "./useAutomationFilters";
+import queries from "@/lib/queries/automations";
+import { createVersion } from "@/lib/versioning";
 import {
-  getRuleTriggerType,
-  TRIGGER_TYPE_LABELS,
-  TRIGGER_TYPE_OPTIONS,
-} from "@/lib/automation-constants";
-import { useAutomationDialogs } from "./useAutomationDialogs";
-import { useAutomationLogs } from "./useAutomationLogs";
+  AutomationRuleSchema,
+  AutomationRunLogSchema,
+  type AutomationFlow,
+  type FlowDefinitionMeta,
+  type WizardFlowPayload,
+} from "@/types/automation";
 import { useAutomationBuilder } from "./useAutomationBuilder";
+import { useAutomationDialogs } from "./useAutomationDialogs";
+import { useAutomationFilters } from "./useAutomationFilters";
+import { useAutomationLogs } from "./useAutomationLogs";
+import type { AutomationRule, AutomationFlowDefinition } from "@/types/automation";
 
 export type { SortField, SortOrder, ErrorFilterValue } from "./useAutomationFilters";
 export { getRuleTriggerType, TRIGGER_TYPE_LABELS, TRIGGER_TYPE_OPTIONS };
@@ -265,40 +264,6 @@ export function useAutomationRules() {
         richColors: true,
       });
       return;
-    }
-
-    function uid() {
-      return randomUUID();
-    }
-
-    function buildFlowDefinition(flowObj: WizardFlowPayload) {
-      const triggerId = `trigger-${uid()}`;
-      const actionNodes = (flowObj.actions_definition || []).map((a: ActionDef, idx: number) => ({
-        id: `action-${uid()}`,
-        type: "action",
-        data: { label: a.type, config: a.config },
-        position: { x: 300, y: idx * 120 },
-      }));
-      const nodes = [
-        {
-          id: triggerId,
-          type: "trigger",
-          data: { label: flowObj.trigger_definition?.type || "trigger" },
-          position: { x: 0, y: 0 },
-        },
-        ...actionNodes,
-      ];
-      const edges = actionNodes.map((an: { id: string }) => ({
-        id: `e-${triggerId}-${an.id}`,
-        source: triggerId,
-        target: an.id,
-      }));
-      const meta: FlowDefinitionMeta = {
-        wizard: flowObj,
-        summary: flowObj.summary,
-        migrated_at: new Date().toISOString(),
-      };
-      return { nodes, edges, meta };
     }
 
     const { data: currentUserData } = await supabase.auth.getUser();

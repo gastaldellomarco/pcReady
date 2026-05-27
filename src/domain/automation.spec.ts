@@ -151,10 +151,12 @@ describe("Automation DSL", () => {
 
   describe("Action Serialization", () => {
     it("should serialize send_email to legacy format", () => {
-      const action = createDefaultAction("send_email") as any;
-      action.config.to = "test@example.com";
-      action.config.subject = "Test";
-      action.config.body = "Body";
+      const action = createDefaultAction("send_email");
+      if (action.type === "send_email") {
+        action.config.to = "test@example.com";
+        action.config.subject = "Test";
+        action.config.body = "Body";
+      }
 
       const serialized = serializeActions([action]);
       expect(serialized[0].type).toBe("send_email");
@@ -162,8 +164,10 @@ describe("Automation DSL", () => {
     });
 
     it("should serialize update_ticket to legacy update_ticket_status", () => {
-      const action = createDefaultAction("update_ticket") as any;
-      action.config.status = "ready";
+      const action = createDefaultAction("update_ticket");
+      if (action.type === "update_ticket") {
+        action.config.status = "ready";
+      }
 
       const serialized = serializeActions([action]);
       expect(serialized[0].type).toBe("update_ticket_status");
