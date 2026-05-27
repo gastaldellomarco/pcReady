@@ -20,7 +20,7 @@ import activityQueries from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import { Barcode, ScanLine } from "lucide-react";
 import { toast } from "sonner";

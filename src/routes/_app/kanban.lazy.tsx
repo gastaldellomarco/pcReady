@@ -6,7 +6,7 @@ import { fetchTicketsList, loadClientOptions } from "@/lib/queries/tickets";
 import queries from "@/lib/queries/tickets";
 import activityQueries from "@/lib/queries/activity";
 import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { useTranslation } from "react-i18next";
 import {
   STATUS_META,
@@ -18,7 +18,7 @@ import {
   computeSlaStatus,
   formatSlaCountdown,
 } from "@/lib/pcready";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {

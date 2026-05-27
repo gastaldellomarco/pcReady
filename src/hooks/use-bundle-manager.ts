@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { AssistanceBundle } from "./bundles";
+import type { AssistanceBundle } from "@/lib/bundles";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "./errors";
+import { errorMessage } from "@/lib/errors";
 
 interface BundleMutations {
   create: UseMutationResult<unknown, Error, Partial<AssistanceBundle>>;

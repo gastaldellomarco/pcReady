@@ -6,7 +6,7 @@ import {
   getRuleTriggerType,
   TRIGGER_TYPE_LABELS,
   TRIGGER_TYPE_OPTIONS,
-} from "@/hooks/automation-constants";
+} from "@/lib/automation-constants";
 import type { AutomationRule } from "@/types/automation";
 import type { AutomationRunStats } from "@/lib/automation-runs";
 

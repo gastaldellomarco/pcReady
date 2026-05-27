@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { ClientBundleAssignment } from "./bundles";
+import type { ClientBundleAssignment } from "@/lib/bundles";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "./errors";
+import { errorMessage } from "@/lib/errors";
 
 interface AssignmentMutations {
   create: UseMutationResult<unknown, Error, Partial<ClientBundleAssignment>>;

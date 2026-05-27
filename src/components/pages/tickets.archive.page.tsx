@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from "react";
 import { useVirtualList } from "@/hooks/useVirtualList";
 import { useArchivedTicketsInfiniteList, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
 import {
   StatusBadge,

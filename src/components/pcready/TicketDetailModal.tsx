@@ -4,9 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
-import { openDeviceDetail, useTicketDetail } from "@/lib/use-detail";
+import { openDeviceDetail } from "@/lib/detail-navigation";
+import { useTicketDetail } from "@/hooks/use-detail";
 import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import queries, { loadDeviceOptions } from "@/lib/queries/tickets";
 import {
   type ChecklistState,

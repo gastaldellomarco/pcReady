@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "./errors";
+import { errorMessage } from "@/lib/errors";
 import {
   listBundlePayments,
   type BundlePayment,
   type ClientBundleAssignment,
-} from "./bundles";
+} from "@/lib/bundles";
 
 export type PaymentDraft = {
   client_bundle_assignment_id: string;

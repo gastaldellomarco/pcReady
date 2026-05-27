@@ -7,8 +7,8 @@ import { useVirtualList } from "@/hooks/useVirtualList";
 import { useQueryClient } from "@tanstack/react-query";
 import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { useTickets } from "@/lib/use-tickets";
-import { openDeviceDetail } from "@/lib/use-detail";
+import { useTickets } from "@/hooks/use-tickets";
+import { openDeviceDetail } from "@/lib/detail-navigation";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import {
   DEVICE_CATEGORIES,

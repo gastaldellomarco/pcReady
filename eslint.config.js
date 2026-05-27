@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import globals from "globals";
+import perfectionist from "eslint-plugin-perfectionist";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactPlugin from "eslint-plugin-react";
@@ -31,6 +32,7 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       react: reactPlugin,
+      perfectionist,
     },
     settings: {
       react: { version: "detect" },
@@ -50,6 +52,42 @@ export default tseslint.config(
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      // Forza l'uso dell'alias @/ per tutti gli import interni
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../../**"],
+              message: "Usa l'alias @/ invece di import relativi che superano un livello (../).",
+            },
+            {
+              group: ["src/**"],
+              message: "Usa l'alias @/ invece del percorso assoluto 'src/'. Esempio: '@/' al posto di 'src/'",
+            },
+          ],
+        },
+      ],
+      // Ordina automaticamente gli import
+      "perfectionist/sort-imports": [
+        "warn",
+        {
+          type: "natural",
+          order: "asc",
+          groups: [
+            "side-effect",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "style",
+            "type",
+          ],
+          internalPattern: ["^@/.*", "^@root/.*"],
+          newlinesBetween: "ignore",
         },
       ],
       // Incremental: tighten after reducing `any` in these trees (see #58).

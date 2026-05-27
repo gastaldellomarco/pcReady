@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useAdminSettingsForm } from "@/hooks/useAdminSettingsForm";
+import type { AppSettings } from "@/lib/app-settings";
 
 // ── Mock sonner ────────────────────────────────────────────────────────
 const toastMock = vi.hoisted(() => ({
@@ -72,8 +73,7 @@ function makeSaveSettingsMock() {
 
 describe("useAdminSettingsForm submitSettings", () => {
   let saveSettings: ReturnType<typeof makeSaveSettingsMock>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let onSettingsSaved: any;
+  let onSettingsSaved: ReturnType<typeof vi.fn<(settings: AppSettings) => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();

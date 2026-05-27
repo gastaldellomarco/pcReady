@@ -6,12 +6,12 @@ import { useVirtualList } from "@/hooks/useVirtualList";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList, fetchAllTicketsList } from "@/lib/queries/tickets";
 import { ExportPdf } from "@/components/ExportPdf";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { useAuth } from "@/lib/auth-context";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import {
   STATUS_META,
   type TicketStatus,

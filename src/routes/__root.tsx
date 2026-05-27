@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { isMaintenanceModeEnabled } from "@/lib/maintenance-env";
 
-import appCss from "../styles.css?url";
+import appCss from "@/styles.css?url";
 
 const FONTS_STYLESHEET =
   "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap";

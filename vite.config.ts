@@ -46,6 +46,7 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         "@": `${process.cwd()}/src`,
+        "@root": process.cwd(),
       },
       dedupe: [
         "react",

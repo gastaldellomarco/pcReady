@@ -124,13 +124,85 @@ La procedura completa è documentata in [`docs/BACKUP.md`](docs/BACKUP.md).
 
 ## Struttura Del Progetto
 
-- `src/routes`: route file-based dell'applicazione
-- `src/components`: componenti UI e componenti di dominio PCReady
-- `src/components/pcready`: modal, badge e componenti specifici PCReady
-- `src/lib`: context, hook e logica condivisa
-- `src/integrations/supabase`: client Supabase e tipi generati
-- `supabase/migrations`: schema, funzioni, trigger e policy RLS
-- `wrangler.jsonc`: configurazione Cloudflare Workers
+```
+.
+├── src/                          # Codice sorgente dell'applicazione
+│   ├── routes/                   # Route file-based (TanStack Router)
+│   ├── components/               # Componenti React
+│   │   ├── ui/                   #   shadcn/ui primitives
+│   │   ├── layout/               #   Layout: AppShell, Sidebar, TopBar
+│   │   ├── [domain]/             #   Componenti per dominio (admin, tickets, automations, …)
+│   │   └── pcready/              #   Componenti specifici PCReady (CreateTicketModal, …)
+│   ├── lib/                      # Business logic, utility, client Supabase, schemi — unica fonte
+│   │   ├── schemas/              #   Zod schemas (settings, admin, clients, devices, …)
+│   │   ├── queries/              #   Query e hook TanStack Query (tickets, automations, …)
+│   │   ├── admin/                #   Admin utilities
+│   │   ├── automations/          #   Automazione logica (adapter, validazione, template)
+│   │   ├── server/               #   Server-only modules
+│   │   └── README.md             #   Convenzioni della directory
+│   ├── hooks/                    # React hooks custom
+│   ├── domain/                   # Domain layer (tipi business, serializzazione)
+│   ├── types/                    # TypeScript types e Zod schemas condivisi
+│   ├── integrations/             # Integrazioni terze parti
+│   │   └── supabase/             #   Client Supabase e tipi DB generati
+│   ├── __tests__/                # Test unitari Vitest
+│   ├── styles.css                # Stili globali (Tailwind)
+│   ├── router.tsx                # Configurazione router
+│   └── routeTree.gen.ts          # Albero route auto-generato (non modificare)
+├── supabase/                     # Configurazione e migrazioni Supabase
+│   ├── migrations/               #   Migration SQL (una per file, ordinate per data)
+│   ├── seed.sql                  #   Seed dati base
+│   ├── seed_demo_full.sql        #   Seed dati demo completi
+│   └── config.toml               #   Config Supabase CLI
+├── e2e/                          # Test end-to-end Playwright
+│   ├── auth-flow.spec.ts         #   Flusso autenticazione
+│   ├── kanban-drag.spec.ts       #   Drag & drop kanban
+│   └── ticket-flow.spec.ts       #   Flusso ticket
+├── scripts/                      # Script Node.js standalone (tooling, backup, codegen)
+│   └── ci/                       #   Script CI (healthcheck)
+├── docs/                         # Documentazione
+│   ├── deployment.md             #   Istruzioni deployment
+│   ├── BACKUP.md                 #   Procedure backup & recovery
+│   ├── architecture.md           #   Architettura software
+│   ├── design-system.md          #   Sistema di design
+│   ├── domain-model.md           #   Modello dati
+│   ├── database-reset.md         #   Reset database
+│   ├── barcode-inventory.md      #   Barcode inventory
+│   ├── lighthouse-budgets.md     #   Lighthouse budgets
+│   └── mobile-audit.md           #   Mobile audit
+├── public/                       # Asset statici (favicon, logo, …)
+│   └── openapi/                  #   Specifica OpenAPI
+├── backups/                      # Backup SQL locali (ignorati da git)
+├── dist/                         # Build output (ignorato da git)
+├── coverage/                     # Report copertura test (ignorato da git)
+│
+├── package.json                  # Dipendenze e script
+├── tsconfig.json                 # TypeScript config — alias @/ → ./src/*, @root/ → ./*
+├── vite.config.ts                # Vite config — alias @/ → src/, @root/ → root progetto
+├── tailwind.config.ts            # Tailwind CSS config
+├── eslint.config.js              # ESLint flat config
+├── playwright.config.ts          # Playwright config
+├── wrangler.jsonc                # Cloudflare Workers config
+├── components.json               # shadcn/ui config
+├── bunfig.toml                   # Bun config
+├── .node-version / .nvmrc        # Versione Node.js
+└── .env.example                  # Template variabili d'ambiente
+```
+
+### Convenzioni
+
+| Directory | Cosa contiene | Cosa NON deve contenere |
+|---|---|---|
+| `src/lib/` | Business logic, utility, schemi, query | Componenti React, route, script standalone |
+| `src/components/` | Componenti React UI e di dominio | Logica di business, route |
+| `src/routes/` | File route TanStack Router | Componenti non-route, logica di business |
+| `src/hooks/` | React hooks custom | Componenti, utility pure |
+| `scripts/` | Script Node.js standalone (tooling) | Logica importata dall'app |
+
+- Gli import interni usano sempre l'alias `@/` che punta a `src/`.
+- L'alias `@root/` punta alla root del progetto (es. `@root/package.json`).
+- I test seguono i file sorgente: `src/__tests__/` con mirror della struttura.
+- Le migration Supabase sono ordinate per data nel nome file.
 
 ## Deployment & Maintenance
 

@@ -50,8 +50,7 @@ function makeSaveSettingsMock() {
 
 describe("useAdminSettingsForm", () => {
   let saveSettings: ReturnType<typeof makeSaveSettingsMock>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let onSettingsSaved: any;
+  let onSettingsSaved: ReturnType<typeof vi.fn<(settings: AppSettings) => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();

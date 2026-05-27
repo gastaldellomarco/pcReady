@@ -1,4 +1,4 @@
-import { version as appVersion } from "../../package.json";
+import { version as appVersion } from "@root/package.json";
 
 export { appVersion };
 

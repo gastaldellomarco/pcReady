@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { AutomationRule } from "@/types/automation";
 import type { AutomationRunStats } from "@/lib/automation-runs";
-import { getRuleTriggerType } from "./automation-constants";
+import { getRuleTriggerType } from "@/lib/automation-constants";
 
 export type SortField = "name" | "last_run" | "executions" | "created";
 export type SortOrder = "asc" | "desc";

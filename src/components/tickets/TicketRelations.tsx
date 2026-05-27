@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { GitBranch, Link2, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import { useAuth } from "@/lib/auth-context";
 import { StatusBadge } from "@/components/pcready/StatusBadge";
 import type { TicketStatus } from "@/lib/pcready";

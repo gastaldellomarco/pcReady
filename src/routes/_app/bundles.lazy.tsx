@@ -51,10 +51,10 @@ import {
   useUpdateBundleAssignmentMutation,
   useUpdateBundleMutation,
 } from "@/lib/bundles";
-import { useAssignmentManager } from "@/lib/use-assignment-manager";
-import { useBundleManager } from "@/lib/use-bundle-manager";
-import { useBillingManager, type PaymentDraft } from "@/lib/use-billing-manager";
-import { useMonthlyUsage } from "@/lib/use-monthly-usage";
+import { useAssignmentManager } from "@/hooks/use-assignment-manager";
+import { useBundleManager } from "@/hooks/use-bundle-manager";
+import { useBillingManager, type PaymentDraft } from "@/hooks/use-billing-manager";
+import { useMonthlyUsage } from "@/hooks/use-monthly-usage";
 import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/bundles")({

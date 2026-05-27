@@ -10,7 +10,7 @@ import {
 } from "@/lib/pcready";
 import { pcReadyColors } from "@/lib/design-system";
 import { cn } from "@/lib/utils";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { SwimLaneCard } from "./SwimLaneView";
 import { Clock } from "lucide-react";

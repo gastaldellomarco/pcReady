@@ -11,7 +11,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Modal } from "./Modal";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { openTicketDetail, useDeviceDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
+import { useDeviceDetail } from "@/hooks/use-detail";
 import {
   DEVICE_STATUS_LABEL,
   fmtDateTime,
@@ -28,7 +29,7 @@ import {
 } from "@/lib/pcready";
 import { useAuth } from "@/lib/auth-context";
 import { updateDeviceStatus } from "@/lib/device-status";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { toast } from "sonner";
 import {
   AlertDialog,

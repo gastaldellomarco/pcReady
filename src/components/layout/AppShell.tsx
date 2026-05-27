@@ -5,7 +5,7 @@ import i18n from "@/i18n";
 import { useAuth } from "@/lib/auth-context";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { useAdminAuditBadge } from "@/hooks/useAdminAuditBadge";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { avatarColors } from "@/lib/pcready";

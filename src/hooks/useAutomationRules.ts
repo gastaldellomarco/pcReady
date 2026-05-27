@@ -32,7 +32,7 @@ import {
   getRuleTriggerType,
   TRIGGER_TYPE_LABELS,
   TRIGGER_TYPE_OPTIONS,
-} from "./automation-constants";
+} from "@/lib/automation-constants";
 import { useAutomationDialogs } from "./useAutomationDialogs";
 import { useAutomationLogs } from "./useAutomationLogs";
 import { useAutomationBuilder } from "./useAutomationBuilder";

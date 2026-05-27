@@ -23,7 +23,7 @@ import activityQueries from "@/lib/queries/activity";
 const insertActivity = activityQueries.insertActivity as any;
 import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { useTranslation } from "react-i18next";
 import { createNotification } from "@/lib/notifications";
 import { sendTicketAssignedEmail } from "@/lib/email-events";

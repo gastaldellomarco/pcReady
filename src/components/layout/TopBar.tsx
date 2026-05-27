@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Menu, Plus, Boxes, Search } from "lucide-react";
-import { useTickets } from "@/lib/use-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
 /* ── Search box sub-component ───────────────────────────────── */

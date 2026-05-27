@@ -19,8 +19,8 @@ import queries from "@/lib/queries/clients";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth-context";
-import { openDeviceDetail, openTicketDetail } from "@/lib/use-detail";
-import { useTickets } from "@/lib/use-tickets";
+import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
+import { useTickets } from "@/hooks/use-tickets";
 import { fmtDate } from "@/lib/pcready";
 import { Modal } from "@/components/pcready/Modal";
 import {

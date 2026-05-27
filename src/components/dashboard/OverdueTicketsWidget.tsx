@@ -8,7 +8,7 @@ import { getOverdueTickets } from "@/lib/dashboard-analytics";
 import { useAuth } from "@/lib/auth-context";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { formatSlaCountdown, type TicketStatus } from "@/lib/pcready";
-import { openTicketDetail } from "@/lib/use-detail";
+import { openTicketDetail } from "@/lib/detail-navigation";
 
 export function OverdueTicketsWidget() {
   const { t } = useTranslation("dashboard");

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listBundleMonthlyUsage } from "./bundles";
+import { listBundleMonthlyUsage } from "@/lib/bundles";
 
 export function useMonthlyUsage(deps: {
   assignmentsDataUpdatedAt: number | undefined;

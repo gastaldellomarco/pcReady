@@ -66,7 +66,7 @@ const useTicketsMock = vi.hoisted(() => ({
   closeCreate: vi.fn(),
 }));
 
-vi.mock("@/lib/use-tickets", () => ({
+vi.mock("@/hooks/use-tickets", () => ({
   useTickets: () => useTicketsMock,
 }));
 
