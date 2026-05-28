@@ -1,18 +1,27 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
-import { getMyDashboardLayout, updateMyDashboardLayout } from "@/lib/user-profile";
 import {
   type WidgetId,
   type DashboardLayout,
   type WidgetLayoutItem,
   DASHBOARD_WIDGETS,
-  createDefaultLayout,
+  createDefaultLayoutForRole,
 } from "@/components/dashboard/widget-registry";
+import { useAuth } from "@/lib/auth-context";
+import { getMyDashboardLayout, updateMyDashboardLayout } from "@/lib/user-profile";
 
+/**
+ * Manages the dashboard widget layout with role-aware defaults.
+ *
+ * Loads the user's saved layout from the database. If none exists,
+ * creates a default layout based on the user's role (admin/tech/viewer).
+ * Provides controls for reordering, toggling visibility, and persisting changes.
+ *
+ * @returns Layout state, widget lists, and mutation callbacks
+ */
 export function useDashboardLayout() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const loadLayout = useServerFn(getMyDashboardLayout);
   const saveLayout = useServerFn(updateMyDashboardLayout);
   const [layout, setLayout] = useState<DashboardLayout | null>(null);
@@ -22,19 +31,20 @@ export function useDashboardLayout() {
   useEffect(() => {
     if (!session?.access_token) return;
     setLoading(true);
+    const role = profile?.role ?? "viewer";
     loadLayout({ data: { accessToken: session.access_token } })
       .then((data) => {
         if (data) {
           setLayout(data);
         } else {
-          setLayout(createDefaultLayout());
+          setLayout(createDefaultLayoutForRole(role));
         }
       })
       .catch(() => {
-        setLayout(createDefaultLayout());
+        setLayout(createDefaultLayoutForRole(role));
       })
       .finally(() => setLoading(false));
-  }, [loadLayout, session?.access_token]);
+  }, [loadLayout, session?.access_token, profile?.role]);
 
   // Persist layout changes
   const persist = useCallback(

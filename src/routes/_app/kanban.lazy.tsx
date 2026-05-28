@@ -1,13 +1,42 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { Rows3, LayoutList, Settings2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
-import { useRealtimeTable } from "@/hooks/useRealtimeTable";
-import { fetchTicketsList, loadClientOptions } from "@/lib/queries/tickets";
-import queries from "@/lib/queries/tickets";
-import activityQueries from "@/lib/queries/activity";
-import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/hooks/use-tickets";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { KanbanColumnsView } from "@/components/kanban/KanbanColumnsView";
+import { SwimLaneView, type SwimLaneGroupMode } from "@/components/kanban/SwimLaneView";
+import {
+  AsyncAutocomplete,
+  type AsyncAutocompleteOption,
+} from "@/components/pcready/AsyncAutocomplete";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTickets } from "@/hooks/use-tickets";
+import { useKanbanPresence } from "@/hooks/useKanbanPresence";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_WIP_LIMITS,
+  getKanbanAppSettings,
+  updateKanbanAppSettings,
+  type KanbanColumnColors,
+  type KanbanColumnNotes,
+  type WipLimits,
+} from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
+import { setTicketContext } from "@/lib/detail-navigation";
+import { sendTicketAssignedEmail } from "@/lib/email-events";
+import { errorMessage } from "@/lib/errors";
+import { createNotification } from "@/lib/notifications";
 import {
   STATUS_META,
   type TicketPriority,
@@ -16,46 +45,21 @@ import {
   PRIORITY_LABEL,
   TICKET_TYPE_LABEL,
   computeSlaStatus,
-  formatSlaCountdown,
 } from "@/lib/pcready";
-import { setTicketContext } from "@/lib/detail-navigation";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
-import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { SwimLaneView } from "@/components/kanban/SwimLaneView";
-import { cn } from "@/lib/utils";
-import {
-  DEFAULT_WIP_LIMITS,
-  getKanbanAppSettings,
-  updateKanbanAppSettings,
-  type KanbanColumnColors,
-  type WipLimits,
-} from "@/lib/app-settings";
+import activityQueries from "@/lib/queries/activity";
+import { fetchTicketsList, fetchStatusChangeTimestamps, loadClientOptions } from "@/lib/queries/tickets";
+import queries from "@/lib/queries/tickets";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
-import { createNotification } from "@/lib/notifications";
-import { sendTicketAssignedEmail } from "@/lib/email-events";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import {
-  AsyncAutocomplete,
-  type AsyncAutocompleteOption,
-} from "@/components/pcready/AsyncAutocomplete";
-import { Rows3, ChevronDown, ChevronRight, LayoutList, Clock, Settings2, X } from "lucide-react";
-import { toast } from "sonner";
-import { errorMessage } from "@/lib/errors";
+import { cn } from "@/lib/utils";
 
 export const Route = createLazyFileRoute("/_app/kanban")({
   component: KanbanPage,
 });
 
-interface Card {
+/**
+ *
+ */
+export interface Card {
   id: string;
   ticket_code: string;
   client: string;
@@ -79,6 +83,7 @@ const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "r
 const KANBAN_VIEW_MODE_KEY = "pcready:kanban:view-mode";
 const KANBAN_FILTERS_KEY = "pcready:kanban:filters";
 const KANBAN_COLLAPSED_COLUMNS_KEY = "pcready:kanban:collapsed-columns";
+const KANBAN_GROUP_MODE_KEY = "pcready:kanban:group-mode";
 
 type SlaFilter = "all" | "warning" | "overdue";
 type ClientOption = AsyncAutocompleteOption;
@@ -133,6 +138,10 @@ function KanbanPage() {
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [wipLimits, setWipLimits] = useState<WipLimits>(DEFAULT_WIP_LIMITS);
   const [columnColors, setColumnColors] = useState<KanbanColumnColors>({});
+  const [columnNotes, setColumnNotes] = useState<KanbanColumnNotes>({
+    pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+  });
+  const [noteSaving, setNoteSaving] = useState<TicketStatus | null>(null);
   const [wipDialogOpen, setWipDialogOpen] = useState(false);
   const [wipDraft, setWipDraft] = useState<WipLimits>(DEFAULT_WIP_LIMITS);
   const [colorDraft, setColorDraft] = useState<KanbanColumnColors>({});
@@ -140,6 +149,7 @@ function KanbanPage() {
   const [filters, setFilters] = useState<KanbanFilters>(() => loadStoredFilters());
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TicketStatus | null>(null);
+  const [overLimitCol, setOverLimitCol] = useState<TicketStatus | null>(null);
   const [overCell, setOverCell] = useState<string | null>(null);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<TicketStatus>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -152,6 +162,35 @@ function KanbanPage() {
   const [selectedTicketIds, setSelectedTicketIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkConfirmStatus, setBulkConfirmStatus] = useState<TicketStatus | null>(null);
+  const { cardViewers, setCurrentCard } = useKanbanPresence(
+    profile?.id,
+    profile?.initials ?? "",
+    profile?.full_name ?? "",
+  );
+
+  const [statusChangedAtMap, setStatusChangedAtMap] = useState<Map<string, string>>(new Map());
+
+  // Fetch latest status-change timestamps for visible tickets
+  useEffect(() => {
+    if (dragId) return; // skip while dragging to avoid churn
+    const ids = rows.map((r) => r.id);
+    if (!ids.length) return;
+    fetchStatusChangeTimestamps(ids)
+      .then(setStatusChangedAtMap)
+      .catch(() => {/* best-effort */});
+  }, [rows, dragId]);
+
+  const [groupMode, setGroupMode] = useState<SwimLaneGroupMode>(() => {
+    if (typeof window === "undefined") return "technician";
+    const stored = window.localStorage.getItem(KANBAN_GROUP_MODE_KEY);
+    if (stored === "client" || stored === "priority") return stored;
+    return "technician";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(KANBAN_GROUP_MODE_KEY, groupMode);
+  }, [groupMode]);
+
   const [compactView, setCompactView] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(KANBAN_VIEW_MODE_KEY + ":compact") === "true";
@@ -212,10 +251,12 @@ function KanbanPage() {
       .then((settings) => {
         const loadedWip = settings?.wip_limits ?? DEFAULT_WIP_LIMITS;
         const loadedColors = settings?.kanban_column_colors ?? {};
+        const loadedNotes = settings?.kanban_column_notes ?? {};
         setWipLimits(loadedWip);
         setWipDraft(loadedWip);
         setColumnColors(loadedColors);
         setColorDraft(loadedColors);
+        setColumnNotes((prev) => ({ ...prev, ...loadedNotes }));
         setArchiveDays(settings?.archive_after_days ?? 7);
       })
       .catch((error) => toast.error(errorMessage(error, t("toasts.wipLoadError", "Impossibile caricare i limiti WIP"))));
@@ -236,6 +277,27 @@ function KanbanPage() {
       description: client.email || client.name,
     }));
   }, []);
+
+  async function saveColumnNote(status: TicketStatus, text: string) {
+    if (!session?.access_token || !isAdmin) return;
+    setNoteSaving(status);
+    try {
+      const updated = { ...columnNotes, [status]: text };
+      const result = await saveKanbanSettings({
+        data: {
+          accessToken: session.access_token,
+          wip_limits: wipLimits,
+          kanban_column_colors: columnColors,
+          kanban_column_notes: updated,
+        },
+      });
+      setColumnNotes(result.kanban_column_notes ?? updated);
+    } catch (err) {
+      toast.error(errorMessage(err, "Impossibile salvare la nota"));
+    } finally {
+      setNoteSaving(null);
+    }
+  }
 
   async function saveWipSettings() {
     if (!session?.access_token || !isAdmin) return toast.error(t("tickets:toasts.adminOnly", "Solo admin"));
@@ -405,6 +467,27 @@ function KanbanPage() {
   const selectedCards = useMemo(
     () => rows.filter((row) => selectedTicketIds.has(row.id)),
     [rows, selectedTicketIds],
+  );
+
+  const columnCounts = useMemo(() => {
+    const counts: Partial<Record<TicketStatus, number>> = {};
+    for (const card of filteredRows) {
+      counts[card.status] = (counts[card.status] || 0) + 1;
+    }
+    return counts as Record<TicketStatus, number>;
+  }, [filteredRows]);
+
+  const isWipBlocked = useCallback(
+    (targetStatus: TicketStatus, currentDragId: string | null): boolean => {
+      if (!currentDragId) return false;
+      const draggedCard = rows.find((r) => r.id === currentDragId);
+      if (!draggedCard || draggedCard.status === targetStatus) return false;
+      const limit = (wipLimits ?? DEFAULT_WIP_LIMITS)[targetStatus];
+      if (!limit || limit <= 0) return false;
+      const currentCount = columnCounts[targetStatus] ?? 0;
+      return currentCount >= limit;
+    },
+    [columnCounts, rows, wipLimits],
   );
 
   const visibleStatuses = useMemo(
@@ -638,24 +721,51 @@ function KanbanPage() {
           >
             <Settings2 className="h-3.5 w-3.5" /> WIP
           </button>
-        )}
-        <button
-          type="button"
-          className={cn(
-            "pc-btn pc-btn-sm",
-            viewMode === "swimlanes" ? "pc-btn-primary" : "pc-btn-ghost",
-          )}
-          onClick={() => setViewMode((mode) => (mode === "columns" ? "swimlanes" : "columns"))}
-        >
-          <Rows3 className="h-3.5 w-3.5" />
-          {t("swimlanes", "Swim Lanes")}
-        </button>
+        )}          <button
+            type="button"
+            className={cn(
+              "pc-btn pc-btn-sm",
+              viewMode === "swimlanes" ? "pc-btn-primary" : "pc-btn-ghost",
+            )}
+            onClick={() => setViewMode((mode) => (mode === "columns" ? "swimlanes" : "columns"))}
+          >
+            <Rows3 className="h-3.5 w-3.5" />
+            {t("swimlanes", "Swim Lanes")}
+          </button>
+
+          {viewMode === "swimlanes" && [
+            <button
+              key="group-tech"
+              type="button"
+              className={cn("pc-btn pc-btn-sm", groupMode === "technician" ? "pc-btn-primary" : "pc-btn-ghost")}
+              onClick={() => setGroupMode("technician")}
+            >
+              {t("groupByTech", "Tecnico")}
+            </button>,
+            <button
+              key="group-client"
+              type="button"
+              className={cn("pc-btn pc-btn-sm", groupMode === "client" ? "pc-btn-primary" : "pc-btn-ghost")}
+              onClick={() => setGroupMode("client")}
+            >
+              {t("groupByClient", "Cliente")}
+            </button>,
+            <button
+              key="group-priority"
+              type="button"
+              className={cn("pc-btn pc-btn-sm", groupMode === "priority" ? "pc-btn-primary" : "pc-btn-ghost")}
+              onClick={() => setGroupMode("priority")}
+            >
+              {t("groupByPriority", "Priorità")}
+            </button>,
+          ]}
       </div>
 
       {viewMode === "swimlanes" ? (
         <SwimLaneView
           cards={filteredRows}
           technicians={Array.isArray(technicians) ? technicians : []}
+          groupMode={groupMode}
           wipLimits={wipLimits ?? DEFAULT_WIP_LIMITS}
           statuses={KANBAN_STATUSES}
           visibleStatuses={visibleStatuses}
@@ -677,271 +787,47 @@ function KanbanPage() {
           onPriorityChange={(id, priority) => void updatePriority(id, priority)}
           selectedCardIds={selectedTicketIds}
           onCardClick={handleKanbanCardClick}
+          cardViewers={cardViewers}
+          setCurrentCard={setCurrentCard}
+          statusChangedAtMap={statusChangedAtMap}
         />
       ) : (
-        <div className={cn(
-          isMobile ? "flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-thin" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4",
-        )}>
-          {isMobile && (
-            <div className="sticky left-0 z-10 flex-shrink-0 w-px" />
-          )}
-          {KANBAN_STATUSES.map((s) => {
-            let items = filteredRows.filter((r) => r.status === s);
-            if (s === "completed") {
-              try {
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - (archiveDays ?? 7));
-                items = items.filter((r) => r.completed_at && new Date(r.completed_at) >= cutoff);
-              } catch {
-                // ignore date parse issues
-              }
-            }
-            const count = items.length;
-            const limit = (wipLimits ?? DEFAULT_WIP_LIMITS)[s];
-            const isOverLimit = limit > 0 && count > limit;
-            const wipPct = limit > 0 ? (count / limit) * 100 : 0;
-            const isHidden = collapsedColumns.has(s);
-            if (isHidden) {
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => toggleCollapseColumn(s)}
-                  className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-2 py-4 transition-all hover:border-text3"
-                  style={{ background: columnColors[s] || undefined }}
-                  title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + s, STATUS_META[s].label) })}
-                >
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ background: STATUS_META[s].color }}
-                  />
-                  <span className="writing-mode-vertical text-[10px] font-bold uppercase tracking-wider text-text3 [writing-mode:vertical-rl]">
-                    {t("tickets:status." + s, STATUS_META[s].label)}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-text3" />
-                  <span
-                    className={cn(
-                      "text-[10px] font-mono",
-                      isOverLimit ? "text-red-600 font-bold" : "text-text3",
-                    )}
-                  >
-                    {limit > 0 ? `${count}/${limit}` : count}
-                  </span>
-                </button>
-              );
-            }
-
-            const isOver = overCol === s;
-            return (
-              <div
-                key={s}
-                className={cn(
-                  "flex flex-col gap-2 rounded-xl p-1",
-                  isMobile && "min-w-[280px] max-w-[300px] snap-center flex-shrink-0",
-                )}
-                onDragOver={(e) => {
-                  if (dragId) {
-                    e.preventDefault();
-                    setOverCol(s);
-                  }
-                }}
-                onDragLeave={() => setOverCol((c) => (c === s ? null : c))}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragId) void moveTo(dragId, s);
-                  setOverCol(null);
-                  setDragId(null);
-                  setOverCell(null);
-                }}
-              >
-                <div className="flex items-center gap-2 px-1">
-                  <button
-                    type="button"
-                    onClick={() => toggleCollapseColumn(s)}
-                    className="flex items-center gap-1 text-left"
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ background: STATUS_META[s].color }}
-                    />
-                    <span className="text-[12px] font-bold uppercase tracking-wider">
-                      {t("tickets:status." + s, STATUS_META[s].label)}
-                    </span>
-                    {!count && !compactView ? (
-                      <ChevronDown className="h-3 w-3 text-text3 ml-0.5" />
-                    ) : null}
-                  </button>
-                  {limit > 0 ? (
-                    <div className="ml-auto flex items-center gap-1.5">
-                      <WipProgressBar pct={wipPct} />
-                      <span
-                        className={cn(
-                          "text-[10px] font-mono",
-                          isOverLimit ? "text-red-600 font-bold" : "text-text3",
-                        )}
-                      >
-                        {count}/{limit}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="ml-auto text-[10px] font-mono text-text3">{count}</span>
-                  )}
-                </div>
-
-                <div
-                  className="flex flex-col gap-2 min-h-[120px] p-2 rounded-[10px] transition-all"
-                  style={{
-                    background: isOver
-                      ? `color-mix(in oklab, ${STATUS_META[s].color} 10%, transparent)`
-                      : columnColors[s] || "transparent",
-                    border: "1.5px dashed " + (isOver ? STATUS_META[s].color : "transparent"),
-                  }}
-                >
-                  {items.map((c) => (
-                    <div
-                      key={c.id}
-                      draggable={canEdit}
-                      onDragStart={() => setDragId(c.id)}
-                      onDragEnd={() => {
-                        setDragId(null);
-                        setOverCol(null);
-                        setOverCell(null);
-                      }}
-                      onClick={(event) => handleKanbanCardClick(event, c.id)}
-                      className={cn(
-                        "pc-card group text-left hover:shadow-md transition-all select-none min-h-[44px]",
-                        compactView ? "p-2" : "p-3",
-                        selectedTicketIds.has(c.id) && "ring-2 ring-accent",
-                      )}
-                      style={{
-                        cursor: canEdit ? "grab" : "pointer",
-                        opacity: dragId === c.id ? 0.4 : 1,
-                        transform: dragId === c.id ? "scale(0.98)" : undefined,
-                        borderLeft: `4px solid ${slaIndicator(c).color}`,
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-[10.5px] text-text3">{c.ticket_code}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: slaIndicator(c).color }}
-                            title={slaIndicator(c).label}
-                          />
-                          <PriorityLabel p={c.priority} />
-                        </div>
-                      </div>
-                      <div
-                        className={cn(
-                          "font-semibold",
-                          compactView ? "text-[11.5px]" : "text-[12.5px] mb-0.5",
-                        )}
-                      >
-                        {c.device?.model || t("tickets:noAsset", "Nessun asset")}
-                      </div>
-                      {!compactView && (
-                        <div className="text-[11px] text-text3 mb-2">{c.client}</div>
-                      )}
-                      {canEdit && (
-                        <div
-                          className="mt-2 hidden grid-cols-1 gap-1 group-hover:grid"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <div className="grid grid-cols-3 gap-1">
-                            <select
-                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                              value={c.assignee_id ?? "unassigned"}
-                              onChange={(event) =>
-                                void moveTo(
-                                  c.id,
-                                  c.status,
-                                  event.target.value === "unassigned" ? null : event.target.value,
-                                )
-                              }
-                              title={t("assignTitle", "Assegna")}
-                            >
-                              <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
-                              {technicians.map((technician) => (
-                                <option key={technician.id} value={technician.id}>
-                                  {technician.full_name}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                              value={c.priority}
-                              onChange={(event) =>
-                                void updatePriority(c.id, event.target.value as TicketPriority)
-                              }
-                              title={t("tickets:columns.priority", "Priorità")}
-                            >
-                              {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
-                                <option key={priority} value={priority}>
-                                  {t("tickets:priority." + priority, label)}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                              value={c.status}
-                              onChange={(event) =>
-                                void moveTo(c.id, event.target.value as TicketStatus)
-                              }
-                              title={t("moveTo", "Sposta a")}
-                            >
-                              {KANBAN_STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                  {t("tickets:status." + status, STATUS_META[status].label)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <button
-                            type="button"
-                            className="pc-btn pc-btn-ghost pc-btn-sm h-7"
-                            onClick={() => setTicketContext(c.id, filteredRows.map((r) => r.id))}
-                          >
-                            {t("tickets:details", "Apri dettaglio")}
-                          </button>
-                        </div>
-                      )}
-                      <div
-                        className={cn(
-                          "flex items-center justify-between",
-                          compactView ? "mt-2" : "",
-                        )}
-                      >
-                        <div>
-                          {c.assignee ? (
-                            <AssigneeChip
-                              initials={c.assignee.initials}
-                              name={c.assignee.full_name}
-                            />
-                          ) : (
-                            <UnassignedBadge />
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <SlaMiniLabel card={c} compactView={compactView} />
-                          {!compactView && <TimeInColumnLabel updatedAt={c.updated_at} />}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {!items.length && (
-                    <div
-                      className="text-center py-6 text-[11px] text-text3 rounded-[7px]"
-                      style={{ border: "1.5px dashed var(--border2)" }}
-                    >
-                      {t("dragHere", "Trascina qui")}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <KanbanColumnsView
+          cards={filteredRows}
+          archiveDays={archiveDays}
+          wipLimits={wipLimits ?? DEFAULT_WIP_LIMITS}
+          columnColors={columnColors}
+          columnNotes={columnNotes}
+          noteSaving={noteSaving}
+          collapsedColumns={collapsedColumns}
+          compactView={compactView}
+          isMobile={isMobile}
+          dragId={dragId}
+          overCol={overCol}
+          overLimitCol={overLimitCol}
+          canEdit={canEdit}
+          isAdmin={isAdmin}
+          technicians={Array.isArray(technicians) ? technicians : []}
+          selectedTicketIds={selectedTicketIds}
+          cardViewers={cardViewers}
+          statusChangedAtMap={statusChangedAtMap}
+          isWipBlocked={isWipBlocked}
+          onToggleCollapseColumn={toggleCollapseColumn}
+          onDragStart={setDragId}
+          onDragEnd={() => {
+            setDragId(null);
+            setOverCol(null);
+            setOverCell(null);
+          }}
+          onOverCol={setOverCol}
+          onOverLimitCol={setOverLimitCol}
+          onOverCell={setOverCell}
+          onMove={(id, status, assigneeId) => void moveTo(id, status, assigneeId)}
+          onPriorityChange={(id, priority) => void updatePriority(id, priority)}
+          onCardClick={handleKanbanCardClick}
+          onSaveColumnNote={saveColumnNote}
+          onSetCurrentCard={setCurrentCard}
+        />
       )}
 
       {selectedCards.length > 0 ? (
@@ -1206,84 +1092,3 @@ function normalizeColor(value: string) {
   return match ? match[0] : "#ffffff";
 }
 
-function SlaMiniLabel({ card, compactView }: { card: Card; compactView?: boolean }) {
-  const indicator = slaIndicator(card);
-  const deadline = card.due_date || card.sla_deadline;
-  // Hide OK badges — only show warning/overdue
-  if (indicator.status === "ok") return null;
-  const countdown = deadline ? formatSlaCountdown(deadline) : indicator.label;
-  const isOverdue = indicator.status === "overdue";
-  return (
-    <span
-      className={cn(
-        "rounded-full px-1.5 py-0.5 font-semibold whitespace-nowrap",
-        compactView ? "text-[9px]" : "text-[9.5px]",
-        isOverdue && "border",
-      )}
-      style={{
-        background: `${indicator.color}22`,
-        color: indicator.color,
-        ...(isOverdue ? { borderColor: indicator.color, borderWidth: "1px" } : {}),
-      }}
-      title={countdown}
-    >
-      {countdown}
-    </span>
-  );
-}
-
-function UnassignedBadge() {
-  return (
-    <span className="inline-flex items-center w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-      Non assegnato
-    </span>
-  );
-}
-
-
-/** WIP progress bar with color thresholds: green <70%, yellow 70-90%, red >=90% */
-function WipProgressBar({ pct }: { pct: number }) {
-  const color = pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
-  const bgColor = pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
-  return (
-    <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
-      <div
-        className="h-full rounded-full transition-all duration-300"
-        style={{ width: `${Math.min(pct, 100)}%`, background: color }}
-      />
-    </div>
-  );
-}
-
-/** Shows how long a ticket has been in its current status column */
-function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
-  if (!updatedAt) return null;
-  try {
-    const d = new Date(updatedAt);
-    if (Number.isNaN(d.getTime())) return null;
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-    let label: string;
-    if (hours < 1) label = `${minutes}m`;
-    else if (hours < 24) label = `${hours}h`;
-    else {
-      const days = Math.floor(hours / 24);
-      label = `${days}g`;
-    }
-
-    return (
-      <span
-        className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono"
-        title={`In questa colonna da ${hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`}`}
-      >
-        <Clock className="h-2.5 w-2.5" />
-        {label}
-      </span>
-    );
-  } catch {
-    return null;
-  }
-}

@@ -1,5 +1,10 @@
-import type { MouseEvent } from "react";
+import { Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AssigneeChip, PriorityLabel } from "@/components/pcready/StatusBadge";
+import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
+import { computeCycleTime, CYCLE_COLORS, CYCLE_BG_COLORS } from "@/lib/cycle-time";
+import { pcReadyColors } from "@/lib/design-system";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import {
   STATUS_META,
   computeSlaStatus,
@@ -8,16 +13,17 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "@/lib/pcready";
-import { pcReadyColors } from "@/lib/design-system";
 import { cn } from "@/lib/utils";
-import { openTicketDetail } from "@/lib/detail-navigation";
+import type { SwimLaneCard, SwimLaneGroupMode } from "./SwimLaneView";
+import type { ViewerInfo } from "@/hooks/useKanbanPresence";
 import type { TechnicianOption } from "@/lib/technicians";
-import type { SwimLaneCard } from "./SwimLaneView";
-import { Clock } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import type { MouseEvent } from "react";
 
 interface SwimLaneRowProps {
   technician: TechnicianOption | null;
+  groupMode: SwimLaneGroupMode;
+  groupLabel: string;
+  groupColor?: string;
   technicians: TechnicianOption[];
   cards: SwimLaneCard[];
   totalLaneCards: number;
@@ -28,6 +34,7 @@ interface SwimLaneRowProps {
   onToggleCollapseColumn: (status: TicketStatus) => void;
   canEdit: boolean;
   dragId: string | null;
+  dragCardStatus: TicketStatus | null;
   overCell: string | null;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
@@ -37,10 +44,23 @@ interface SwimLaneRowProps {
   onPriorityChange?: (id: string, priority: TicketPriority) => void;
   selectedCardIds?: Set<string>;
   onCardClick?: (event: MouseEvent, id: string) => void;
+  wipLimits: WipLimits;
+  columnCounts: Record<string, number>;
+  overLimitCell: string | null;
+  onSetOverLimitCell: (cellId: string | null) => void;
+  cardViewers: ReadonlyMap<string, ViewerInfo[]>;
+  setCurrentCard: (cardId: string | null) => void;
+  statusChangedAtMap: ReadonlyMap<string, string>;
 }
 
+/**
+ *
+ */
 export function SwimLaneRow({
   technician,
+  groupMode,
+  groupLabel,
+  groupColor,
   technicians,
   cards,
   totalLaneCards,
@@ -51,6 +71,7 @@ export function SwimLaneRow({
   onToggleCollapseColumn,
   canEdit,
   dragId,
+  dragCardStatus,
   overCell,
   onDragStart,
   onDragEnd,
@@ -60,10 +81,27 @@ export function SwimLaneRow({
   onPriorityChange,
   selectedCardIds,
   onCardClick,
+  wipLimits,
+  columnCounts,
+  overLimitCell,
+  onSetOverLimitCell,
+  cardViewers,
+  setCurrentCard,
+  statusChangedAtMap,
 }: SwimLaneRowProps) {
+  const isWipBlocked = (targetStatus: TicketStatus): boolean => {
+    if (!dragId || !dragCardStatus) return false;
+    if (dragCardStatus === targetStatus) return false;
+    const limit = (wipLimits ?? DEFAULT_WIP_LIMITS)[targetStatus];
+    if (!limit || limit <= 0) return false;
+    const currentCount = columnCounts[targetStatus] ?? 0;
+    return currentCount >= limit;
+  };
   const { t } = useTranslation(["kanban", "tickets"]);
   const assigneeId = technician?.id ?? null;
-  const laneId = assigneeId ?? "unassigned";
+  const laneId = groupMode === "technician"
+    ? (assigneeId ?? "unassigned")
+    : `${groupMode}:${groupLabel}`;
 
   return (
     <tr className="border-b align-top" style={{ borderColor: "var(--border)" }}>
@@ -72,14 +110,31 @@ export function SwimLaneRow({
         style={{ background: "var(--surface)" }}
       >
         <div className="flex items-center justify-between gap-2">
-          <div>
-            {technician ? (
+          <div className="flex items-center gap-2 min-w-0">
+            {groupColor && (
+              <span
+                className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                style={{ background: groupColor }}
+              />
+            )}
+            {groupMode === "technician" && technician ? (
               <AssigneeChip initials={technician.initials} name={technician.full_name} />
-            ) : (
+            ) : groupMode === "technician" ? (
               <UnassignedBadge />
+            ) : (
+              <span
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold truncate max-w-[160px]"
+                style={{
+                  background: groupColor ? `${groupColor}18` : "var(--surface3)",
+                  color: groupColor || "var(--text1)",
+                }}
+                title={groupLabel}
+              >
+                {groupLabel}
+              </span>
             )}
           </div>
-          <span className="text-[10px] font-mono text-text3 whitespace-nowrap">
+          <span className="text-[10px] font-mono text-text3 whitespace-nowrap flex-shrink-0">
             {totalLaneCards}
           </span>
         </div>
@@ -110,26 +165,53 @@ export function SwimLaneRow({
         const cellId = `${laneId}:${status}`;
         const items = cards.filter((card) => card.status === status);
         const isOver = overCell === cellId;
+        const isBlocked = overLimitCell === cellId;
+        const blocked = isWipBlocked(status);
 
         return (
           <td key={status} className="min-w-[220px] p-2 align-top">
             <div
-              className="flex min-h-[112px] flex-col gap-2 rounded-[8px] p-2 transition-all"
+              className={cn(
+                "flex min-h-[112px] flex-col gap-2 rounded-[8px] p-2 transition-all",
+                isBlocked && "pc-shake",
+              )}
               style={{
-                background: isOver
-                  ? `color-mix(in oklab, ${STATUS_META[status].color} 10%, transparent)`
-                  : "var(--surface2)",
-                border: "1.5px dashed " + (isOver ? STATUS_META[status].color : "var(--border)"),
+                background: isBlocked
+                  ? `color-mix(in oklab, #DC2626 12%, transparent)`
+                  : isOver
+                    ? `color-mix(in oklab, ${STATUS_META[status].color} 10%, transparent)`
+                    : "var(--surface2)",
+                border: "1.5px dashed " + (isBlocked ? "#DC2626" : isOver ? STATUS_META[status].color : "var(--border)"),
+                boxShadow: isBlocked ? "0 0 12px rgba(220,38,38,0.25)" : undefined,
               }}
               onDragOver={(event) => {
                 if (!dragId) return;
+                if (blocked) {
+                  event.preventDefault();
+                  onSetOverLimitCell(cellId);
+                  return;
+                }
                 event.preventDefault();
                 onDragOverCell(cellId);
               }}
-              onDragLeave={() => onDragLeaveCell(cellId)}
+              onDragLeave={() => {
+                if (blocked) onSetOverLimitCell(null);
+                onDragLeaveCell(cellId);
+              }}
               onDrop={(event) => {
                 event.preventDefault();
-                if (dragId) onMove(dragId, status, assigneeId);
+                if (dragId) {
+                  if (blocked) {
+                    onSetOverLimitCell(null);
+                    onDragEnd();
+                    return;
+                  }
+                  // In non-technician modes, keep the card's current assignee
+                  const dropAssignee = groupMode === "technician"
+                    ? assigneeId
+                    : (cards.find((c) => c.id === dragId)?.assignee_id ?? null);
+                  onMove(dragId, status, dropAssignee);
+                }
                 onDragEnd();
               }}
             >
@@ -150,6 +232,9 @@ export function SwimLaneRow({
                   onMove={onMove}
                   onPriorityChange={onPriorityChange}
                   onCardClick={onCardClick}
+                  viewers={cardViewers.get(card.id) ?? []}
+                  onHover={setCurrentCard}
+                  statusChangedAt={statusChangedAtMap.get(card.id) ?? null}
                 />
               ))}
               {!items.length && (
@@ -168,37 +253,47 @@ export function SwimLaneRow({
   );
 }
 
-function TimeInColumnLabel({ updatedAt }: { updatedAt?: string | null }) {
-  const { t } = useTranslation("kanban");
-  if (!updatedAt) return null;
-  try {
-    const d = new Date(updatedAt);
-    if (Number.isNaN(d.getTime())) return null;
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+function TimeInColumnLabel({
+  updatedAt,
+  status,
+  createdAt,
+  statusChangedAt,
+}: {
+  updatedAt?: string | null;
+  status?: TicketStatus;
+  createdAt?: string | null;
+  statusChangedAt?: string | null;
+}) {
+  const actualChanged = statusChangedAt ?? createdAt ?? updatedAt;
+  const { cycle, lead, cycleColor } = computeCycleTime(createdAt, actualChanged, status);
+  if (!cycle) return null;
 
-    let label: string;
-    if (hours < 1) label = `${minutes}m`;
-    else if (hours < 24) label = `${hours}h`;
-    else {
-      const days = Math.floor(hours / 24);
-      label = `${days}g`;
-    }
+  const color = cycleColor ? CYCLE_COLORS[cycleColor] : undefined;
+  const bgColor = cycleColor ? CYCLE_BG_COLORS[cycleColor] : undefined;
 
-    return (
-      <span
-        className="inline-flex items-center gap-1 text-[10px] text-text3 font-mono"
-        title={t("inColumnSince", "In questa colonna da {{time}}", { time: hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m` })}
-      >
-        <Clock className="h-2.5 w-2.5" />
-        {label}
-      </span>
-    );
-  } catch {
-    return null;
-  }
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-0.5 text-[9.5px] font-mono font-medium leading-none"
+      style={{
+        background: bgColor ?? "transparent",
+        color: color ?? "var(--text3)",
+      }}
+      title={
+        lead
+          ? `In questa colonna da ${cycle} · Aperto da ${lead}`
+          : `In questa colonna da ${cycle}`
+      }
+    >
+      {cycleColor && (
+        <span
+          className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+          style={{ background: color }}
+        />
+      )}
+      <Clock className="h-2.5 w-2.5" />
+      {cycle}
+    </span>
+  );
 }
 
 function TicketCard({
@@ -216,6 +311,9 @@ function TicketCard({
   onMove,
   onPriorityChange,
   onCardClick,
+  viewers,
+  onHover,
+  statusChangedAt,
 }: {
   card: SwimLaneCard;
   canEdit: boolean;
@@ -231,6 +329,9 @@ function TicketCard({
   onMove: (id: string, status: TicketStatus, assigneeId: string | null) => void;
   onPriorityChange?: (id: string, priority: TicketPriority) => void;
   onCardClick?: (event: MouseEvent, id: string) => void;
+  viewers: ViewerInfo[];
+  onHover: (cardId: string | null) => void;
+  statusChangedAt?: string | null;
 }) {
   const { t } = useTranslation(["kanban", "tickets"]);
   const indicator = slaIndicator(card);
@@ -245,6 +346,8 @@ function TicketCard({
       draggable={canEdit}
       onDragStart={() => onDragStart(card.id)}
       onDragEnd={onDragEnd}
+      onMouseEnter={() => onHover(card.id)}
+      onMouseLeave={() => onHover(null)}
       onClick={(event) => (onCardClick ? onCardClick(event, card.id) : openTicketDetail(card.id))}
       className={cn(
         "pc-card group text-left transition-all hover:shadow-md",
@@ -274,6 +377,37 @@ function TicketCard({
         {card.device?.model || t("tickets:noAsset", "Nessun asset")}
       </div>
       {!compactView && <div className="mb-2 text-[11px] text-text3">{card.client}</div>}
+      {viewers.length > 0 && (
+        <div className="mb-2 flex items-center -space-x-1.5">
+          {viewers.slice(0, 3).map((v, i) => (
+            <span
+              key={v.full_name + i}
+              className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
+              style={{
+                background: "var(--accent2)",
+                color: "var(--accent)",
+                borderColor: "var(--surface1)",
+              }}
+              title={v.full_name}
+            >
+              {v.initials}
+            </span>
+          ))}
+          {viewers.length > 3 && (
+            <span
+              className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
+              style={{
+                background: "var(--surface3)",
+                color: "var(--text3)",
+                borderColor: "var(--surface1)",
+              }}
+              title={`+${viewers.length - 3} altri`}
+            >
+              +{viewers.length - 3}
+            </span>
+          )}
+        </div>
+      )}
       {canEdit && (
         <div
           className="mt-2 hidden grid-cols-1 gap-1 group-hover:grid"
@@ -347,7 +481,14 @@ function TicketCard({
         </div>
         <div className="flex flex-col items-end gap-1">
           <SlaMiniLabel card={card} compactView={compactView} />
-          {!compactView && <TimeInColumnLabel updatedAt={card.updated_at} />}
+          {!compactView && (
+            <TimeInColumnLabel
+              updatedAt={card.updated_at}
+              createdAt={card.created_at}
+              status={card.status}
+              statusChangedAt={statusChangedAt}
+            />
+          )}
         </div>
       </div>
     </div>

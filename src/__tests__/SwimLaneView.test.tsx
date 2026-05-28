@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { TicketStatus, TicketPriority } from "@/lib/pcready";
 
 // ── Mock di react-i18next ──────────────────────────────────────────────
@@ -30,12 +30,12 @@ vi.mock("@/lib/utils", () => ({
   cn: (...args: (string | undefined | null | false)[]) => args.filter(Boolean).join(" "),
 }));
 
-// ── Import reale del componente dopo i mock ────────────────────────────
-import { SwimLaneView, type SwimLaneCard } from "@/components/kanban/SwimLaneView";
 import { axe } from "vitest-axe";
 import { SwimLaneRow } from "@/components/kanban/SwimLaneRow";
-import type { TechnicianOption } from "@/lib/technicians";
+// ── Import reale del componente dopo i mock ────────────────────────────
+import { SwimLaneView, type SwimLaneCard } from "@/components/kanban/SwimLaneView";
 import type { WipLimits } from "@/lib/app-settings";
+import type { TechnicianOption } from "@/lib/technicians";
 
 const STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready", "completed", "archived"];
 
@@ -84,6 +84,7 @@ function renderSwimLane(overrides: Partial<Parameters<typeof SwimLaneView>[0]> =
   const props = {
     cards: MOCK_CARDS,
     technicians: MOCK_TECHNICIANS,
+    groupMode: "technician" as const,
     wipLimits: DEFAULT_WIP,
     statuses: STATUSES,
     visibleStatuses: STATUSES,
@@ -98,6 +99,9 @@ function renderSwimLane(overrides: Partial<Parameters<typeof SwimLaneView>[0]> =
     onDragOverCell: vi.fn(),
     onDragLeaveCell: vi.fn(),
     onMove: vi.fn(),
+    cardViewers: new Map() as ReadonlyMap<string, import("@/hooks/useKanbanPresence").ViewerInfo[]>,
+    setCurrentCard: vi.fn(),
+    statusChangedAtMap: new Map() as ReadonlyMap<string, string>,
     ...overrides,
   };
   return { props, ...render(<SwimLaneView {...props} />) };

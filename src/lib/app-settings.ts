@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireAdmin } from "./admin-users.server";
 import {
   OS_OPTIONS,
   type TicketStatus,
@@ -11,9 +10,20 @@ import {
   DEFAULT_SLA_CONFIG,
   slaConfigToLimits,
 } from "@/lib/pcready";
+import { requireAdmin } from "./admin-users.server";
 
+/**
+ *
+ */
 export type WipLimits = Record<TicketStatus, number>;
+/**
+ *
+ */
 export type KanbanColumnColors = Partial<Record<TicketStatus, string>>;
+/**
+ *
+ */
+export type KanbanColumnNotes = Partial<Record<TicketStatus, string>>;
 
 export const DEFAULT_WIP_LIMITS: WipLimits = {
   pending: 20,
@@ -24,6 +34,9 @@ export const DEFAULT_WIP_LIMITS: WipLimits = {
   archived: 0,
 };
 
+/**
+ *
+ */
 export type AppSettings = {
   organization_name: string;
   default_timezone: string;
@@ -40,6 +53,7 @@ export type AppSettings = {
   device_brands: string[];
   ticket_categories: string[];
   kanban_column_colors: KanbanColumnColors;
+  kanban_column_notes: KanbanColumnNotes;
   mfa_require_admin_users: boolean;
   mfa_require_all_users: boolean;
   mfa_grace_period_days: number;
@@ -61,6 +75,14 @@ const DEFAULT_SETTINGS: AppSettings = {
   archive_after_days: 7,
   log_retention_days: 365,
   kanban_column_colors: {},
+  kanban_column_notes: {
+    pending: "",
+    "in-progress": "",
+    testing: "",
+    ready: "",
+    completed: "",
+    archived: "",
+  },
   mfa_require_admin_users: false,
   mfa_require_all_users: false,
   mfa_grace_period_days: 7,
@@ -100,6 +122,17 @@ const SlaConfigSchema = z.object({
 
 const StringListSchema = z.array(z.string().trim().min(1)).default([]);
 const KanbanColumnColorsSchema = z
+  .object({
+    pending: z.string().optional(),
+    "in-progress": z.string().optional(),
+    testing: z.string().optional(),
+    ready: z.string().optional(),
+    completed: z.string().optional(),
+    archived: z.string().optional(),
+  })
+  .default({});
+
+const KanbanColumnNotesSchema = z
   .object({
     pending: z.string().optional(),
     "in-progress": z.string().optional(),
@@ -186,6 +219,9 @@ export const getSupportContact = createServerFn({ method: "GET" }).handler(async
 });
 
 // Client-side cached settings helpers
+/**
+ *
+ */
 export function setClientAppSettings(settings: Partial<AppSettings>) {
   try {
     (globalThis as any).__APP_SETTINGS__ = settings;
@@ -194,6 +230,9 @@ export function setClientAppSettings(settings: Partial<AppSettings>) {
   }
 }
 
+/**
+ *
+ */
 export function getClientAppSettings(): AppSettings {
   return (globalThis as any).__APP_SETTINGS__ ?? DEFAULT_SETTINGS;
 }
@@ -238,7 +277,7 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_settings" as any)
       .select("key, value")
-      .in("key", ["wip_limits", "archive_after_days", "kanban_column_colors"]);
+      .in("key", ["wip_limits", "archive_after_days", "kanban_column_colors", "kanban_column_notes"]);
 
     if (error) throw error;
 
@@ -247,10 +286,12 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     const merged = mergeAppSettingsRows(rows);
     const parsedWip = merged.wip_limits ?? DEFAULT_WIP_LIMITS;
     const result = WipLimitsSchema.safeParse(parsedWip);
+    const parsedNotes = KanbanColumnNotesSchema.safeParse(merged.kanban_column_notes);
     return {
       wip_limits: result.success ? result.data : DEFAULT_WIP_LIMITS,
       archive_after_days: merged.archive_after_days ?? 7,
       kanban_column_colors: merged.kanban_column_colors ?? {},
+      kanban_column_notes: parsedNotes.success ? parsedNotes.data : {},
     };
   });
 
@@ -260,21 +301,36 @@ export const updateKanbanAppSettings = createServerFn({ method: "POST" })
       accessToken: string;
       wip_limits: WipLimits;
       kanban_column_colors?: KanbanColumnColors;
+      kanban_column_notes?: KanbanColumnNotes;
     }) => data,
   )
-  .handler(async ({ data: { accessToken, wip_limits, kanban_column_colors } }) => {
+  .handler(async ({ data: { accessToken, wip_limits, kanban_column_colors, kanban_column_notes } }) => {
     const userId = await requireAdmin(accessToken);
     const parsedWip = WipLimitsSchema.parse(wip_limits);
     const parsedColors = KanbanColumnColorsSchema.parse(kanban_column_colors ?? {});
+    const parsedNotes = kanban_column_notes !== undefined
+      ? KanbanColumnNotesSchema.parse(kanban_column_notes)
+      : undefined;
     const updates = [
       { key: "wip_limits", value: JSON.stringify(parsedWip), updated_by: userId },
       { key: "kanban_column_colors", value: JSON.stringify(parsedColors), updated_by: userId },
     ];
+    if (parsedNotes !== undefined) {
+      updates.push({
+        key: "kanban_column_notes",
+        value: JSON.stringify(parsedNotes),
+        updated_by: userId,
+      });
+    }
     const { error } = await supabaseAdmin
       .from("app_settings" as any)
       .upsert(updates as any, { onConflict: "key" });
     if (error) throw error;
-    return { wip_limits: parsedWip, kanban_column_colors: parsedColors };
+    return {
+      wip_limits: parsedWip,
+      kanban_column_colors: parsedColors,
+      kanban_column_notes: parsedNotes ?? {},
+    };
   });
 
 export const updateAppSettings = createServerFn({ method: "POST" })
@@ -299,6 +355,9 @@ export const updateAppSettings = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+/**
+ *
+ */
 export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
   const settings = { ...DEFAULT_SETTINGS };
   const seenKeys = new Set<string>();
@@ -327,6 +386,9 @@ export function mergeAppSettingsRows(rows: AppSettingRow[]): AppSettings {
   return settings;
 }
 
+/**
+ *
+ */
 export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSettings {
   // Merge incoming settings with defaults so missing optional fields get default values
   const mergedSettings: AppSettings = {
@@ -341,6 +403,7 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
     archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
     log_retention_days: settings.log_retention_days ?? DEFAULT_SETTINGS.log_retention_days,
     kanban_column_colors: settings.kanban_column_colors ?? DEFAULT_SETTINGS.kanban_column_colors,
+    kanban_column_notes: settings.kanban_column_notes ?? DEFAULT_SETTINGS.kanban_column_notes,
     mfa_require_admin_users:
       settings.mfa_require_admin_users ?? DEFAULT_SETTINGS.mfa_require_admin_users,
     mfa_require_all_users: settings.mfa_require_all_users ?? DEFAULT_SETTINGS.mfa_require_all_users,
@@ -370,6 +433,7 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
       device_brands: StringListSchema,
       ticket_categories: StringListSchema,
       kanban_column_colors: KanbanColumnColorsSchema,
+      kanban_column_notes: KanbanColumnNotesSchema,
       mfa_require_admin_users: z.boolean(),
       mfa_require_all_users: z.boolean(),
       mfa_grace_period_days: z.number().int().min(0).max(365),

@@ -1,5 +1,59 @@
 import i18n from "@/i18n";
+import type { AppRole } from "@/lib/auth-context";
 
+/**
+ * Maps each role to its default visible widgets.
+ *
+ * Widgets not in a role's set are hidden by default but can be enabled
+ * by the user via the widget settings panel.
+ */
+const ROLE_DEFAULT_VISIBLE: Record<AppRole, ReadonlySet<WidgetId>> = {
+  admin: new Set([
+    "stat-cards",
+    "analytics-card",
+    "devices-without-ticket",
+    "tickets-without-device",
+    "trend-chart",
+    "recent-tickets",
+    "status-distribution",
+    "technician-heatmap",
+    "recent-activity",
+    "overdue-tickets",
+    "team-activity",
+    "technician-stats",
+    "critical-events",
+    "warranty-overview",
+    "maintenance-overview",
+    "kanban-wip-limits",
+  ]),
+  tech: new Set([
+    "stat-cards",
+    "analytics-card",
+    "devices-without-ticket",
+    "recent-tickets",
+    "status-distribution",
+    "technician-heatmap",
+    "recent-activity",
+    "overdue-tickets",
+    "team-activity",
+    "technician-stats",
+    "warranty-overview",
+    "maintenance-overview",
+    "kanban-wip-limits",
+  ]),
+  viewer: new Set([
+    "stat-cards",
+    "analytics-card",
+    "trend-chart",
+    "recent-tickets",
+    "status-distribution",
+    "warranty-overview",
+  ]),
+};
+
+/**
+ *
+ */
 export type WidgetId =
   | "stat-cards"
   | "analytics-card"
@@ -15,20 +69,30 @@ export type WidgetId =
   | "technician-stats"
   | "critical-events"
   | "warranty-overview"
-  | "maintenance-overview";
+  | "maintenance-overview"
+  | "kanban-wip-limits";
 
+/**
+ *
+ */
 export interface WidgetEntry {
   id: WidgetId;
   label: string;
   description: string;
 }
 
+/**
+ *
+ */
 export interface WidgetLayoutItem {
   id: WidgetId;
   order: number;
   visible: boolean;
 }
 
+/**
+ *
+ */
 export interface DashboardLayout {
   widgets: WidgetLayoutItem[];
 }
@@ -93,14 +157,28 @@ export const DASHBOARD_WIDGETS: WidgetEntry[] = [
     label: i18n.t("dashboard:widgets.maintenance-overview.label", "Manutenzioni"),
     description: i18n.t("dashboard:widgets.maintenance-overview.desc", "Prossimi interventi e manutenzioni scadute"),
   },
+  {
+    id: "kanban-wip-limits",
+    label: i18n.t("dashboard:widgets.kanban-wip-limits.label", "Limiti WIP Kanban"),
+    description: i18n.t("dashboard:widgets.kanban-wip-limits.desc", "Ticket per colonna e limiti WIP configurati"),
+  },
 ];
 
-export function createDefaultLayout(): DashboardLayout {
+/**
+ * Creates a default dashboard layout for the given role.
+ *
+ * @param role - The user's role (admin, tech, or viewer)
+ * @returns A {@link DashboardLayout} with widgets visible/hidden based on role defaults
+ */
+export function createDefaultLayoutForRole(role: AppRole): DashboardLayout {
+  const visibleSet = ROLE_DEFAULT_VISIBLE[role];
   return {
     widgets: DASHBOARD_WIDGETS.map((w, i) => ({
       id: w.id,
       order: i,
-      visible: w.id !== "technician-stats", // technician-stats hidden by default
+      visible: visibleSet.has(w.id),
     })),
   };
 }
+
+

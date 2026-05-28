@@ -1,48 +1,6 @@
-import { createLazyFileRoute, Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { PageErrorBoundary } from "@/components/page-states";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useTickets } from "@/hooks/use-tickets";
-import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcready";
-import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
-import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
-import { useAuth } from "@/lib/auth-context";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { useDashboardLayout } from "@/hooks/useDashboardLayout";
-import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helpers";
-import {
-  DashboardStatCard,
-  DashboardDonut,
-  DashboardAreaSpark,
-  DashboardAreaSparkMulti,
-} from "@/components/dashboard/DashboardStatWidgets";
-import { dashboardDeviceLabel } from "@/components/dashboard/dashboard-stat-utils";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
-import { getPublicAppSettings } from "@/lib/app-settings";
-import { buildDownloadFileName } from "@/lib/downloads";
-import { CriticalEventsWidget } from "@/components/dashboard/CriticalEventsWidget";
-import { OverdueTicketsWidget } from "@/components/dashboard/OverdueTicketsWidget";
-import { TeamActivityWidget } from "@/components/dashboard/TeamActivityWidget";
-import { WidgetSettingsPanel } from "@/components/dashboard/WidgetSettingsPanel";
-import type { WidgetId } from "@/components/dashboard/widget-registry";
-import {
-  fetchMaintenanceDashboard,
-  getMaintenanceStatus,
-  MAINTENANCE_STATUS_META,
-  type MaintenanceSchedule,
-} from "@/lib/maintenance";
-import {
-  daysUntil,
-  getWarrantyStatus,
-  WARRANTY_STATUS_META,
-  type WarrantyStatus,
-} from "@/lib/warranty";
+import { createLazyFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   TrendingUp,
   Activity,
@@ -51,10 +9,56 @@ import {
   CircleCheck,
   ArrowRight,
   Settings2,
+  StickyNote,
   ListChecks as ListChecksIcon,
 } from "lucide-react";
-
+import { lazy, Suspense, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { CriticalEventsWidget } from "@/components/dashboard/CriticalEventsWidget";
+import { dashboardDeviceLabel } from "@/components/dashboard/dashboard-stat-utils";
+import {
+  DashboardStatCard,
+  DashboardDonut,
+  DashboardAreaSpark,
+  DashboardAreaSparkMulti,
+} from "@/components/dashboard/DashboardStatWidgets";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { KanbanWipWidget } from "@/components/dashboard/KanbanWipWidget";
+import { OverdueTicketsWidget } from "@/components/dashboard/OverdueTicketsWidget";
+import { TeamActivityWidget } from "@/components/dashboard/TeamActivityWidget";
+import TechnicianHeatmapWidget from "@/components/dashboard/TechnicianHeatmapWidget";
+import { WidgetAnnotationBadge } from "@/components/dashboard/WidgetAnnotationBadge";
+import { WidgetAnnotationsDrawer } from "@/components/dashboard/WidgetAnnotationsDrawer";
+import { WidgetSettingsPanel } from "@/components/dashboard/WidgetSettingsPanel";
+import { PageErrorBoundary } from "@/components/page-states";
+import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
+import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTickets } from "@/hooks/use-tickets";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { getPublicAppSettings } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
+import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helpers";
+import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
+import { buildDownloadFileName } from "@/lib/downloads";
+import {
+  fetchMaintenanceDashboard,
+  getMaintenanceStatus,
+  MAINTENANCE_STATUS_META,
+  type MaintenanceSchedule,
+} from "@/lib/maintenance";
+import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcready";
+import {
+  daysUntil,
+  getWarrantyStatus,
+  WARRANTY_STATUS_META,
+  type WarrantyStatus,
+} from "@/lib/warranty";
+
+import type { WidgetId } from "@/components/dashboard/widget-registry";
 
 const AnalyticsCard = lazy(() =>
   import("@/components/dashboard/AnalyticsCard").then((module) => ({
@@ -209,6 +213,7 @@ function DashboardPage() {
   });
   const { visibleWidgets, allWidgets, editMode, setEditMode, reorder, toggleVisibility } =
     useDashboardLayout();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const checklistStatsQuery = useQuery({
     queryKey: ["dashboard", "checklist-stats"],
     queryFn: fetchChecklistStats,
@@ -238,14 +243,24 @@ function DashboardPage() {
           <h2 className="text-lg font-semibold">{t("title")}</h2>
           <div className="text-xs text-text3">{t("headingDesc")}</div>
         </div>
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          onClick={() => setEditMode(!editMode)}
-          title={t("widgetSettings")}
-        >
-          <Settings2 className="w-4 h-4 mr-1" />
-          {t("widgets.buttonLabel")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={() => setDrawerOpen(true)}
+            title="Note widget"
+          >
+            <StickyNote className="w-4 h-4 mr-1" />
+            Note
+          </button>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={() => setEditMode(!editMode)}
+            title={t("widgetSettings")}
+          >
+            <Settings2 className="w-4 h-4 mr-1" />
+            {t("widgets.buttonLabel")}
+          </button>
+        </div>
       </div>
 
       {/* Widget settings panel */}
@@ -259,33 +274,38 @@ function DashboardPage() {
       )}
 
       {/* Render widgets in configured order */}
-      {visibleWidgets.map((w) =>
-        renderWidget(w.id, {
-          isMobile,
-          tickets,
-          devices,
-          devicesWithoutTicket,
-          warrantyDevices,
-          ticketsWithoutDeviceCount,
-          activeClientsCount,
-          dateFrom,
-          setDateFrom,
-          dateTo,
-          setDateTo,
-          analytics,
-          analyticsLoading,
-          dedupLogs,
-          range,
-          periodLabel,
-          counts,
-          total,
-          priorityCounts,
-          checklistStats: checklistStatsQuery.data ?? null,
-          satisfactionStats: satisfactionQuery.data ?? null,
-          loadSettings,
-          session,
-        }),
-      )}
+      {visibleWidgets.map((w) => (
+        <div key={w.id} className="relative group">
+          <WidgetAnnotationBadge widgetId={w.id} />
+          {renderWidget(w.id, {
+            isMobile,
+            tickets,
+            devices,
+            devicesWithoutTicket,
+            warrantyDevices,
+            ticketsWithoutDeviceCount,
+            activeClientsCount,
+            dateFrom,
+            setDateFrom,
+            dateTo,
+            setDateTo,
+            analytics,
+            analyticsLoading,
+            dedupLogs,
+            range,
+            periodLabel,
+            counts,
+            total,
+            priorityCounts,
+            checklistStats: checklistStatsQuery.data ?? null,
+            satisfactionStats: satisfactionQuery.data ?? null,
+            loadSettings,
+            session,
+          })}
+        </div>
+      ))}
+
+      <WidgetAnnotationsDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
     </div>
   );
 }
@@ -802,7 +822,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
       // These are rendered as part of the "devices-without-ticket" grid group
       return null;
 
-    case "recent-tickets":
+    case "recent-tickets": {
       const recentTicketColumns: MobileCardColumn<any>[] = [
         {
           label: "Codice",
@@ -972,6 +992,8 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         </div>
       );
 
+    }
+
     case "status-distribution":
       // This is included within "recent-tickets" grid
       return null;
@@ -1072,6 +1094,13 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
       return (
         <div key="critical-events" className="grid grid-cols-1 gap-[18px]">
           <CriticalEventsWidget accessToken={ctx.session?.access_token} />
+        </div>
+      );
+
+    case "kanban-wip-limits":
+      return (
+        <div key="kanban-wip-limits" className="grid grid-cols-1 gap-[18px]">
+          <KanbanWipWidget accessToken={ctx.session?.access_token} />
         </div>
       );
 

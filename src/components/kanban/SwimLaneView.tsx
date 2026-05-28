@@ -1,12 +1,24 @@
-import { useMemo, type MouseEvent } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import OverflowTable from "@/components/ui/overflow-table";
-import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
 import { pcReadyColors } from "@/lib/design-system";
-import type { TechnicianOption } from "@/lib/technicians";
+import { PRIORITY_LABEL, STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "react-i18next";
 import { SwimLaneRow } from "./SwimLaneRow";
+import type { ViewerInfo } from "@/hooks/useKanbanPresence";
+import type { TechnicianOption } from "@/lib/technicians";
+
+const PRIORITY_COLORS: Record<TicketPriority, string> = {
+  high: "#DC2626",
+  med: "#EA580C",
+  low: "#16A34A",
+};
+
+/**
+ *
+ */
+export type SwimLaneGroupMode = "technician" | "client" | "priority";
 
 function WipProgressBar({ pct }: { pct: number }) {
   const color =
@@ -27,6 +39,9 @@ function WipProgressBar({ pct }: { pct: number }) {
   );
 }
 
+/**
+ *
+ */
 export interface SwimLaneCard {
   id: string;
   ticket_code: string;
@@ -46,6 +61,7 @@ export interface SwimLaneCard {
 interface SwimLaneViewProps {
   cards: SwimLaneCard[];
   technicians: TechnicianOption[];
+  groupMode: SwimLaneGroupMode;
   wipLimits: WipLimits;
   statuses: TicketStatus[];
   visibleStatuses: TicketStatus[];
@@ -63,11 +79,18 @@ interface SwimLaneViewProps {
   onPriorityChange?: (id: string, priority: TicketPriority) => void;
   selectedCardIds?: Set<string>;
   onCardClick?: (event: MouseEvent, id: string) => void;
+  cardViewers: ReadonlyMap<string, ViewerInfo[]>;
+  setCurrentCard: (cardId: string | null) => void;
+  statusChangedAtMap: ReadonlyMap<string, string>;
 }
 
+/**
+ *
+ */
 export function SwimLaneView({
   cards,
   technicians,
+  groupMode = "technician",
   wipLimits,
   statuses,
   visibleStatuses,
@@ -85,28 +108,92 @@ export function SwimLaneView({
   onPriorityChange,
   selectedCardIds,
   onCardClick,
+  cardViewers,
+  setCurrentCard,
+  statusChangedAtMap,
 }: SwimLaneViewProps) {
   const { t } = useTranslation(["kanban", "tickets"]);
+  const [overLimitCell, setOverLimitCell] = useState<string | null>(null);
+
+  // Clear blocked-cell indicator when drag ends
+  useEffect(() => {
+    if (!dragId) setOverLimitCell(null);
+  }, [dragId]);
+
+  // Dragged card's current status (used for WIP block check across all lanes)
+  const dragCardStatus = useMemo(() => {
+    if (!dragId) return null;
+    const card = cards.find((c) => c.id === dragId);
+    return card?.status ?? null;
+  }, [cards, dragId]);
+
+  const columnCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const card of cards) {
+      counts[card.status] = (counts[card.status] || 0) + 1;
+    }
+    return counts;
+  }, [cards]);
+
   const lanes = useMemo(() => {
+    if (groupMode === "client") {
+      const map = new Map<string, SwimLaneCard[]>();
+      for (const card of cards) {
+        const key = card.client || t("tickets:noClient", "Nessun cliente");
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(card);
+      }
+      return Array.from(map.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([clientName, laneCards]) => ({
+          id: `client:${clientName}`,
+          technician: null,
+          groupLabel: clientName,
+          groupColor: undefined as string | undefined,
+          cards: laneCards,
+        }));
+    }
+
+    if (groupMode === "priority") {
+      const priorityOrder: TicketPriority[] = ["high", "med", "low"];
+      const map = new Map<TicketPriority, SwimLaneCard[]>();
+      for (const p of priorityOrder) map.set(p, []);
+      for (const card of cards) {
+        if (map.has(card.priority)) {
+          map.get(card.priority)!.push(card);
+        }
+      }
+      return priorityOrder
+        .filter((p) => map.get(p)!.length > 0)
+        .map((p) => ({
+          id: `priority:${p}`,
+          technician: null,
+          groupLabel: t("tickets:priority." + p, PRIORITY_LABEL[p]),
+          groupColor: PRIORITY_COLORS[p],
+          cards: map.get(p)!,
+        }));
+    }
+
+    // Technician mode (default)
     const map = new Map<string | null, SwimLaneCard[]>();
     for (const technician of technicians) map.set(technician.id, []);
     map.set(null, []);
-
     for (const card of cards) {
       const key = card.assignee_id ?? null;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(card);
     }
-
     return [
       ...technicians.map((technician) => ({
         id: technician.id,
         technician,
+        groupLabel: technician.full_name,
+        groupColor: undefined as string | undefined,
         cards: map.get(technician.id) ?? [],
       })),
-      { id: "unassigned", technician: null, cards: map.get(null) ?? [] },
+      { id: "unassigned", technician: null, groupLabel: t("tickets:unassigned", "Non assegnato"), groupColor: undefined as string | undefined, cards: map.get(null) ?? [] },
     ];
-  }, [cards, technicians]);
+  }, [cards, technicians, groupMode, t]);
 
   return (
     <div className="pc-card overflow-hidden">
@@ -118,7 +205,11 @@ export function SwimLaneView({
                 className="sticky left-0 z-20 w-44 min-w-44 border-b px-3 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-text3"
                 style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
               >
-                {t("swimlanesHeader", "Tecnico / Stato")}
+                {groupMode === "technician"
+                  ? t("swimlanesHeader", "Tecnico / Stato")
+                  : groupMode === "client"
+                    ? t("swimlanesHeaderClient", "Cliente / Stato")
+                    : t("swimlanesHeaderPriority", "Priorità / Stato")}
               </th>
               {statuses.map((status) => {
                 const isHidden =
@@ -195,6 +286,9 @@ export function SwimLaneView({
               <SwimLaneRow
                 key={lane.id}
                 technician={lane.technician}
+                groupMode={groupMode}
+                groupLabel={lane.groupLabel ?? ""}
+                groupColor={lane.groupColor}
                 technicians={technicians}
                 cards={lane.cards}
                 totalLaneCards={lane.cards.length}
@@ -205,6 +299,7 @@ export function SwimLaneView({
                 onToggleCollapseColumn={onToggleCollapseColumn}
                 canEdit={canEdit}
                 dragId={dragId}
+                dragCardStatus={dragCardStatus}
                 overCell={overCell}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
@@ -214,6 +309,13 @@ export function SwimLaneView({
                 onPriorityChange={onPriorityChange}
                 selectedCardIds={selectedCardIds}
                 onCardClick={onCardClick}
+                wipLimits={wipLimits}
+                columnCounts={columnCounts}
+                overLimitCell={overLimitCell}
+                onSetOverLimitCell={setOverLimitCell}
+                cardViewers={cardViewers}
+                setCurrentCard={setCurrentCard}
+                statusChangedAtMap={statusChangedAtMap}
               />
             ))}
           </tbody>

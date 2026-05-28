@@ -72,6 +72,9 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     device_brands: ["Dell", "Lenovo"],
     ticket_categories: ["Hardware", "Software"],
     kanban_column_colors: {},
+    kanban_column_notes: {
+      pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+    },
     mfa_require_admin_users: false,
     mfa_require_all_users: false,
     mfa_grace_period_days: 7,

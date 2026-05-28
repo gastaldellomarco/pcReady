@@ -6,6 +6,9 @@ import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-co
 const TICKET_DETAIL_SELECT =
   "id, ticket_code, client, client_id, requester, ticket_type, priority, status, source, assignee_id, software, notes, checklist, checklist_structure, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, sla_response_due_at, sla_resolution_due_at, completed_at, device_id, model, billable_hours, hourly_rate, material_cost, labor_cost, total_cost, cost_notes, cost_currency, bundle_assignment_id, bundle_extra_hours, bundle_extra_amount, onsite_visit, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
 
+/**
+ *
+ */
 export async function loadClientOptions(query: string) {
   let request = supabase.from("clients").select("id, name, company_name, email").order("name");
   const term = query.trim().replace(/[,%]/g, "");
@@ -16,6 +19,9 @@ export async function loadClientOptions(query: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export async function fetchClientById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
@@ -27,6 +33,9 @@ export async function fetchClientById(id: string) {
   return data ?? null;
 }
 
+/**
+ *
+ */
 export async function loadContactOptions(query: string, clientId: string) {
   if (!clientId) return [];
   const term = query.trim().replace(/[,%]/g, "");
@@ -45,6 +54,9 @@ export async function loadContactOptions(query: string, clientId: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export async function fetchContactById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
@@ -56,6 +68,9 @@ export async function fetchContactById(id: string) {
   return data ?? null;
 }
 
+/**
+ *
+ */
 export async function loadDeviceOptions(query: string, clientId: string) {
   if (!clientId) return [];
   const term = query.trim().replace(/[,%]/g, "");
@@ -73,6 +88,9 @@ export async function loadDeviceOptions(query: string, clientId: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export async function fetchDeviceById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
@@ -84,6 +102,9 @@ export async function fetchDeviceById(id: string) {
   return data ?? null;
 }
 
+/**
+ *
+ */
 export function useCreateTicket() {
   const qc = useQueryClient();
   return useMutation({
@@ -102,6 +123,9 @@ export function useCreateTicket() {
   });
 }
 
+/**
+ *
+ */
 export async function fetchTicketById(id: string) {
   if (!id) return null;
   const { data, error } = await supabase
@@ -113,6 +137,9 @@ export async function fetchTicketById(id: string) {
   return data ?? null;
 }
 
+/**
+ *
+ */
 export async function fetchTicketAssignments(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
@@ -124,6 +151,9 @@ export async function fetchTicketAssignments(id: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export async function fetchTicketAssignmentHistory(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
@@ -137,6 +167,9 @@ export async function fetchTicketAssignmentHistory(id: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export async function fetchTicketStatusHistory(id: string) {
   if (!id) return [];
   const { data, error } = await supabase
@@ -148,6 +181,9 @@ export async function fetchTicketStatusHistory(id: string) {
   return (data ?? []) as any[];
 }
 
+/**
+ *
+ */
 export type TicketsListParams = {
   status?: string;
   priority?: string;
@@ -173,6 +209,9 @@ const STATUS_ORDER: Record<string, number> = {
   archived: 5,
 };
 
+/**
+ *
+ */
 export async function fetchTicketsList(params: TicketsListParams) {
   const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
@@ -226,6 +265,9 @@ export async function fetchTicketsList(params: TicketsListParams) {
   return { data: result, count: count ?? 0 };
 }
 
+/**
+ *
+ */
 export function useTicketsList(params: TicketsListParams) {
   return useQuery({
     queryKey: [
@@ -250,6 +292,9 @@ export function useTicketsList(params: TicketsListParams) {
   });
 }
 
+/**
+ *
+ */
 export function useTicketQuery(id: string | null) {
   return useQuery({
     queryKey: QUERY_KEYS.ticket(id ?? "null"),
@@ -260,6 +305,9 @@ export function useTicketQuery(id: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useTicketAssignmentsQuery(id: string | null) {
   return useQuery({
     queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "assignments"],
@@ -268,6 +316,9 @@ export function useTicketAssignmentsQuery(id: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useTicketHistoryQuery(id: string | null) {
   return useQuery({
     queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "history"],
@@ -276,6 +327,9 @@ export function useTicketHistoryQuery(id: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useTicketStatusHistoryQuery(id: string | null) {
   return useQuery({
     queryKey: [...QUERY_KEYS.ticket(id ?? "null"), "status-history"],
@@ -284,6 +338,9 @@ export function useTicketStatusHistoryQuery(id: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateTicket() {
   const qc = useQueryClient();
   return useMutation({
@@ -299,6 +356,9 @@ export function useUpdateTicket() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteTicket() {
   const qc = useQueryClient();
   return useMutation({
@@ -313,6 +373,9 @@ export function useDeleteTicket() {
   });
 }
 
+/**
+ *
+ */
 export async function addTicketStatusHistory(ticketId: string, payload: any) {
   const record = { ticket_id: ticketId, ...payload };
   const { error } = await supabase.from("ticket_status_history").insert(record);
@@ -320,6 +383,9 @@ export async function addTicketStatusHistory(ticketId: string, payload: any) {
   return true;
 }
 
+/**
+ *
+ */
 export function useAddTicketStatusHistory() {
   const qc = useQueryClient();
   return useMutation({
@@ -332,6 +398,9 @@ export function useAddTicketStatusHistory() {
   });
 }
 
+/**
+ *
+ */
 export function useTicketsInfiniteList(params: TicketsListParams) {
   return useInfiniteQuery({
     queryKey: [
@@ -359,6 +428,28 @@ export function useTicketsInfiniteList(params: TicketsListParams) {
     gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
   });
+}
+
+/**
+ * Fetch the latest status-change timestamp for each given ticket ID.
+ * Returns a Map<ticketId, changed_at_iso_string>.
+ * Tickets with no history entry will not appear in the map.
+ */
+export async function fetchStatusChangeTimestamps(ticketIds: string[]): Promise<Map<string, string>> {
+  if (!ticketIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("ticket_status_history")
+    .select("ticket_id, changed_at")
+    .in("ticket_id", ticketIds)
+    .order("changed_at", { ascending: false });
+  if (error) throw error;
+  const map = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (!map.has(row.ticket_id)) {
+      map.set(row.ticket_id, row.changed_at);
+    }
+  }
+  return map;
 }
 
 const ARCHIVED_TICKET_LIST_SELECT =
@@ -416,6 +507,9 @@ export async function fetchAllTicketsList(params: TicketsListParams) {
   return { data: result, count: count ?? 0 };
 }
 
+/**
+ *
+ */
 export async function fetchArchivedTicketsList(params: { page?: number; pageSize?: number }) {
   const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
@@ -430,6 +524,9 @@ export async function fetchArchivedTicketsList(params: { page?: number; pageSize
   return { data: (data ?? []) as any[], count: count ?? 0 };
 }
 
+/**
+ *
+ */
 export function useArchivedTicketsInfiniteList(params: { pageSize?: number }) {
   return useInfiniteQuery({
     queryKey: [...QUERY_KEYS.tickets, "archived", "infinite"],
@@ -472,4 +569,5 @@ export default {
   useArchivedTicketsInfiniteList,
   addTicketStatusHistory,
   useAddTicketStatusHistory,
+  fetchStatusChangeTimestamps,
 };

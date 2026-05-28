@@ -1,14 +1,17 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "sonner";
-import { AppSettingsSchema } from "@/lib/schemas";
+import { z } from "zod";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
+import { AppSettingsSchema } from "@/lib/schemas";
 import type { AppSettings } from "@/lib/app-settings";
 
 type SaveServerFn = (opts: { data: { accessToken: string; settings: AppSettings } }) => Promise<{ success: boolean }>;
 
+/**
+ *
+ */
 export function useAdminSettingsForm(args: {
   accessToken: string | undefined;
   settings: AppSettings | null;
@@ -139,6 +142,9 @@ export function useAdminSettingsForm(args: {
         device_brands: values.device_brands ?? [],
         ticket_categories: values.ticket_categories ?? [],
         kanban_column_colors: settings?.kanban_column_colors ?? {},
+        kanban_column_notes: settings?.kanban_column_notes ?? {
+          pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+        },
         mfa_require_admin_users: !!(values as any).mfa_require_admin_users,
         mfa_require_all_users: !!(values as any).mfa_require_all_users,
         mfa_grace_period_days: Number((values as any).mfa_grace_period_days ?? 7),
