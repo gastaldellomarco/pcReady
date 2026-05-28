@@ -5,19 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getKanbanAppSettings, DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
+import { KANBAN_STATUSES } from "@/lib/kanban/constants";
 import { STATUS_META, type TicketStatus } from "@/lib/pcready";
 
 interface KanbanWipWidgetProps {
   accessToken: string | undefined;
 }
-
-const KANBAN_STATUSES: TicketStatus[] = [
-  "pending",
-  "in-progress",
-  "testing",
-  "ready",
-  "completed",
-];
 
 /**
  * Dashboard widget that displays current ticket counts per Kanban column

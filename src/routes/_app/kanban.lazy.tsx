@@ -4,8 +4,10 @@ import { Rows3, LayoutList, Settings2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { BulkActionBar } from "@/components/kanban/BulkActionBar";
 import { KanbanColumnsView } from "@/components/kanban/KanbanColumnsView";
 import { SwimLaneView, type SwimLaneGroupMode } from "@/components/kanban/SwimLaneView";
+import { WipConfigDialog } from "@/components/kanban/WipConfigDialog";
 import {
   AsyncAutocomplete,
   type AsyncAutocompleteOption,
@@ -36,6 +38,8 @@ import { useAuth } from "@/lib/auth-context";
 import { setTicketContext } from "@/lib/detail-navigation";
 import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { errorMessage } from "@/lib/errors";
+import { KANBAN_STATUSES, KANBAN_VIEW_MODE_KEY, KANBAN_FILTERS_KEY, KANBAN_COLLAPSED_COLUMNS_KEY, KANBAN_GROUP_MODE_KEY } from "@/lib/kanban/constants";
+import { slaIndicator } from "@/lib/kanban/helpers";
 import { createNotification } from "@/lib/notifications";
 import {
   STATUS_META,
@@ -44,7 +48,6 @@ import {
   type TicketType,
   PRIORITY_LABEL,
   TICKET_TYPE_LABEL,
-  computeSlaStatus,
 } from "@/lib/pcready";
 import activityQueries from "@/lib/queries/activity";
 import { fetchTicketsList, fetchStatusChangeTimestamps, loadClientOptions } from "@/lib/queries/tickets";
@@ -79,11 +82,6 @@ export interface Card {
 }
 
 type ViewMode = "columns" | "swimlanes";
-const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready", "completed"];
-const KANBAN_VIEW_MODE_KEY = "pcready:kanban:view-mode";
-const KANBAN_FILTERS_KEY = "pcready:kanban:filters";
-const KANBAN_COLLAPSED_COLUMNS_KEY = "pcready:kanban:collapsed-columns";
-const KANBAN_GROUP_MODE_KEY = "pcready:kanban:group-mode";
 
 type SlaFilter = "all" | "warning" | "overdue";
 type ClientOption = AsyncAutocompleteOption;
@@ -830,222 +828,45 @@ function KanbanPage() {
         />
       )}
 
-      {selectedCards.length > 0 ? (
-        <div
-          className={cn(
-            "fixed bottom-0 left-0 right-0 z-40 flex flex-wrap items-center gap-1.5 rounded-t-xl border px-2 py-2 shadow-lg",
-            isMobile ? "pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]" : "bottom-4 left-1/2 max-w-[calc(100vw-2rem)] -translate-x-1/2",
-            !isMobile && "rounded-xl",
-          )}
-          style={{ background: "var(--surface1)", borderColor: "var(--border)" }}
-        >
-          {isMobile && (
-            <div className="flex w-full items-center justify-between gap-1">
-              <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">
-                {selectedCards.length} {t("bulk.selected", "selezionati")}
-              </span>
-              <button
-                type="button"
-                className="pc-btn pc-btn-ghost pc-btn-xs"
-                onClick={() => setSelectedTicketIds(new Set())}
-              >
-                <X className="h-3 w-3" /> {t("bulk.deselect", "Deseleziona")}
-              </button>
-            </div>
-          )}
-          {!isMobile && (
-            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
-              {selectedCards.length} {t("bulk.selected", "selezionati")}
-            </span>
-          )}
-          <select
-            className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
-            value=""
-            disabled={bulkBusy || !canEdit}
-            onChange={(event) => {
-              const status = event.target.value as TicketStatus;
-              if (status) requestKanbanBulkStatus(status);
-            }}
-          >
-            <option value="">{t("bulk.changeStatus", "Cambia stato...")}</option>
-            {KANBAN_STATUSES.concat("archived").map((status) => (
-              <option key={status} value={status}>
-                {t("tickets:status." + status, STATUS_META[status].label)}
-              </option>
-            ))}
-          </select>
-          <select
-            className="pc-input h-8 max-w-[180px] px-3 py-0 text-[12px] leading-none"
-            value=""
-            disabled={bulkBusy || !canEdit}
-            onChange={(event) => {
-              const value = event.target.value;
-              if (value)
-                void applyKanbanBulkPatch(
-                  { assignee_id: value === "unassigned" ? null : value },
-                  t("bulk.reassignAction", "riassegnazione bulk"),
-                );
-            }}
-          >
-            <option value="">{t("bulk.reassign", "Riassegna...")}</option>
-            <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
-            {technicians.map((technician) => (
-              <option key={technician.id} value={technician.id}>
-                {technician.full_name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
-            value=""
-            disabled={bulkBusy || !canEdit}
-            onChange={(event) => {
-              const priority = event.target.value as TicketPriority;
-              if (priority)
-                void applyKanbanBulkPatch(
-                  { priority },
-                  t("bulk.changePriorityAction", "cambio priorità a {{priority}}", { priority: t("tickets:priority." + priority, PRIORITY_LABEL[priority]) }),
-                );
-            }}
-          >
-            <option value="">{t("bulk.priority", "Priorità...")}</option>
-            {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
-              <option key={priority} value={priority}>
-                {t("tickets:priority." + priority, label)}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="pc-btn pc-btn-danger pc-btn-sm"
-            disabled={bulkBusy || !canEdit}
-            onClick={() => setBulkConfirmStatus("archived")}
-          >
-            {t("bulk.archive", "Archivia")}
-          </button>
-          <button
-            type="button"
-            className="pc-btn pc-btn-ghost pc-btn-sm"
-            onClick={() => setSelectedTicketIds(new Set())}
-          >
-            X {t("bulk.deselect", "Deseleziona")}
-          </button>
-          {!isMobile && (
-            <span className="text-[10px] text-text3">{t("bulk.shiftClickHint", "Shift+click sulle card per selezionare")}</span>
-          )}
-        </div>
-      ) : null}
-
-      {wipDialogOpen && (
-        <div
-          className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setWipDialogOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-xl border bg-surface p-5 shadow-lg"
-            style={{ borderColor: "var(--border)" }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-[15px] font-bold">{t("wipConfig.title", "Configura Kanban")}</h3>
-                <p className="text-[12px] text-text3">
-                  {t("wipConfig.desc", "Limiti WIP e colori sfondo colonne. 0 = nessun limite.")}
-                </p>
-              </div>
-              <button className="pc-btn-icon touch-target" onClick={() => setWipDialogOpen(false)}>
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {KANBAN_STATUSES.map((status) => (
-                <div
-                  key={status}
-                  className="rounded-lg border p-3"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ background: STATUS_META[status].color }}
-                    />
-                    <span className="text-[12px] font-bold uppercase tracking-wide">
-                      {t("tickets:status." + status, STATUS_META[status].label)}
-                    </span>
-                  </div>
-                  <label className="mb-2 block text-[11px] font-semibold text-text2">
-                    {t("wipConfig.wipLimitLabel", "Limite WIP")}
-                    <input
-                      type="number"
-                      min={0}
-                      max={999}
-                      className="pc-input mt-1 w-full"
-                      value={wipDraft[status] ?? 0}
-                      onChange={(event) =>
-                        setWipDraft((current) => ({
-                          ...current,
-                          [status]: Number(event.target.value || 0),
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="block text-[11px] font-semibold text-text2">
-                    {t("wipConfig.bgColorLabel", "Colore sfondo")}
-                    <div className="mt-1 flex gap-2">
-                      <input
-                        type="color"
-                        className="h-9 w-12 rounded border border-border bg-transparent"
-                        value={normalizeColor(colorDraft[status] || STATUS_META[status].color)}
-                        onChange={(event) =>
-                          setColorDraft((current) => ({
-                            ...current,
-                            [status]: `${event.target.value}18`,
-                          }))
-                        }
-                      />
-                      <input
-                        className="pc-input flex-1"
-                        value={colorDraft[status] || ""}
-                        onChange={(event) =>
-                          setColorDraft((current) => ({ ...current, [status]: event.target.value }))
-                        }
-                        placeholder="#1B4FD818"
-                      />
-                    </div>
-                  </label>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                className="pc-btn pc-btn-ghost"
-                onClick={() => {
-                  setWipDraft(DEFAULT_WIP_LIMITS);
-                  setColorDraft({});
-                }}
-              >
-                {t("wipConfig.reset", "Reset default")}
-              </button>
-              <button
-                type="button"
-                className="pc-btn pc-btn-ghost"
-                onClick={() => setWipDialogOpen(false)}
-              >
-                {t("wipConfig.cancel", "Annulla")}
-              </button>
-              <button
-                type="button"
-                className="pc-btn pc-btn-primary"
-                disabled={savingWip}
-                onClick={saveWipSettings}
-              >
-                {savingWip ? t("wipConfig.saving", "Salvataggio...") : t("wipConfig.save", "Salva")}
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedCards.length > 0 && (
+        <BulkActionBar
+          selectedCount={selectedCards.length}
+          isMobile={isMobile}
+          bulkBusy={bulkBusy}
+          canEdit={canEdit}
+          technicians={technicians}
+          onStatusChange={(status) => requestKanbanBulkStatus(status)}
+          onReassign={(value) => {
+            void applyKanbanBulkPatch(
+              { assignee_id: value === "unassigned" ? null : value },
+              t("bulk.reassignAction", "riassegnazione bulk"),
+            );
+          }}
+          onPriorityChange={(priority) => {
+            void applyKanbanBulkPatch(
+              { priority },
+              t("bulk.changePriorityAction", "cambio priorità a {{priority}}", { priority: t("tickets:priority." + priority, PRIORITY_LABEL[priority]) }),
+            );
+          }}
+          onArchive={() => setBulkConfirmStatus("archived")}
+          onDeselect={() => setSelectedTicketIds(new Set())}
+        />
       )}
+
+      <WipConfigDialog
+        open={wipDialogOpen}
+        wipDraft={wipDraft}
+        colorDraft={colorDraft}
+        saving={savingWip}
+        onClose={() => setWipDialogOpen(false)}
+        onWipDraftChange={setWipDraft}
+        onColorDraftChange={setColorDraft}
+        onSave={saveWipSettings}
+        onReset={() => {
+          setWipDraft(DEFAULT_WIP_LIMITS);
+          setColorDraft({});
+        }}
+      />
 
       <DestructiveConfirmDialog
         open={!!bulkConfirmStatus}
@@ -1070,25 +891,5 @@ function KanbanPage() {
       />
     </div>
   );
-}
-
-function slaIndicator(card: Card) {
-  const sla = computeSlaStatus(
-    card.created_at || card.updated_at || new Date().toISOString(),
-    card.priority,
-    undefined,
-    card.due_date || card.sla_deadline,
-    card.sla_breached,
-  );
-  if (sla.status === "overdue")
-    return { color: "#DC2626", label: "SLA violato", status: "overdue" as const };
-  if (sla.status === "warning")
-    return { color: "#CA8A04", label: "In scadenza", status: "warning" as const };
-  return { color: "#16A34A", label: "SLA OK", status: "ok" as const };
-}
-
-function normalizeColor(value: string) {
-  const match = value.match(/^#[0-9a-fA-F]{6}/);
-  return match ? match[0] : "#ffffff";
 }
 

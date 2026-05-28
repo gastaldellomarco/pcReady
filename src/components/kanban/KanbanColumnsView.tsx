@@ -1,8 +1,13 @@
-import { Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ColumnNote } from "@/components/kanban/ColumnNote";
+import { SlaMiniLabel } from "@/components/kanban/SlaMiniLabel";
+import { TimeInColumnLabel } from "@/components/kanban/TimeInColumnLabel";
+import { UnassignedBadge } from "@/components/kanban/UnassignedBadge";
+import { ViewerAvatars } from "@/components/kanban/ViewerAvatars";
+import { WipProgressBar } from "@/components/kanban/WipProgressBar";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
   DEFAULT_WIP_LIMITS,
@@ -10,166 +15,18 @@ import {
   type KanbanColumnNotes,
   type WipLimits,
 } from "@/lib/app-settings";
-import { computeCycleTime, CYCLE_COLORS, CYCLE_BG_COLORS } from "@/lib/cycle-time";
 import { setTicketContext } from "@/lib/detail-navigation";
+import { KANBAN_STATUSES } from "@/lib/kanban/constants";
+import { slaIndicator } from "@/lib/kanban/helpers";
 import {
   STATUS_META,
   type TicketPriority,
   type TicketStatus,
   PRIORITY_LABEL,
-  computeSlaStatus,
-  formatSlaCountdown,
 } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { Card as KanbanCard } from "@/routes/_app/kanban.lazy";
-
-const KANBAN_STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready", "completed"];
-
-/** SLA indicator for a card — shared with the parent route */
-export function slaIndicator(card: KanbanCard) {
-  const sla = computeSlaStatus(
-    card.created_at || card.updated_at || new Date().toISOString(),
-    card.priority,
-    undefined,
-    card.due_date || card.sla_deadline,
-    card.sla_breached,
-  );
-  if (sla.status === "overdue")
-    return { color: "#DC2626", label: "SLA violato", status: "overdue" as const };
-  if (sla.status === "warning")
-    return { color: "#CA8A04", label: "In scadenza", status: "warning" as const };
-  return { color: "#16A34A", label: "SLA OK", status: "ok" as const };
-}
-
-/* ── Sub-components ─────────────────────────────────────────────────────── */
-
-function ViewerAvatars({ viewers }: { viewers: { initials: string; full_name: string }[] }) {
-  if (!viewers.length) return null;
-  const max = 3;
-  const shown = viewers.slice(0, max);
-  const extra = viewers.length - max;
-  return (
-    <div className="flex items-center -space-x-1.5">
-      {shown.map((v, i) => (
-        <span
-          key={v.full_name + i}
-          className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
-          style={{
-            background: "var(--accent2)",
-            color: "var(--accent)",
-            borderColor: "var(--surface1)",
-          }}
-          title={v.full_name}
-        >
-          {v.initials}
-        </span>
-      ))}
-      {extra > 0 && (
-        <span
-          className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
-          style={{
-            background: "var(--surface3)",
-            color: "var(--text3)",
-            borderColor: "var(--surface1)",
-          }}
-          title={`+${extra} altri`}
-        >
-          +{extra}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function SlaMiniLabel({ card, compactView }: { card: KanbanCard; compactView?: boolean }) {
-  const indicator = slaIndicator(card);
-  const deadline = card.due_date || card.sla_deadline;
-  if (indicator.status === "ok") return null;
-  const countdown = deadline ? formatSlaCountdown(deadline) : indicator.label;
-  const isOverdue = indicator.status === "overdue";
-  return (
-    <span
-      className={cn(
-        "rounded-full px-1.5 py-0.5 font-semibold whitespace-nowrap",
-        compactView ? "text-[9px]" : "text-[9.5px]",
-        isOverdue && "border",
-      )}
-      style={{
-        background: `${indicator.color}22`,
-        color: indicator.color,
-        ...(isOverdue ? { borderColor: indicator.color, borderWidth: "1px" } : {}),
-      }}
-      title={countdown}
-    >
-      {countdown}
-    </span>
-  );
-}
-
-function UnassignedBadge() {
-  return (
-    <span className="inline-flex items-center w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-      Non assegnato
-    </span>
-  );
-}
-
-function WipProgressBar({ pct }: { pct: number }) {
-  const color = pct >= 90 ? "#DC2626" : pct >= 70 ? "#CA8A04" : "#16A34A";
-  const bgColor = pct >= 90 ? "#FEE2E2" : pct >= 70 ? "#FEF9C3" : "#DCFCE7";
-  return (
-    <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
-      <div
-        className="h-full rounded-full transition-all duration-300"
-        style={{ width: `${Math.min(pct, 100)}%`, background: color }}
-      />
-    </div>
-  );
-}
-
-function TimeInColumnLabel({
-  updatedAt,
-  status,
-  createdAt,
-  statusChangedAt,
-}: {
-  updatedAt?: string | null;
-  status?: TicketStatus;
-  createdAt?: string | null;
-  statusChangedAt?: string | null;
-}) {
-  const actualChanged = statusChangedAt ?? createdAt ?? updatedAt;
-  const { cycle, lead, cycleColor } = computeCycleTime(createdAt, actualChanged, status);
-  if (!cycle) return null;
-
-  const color = cycleColor ? CYCLE_COLORS[cycleColor] : undefined;
-  const bgColor = cycleColor ? CYCLE_BG_COLORS[cycleColor] : undefined;
-
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-0.5 text-[9.5px] font-mono font-medium leading-none"
-      style={{
-        background: bgColor ?? "transparent",
-        color: color ?? "var(--text3)",
-      }}
-      title={
-        lead
-          ? `In questa colonna da ${cycle} · Aperto da ${lead}`
-          : `In questa colonna da ${cycle}`
-      }
-    >
-      {cycleColor && (
-        <span
-          className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-          style={{ background: color }}
-        />
-      )}
-      <Clock className="h-2.5 w-2.5" />
-      {cycle}
-    </span>
-  );
-}
 
 /* ── Main component ─────────────────────────────────────────────────────── */
 
@@ -362,7 +219,7 @@ export function KanbanColumnsView({
               </button>
               {limit > 0 ? (
                 <div className="ml-auto flex items-center gap-1.5">
-                  <WipProgressBar pct={wipPct} />
+                  <WipProgressBar pct={wipPct} className="w-14" />
                   <span
                     className={cn(
                       "text-[10px] font-mono",

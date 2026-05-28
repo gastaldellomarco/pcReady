@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { WipProgressBar } from "@/components/kanban/WipProgressBar";
 import OverflowTable from "@/components/ui/overflow-table";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
-import { pcReadyColors } from "@/lib/design-system";
 import { PRIORITY_LABEL, STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import { SwimLaneRow } from "./SwimLaneRow";
@@ -19,25 +19,6 @@ const PRIORITY_COLORS: Record<TicketPriority, string> = {
  *
  */
 export type SwimLaneGroupMode = "technician" | "client" | "priority";
-
-function WipProgressBar({ pct }: { pct: number }) {
-  const color =
-    pct >= 90 ? pcReadyColors.danger : pct >= 70 ? pcReadyColors.warning : pcReadyColors.success;
-  const bgColor =
-    pct >= 90
-      ? pcReadyColors.dangerLight
-      : pct >= 70
-        ? pcReadyColors.warningLight
-        : pcReadyColors.successLight;
-  return (
-    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: bgColor }}>
-      <div
-        className="h-full rounded-full transition-all duration-300"
-        style={{ width: `${Math.min(pct, 100)}%`, background: color }}
-      />
-    </div>
-  );
-}
 
 /**
  *

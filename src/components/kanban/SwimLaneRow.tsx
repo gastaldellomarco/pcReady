@@ -1,14 +1,14 @@
-import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { SlaMiniLabel } from "@/components/kanban/SlaMiniLabel";
+import { TimeInColumnLabel } from "@/components/kanban/TimeInColumnLabel";
+import { UnassignedBadge } from "@/components/kanban/UnassignedBadge";
+import { ViewerAvatars } from "@/components/kanban/ViewerAvatars";
 import { AssigneeChip, PriorityLabel } from "@/components/pcready/StatusBadge";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
-import { computeCycleTime, CYCLE_COLORS, CYCLE_BG_COLORS } from "@/lib/cycle-time";
-import { pcReadyColors } from "@/lib/design-system";
 import { openTicketDetail } from "@/lib/detail-navigation";
+import { slaIndicator } from "@/lib/kanban/helpers";
 import {
   STATUS_META,
-  computeSlaStatus,
-  formatSlaCountdown,
   PRIORITY_LABEL,
   type TicketPriority,
   type TicketStatus,
@@ -253,49 +253,6 @@ export function SwimLaneRow({
   );
 }
 
-function TimeInColumnLabel({
-  updatedAt,
-  status,
-  createdAt,
-  statusChangedAt,
-}: {
-  updatedAt?: string | null;
-  status?: TicketStatus;
-  createdAt?: string | null;
-  statusChangedAt?: string | null;
-}) {
-  const actualChanged = statusChangedAt ?? createdAt ?? updatedAt;
-  const { cycle, lead, cycleColor } = computeCycleTime(createdAt, actualChanged, status);
-  if (!cycle) return null;
-
-  const color = cycleColor ? CYCLE_COLORS[cycleColor] : undefined;
-  const bgColor = cycleColor ? CYCLE_BG_COLORS[cycleColor] : undefined;
-
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-0.5 text-[9.5px] font-mono font-medium leading-none"
-      style={{
-        background: bgColor ?? "transparent",
-        color: color ?? "var(--text3)",
-      }}
-      title={
-        lead
-          ? `In questa colonna da ${cycle} · Aperto da ${lead}`
-          : `In questa colonna da ${cycle}`
-      }
-    >
-      {cycleColor && (
-        <span
-          className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-          style={{ background: color }}
-        />
-      )}
-      <Clock className="h-2.5 w-2.5" />
-      {cycle}
-    </span>
-  );
-}
-
 function TicketCard({
   card,
   canEdit,
@@ -378,34 +335,8 @@ function TicketCard({
       </div>
       {!compactView && <div className="mb-2 text-[11px] text-text3">{card.client}</div>}
       {viewers.length > 0 && (
-        <div className="mb-2 flex items-center -space-x-1.5">
-          {viewers.slice(0, 3).map((v, i) => (
-            <span
-              key={v.full_name + i}
-              className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
-              style={{
-                background: "var(--accent2)",
-                color: "var(--accent)",
-                borderColor: "var(--surface1)",
-              }}
-              title={v.full_name}
-            >
-              {v.initials}
-            </span>
-          ))}
-          {viewers.length > 3 && (
-            <span
-              className="relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[7px] font-bold leading-none"
-              style={{
-                background: "var(--surface3)",
-                color: "var(--text3)",
-                borderColor: "var(--surface1)",
-              }}
-              title={`+${viewers.length - 3} altri`}
-            >
-              +{viewers.length - 3}
-            </span>
-          )}
+        <div className="mb-2">
+          <ViewerAvatars viewers={viewers} />
         </div>
       )}
       {canEdit && (
@@ -492,58 +423,5 @@ function TicketCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function slaIndicator(card: SwimLaneCard) {
-  const sla = computeSlaStatus(
-    card.created_at || card.updated_at || new Date().toISOString(),
-    card.priority,
-    undefined,
-    card.due_date || card.sla_deadline,
-    card.sla_breached,
-  );
-  if (sla.status === "overdue") return { color: pcReadyColors.danger, label: "SLA violato", status: "overdue" };
-  if (sla.status === "warning") return { color: pcReadyColors.warning, label: "In scadenza", status: "warning" };
-  return { color: pcReadyColors.success, label: "SLA OK", status: "ok" };
-}
-
-function SlaMiniLabel({ card, compactView }: { card: SwimLaneCard; compactView?: boolean }) {
-  const { t } = useTranslation(["tickets"]);
-  const indicator = slaIndicator(card);
-  const deadline = card.due_date || card.sla_deadline;
-  // Hide OK badges — only show warning/overdue
-  if (indicator.status === "ok") return null;
-  const countdown = deadline
-    ? formatSlaCountdown(deadline)
-    : indicator.status === "overdue"
-      ? t("sla.breached", indicator.label)
-      : t("status.expiring", indicator.label);
-  const isOverdue = indicator.status === "overdue";
-  return (
-    <span
-      className={cn(
-        "rounded-full px-1.5 py-0.5 font-semibold whitespace-nowrap",
-        compactView ? "text-[9px]" : "text-[9.5px]",
-        isOverdue && "border",
-      )}
-      style={{
-        background: `${indicator.color}22`,
-        color: indicator.color,
-        ...(isOverdue ? { borderColor: indicator.color, borderWidth: "1px" } : {}),
-      }}
-      title={countdown}
-    >
-      {countdown}
-    </span>
-  );
-}
-
-function UnassignedBadge() {
-  const { t } = useTranslation(["tickets"]);
-  return (
-    <span className="inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-      {t("unassigned", "Non assegnato")}
-    </span>
   );
 }
