@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
 import { pcReadyColors } from '@/lib/design-system';
 import { cn } from '@/lib/utils';
 import type { CalendarView, TechnicianOption } from './types';
+import type { CalendarColorMode } from '@/lib/queries/calendar';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -25,13 +25,13 @@ interface CalendarToolbarProps {
   view: CalendarView;
   technicians: TechnicianOption[];
   filterTechId: string | null;
-  colorMode: 'type' | 'technician';
+  colorMode: CalendarColorMode;
   onNavigatePrev: () => void;
   onNavigateNext: () => void;
   onNavigateToday: () => void;
   onViewChange: (v: CalendarView) => void;
   onFilterTechChange: (id: string | null) => void;
-  onColorModeChange: (mode: 'type' | 'technician') => void;
+  onColorModeChange: (mode: CalendarColorMode) => void;
   onExportIcal: () => void;
   onCreateEvent: () => void;
   canEdit: boolean;
@@ -41,12 +41,16 @@ interface CalendarToolbarProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const VIEW_VALUES: CalendarView[] = ['month', 'week', 'day'];
+const VIEW_VALUES: CalendarView[] = ['month', 'week', 'day', 'agenda'];
+const COLOR_MODES: CalendarColorMode[] = ["type", "technician", "client"];
 
 // ---------------------------------------------------------------------------
 // CalendarToolbar
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function CalendarToolbar({
   currentDate,
   view,
@@ -75,6 +79,8 @@ export function CalendarToolbar({
       }
       case 'day':
         return format(date, 'EEEE d MMMM yyyy', { locale: it });
+      case 'agenda':
+        return format(date, 'MMMM yyyy', { locale: it });
     }
   }
 
@@ -160,13 +166,20 @@ export function CalendarToolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onColorModeChange(colorMode === 'type' ? 'technician' : 'type')}
-          title={colorMode === 'type' ? t("toolbar.switchColorTechnician", "Passa a colori per tecnico") : t("toolbar.switchColorType", "Passa a colori per tipo")}
+          onClick={() => {
+            const next = COLOR_MODES[(COLOR_MODES.indexOf(colorMode) + 1) % COLOR_MODES.length];
+            onColorModeChange(next);
+          }}
+          title={t("toolbar.switchColorMode", "Cambia criterio colori")}
           className="gap-1.5"
         >
           <Palette className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {colorMode === 'type' ? t("toolbar.colorType", "Tipo") : t("toolbar.colorTechnician", "Tecnico")}
+            {colorMode === 'type'
+              ? t("toolbar.colorType", "Tipo")
+              : colorMode === "technician"
+                ? t("toolbar.colorTechnician", "Tecnico")
+                : t("toolbar.colorClient", "Cliente")}
           </span>
         </Button>
 

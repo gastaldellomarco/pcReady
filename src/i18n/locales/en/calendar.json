@@ -5,7 +5,8 @@
   "views": {
     "month": "Month",
     "week": "Week",
-    "day": "Day"
+    "day": "Day",
+    "agenda": "Agenda"
   },
   "errors": {
     "loadTechnicians": "Unable to load technicians",
@@ -25,6 +26,8 @@
     "filterAll": "All technicians",
     "colorType": "Type",
     "colorTechnician": "Technician",
+    "colorClient": "Client",
+    "switchColorMode": "Change color mode",
     "switchColorType": "Switch to color by type",
     "switchColorTechnician": "Switch to color by technician",
     "exportIcalTitle": "Export as iCal (.ics) file",
@@ -49,7 +52,10 @@
     "endTimeLabel": "End time",
     "assigneeLabel": "Assigned technician",
     "assigneeNone": "None",
-    "ticketLabel": "Linked ticket",
+    "clientLabel": "Client",
+    "clientNone": "No client",
+    "ticketLabel": "Linked tickets",
+    "ticketSearchPlaceholder": "Search tickets...",
     "ticketPlaceholder": "No linked ticket",
     "ticketRemoveTitle": "Remove ticket link",
     "ticketHelp": "Ticket link cannot be modified from here.",
@@ -60,6 +66,13 @@
     "colorReset": "Reset",
     "notesLabel": "Notes",
     "notesPlaceholder": "Additional notes about the event...",
+    "availabilityLabel": "Availability / absence",
+    "recurrenceLabel": "Recurrence",
+    "recurringEditScope": "Edit recurring event",
+    "editSingle": "This date only",
+    "editSeries": "Whole series",
+    "reminderLabel": "Reminder",
+    "noReminder": "No reminder",
     "confirmDelete": "Confirm deletion?",
     "deleteButton": "Delete",
     "noButton": "No",
@@ -92,5 +105,25 @@
   "dayView": {
     "eventCount": "{{count}} event",
     "eventCount_plural": "{{count}} events"
+  },
+  "agenda": {
+    "empty": "No events in the selected period"
+  },
+  "recurrence": {
+    "none": "None",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "custom": "Custom"
+  },
+  "availability": {
+    "available": "Available",
+    "vacation": "Vacation",
+    "sick_leave": "Sick leave",
+    "unavailable": "Unavailable"
+  },
+  "reminders": {
+    "in_app": "In-app",
+    "email": "Email"
   }
 }

@@ -1,4 +1,3 @@
-import { useMemo, useRef } from 'react';
 import {
   format,
   isToday,
@@ -9,12 +8,14 @@ import {
   parseISO,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { CalendarEvent } from '@/lib/queries/calendar';
-import { EVENT_TYPE_COLORS } from './eventColors';
 import { pcReadyColors } from '@/lib/design-system';
 import { cn } from '@/lib/utils';
+import { EVENT_TYPE_COLORS, resolveEventColors } from './eventColors';
+import type { CalendarDraftRange } from './types';
+import type { CalendarEvent } from '@/lib/queries/calendar';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -31,46 +32,15 @@ interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   techColorMap: Record<string, string>;
-  colorMode: 'type' | 'technician';
+  colorMode: 'type' | 'technician' | 'client';
   onSlotClick: (date: Date, hour: number) => void;
+  onSlotRangeSelect?: (range: CalendarDraftRange) => void;
   onEventClick: (event: CalendarEvent) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-interface EventColors {
-  bg: string;
-  fg: string;
-  border: string;
-}
-
-function resolveEventColors(
-  event: CalendarEvent,
-  techColorMap: Record<string, string>,
-  colorMode: 'type' | 'technician',
-): EventColors {
-  const typeColors = EVENT_TYPE_COLORS[event.event_type];
-  let bg = typeColors.bg;
-  let fg = typeColors.fg;
-  let border = typeColors.border;
-
-  if (colorMode === 'technician' && event.assignee_id && techColorMap[event.assignee_id]) {
-    const c = techColorMap[event.assignee_id];
-    bg = `${c}22`;
-    fg = c;
-    border = c;
-  }
-
-  if (event.color) {
-    bg = `${event.color}22`;
-    fg = event.color;
-    border = event.color;
-  }
-
-  return { bg, fg, border };
-}
 
 /** Returns absolute top offset and height (px) for the full 24-hour day grid. */
 function positionEvent(event: CalendarEvent): { top: number; height: number } {
@@ -88,16 +58,22 @@ function positionEvent(event: CalendarEvent): { top: number; height: number } {
 // DayView
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function DayView({
   currentDate,
   events,
   techColorMap,
   colorMode,
   onSlotClick,
+  onSlotRangeSelect,
   onEventClick,
 }: DayViewProps) {
   const { t } = useTranslation("calendar");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [dragStartHour, setDragStartHour] = useState<number | null>(null);
+  const [dragEndHour, setDragEndHour] = useState<number | null>(null);
 
   const today = isToday(currentDate);
 
@@ -107,6 +83,29 @@ export function DayView({
     () => events.filter((e) => !e.all_day && isSameDay(parseISO(e.start_at), currentDate)),
     [events, currentDate],
   );
+
+  function finishDrag(hour: number) {
+    if (dragStartHour == null) return;
+    const startHour = Math.min(dragStartHour, hour);
+    const endHour = Math.max(dragStartHour, hour) + 1;
+    const start = new Date(currentDate);
+    start.setHours(startHour, 0, 0, 0);
+    const end = new Date(currentDate);
+    end.setHours(Math.min(endHour, 23), endHour > 23 ? 59 : 0, 0, 0);
+    setDragStartHour(null);
+    setDragEndHour(null);
+    if (Math.abs(hour - dragStartHour) > 0 && onSlotRangeSelect) {
+      onSlotRangeSelect({ start, end });
+    } else {
+      onSlotClick(currentDate, hour);
+    }
+  }
+
+  const previewTop = dragStartHour == null || dragEndHour == null ? null : Math.min(dragStartHour, dragEndHour) * HOUR_HEIGHT;
+  const previewHeight =
+    dragStartHour == null || dragEndHour == null
+      ? null
+      : (Math.abs(dragEndHour - dragStartHour) + 1) * HOUR_HEIGHT;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -172,9 +171,28 @@ export function DayView({
                   height: `${HOUR_HEIGHT}px`,
                   borderColor: pcReadyColors.border,
                 }}
-                onClick={() => onSlotClick(currentDate, hour)}
+                onMouseDown={() => {
+                  setDragStartHour(hour);
+                  setDragEndHour(hour);
+                }}
+                onMouseEnter={() => {
+                  if (dragStartHour != null) setDragEndHour(hour);
+                }}
+                onMouseUp={() => finishDrag(hour)}
               />
             ))}
+
+            {previewTop != null && previewHeight != null && (
+              <div
+                className="absolute left-1 right-2 rounded-md border-2 border-dashed pointer-events-none z-20"
+                style={{
+                  top: `${previewTop}px`,
+                  height: `${previewHeight}px`,
+                  borderColor: pcReadyColors.primary,
+                  background: "rgba(37, 99, 235, 0.08)",
+                }}
+              />
+            )}
 
             {/* Timed events — positioned absolutely */}
             {dayEvents.map((event) => {

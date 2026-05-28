@@ -1,4 +1,11 @@
-import { useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import {
   startOfMonth,
   endOfMonth,
@@ -9,20 +16,13 @@ import {
   isToday,
   format,
 } from "date-fns";
-import {
-  DndContext,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { CalendarEvent } from "@/lib/queries/calendar";
 import { pcReadyColors } from "@/lib/design-system";
 import { cn } from "@/lib/utils";
 import { EventChip } from "./EventChip";
+import type { CalendarEvent } from "@/lib/queries/calendar";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -32,7 +32,7 @@ interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   techColorMap: Record<string, string>;
-  colorMode: "type" | "technician";
+  colorMode: "type" | "technician" | "client";
   onDayClick: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onEventDrop: (eventId: string, newDate: Date) => void;
@@ -45,7 +45,7 @@ interface MonthViewProps {
 interface DraggableChipProps {
   event: CalendarEvent;
   techColorMap: Record<string, string>;
-  colorMode: "type" | "technician";
+  colorMode: "type" | "technician" | "client";
   onEventClick: (event: CalendarEvent) => void;
 }
 
@@ -81,7 +81,7 @@ interface DroppableDayProps {
   dayEvents: CalendarEvent[];
   isCurrentMonth: boolean;
   techColorMap: Record<string, string>;
-  colorMode: "type" | "technician";
+  colorMode: "type" | "technician" | "client";
   onDayClick: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
 }
@@ -166,6 +166,9 @@ function DroppableDay({
 
 const DAY_HEADER_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
+/**
+ *
+ */
 export function MonthView({
   currentDate,
   events,

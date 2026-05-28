@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   startOfMonth,
   endOfMonth,
@@ -16,26 +16,27 @@ import {
   addMinutes,
   differenceInMinutes,
 } from "date-fns";
-import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-
-import { LoadingSkeleton } from "@/components/RouteHelpers";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { AgendaView } from "@/components/calendar/AgendaView";
+import { CalendarToolbar } from "@/components/calendar/CalendarToolbar";
+import { DayView } from "@/components/calendar/DayView";
+import { getTechColor } from "@/components/calendar/eventColors";
+import { EventModal } from "@/components/calendar/EventModal";
+import { MonthView } from "@/components/calendar/MonthView";
+import { WeekView } from "@/components/calendar/WeekView";
+import { LoadingSkeleton } from "@/components/RouteHelpers";
 import { useAuth } from "@/lib/auth-context";
+import { downloadIcal } from "@/lib/calendar-ical";
 import {
   useCalendarEvents,
   useUpdateCalendarEvent,
+  type CalendarColorMode,
   type CalendarEvent,
 } from "@/lib/queries/calendar";
 import { listTechnicians } from "@/lib/technicians";
-import { downloadIcal } from "@/lib/calendar-ical";
-import { getTechColor } from "@/components/calendar/eventColors";
-import { CalendarToolbar } from "@/components/calendar/CalendarToolbar";
-import { MonthView } from "@/components/calendar/MonthView";
-import { WeekView } from "@/components/calendar/WeekView";
-import { DayView } from "@/components/calendar/DayView";
-import { EventModal } from "@/components/calendar/EventModal";
-import type { CalendarView, TechnicianOption } from "@/components/calendar/types";
+import type { CalendarDraftRange, CalendarView, TechnicianOption } from "@/components/calendar/types";
 
 export const Route = createLazyFileRoute("/_app/calendar")({
   component: CalendarPage,
@@ -49,11 +50,12 @@ function CalendarPage() {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [view, setView] = useState<CalendarView>("month");
   const [filterTechId, setFilterTechId] = useState<string | null>(null);
-  const [colorMode, setColorMode] = useState<"type" | "technician">("type");
+  const [colorMode, setColorMode] = useState<CalendarColorMode>("type");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | null>(null);
   const [defaultHour, setDefaultHour] = useState<number | null>(null);
+  const [defaultEndDate, setDefaultEndDate] = useState<Date | null>(null);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
 
   // ── Date range based on view ─────────────────────────────────────────────
@@ -70,7 +72,12 @@ function CalendarPage() {
         rangeEnd: endOfWeek(currentDate, { weekStartsOn: 1 }),
       };
     }
-    // day
+    if (view === "agenda") {
+      return {
+        rangeStart: startOfMonth(currentDate),
+        rangeEnd: endOfMonth(currentDate),
+      };
+    }
     return {
       rangeStart: startOfDay(currentDate),
       rangeEnd: endOfDay(currentDate),
@@ -112,6 +119,7 @@ function CalendarPage() {
     setCurrentDate((d) => {
       if (view === "month") return subMonths(d, 1);
       if (view === "week") return subWeeks(d, 1);
+      if (view === "agenda") return subMonths(d, 1);
       return subDays(d, 1);
     });
   }
@@ -120,6 +128,7 @@ function CalendarPage() {
     setCurrentDate((d) => {
       if (view === "month") return addMonths(d, 1);
       if (view === "week") return addWeeks(d, 1);
+      if (view === "agenda") return addMonths(d, 1);
       return addDays(d, 1);
     });
   }
@@ -132,6 +141,7 @@ function CalendarPage() {
   function onDayClick(date: Date) {
     setDefaultDate(date);
     setDefaultHour(null);
+    setDefaultEndDate(null);
     setSelectedEvent(null);
     setEventModalOpen(true);
   }
@@ -139,6 +149,7 @@ function CalendarPage() {
   function onSlotClick(date: Date, hour: number) {
     setDefaultDate(date);
     setDefaultHour(hour);
+    setDefaultEndDate(null);
     setSelectedEvent(null);
     setEventModalOpen(true);
   }
@@ -148,11 +159,20 @@ function CalendarPage() {
     setEventModalOpen(true);
   }
 
+  function onSlotRangeSelect(range: CalendarDraftRange) {
+    setDefaultDate(range.start);
+    setDefaultHour(range.start.getHours());
+    setDefaultEndDate(range.end);
+    setSelectedEvent(null);
+    setEventModalOpen(true);
+  }
+
   // ── Drag & drop handler ──────────────────────────────────────────────────
   function onEventDrop(eventId: string, newDate: Date) {
     const events = eventsQuery.data ?? [];
     const event = events.find((e) => e.id === eventId);
     if (!event) return;
+    const targetId = event.occurrence_id ?? event.id;
 
     const originalStart = new Date(event.start_at);
     const originalEnd = new Date(event.end_at);
@@ -169,7 +189,7 @@ function CalendarPage() {
 
     updateMutation.mutate(
       {
-        id: eventId,
+        id: targetId,
         data: {
           start_at: newStart.toISOString(),
           end_at: newEnd.toISOString(),
@@ -262,6 +282,7 @@ function CalendarPage() {
             techColorMap={techColorMap}
             colorMode={colorMode}
             onSlotClick={onSlotClick}
+            onSlotRangeSelect={onSlotRangeSelect}
             onEventClick={onEventClick}
           />
         )}
@@ -272,6 +293,15 @@ function CalendarPage() {
             techColorMap={techColorMap}
             colorMode={colorMode}
             onSlotClick={onSlotClick}
+            onSlotRangeSelect={onSlotRangeSelect}
+            onEventClick={onEventClick}
+          />
+        )}
+        {view === "agenda" && (
+          <AgendaView
+            events={events}
+            techColorMap={techColorMap}
+            colorMode={colorMode}
             onEventClick={onEventClick}
           />
         )}
@@ -285,6 +315,7 @@ function CalendarPage() {
         event={selectedEvent}
         defaultDate={defaultDate}
         defaultHour={defaultHour}
+        defaultEndDate={defaultEndDate}
         technicians={technicians}
         currentUserId={profile?.id ?? ""}
         canEdit={canEdit}

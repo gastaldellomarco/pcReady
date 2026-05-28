@@ -5,7 +5,8 @@
   "views": {
     "month": "Mese",
     "week": "Settimana",
-    "day": "Giorno"
+    "day": "Giorno",
+    "agenda": "Agenda"
   },
   "errors": {
     "loadTechnicians": "Impossibile caricare i tecnici",
@@ -25,6 +26,8 @@
     "filterAll": "Tutti i tecnici",
     "colorType": "Tipo",
     "colorTechnician": "Tecnico",
+    "colorClient": "Cliente",
+    "switchColorMode": "Cambia criterio colori",
     "switchColorType": "Passa a colori per tipo",
     "switchColorTechnician": "Passa a colori per tecnico",
     "exportIcalTitle": "Esporta come file iCal (.ics)",
@@ -49,7 +52,10 @@
     "endTimeLabel": "Ora fine",
     "assigneeLabel": "Tecnico assegnato",
     "assigneeNone": "Nessuno",
-    "ticketLabel": "Ticket collegato",
+    "clientLabel": "Cliente",
+    "clientNone": "Nessun cliente",
+    "ticketLabel": "Ticket collegati",
+    "ticketSearchPlaceholder": "Cerca ticket...",
     "ticketPlaceholder": "Nessun ticket collegato",
     "ticketRemoveTitle": "Rimuovi collegamento ticket",
     "ticketHelp": "Il collegamento ticket non può essere modificato da qui.",
@@ -60,6 +66,13 @@
     "colorReset": "Ripristina",
     "notesLabel": "Note",
     "notesPlaceholder": "Note aggiuntive sull'evento...",
+    "availabilityLabel": "Disponibilita / assenza",
+    "recurrenceLabel": "Ricorrenza",
+    "recurringEditScope": "Modifica evento ricorrente",
+    "editSingle": "Solo questa data",
+    "editSeries": "Tutta la serie",
+    "reminderLabel": "Promemoria",
+    "noReminder": "Nessun promemoria",
     "confirmDelete": "Confermare l'eliminazione?",
     "deleteButton": "Elimina",
     "noButton": "No",
@@ -92,5 +105,25 @@
   "dayView": {
     "eventCount": "{{count}} evento",
     "eventCount_plural": "{{count}} eventi"
+  },
+  "agenda": {
+    "empty": "Nessun evento nel periodo selezionato"
+  },
+  "recurrence": {
+    "none": "Nessuna",
+    "daily": "Giornaliera",
+    "weekly": "Settimanale",
+    "monthly": "Mensile",
+    "custom": "Custom"
+  },
+  "availability": {
+    "available": "Disponibile",
+    "vacation": "Ferie",
+    "sick_leave": "Malattia",
+    "unavailable": "Non disponibile"
+  },
+  "reminders": {
+    "in_app": "In-app",
+    "email": "Email"
   }
 }

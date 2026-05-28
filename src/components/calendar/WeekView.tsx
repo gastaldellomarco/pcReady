@@ -1,4 +1,3 @@
-import { useMemo, useRef } from "react";
 import {
   startOfWeek,
   endOfWeek,
@@ -12,10 +11,12 @@ import {
   parseISO,
 } from "date-fns";
 import { it } from "date-fns/locale";
+import { useMemo, useRef, useState } from "react";
 
-import type { CalendarEvent } from "@/lib/queries/calendar";
-import { EVENT_TYPE_COLORS } from "./eventColors";
 import { pcReadyColors } from "@/lib/design-system";
+import { resolveEventColors } from "./eventColors";
+import type { CalendarDraftRange } from "./types";
+import type { CalendarEvent } from "@/lib/queries/calendar";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,46 +35,15 @@ interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   techColorMap: Record<string, string>;
-  colorMode: "type" | "technician";
+  colorMode: "type" | "technician" | "client";
   onSlotClick: (date: Date, hour: number) => void;
+  onSlotRangeSelect?: (range: CalendarDraftRange) => void;
   onEventClick: (event: CalendarEvent) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-interface EventColors {
-  bg: string;
-  fg: string;
-  border: string;
-}
-
-function resolveEventColors(
-  event: CalendarEvent,
-  techColorMap: Record<string, string>,
-  colorMode: "type" | "technician",
-): EventColors {
-  const typeColors = EVENT_TYPE_COLORS[event.event_type];
-  let bg = typeColors.bg;
-  let fg = typeColors.fg;
-  let border = typeColors.border;
-
-  if (colorMode === "technician" && event.assignee_id && techColorMap[event.assignee_id]) {
-    const c = techColorMap[event.assignee_id];
-    bg = `${c}22`;
-    fg = c;
-    border = c;
-  }
-
-  if (event.color) {
-    bg = `${event.color}22`;
-    fg = event.color;
-    border = event.color;
-  }
-
-  return { bg, fg, border };
-}
 
 /** Returns top offset and height (in px) for an event within the visible grid. */
 function positionEvent(event: CalendarEvent): { top: number; height: number } {
@@ -91,15 +61,20 @@ function positionEvent(event: CalendarEvent): { top: number; height: number } {
 // WeekView
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function WeekView({
   currentDate,
   events,
   techColorMap,
   colorMode,
   onSlotClick,
+  onSlotRangeSelect,
   onEventClick,
 }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<{ dayKey: string; startHour: number; endHour: number } | null>(null);
 
   const days = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -118,6 +93,20 @@ export function WeekView({
     }
     return map;
   }, [days, events]);
+
+  function finishDrag(day: Date, dayKey: string, hour: number) {
+    if (!drag || drag.dayKey !== dayKey) return;
+    const startHour = Math.min(drag.startHour, hour);
+    const endHour = Math.max(drag.startHour, hour) + 1;
+    const start = new Date(day);
+    start.setHours(startHour, 0, 0, 0);
+    const end = new Date(day);
+    end.setHours(Math.min(endHour, 23), endHour > 23 ? 59 : 0, 0, 0);
+    const didDrag = Math.abs(hour - drag.startHour) > 0;
+    setDrag(null);
+    if (didDrag && onSlotRangeSelect) onSlotRangeSelect({ start, end });
+    else onSlotClick(day, hour);
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -194,9 +183,25 @@ export function WeekView({
                       height: `${HOUR_HEIGHT}px`,
                       borderColor: pcReadyColors.border,
                     }}
-                    onClick={() => onSlotClick(day, hour)}
+                    onMouseDown={() => setDrag({ dayKey: key, startHour: hour, endHour: hour })}
+                    onMouseEnter={() => {
+                      if (drag?.dayKey === key) setDrag({ ...drag, endHour: hour });
+                    }}
+                    onMouseUp={() => finishDrag(day, key, hour)}
                   />
                 ))}
+
+                {drag?.dayKey === key && (
+                  <div
+                    className="absolute left-0.5 right-0.5 rounded border-2 border-dashed pointer-events-none z-20"
+                    style={{
+                      top: `${(Math.min(drag.startHour, drag.endHour) - START_HOUR) * HOUR_HEIGHT}px`,
+                      height: `${(Math.abs(drag.endHour - drag.startHour) + 1) * HOUR_HEIGHT}px`,
+                      borderColor: pcReadyColors.primary,
+                      background: "rgba(37, 99, 235, 0.08)",
+                    }}
+                  />
+                )}
 
                 {/* Timed events */}
                 {dayEvents.map((event) => {

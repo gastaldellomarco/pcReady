@@ -1,6 +1,6 @@
 import i18n from "@/i18n";
 import { pcReadyColors } from '@/lib/design-system';
-import type { CalendarEventType } from '@/lib/queries/calendar';
+import type { CalendarColorMode, CalendarEvent, CalendarEventType } from '@/lib/queries/calendar';
 
 export const EVENT_TYPE_COLORS: Record<
   CalendarEventType,
@@ -45,6 +45,56 @@ export const TECHNICIAN_PALETTE = [
   '#E11D48',
 ];
 
+/**
+ *
+ */
 export function getTechColor(index: number): string {
   return TECHNICIAN_PALETTE[index % TECHNICIAN_PALETTE.length];
+}
+
+/**
+ *
+ */
+export function getClientColor(clientId: string): string {
+  let hash = 0;
+  for (let i = 0; i < clientId.length; i += 1) {
+    hash = (hash * 31 + clientId.charCodeAt(i)) >>> 0;
+  }
+  return TECHNICIAN_PALETTE[hash % TECHNICIAN_PALETTE.length];
+}
+
+/**
+ *
+ */
+export function resolveEventColors(
+  event: CalendarEvent,
+  techColorMap: Record<string, string>,
+  colorMode: CalendarColorMode,
+) {
+  const typeColors = EVENT_TYPE_COLORS[event.event_type];
+  let bg = typeColors.bg;
+  let fg = typeColors.fg;
+  let border = typeColors.border;
+
+  if (colorMode === "technician" && event.assignee_id && techColorMap[event.assignee_id]) {
+    const c = techColorMap[event.assignee_id];
+    bg = `${c}22`;
+    fg = c;
+    border = c;
+  }
+
+  if (colorMode === "client" && event.client_id) {
+    const c = getClientColor(event.client_id);
+    bg = `${c}22`;
+    fg = c;
+    border = c;
+  }
+
+  if (event.color) {
+    bg = `${event.color}22`;
+    fg = event.color;
+    border = event.color;
+  }
+
+  return { bg, fg, border };
 }
