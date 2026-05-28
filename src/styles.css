@@ -659,6 +659,55 @@
     overscroll-behavior-x: contain;
   }
 
+  .mobile-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .mobile-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .mobile-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-scroll-x > * {
+    scroll-snap-align: start;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+  @media (min-width: 640px) {
+    .hide-mobile {
+      display: revert !important;
+    }
+    .hide-desktop {
+      display: none !important;
+    }
+  }
+  .hide-desktop {
+    display: revert;
+  }
+
+  .card-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  @media (min-width: 640px) {
+    .card-row {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .card-row > * {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+
   .break-anywhere {
     overflow-wrap: anywhere;
     word-break: break-word;

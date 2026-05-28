@@ -10,6 +10,8 @@ import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcre
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helpers";
@@ -51,6 +53,7 @@ import {
   Settings2,
   ListChecks as ListChecksIcon,
 } from "lucide-react";
+
 import i18n from "@/i18n";
 
 const AnalyticsCard = lazy(() =>
@@ -180,6 +183,7 @@ function DashboardPage() {
   const { t } = useTranslation("dashboard");
   const { setPendingCount } = useTickets();
   const { session } = useAuth();
+  const isMobile = useIsMobile();
   const loadSettings = useServerFn(getPublicAppSettings);
   const {
     tickets,
@@ -257,6 +261,7 @@ function DashboardPage() {
       {/* Render widgets in configured order */}
       {visibleWidgets.map((w) =>
         renderWidget(w.id, {
+          isMobile,
           tickets,
           devices,
           devicesWithoutTicket,
@@ -304,6 +309,7 @@ type WidgetContext = {
   counts: Record<string, number>;
   total: number;
   priorityCounts: { high: number; med: number; low: number };
+  isMobile: boolean;
   checklistStats: ChecklistDashboardStats | null;
   satisfactionStats: { average: number | null; count: number } | null;
   loadSettings: any;
@@ -511,74 +517,108 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             <div className="pc-card-hd">
               <span className="pc-card-title">{i18n.t("dashboard:warranty.expiringTitle", "Garanzie in scadenza (prossimi 90 giorni)")}</span>
               <span className="text-[11px] text-text3 font-mono">{expiringRows.length}</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px]">
-                <thead>
-                  <tr>
-                    {[i18n.t("dashboard:warranty.tableAsset", "Asset"), i18n.t("dashboard:warranty.tableExpiry", "Scadenza"), i18n.t("dashboard:warranty.tableStatus", "Stato"), i18n.t("dashboard:warranty.tableProvider", "Fornitore")].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {expiringRows.map((device) => {
-                    const status = getWarrantyStatus(device.warranty_expiry_date);
-                    const meta = WARRANTY_STATUS_META[status];
-                    const days = daysUntil(device.warranty_expiry_date);
-                    return (
-                      <tr
-                        key={device.id}
-                        className="border-b cursor-pointer hover:bg-surface2"
-                        style={{ borderColor: "var(--border)" }}
-                        onClick={() => openDeviceDetail(device.id)}
-                      >
-                        <td className="px-[14px] py-[10px] text-[12.5px]">
-                          <span className="font-semibold">{device.model}</span>
-                          <div className="font-mono text-[11px] text-text3">
-                            {device.serial || device.id.slice(0, 8)}
-                          </div>
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px]">
-                          {device.warranty_expiry_date ? fmtDate(device.warranty_expiry_date) : "—"}
-                          <div className="text-[11px] text-text3">
-                            {days == null ? "" : `${days} ${i18n.t("dashboard:warranty.days", "giorni")}`}
-                          </div>
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <span
-                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-                            style={{
-                              color: meta.color,
-                              background: meta.background,
-                              borderColor: meta.color,
-                            }}
-                          >
-                            {i18n.t(`dashboard:${status === "urgent" ? "warranty.status.urgent" : status === "expiring" ? "warranty.status.expiring" : status === "expired" ? "warranty.status.expired" : status === "valid" ? "warranty.status.valid" : "warranty.status.missing"}`, meta.label)}
-                          </span>
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                          {device.warranty_provider || "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {!expiringRows.length && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-sm text-text3">
-                        {i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            </div>                          {!ctx.isMobile ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full min-w-[620px]">
+                                <thead>
+                                  <tr>
+                                    {[i18n.t("dashboard:warranty.tableAsset", "Asset"), i18n.t("dashboard:warranty.tableExpiry", "Scadenza"), i18n.t("dashboard:warranty.tableStatus", "Stato"), i18n.t("dashboard:warranty.tableProvider", "Fornitore")].map((h) => (
+                                      <th
+                                        key={h}
+                                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                                        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                                      >
+                                        {h}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {expiringRows.map((device) => {
+                                    const status = getWarrantyStatus(device.warranty_expiry_date);
+                                    const meta = WARRANTY_STATUS_META[status];
+                                    const days = daysUntil(device.warranty_expiry_date);
+                                    return (
+                                      <tr
+                                        key={device.id}
+                                        className="border-b cursor-pointer hover:bg-surface2"
+                                        style={{ borderColor: "var(--border)" }}
+                                        onClick={() => openDeviceDetail(device.id)}
+                                      >
+                                        <td className="px-[14px] py-[10px] text-[12.5px]">
+                                          <span className="font-semibold">{device.model}</span>
+                                          <div className="font-mono text-[11px] text-text3">
+                                            {device.serial || device.id.slice(0, 8)}
+                                          </div>
+                                        </td>
+                                        <td className="px-[14px] py-[10px] text-[12px]">
+                                          {device.warranty_expiry_date ? fmtDate(device.warranty_expiry_date) : "—"}
+                                          <div className="text-[11px] text-text3">
+                                            {days == null ? "" : `${days} ${i18n.t("dashboard:warranty.days", "giorni")}`}
+                                          </div>
+                                        </td>
+                                        <td className="px-[14px] py-[10px]">
+                                          <span
+                                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                                            style={{
+                                              color: meta.color,
+                                              background: meta.background,
+                                              borderColor: meta.color,
+                                            }}
+                                          >
+                                            {i18n.t(`dashboard:${status === "urgent" ? "warranty.status.urgent" : status === "expiring" ? "warranty.status.expiring" : status === "expired" ? "warranty.status.expired" : status === "valid" ? "warranty.status.valid" : "warranty.status.missing"}`, meta.label)}
+                                          </span>
+                                        </td>
+                                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                                          {device.warranty_provider || "—"}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                  {!expiringRows.length && (
+                                    <tr>
+                                      <td colSpan={4} className="py-8 text-center text-sm text-text3">
+                                        {i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="pc-card-body px-0">
+                              <MobileCardView
+                                data={expiringRows}
+                                keyField="id"
+                                columns={[
+                                  { label: "Modello", accessor: "model" as any, primary: true },
+                                  { label: "Seriale", accessor: (d: any) => d.serial || d.id.slice(0, 8) },
+                                  {
+                                    label: "Scadenza",
+                                    accessor: (d: any) => d.warranty_expiry_date ? fmtDate(d.warranty_expiry_date) : "—",
+                                  },
+                                  {
+                                    label: "Stato",
+                                    accessor: (d: any) => {
+                                      const s = getWarrantyStatus(d.warranty_expiry_date);
+                                      const m = WARRANTY_STATUS_META[s];
+                                      return (
+                                        <span
+                                          className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                                          style={{ color: m.color, background: m.background, borderColor: m.color }}
+                                        >
+                                          {m.label}
+                                        </span>
+                                      );
+                                    },
+                                  },
+                                  { label: "Fornitore", accessor: "warranty_provider" as any },
+                                ]}
+                                onRowClick={(d) => openDeviceDetail(d.id)}
+                                emptyMessage={i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
+                              />
+                            </div>
+                          )}
           </div>
         </div>
       );
@@ -763,6 +803,38 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
       return null;
 
     case "recent-tickets":
+      const recentTicketColumns: MobileCardColumn<any>[] = [
+        {
+          label: "Codice",
+          accessor: "ticket_code",
+          primary: true,
+          render: (t: any) => (
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11.5px] text-text3">{t.ticket_code}</span>
+              <span className="text-[12.5px]">
+                {dashboardDeviceLabel(t)}
+              </span>
+            </div>
+          ),
+        },
+        {
+          label: "Cliente",
+          accessor: (t: any) => t.client || "—",
+        },
+        {
+          label: "Stato",
+          accessor: (t: any) => <StatusBadge status={t.status as TicketStatus} />,
+        },
+        {
+          label: "Assegnatario",
+          accessor: (t: any) =>
+            t.assignee?.full_name ? (
+              <AssigneeChip initials={t.assignee.initials} name={t.assignee.full_name} />
+            ) : (
+              "—"
+            ),
+        },
+      ];
       return (
         <div key="recent-tickets" className="grid grid-cols-1 lg:grid-cols-2 gap-[18px]">
           <div className="pc-card">
@@ -776,60 +848,72 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    {[i18n.t("dashboard:recentTickets.tableId", "ID"), i18n.t("dashboard:recentTickets.tableAsset", "Asset"), i18n.t("dashboard:recentTickets.tableStatus", "Stato"), i18n.t("dashboard:recentTickets.tableAssignee", "Assegnatario")].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                        style={{
-                          background: "var(--surface2)",
-                          borderColor: "var(--border)",
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ctx.tickets.slice(0, 6).map((ticket: any) => (
-                    <tr
-                      key={ticket.id}
-                      className="border-b cursor-pointer hover:bg-surface2 transition-colors"
-                      style={{ borderColor: "var(--border)" }}
-                      onClick={() => openTicketDetail(ticket.id)}
-                    >
-                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                        {ticket.ticket_code}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">
-                        {dashboardDeviceLabel(ticket)}
-                        <div className="text-[11px] text-text3">{ticket.client}</div>
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <StatusBadge status={ticket.status as TicketStatus} />
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <AssigneeChip
-                          initials={ticket.assignee?.initials}
-                          name={ticket.assignee?.full_name}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  {!ctx.tickets.length && (
+            {!ctx.isMobile ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-text3 text-sm">
-                        {i18n.t("dashboard:recentTickets.noTickets", "Nessun ticket. Creane uno con il pulsante in alto.")}
-                      </td>
+                      {[i18n.t("dashboard:recentTickets.tableId", "ID"), i18n.t("dashboard:recentTickets.tableAsset", "Asset"), i18n.t("dashboard:recentTickets.tableStatus", "Stato"), i18n.t("dashboard:recentTickets.tableAssignee", "Assegnatario")].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                          style={{
+                            background: "var(--surface2)",
+                            borderColor: "var(--border)",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {ctx.tickets.slice(0, 6).map((ticket: any) => (
+                      <tr
+                        key={ticket.id}
+                        className="border-b cursor-pointer hover:bg-surface2 transition-colors"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openTicketDetail(ticket.id)}
+                      >
+                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                          {ticket.ticket_code}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">
+                          {dashboardDeviceLabel(ticket)}
+                          <div className="text-[11px] text-text3">{ticket.client}</div>
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <StatusBadge status={ticket.status as TicketStatus} />
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <AssigneeChip
+                            initials={ticket.assignee?.initials}
+                            name={ticket.assignee?.full_name}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                    {!ctx.tickets.length && (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-text3 text-sm">
+                          {i18n.t("dashboard:recentTickets.noTickets", "Nessun ticket. Creane uno con il pulsante in alto.")}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-3 pb-3">
+                <MobileCardView
+                  data={ctx.tickets.slice(0, 6)}
+                  keyField="id"
+                  columns={recentTicketColumns}
+                  onRowClick={(t) => openTicketDetail(t.id)}
+                  emptyMessage={i18n.t("dashboard:recentTickets.noTickets", "Nessun ticket.")}
+                />
+              </div>
+            )}
           </div>
 
           <div className="pc-card dashboard-widget">

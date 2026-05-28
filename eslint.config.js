@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import globals from "globals";
+import jsdoc from "eslint-plugin-jsdoc";
 import perfectionist from "eslint-plugin-perfectionist";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
@@ -33,6 +34,7 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
       react: reactPlugin,
       perfectionist,
+      jsdoc,
     },
     settings: {
       react: { version: "detect" },
@@ -90,6 +92,30 @@ export default tseslint.config(
           newlinesBetween: "ignore",
         },
       ],
+      // ── JSDoc (documentazione obbligatoria su tipi e funzioni esportati) ──────
+      // require-jsdoc: solo item esportati (ESM + CJS) necessitano JSDoc.
+      // I tipi TypeScript (type/interface/enum) sono coperti via `contexts`
+      // con selettori ESTree perché il plugin non supporta TSInterfaceDeclaration
+      // e simili direttamente nel `require`.
+      "jsdoc/require-jsdoc": ["error", {
+        publicOnly: { cjs: true, esm: true },
+        require: {
+          FunctionDeclaration: true,
+          ArrowFunctionExpression: true,
+          ClassDeclaration: true,
+          MethodDefinition: true,
+        },
+        contexts: [
+          "TSInterfaceDeclaration[parent.type=\"ExportNamedDeclaration\"]",
+          "TSTypeAliasDeclaration[parent.type=\"ExportNamedDeclaration\"]",
+          "TSEnumDeclaration[parent.type=\"ExportNamedDeclaration\"]",
+        ],
+      }],
+      // TODO: abilitare gradualmente — richiedono @param/@returns su TUTTE le funzioni
+      // (non solo quelle esportate), quindi generano molto rumore inizialmente.
+      "jsdoc/require-param": "off",
+      "jsdoc/require-returns": "off",
+      "jsdoc/require-property": "off",
       // Incremental: tighten after reducing `any` in these trees (see #58).
       "@typescript-eslint/no-explicit-any": "off",
     },

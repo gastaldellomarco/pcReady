@@ -476,7 +476,7 @@ function CostsPage() {
           <TrendingUp className="h-5 w-5 text-text3" />
         </div>
         <div className="pc-card-body">
-          <div className="grid gap-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
             <DatePickerInput
               value={dateFrom}
               onChange={setDateFrom}
@@ -522,7 +522,7 @@ function CostsPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <CostStat label={t("stats.ticketTotal", "Totale ticket")} value={formatCurrency(summary.ticketTotal)} />
         <CostStat label={t("stats.labor", "Manodopera")} value={formatCurrency(summary.labor)} />
         <CostStat label={t("stats.materials", "Materiali")} value={formatCurrency(summary.materials)} />
@@ -570,7 +570,7 @@ function CostsPage() {
               </button>
             </div>
           </div>
-          <div className="pc-card-body grid gap-3 md:grid-cols-2 xl:grid-cols-8">
+          <div className="pc-card-body grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-8">
             <label className="space-y-1 text-sm font-medium text-text2">
               {t("contractForm.clientLabel", "Cliente")}
               <select
@@ -847,7 +847,37 @@ function CostsPage() {
         />
       </div>
 
-      <div className="pc-card overflow-hidden">
+      {/* Mobile card view for ticket detail */}
+      <div className="md:hidden">
+        {filteredTickets.map((ticket) => (
+          <div key={ticket.id} className="mb-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-sm font-bold text-accent">{ticket.ticket_code}</span>
+              <span className="text-[11px] text-text3">{ticket.status}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[12px]">
+              <div><span className="text-text3">{t("detailTable.headers.client", "Cliente")}:</span> <span className="font-medium">{ticket.client_name || "-"}</span></div>
+              <div><span className="text-text3">{t("detailTable.headers.technician", "Tecnico")}:</span> <span className="font-medium">{ticket.technician_name || "-"}</span></div>
+              <div><span className="text-text3">{t("detailTable.headers.hours", "Ore")}:</span> <span className="font-mono font-medium">{formatHours(money(ticket.billable_hours))}</span></div>
+              <div><span className="text-text3">{t("detailTable.headers.rate", "Tariffa")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.hourly_rate)}</span></div>
+              <div><span className="text-text3">{t("detailTable.headers.labor", "Manodopera")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.labor_cost)}</span></div>
+              <div><span className="text-text3">{t("detailTable.headers.materials", "Materiali")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.material_cost)}</span></div>
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: "var(--border)" }}>
+              <span className="text-[11px] text-text3">{t("detailTable.headers.total", "Totale")}</span>
+              <span className="font-mono text-sm font-bold">{formatCurrency(ticket.total_cost)}</span>
+            </div>
+          </div>
+        ))}
+        {!filteredTickets.length && !loading && (
+          <div className="py-8 text-center text-sm text-text3">
+            {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div>
             <div className="pc-card-title">{t("detailTable.title", "Dettaglio ticket fatturabili")}</div>
@@ -983,7 +1013,7 @@ function CostsPage() {
         <div className="pc-card-hd">
           <div className="pc-card-title">{t("contracts.title", "Contratti attivi e ore extra")}</div>
         </div>
-        <div className="grid gap-3 p-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-2">
           {filteredContracts.map((contract) => {
             const usedHours = filteredTickets
               .filter((ticket) => ticket.client_id === contract.client_id)

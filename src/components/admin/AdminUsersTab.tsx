@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { TableSkeletonRows } from "@/components/page-states";
 import OverflowTable from "@/components/ui/overflow-table";
+import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { TabsContent } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -98,6 +100,91 @@ export function AdminUsersTab() {
   const isInviteButtonEnabled = !inviteBusy && !!watchedFullName && !!watchedEmail && EMAIL_RE.test(watchedEmail) && inviteForm.formState.isValid;
 
   const { settings } = useAdminAppSettings({ accessToken, isAdmin });
+  const isMobile = useIsMobile();
+
+  const userCardColumns: MobileCardColumn<any>[] = [
+    {
+      label: "Nome",
+      accessor: (row: any) => (
+        <div className="flex items-center gap-2.5">
+          <span
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            style={{
+              background: "var(--accent2)",
+              color: "var(--accent)",
+              fontFamily: "var(--font-head)",
+            }}
+          >
+            {row.initials}
+          </span>
+          <span className="font-semibold text-[13px]">{row.full_name}</span>
+        </div>
+      ),
+      primary: true,
+    },
+    { label: "Email", accessor: "email" },
+    {
+      label: "Ruolo",
+      render: (row: any) => (
+        <AdminUserRoleEditor
+          role={row.role}
+          disabled={busyId === row.id}
+          onChange={(nextRole: AppRole) => saveRole(row, nextRole)}
+        />
+      ),
+    },
+    { label: "Creato il", accessor: (row: any) => fmtDateTime(row.created_at) },
+    {
+      label: "Ultimo accesso",
+      accessor: (row: any) =>
+        row.last_sign_in_at ? fmtDateTime(row.last_sign_in_at) : "Mai acceduto",
+    },
+    {
+      label: "2FA",
+      render: (row: any) => (
+        <MfaStatusBadge enabled={row.mfa_enabled} required={row.mfa_required} role={row.role} />
+      ),
+    },
+    {
+      label: "Stato",
+      render: (row: any) => (
+        <AdminUserStatusBadge
+          status={row.status}
+          invitedAt={row.invited_at}
+          busy={busyId === row.id}
+          onResend={() => resendInviteFor(row)}
+        />
+      ),
+    },
+    {
+      label: "Azioni",
+      render: (row: any) => (
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="pc-btn-icon touch-target"
+            title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
+            disabled={busyId === row.id || row.id === user?.id}
+            onClick={() => toggleDisabled(row)}
+          >
+            {row.status === "disabled" ? (
+              <UserCheck className="w-3.5 h-3.5" />
+            ) : (
+              <UserX className="w-3.5 h-3.5" />
+            )}
+          </button>
+          <button
+            className="pc-btn-icon touch-target"
+            title="Rimuovi utente"
+            disabled={busyId === row.id || row.id === user?.id}
+            onClick={() => remove(row)}
+            style={{ color: "var(--danger, #DC2626)" }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <TabsContent value="users" className="space-y-5">
@@ -229,7 +316,7 @@ export function AdminUsersTab() {
               <select
                 className="pc-input max-w-[160px]"
                 value={bulkRole}
-                onChange={(e) => setBulkRole(e.target.value as AppRole)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBulkRole(e.target.value as any)}
                 aria-label={t("users.bulk.roleLabel", "Ruolo in blocco")}
               >
                 {ADMIN_ROLES.map((r) => (
@@ -353,6 +440,7 @@ export function AdminUsersTab() {
           </div>
         )}
         <OverflowTable>
+          {!isMobile ? (
           <table className="w-full text-sm">
           <thead>
             <tr>
@@ -486,6 +574,14 @@ export function AdminUsersTab() {
             )}
           </tbody>
           </table>
+          ) : (
+            <MobileCardView
+              data={filtered ?? []}
+              columns={userCardColumns}
+              keyField="id"
+              emptyMessage={t("users.empty.noUsers", "Nessun utente trovato")}
+            />
+          )}
         </OverflowTable>
       </div>
       <AlertDialog

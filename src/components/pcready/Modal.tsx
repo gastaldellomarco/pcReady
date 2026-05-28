@@ -1,6 +1,14 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
 const MODAL_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
   md: "560px",
@@ -23,6 +31,8 @@ export function Modal({
   footer?: ReactNode;
   size?: "md" | "lg" | "xl";
 }) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -33,6 +43,38 @@ export function Modal({
   }, [open, onClose]);
 
   if (!open || typeof document === "undefined") return null;
+
+  // On mobile: render as bottom Drawer sheet
+  if (isMobile) {
+    return createPortal(
+      <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <DrawerContent
+          className="max-h-[92dvh] overflow-y-auto px-4 pb-8 pt-2 safe-area-bottom"
+        >
+          <DrawerHeader className="px-0">
+            <DrawerTitle className="text-[16px]">{title}</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              {title}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="flex flex-col gap-4">
+            {children}
+          </div>
+          {footer && (
+            <div
+              className="mt-4 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {footer}
+            </div>
+          )}
+        </DrawerContent>
+      </Drawer>,
+      document.body,
+    );
+  }
+
+  // Desktop: render as centered modal
   return createPortal(
     <div
       className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8"

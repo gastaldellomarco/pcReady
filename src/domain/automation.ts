@@ -1,10 +1,53 @@
 // Domain types for advanced automation conditions
 // These types provide a cleaner abstraction over the legacy ConditionDef
 
+/**
+ * Comparison operators for condition evaluation.
+ *
+ * - `eq` / `neq`: exact match / negated match (works with strings, numbers, references)
+ * - `contains`: substring match (string fields only)
+ * - `gt` / `lt`: numeric comparison (number fields only)
+ * - `in`: multi-value membership check (works with select and reference fields)
+ */
 export type ConditionOperator = "eq" | "neq" | "contains" | "gt" | "lt" | "in";
+
+/**
+ * Logical operator that joins multiple conditions within a group.
+ *
+ * - `"AND"`: all conditions must match — more restrictive, reduces false positives
+ * - `"OR"`: any condition must match — broader, useful for alternative criteria
+ *
+ * @see ConditionsGroup for how this is applied
+ */
 export type ConditionLogic = "AND" | "OR";
+
+/**
+ * Describes the data type expected for a condition value.
+ *
+ * - `"string"`: plain text comparison (supports `eq`, `neq`, `contains`)
+ * - `"number"`: numeric comparison (supports `eq`, `neq`, `gt`, `lt`)
+ * - `"list"`: array of values for the `in` operator
+ * - `"reference"`: foreign-key ID (e.g. `customer_id`, `assignee_id`); behaves like
+ *   `"string"` for comparison but the UI should render a lookup selector instead of
+ *   a free-text field
+ *
+ * @see AutomationCondition.valueType
+ * @see ConditionFieldDef.type for the UI field type this maps to
+ */
 export type ValueType = "string" | "number" | "list" | "reference";
 
+/**
+ * A single condition that checks a field against a value.
+ *
+ * The `valueType` field determines how `value` is interpreted:
+ * - `"string"` / `"number"`: `value` is a single scalar
+ * - `"list"`: `value` is a `string[]`
+ * - `"reference"`: `value` is the ID string of the referenced entity; the UI should
+ *   resolve it via a lookup (e.g. an async autocomplete or entity picker)
+ *
+ * `label` is an optional user-friendly description, used exclusively by the UI for
+ * display purposes. It is **not** persisted to the API.
+ */
 export interface AutomationCondition {
   id: string;
   field: string; // ticket.status, ticket.priority, etc.
@@ -14,12 +57,35 @@ export interface AutomationCondition {
   label?: string; // user-friendly label (optional, for UI)
 }
 
+/**
+ * A group of conditions joined by a logical operator.
+ *
+ * When `logic` is `"AND"` every condition must evaluate to true for the group to pass.
+ * When it is `"OR"` only one condition needs to match.
+ *
+ * **Important**: the legacy API serialization always returns `AND` because the old
+ * format does not support logic toggling. Deserialised groups will therefore have
+ * `logic: "AND"` regardless of the original input.
+ *
+ * @see serializeConditions for details on the legacy format limitation
+ * @see AutomationCondition
+ */
 export interface ConditionsGroup {
   conditions: AutomationCondition[];
   logic: ConditionLogic;
 }
 
-// Field definitions with metadata for UI
+/**
+ * Metadata descriptor for a field that can be used in conditions.
+ *
+ * The `type` property drives which operators and input controls the UI shows:
+ * - `"string"` → text input, operators: eq / neq / contains
+ * - `"number"` → number input, operators: eq / neq / gt / lt
+ * - `"select"` → dropdown, operators: eq / neq / in
+ * - `"reference"` → entity picker, operators: eq / neq / in
+ *
+ * When `type` is `"select"`, the `options` array provides the available choices.
+ */
 export interface ConditionFieldDef {
   value: string;
   label: string;
@@ -110,12 +176,23 @@ export const OPERATORS_BY_FIELD_TYPE: Record<
   ],
 };
 
-// Helper to get field definition by value
+/**
+ * Returns the field definition for the given field value.
+ *
+ * @param fieldValue - The dot-notation field key (e.g. `"ticket.status"`)
+ * @returns The matching `ConditionFieldDef`, or `undefined` if not found
+ */
 export function getFieldDef(fieldValue: string): ConditionFieldDef | undefined {
   return AUTOMATION_CONDITION_FIELDS.find((f) => f.value === fieldValue);
 }
 
-// Helper to get available operators for a field
+/**
+ * Returns the operators available for a given field.
+ *
+ * @param fieldValue - The dot-notation field key (e.g. `"ticket.status"`)
+ * @returns Array of operator options with labels, or an empty array if the field is unknown
+ * @see OPERATORS_BY_FIELD_TYPE for the full mapping
+ */
 export function getOperatorsForField(
   fieldValue: string
 ): { value: ConditionOperator; label: string }[] {
@@ -124,7 +201,11 @@ export function getOperatorsForField(
   return OPERATORS_BY_FIELD_TYPE[field.type] || [];
 }
 
-// Default value for new condition
+/**
+ * Creates a condition with sensible defaults for a new blank row in the conditions editor.
+ *
+ * @returns A new `AutomationCondition` with a unique ID and default values
+ */
 export function createDefaultCondition(): AutomationCondition {
   return {
     id: `cond-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
@@ -135,7 +216,12 @@ export function createDefaultCondition(): AutomationCondition {
   };
 }
 
-// Check if operator supports multiple values (array)
+/**
+ * Checks whether an operator accepts multiple values (as an array).
+ *
+ * @param operator - The operator to check
+ * @returns `true` if the operator is `"in"` (multi-value), `false` otherwise
+ */
 export function isMultiValueOperator(operator: ConditionOperator): boolean {
   return operator === "in";
 }
@@ -144,6 +230,17 @@ export function isMultiValueOperator(operator: ConditionOperator): boolean {
 // AUTOMATION ACTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * All supported action types for automation flows.
+ *
+ * - `send_email`: sends an email to a configured address
+ * - `update_ticket`: modifies ticket status, priority, and/or assignee
+ * - `add_comment`: appends an internal or public note to a ticket
+ * - `create_ticket`: generates a new ticket (useful for scheduled automations)
+ * - `create_notification`: dispatches an in-app notification to a user
+ * - `assign_ticket`: assigns a ticket to a specific technician
+ * - `update_device`: changes device status or location
+ */
 export type AutomationActionType =
   | "send_email"
   | "update_ticket"
@@ -153,14 +250,20 @@ export type AutomationActionType =
   | "assign_ticket"
   | "update_device";
 
-// Base action interface
+/**
+ * Common fields shared by every action type.
+ */
 export interface AutomationActionBase {
   id: string;
   type: AutomationActionType;
   order: number;
 }
 
-// Send Email
+/**
+ * Sends an email to a specified recipient.
+ *
+ * The email body supports plain text or HTML depending on `is_html`.
+ */
 export interface SendEmailAction extends AutomationActionBase {
   type: "send_email";
   config: {
@@ -171,7 +274,11 @@ export interface SendEmailAction extends AutomationActionBase {
   };
 }
 
-// Update Ticket (consolidated: status, priority, assignee)
+/**
+ * Updates one or more fields of an existing ticket.
+ *
+ * All config fields are optional so that callers can change only what they need.
+ */
 export interface UpdateTicketAction extends AutomationActionBase {
   type: "update_ticket";
   config: {
@@ -182,7 +289,12 @@ export interface UpdateTicketAction extends AutomationActionBase {
   };
 }
 
-// Add Comment
+/**
+ * Appends a comment to a ticket.
+ *
+ * Use `is_internal` to control visibility: internal comments are visible only to
+ * technicians, public ones are visible to the client portal too.
+ */
 export interface AddCommentAction extends AutomationActionBase {
   type: "add_comment";
   config: {
@@ -192,7 +304,12 @@ export interface AddCommentAction extends AutomationActionBase {
   };
 }
 
-// Create Ticket (for scheduled automations)
+/**
+ * Creates a new ticket from the automation action configuration.
+ *
+ * This action is most useful in **scheduled** automations (e.g. "every Monday
+ * create a recurring ticket").
+ */
 export interface CreateTicketAction extends AutomationActionBase {
   type: "create_ticket";
   config: {
@@ -204,7 +321,12 @@ export interface CreateTicketAction extends AutomationActionBase {
   };
 }
 
-// Create Notification
+/**
+ * Dispatches an in-app notification to a user.
+ *
+ * The optional `link` field lets the notification navigate to a specific page when
+ * clicked.
+ */
 export interface CreateNotificationAction extends AutomationActionBase {
   type: "create_notification";
   config: {
@@ -216,7 +338,11 @@ export interface CreateNotificationAction extends AutomationActionBase {
   };
 }
 
-// Assign Ticket
+/**
+ * Assigns a ticket to a specific technician.
+ *
+ * The `ticket_id` is optional and derived from context at runtime if omitted.
+ */
 export interface AssignTicketAction extends AutomationActionBase {
   type: "assign_ticket";
   config: {
@@ -225,7 +351,11 @@ export interface AssignTicketAction extends AutomationActionBase {
   };
 }
 
-// Update Device
+/**
+ * Updates the status or location of a device.
+ *
+ * The `device_id` is optional and derived from context at runtime if omitted.
+ */
 export interface UpdateDeviceAction extends AutomationActionBase {
   type: "update_device";
   config: {
@@ -235,7 +365,12 @@ export interface UpdateDeviceAction extends AutomationActionBase {
   };
 }
 
-// Union type
+/**
+ * Union of all supported automation action types.
+ *
+ * Use type narrowing (`switch` / `if`) on the `type` discriminant to access the
+ * specific `config` shape of each action.
+ */
 export type AutomationAction =
   | SendEmailAction
   | UpdateTicketAction
@@ -245,12 +380,17 @@ export type AutomationAction =
   | AssignTicketAction
   | UpdateDeviceAction;
 
-// Actions container
+/**
+ * Container for a list of automation actions.
+ */
 export interface ActionsList {
   actions: AutomationAction[];
 }
 
-// Action type metadata for UI
+/**
+ * Metadata descriptor for an action type, used by the UI to render the
+ * action-picker dropdown and default configuration forms.
+ */
 export interface ActionTypeDef {
   value: AutomationActionType;
   label: string;
@@ -303,12 +443,24 @@ export const AUTOMATION_ACTION_TYPES: ActionTypeDef[] = [
   },
 ];
 
-// Helper to get action type definition
+/**
+ * Returns the action type definition for the given type.
+ *
+ * @param type - The action type to look up
+ * @returns The matching `ActionTypeDef`, or `undefined` if not found
+ */
 export function getActionTypeDef(type: AutomationActionType): ActionTypeDef | undefined {
   return AUTOMATION_ACTION_TYPES.find((a) => a.value === type);
 }
 
-// Create default action for type
+/**
+ * Creates a default action of the specified type, populating its config with
+ * sensible zero-values (empty strings, `false`, empty objects).
+ *
+ * @param type - The action type to create
+ * @returns A new `AutomationAction` instance with a unique ID and default config
+ * @throws Never throws — unknown types fall back to `send_email`
+ */
 export function createDefaultAction(type: AutomationActionType): AutomationAction {
   const base = {
     id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
@@ -371,6 +523,15 @@ export function createDefaultAction(type: AutomationActionType): AutomationActio
 // AUTOMATION TRIGGER DSL
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * All supported trigger types for automation flows.
+ *
+ * - `ticket_created`: fires immediately after a new ticket is created
+ * - `ticket_updated`: fires when an existing ticket is modified
+ * - `sla_due`: fires when a ticket's SLA deadline is approaching
+ * - `warranty_due`: fires when a device warranty is about to expire
+ * - `scheduled`: fires on a cron schedule
+ */
 export type AutomationTriggerType =
   | "ticket_created"
   | "ticket_updated"
@@ -378,18 +539,28 @@ export type AutomationTriggerType =
   | "warranty_due"
   | "scheduled";
 
-// Base trigger interface
+/**
+ * Common fields shared by every trigger type.
+ */
 export interface AutomationTriggerBase {
   type: AutomationTriggerType;
 }
 
-// Ticket Created
+/**
+ * Fires immediately after a ticket is created.
+ * No additional configuration is required.
+ */
 export interface TicketCreatedTrigger extends AutomationTriggerBase {
   type: "ticket_created";
   config: Record<string, never>; // No additional config needed
 }
 
-// Ticket Updated
+/**
+ * Fires when an existing ticket is modified.
+ *
+ * Use `fields` to restrict the trigger to specific field changes. When `fields`
+ * is omitted or empty, any update triggers the automation.
+ */
 export interface TicketUpdatedTrigger extends AutomationTriggerBase {
   type: "ticket_updated";
   config: {
@@ -397,7 +568,9 @@ export interface TicketUpdatedTrigger extends AutomationTriggerBase {
   };
 }
 
-// SLA Due (warning)
+/**
+ * Fires a configurable number of hours before a ticket's SLA deadline.
+ */
 export interface SlaDueTrigger extends AutomationTriggerBase {
   type: "sla_due";
   config: {
@@ -405,7 +578,9 @@ export interface SlaDueTrigger extends AutomationTriggerBase {
   };
 }
 
-// Warranty Due (expiring soon)
+/**
+ * Fires a configurable number of days before a device warranty expires.
+ */
 export interface WarrantyDueTrigger extends AutomationTriggerBase {
   type: "warranty_due";
   config: {
@@ -413,7 +588,12 @@ export interface WarrantyDueTrigger extends AutomationTriggerBase {
   };
 }
 
-// Scheduled
+/**
+ * Fires on a cron-based schedule.
+ *
+ * The `timezone` field is optional; when omitted the system timezone is used.
+ * Note: not all backend environments may support custom timezones.
+ */
 export interface ScheduledTrigger extends AutomationTriggerBase {
   type: "scheduled";
   config: {
@@ -422,7 +602,12 @@ export interface ScheduledTrigger extends AutomationTriggerBase {
   };
 }
 
-// Union type
+/**
+ * Union of all supported trigger types.
+ *
+ * Use type narrowing on the `type` discriminant to access the specific `config`
+ * shape of each trigger.
+ */
 export type AutomationTrigger =
   | TicketCreatedTrigger
   | TicketUpdatedTrigger
@@ -439,7 +624,12 @@ export const DEFAULT_TRIGGER_CONFIGS: Record<AutomationTriggerType, Record<strin
   scheduled: { cron: "0 8 * * *", timezone: "Europe/Rome" },
 };
 
-// Create default trigger
+/**
+ * Creates a default trigger of the specified type.
+ *
+ * @param type - The trigger type to create
+ * @returns A new `AutomationTrigger` with sensible default configuration
+ */
 export function createDefaultTrigger(type: AutomationTriggerType): AutomationTrigger {
   switch (type) {
     case "ticket_created":
@@ -457,7 +647,10 @@ export function createDefaultTrigger(type: AutomationTriggerType): AutomationTri
   }
 }
 
-// Trigger type metadata for UI
+/**
+ * Metadata descriptor for a trigger type, used by the UI to render the
+ * trigger-picker dropdown and default configuration panels.
+ */
 export interface TriggerTypeDef {
   value: AutomationTriggerType;
   label: string;
@@ -504,7 +697,12 @@ export const AUTOMATION_TRIGGER_TYPES: TriggerTypeDef[] = [
   },
 ];
 
-// Helper to get trigger type definition
+/**
+ * Returns the trigger type definition for the given type.
+ *
+ * @param type - The trigger type to look up
+ * @returns The matching `TriggerTypeDef`, or `undefined` if not found
+ */
 export function getTriggerTypeDef(type: AutomationTriggerType): TriggerTypeDef | undefined {
   return AUTOMATION_TRIGGER_TYPES.find((t) => t.value === type);
 }
@@ -513,6 +711,17 @@ export function getTriggerTypeDef(type: AutomationTriggerType): TriggerTypeDef |
 // AUTOMATION FLOW DSL
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * A complete automation flow combining trigger, conditions, and actions.
+ *
+ * **Optional fields** and when they are populated:
+ * - `id`: set by the API when an existing flow is loaded; `undefined` for new flows
+ * - `description`: human-readable summary, optional for simple flows
+ * - `category`: grouping tag for organising flows (e.g. `"sla"`, `"maintenance"`)
+ * - `created_at` / `updated_at`: timestamps populated by the API after save
+ *
+ * @see AutomationFlowInput for the form input variant (without auto-generated fields)
+ */
 export interface AutomationFlow {
   id?: string; // Optional: set when editing existing
   name: string;
@@ -526,7 +735,16 @@ export interface AutomationFlow {
   updated_at?: string;
 }
 
-// Input type for forms (without auto-generated fields)
+/**
+ * Input shape for automation flow forms.
+ *
+ * Unlike {@link AutomationFlow}, this type omits server-managed fields (`id`,
+ * `is_active`, `created_at`, `updated_at`). It represents the data collected
+ * from the UI before saving.
+ *
+ * Use `serializeFlow` (which adds the missing fields) to convert this into
+ * the payload expected by the API.
+ */
 export interface AutomationFlowInput {
   name: string;
   description?: string;
@@ -540,7 +758,13 @@ export interface AutomationFlowInput {
 // SERIALIZATION / DESERIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Type mappers for backward compatibility
+/**
+ * Maps a DSL trigger type to its legacy string representation for the REST API.
+ *
+ * @param type - The new DSL trigger type (e.g. `"sla_due"`)
+ * @returns The legacy string (e.g. `"sla_warning"`)
+ * @see mapLegacyTriggerType for the reverse operation
+ */
 export function mapTriggerTypeToLegacy(type: AutomationTriggerType): string {
   const mapping: Record<AutomationTriggerType, string> = {
     ticket_created: "ticket_created",
@@ -552,6 +776,17 @@ export function mapTriggerTypeToLegacy(type: AutomationTriggerType): string {
   return mapping[type];
 }
 
+/**
+ * Maps a legacy trigger string back to a DSL trigger type.
+ *
+ * **Fallback behaviour**: if the legacy string is unknown (e.g. a new value added
+ * by a future API version), the function defaults to `"ticket_created"` to avoid
+ * crashing the UI.
+ *
+ * @param type - The legacy trigger string from the API (e.g. `"sla_warning"`)
+ * @returns The corresponding DSL trigger type, or `"ticket_created"` as fallback
+ * @see mapTriggerTypeToLegacy for the reverse operation
+ */
 export function mapLegacyTriggerType(type: string): AutomationTriggerType {
   const mapping: Record<string, AutomationTriggerType> = {
     ticket_created: "ticket_created",
@@ -563,7 +798,13 @@ export function mapLegacyTriggerType(type: string): AutomationTriggerType {
   return mapping[type] || "ticket_created";
 }
 
-// Serialize trigger to legacy format
+/**
+ * Serializes a DSL trigger object into the legacy API format.
+ *
+ * @param trigger - The DSL trigger to serialize
+ * @returns A plain object compatible with the legacy trigger payload
+ * @see deserializeTrigger for the reverse operation
+ */
 export function serializeTrigger(trigger: AutomationTrigger): Record<string, unknown> {
   return {
     type: mapTriggerTypeToLegacy(trigger.type),
@@ -571,7 +812,15 @@ export function serializeTrigger(trigger: AutomationTrigger): Record<string, unk
   };
 }
 
-// Deserialize trigger from legacy format
+/**
+ * Deserialises a legacy API trigger payload back into a DSL trigger object.
+ *
+ * Missing or undefined config values are replaced with sensible defaults.
+ *
+ * @param def - The legacy trigger payload from the API
+ * @returns A fully typed `AutomationTrigger` instance
+ * @see serializeTrigger for the reverse operation
+ */
 export function deserializeTrigger(def: Record<string, unknown>): AutomationTrigger {
   const type = mapLegacyTriggerType(def.type as string);
   const config = (def.config as Record<string, unknown>) || {};
@@ -607,7 +856,18 @@ export function deserializeTrigger(def: Record<string, unknown>): AutomationTrig
   }
 }
 
-// Serialize conditions to legacy format
+/**
+ * Serializes conditions into the legacy API array format.
+ *
+ * **Known limitation**: the `in` operator is mapped to `field_equals` (the legacy
+ * equivalent of `eq`). This means multi-value conditions from the new DSL are
+ * serialised as a single comma-separated string, losing the semantic distinction
+ * between "equals" and "in".
+ *
+ * @param conditions - The DSL conditions group to serialize
+ * @returns An array of legacy condition objects
+ * @see deserializeConditions for the reverse operation
+ */
 export function serializeConditions(conditions: ConditionsGroup): Record<string, unknown>[] {
   return conditions.conditions.map((c) => ({
     id: c.id,
@@ -619,7 +879,17 @@ export function serializeConditions(conditions: ConditionsGroup): Record<string,
   }));
 }
 
-// Deserialize conditions from legacy format
+/**
+ * Deserialises a legacy API conditions array back into a DSL `ConditionsGroup`.
+ *
+ * The legacy format does not support the `logic` field, so the returned group
+ * always uses `"AND"`.
+ *
+ * @param defs - The legacy conditions array from the API
+ * @returns A fully typed `ConditionsGroup` (defaults to empty group when input is
+ *   nullish or empty)
+ * @see serializeConditions for the reverse operation
+ */
 export function deserializeConditions(defs: Record<string, unknown>[]): ConditionsGroup {
   if (!defs || defs.length === 0) {
     return { conditions: [], logic: "AND" };
@@ -637,7 +907,16 @@ export function deserializeConditions(defs: Record<string, unknown>[]): Conditio
   };
 }
 
-// Helper to map operator to legacy condition type
+/**
+ * Maps a DSL `ConditionOperator` to the legacy condition type string.
+ *
+ * **Note on `in` operator**: the `in` operator maps to `field_equals` because the
+ * legacy format handles multi-value via comma-separated strings rather than arrays.
+ *
+ * @param operator - The DSL operator
+ * @returns The legacy condition type string
+ * @see mapLegacyConditionType for the reverse operation
+ */
 function mapConditionOperatorToLegacy(operator: ConditionOperator): string {
   const mapping: Record<ConditionOperator, string> = {
     eq: "field_equals",
@@ -650,7 +929,16 @@ function mapConditionOperatorToLegacy(operator: ConditionOperator): string {
   return mapping[operator];
 }
 
-// Helper to map legacy condition type to operator
+/**
+ * Maps a legacy condition type string back to a DSL `ConditionOperator`.
+ *
+ * Several legacy types (`field_starts_with`, `field_ends_with`, `tag_contains`)
+ * all map to `"contains"` since the new DSL does not distinguish between them.
+ *
+ * @param type - The legacy condition type string
+ * @returns The corresponding DSL operator, or `"eq"` as fallback
+ * @see mapConditionOperatorToLegacy for the reverse operation
+ */
 function mapLegacyConditionType(type: string): ConditionOperator {
   const mapping: Record<string, ConditionOperator> = {
     field_equals: "eq",
@@ -666,7 +954,16 @@ function mapLegacyConditionType(type: string): ConditionOperator {
   return mapping[type] || "eq";
 }
 
-// Parse condition value from legacy format
+/**
+ * Parses a condition value from the legacy API format into the DSL type system.
+ *
+ * **Comma-separated strings**: if the value is a string that contains commas, it
+ * is automatically split into a `string[]`. This preserves the legacy behaviour
+ * where multi-value conditions were encoded as comma-separated text.
+ *
+ * @param value - The raw value from the legacy API (may be string, number, or nullish)
+ * @returns The parsed value as `string`, `number`, or `string[]`
+ */
 function parseConditionValue(value: unknown): string | number | string[] {
   if (typeof value === "string" && value.includes(",")) {
     return value.split(",").map((v) => v.trim());
@@ -677,7 +974,22 @@ function parseConditionValue(value: unknown): string | number | string[] {
   return String(value ?? "");
 }
 
-// Serialize actions to legacy format
+/**
+ * Serializes a list of DSL actions into the legacy API array format.
+ *
+ * **Action type mapping** (DSL → legacy):
+ * - `send_email` → `send_email`
+ * - `update_ticket` → `update_ticket_status` (only status is mapped)
+ * - `add_comment` → `create_notification` with type `ticket_comment`
+ * - `create_ticket` → `create_notification` with type `auto_create_ticket`
+ * - `create_notification` → `create_notification`
+ * - `assign_ticket` → `assign_ticket`
+ * - `update_device` → `update_device_status` (only status is mapped)
+ *
+ * @param actions - The DSL actions to serialize
+ * @returns An array of legacy action objects
+ * @see deserializeActions for the reverse operation
+ */
 export function serializeActions(actions: AutomationAction[]): Record<string, unknown>[] {
   return actions.map((action) => {
     const base = {
@@ -747,7 +1059,13 @@ export function serializeActions(actions: AutomationAction[]): Record<string, un
   });
 }
 
-// Deserialize actions from legacy format
+/**
+ * Deserialises a legacy actions array from the API back into DSL action objects.
+ *
+ * @param defs - The legacy actions array from the API
+ * @returns An array of fully typed `AutomationAction` instances
+ * @see serializeActions for the reverse operation
+ */
 export function deserializeActions(defs: Record<string, unknown>[]): AutomationAction[] {
   return defs.map((def, index) => {
     const base = {
@@ -819,7 +1137,18 @@ export function deserializeActions(defs: Record<string, unknown>[]): AutomationA
   });
 }
 
-// Serialize complete flow to legacy format for API
+/**
+ * Serializes a complete `AutomationFlow` into the legacy API payload format.
+ *
+ * This function:
+ * 1. Maps the DSL trigger type to its legacy equivalent
+ * 2. Converts conditions to the legacy array format (with the `in` → `field_equals` loss)
+ * 3. Maps action types to their legacy equivalents
+ *
+ * @param flow - The DSL flow to serialize
+ * @returns A flat record compatible with the legacy REST API payload
+ * @see deserializeFlow for the reverse operation
+ */
 export function serializeFlow(flow: AutomationFlow): Record<string, unknown> {
   return {
     id: flow.id,
@@ -835,7 +1164,19 @@ export function serializeFlow(flow: AutomationFlow): Record<string, unknown> {
   };
 }
 
-// Deserialize complete flow from API response
+/**
+ * Deserialises a legacy API flow payload into a complete `AutomationFlow`.
+ *
+ * Missing or `null` sub-objects are replaced with sensible defaults:
+ * - `trigger_definition` → defaults to `ticket_created`
+ * - `conditions_definition` → empty conditions group with `AND` logic
+ * - `actions_definition` → empty array
+ * - `is_active` → `true`
+ *
+ * @param data - The legacy flow payload from the API
+ * @returns A fully typed `AutomationFlow` instance
+ * @see serializeFlow for the reverse operation
+ */
 export function deserializeFlow(data: Record<string, unknown>): AutomationFlow {
   return {
     id: data.id as string | undefined,

@@ -19,6 +19,7 @@ import {
   formatSlaCountdown,
 } from "@/lib/pcready";
 import { setTicketContext } from "@/lib/detail-navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
@@ -118,6 +119,7 @@ function loadStoredFilters(): KanbanFilters {
 
 function KanbanPage() {
   const { t } = useTranslation(["kanban", "tickets"]);
+  const isMobile = useIsMobile();
   useTickets();
   const { canEdit, isAdmin, user, profile, session } = useAuth();
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
@@ -677,7 +679,12 @@ function KanbanPage() {
           onCardClick={handleKanbanCardClick}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className={cn(
+          isMobile ? "flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-thin" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4",
+        )}>
+          {isMobile && (
+            <div className="sticky left-0 z-10 flex-shrink-0 w-px" />
+          )}
           {KANBAN_STATUSES.map((s) => {
             let items = filteredRows.filter((r) => r.status === s);
             if (s === "completed") {
@@ -728,7 +735,10 @@ function KanbanPage() {
             return (
               <div
                 key={s}
-                className="flex flex-col gap-2 rounded-xl p-1"
+                className={cn(
+                  "flex flex-col gap-2 rounded-xl p-1",
+                  isMobile && "min-w-[280px] max-w-[300px] snap-center flex-shrink-0",
+                )}
                 onDragOver={(e) => {
                   if (dragId) {
                     e.preventDefault();
@@ -799,7 +809,7 @@ function KanbanPage() {
                       }}
                       onClick={(event) => handleKanbanCardClick(event, c.id)}
                       className={cn(
-                        "pc-card group text-left hover:shadow-md transition-all select-none",
+                        "pc-card group text-left hover:shadow-md transition-all select-none min-h-[44px]",
                         compactView ? "p-2" : "p-3",
                         selectedTicketIds.has(c.id) && "ring-2 ring-accent",
                       )}
@@ -936,12 +946,32 @@ function KanbanPage() {
 
       {selectedCards.length > 0 ? (
         <div
-          className="fixed bottom-4 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl border px-3 py-2 shadow-lg"
+          className={cn(
+            "fixed bottom-0 left-0 right-0 z-40 flex flex-wrap items-center gap-1.5 rounded-t-xl border px-2 py-2 shadow-lg",
+            isMobile ? "pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]" : "bottom-4 left-1/2 max-w-[calc(100vw-2rem)] -translate-x-1/2",
+            !isMobile && "rounded-xl",
+          )}
           style={{ background: "var(--surface1)", borderColor: "var(--border)" }}
         >
-          <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
-            {selectedCards.length} {t("bulk.selected", "selezionati")}
-          </span>
+          {isMobile && (
+            <div className="flex w-full items-center justify-between gap-1">
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">
+                {selectedCards.length} {t("bulk.selected", "selezionati")}
+              </span>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-xs"
+                onClick={() => setSelectedTicketIds(new Set())}
+              >
+                <X className="h-3 w-3" /> {t("bulk.deselect", "Deseleziona")}
+              </button>
+            </div>
+          )}
+          {!isMobile && (
+            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
+              {selectedCards.length} {t("bulk.selected", "selezionati")}
+            </span>
+          )}
           <select
             className="pc-input h-8 max-w-[170px] px-3 py-0 text-[12px] leading-none"
             value=""
@@ -1014,7 +1044,9 @@ function KanbanPage() {
           >
             X {t("bulk.deselect", "Deseleziona")}
           </button>
-          <span className="text-[10px] text-text3">{t("bulk.shiftClickHint", "Shift+click sulle card per selezionare")}</span>
+          {!isMobile && (
+            <span className="text-[10px] text-text3">{t("bulk.shiftClickHint", "Shift+click sulle card per selezionare")}</span>
+          )}
         </div>
       ) : null}
 

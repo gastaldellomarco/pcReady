@@ -494,22 +494,69 @@ function AssignmentsTab({
   hasHidden: boolean;
 }) {
   const { t } = useTranslation("bundles");
-  return (
-    <div className="pc-card overflow-hidden">
-      <div className="pc-card-hd">
-        <div className="pc-card-title">{t("assignments.title", "Storico bundle assegnati")}</div>
-        <button
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          onClick={onToggleShowAll}
-          title={showAll ? t("assignments.showActiveOnly", "Mostra solo attivi") : t("assignments.showAll", "Mostra tutti")}
-        >
-          <Filter className="h-3 w-3" />
-          {showAll ? t("assignments.showActiveOnly", "Solo attivi") : t("assignments.showAll", "Mostra tutti")}
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <OverflowTable>
-          <table className="w-full min-w-[980px] text-[12.5px]">
+  return (      <div className="pc-card overflow-hidden">
+        <div className="pc-card-hd">
+          <div className="pc-card-title">{t("assignments.title", "Storico bundle assegnati")}</div>
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={onToggleShowAll}
+            title={showAll ? t("assignments.showActiveOnly", "Mostra solo attivi") : t("assignments.showAll", "Mostra tutti")}
+          >
+            <Filter className="h-3 w-3" />
+            {showAll ? t("assignments.showActiveOnly", "Solo attivi") : t("assignments.showAll", "Mostra tutti")}
+          </button>
+        </div>
+
+        {/* Mobile card view */}
+        <div className="md:hidden flex flex-col gap-3 p-4">
+          {assignments.map((assignment) => (
+            <div key={assignment.id} className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-bold truncate">{clientName(assignment)}</div>
+                  <div className="text-xs text-text3">{assignment.bundle?.name ?? "-"}</div>
+                </div>
+                <BundleStatusBadge status={assignment.status} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="text-text3">{t("assignments.table.period", "Periodo")}:</span> <span className="font-mono">{assignment.start_date} → {assignment.end_date ?? t("assignments.noExpiry", "senza scadenza")}</span></div>
+                <div><span className="text-text3">{t("assignments.table.renewal", "Rinnovo")}:</span> <span>{assignment.auto_renew ? t("assignments.autoRenew", "Automatico") : t("assignments.manualRenew", "Manuale")}</span></div>
+                <div><span className="text-text3">{t("assignments.table.fee", "Canone")}:</span> <span className="font-mono">{formatBundleMoney(assignment.custom_fee ?? assignment.bundle?.fee ?? 0, assignment.bundle?.currency ?? "EUR")}</span></div>
+                {assignment.notes && <div className="col-span-2"><span className="text-text3">{t("assignments.table.notes", "Note")}:</span> <span className="text-text2">{assignment.notes}</span></div>}
+              </div>
+              {canManage && (
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+                  <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onEdit(assignment)} title={t("assignments.edit", "Modifica assegnazione")}>
+                    <Pencil className="h-3 w-3" /> {t("assignments.edit", "Modifica")}
+                  </button>
+                  <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onViewUsage(assignment)} title={t("assignments.viewUsage", "Storico consumo")}>
+                    <History className="h-3 w-3" /> {t("assignments.viewUsage", "Consumo")}
+                  </button>
+                  {assignment.status === "active" && (
+                    <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onCancel(assignment.id)} title={t("assignments.cancel", "Annulla assegnazione")}>
+                      <Ban className="h-3 w-3" /> {t("assignments.cancel", "Annulla")}
+                    </button>
+                  )}
+                  {assignment.status !== "active" && (
+                    <button className="pc-btn pc-btn-ghost pc-btn-xs text-destructive" onClick={() => onDelete(assignment.id)} disabled={busy} title={t("assignments.delete", "Elimina")}>
+                      <Trash2 className="h-3 w-3" /> {t("assignments.delete", "Elimina")}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {!assignments.length && (
+            <div className="py-8 text-center text-sm text-text3">
+              {hasHidden ? t("assignments.emptyActive", "Nessuna assegnazione attiva.") : t("assignments.empty", "Nessuna assegnazione.")}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
+          <OverflowTable>
+            <table className="w-full min-w-[980px] text-[12.5px]">
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
               {[t("assignments.table.client", "Cliente"), t("assignments.table.bundle", "Bundle"), t("assignments.table.status", "Stato"), t("assignments.table.period", "Periodo"), t("assignments.table.renewal", "Rinnovo"), t("assignments.table.fee", "Canone"), t("assignments.table.notes", "Note"), t("assignments.table.actions", "Azioni")].map(
@@ -612,8 +659,10 @@ function UsageTab({
 }) {
   const { t } = useTranslation("bundles");
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
-      <div className="pc-card overflow-hidden">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+
+      {/* Desktop table */}
+      <div className="hidden md:block pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div className="pc-card-title">{t("usage.title", "Consumi bundle e alert")}</div>
         </div>
