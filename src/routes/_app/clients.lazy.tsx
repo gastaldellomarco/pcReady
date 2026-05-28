@@ -25,19 +25,25 @@ import { fmtDate } from "@/lib/pcready";
 import { Modal } from "@/components/pcready/Modal";
 import {
   Building2,
+  Bell,
   CheckCircle2,
+  Clock,
   Copy,
   Download,
   FileUp,
+  FileText,
   HardDrive,
+  History,
   Link2,
   Pencil,
   Plus,
   Save,
   Search,
   Star,
+  Tags,
   Trash2,
   Ticket,
+  Upload,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -111,7 +117,7 @@ type ContactForm = {
   notes: string;
 };
 
-type ClientTab = "info" | "contacts" | "tickets" | "devices";
+type ClientTab = "overview" | "info" | "notes" | "contacts" | "tickets" | "devices" | "activity" | "documents" | "settings";
 type ClientListFilter = "all" | "openTickets" | "portalActive";
 type DestructiveAction =
   | { type: "client"; client: ClientRow }
@@ -189,7 +195,8 @@ function ClientsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [q, setQ] = useState("");
   const [listFilter, setListFilter] = useState<ClientListFilter>("all");
-  const [activeTab, setActiveTab] = useState<ClientTab>("info");
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<ClientTab>("overview");
   const [importOpen, setImportOpen] = useState(false);
   const [contactImportOpen, setContactImportOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -224,6 +231,9 @@ function ClientsPage() {
     useContactPortalAccess,
     useClientTickets,
     useClientDevices,
+    useClientTags,
+    useClientTagAssignments,
+    useClientOverview,
   } = queries as any;
   const listQuery = useClientsInfiniteList({ q, pageSize: PAGE_SIZE });
   const {
@@ -260,6 +270,8 @@ function ClientsPage() {
   const isFetchingNextPage = listQuery.isFetchingNextPage;
   const clientIds = useMemo(() => clients.map((client) => client.id), [clients]);
   const statsQuery = useClientStats(clientIds);
+  const tagsQuery = useClientTags();
+  const tagAssignmentsQuery = useClientTagAssignments(clientIds);
 
   useEffect(() => {
     if (!clients.length) return;
@@ -326,7 +338,7 @@ function ClientsPage() {
   }, [clients, routeSearch.clientId]);
 
   useEffect(() => {
-    setActiveTab((routeSearch.tab as ClientTab | undefined) ?? "info");
+    setActiveTab((routeSearch.tab as ClientTab | undefined) ?? "overview");
     setContactModalOpen(false);
     setEditingContactId(null);
     contactForm.reset(emptyContact as ContactInput);
@@ -337,6 +349,7 @@ function ClientsPage() {
   const portalAccessQuery = useContactPortalAccess(contactIds);
   const ticketsQuery = useClientTickets(selectedId);
   const devicesQuery = useClientDevices(selectedId);
+  const overviewQuery = useClientOverview(selectedId);
   useEffect(() => {
     if (!selectedId) {
       setContacts([]);
@@ -364,6 +377,10 @@ function ClientsPage() {
   const portalAccess = (portalAccessQuery.data ?? {}) as Record<string, boolean>;
   const tickets = ((ticketsQuery.data ?? []) as TicketRow[]).slice().sort(compareTickets);
   const devices = (devicesQuery.data ?? []) as DeviceRow[];
+  const tagAssignments = (tagAssignmentsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientTag[]>;
+  const allTags = (tagsQuery.data ?? []) as import("@/lib/queries/clients").ClientTag[];
+  const selectedOverview = overviewQuery.data as import("@/lib/queries/clients").ClientOverview | null | undefined;
+  const selectedTags = selectedId ? tagAssignments[selectedId] ?? [] : [];
   const displayedClients = clients.filter((client) => {
     const clientStats = stats[client.id] ?? {
       openTickets: 0,
@@ -371,6 +388,8 @@ function ClientsPage() {
       contacts: 0,
       portalActive: false,
     };
+    const tagMatch = tagFilter === "all" || (tagAssignments[client.id] ?? []).some((tag) => tag.id === tagFilter);
+    if (!tagMatch) return false;
     if (listFilter === "openTickets") return clientStats.openTickets > 0;
     if (listFilter === "portalActive")
       return Boolean(client.portal_enabled) || clientStats.portalActive;
@@ -682,6 +701,23 @@ function ClientsPage() {
               </button>
             ))}
           </div>
+          {allTags.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Tags className="h-4 w-4 text-text3" />
+              <select
+                className="pc-input h-9 text-xs"
+                value={tagFilter}
+                onChange={(event) => setTagFilter(event.target.value)}
+              >
+                <option value="all">{t("tags.filterAll", "Tutti i tag")}</option>
+                {allTags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 text-xs text-text3">
             <label className="flex items-center gap-2">
               <input
@@ -794,6 +830,7 @@ function ClientsPage() {
                           label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
                         />
                       </div>
+                      <ClientTagBadges tags={tagAssignments[client.id] ?? []} compact />
                     </button>
                   </div>
                 );
@@ -859,6 +896,7 @@ function ClientsPage() {
                         label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
                       />
                     </div>
+                    <ClientTagBadges tags={tagAssignments[client.id] ?? []} compact />
                   </button>
                 );
               })}
@@ -901,6 +939,7 @@ function ClientsPage() {
                       {[selected.email, selected.phone].filter(Boolean).join(" · ") ||
                         t("detail.contactInfoEmpty", "Contatti cliente non compilati")}
                     </div>
+                    <ClientTagBadges tags={selectedTags} />
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -923,10 +962,15 @@ function ClientsPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5 border-b-0">
                 {[
+                  ["overview", t("tabs.overview", "Overview")],
                   ["info", t("tabs.info", "Informazioni")],
+                  ["notes", t("tabs.notes", "Note")],
                   ["contacts", t("tabs.contacts", "Referenti")],
                   ["tickets", t("tabs.tickets", "Ticket")],
                   ["devices", t("tabs.devices", "Dispositivi")],
+                  ["activity", t("tabs.activity", "Attivita'")],
+                  ["documents", t("tabs.documents", "Documenti")],
+                  ["settings", t("tabs.settings", "SLA e tag")],
                 ].map(([value, label]) => (
                   <button
                     key={value}
@@ -943,6 +987,18 @@ function ClientsPage() {
                 ))}
               </div>
             </div>
+
+            {activeTab === "overview" && (
+              <ClientOverviewPanel
+                overview={selectedOverview}
+                loading={overviewQuery.isLoading}
+                contactsCount={selectedStats.contacts || contacts.length}
+                devicesCount={selectedStats.devices}
+                onOpenTickets={() => setActiveTab("tickets")}
+                onOpenDocuments={() => setActiveTab("documents")}
+                onOpenSettings={() => setActiveTab("settings")}
+              />
+            )}
 
             {activeTab === "info" && (
               <div className="pc-card-body">
@@ -1058,6 +1114,15 @@ function ClientsPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {activeTab === "notes" && (
+              <ClientNotesPanel
+                clientId={selected.id}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                userId={profile?.id ?? null}
+              />
             )}
 
             {activeTab === "contacts" && (
@@ -1229,6 +1294,26 @@ function ClientsPage() {
                   ])}
                 />
               </div>
+            )}
+
+            {activeTab === "activity" && <ClientActivityTimeline clientId={selected.id} />}
+
+            {activeTab === "documents" && (
+              <ClientDocumentsPanel
+                clientId={selected.id}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                userId={profile?.id ?? null}
+              />
+            )}
+
+            {activeTab === "settings" && (
+              <ClientSettingsPanel
+                clientId={selected.id}
+                canEdit={canEdit}
+                userId={profile?.id ?? null}
+                overview={selectedOverview}
+              />
             )}
           </>
         ) : (
@@ -1527,6 +1612,596 @@ function PortalLinkModal({
   );
 }
 
+function ClientOverviewPanel({
+  overview,
+  loading,
+  contactsCount,
+  devicesCount,
+  onOpenTickets,
+  onOpenDocuments,
+  onOpenSettings,
+}: {
+  overview: import("@/lib/queries/clients").ClientOverview | null | undefined;
+  loading: boolean;
+  contactsCount: number;
+  devicesCount: number;
+  onOpenTickets: () => void;
+  onOpenDocuments: () => void;
+  onOpenSettings: () => void;
+}) {
+  const { t } = useTranslation("clients");
+  const bundle = overview?.activeBundle;
+  return (
+    <div className="pc-card-body space-y-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <button type="button" className="rounded-md border p-3 text-left" style={{ borderColor: "var(--border)" }} onClick={onOpenTickets}>
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
+            <Ticket className="h-3.5 w-3.5" /> {t("overview.openTickets", "Ticket aperti")}
+          </div>
+          <div className="mt-2 font-mono text-2xl font-bold">{loading ? "..." : overview?.openTickets ?? 0}</div>
+        </button>
+        <div className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
+            <Clock className="h-3.5 w-3.5" /> {t("overview.avgResolution", "Tempo medio risoluzione")}
+          </div>
+          <div className="mt-2 font-mono text-2xl font-bold">
+            {loading ? "..." : formatHours(overview?.avgResolutionHours)}
+          </div>
+        </div>
+        <div className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
+            <FileText className="h-3.5 w-3.5" /> {t("overview.totalBilled", "Fatturato")}
+          </div>
+          <div className="mt-2 font-mono text-2xl font-bold">{loading ? "..." : formatMoney(overview?.totalBilled ?? 0)}</div>
+        </div>
+        <button type="button" className="rounded-md border p-3 text-left" style={{ borderColor: "var(--border)" }} onClick={onOpenSettings}>
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
+            <Bell className="h-3.5 w-3.5" /> {t("overview.contractExpiry", "Scadenza contratto")}
+          </div>
+          <div className="mt-2 font-mono text-2xl font-bold">
+            {loading ? "..." : overview?.contractDaysLeft == null ? "-" : `${overview.contractDaysLeft}g`}
+          </div>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="rounded-md border p-4" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <div className="text-sm font-bold">{t("overview.bundleTitle", "Bundle assistenza attivo")}</div>
+              <div className="text-xs text-text3">{t("overview.bundleSubtitle", "SLA effettivi e scadenza contratto")}</div>
+            </div>
+            <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" onClick={onOpenSettings}>
+              <Pencil className="h-3 w-3" /> {t("overview.configure", "Configura")}
+            </button>
+          </div>
+          {bundle ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                <div className="text-[10px] uppercase text-text3">{t("overview.bundleName", "Nome")}</div>
+                <div className="truncate text-sm font-semibold">{bundle.bundle_name ?? bundle.name ?? "-"}</div>
+              </div>
+              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                <div className="text-[10px] uppercase text-text3">{t("overview.responseSla", "Risposta")}</div>
+                <div className="font-mono text-sm font-semibold">{formatHours(bundle.effective_sla_response_hours)}</div>
+              </div>
+              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                <div className="text-[10px] uppercase text-text3">{t("overview.resolutionSla", "Risoluzione")}</div>
+                <div className="font-mono text-sm font-semibold">{formatHours(bundle.effective_sla_resolution_hours)}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed px-3 py-5 text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+              {t("overview.noBundle", "Nessun bundle attivo collegato a questo cliente.")}
+            </div>
+          )}
+        </div>
+        <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="text-sm font-bold">{t("overview.quickStats", "Scheda cliente")}</div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <SummaryBox label={t("overview.contacts", "Referenti")} value={contactsCount} />
+            <SummaryBox label={t("overview.devices", "Device")} value={devicesCount} />
+          </div>
+          <button className="pc-btn pc-btn-primary pc-btn-sm mt-3 w-full" type="button" onClick={onOpenDocuments}>
+            <Upload className="h-3 w-3" /> {t("overview.uploadDocument", "Carica documento")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientTagBadges({
+  tags,
+  compact,
+}: {
+  tags: import("@/lib/queries/clients").ClientTag[];
+  compact?: boolean;
+}) {
+  if (!tags.length) return null;
+  return (
+    <div className={compact ? "mt-2 flex flex-wrap gap-1" : "mt-2 flex flex-wrap gap-1.5"}>
+      {tags.slice(0, compact ? 3 : 8).map((tag) => (
+        <span
+          key={tag.id}
+          className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10.5px] font-bold"
+          style={{
+            borderColor: tag.color || "var(--border)",
+            background: "var(--surface2)",
+            color: tag.color || "var(--text3)",
+          }}
+        >
+          {tag.name}
+        </span>
+      ))}
+      {compact && tags.length > 3 && (
+        <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10.5px] font-bold text-text3">
+          +{tags.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ClientNotesPanel({
+  clientId,
+  canEdit,
+  canDelete,
+  userId,
+}: {
+  clientId: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  userId: string | null;
+}) {
+  const { t } = useTranslation("clients");
+  const qc = useQueryClient();
+  const notesQuery = (queries as any).useClientNotes(clientId);
+  const [content, setContent] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const revisionsQuery = (queries as any).useClientNoteRevisions(historyNoteId);
+  const notes = (notesQuery.data ?? []) as import("@/lib/queries/clients").ClientNote[];
+
+  async function saveNote() {
+    if (!canEdit || !content.trim()) return;
+    setBusy(true);
+    try {
+      if (editingId) await (queries as any).updateClientNote(editingId, content, userId);
+      else await (queries as any).createClientNote(clientId, content, userId);
+      setContent("");
+      setEditingId(null);
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "notes"] });
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "activity"] });
+      toast.success(t("notes.saved", "Nota salvata"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("notes.saveError", "Errore salvataggio nota")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeNote(noteId: string) {
+    if (!canDelete) return;
+    setBusy(true);
+    try {
+      await (queries as any).deleteClientNote(noteId);
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "notes"] });
+      toast.success(t("notes.deleted", "Nota eliminata"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("notes.deleteError", "Errore eliminazione nota")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="pc-card-body space-y-4">
+      <div className="rounded-md border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+        <Field label={t("notes.editorLabel", "Nota interna")}>
+          <textarea
+            className="pc-input min-h-[110px]"
+            value={content}
+            disabled={!canEdit || busy}
+            maxLength={5000}
+            onChange={(event) => setContent(event.target.value)}
+          />
+        </Field>
+        <div className="mt-3 flex justify-end gap-2">
+          {editingId && (
+            <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" onClick={() => { setEditingId(null); setContent(""); }}>
+              {t("form.cancel", "Annulla")}
+            </button>
+          )}
+          <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !content.trim()} onClick={() => void saveNote()}>
+            <Save className="h-3 w-3" /> {editingId ? t("notes.update", "Aggiorna nota") : t("notes.add", "Aggiungi nota")}
+          </button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {notesQuery.isLoading ? (
+          <ListSkeleton rows={3} variant="app" />
+        ) : notes.length ? (
+          notes.map((note) => (
+            <div key={note.id} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="text-xs text-text3">
+                  {note.author?.full_name || t("notes.unknownAuthor", "Autore non disponibile")} - {fmtDate(note.updated_at)}
+                </div>
+                <div className="flex gap-1">
+                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => setHistoryNoteId(note.id)}>
+                    <History className="h-3 w-3" /> {t("notes.history", "Storico")}
+                  </button>
+                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canEdit} onClick={() => { setEditingId(note.id); setContent(note.content); }}>
+                    <Pencil className="h-3 w-3" /> {t("form.edit", "Modifica")}
+                  </button>
+                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete} onClick={() => void removeNote(note.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-text2">{note.content}</p>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-md border border-dashed p-8 text-center text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+            {t("notes.empty", "Nessuna nota interna per questo cliente.")}
+          </div>
+        )}
+      </div>
+      <Modal open={!!historyNoteId} onClose={() => setHistoryNoteId(null)} title={t("notes.historyTitle", "Storico modifiche")}>
+        <div className="space-y-2">
+          {revisionsQuery.isLoading ? (
+            <ListSkeleton rows={3} variant="app" />
+          ) : ((revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[]).length ? (
+            ((revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[]).map((revision) => (
+              <div key={revision.id} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+                <div className="text-xs text-text3">{revision.author?.full_name || "-"} - {fmtDate(revision.changed_at)}</div>
+                <div className="mt-2 text-xs text-text3">{t("notes.previous", "Prima")}</div>
+                <p className="whitespace-pre-wrap text-sm text-text2">{revision.previous_content}</p>
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-text3">{t("notes.noRevisions", "Nessuna modifica registrata.")}</div>
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function ClientActivityTimeline({ clientId }: { clientId: string }) {
+  const { t } = useTranslation("clients");
+  const activityQuery = (queries as any).useClientActivity(clientId);
+  const items = (activityQuery.data ?? []) as import("@/lib/queries/clients").ClientActivityItem[];
+  return (
+    <div className="pc-card-body">
+      {activityQuery.isLoading ? (
+        <ListSkeleton rows={5} variant="app" />
+      ) : items.length ? (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex gap-3 rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-surface2 text-text3">
+                <History className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-semibold">{item.title}</div>
+                  <div className="font-mono text-xs text-text3">{fmtDate(item.created_at)}</div>
+                </div>
+                {item.description && <p className="mt-1 line-clamp-2 text-xs text-text3">{item.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-md border border-dashed p-8 text-center text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+          {t("activity.empty", "Nessuna attivita' disponibile.")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ClientDocumentsPanel({
+  clientId,
+  canEdit,
+  canDelete,
+  userId,
+}: {
+  clientId: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  userId: string | null;
+}) {
+  const { t } = useTranslation("clients");
+  const qc = useQueryClient();
+  const documentsQuery = (queries as any).useClientDocuments(clientId);
+  const [documentType, setDocumentType] = useState<import("@/lib/queries/clients").ClientDocument["document_type"]>("contract");
+  const [description, setDescription] = useState("");
+  const [busy, setBusy] = useState(false);
+  const documents = (documentsQuery.data ?? []) as import("@/lib/queries/clients").ClientDocument[];
+
+  async function upload(file: File | null) {
+    if (!file || !canEdit) return;
+    setBusy(true);
+    try {
+      await (queries as any).uploadClientDocument({ clientId, file, documentType, description, userId });
+      setDescription("");
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "documents"] });
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "activity"] });
+      toast.success(t("documents.uploaded", "Documento caricato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("documents.uploadError", "Errore upload documento")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openDocument(document: import("@/lib/queries/clients").ClientDocument) {
+    try {
+      const url = await (queries as any).getClientDocumentSignedUrl(document);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(errorMessage(error, t("documents.openError", "Errore apertura documento")));
+    }
+  }
+
+  async function removeDocument(document: import("@/lib/queries/clients").ClientDocument) {
+    if (!canDelete) return;
+    setBusy(true);
+    try {
+      await (queries as any).deleteClientDocument(document);
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "documents"] });
+      toast.success(t("documents.deleted", "Documento eliminato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("documents.deleteError", "Errore eliminazione documento")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="pc-card-body space-y-4">
+      <div className="grid grid-cols-1 gap-3 rounded-md border p-3 md:grid-cols-[180px_minmax(0,1fr)_auto]" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+        <select className="pc-input" value={documentType} disabled={!canEdit || busy} onChange={(event) => setDocumentType(event.target.value as any)}>
+          <option value="contract">{t("documents.typeContract", "Contratto")}</option>
+          <option value="nda">{t("documents.typeNda", "NDA")}</option>
+          <option value="technical">{t("documents.typeTechnical", "Tecnico")}</option>
+          <option value="other">{t("documents.typeOther", "Altro")}</option>
+        </select>
+        <input className="pc-input" value={description} disabled={!canEdit || busy} placeholder={t("documents.description", "Descrizione documento")} onChange={(event) => setDescription(event.target.value)} />
+        <label className="pc-btn pc-btn-primary pc-btn-sm justify-center">
+          <Upload className="h-3 w-3" /> {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
+          <input type="file" className="hidden" disabled={!canEdit || busy} onChange={(event) => void upload(event.target.files?.[0] ?? null)} />
+        </label>
+      </div>
+      <ResponsiveTable
+        empty={t("documents.empty", "Nessun documento allegato al cliente.")}
+        headers={[
+          t("documents.headers.name", "Nome"),
+          t("documents.headers.type", "Tipo"),
+          t("documents.headers.size", "Dimensione"),
+          t("documents.headers.uploaded", "Caricato"),
+          t("documents.headers.actions", "Azioni"),
+        ]}
+        rows={documents.map((document) => [
+          <button className="font-semibold text-accent" type="button" onClick={() => void openDocument(document)}>{document.file_name}</button>,
+          documentTypeLabel(document.document_type),
+          formatFileSize(document.file_size),
+          fmtDate(document.uploaded_at),
+          <div className="flex gap-1">
+            <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => void openDocument(document)}>
+              <Download className="h-3 w-3" />
+            </button>
+            <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete || busy} onClick={() => void removeDocument(document)}>
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>,
+        ])}
+      />
+    </div>
+  );
+}
+
+function ClientSettingsPanel({
+  clientId,
+  canEdit,
+  userId,
+  overview,
+}: {
+  clientId: string;
+  canEdit: boolean;
+  userId: string | null;
+  overview: import("@/lib/queries/clients").ClientOverview | null | undefined;
+}) {
+  const { t } = useTranslation("clients");
+  const qc = useQueryClient();
+  const tagsQuery = (queries as any).useClientTags();
+  const assignmentsQuery = (queries as any).useClientTagAssignments([clientId]);
+  const alertsQuery = (queries as any).useClientContractAlerts(clientId);
+  const allTags = (tagsQuery.data ?? []) as import("@/lib/queries/clients").ClientTag[];
+  const assigned = (((assignmentsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientTag[]>)[clientId] ?? []);
+  const assignedIds = new Set(assigned.map((tag) => tag.id));
+  const bundle = overview?.activeBundle;
+  const alert = ((alertsQuery.data ?? []) as any[])[0];
+  const [newTag, setNewTag] = useState("");
+  const [responseHours, setResponseHours] = useState("");
+  const [resolutionHours, setResolutionHours] = useState("");
+  const [daysBefore, setDaysBefore] = useState(30);
+  const [channel, setChannel] = useState<"in_app" | "email">("in_app");
+  const [enabled, setEnabled] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setResponseHours(bundle?.effective_sla_response_hours != null ? String(bundle.effective_sla_response_hours) : "");
+    setResolutionHours(bundle?.effective_sla_resolution_hours != null ? String(bundle.effective_sla_resolution_hours) : "");
+  }, [bundle?.id, bundle?.effective_sla_response_hours, bundle?.effective_sla_resolution_hours]);
+
+  useEffect(() => {
+    if (!alert) return;
+    setDaysBefore(alert.days_before ?? 30);
+    setChannel(alert.channel ?? "in_app");
+    setEnabled(Boolean(alert.enabled));
+  }, [alert?.id, alert?.days_before, alert?.channel, alert?.enabled]);
+
+  async function toggleTag(tag: import("@/lib/queries/clients").ClientTag) {
+    if (!canEdit) return;
+    setBusy(true);
+    try {
+      await (queries as any).toggleClientTag(clientId, tag.id, !assignedIds.has(tag.id), userId);
+      void qc.invalidateQueries({ queryKey: ["clients", "tag-assignments"] });
+      toast.success(t("tags.updated", "Tag aggiornati"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("tags.updateError", "Errore aggiornamento tag")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addTag() {
+    if (!canEdit || !newTag.trim()) return;
+    setBusy(true);
+    try {
+      const tag = await (queries as any).createClientTag(newTag);
+      await (queries as any).toggleClientTag(clientId, tag.id, true, userId);
+      setNewTag("");
+      void qc.invalidateQueries({ queryKey: ["clients", "tags"] });
+      void qc.invalidateQueries({ queryKey: ["clients", "tag-assignments"] });
+      toast.success(t("tags.created", "Tag assegnato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("tags.createError", "Errore creazione tag")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveSla() {
+    if (!canEdit || !bundle?.id) return;
+    setBusy(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("client_bundle_assignments")
+        .update({
+          custom_sla_response_hours: responseHours ? Number(responseHours) : null,
+          custom_sla_resolution_hours: resolutionHours ? Number(resolutionHours) : null,
+        })
+        .eq("id", bundle.id);
+      if (error) throw error;
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "overview"] });
+      toast.success(t("sla.saved", "SLA cliente aggiornato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("sla.saveError", "Errore aggiornamento SLA")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveAlert() {
+    if (!canEdit) return;
+    setBusy(true);
+    try {
+      await (queries as any).upsertClientContractAlert({
+        clientId,
+        bundleAssignmentId: bundle?.id ?? null,
+        daysBefore,
+        channel,
+        enabled,
+        userId,
+      });
+      void qc.invalidateQueries({ queryKey: ["clients", clientId, "contract-alerts"] });
+      toast.success(t("alerts.saved", "Alert scadenza aggiornato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("alerts.saveError", "Errore salvataggio alert")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="pc-card-body space-y-4">
+      <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
+        <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+          <Tags className="h-4 w-4" /> {t("tags.title", "Segmentazione cliente")}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {allTags.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              className="rounded-full border px-3 py-1 text-xs font-bold"
+              style={{
+                borderColor: assignedIds.has(tag.id) ? tag.color || "var(--accent)" : "var(--border)",
+                background: assignedIds.has(tag.id) ? "var(--accent2)" : "var(--surface2)",
+                color: assignedIds.has(tag.id) ? tag.color || "var(--accent)" : "var(--text3)",
+              }}
+              disabled={!canEdit || busy}
+              onClick={() => void toggleTag(tag)}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input className="pc-input" value={newTag} disabled={!canEdit || busy} placeholder={t("tags.newPlaceholder", "Nuovo tag, es. VIP")} onChange={(event) => setNewTag(event.target.value)} />
+          <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !newTag.trim()} onClick={() => void addTag()}>
+            <Plus className="h-3 w-3" /> {t("tags.add", "Aggiungi")}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <Clock className="h-4 w-4" /> {t("sla.title", "SLA personalizzato")}
+          </div>
+          {bundle ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Field label={t("sla.responseHours", "Risposta entro ore")}>
+                <input className="pc-input" type="number" min={0} step={0.5} value={responseHours} disabled={!canEdit || busy} onChange={(event) => setResponseHours(event.target.value)} />
+              </Field>
+              <Field label={t("sla.resolutionHours", "Risoluzione entro ore")}>
+                <input className="pc-input" type="number" min={0} step={0.5} value={resolutionHours} disabled={!canEdit || busy} onChange={(event) => setResolutionHours(event.target.value)} />
+              </Field>
+              <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveSla()}>
+                <Save className="h-3 w-3" /> {t("sla.save", "Salva override SLA")}
+              </button>
+            </div>
+          ) : (
+            <div className="text-sm text-text3">{t("sla.noBundle", "Serve un bundle attivo per configurare uno SLA cliente.")}</div>
+          )}
+        </div>
+
+        <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <Bell className="h-4 w-4" /> {t("alerts.title", "Notifica scadenza contratto")}
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Field label={t("alerts.daysBefore", "Giorni prima")}>
+              <input className="pc-input" type="number" min={1} value={daysBefore} disabled={!canEdit || busy} onChange={(event) => setDaysBefore(Number(event.target.value || 30))} />
+            </Field>
+            <Field label={t("alerts.channel", "Canale")}>
+              <select className="pc-input" value={channel} disabled={!canEdit || busy} onChange={(event) => setChannel(event.target.value as any)}>
+                <option value="in_app">{t("alerts.inApp", "In-app")}</option>
+                <option value="email">{t("alerts.email", "Email")}</option>
+              </select>
+            </Field>
+            <label className="flex items-center gap-2 text-sm text-text2 md:col-span-2">
+              <input type="checkbox" checked={enabled} disabled={!canEdit || busy} onChange={(event) => setEnabled(event.target.checked)} />
+              {t("alerts.enabled", "Alert attivo")}
+            </label>
+            <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveAlert()}>
+              <Save className="h-3 w-3" /> {t("alerts.save", "Salva alert")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SmallMetric({
   icon,
   label,
@@ -1724,6 +2399,35 @@ function DeviceSummary({ devices }: { devices: DeviceRow[] }) {
   );
 }
 
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value || 0);
+}
+
+function formatHours(value: number | string | null | undefined) {
+  if (value == null || value === "") return "-";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  if (n < 24) return `${n.toLocaleString("it-IT", { maximumFractionDigits: 1 })}h`;
+  return `${(n / 24).toLocaleString("it-IT", { maximumFractionDigits: 1 })}g`;
+}
+
+function formatFileSize(value: number | null | undefined) {
+  if (!value) return "-";
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function documentTypeLabel(type: import("@/lib/queries/clients").ClientDocument["document_type"]) {
+  const labels = {
+    contract: "Contratto",
+    nda: "NDA",
+    technical: "Tecnico",
+    other: "Altro",
+  } as const;
+  return labels[type] ?? type;
+}
+
 function clientInitials(client: ClientRow) {
   return (client.company_name || client.name)
     .split(/\s+/)
@@ -1759,6 +2463,29 @@ type ClientImportRow = {
   action: "insert" | "update" | "skip";
   errors: string[];
 };
+
+type ClientImportField =
+  | "name"
+  | "company_name"
+  | "vat_number"
+  | "fiscal_code"
+  | "email"
+  | "phone"
+  | "address"
+  | "notes";
+
+type ClientImportMapping = Partial<Record<ClientImportField, string>>;
+
+const CLIENT_IMPORT_FIELDS: ClientImportField[] = [
+  "name",
+  "company_name",
+  "vat_number",
+  "fiscal_code",
+  "email",
+  "phone",
+  "address",
+  "notes",
+];
 
 type ClientImportResult = {
   inserted: number;
@@ -2101,6 +2828,9 @@ function ImportClientsCsvDialog({
   const { t } = useTranslation("clients");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [rows, setRows] = useState<ClientImportRow[]>([]);
+  const [records, setRecords] = useState<CsvRecord[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mapping, setMapping] = useState<ClientImportMapping>({});
   const [fileName, setFileName] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ClientImportResult | null>(null);
@@ -2118,10 +2848,20 @@ function ImportClientsCsvDialog({
   function resetAndClose() {
     setStep(1);
     setRows([]);
+    setRecords([]);
+    setHeaders([]);
+    setMapping({});
     setFileName("");
     setBusy(false);
     setResult(null);
     onClose();
+  }
+
+  async function rebuildPreview(nextMapping: ClientImportMapping, sourceRecords = records) {
+    const existing = await loadClientImportKeys();
+    const preview = buildClientImportPreview(sourceRecords, existing, nextMapping);
+    setRows(preview);
+    if (!preview.length) toast.error(t("importClients.validation.emptyCsv", "CSV vuoto o senza righe valide"));
   }
 
   async function handleFile(file: File | null) {
@@ -2132,11 +2872,13 @@ function ImportClientsCsvDialog({
     try {
       const text = await file.text();
       const parsed = parseCsv(text);
-      const existing = await loadClientImportKeys();
-      const preview = buildClientImportPreview(parsed, existing);
-      setRows(preview);
+      const parsedHeaders = Object.keys(parsed[0]?.values ?? {});
+      const guessedMapping = guessClientImportMapping(parsedHeaders);
+      setRecords(parsed);
+      setHeaders(parsedHeaders);
+      setMapping(guessedMapping);
+      await rebuildPreview(guessedMapping, parsed);
       setStep(2);
-      if (!preview.length) toast.error(t("importClients.validation.emptyCsv", "CSV vuoto o senza righe valide"));
     } catch (error) {
       toast.error(errorMessage(error, t("toasts.readCsvError", "Errore lettura CSV")));
     } finally {
@@ -2250,6 +2992,33 @@ function ImportClientsCsvDialog({
 
         {step === 2 && (
           <div className="flex flex-col gap-3">
+            <div className="rounded-md border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+              <div className="mb-3 text-sm font-semibold">{t("importClients.mappingTitle", "Mapping colonne")}</div>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                {CLIENT_IMPORT_FIELDS.map((field) => (
+                  <Field key={field} label={clientImportFieldLabel(field)}>
+                    <select
+                      className="pc-input h-9 text-xs"
+                      value={mapping[field] ?? ""}
+                      disabled={busy}
+                      onChange={(event) => setMapping((current) => ({ ...current, [field]: event.target.value || undefined }))}
+                    >
+                      <option value="">{t("importClients.mappingNone", "Non importare")}</option>
+                      {headers.map((header) => (
+                        <option key={header} value={header}>
+                          {header}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ))}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" disabled={busy} onClick={() => void rebuildPreview(mapping)}>
+                  <CheckCircle2 className="h-3 w-3" /> {t("importClients.applyMapping", "Applica mapping")}
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-4 gap-2 text-xs">
               <SummaryBox label={t("importClients.resultSummary.insert", "Insert")} value={stats.inserts} />
               <SummaryBox label={t("importClients.resultSummary.update", "Update")} value={stats.updates} />
@@ -2432,26 +3201,30 @@ async function loadClientImportKeys() {
   return { byVat, byEmail };
 }
 
-function buildClientImportPreview(records: CsvRecord[], existing: ExistingClientKeys) {
+function buildClientImportPreview(
+  records: CsvRecord[],
+  existing: ExistingClientKeys,
+  mapping: ClientImportMapping = {},
+) {
   const seenKeys = new Set<string>();
 
   return records.map((record) => {
-    const name = pickCsvValue(record.values, ["nome", "name", "ragione_sociale"]);
+    const name = getClientImportValue(record.values, mapping, "name", ["nome", "name", "ragione_sociale"]);
     const companyName =
-      pickCsvValue(record.values, ["azienda", "company", "company_name", "ragione_sociale"]) ||
+      getClientImportValue(record.values, mapping, "company_name", ["azienda", "company", "company_name", "ragione_sociale"]) ||
       name;
-    const vatNumber = pickCsvValue(record.values, ["p_iva", "piva", "partita_iva", "vat_number"]);
-    const email = pickCsvValue(record.values, ["email", "mail"]);
+    const vatNumber = getClientImportValue(record.values, mapping, "vat_number", ["p_iva", "piva", "partita_iva", "vat_number"]);
+    const email = getClientImportValue(record.values, mapping, "email", ["email", "mail"]);
     const row: ClientImportRow = {
       rowNumber: record.rowNumber,
       name,
       company_name: companyName,
       vat_number: vatNumber,
-      fiscal_code: pickCsvValue(record.values, ["codice_fiscale", "fiscal_code"]),
+      fiscal_code: getClientImportValue(record.values, mapping, "fiscal_code", ["codice_fiscale", "fiscal_code"]),
       email,
-      phone: pickCsvValue(record.values, ["telefono", "phone", "tel"]),
-      address: pickCsvValue(record.values, ["indirizzo", "address"]),
-      notes: pickCsvValue(record.values, ["note", "notes"]),
+      phone: getClientImportValue(record.values, mapping, "phone", ["telefono", "phone", "tel"]),
+      address: getClientImportValue(record.values, mapping, "address", ["indirizzo", "address"]),
+      notes: getClientImportValue(record.values, mapping, "notes", ["note", "notes"]),
       existingId: null,
       action: "insert",
       errors: [],
@@ -2471,6 +3244,50 @@ function buildClientImportPreview(records: CsvRecord[], existing: ExistingClient
     row.action = row.errors.length ? "skip" : row.existingId ? "update" : "insert";
     return row;
   });
+}
+
+function getClientImportValue(
+  values: Record<string, string>,
+  mapping: ClientImportMapping,
+  field: ClientImportField,
+  aliases: string[],
+) {
+  const mappedHeader = mapping[field];
+  if (mappedHeader) return values[mappedHeader]?.trim() ?? "";
+  return pickCsvValue(values, aliases);
+}
+
+function guessClientImportMapping(headers: string[]) {
+  const mapping: ClientImportMapping = {};
+  const aliases: Record<ClientImportField, string[]> = {
+    name: ["nome", "name", "ragione_sociale"],
+    company_name: ["azienda", "company", "company_name", "ragione_sociale"],
+    vat_number: ["p_iva", "piva", "partita_iva", "vat_number"],
+    fiscal_code: ["codice_fiscale", "fiscal_code"],
+    email: ["email", "mail"],
+    phone: ["telefono", "phone", "tel"],
+    address: ["indirizzo", "address"],
+    notes: ["note", "notes"],
+  };
+  for (const field of CLIENT_IMPORT_FIELDS) {
+    const found = headers.find((header) => aliases[field].includes(normalizeCsvHeader(header)));
+    if (found) mapping[field] = found;
+  }
+  return mapping;
+}
+
+function clientImportFieldLabel(field: ClientImportField) {
+  const labels: Record<ClientImportField, string> = {
+    name: "Nome *",
+    company_name: "Azienda",
+    vat_number: "P.IVA",
+    fiscal_code: "Codice fiscale",
+    email: "Email",
+    phone: "Telefono",
+    address: "Indirizzo",
+    notes: "Note",
+  };
+  return labels[field];
 }
 
 async function importClientsFromPreview(rows: ClientImportRow[]) {
@@ -2671,6 +3488,10 @@ function normalizeKey(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function normalizeCsvHeader(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s.-]+/g, "_");
+}
+
 function pickCsvValue(values: Record<string, string>, keys: string[]): string {
   for (const key of keys) {
     const v = values[key];
@@ -2720,4 +3541,3 @@ function formatPortalExpiry(expiresAt: string): string {
     return expiresAt;
   }
 }
-
