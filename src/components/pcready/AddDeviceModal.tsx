@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Field } from "@/components/ui/form-field";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -674,11 +675,3 @@ function DynamicDeviceFields({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <label className="pc-label">{label}</label>
-      {children}
-    </div>
-  );
-}

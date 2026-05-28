@@ -53,6 +53,8 @@ import { downloadCsv } from "@/lib/downloads";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { errorMessage } from "@/lib/errors";
+import { Field } from "@/components/ui/form-field";
+import { formatMoney } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/_app/clients")({
   component: ClientsPage,
@@ -2399,10 +2401,6 @@ function DeviceSummary({ devices }: { devices: DeviceRow[] }) {
   );
 }
 
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value || 0);
-}
-
 function formatHours(value: number | string | null | undefined) {
   if (value == null || value === "") return "-";
   const n = Number(value);
@@ -3126,15 +3124,6 @@ function SummaryBox({ label, value }: { label: string; value: number }) {
     >
       <div className="text-[10px] uppercase text-text3">{label}</div>
       <div className="font-mono text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="pc-label">{label}</label>
-      {children}
     </div>
   );
 }

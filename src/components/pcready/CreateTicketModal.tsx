@@ -32,6 +32,7 @@ import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomp
 import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
 import { createTicket } from "@/lib/tickets";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
+import { Field } from "@/components/ui/form-field";
 
 interface Tech {
   id: string;
@@ -561,14 +562,6 @@ export function CreateTicketModal() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="pc-label">{label}</label>
-      {children}
-    </div>
-  );
-}
 
 function contactName(c: ContactOpt) {
   return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");

@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { errorMessage } from "@/lib/errors";
 import { useVirtualList } from "@/hooks/useVirtualList";
+import { Field } from "@/components/ui/form-field";
 
 export const Route = createLazyFileRoute("/_app/contacts")({
   component: ContactsPage,
@@ -882,14 +883,7 @@ function PortalLinkModal({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="pc-label">{label}</label>
-      {children}
-    </div>
-  );
-}
+
 
 function PortalBadge({ active }: { active: boolean }) {
   const { t } = useTranslation("contacts");

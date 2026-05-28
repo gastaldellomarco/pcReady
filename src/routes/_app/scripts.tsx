@@ -38,6 +38,7 @@ import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { errorMessage } from "@/lib/errors";
 import CodeMirror from "@uiw/react-codemirror";
+import { Field } from "@/components/ui/form-field";
 import { python } from "@codemirror/lang-python";
 import { sql } from "@codemirror/lang-sql";
 import { javascript } from "@codemirror/lang-javascript";
@@ -946,11 +947,3 @@ function ScriptEditor({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="pc-label">{label}</label>
-      {children}
-    </div>
-  );
-}
