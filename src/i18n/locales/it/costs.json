@@ -65,6 +65,17 @@
     "noData": "Nessun dato",
     "clickHint": "Clicca per dettaglio"
   },
+  "finance": {
+    "budgetTitle": "Budget clienti",
+    "budgetAmount": "Budget",
+    "budgetAmountLabel": "Budget",
+    "alertThreshold": "Alert %",
+    "alertThresholdLabel": "Alert %",
+    "saveBudget": "Salva budget",
+    "noBudgets": "Nessun budget attivo.",
+    "budgetSaved": "Budget salvato",
+    "budgetSaveError": "Errore salvataggio budget"
+  },
   "detailTable": {
     "title": "Dettaglio ticket fatturabili",
     "ticketsInPeriod": "{{count}} ticket nel periodo",

@@ -3,7 +3,7 @@
 ALTER TABLE public.tickets
   ADD COLUMN IF NOT EXISTS billable_hours numeric(10,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS hourly_rate numeric(10,2) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS material_cost numeric(10,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS material_cost numeric(12,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS cost_currency text NOT NULL DEFAULT 'EUR',
   ADD COLUMN IF NOT EXISTS cost_notes text;
 
