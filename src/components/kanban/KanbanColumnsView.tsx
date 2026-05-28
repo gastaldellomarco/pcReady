@@ -3,12 +3,8 @@ import { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ColumnNote } from "@/components/kanban/ColumnNote";
-import { SlaMiniLabel } from "@/components/kanban/SlaMiniLabel";
-import { TimeInColumnLabel } from "@/components/kanban/TimeInColumnLabel";
-import { UnassignedBadge } from "@/components/kanban/UnassignedBadge";
-import { ViewerAvatars } from "@/components/kanban/ViewerAvatars";
+import { TicketCard } from "@/components/kanban/TicketCard";
 import { WipProgressBar } from "@/components/kanban/WipProgressBar";
-import { PriorityLabel, AssigneeChip } from "@/components/pcready/StatusBadge";
 import {
   DEFAULT_WIP_LIMITS,
   type KanbanColumnColors,
@@ -17,12 +13,10 @@ import {
 } from "@/lib/app-settings";
 import { setTicketContext } from "@/lib/detail-navigation";
 import { KANBAN_STATUSES } from "@/lib/kanban/constants";
-import { slaIndicator } from "@/lib/kanban/helpers";
 import {
   STATUS_META,
   type TicketPriority,
   type TicketStatus,
-  PRIORITY_LABEL,
 } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import type { TechnicianOption } from "@/lib/technicians";
@@ -254,145 +248,27 @@ export function KanbanColumnsView({
               }}
             >
               {items.map((c) => (
-                <div
+                <TicketCard
                   key={c.id}
-                  draggable={canEdit}
-                  onDragStart={() => onDragStart(c.id)}
+                  card={c}
+                  canEdit={canEdit}
+                  isDragging={dragId === c.id}
+                  onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
-                  onMouseEnter={() => onSetCurrentCard(c.id)}
-                  onMouseLeave={() => onSetCurrentCard(null)}
-                  onClick={(event) => onCardClick(event, c.id)}
-                  className={cn(
-                    "pc-card group text-left hover:shadow-md transition-all select-none min-h-[44px]",
-                    compactView ? "p-2" : "p-3",
-                    selectedTicketIds.has(c.id) && "ring-2 ring-accent",
-                  )}
-                  style={{
-                    cursor: canEdit ? "grab" : "pointer",
-                    opacity: dragId === c.id ? 0.4 : 1,
-                    transform: dragId === c.id ? "scale(0.98)" : undefined,
-                    borderLeft: `4px solid ${slaIndicator(c).color}`,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-[10.5px] text-text3">{c.ticket_code}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: slaIndicator(c).color }}
-                        title={slaIndicator(c).label}
-                      />
-                      <PriorityLabel p={c.priority} />
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "font-semibold",
-                      compactView ? "text-[11.5px]" : "text-[12.5px] mb-0.5",
-                    )}
-                  >
-                    {c.device?.model || t("tickets:noAsset", "Nessun asset")}
-                  </div>
-                  {!compactView && (
-                    <div className="text-[11px] text-text3 mb-2">{c.client}</div>
-                  )}
-                  {cardViewers.has(c.id) && (
-                    <div className="mb-2">
-                      <ViewerAvatars viewers={cardViewers.get(c.id)!} />
-                    </div>
-                  )}
-                  {canEdit && (
-                    <div
-                      className="mt-2 hidden grid-cols-1 gap-1 group-hover:grid"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <div className="grid grid-cols-3 gap-1">
-                        <select
-                          className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                          value={c.assignee_id ?? "unassigned"}
-                          onChange={(event) =>
-                            void onMove(
-                              c.id,
-                              c.status,
-                              event.target.value === "unassigned" ? null : event.target.value,
-                            )
-                          }
-                          title={t("assignTitle", "Assegna")}
-                        >
-                          <option value="unassigned">{t("tickets:unassigned", "Non assegnato")}</option>
-                          {technicians.map((technician) => (
-                            <option key={technician.id} value={technician.id}>
-                              {technician.full_name}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                          value={c.priority}
-                          onChange={(event) =>
-                            void onPriorityChange(c.id, event.target.value as TicketPriority)
-                          }
-                          title={t("tickets:columns.priority", "Priorità")}
-                        >
-                          {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
-                            <option key={priority} value={priority}>
-                              {t("tickets:priority." + priority, label)}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
-                          value={c.status}
-                          onChange={(event) =>
-                            void onMove(c.id, event.target.value as TicketStatus)
-                          }
-                          title={t("moveTo", "Sposta a")}
-                        >
-                          {KANBAN_STATUSES.map((status) => (
-                            <option key={status} value={status}>
-                              {t("tickets:status." + status, STATUS_META[status].label)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <button
-                        type="button"
-                        className="pc-btn pc-btn-ghost pc-btn-sm h-7"
-                        onClick={() => setTicketContext(c.id, cards.map((r) => r.id))}
-                      >
-                        {t("tickets:details", "Apri dettaglio")}
-                      </button>
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "flex items-center justify-between",
-                      compactView ? "mt-2" : "",
-                    )}
-                  >
-                    <div>
-                      {c.assignee ? (
-                        <AssigneeChip
-                          initials={c.assignee.initials}
-                          name={c.assignee.full_name}
-                        />
-                      ) : (
-                        <UnassignedBadge />
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <SlaMiniLabel card={c} compactView={compactView} />
-                      {!compactView && (
-                        <TimeInColumnLabel
-                          updatedAt={c.updated_at}
-                          createdAt={c.created_at}
-                          status={c.status}
-                          statusChangedAt={statusChangedAtMap.get(c.id)}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  selected={selectedTicketIds.has(c.id)}
+                  compactView={compactView}
+                  technicians={technicians}
+                  statuses={KANBAN_STATUSES}
+                  status={c.status}
+                  assigneeId={c.assignee_id ?? null}
+                  onMove={(id, status, assigneeId) => void onMove(id, status, assigneeId)}
+                  onPriorityChange={(id, priority) => void onPriorityChange(id, priority)}
+                  onClick={onCardClick}
+                  onOpenDetail={() => setTicketContext(c.id, cards.map((r) => r.id))}
+                  viewers={cardViewers.get(c.id) ?? []}
+                  onHover={onSetCurrentCard}
+                  statusChangedAt={statusChangedAtMap.get(c.id) ?? null}
+                />
               ))}
 
               {!items.length && (
