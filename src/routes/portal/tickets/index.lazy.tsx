@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { TicketCard } from "@/components/portal/TicketCard";
 import { Button } from "@/components/ui/button";
 import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
-import { listPortalTickets } from "@/lib/portal-tickets";
+import { listPortalTickets, listPortalDevices } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/tickets/")({
   component: PortalTicketsPage,
@@ -12,13 +12,16 @@ export const Route = createLazyFileRoute("/portal/tickets/")({
 
 function PortalTicketsPage() {
   const listTickets = useServerFn(listPortalTickets);
+  const loadDevices = useServerFn(listPortalDevices);
   const [tickets, setTickets] = useState<any[]>([]);
+  const [devices, setDevices] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retryKey, setRetryKey] = useState(0);
   const [status, setStatus] = useState<"all" | "open" | "in-progress" | "completed">("all");
   const [q, setQ] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "status" | "priority">("created_at");
+  const [deviceId, setDeviceId] = useState("");
 
   const load = useCallback(() => {
     const token = localStorage.getItem("pcready_portal_token") || "";
@@ -28,15 +31,24 @@ function PortalTicketsPage() {
     }
     setLoading(true);
     setError("");
-    listTickets({ data: { token, status, q, sortBy, sortDir: "desc" } })
+    listTickets({ data: { token, status, q, sortBy, sortDir: "desc", deviceId: deviceId || null } })
       .then((result) => setTickets((result.tickets as any[]) || []))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Errore di rete"))
       .finally(() => setLoading(false));
-  }, [listTickets, q, sortBy, status]);
+  }, [listTickets, q, sortBy, status, deviceId]);
 
   useEffect(() => {
     load();
   }, [load, retryKey]);
+
+  // Load devices for filter
+  useEffect(() => {
+    const token = localStorage.getItem("pcready_portal_token") || "";
+    if (!token) return;
+    loadDevices({ data: { token } })
+      .then((result) => setDevices((result.devices as any[]) || []))
+      .catch(() => setDevices([]));
+  }, [loadDevices]);
 
   if (error) {
     return (
@@ -70,7 +82,7 @@ function PortalTicketsPage() {
           <a href="/portal/tickets/new">Nuovo ticket</a>
         </Button>
       </div>
-      <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-3">
+      <div className="grid gap-3 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-4">
         <input
           className="pc-input"
           value={q}
@@ -96,12 +108,28 @@ function PortalTicketsPage() {
           <option value="status">Ordina per stato</option>
           <option value="priority">Ordina per priorità</option>
         </select>
+        <select
+          className="pc-input"
+          value={deviceId}
+          onChange={(event) => setDeviceId(event.target.value)}
+        >
+          <option value="">Tutti i dispositivi</option>
+          {devices.map((device) => (
+            <option key={device.id} value={device.id}>
+              {device.model} · {device.serial || device.id.slice(0, 8)}
+            </option>
+          ))}
+        </select>
       </div>
       {!tickets.length ? (
         <PageEmptyState
           variant="portal"
           title="Nessun ticket"
-          description="Non risultano ticket per il tuo account. Puoi aprirne uno nuovo quando necessario."
+          description={
+            deviceId
+              ? "Nessun ticket trovato per il dispositivo selezionato."
+              : "Non risultano ticket per il tuo account. Puoi aprirne uno nuovo quando necessario."
+          }
         >
           <Button asChild>
             <a href="/portal/tickets/new">Apri ticket</a>

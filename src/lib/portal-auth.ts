@@ -65,6 +65,65 @@ export const updatePortalContactProfile = createServerFn({ method: "POST" })
     return updatePortalContactProfileServer(PortalProfileUpdateSchema.parse(data));
   });
 
+export const updatePortalContactLanguage = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; language: string }) => data)
+  .handler(async ({ data }) => {
+    const { updatePortalContactLanguageServer } = await import("@/lib/portal-auth.server");
+    return updatePortalContactLanguageServer(
+      z.object({ token: z.string().min(32), language: z.enum(["it", "en"]) }).parse(data),
+    );
+  });
+
+export const getPortalAccessHistory = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string }) => data)
+  .handler(async ({ data }) => {
+    const { getPortalAccessHistoryServer } = await import("@/lib/portal-auth.server");
+    return getPortalAccessHistoryServer(z.object({ token: z.string().min(32) }).parse(data));
+  });
+
+export const setupPortal2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; enable: boolean }) => data)
+  .handler(async ({ data }) => {
+    const { setupPortal2FAServer } = await import("@/lib/portal-auth.server");
+    return setupPortal2FAServer(
+      z.object({ token: z.string().min(32), enable: z.boolean() }).parse(data),
+    );
+  });
+
+export const verifyPortal2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; code: string }) => data)
+  .handler(async ({ data }) => {
+    const { verifyPortal2FAServer } = await import("@/lib/portal-auth.server");
+    return verifyPortal2FAServer(
+      z.object({ token: z.string().min(32), code: z.string().length(6) }).parse(data),
+    );
+  });
+
+export const updatePortalNotificationPreferences = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; preferences: Record<string, boolean> }) => data)
+  .handler(async ({ data }) => {
+    const { updatePortalNotificationPreferencesServer } = await import("@/lib/portal-auth.server");
+    return updatePortalNotificationPreferencesServer(
+      z.object({ token: z.string().min(32), preferences: z.record(z.boolean()) }).parse(data),
+    );
+  });
+
+export const getPortalClientContacts = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string }) => data)
+  .handler(async ({ data }) => {
+    const { getPortalClientContactsServer } = await import("@/lib/portal-auth.server");
+    return getPortalClientContactsServer(z.object({ token: z.string().min(32) }).parse(data));
+  });
+
+export const verifyPortalLogin2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: { pendingToken: string; code: string }) => data)
+  .handler(async ({ data }) => {
+    const { verifyPortalLogin2FAServer } = await import("@/lib/portal-auth.server");
+    return verifyPortalLogin2FAServer(
+      z.object({ pendingToken: z.string().min(32), code: z.string().length(6) }).parse(data),
+    );
+  });
+
 export const logoutPortalSession = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof PortalTokenSchema>) => data)
   .handler(async ({ data }) => {

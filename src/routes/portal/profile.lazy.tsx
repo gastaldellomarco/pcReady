@@ -10,7 +10,14 @@ import {
   Mail,
   Phone,
   UserRound,
+  Globe,
+  ShieldCheck,
+  ShieldOff,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +27,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageFetchError } from "@/components/page-states";
-import { updatePortalContactProfile } from "@/lib/portal-auth";
+import {
+  updatePortalContactProfile,
+  updatePortalContactLanguage,
+  getPortalAccessHistory,
+  setupPortal2FA,
+  verifyPortal2FA,
+  updatePortalNotificationPreferences,
+  getPortalClientContacts,
+} from "@/lib/portal-auth";
 import { getPortalProfileOverview } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/profile")({
@@ -30,6 +45,12 @@ export const Route = createLazyFileRoute("/portal/profile")({
 function PortalProfilePage() {
   const loadOverview = useServerFn(getPortalProfileOverview);
   const updateProfile = useServerFn(updatePortalContactProfile);
+  const updateLanguage = useServerFn(updatePortalContactLanguage);
+  const loadAccessHistory = useServerFn(getPortalAccessHistory);
+  const setup2FA = useServerFn(setupPortal2FA);
+  const verify2FA = useServerFn(verifyPortal2FA);
+  const updateNotifyPrefs = useServerFn(updatePortalNotificationPreferences);
+  const loadContacts = useServerFn(getPortalClientContacts);
   const [token, setToken] = useState("");
   const [overview, setOverview] = useState<any>(null);
   const [fullName, setFullName] = useState("");
@@ -39,9 +60,26 @@ function PortalProfilePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [notifyEmail, setNotifyEmail] = useState(true);
-  const [notifyStatus, setNotifyStatus] = useState(true);
-  const [notifyReports, setNotifyReports] = useState(true);
+  // Notification preferences (server-side)
+  const [notifyPrefs, setNotifyPrefs] = useState<Record<string, boolean>>({
+    ticket_updated: true,
+    ticket_closed: true,
+    document_available: true,
+    bundle_expiring: true,
+  });
+  const [notifySaving, setNotifySaving] = useState(false);
+  // Language, access history, 2FA, contacts
+  const [lang, setLang] = useState<"it" | "en">("it");
+  const [accessSessions, setAccessSessions] = useState<any[] | null>(null);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [twoFAPending, setTwoFAPending] = useState(false);
+  const [twoFACode, setTwoFACode] = useState("");
+  const [twoFABusy, setTwoFABusy] = useState(false);
+  const [clientContacts, setClientContacts] = useState<any[] | null>(null);
+  const [contactsLoading, setContactsLoading] = useState(false);
+
+  const { t, i18n } = useTranslation();
 
   const session = overview?.session;
 
@@ -65,17 +103,8 @@ function PortalProfilePage() {
       return;
     }
     setToken(stored);
-    const storedPrefs = localStorage.getItem(`pcready_portal_notification_prefs_${stored}`);
-    if (storedPrefs) {
-      try {
-        const parsed = JSON.parse(storedPrefs) as Record<string, boolean>;
-        setNotifyEmail(parsed.notifyEmail ?? true);
-        setNotifyStatus(parsed.notifyStatus ?? true);
-        setNotifyReports(parsed.notifyReports ?? true);
-      } catch {
-        // Keep defaults when local preferences are malformed.
-      }
-    }
+    const storedLang = localStorage.getItem("pcready_portal_lang") || "it";
+    setLang(storedLang === "en" ? "en" : "it");
     setLoading(true);
     setError("");
     loadOverview({ data: { token: stored } })
@@ -84,6 +113,10 @@ function PortalProfilePage() {
         setFullName(result.session.contactName || "");
         setPhone(result.session.contactPhone || "");
         setJobTitle(result.session.contactJobTitle || result.session.contactRole || "");
+        setTwoFAEnabled(result.session.twoFAEnabled ?? false);
+        if (result.session.notificationPreferences) {
+          setNotifyPrefs((prev) => ({ ...prev, ...result.session.notificationPreferences }));
+        }
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Errore di rete"))
       .finally(() => setLoading(false));
@@ -110,14 +143,89 @@ function PortalProfilePage() {
     }
   }
 
-  function saveNotificationPreferences() {
-    if (token) {
-      localStorage.setItem(
-        `pcready_portal_notification_prefs_${token}`,
-        JSON.stringify({ notifyEmail, notifyStatus, notifyReports }),
-      );
+  async function switchLanguage(newLang: "it" | "en") {
+    setLang(newLang);
+    localStorage.setItem("pcready_portal_lang", newLang);
+    i18n.changeLanguage(newLang);
+    try {
+      await updateLanguage({ data: { token, language: newLang } });
+    } catch { /* non-blocking */ }
+    toast.success(newLang === "it" ? "Lingua cambiata in Italiano" : "Language changed to English");
+  }
+
+  async function loadAccess() {
+    setAccessLoading(true);
+    try {
+      const result = await loadAccessHistory({ data: { token } });
+      setAccessSessions(result.sessions || []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore caricamento accessi");
+    } finally {
+      setAccessLoading(false);
     }
-    toast.success("Preferenze notifiche salvate");
+  }
+
+  async function toggle2FA() {
+    setTwoFABusy(true);
+    try {
+      const result = await setup2FA({ data: { token, enable: !twoFAEnabled } });
+      if (result.pending) {
+        setTwoFAPending(true);
+        toast.success("Codice di verifica inviato via email");
+      } else if (result.enabled === false) {
+        setTwoFAEnabled(false);
+        setTwoFAPending(false);
+        setTwoFACode("");
+        toast.success("2FA disattivato");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore configurazione 2FA");
+    } finally {
+      setTwoFABusy(false);
+    }
+  }
+
+  async function confirm2FA() {
+    if (twoFACode.length !== 6) return;
+    setTwoFABusy(true);
+    try {
+      const result = await verify2FA({ data: { token, code: twoFACode } });
+      if (result.enabled) {
+        setTwoFAEnabled(true);
+        setTwoFAPending(false);
+        setTwoFACode("");
+        toast.success("2FA attivato con successo");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Codice non valido");
+    } finally {
+      setTwoFABusy(false);
+    }
+  }
+  async function saveNotificationPreferences() {
+    setNotifySaving(true);
+    try {
+      const result = await updateNotifyPrefs({ data: { token, preferences: notifyPrefs } });
+      if (result.preferences) setNotifyPrefs(result.preferences);
+      toast.success("Preferenze notifiche salvate");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore salvataggio preferenze");
+    } finally {
+      setNotifySaving(false);
+    }
+  }
+
+  async function loadClientContacts() {
+    if (contactsLoading || clientContacts) return;
+    setContactsLoading(true);
+    try {
+      const result = await loadContacts({ data: { token } });
+      setClientContacts(result.contacts || []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore caricamento contatti");
+    } finally {
+      setContactsLoading(false);
+    }
   }
 
   if (error) return <PageFetchError variant="portal" message={error} onRetry={load} />;
@@ -145,13 +253,19 @@ function PortalProfilePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-5">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
-          <TabsTrigger value="profile">Dati profilo</TabsTrigger>
+      <Tabs defaultValue="profile" className="space-y-5" onValueChange={(value) => {
+        if (value === "access" && !accessSessions) loadAccess();
+        if (value === "contacts" && !clientContacts) loadClientContacts();
+      }}>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
+          <TabsTrigger value="profile">Profilo</TabsTrigger>
           <TabsTrigger value="requests">Richieste</TabsTrigger>
           <TabsTrigger value="history">Interventi</TabsTrigger>
           <TabsTrigger value="documents">Documenti</TabsTrigger>
           <TabsTrigger value="contracts">Contratti</TabsTrigger>
+          <TabsTrigger value="contacts">Contatti</TabsTrigger>
+          <TabsTrigger value="access">Accessi</TabsTrigger>
+          <TabsTrigger value="security">Sicurezza</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -161,7 +275,7 @@ function PortalProfilePage() {
                 <UserRound className="h-5 w-5" /> Dati personali
               </CardTitle>
               <CardDescription>
-                Modifica nome, telefono, ruolo e password di accesso al portale.
+                Modifica nome, telefono, ruolo, lingua e password di accesso al portale.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -188,6 +302,29 @@ function PortalProfilePage() {
                     <Input value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} />
                   </Field>
                 </div>
+                {/* Language switcher */}
+                <Field label="Lingua">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={lang === "it" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => switchLanguage("it")}
+                    >
+                      <Globe className="mr-1.5 h-4 w-4" />
+                      Italiano
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={lang === "en" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => switchLanguage("en")}
+                    >
+                      <Globe className="mr-1.5 h-4 w-4" />
+                      English
+                    </Button>
+                  </div>
+                </Field>
                 <Field label="Nuova password portale">
                   <Input
                     type="password"
@@ -208,26 +345,31 @@ function PortalProfilePage() {
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" /> Preferenze notifiche
               </CardTitle>
-              <CardDescription>Configura gli aggiornamenti che desideri ricevere.</CardDescription>
+              <CardDescription>Scegli per quali eventi ricevere notifiche email.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <NotificationToggle
-                label="Email sulle nuove risposte"
-                checked={notifyEmail}
-                onChange={setNotifyEmail}
+                label="Ticket aggiornato dal tecnico"
+                checked={notifyPrefs.ticket_updated}
+                onChange={(v) => setNotifyPrefs((p) => ({ ...p, ticket_updated: v }))}
               />
               <NotificationToggle
-                label="Cambio stato richieste"
-                checked={notifyStatus}
-                onChange={setNotifyStatus}
+                label="Ticket completato / chiuso"
+                checked={notifyPrefs.ticket_closed}
+                onChange={(v) => setNotifyPrefs((p) => ({ ...p, ticket_closed: v }))}
               />
               <NotificationToggle
-                label="Report e documenti"
-                checked={notifyReports}
-                onChange={setNotifyReports}
+                label="Nuovo documento disponibile"
+                checked={notifyPrefs.document_available}
+                onChange={(v) => setNotifyPrefs((p) => ({ ...p, document_available: v }))}
               />
-              <Button variant="outline" onClick={saveNotificationPreferences}>
-                Salva preferenze
+              <NotificationToggle
+                label="Contratto / bundle in scadenza"
+                checked={notifyPrefs.bundle_expiring}
+                onChange={(v) => setNotifyPrefs((p) => ({ ...p, bundle_expiring: v }))}
+              />
+              <Button variant="outline" onClick={saveNotificationPreferences} disabled={notifySaving}>
+                {notifySaving ? "Salvataggio..." : "Salva preferenze"}
               </Button>
             </CardContent>
           </Card>
@@ -352,6 +494,172 @@ function PortalProfilePage() {
                 ))
               ) : (
                 <EmptyText text="Nessun contratto attivo associato al tuo profilo." />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Contacts tab (multi-referent) */}
+        <TabsContent value="contacts">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" /> Referenti aziendali
+              </CardTitle>
+              <CardDescription>
+                Tutti i contatti della tua azienda con accesso al portale. Ogni referente accede con le proprie credenziali e vede gli stessi dati aziendali.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {contactsLoading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
+                  ))}
+                </div>
+              ) : !clientContacts?.length ? (
+                <EmptyText text="Nessun contatto disponibile." />
+              ) : (
+                <div className="space-y-2">
+                  {clientContacts.map((contact) => (
+                    <div key={contact.id} className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                          {contact.fullName
+                            ? contact.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((p: string) => p[0]).join("").toUpperCase()
+                            : "?"}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {contact.fullName}
+                              {contact.isSelf ? " (tu)" : ""}
+                            </p>
+                            {contact.isPrimary && (
+                              <Badge variant="default" className="text-[10px]">Referente</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{contact.email}</p>
+                          <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                            {contact.phone && <span>{contact.phone}</span>}
+                            {contact.jobTitle && <span>{contact.jobTitle}</span>}
+                            {contact.department && <span>{contact.department}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="access">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" /> Storico accessi
+              </CardTitle>
+              <CardDescription>Ultimi accessi al portale con data, ora e stato.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {accessLoading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
+                  ))}
+                </div>
+              ) : !accessSessions?.length ? (
+                <EmptyText text="Nessuna sessione di accesso disponibile." />
+              ) : (
+                <div className="space-y-2">
+                  {accessSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`rounded-full p-1.5 ${session.isActive ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                          {session.isActive ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : session.isRevoked ? (
+                            <XCircle className="h-4 w-4" />
+                          ) : (
+                            <Clock className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {new Date(session.createdAt).toLocaleString("it-IT")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Ultimo utilizzo: {session.lastUsedAt ? new Date(session.lastUsedAt).toLocaleString("it-IT") : "—"}
+                            {session.isRevoked ? " · Revocata" : session.isActive ? " · Attiva" : " · Scaduta"}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={session.isActive ? "default" : "secondary"}>
+                        {session.isRevoked ? "Revocata" : session.isActive ? "Attiva" : "Scaduta"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security tab (2FA) */}
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {twoFAEnabled ? (
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <ShieldOff className="h-5 w-5 text-muted-foreground" />
+                )}
+                Autenticazione a due fattori
+              </CardTitle>
+              <CardDescription>
+                {twoFAEnabled
+                  ? "La verifica in due passaggi è attiva. Riceverai un codice via email a ogni accesso."
+                  : "Aggiungi un livello di sicurezza extra al tuo account con la verifica via email."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <p className="text-sm font-medium">Verifica email</p>
+                  <p className="text-xs text-muted-foreground">
+                    {twoFAEnabled
+                      ? "Riceverai un codice di 6 cifre via email ad ogni accesso."
+                      : "Attiva per ricevere un codice via email a ogni accesso."}
+                  </p>
+                </div>
+                <Switch
+                  checked={twoFAEnabled}
+                  onCheckedChange={() => toggle2FA()}
+                  disabled={twoFABusy}
+                />
+              </div>
+
+              {twoFAPending && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <p className="text-sm">Abbiamo inviato un codice di 6 cifre alla tua email. Inseriscilo qui sotto per attivare la 2FA.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={twoFACode}
+                      onChange={(e) => setTwoFACode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                      placeholder="000000"
+                      maxLength={6}
+                      className="w-32 text-center font-mono text-lg tracking-widest"
+                    />
+                    <Button
+                      onClick={() => confirm2FA()}
+                      disabled={twoFACode.length !== 6 || twoFABusy}
+                    >
+                      {twoFABusy ? "Verifica..." : "Verifica"}
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

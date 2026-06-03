@@ -27,8 +27,21 @@ export function NewTicketForm({ token, categories }: { token: string; categories
       .then((result) => {
         const rows = (result.devices as any[]) || [];
         setDevices(rows);
-        const prefill = new URLSearchParams(window.location.search).get("device");
-        if (prefill && rows.some((device) => device.id === prefill)) setDeviceId(prefill);
+        const params = new URLSearchParams(window.location.search);
+        const prefill = params.get("device");
+        const isReplace = params.get("replace") === "1";
+        const device = prefill ? rows.find((d) => d.id === prefill) : null;
+        if (device) {
+          setDeviceId(device.id);
+          if (isReplace) {
+            const deviceLabel = [device.model, device.serial].filter(Boolean).join(" - ");
+            setTitle(`Richiesta sostituzione: ${deviceLabel}`);
+            setRequestType("device_fault");
+            setDescription(
+              `Richiedo la sostituzione del dispositivo ${deviceLabel}.\n\nMotivazione (descrivere il problema riscontrato):\n`,
+            );
+          }
+        }
       })
       .catch(() => setDevices([]));
   }, [loadDevices, token]);

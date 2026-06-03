@@ -9,6 +9,7 @@ const PortalTicketListSchema = z.object({
   q: z.string().max(120).optional(),
   sortBy: z.enum(["created_at", "status", "priority"]).optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
+  deviceId: z.string().uuid().nullable().optional(),
 });
 
 const NewPortalTicketSchema = z.object({
@@ -108,4 +109,21 @@ export const getPortalTicketCategories = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { getPortalTicketCategoriesServer } = await import("@/lib/portal-tickets.server");
     return getPortalTicketCategoriesServer(PortalTokenSchema.parse(data));
+  });
+
+export const signPortalDocument = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { token: string; documentId: string; signatureDataUrl: string }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { signPortalDocumentServer } = await import("@/lib/portal-tickets.server");
+    return signPortalDocumentServer(
+      z
+        .object({
+          token: z.string().min(32),
+          documentId: z.string().min(1),
+          signatureDataUrl: z.string().min(1),
+        })
+        .parse(data),
+    );
   });

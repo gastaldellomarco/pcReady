@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 
-const BUNDLE_SELECT = "id, name, description, billing_type, total_hours, total_visits, total_amount, unit_label, active, priority, created_by, created_at";
+const BUNDLE_SELECT = "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_by, created_at";
 const BUNDLE_ASSIGNMENT_SELECT = "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
 const BUNDLE_USAGE_SUMMARY_SELECT = "client_bundle_assignment_id, client_id, bundle_id, used_hours, onsite_visits, extra_hours, extra_amount, remaining_hours, remaining_onsite_visits, usage_percent";
 import { getPortalSession } from "@/lib/portal-auth.server";
@@ -31,10 +31,10 @@ export async function getPortalDashboardServer(input: { token: string }) {
 
   const { data: tickets, error } = await supabaseAdmin
     .from("tickets" as any)
-    .select("id, ticket_code, model, notes, status, created_at, updated_at, ticket_type")
+    .select("id, ticket_code, model, notes, status, created_at, updated_at, ticket_type, closed_at, completed_at")
     .eq("client_id", session.clientId)
     .order("created_at", { ascending: false })
-    .limit(10);
+    .limit(100);
   if (error) throw error;
 
   const rows = (tickets ?? []) as any[];
@@ -75,6 +75,44 @@ export async function getPortalDashboardServer(input: { token: string }) {
       usage: usageByAssignment.get(assignment.id) ?? null,
     }));
 
+  // ── Monthly ticket volume (last 6 months) ──
+  let ticketVolume: { label: string; opened: number; closed: number }[] = [];
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+    const { data: volumeTickets, error: volumeError } = await supabaseAdmin
+      .from("tickets" as any)
+      .select("created_at, closed_at, completed_at")
+      .eq("client_id", session.clientId)
+      .gte("created_at", sixMonthsAgo.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (volumeError) {
+      console.error("[portal-dashboard] volumeTickets query failed:", volumeError);
+    } else {
+      ticketVolume = computeMonthlyTicketVolume((volumeTickets ?? []) as any[]);
+    }
+  } catch (err) {
+    console.error("[portal-dashboard] ticketVolume computation failed:", err);
+  }
+
+  // ── Service statuses ──
+  let services: any[] = [];
+  try {
+    const { data: serviceStatuses, error: serviceError } = await supabaseAdmin
+      .from("app_settings" as any)
+      .select("value")
+      .eq("key", "portal_service_statuses")
+      .maybeSingle();
+    if (!serviceError && (serviceStatuses as any)?.value) {
+      services = Array.isArray((serviceStatuses as any).value) ? (serviceStatuses as any).value : [];
+    }
+  } catch (err) {
+    console.error("[portal-dashboard] serviceStatuses query failed:", err);
+  }
+
   return {
     session,
     stats: {
@@ -86,7 +124,7 @@ export async function getPortalDashboardServer(input: { token: string }) {
         (ticket) => ticket.status === "ready" && new Date(ticket.updated_at) >= monthStart,
       ).length,
     },
-    recentTickets: rows.map((ticket) => ({
+    recentTickets: rows.slice(0, 10).map((ticket) => ({
       id: ticket.id,
       ticket_code: ticket.ticket_code,
       title: ticket.model || ticket.notes || "Ticket assistenza",
@@ -95,7 +133,32 @@ export async function getPortalDashboardServer(input: { token: string }) {
       created_at: ticket.created_at,
     })),
     activeBundles,
+    ticketVolume,
+    services,
   };
+}
+
+function computeMonthlyTicketVolume(tickets: any[]) {
+  const now = new Date();
+  const months: { label: string; opened: number; closed: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const label = new Intl.DateTimeFormat("it-IT", { month: "short", year: "2-digit" }).format(d);
+    const opened = tickets.filter((t) => {
+      const created = new Date(t.created_at);
+      return created.getFullYear() === year && created.getMonth() === month;
+    }).length;
+    const closed = tickets.filter((t) => {
+      const closedDate = t.closed_at || t.completed_at;
+      if (!closedDate) return false;
+      const closed = new Date(closedDate);
+      return closed.getFullYear() === year && closed.getMonth() === month;
+    }).length;
+    months.push({ label, opened, closed });
+  }
+  return months;
 }
 
 export async function listPortalTicketsServer(input: {
@@ -104,12 +167,13 @@ export async function listPortalTicketsServer(input: {
   q?: string;
   sortBy?: "created_at" | "status" | "priority";
   sortDir?: "asc" | "desc";
+  deviceId?: string | null;
 }) {
   const session = await getPortalSession(input.token);
   let query = supabaseAdmin
     .from("tickets" as any)
     .select(
-      "id, ticket_code, model, notes, status, priority, created_at, updated_at, closed_at, public_notes, assignee:profiles!tickets_assignee_id_fkey(full_name)",
+      "id, ticket_code, model, notes, status, priority, created_at, updated_at, closed_at, public_notes, device_id, assignee:profiles!tickets_assignee_id_fkey(full_name)",
     )
     .eq("client_id", session.clientId);
 
@@ -117,6 +181,7 @@ export async function listPortalTicketsServer(input: {
   if (input.status === "in-progress") query = query.in("status", ["in-progress", "testing"] as any);
   if (input.status === "completed")
     query = query.in("status", ["ready", "completed", "archived"] as any);
+  if (input.deviceId) query = query.eq("device_id", input.deviceId);
   const term = input.q?.trim().replace(/[,%]/g, "");
   if (term)
     query = query.or(`ticket_code.ilike.%${term}%,model.ilike.%${term}%,notes.ilike.%${term}%`);
@@ -330,7 +395,7 @@ export async function listPortalDevicesServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data: devices, error } = await supabaseAdmin
     .from("devices" as any)
-    .select("id, model, serial, os, status, assigned_to, updated_at")
+    .select("id, model, serial, os, status, assigned_to, updated_at, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes")
     .eq("client_id", session.clientId)
     .order("model", { ascending: true })
     .limit(200);
@@ -339,20 +404,26 @@ export async function listPortalDevicesServer(input: { token: string }) {
   const { data: tickets, error: ticketError } = deviceIds.length
     ? await supabaseAdmin
         .from("tickets" as any)
-        .select("id, ticket_code, device_id, status, created_at, model")
+        .select("id, ticket_code, device_id, status, created_at, model, updated_at, closed_at, completed_at")
         .in("device_id", deviceIds)
         .order("created_at", { ascending: false })
+        .limit(500)
     : { data: [], error: null };
   if (ticketError) throw ticketError;
   const latestByDevice = new Map<string, any>();
+  const ticketsByDevice = new Map<string, any[]>();
   ((tickets ?? []) as any[]).forEach((ticket) => {
     if (!latestByDevice.has(ticket.device_id)) latestByDevice.set(ticket.device_id, ticket);
+    const list = ticketsByDevice.get(ticket.device_id) || [];
+    list.push(ticket);
+    ticketsByDevice.set(ticket.device_id, list);
   });
   return {
     session,
     devices: ((devices ?? []) as any[]).map((device) => ({
       ...device,
       lastTicket: latestByDevice.get(device.id) ?? null,
+      ticketHistory: ticketsByDevice.get(device.id) ?? [],
     })),
   };
 }
@@ -649,9 +720,26 @@ export async function listPortalDocumentsServer(input: { token: string }) {
     })
     .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
+  // Fetch signatures for this client's documents
+  const documentIds = documents.map((d) => d.id);
+  const { data: signatures, error: signaturesError } = documentIds.length
+    ? await supabaseAdmin
+        .from("document_signatures" as any)
+        .select("document_id, signed_at, signature_path")
+        .in("document_id", documentIds)
+        .eq("client_id", session.clientId)
+    : { data: [], error: null };
+  if (signaturesError) console.error("[portal-documents] signatures query failed:", signaturesError);
+  const signatureByDocument = new Map(
+    ((signatures ?? []) as any[]).map((s) => [s.document_id, s]),
+  );
+
   return {
     session,
-    documents,
+    documents: documents.map((d) => ({
+      ...d,
+      signature: signatureByDocument.get(d.id) ?? null,
+    })),
     diagnostics: {
       attachments: attachmentDocuments.length,
       completionReports: completionDocuments.length,
@@ -668,4 +756,58 @@ export async function getPortalTicketCategoriesServer(input: { token: string }) 
     .maybeSingle();
   if (error) throw error;
   return { categories: Array.isArray((rows as any)?.value) ? (rows as any).value : [] };
+}
+
+export async function signPortalDocumentServer(input: {
+  token: string;
+  documentId: string;
+  signatureDataUrl: string;
+}) {
+  const session = await getPortalSession(input.token);
+
+  // Extract base64 data from data URL
+  const match = /^data:image\/png;base64,(.+)$/.exec(input.signatureDataUrl);
+  if (!match) throw new Response("Formato firma non valido", { status: 400 });
+  const buffer = Buffer.from(match[1], "base64");
+  if (buffer.byteLength > 500 * 1024)
+    throw new Response("Firma troppo grande", { status: 400 });
+
+  // Store signature in storage
+  const now = Date.now();
+  const sanitizedId = input.documentId.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const storagePath = `signatures/${session.clientId}/${now}-${sanitizedId}.png`;
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("ticket-documents")
+    .upload(storagePath, buffer, {
+      contentType: "image/png",
+      upsert: false,
+      cacheControl: "private, max-age=31536000",
+    });
+  if (uploadError) throw uploadError;
+
+  // Upsert signature record
+  const { error: upsertError } = await supabaseAdmin
+    .from("document_signatures" as any)
+    .upsert(
+      {
+        document_id: input.documentId,
+        client_id: session.clientId,
+        contact_id: session.contactId,
+        signature_path: storagePath,
+        signed_at: new Date().toISOString(),
+      },
+      { onConflict: "document_id,contact_id" },
+    );
+  if (upsertError) throw upsertError;
+
+  // Create signed URL for the signature
+  const { data: signedUrlData } = await supabaseAdmin.storage
+    .from("ticket-documents")
+    .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+
+  return {
+    success: true,
+    signatureUrl: signedUrlData?.signedUrl ?? null,
+    signedAt: new Date().toISOString(),
+  };
 }

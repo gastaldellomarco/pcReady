@@ -8,6 +8,10 @@ import { CardGridSkeleton, PageEmptyState, PageFetchError } from "@/components/p
 import { getPortalDashboard } from "@/lib/portal-tickets";
 import { BundleUsageBar } from "@/components/bundles/BundleBadges";
 import { formatBundleHours, formatBundleMoney } from "@/lib/bundles";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { AlertTriangle, Clock, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { pcReadyColors } from "@/lib/design-system";
 
 export const Route = createLazyFileRoute("/portal/dashboard")({
   component: PortalDashboardPage,
@@ -16,6 +20,8 @@ export const Route = createLazyFileRoute("/portal/dashboard")({
 function portalToken() {
   return typeof window === "undefined" ? "" : localStorage.getItem("pcready_portal_token") || "";
 }
+
+const BUNDLE_EXPIRY_WARN_DAYS = 30;
 
 function PortalDashboardPage() {
   const { t } = useTranslation("dashboard");
@@ -35,7 +41,13 @@ function PortalDashboardPage() {
     setError("");
     loadDashboard({ data: { token } })
       .then(setData)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t("portal.networkError", "Errore di rete")))
+      .catch((err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message
+          : typeof err === "object" && err !== null && "message" in err ? String((err as any).message)
+          : t("portal.networkError", "Errore di rete");
+        setError(msg);
+      })
       .finally(() => setLoading(false));
   }, [loadDashboard, t]);
 
@@ -70,11 +82,26 @@ function PortalDashboardPage() {
           {data.session.branding?.welcomeMessage || t("portal.welcomeDesc", "Panoramica ticket e richieste recenti.")}
         </p>
       </div>
+
+      {/* ── Bundle / Contract expiry banner ── */}
+      <BundleExpiryBanner bundles={data.activeBundles ?? []} />
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label={t("portal.openTickets", "Ticket aperti")} value={data.stats.open} />
         <Stat label={t("portal.inProgress", "In lavorazione")} value={data.stats.inProgress} />
         <Stat label={t("portal.resolvedThisMonth", "Risolti questo mese")} value={data.stats.resolvedThisMonth} />
       </div>
+
+      {/* ── Ticket volume chart (6 months) ── */}
+      {data.ticketVolume?.length > 0 && (
+        <TicketVolumeChart data={data.ticketVolume} />
+      )}
+
+      {/* ── Service status / uptime ── */}
+      {data.services?.length > 0 && (
+        <ServiceStatusSection services={data.services} />
+      )}
+
       <PortalBundles bundles={data.activeBundles ?? []} />
       <section className="space-y-3">
         <h2 className="font-semibold">{t("portal.recentTickets", "Ticket recenti")}</h2>
@@ -107,6 +134,167 @@ function PortalDashboardPage() {
     </div>
   );
 }
+
+// ── Bundle Expiry Banner ──────────────────────────────────────────────────
+
+function BundleExpiryBanner({ bundles }: { bundles: any[] }) {
+  if (!bundles.length) return null;
+
+  const now = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + BUNDLE_EXPIRY_WARN_DAYS);
+
+  const expiring = bundles.filter((b) => {
+    if (!b.end_date) return false;
+    const endDate = new Date(b.end_date);
+    return endDate <= thirtyDaysFromNow && endDate >= now;
+  });
+
+  if (!expiring.length) return null;
+
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-950/30">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-500" />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            {expiring.length === 1
+              ? "Contratto in scadenza"
+              : "Contratti in scadenza"}
+          </h3>
+          <ul className="mt-1.5 space-y-1">
+            {expiring.map((b) => {
+              const bundleName = b.bundle?.name || "Bundle assistenza";
+              const endDate = new Date(b.end_date);
+              const daysLeft = Math.max(1, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+              return (
+                <li key={b.id} className="text-sm text-amber-800 dark:text-amber-300">
+                  <strong>{bundleName}</strong> — scade {endDate.toLocaleDateString("it-IT")}{" "}
+                  ({daysLeft} {daysLeft === 1 ? "giorno" : "giorni"} rimanenti)
+                  {b.auto_renew ? " · Rinnovo automatico" : ""}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">
+            Per evitare interruzioni del servizio, contatta il supporto per il rinnovo.
+          </p>
+          <div className="mt-3">
+            <Button size="sm" variant="outline" className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40" asChild>
+              <a href="/portal/tickets/new">Contatta il supporto</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Ticket Volume Chart ───────────────────────────────────────────────────
+
+function TicketVolumeChart({ data }: { data: { label: string; opened: number; closed: number }[] }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-semibold">Andamento ticket</h2>
+        <p className="text-sm text-muted-foreground">Ticket aperti e chiusi negli ultimi 6 mesi.</p>
+      </div>
+      <div className="rounded-lg border bg-card p-4">
+        <ChartContainer
+          config={{
+            opened: { label: "Aperti", color: pcReadyColors.primary },
+            closed: { label: "Chiusi", color: pcReadyColors.success },
+          }}
+          className="h-[200px] w-full"
+        >
+          <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="4 4" />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="opened" fill="var(--color-opened)" radius={[4, 4, 0, 0]} barSize={24} />
+            <Bar dataKey="closed" fill="var(--color-closed)" radius={[4, 4, 0, 0]} barSize={24} />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    </section>
+  );
+}
+
+// ── Service Status Section ────────────────────────────────────────────────
+
+interface ServiceItem {
+  name: string;
+  status: "operational" | "degraded" | "outage";
+  updated_at?: string;
+  note?: string;
+}
+
+const SERVICE_STATUS_CONFIG = {
+  operational: {
+    icon: CheckCircle2,
+    label: "Operativo",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    border: "border-emerald-200 dark:border-emerald-800/50",
+  },
+  degraded: {
+    icon: AlertCircle,
+    label: "Degradato",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    border: "border-amber-200 dark:border-amber-800/50",
+  },
+  outage: {
+    icon: XCircle,
+    label: "Fuori servizio",
+    color: "text-red-600 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    border: "border-red-200 dark:border-red-800/50",
+  },
+};
+
+function ServiceStatusSection({ services }: { services: ServiceItem[] }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-semibold">Stato dei servizi</h2>
+        <p className="text-sm text-muted-foreground">Monitoraggio in tempo reale dei servizi gestiti.</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {services.map((svc, idx) => {
+          const cfg = SERVICE_STATUS_CONFIG[svc.status] || SERVICE_STATUS_CONFIG.operational;
+          const Icon = cfg.icon;
+          return (
+            <div
+              key={idx}
+              className={`rounded-lg border p-4 ${cfg.border} ${cfg.bg}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Icon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold">{svc.name}</h3>
+                  <p className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</p>
+                </div>
+              </div>
+              {svc.note && (
+                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{svc.note}</p>
+              )}
+              {svc.updated_at && (
+                <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  Aggiornato: {new Date(svc.updated_at).toLocaleString("it-IT")}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ── Bundles ───────────────────────────────────────────────────────────────
 
 function PortalBundles({ bundles }: { bundles: any[] }) {
   const { t } = useTranslation("dashboard");
