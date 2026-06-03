@@ -15,15 +15,8 @@ export interface ChecklistTemplateRow {
   description: string | null;
   structure: ChecklistStructure;
   is_default: boolean;
+  tags: string[];
 }
-
-type ChecklistTemplateDbRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  structure: Json;
-  is_default: boolean;
-};
 
 export interface TicketChecklistResponseRow {
   id: string;
@@ -53,11 +46,17 @@ export interface TicketChecklistInstanceRow {
 }
 
 function sectionAssignmentsFromStructure(structure: ChecklistStructure) {
-  return Object.fromEntries(
-    Object.entries(structure)
-      .filter(([, section]) => !!section.assigned_to)
-      .map(([key, section]) => [key, section.assigned_to ?? null]),
-  );
+  const assignments: Record<string, string | null> = {};
+  for (const group of Object.values(structure)) {
+    if (group.sections) {
+      for (const [secKey, section] of Object.entries(group.sections)) {
+        if (section.assigned_to) {
+          assignments[secKey] = section.assigned_to;
+        }
+      }
+    }
+  }
+  return assignments;
 }
 
 function mapInstance(row: any): TicketChecklistInstanceRow {
@@ -74,13 +73,14 @@ function mapInstance(row: any): TicketChecklistInstanceRow {
 export async function fetchChecklistTemplates(): Promise<ChecklistTemplateRow[]> {
   const { data, error } = await supabase
     .from("checklist_templates")
-    .select("id, name, description, structure, is_default")
+    .select("id, name, description, structure, is_default, tags")
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return ((data ?? []) as ChecklistTemplateDbRow[]).map((row) => ({
+  return ((data ?? []) as any[]).map((row: any) => ({
     ...row,
     structure: parseChecklistStructure(row.structure),
+    tags: row.tags ?? [],
   }));
 }
 
@@ -92,11 +92,11 @@ async function createTemplate(payload: Record<string, any>) {
   const { data, error } = await supabase
     .from("checklist_templates")
     .insert(payload as any)
-    .select("id, name, description, structure, is_default")
+    .select("id, name, description, structure, is_default, tags")
     .single();
   if (error) throw error;
-  const row = data as ChecklistTemplateDbRow;
-  return { ...row, structure: parseChecklistStructure(row.structure) };
+  const row = data as any;
+  return { ...row, structure: parseChecklistStructure(row.structure), tags: row.tags ?? [] };
 }
 
 async function updateTemplate(id: string, patch: Record<string, any>) {
@@ -295,7 +295,33 @@ export function useCompleteTicketChecklistInstance(ticketId: string) {
     mutationFn: completeTicketChecklistInstance,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEYS.ticket(ticketId), "checklist-instances"] });
+      qc.invalidateQueries({ queryKey: ["checklist_templates", "completion-stats"] });
     },
+  });
+}
+
+// ── Template completion stats ───────────────────────────────────────────
+export type TemplateCompletionStats = Record<string, { total: number; completed: number }>;
+
+export async function fetchTemplateCompletionStats(): Promise<TemplateCompletionStats> {
+  const { data, error } = await supabase
+    .from("ticket_checklist_instances")
+    .select("template_id, status")
+    .not("template_id", "is", null);
+  if (error) throw error;
+  const stats: Record<string, { total: number; completed: number }> = {};
+  for (const row of (data ?? []) as { template_id: string; status: string }[]) {
+    if (!stats[row.template_id]) stats[row.template_id] = { total: 0, completed: 0 };
+    stats[row.template_id].total++;
+    if (row.status === "completed") stats[row.template_id].completed++;
+  }
+  return stats;
+}
+
+export function useTemplateCompletionStats() {
+  return useQuery({
+    queryKey: ["checklist_templates", "completion-stats"],
+    queryFn: () => fetchTemplateCompletionStats(),
   });
 }
 
@@ -311,4 +337,5 @@ export default {
   useCreateTicketChecklistInstance,
   useUpsertTicketChecklistResponse,
   useCompleteTicketChecklistInstance,
+  useTemplateCompletionStats,
 };

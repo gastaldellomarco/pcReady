@@ -508,7 +508,7 @@ export function TicketDetailModal() {
     if (!canEdit || !user) return toast.error(t("detail.toasts.insufficientPermissions", "Permessi insufficienti"));
     if (instance.status === "completed") return toast.error(t("detail.toasts.checklistAlreadyCompleted", "Checklist già completata"));
     const assignedTo =
-      instance.section_assignments?.[sectionKey] || instance.structure[sectionKey]?.assigned_to;
+      instance.section_assignments?.[sectionKey] || (instance.structure as any)[sectionKey]?.assigned_to;
     if (assignedTo && assignedTo !== user.id && !isAdmin) {
       return toast.error(t("detail.toasts.checklistSectionAssigned", "Questa sezione è assegnata a un altro tecnico"));
     }
@@ -1091,7 +1091,7 @@ export function TicketDetailModal() {
               })}
             </div>
             <div className="flex flex-col gap-1.5">
-              {(struct[currentChecklistTab]?.items || []).map((item) => {
+              {((struct[currentChecklistTab] as any)?.items || []).map((item: ChecklistItemDef) => {
                 const done = ticket.checklist?.[currentChecklistTab]?.[item.id];
                 return (
                   <button
@@ -1119,7 +1119,7 @@ export function TicketDetailModal() {
                   </button>
                 );
               })}
-              {!struct[currentChecklistTab]?.items?.length && (
+              {!((struct[currentChecklistTab] as any)?.items as any[])?.length && (
                 <div className="py-6 text-center text-[12px] text-text3">
                   {t("detail.section.noItems", "Nessuna voce in questa sezione")}
                 </div>
@@ -1320,60 +1320,74 @@ function TicketChecklistPanel({
                 </div>
 
                 <div className="space-y-3">
-                  {Object.entries(instance.structure).map(([sectionKey, section]) => {
+                  {Object.entries(instance.structure as Record<string, any>).map(([groupKey, group]) => {
+                    const sections = (group as any).sections;
+                    if (!sections) {
+                      // Old flat format: group is actually a section
+                      const section = group as unknown as { label: string; items: ChecklistItemDef[]; assigned_to?: string | null };
+                      const assignedTo =
+                        instance.section_assignments?.[groupKey] || section.assigned_to || null;
+                      const assignedTech = technicians.find((tech) => tech.id === assignedTo);
+                      const sectionLocked = !!assignedTo && assignedTo !== currentUserId && !isAdmin;
+                      const responses = responseMap(instance.responses);
+                      return (
+                        <div key={groupKey} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <div className="text-[12.5px] font-bold">{section.label}</div>
+                              <div className="text-[11px] text-text3">
+                                {assignedTech ? t("detail.section.assignedTo", { name: assignedTech.full_name, defaultValue: "Assegnata a {{name}}" }) : t("detail.section.noTechnicianAssigned", "Nessun tecnico specifico")}
+                                {sectionLocked ? ` · ${t("detail.section.readOnly", "sola lettura per te")}` : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            {(section.items || []).map((item) => {
+                              const key = `${groupKey}:${item.id}`;
+                              const response = responses.get(key);
+                              const disabled = !canEdit || sectionLocked || instance.status === "completed";
+                              return (
+                                <ChecklistResponseInput key={item.id} item={item} value={response?.value ?? ""} response={response} disabled={disabled} compiledByLabel={technicians.find((tech) => tech.id === response?.compiled_by)?.full_name} onSave={(value) => onSaveResponse(instance, groupKey, item.id, value)} />
+                              );
+                            })}
+                            {!section.items?.length && (
+                              <div className="text-[12px] text-text3">{t("detail.section.noItems", "Nessuna voce in questa sezione")}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    // New two-level format: iterate sections within group
+                    return Object.entries(sections as Record<string, any>).map(([sectionKey, section]) => {
                     const assignedTo =
                       instance.section_assignments?.[sectionKey] || section.assigned_to || null;
                     const assignedTech = technicians.find((tech) => tech.id === assignedTo);
                     const sectionLocked = !!assignedTo && assignedTo !== currentUserId && !isAdmin;
                     const responses = responseMap(instance.responses);
                     return (
-                      <div
-                        key={sectionKey}
-                        className="rounded-lg border p-3"
-                        style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
-                      >
+                      <div key={sectionKey} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <div className="text-[12.5px] font-bold">{section.label}</div>
-                            <div className="text-[11px] text-text3">
-                              {assignedTech
-                                ? t("detail.section.assignedTo", { name: assignedTech.full_name, defaultValue: "Assegnata a {{name}}" })
-                                : t("detail.section.noTechnicianAssigned", "Nessun tecnico specifico")}
-                              {sectionLocked ? ` · ${t("detail.section.readOnly", "sola lettura per te")}` : ""}
-                            </div>
-                          </div>
+                          <div><div className="text-[12.5px] font-bold">{section.label}</div><div className="text-[11px] text-text3">
+                            {assignedTech ? t("detail.section.assignedTo", { name: assignedTech.full_name, defaultValue: "Assegnata a {{name}}" }) : t("detail.section.noTechnicianAssigned", "Nessun tecnico specifico")}
+                            {sectionLocked ? ` · ${t("detail.section.readOnly", "sola lettura per te")}` : ""}
+                          </div></div>
                         </div>
                         <div className="space-y-1.5">
-                          {section.items.map((item) => {
+                          {(section.items || []).map((item) => {
                             const key = `${sectionKey}:${item.id}`;
                             const response = responses.get(key);
-                            const disabled =
-                              !canEdit || sectionLocked || instance.status === "completed";
+                            const disabled = !canEdit || sectionLocked || instance.status === "completed";
                             return (
-                              <ChecklistResponseInput
-                                key={item.id}
-                                item={item}
-                                value={response?.value ?? ""}
-                                response={response}
-                                disabled={disabled}
-                                compiledByLabel={
-                                  technicians.find((tech) => tech.id === response?.compiled_by)
-                                    ?.full_name
-                                }
-                                onSave={(value) =>
-                                  onSaveResponse(instance, sectionKey, item.id, value)
-                                }
-                              />
+                              <ChecklistResponseInput key={item.id} item={item} value={response?.value ?? ""} response={response} disabled={disabled} compiledByLabel={technicians.find((tech) => tech.id === response?.compiled_by)?.full_name} onSave={(value) => onSaveResponse(instance, sectionKey, item.id, value)} />
                             );
                           })}
-                          {!section.items.length && (
-                            <div className="text-[12px] text-text3">
-                              {t("detail.section.noItems", "Nessuna voce in questa sezione")}
-                            </div>
+                          {!section.items?.length && (
+                            <div className="text-[12px] text-text3">{t("detail.section.noItems", "Nessuna voce in questa sezione")}</div>
                           )}
                         </div>
                       </div>
                     );
+                    });
                   })}
                 </div>
                 {instance.status === "completed" && (
@@ -1477,15 +1491,32 @@ function computeInstanceProgress(instance: TicketChecklistInstanceRow) {
   let done = 0;
   let total = 0;
   let requiredMissing = 0;
-  Object.entries(instance.structure).forEach(([sectionKey, section]) => {
-    section.items.forEach((item) => {
-      total += 1;
-      const response = responses.get(`${sectionKey}:${item.id}`);
-      const completed = isResponseComplete(item, response?.value);
-      if (completed) done += 1;
-      if (item.required && !completed) requiredMissing += 1;
-    });
-  });
+  const struct = instance.structure as Record<string, any>;
+  for (const [groupKey, group] of Object.entries(struct)) {
+    const sections = (group as any).sections;
+    if (sections) {
+      // New two-level format
+      for (const [sectionKey, section] of Object.entries(sections as Record<string, any>)) {
+        for (const item of ((section as any).items as ChecklistItemDef[]) || []) {
+          total += 1;
+          const response = responses.get(`${sectionKey}:${item.id}`);
+          const completed = isResponseComplete(item, response?.value);
+          if (completed) done += 1;
+          if (item.required && !completed) requiredMissing += 1;
+        }
+      }
+    } else {
+      // Old flat format: groupKey IS the section key
+      const items = ((group as any).items as ChecklistItemDef[]) || [];
+      for (const item of items) {
+        total += 1;
+        const response = responses.get(`${groupKey}:${item.id}`);
+        const completed = isResponseComplete(item, response?.value);
+        if (completed) done += 1;
+        if (item.required && !completed) requiredMissing += 1;
+      }
+    }
+  }
   return { done, total, requiredMissing, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 

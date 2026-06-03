@@ -41,6 +41,10 @@
   "typeText": "Testo",
   "typeNumber": "Numero",
   "remove": "Rimuovi",
+  "tags": "Tag",
+  "tagsPlaceholder": "Aggiungi tag...",
+  "allTags": "Tutti",
+  "noFilteredTemplates": "Nessun modello con questo tag",
   "copyOf": "Copia di ",
   "errors": {
     "insufficientPermissions": "Permessi insufficienti",
@@ -59,7 +63,13 @@
     "confirm": "Elimina modello",
     "loading": "Eliminazione..."
   },
-  "deleteSectionDialog": {
+  "deleteGroupDialog": {
+      "title": "Eliminare questo gruppo?",
+      "description": "Il gruppo \"{{label}}\" e tutte le sue sezioni verranno rimossi.",
+      "descriptionGeneric": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.",
+      "confirm": "Elimina gruppo"
+    },
+    "deleteSectionDialog": {
     "title": "Eliminare questa sezione?",
     "description": "La sezione \"{{label}}\" e tutte le sue voci verranno rimosse dal modello. L'azione non può essere annullata.",
     "descriptionGeneric": "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non può essere annullata.",
@@ -72,6 +82,9 @@
     "deleted": "Modello checklist eliminato",
     "duplicated": "Modello checklist duplicato",
     "setDefault": "Impostato come modello predefinito",
+    "groupAdded": "Gruppo checklist aggiunto",
+    "groupRemoved": "Gruppo checklist rimosso",
+    "groupRenamed": "Gruppo checklist rinominato",
     "sectionAdded": "Sezione checklist aggiunta",
     "sectionRemoved": "Sezione checklist rimossa",
     "sectionRenamed": "Sezione checklist rinominata",
@@ -113,6 +126,9 @@
     "deleted": "Modello checklist eliminato",
     "duplicated": "Modello checklist duplicato",
     "setDefault": "Impostato come modello predefinito",
+    "groupAdded": "Gruppo checklist aggiunto",
+    "groupRemoved": "Gruppo checklist rimosso",
+    "groupRenamed": "Gruppo checklist rinominato",
     "sectionAdded": "Sezione checklist aggiunta",
     "sectionRemoved": "Sezione checklist rimossa",
     "sectionRenamed": "Sezione checklist rinominata",
@@ -128,11 +144,22 @@
     "sectionUnassigned": "Assegnazione sezione rimossa",
     "nameUpdated": "Nome checklist aggiornato",
     "descriptionUpdated": "Descrizione checklist aggiornata",
-    "structureUpdated": "Struttura checklist aggiornata"
+    "structureUpdated": "Struttura checklist aggiornata",
+    "tagsUpdated": "Tag checklist aggiornati"
   },
   "defaultName": "Nuovo modello",
   "newSection": "Nuova sezione",
   "newItem": "Nuova voce",
+  "completionStats": "{{completed}}/{{total}} completate ({{pct}}%)",
+  "newGroup": "Nuovo gruppo",
+  "addGroup": "Aggiungi gruppo",
+  "addGroupTitle": "Aggiungi gruppo",
+  "deleteGroup": "Elimina gruppo",
+  "deleteGroupDialog": {
+    "title": "Eliminare questo gruppo?",
+    "description": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello.",
+    "confirm": "Elimina gruppo"
+  },
   "addSectionTitle": "Aggiungi sezione",
   "versionHistory": {
     "title": "Storico Versioni",

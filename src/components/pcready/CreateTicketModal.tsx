@@ -243,13 +243,18 @@ export function CreateTicketModal() {
       });
       const sectionAssignees = new Map<string, string[]>();
       selectedTemplates.forEach((template) => {
-        Object.values(template.structure || {}).forEach((section) => {
-          if (section.assigned_to) {
-            const labels = sectionAssignees.get(section.assigned_to) ?? [];
-            labels.push(`${template.name}: ${section.label}`);
-            sectionAssignees.set(section.assigned_to, labels);
+        const struct = template.structure || {};
+        for (const group of Object.values(struct)) {
+          const sections = (group as any).sections;
+          if (!sections) continue;
+          for (const section of Object.values(sections) as any[]) {
+            if (section.assigned_to) {
+              const labels = sectionAssignees.get(section.assigned_to) ?? [];
+              labels.push(`${template.name}: ${section.label}`);
+              sectionAssignees.set(section.assigned_to, labels);
+            }
           }
-        });
+        }
       });
       await Promise.all(
         Array.from(sectionAssignees.entries()).map(([userId, labels]) =>

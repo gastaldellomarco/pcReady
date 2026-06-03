@@ -61,6 +61,7 @@ interface Template {
   description: string | null;
   structure: ChecklistStructure;
   is_default: boolean;
+  tags: string[];
 }
 
 interface TechnicianOption {
@@ -77,14 +78,17 @@ function ChecklistPage() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [deleteTemplateTarget, setDeleteTemplateTarget] = useState<Template | null>(null);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const {
     useChecklistTemplates,
     useCreateTemplate,
     useUpdateTemplate,
     useDeleteTemplate,
     useSetDefaultTemplate,
+    useTemplateCompletionStats,
   } = queries as any;
   const listQuery = useChecklistTemplates();
+  const statsQuery = useTemplateCompletionStats();
   const createMut = useCreateTemplate();
   const updateMut = useUpdateTemplate();
   const deleteMut = useDeleteTemplate();
@@ -154,6 +158,7 @@ function ChecklistPage() {
       name: t("copyOf", "Copia di ") + tmpl.name,
       description: tmpl.description || "",
       structure: tmpl.structure as unknown as Json,
+      tags: tmpl.tags || [],
       created_by: user!.id,
     };
     const data = await createMut.mutateAsync(payload);
@@ -214,6 +219,15 @@ function ChecklistPage() {
     setTemplates((ts) => ts.map((x) => (x.id === tmpl.id ? ({ ...x, ...patch } as Template) : x)));
   }
 
+  // ── Tag filter ──
+  const allTags = Array.from(
+    new Set(templates.flatMap((tmpl) => tmpl.tags || [])),
+  ).sort((a, b) => a.localeCompare(b));
+  const filteredTemplates = tagFilter
+    ? templates.filter((tmpl) => (tmpl.tags || []).includes(tagFilter))
+    : templates;
+  const completionStats = (statsQuery.data ?? {}) as Record<string, { total: number; completed: number }>;
+
   const current = templates.find((t) => t.id === active);
 
   if (listQuery.isError) {
@@ -237,15 +251,50 @@ function ChecklistPage() {
           )}
         </div>
         <div className="pc-card-body flex flex-col gap-1.5">
+          {/* Tag filter */}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pb-1">
+              <button
+                onClick={() => setTagFilter(null)}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                  !tagFilter
+                    ? "text-white"
+                    : "text-text3 hover:text-text"
+                }`}
+                style={{ background: !tagFilter ? "var(--accent)" : "var(--surface2)" }}
+              >
+                {t("allTags", "Tutti")}
+              </button>
+              {allTags.slice(0, 8).map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                    tagFilter === tag
+                      ? "text-white"
+                      : "text-text3 hover:text-text"
+                  }`}
+                  style={{ background: tagFilter === tag ? "var(--accent)" : "var(--surface2)" }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
           {loading && <ListSkeleton rows={5} variant="app" className="gap-1.5" />}
-          {!loading && !templates.length && (
+          {!loading && !filteredTemplates.length && !tagFilter && (
             <PageEmptyState
               className="border-0 shadow-none bg-transparent p-4"
               title={t("emptyTitle", "Nessun modello checklist")}
               description={t("emptyDescription", "Creane uno con il pulsante Nuovo in alto per iniziare.")}
             />
           )}
-          {templates.map((tmpl) => {
+          {!loading && !filteredTemplates.length && tagFilter && (
+            <div className="text-center py-4 text-text3 text-[12px]">
+              {t("noFilteredTemplates", "Nessun modello con questo tag")}
+            </div>
+          )}
+          {filteredTemplates.map((tmpl) => {
             const on = tmpl.id === active;
             return (
               <button
@@ -274,9 +323,37 @@ function ChecklistPage() {
                   <div className="text-[11px] text-text3 truncate mt-0.5">{tmpl.description}</div>
                 )}
                 <div className="text-[10px] text-text3 font-mono mt-1">
-                  {Object.values(tmpl.structure || {}).reduce((a, c) => a + (c.items?.length || 0), 0)}{" "}
+                  {Object.values(tmpl.structure || {}).reduce((a, group) => {
+                    const sections = (group as any).sections || {};
+                    return a + Object.values(sections).reduce((b: number, sec: any) => b + ((sec as any).items?.length || 0), 0);
+                  }, 0)}{" "}
                   {t("itemsCount", "voci")}
                 </div>
+                {/* Completion progress bar */}
+                {completionStats[tmpl.id] && completionStats[tmpl.id].total > 0 && (() => {
+                  const stat = completionStats[tmpl.id];
+                  const pct = Math.round((stat.completed / stat.total) * 100);
+                  return (
+                  <div className="mt-1.5">
+                    <div className="w-full h-[4px] rounded-full overflow-hidden" style={{ background: "var(--border2)" }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          background: "var(--success)",
+                        }}
+                      />
+                    </div>
+                    <div className="text-[10px] font-mono text-text3 mt-0.5">
+                      {t("completionStats", {
+                        completed: stat.completed,
+                        total: stat.total,
+                        pct,
+                      })}
+                    </div>
+                  </div>
+                  );
+                })()}
               </button>
             );
           })}
@@ -352,12 +429,18 @@ function TemplateEditor({
   const [name, setName] = useState(template.name);
   const [desc, setDesc] = useState(template.description || "");
   const [struct, setStruct] = useState<ChecklistStructure>(template.structure || {});
-  const [activeTab, setActiveTab] = useState<string>(
-    Object.keys(template.structure || {})[0] || "",
-  );
+  const groups = struct || {};
+  const groupKeys = Object.keys(groups);
+  const [activeGroup, setActiveGroup] = useState<string>(groupKeys[0] || "");
+  const activeGroupSections = activeGroup ? (groups[activeGroup]?.sections || {}) : {};
+  const sectionKeys = Object.keys(activeGroupSections);
+  const [activeSection, setActiveSection] = useState<string>(sectionKeys[0] || "");
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [tabLabel, setTabLabel] = useState("");
+  const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
+  const [groupLabel, setGroupLabel] = useState("");
   const [deleteSectionKey, setDeleteSectionKey] = useState<string | null>(null);
+  const [deleteGroupKey, setDeleteGroupKey] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
@@ -366,69 +449,155 @@ function TemplateEditor({
   useEffect(() => {
     setName(template.name);
     setDesc(template.description || "");
-    setStruct(template.structure || {});
-    setActiveTab(Object.keys(template.structure || {})[0] || "");
+    const s = template.structure || {};
+    setStruct(s);
+    const gk = Object.keys(s);
+    const g = gk[0] || "";
+    setActiveGroup(g);
+    const sk = g ? Object.keys(s[g]?.sections || {}) : [];
+    setActiveSection(sk[0] || "");
     setPreviewMode(false);
   }, [template.description, template.id, template.name, template.structure]);
+
+  const section = activeGroup && activeSection ? groups[activeGroup]?.sections?.[activeSection] : null;
+  const activeSectionData = section;
 
   function persist(s: ChecklistStructure, changeNote = t("changeNotes.structureUpdated", "Struttura checklist aggiornata")) {
     setStruct(s);
     onUpdate({ structure: s }, changeNote);
   }
 
-  function addTab() {
+  // ── Group operations ──
+  function addGroup() {
+    const key = "grp_" + Math.random().toString(36).slice(2, 8);
+    const next = {
+      ...struct,
+      [key]: { label: t("newGroup", "Nuovo gruppo"), sections: {} },
+    };
+    persist(next, t("changeNotes.groupAdded", "Gruppo checklist aggiunto"));
+    setActiveGroup(key);
+    setActiveSection("");
+  }
+  function renameGroup(key: string, label: string) {
+    persist(
+      { ...struct, [key]: { ...struct[key], label } },
+      t("changeNotes.groupRenamed", "Gruppo checklist rinominato"),
+    );
+  }
+  function toggleGroupCollapse(key: string) {
+    const g = struct[key];
+    const next = { ...struct, [key]: { ...g, collapsed: !g.collapsed } };
+    setStruct(next);
+    onUpdate({ structure: next });
+  }
+
+  // ── Section operations ──
+  function addSection() {
+    if (!activeGroup) return;
     const key = "sec_" + Math.random().toString(36).slice(2, 8);
+    const next = {
+      ...struct,
+      [activeGroup]: {
+        ...struct[activeGroup],
+        sections: { ...struct[activeGroup].sections, [key]: { label: t("newSection", "Nuova sezione"), items: [] } },
+      },
+    };
+    persist(next, t("changeNotes.sectionAdded", "Sezione checklist aggiunta"));
+    setActiveSection(key);
+  }
+  function renameSection(key: string, label: string) {
+    if (!activeGroup) return;
+    const g = struct[activeGroup];
     persist(
-      { ...struct, [key]: { label: t("newSection", "Nuova sezione"), items: [] } },
-      t("changeNotes.sectionAdded", "Sezione checklist aggiunta"),
-    );
-    setActiveTab(key);
-  }
-  function renameTab(key: string, label: string) {
-    persist({ ...struct, [key]: { ...struct[key], label } }, t("changeNotes.sectionRenamed", "Sezione checklist rinominata"));
-  }
-  function removeTab(key: string) {
-    const c = { ...struct };
-    delete c[key];
-    persist(c, t("changeNotes.sectionRemoved", "Sezione checklist rimossa"));
-    setActiveTab(Object.keys(c)[0] || "");
-  }
-  function addItem() {
-    const id = "i_" + Math.random().toString(36).slice(2, 8);
-    const items = [...(struct[activeTab]?.items || []), { id, text: t("newItem", "Nuova voce") }];
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemAdded", "Voce checklist aggiunta"));
-  }
-  function updateItem(id: string, text: string) {
-    const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, text } : i));
-    persist(
-      { ...struct, [activeTab]: { ...struct[activeTab], items } },
-      t("changeNotes.itemUpdated", "Voce checklist aggiornata"),
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [key]: { ...g.sections[key], label } } } },
+      t("changeNotes.sectionRenamed", "Sezione checklist rinominata"),
     );
   }
-  function updateItemType(id: string, type: "checkbox" | "text" | "number") {
-    const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, type } : i));
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemTypeChanged", "Tipo voce modificato"));
+  // ── Group deletion ──
+  function removeGroup(key: string) {
+    const s = { ...struct };
+    delete s[key];
+    persist(s, t("changeNotes.groupRemoved", "Gruppo checklist rimosso"));
+    const gk = Object.keys(s);
+    setActiveGroup(gk[0] || "");
+    setActiveSection("");
+  }
+
+  function removeSection(key: string) {
+    if (!activeGroup) return;
+    const g = struct[activeGroup];
+    const sec = { ...g.sections };
+    delete sec[key];
+    const next = { ...struct, [activeGroup]: { ...g, sections: sec } };
+    persist(next, t("changeNotes.sectionRemoved", "Sezione checklist rimossa"));
+    const sk = Object.keys(sec);
+    setActiveSection(sk[0] || "");
   }
   function updateSectionAssignee(key: string, assignedTo: string) {
+    if (!activeGroup) return;
+    const g = struct[activeGroup];
+    const sec = g.sections[key];
+    if (!sec) return;
     persist(
-      { ...struct, [key]: { ...struct[key], assigned_to: assignedTo || null } },
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [key]: { ...sec, assigned_to: assignedTo || null } } } },
       assignedTo ? t("changeNotes.sectionAssigned", "Tecnico assegnato alla sezione") : t("changeNotes.sectionUnassigned", "Assegnazione sezione rimossa"),
     );
   }
 
-  function updateItemRequired(id: string, required: boolean) {
-    const items = struct[activeTab].items.map((i) => (i.id === id ? { ...i, required } : i));
+  // ── Item operations ──
+  function addItem() {
+    if (!activeGroup || !activeSection) return;
+    const id = "i_" + Math.random().toString(36).slice(2, 8);
+    const g = struct[activeGroup];
+    const sec = g.sections[activeSection];
+    const items = [...(sec?.items || []), { id, text: t("newItem", "Nuova voce") }];
     persist(
-      { ...struct, [activeTab]: { ...struct[activeTab], items } },
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      t("changeNotes.itemAdded", "Voce checklist aggiunta"),
+    );
+  }
+  function updateItem(id: string, text: string) {
+    if (!activeGroup || !activeSection) return;
+    const g = struct[activeGroup];
+    const sec = g.sections[activeSection];
+    const items = sec.items.map((i) => (i.id === id ? { ...i, text } : i));
+    persist(
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      t("changeNotes.itemUpdated", "Voce checklist aggiornata"),
+    );
+  }
+  function updateItemType(id: string, type: "checkbox" | "text" | "number") {
+    if (!activeGroup || !activeSection) return;
+    const g = struct[activeGroup];
+    const sec = g.sections[activeSection];
+    const items = sec.items.map((i) => (i.id === id ? { ...i, type } : i));
+    persist(
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      t("changeNotes.itemTypeChanged", "Tipo voce modificato"),
+    );
+  }
+  function updateItemRequired(id: string, required: boolean) {
+    if (!activeGroup || !activeSection) return;
+    const g = struct[activeGroup];
+    const sec = g.sections[activeSection];
+    const items = sec.items.map((i) => (i.id === id ? { ...i, required } : i));
+    persist(
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
       required ? t("changeNotes.itemRequired", "Voce impostata come obbligatoria") : t("changeNotes.itemOptional", "Voce impostata come opzionale"),
     );
   }
   function removeItem(id: string) {
-    const items = struct[activeTab].items.filter((i) => i.id !== id);
-    persist({ ...struct, [activeTab]: { ...struct[activeTab], items } }, t("changeNotes.itemRemoved", "Voce checklist rimossa"));
+    if (!activeGroup || !activeSection) return;
+    const g = struct[activeGroup];
+    const sec = g.sections[activeSection];
+    const items = sec.items.filter((i) => i.id !== id);
+    persist(
+      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      t("changeNotes.itemRemoved", "Voce checklist rimossa"),
+    );
   }
 
-  // -- Drag & drop -----------------------------------------------------------
+  // -- Drag & drop (two-level: group:section:item) --------------------------
   function handleDragStart(event: DragStartEvent) {
     setActiveDragId(String(event.active.id));
   }
@@ -441,72 +610,55 @@ function TemplateEditor({
     const activeStr = String(active.id);
     const overStr = String(over.id);
 
-    function parseDragId(id: string): [string, string] {
-      const idx = id.indexOf(":");
-      return [id.slice(0, idx), id.slice(idx + 1)];
+    // Parse 3-part ID: group:section:item
+    function parse3Part(id: string): [string, string, string] {
+      const parts = id.split(":");
+      return [parts[0] ?? "", parts[1] ?? "", parts[2] ?? ""];
     }
 
-    // Dropped on a section tab (cross-section move to end)
-    if (overStr.startsWith("section:")) {
-      const targetSection = overStr.slice(8);
-      const [srcSec, itemId] = parseDragId(activeStr);
-      if (!struct[srcSec] || !struct[targetSection] || srcSec === targetSection) return;
-      const srcItems = [...struct[srcSec].items];
-      const idx = srcItems.findIndex((i) => i.id === itemId);
-      if (idx === -1) return;
-      const [moved] = srcItems.splice(idx, 1);
-      const tgtItems = [...struct[targetSection].items];
-      tgtItems.push(moved);
-      persist(
-        {
-          ...struct,
-          [srcSec]: { ...struct[srcSec], items: srcItems },
-          [targetSection]: { ...struct[targetSection], items: tgtItems },
-        },
-        t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"),
-      );
-      return;
-    }
+    // Dropped on another item (same section reorder or cross-section move)
+    const [srcGroup, srcSection, itemId] = parse3Part(activeStr);
+    const [tgtGroup, tgtSection, targetItemId] = parse3Part(overStr);
 
-    // Dropped on another item
-    const [srcSec, itemId] = parseDragId(activeStr);
-    const [tgtSec, targetItemId] = parseDragId(overStr);
+    if (!srcGroup || !srcSection || !tgtGroup || !tgtSection) return;
 
-    if (srcSec === tgtSec) {
-      // Same section - reorder
-      const items = [...struct[srcSec].items];
+    if (srcGroup === tgtGroup && srcSection === tgtSection) {
+      // Same section — reorder
+      const items = [...(struct[srcGroup]?.sections?.[srcSection]?.items ?? [])];
       const oldIdx = items.findIndex((i) => i.id === itemId);
       const newIdx = items.findIndex((i) => i.id === targetItemId);
       if (oldIdx === -1 || newIdx === -1) return;
       const reordered = arrayMove(items, oldIdx, newIdx);
+      const g = struct[srcGroup];
       persist(
-        { ...struct, [srcSec]: { ...struct[srcSec], items: reordered } },
+        { ...struct, [srcGroup]: { ...g, sections: { ...g.sections, [srcSection]: { ...g.sections[srcSection], items: reordered } } } },
         t("changeNotes.itemReordered", "Voce checklist riordinata"),
       );
     } else {
-      // Different section - move before target
-      const srcItems = [...struct[srcSec].items];
+      // Different section/group — move before target
+      const srcG = struct[srcGroup];
+      const tgtG = struct[tgtGroup];
+      if (!srcG?.sections?.[srcSection] || !tgtG?.sections?.[tgtSection]) return;
+
+      const srcItems = [...srcG.sections[srcSection].items];
       const srcIdx = srcItems.findIndex((i) => i.id === itemId);
       if (srcIdx === -1) return;
       const [moved] = srcItems.splice(srcIdx, 1);
-      const tgtItems = [...struct[tgtSec].items];
+      const tgtItems = [...tgtG.sections[tgtSection].items];
       const tgtIdx = tgtItems.findIndex((i) => i.id === targetItemId);
       if (tgtIdx >= 0) tgtItems.splice(tgtIdx, 0, moved);
       else tgtItems.push(moved);
-      persist(
-        {
-          ...struct,
-          [srcSec]: { ...struct[srcSec], items: srcItems },
-          [tgtSec]: { ...struct[tgtSec], items: tgtItems },
-        },
-        t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"),
-      );
+
+      const updated = { ...struct };
+      updated[srcGroup] = { ...srcG, sections: { ...srcG.sections, [srcSection]: { ...srcG.sections[srcSection], items: srcItems } } };
+      updated[tgtGroup] = { ...tgtG, sections: { ...tgtG.sections, [tgtSection]: { ...tgtG.sections[tgtSection], items: tgtItems } } };
+      persist(updated, t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"));
     }
   }
 
   const itemIds =
-    activeTab && struct[activeTab]
-      ? struct[activeTab].items.map((it) => `${activeTab}:${it.id}`)
+    activeGroup && activeSection && groups[activeGroup]?.sections?.[activeSection]
+      ? groups[activeGroup].sections[activeSection].items.map((it) => `${activeGroup}:${activeSection}:${it.id}`)
       : [];
 
   return (
@@ -580,7 +732,7 @@ function TemplateEditor({
           </div>
         </div>
 
-        <div className="px-5 pt-4">
+        <div className="px-5 pt-4 flex flex-col gap-3">
           <input
             className="pc-input"
             placeholder={t("descriptionPlaceholder", "Descrizione (opzionale)")}
@@ -592,80 +744,181 @@ function TemplateEditor({
               onUpdate({ description: desc }, t("changeNotes.descriptionUpdated", "Descrizione checklist aggiornata"))
             }
           />
+          {/* Tags input */}
+          <TagInput
+            tags={template.tags || []}
+            canEdit={canEdit}
+            onChange={(newTags) => onUpdate({ tags: newTags }, t("changeNotes.tagsUpdated", "Tag checklist aggiornati"))}
+          />
         </div>
 
         <div className="border-b mt-4 px-3" style={{ borderColor: "var(--border)" }}>
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {Object.keys(struct).map((k) => {
-              const on = activeTab === k;
-              const isEditing = editingTab === k;
+          {/* Groups accordion */}
+          <div className="flex flex-col gap-0.5">
+            {groupKeys.map((gk) => {
+              const group = groups[gk];
+              const isCollapsed = group.collapsed || false;
+              const isActive = gk === activeGroup;
+              const secKeys = Object.keys(group.sections || {});
               return (
-                <div key={k} className="flex items-center -mb-px">
-                  {isEditing ? (
-                    <div className="flex items-center gap-1 px-2 py-1.5">
-                      <input
-                        autoFocus
-                        className="pc-input !py-1 !text-[12px] max-w-[140px]"
-                        value={tabLabel}
-                        onChange={(e) => setTabLabel(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            renameTab(k, tabLabel);
-                            setEditingTab(null);
-                          }
-                        }}
-                      />
-                      <button
-                        className="pc-btn-icon touch-target"
-                        onClick={() => {
-                          renameTab(k, tabLabel);
-                          setEditingTab(null);
-                        }}
-                      >
-                        <Check className="w-3 h-3" />
-                      </button>
-                      <button className="pc-btn-icon touch-target" onClick={() => setEditingTab(null)}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
+                <div key={gk}>
+                  {/* Group header */}
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setActiveTab(k)}
-                      onDoubleClick={() => {
-                        if (canEdit && !previewMode) {
-                          setEditingTab(k);
-                          setTabLabel(struct[k].label);
+                      onClick={() => {
+                        if (isCollapsed) {
+                          // Expand and activate
+                          toggleGroupCollapse(gk);
+                          setActiveGroup(gk);
+                          const sk = Object.keys(group.sections || {});
+                          setActiveSection(sk[0] || "");
+                        } else if (isActive) {
+                          toggleGroupCollapse(gk);
+                        } else {
+                          setActiveGroup(gk);
+                          const sk = Object.keys(group.sections || {});
+                          setActiveSection(sk[0] || "");
                         }
                       }}
-                      className="px-3 py-2 text-[12.5px] font-semibold border-b-2 transition-colors flex items-center gap-1.5"
+                      className={`flex items-center gap-1.5 px-2 py-1.5 text-[12.5px] font-semibold transition-colors rounded ${
+                        isActive && !isCollapsed ? "" : ""
+                      }`}
                       style={{
-                        color: on ? "var(--accent)" : "var(--text3)",
-                        borderColor: on ? "var(--accent)" : "transparent",
+                        color: isActive && !isCollapsed ? "var(--accent)" : "var(--text3)",
                       }}
                     >
-                      {struct[k].label}
+                      <span className="text-[10px]">{isCollapsed ? "▶" : "▼"}</span>
+                      {editingGroupKey === gk ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            className="pc-input !py-0.5 !text-[12px] max-w-[140px]"
+                            value={groupLabel}
+                            onChange={(e) => setGroupLabel(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                renameGroup(gk, groupLabel);
+                                setEditingGroupKey(null);
+                              }
+                            }}
+                          />
+                          <button className="pc-btn-icon touch-target" onClick={() => { renameGroup(gk, groupLabel); setEditingGroupKey(null); }}>
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button className="pc-btn-icon touch-target" onClick={() => setEditingGroupKey(null)}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          onDoubleClick={() => {
+                            if (canEdit && !previewMode) {
+                              setEditingGroupKey(gk);
+                              setGroupLabel(group.label);
+                            }
+                          }}
+                        >
+                          {group.label}
+                        </span>
+                      )}
                       <span className="font-mono text-[10px] opacity-60">
-                        {struct[k].items.length}
+                        {secKeys.length} sez
                       </span>
                     </button>
+                    {canEdit && !previewMode && groupKeys.length > 1 && (
+                      <button
+                        className="pc-btn-icon touch-target ml-auto"
+                        onClick={() => setDeleteGroupKey(gk)}
+                        title={t("deleteGroup", "Elimina gruppo")}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sections (inside expanded group) */}
+                  {!isCollapsed && isActive && (
+                    <div className="ml-4">
+                      <div className="flex items-center gap-1 overflow-x-auto">
+                        {secKeys.map((sk) => {
+                          const on = activeSection === sk;
+                          const isEditing = editingTab === sk;
+                          return (
+                            <div key={sk} className="flex items-center -mb-px">
+                              {isEditing ? (
+                                <div className="flex items-center gap-1 px-2 py-1.5">
+                                  <input
+                                    autoFocus
+                                    className="pc-input !py-1 !text-[12px] max-w-[140px]"
+                                    value={tabLabel}
+                                    onChange={(e) => setTabLabel(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        renameSection(sk, tabLabel);
+                                        setEditingTab(null);
+                                      }
+                                    }}
+                                  />
+                                  <button className="pc-btn-icon touch-target" onClick={() => { renameSection(sk, tabLabel); setEditingTab(null); }}>
+                                    <Check className="w-3 h-3" />
+                                  </button>
+                                  <button className="pc-btn-icon touch-target" onClick={() => setEditingTab(null)}>
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setActiveSection(sk)}
+                                  onDoubleClick={() => {
+                                    if (canEdit && !previewMode) {
+                                      setEditingTab(sk);
+                                      setTabLabel(group.sections[sk].label);
+                                    }
+                                  }}
+                                  className="px-3 py-2 text-[12.5px] font-semibold border-b-2 transition-colors flex items-center gap-1.5"
+                                  style={{
+                                    color: on ? "var(--accent)" : "var(--text3)",
+                                    borderColor: on ? "var(--accent)" : "transparent",
+                                  }}
+                                >
+                                  {group.sections[sk].label}
+                                  <span className="font-mono text-[10px] opacity-60">
+                                    {group.sections[sk].items.length}
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {canEdit && !previewMode && (
+                          <button
+                            onClick={addSection}
+                            className="px-2.5 py-2 text-text3 hover:text-accent"
+                            title={t("addSectionTitle", "Aggiungi sezione")}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               );
             })}
-              {canEdit && !previewMode && (
-                <button
-                  onClick={addTab}
-                  className="px-2.5 py-2 text-text3 hover:text-accent"
-                  title={t("addSectionTitle", "Aggiungi sezione")}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              )}
+            {canEdit && !previewMode && (
+              <button
+                onClick={addGroup}
+                className="px-2.5 py-2 text-text3 hover:text-accent flex items-center gap-1"
+                title={t("addGroupTitle", "Aggiungi gruppo")}
+              >
+                <Plus className="w-3.5 h-3.5" /> {t("addGroup", "Aggiungi gruppo")}
+              </button>
+            )}
           </div>
         </div>
 
         <div className="pc-card-body flex flex-col gap-1.5">
-          {activeTab && struct[activeTab] && (
+          {activeSection && activeSectionData && (
             <>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[11px] text-text3 uppercase tracking-wider">
@@ -675,17 +928,17 @@ function TemplateEditor({
                   <button
                     className="pc-btn pc-btn-ghost pc-btn-sm ml-auto"
                     onClick={() => {
-                      setEditingTab(activeTab);
-                      setTabLabel(struct[activeTab].label);
+                      setEditingTab(activeSection);
+                      setTabLabel(activeSectionData.label);
                     }}
                   >
                     <Pencil className="w-3 h-3" /> {t("rename", "Rinomina")}
                   </button>
                 )}
-                {canEdit && !previewMode && Object.keys(struct).length > 1 && (
+                {canEdit && !previewMode && sectionKeys.length > 1 && (
                   <button
                     className="pc-btn pc-btn-danger pc-btn-sm"
-                    onClick={() => setDeleteSectionKey(activeTab)}
+                    onClick={() => setDeleteSectionKey(activeSection)}
                   >
                     <Trash2 className="w-3 h-3" /> {t("section", "Sezione")}
                   </button>
@@ -700,8 +953,8 @@ function TemplateEditor({
                 {canEdit && !previewMode ? (
                   <select
                     className="pc-input h-8 max-w-[260px] py-0 text-[12px] leading-normal"
-                    value={struct[activeTab].assigned_to ?? ""}
-                    onChange={(event) => updateSectionAssignee(activeTab, event.target.value)}
+                    value={(activeSectionData as any)?.assigned_to ?? ""}
+                    onChange={(event) => updateSectionAssignee(activeSection, event.target.value)}
                   >
                     <option value="">{t("noSpecificTechShort", "\u2014 Nessun tecnico specifico \u2014")}</option>
                     {technicians.map((tech) => (
@@ -712,20 +965,21 @@ function TemplateEditor({
                   </select>
                 ) : (
                   <span className="text-[12px] text-text3">
-                    {technicians.find((tech) => tech.id === struct[activeTab].assigned_to)
+                    {technicians.find((tech) => tech.id === (activeSectionData as any)?.assigned_to)
                       ?.full_name || t("noSpecificTech", "Nessun tecnico specifico")}
                   </span>
                 )}
               </div>
 
-              {/* DnD Context for sortable items */}
+              {/* DnD for sortable items */}
               <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                  {struct[activeTab].items.map((it) => (
+                  {(activeSectionData.items || []).map((it) => (
                     <SortableChecklistItem
                       key={it.id}
                       item={it}
-                      sectionKey={activeTab}
+                      groupKey={activeGroup}
+                      sectionKey={activeSection}
                       canEdit={canEdit}
                       previewMode={previewMode}
                       onUpdate={updateItem}
@@ -749,11 +1003,12 @@ function TemplateEditor({
                       <GripVertical className="w-3 h-3 text-text3" />
                       <span className="text-[13px]">
                         {(() => {
-                          const [sec, itId] = activeDragId.includes(":")
-                            ? [activeDragId.split(":")[0], activeDragId.split(":")[1]]
-                            : [activeTab, activeDragId];
-                          const found = struct[sec]?.items.find((i) => i.id === itId);
-                          return found?.text || t("item", "Voce");
+                          const parts = activeDragId.split(":");
+                          const grp = parts[0];
+                          const sec = parts[1];
+                          const itId = parts[2];
+                          const found = groups[grp]?.sections?.[sec]?.items?.find((i: ChecklistItemDef) => i.id === itId);
+                          return (found as ChecklistItemDef)?.text || t("item", "Voce");
                         })()}
                       </span>
                     </div>
@@ -770,7 +1025,7 @@ function TemplateEditor({
                   <Plus className="w-3.5 h-3.5" /> {t("addItem", "Aggiungi voce")}
                 </button>
               )}
-              {!struct[activeTab].items.length && (
+              {!activeSectionData.items.length && (
                 <div className="text-center py-6 text-text3 text-[12px]">
                   {previewMode
                     ? t("noItems", "Nessuna voce")
@@ -785,15 +1040,30 @@ function TemplateEditor({
         open={!!deleteSectionKey}
         title={t("deleteSectionDialog.title", "Eliminare questa sezione?")}
         description={
-          deleteSectionKey && struct[deleteSectionKey]
-            ? t("deleteSectionDialog.description", { label: struct[deleteSectionKey].label, defaultValue: "La sezione verra' rimossa." })
+          deleteSectionKey && activeGroup && groups[activeGroup]?.sections?.[deleteSectionKey]
+            ? t("deleteSectionDialog.description", { label: groups[activeGroup].sections[deleteSectionKey].label, defaultValue: "La sezione verra' rimossa." })
             : t("deleteSectionDialog.descriptionGeneric", "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.")
         }
         confirmLabel={t("deleteSectionDialog.confirm", "Elimina sezione")}
         loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
         onOpenChange={(open) => !open && setDeleteSectionKey(null)}
         onConfirm={async () => {
-          if (deleteSectionKey) removeTab(deleteSectionKey);
+          if (deleteSectionKey) removeSection(deleteSectionKey);
+        }}
+      />
+      <DestructiveConfirmDialog
+        open={!!deleteGroupKey}
+        title={t("deleteGroupDialog.title", "Eliminare questo gruppo?")}
+        description={
+          deleteGroupKey && groups[deleteGroupKey]
+            ? t("deleteGroupDialog.description", { label: groups[deleteGroupKey].label, defaultValue: "Il gruppo verra' rimosso con tutte le sue sezioni." })
+            : t("deleteGroupDialog.descriptionGeneric", "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.")
+        }
+        confirmLabel={t("deleteGroupDialog.confirm", "Elimina gruppo")}
+        loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
+        onOpenChange={(open) => !open && setDeleteGroupKey(null)}
+        onConfirm={async () => {
+          if (deleteGroupKey) removeGroup(deleteGroupKey);
         }}
       />
     </>
@@ -804,6 +1074,7 @@ function TemplateEditor({
 function SortableChecklistItem({
   item,
   sectionKey,
+  groupKey,
   canEdit,
   previewMode,
   onUpdate,
@@ -813,6 +1084,7 @@ function SortableChecklistItem({
 }: {
   item: ChecklistItemDef;
   sectionKey: string;
+  groupKey: string;
   canEdit: boolean;
   previewMode: boolean;
   onUpdate: (id: string, text: string) => void;
@@ -821,7 +1093,7 @@ function SortableChecklistItem({
   onRequiredChange: (id: string, required: boolean) => void;
 }) {
   const { t } = useTranslation("checklist");
-  const dndId = `${sectionKey}:${item.id}`;
+  const dndId = `${groupKey}:${sectionKey}:${item.id}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: dndId,
   });
@@ -932,6 +1204,85 @@ function SortableChecklistItem({
         >
           <Trash2 className="w-3 h-3" />
         </button>
+      )}
+    </div>
+  );
+}
+
+// --- Tag input component ---------------------------------------------------
+function TagInput({
+  tags,
+  canEdit,
+  onChange,
+}: {
+  tags: string[];
+  canEdit: boolean;
+  onChange: (tags: string[]) => void;
+}) {
+  const { t } = useTranslation("checklist");
+  const [input, setInput] = useState("");
+
+  function addTag() {
+    const trimmed = input.trim();
+    if (!trimmed || tags.includes(trimmed)) return;
+    onChange([...tags, trimmed]);
+    setInput("");
+  }
+
+  function removeTag(tag: string) {
+    onChange(tags.filter((t) => t !== tag));
+  }
+
+  if (!canEdit && !tags.length) return null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap gap-1">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+            style={{
+              background: "var(--accent2)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent-border, #3b82f640)",
+            }}
+          >
+            {tag}
+            {canEdit && (
+              <button
+                className="pc-btn-icon touch-target"
+                onClick={() => removeTag(tag)}
+                title={t("remove", "Rimuovi")}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </span>
+        ))}
+      </div>
+      {canEdit && (
+        <div className="flex items-center gap-1">
+          <input
+            className="pc-input !py-1 !text-[12px] flex-1"
+            placeholder={t("tagsPlaceholder", "Aggiungi tag...")}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag();
+              }
+            }}
+          />
+          <button
+            className="pc-btn pc-btn-ghost pc-btn-sm"
+            onClick={addTag}
+            disabled={!input.trim()}
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
       )}
     </div>
   );

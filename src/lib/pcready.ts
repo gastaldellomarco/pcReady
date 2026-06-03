@@ -174,34 +174,57 @@ export interface ChecklistItemDef {
   type?: "checkbox" | "text" | "number";
   required?: boolean;
 }
-export interface ChecklistTabDef {
+export interface ChecklistSection {
   label: string;
   items: ChecklistItemDef[];
   assigned_to?: string | null;
 }
-export type ChecklistStructure = Record<string, ChecklistTabDef>;
+export interface ChecklistGroup {
+  label: string;
+  collapsed?: boolean;
+  sections: Record<string, ChecklistSection>;
+}
+export type ChecklistStructure = Record<string, ChecklistGroup>;
 
-export const DEFAULT_STRUCTURE: ChecklistStructure = Object.fromEntries(
-  CHECKLIST_TABS.map((t) => [
-    t.key,
-    { label: t.label, items: [...CHECKLIST_TEMPLATE[t.key]] as ChecklistItemDef[] },
-  ]),
-);
+// Keep ChecklistTabDef as alias for backward compat with older references
+export type ChecklistTabDef = ChecklistSection;
 
-export function structureProgress(state: ChecklistState, struct: ChecklistStructure, key: string) {
-  const items = struct[key]?.items ?? [];
-  const done = items.filter((i) => state[key]?.[i.id]).length;
-  const total = items.length || 1;
-  return { done, total: items.length, pct: Math.round((done / total) * 100) };
+export const DEFAULT_STRUCTURE: ChecklistStructure = {
+  "default_group": {
+    label: "Generale",
+    sections: Object.fromEntries(
+      CHECKLIST_TABS.map((t) => [
+        t.key,
+        { label: t.label, items: [...CHECKLIST_TEMPLATE[t.key]] as ChecklistItemDef[] },
+      ]),
+    ),
+  },
+};
+
+export function structureProgress(state: ChecklistState, struct: ChecklistStructure, groupKey: string) {
+  const group = struct[groupKey];
+  if (!group?.sections) return { done: 0, total: 1, pct: 0 };
+  let done = 0,
+    total = 0;
+  for (const secKey of Object.keys(group.sections)) {
+    const items = group.sections[secKey].items;
+    total += items.length;
+    done += items.filter((i) => state[secKey]?.[i.id]).length;
+  }
+  return { done, total: total || 1, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 export function structureOverallProgress(state: ChecklistState, struct: ChecklistStructure) {
   let done = 0,
     total = 0;
-  for (const k of Object.keys(struct)) {
-    const items = struct[k].items;
-    total += items.length;
-    done += items.filter((i) => state[k]?.[i.id]).length;
+  for (const groupKey of Object.keys(struct)) {
+    const group = struct[groupKey];
+    if (!group?.sections) continue;
+    for (const secKey of Object.keys(group.sections)) {
+      const items = group.sections[secKey].items;
+      total += items.length;
+      done += items.filter((i) => state[secKey]?.[i.id]).length;
+    }
   }
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
