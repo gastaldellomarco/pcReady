@@ -2,10 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { AUTOMATION_RUN_LOG_SELECT } from "./automation-runs.server";
 
+/**
+ *
+ */
 export type RunLogStatus = "success" | "error" | "dry_run" | "skipped";
+/**
+ *
+ */
 export type ActionResultStatus = "success" | "error" | "skipped";
+/**
+ *
+ */
 export type HealthStatus = "healthy" | "degraded" | "failing" | "never_run";
 
+/**
+ *
+ */
 export interface ActionResult {
   action: string;
   status: ActionResultStatus;
@@ -18,6 +30,9 @@ export interface ActionResult {
   error?: string;
 }
 
+/**
+ *
+ */
 export interface DryRunStep {
   stepIndex: number;
   type: "trigger" | "condition" | "action";
@@ -26,11 +41,17 @@ export interface DryRunStep {
   detail: string;
 }
 
+/**
+ *
+ */
 export interface DryRunResult {
   steps: DryRunStep[];
   summary: "success" | "blocked" | "error";
 }
 
+/**
+ *
+ */
 export interface AutomationRunLog {
   id: string;
   automation_id: string;
@@ -44,6 +65,9 @@ export interface AutomationRunLog {
   is_dry_run: boolean;
 }
 
+/**
+ *
+ */
 export interface AutomationRunStats {
   automation_id: string;
   success: number;
@@ -54,6 +78,9 @@ export interface AutomationRunStats {
   recent: Pick<AutomationRunLog, "status">[];
 }
 
+/**
+ *
+ */
 export interface AutomationDashboardKpis {
   activeAutomations: number;
   runsToday: number;

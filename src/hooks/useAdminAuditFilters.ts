@@ -5,8 +5,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuditLogFilters } from "@/lib/audit-log";
 
+/**
+ *
+ */
 export type DatePreset = "today" | "yesterday" | "last7" | "last30" | "custom" | "";
 
+/**
+ *
+ */
 export function useAdminAuditFilters(args: {
   loadAudit: (page: number, filters: AuditLogFilters) => Promise<void>;
   initialFilters?: AuditLogFilters;

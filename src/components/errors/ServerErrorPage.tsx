@@ -1,12 +1,15 @@
 import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SupportContact } from "@/components/errors/SupportContact";
+import { Button } from "@/components/ui/button";
 
+/**
+ *
+ */
 export function ServerErrorPage({ error }: { error: Error }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
-        <AlertTriangle className="h-16 w-16 text-destructive" />
+      <div className="flex size-20 items-center justify-center rounded-full bg-destructive/10">
+        <AlertTriangle className="size-16 text-destructive" />
       </div>
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground">500</h1>

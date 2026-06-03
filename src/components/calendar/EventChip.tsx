@@ -24,7 +24,8 @@ export function EventChip({ event, techColorMap, colorMode, onClick }: EventChip
     .join(" · ");
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
         'w-full rounded-sm text-xs px-1.5 py-0.5 cursor-pointer',
         'flex items-center gap-1 overflow-hidden',
@@ -44,7 +45,7 @@ export function EventChip({ event, techColorMap, colorMode, onClick }: EventChip
     >
       {/* Type indicator dot */}
       <span
-        className="flex-shrink-0 w-1.5 h-1.5 rounded-full"
+        className="flex-shrink-0 size-1.5 rounded-full"
         style={{ background: fg }}
         aria-hidden="true"
       />
@@ -54,6 +55,6 @@ export function EventChip({ event, techColorMap, colorMode, onClick }: EventChip
           {event.tickets[0].ticket_code}
         </span>
       ) : null}
-    </div>
+    </button>
   );
 }

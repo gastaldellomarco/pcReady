@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { optionalTrimmed } from "./utils";
 import {
   DEFAULT_DEVICE_CATEGORY,
   DEFAULT_DEVICE_TYPE,
@@ -7,6 +6,7 @@ import {
   DEVICE_TYPES_BY_CATEGORY,
   type DeviceCategory,
 } from "@/lib/device-taxonomy";
+import { optionalTrimmed } from "./utils";
 
 export const DeviceSchema = z
   .object({
@@ -87,5 +87,11 @@ export const DeviceSchema = z
     }
   });
 
+/**
+ *
+ */
 export type DeviceFormInput = z.input<typeof DeviceSchema>;
+/**
+ *
+ */
 export type DeviceInput = z.infer<typeof DeviceSchema>;

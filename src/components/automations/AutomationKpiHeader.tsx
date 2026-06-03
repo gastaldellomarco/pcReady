@@ -1,8 +1,11 @@
 import { Activity, AlertTriangle, CheckCircle, Zap } from "lucide-react";
-import type { AutomationRule } from "@/types/automation";
-import type { AutomationDashboardKpis } from "@/lib/automation-runs";
 import { AutomationKpiCard } from "./AutomationKpiCard";
+import type { AutomationDashboardKpis } from "@/lib/automation-runs";
+import type { AutomationRule } from "@/types/automation";
 
+/**
+ *
+ */
 export function AutomationKpiHeader({
   rules,
   kpis,
@@ -22,25 +25,25 @@ export function AutomationKpiHeader({
       <AutomationKpiCard
         label="Regole totali"
         value={totalCount}
-        icon={<Zap className="h-4 w-4" />}
+        icon={<Zap className="size-4" />}
         color="blue"
       />
       <AutomationKpiCard
         label="Attive / Inattive"
         value={`${activeCount} / ${inactiveCount}`}
-        icon={<CheckCircle className="h-4 w-4" />}
+        icon={<CheckCircle className="size-4" />}
         color="green"
       />
       <AutomationKpiCard
         label="Esecuzioni 24h"
         value={runsToday}
-        icon={<Activity className="h-4 w-4" />}
+        icon={<Activity className="size-4" />}
         color={runsToday > 0 ? "green" : "default"}
       />
       <AutomationKpiCard
         label="Regole con errori"
         value={rulesWithErrors}
-        icon={<AlertTriangle className="h-4 w-4" />}
+        icon={<AlertTriangle className="size-4" />}
         color={rulesWithErrors > 0 ? "red" : "default"}
         trend={successRate}
       />

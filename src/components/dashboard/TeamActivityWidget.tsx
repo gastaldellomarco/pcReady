@@ -1,8 +1,8 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Info } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useServerFn } from "@tanstack/react-start";
-import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -11,11 +11,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
 type Period = "today" | "week" | "month";
 
+function workloadColor(load: number) {
+  if (load >= 10) return "bg-red-500 text-white";
+  if (load >= 5) return "bg-orange-500 text-white";
+  return "bg-emerald-600 text-white";
+}
+
+/**
+ *
+ */
 export function TeamActivityWidget() {
   const { t } = useTranslation("dashboard");
   const [period, setPeriod] = useState<Period>("week");
@@ -44,12 +53,6 @@ export function TeamActivityWidget() {
   }, [load]);
 
   const activeCount = rows.filter((r) => r.active).length;
-
-  function workloadColor(load: number) {
-    if (load >= 10) return "bg-red-500 text-white";
-    if (load >= 5) return "bg-orange-500 text-white";
-    return "bg-emerald-600 text-white";
-  }
 
   return (
     <div className="pc-card">
@@ -98,15 +101,16 @@ export function TeamActivityWidget() {
         ) : (
           <div className="flex flex-col gap-2.5">
             {rows.map((tech) => (
-              <div
+              <button
+                type="button"
                 key={tech.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] cursor-pointer hover:bg-surface2 transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[12px] cursor-pointer hover:bg-surface2 transition-colors text-left"
                 style={{ border: "1px solid var(--border)" }}
                 onClick={() =>
                   navigate({ to: "/_app/tickets", search: { technician: tech.id } } as any)
                 }
               >
-                <Avatar className="w-8 h-8 text-[11px]">{tech.initials}</Avatar>
+                <Avatar className="size-8 text-[11px]">{tech.initials}</Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{tech.name}</div>
                   <div className="flex items-center gap-2 text-[11px] text-text3">
@@ -130,7 +134,7 @@ export function TeamActivityWidget() {
                     {tech.assigned >= 10 ? t("widgets.high", "Alto") : tech.assigned >= 5 ? t("widgets.medium", "Medio") : t("widgets.low", "Basso")}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

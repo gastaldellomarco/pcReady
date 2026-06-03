@@ -1,23 +1,41 @@
-import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import { formatDistanceStrict } from "date-fns";
+import { Info } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Avatar } from "@/components/ui/avatar";
-import { formatDistanceStrict } from "date-fns";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
 type Period = "today" | "week" | "month";
 
+function formatDuration(ms: number | null) {
+  if (!ms) return "—";
+  try {
+    return formatDistanceStrict(0, ms, { unit: "minute" });
+  } catch {
+    return "—";
+  }
+}
+
+function workloadColor(load: number) {
+  if (load >= 10) return "bg-red-500 text-white";
+  if (load >= 5) return "bg-orange-500 text-white";
+  return "bg-emerald-600 text-white";
+}
+
+/**
+ *
+ */
 export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period }) {
   const { t } = useTranslation("dashboard");
   const [period, setPeriod] = useState<Period>(defaultPeriod);
@@ -53,22 +71,6 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
   }, [load, refreshKey]);
 
   const activeCount = rows.filter((r) => r.active).length;
-
-  function formatDuration(ms: number | null) {
-    if (!ms) return "—";
-    try {
-      return formatDistanceStrict(0, ms, { unit: "minute" });
-    } catch {
-      return "—";
-    }
-  }
-
-  function workloadColor(load: number) {
-    // thresholds: <5 green, 5-9 orange, 10+ red (configurable later)
-    if (load >= 10) return "bg-red-500 text-white";
-    if (load >= 5) return "bg-orange-500 text-white";
-    return "bg-emerald-600 text-white";
-  }
 
   return (
     <Card>
@@ -130,15 +132,16 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
             </div>
           ) : (
             rows.map((tech) => (
-              <div
+              <button
+                type="button"
                 key={tech.id}
-                className="min-w-[220px] pc-card p-3 cursor-pointer flex-shrink-0"
+                className="min-w-[220px] pc-card p-3 cursor-pointer flex-shrink-0 text-left"
                 onClick={() =>
                   navigate({ to: "/_app/tickets", search: { technician: tech.id } } as any)
                 }
               >
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-9 h-9">{tech.initials}</Avatar>
+                  <Avatar className="size-9">{tech.initials}</Avatar>
                   <div>
                     <div className="font-semibold text-sm">{tech.name}</div>
                     <div className="text-xs text-text3">{tech.title || t("technicians.technicianLabel", "Tecnico")}</div>
@@ -185,7 +188,7 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>

@@ -1,7 +1,13 @@
 import type { AutomationRule } from "@/types/automation";
 
+/**
+ *
+ */
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 
+/**
+ *
+ */
 export interface CompletenessResult {
   complete: boolean;
   missing: string[];

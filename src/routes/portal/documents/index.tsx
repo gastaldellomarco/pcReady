@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Eye, FileArchive, FileImage, FileText, X, RefreshCw, PenLine, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { listPortalDocuments, signPortalDocument } from "@/lib/portal-tickets";
 
 export const Route = createFileRoute("/portal/documents/")({
@@ -168,7 +168,7 @@ function PortalDocumentsPage() {
           </p>
         </div>
         <Button variant="outline" onClick={() => setRetryKey((current) => current + 1)}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Aggiorna
         </Button>
       </div>
@@ -278,8 +278,11 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
 
   return (
     <div
+      role="button"
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="relative w-full max-w-4xl rounded-lg bg-card shadow-2xl" style={{ height: "85vh" }}>
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -294,7 +297,7 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
             {document.download_url && (
               <Button size="sm" variant="outline" asChild>
                 <a href={document.download_url} target="_blank" rel="noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 size-4" />
                   Scarica
                 </a>
               </Button>
@@ -304,7 +307,7 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
               className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="Chiudi anteprima"
             >
-              <X className="h-5 w-5" />
+              <X className="size-5" />
             </button>
           </div>
         </div>
@@ -319,7 +322,7 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
           ) : document.view_url ? (
             <div className="flex h-full items-center justify-center p-8">
               <div className="text-center">
-                <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
+                <FileText className="mx-auto size-16 text-muted-foreground" />
                 <p className="mt-4 text-muted-foreground">
                   L'anteprima inline è disponibile solo per i PDF.
                 </p>
@@ -443,8 +446,11 @@ function SignatureModal({
 
   return (
     <div
+      role="button"
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}
+      onKeyDown={(e) => { if (e.key === "Escape" && !busy) onClose(); }}
     >
       <div className="w-full max-w-lg rounded-lg bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -458,7 +464,7 @@ function SignatureModal({
             className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Annulla firma"
           >
-            <X className="h-5 w-5" />
+            <X className="size-5" />
           </button>
         </div>
 
@@ -498,7 +504,7 @@ function SignatureModal({
               disabled={!hasDrawing || busy}
               className="gap-2"
             >
-              <PenLine className="h-4 w-4" />
+              <PenLine className="size-4" />
               {busy ? "Salvataggio..." : "Firma documento"}
             </Button>
           </div>
@@ -539,7 +545,7 @@ function DocumentRow({
             </Badge>
             {isSigned && (
               <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400">
-                <CheckCircle2 className="mr-1 h-3 w-3" />
+                <CheckCircle2 className="mr-1 size-3" />
                 Firmato
               </Badge>
             )}
@@ -562,21 +568,21 @@ function DocumentRow({
       <div className="flex flex-wrap gap-2 md:justify-end">
         {isPdf && canOpen && (
           <Button size="sm" variant="ghost" onClick={onPreview}>
-            <Eye className="mr-2 h-4 w-4" />
+            <Eye className="mr-2 size-4" />
             Anteprima
           </Button>
         )}
         {canDownload && (
           <Button size="sm" variant="outline" asChild>
             <a href={document.download_url} target="_blank" rel="noreferrer">
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 size-4" />
               Scarica
             </a>
           </Button>
         )}
         {!isSigned && isSignable(document) && (
           <Button size="sm" onClick={onSign} className="gap-2">
-            <PenLine className="h-4 w-4" />
+            <PenLine className="size-4" />
             Firma
           </Button>
         )}
@@ -587,10 +593,10 @@ function DocumentRow({
 
 function DocumentIcon({ mimeType, fileName }: { mimeType: string | null; fileName: string }) {
   const lower = `${mimeType || ""} ${fileName}`.toLowerCase();
-  if (lower.includes("image/")) return <FileImage className="h-5 w-5" />;
+  if (lower.includes("image/")) return <FileImage className="size-5" />;
   if (lower.includes("zip") || lower.includes("archive"))
-    return <FileArchive className="h-5 w-5" />;
-  return <FileText className="h-5 w-5" />;
+    return <FileArchive className="size-5" />;
+  return <FileText className="size-5" />;
 }
 
 function formatDate(value: string | null | undefined) {

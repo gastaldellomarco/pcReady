@@ -11,6 +11,9 @@ import {
 import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
+/**
+ *
+ */
 export interface TicketPdfRow {
   ticket_code: string;
   client: string;
@@ -24,6 +27,9 @@ export interface TicketPdfRow {
   created_at: string;
 }
 
+/**
+ *
+ */
 export function TicketListPdf({
   rows,
   organizationName,

@@ -1,6 +1,9 @@
 import { Bell, Settings, Wrench, Zap } from "lucide-react";
 import type { NotificationType } from "@/lib/notifications";
 
+/**
+ *
+ */
 export function iconForType(type: NotificationType) {
   if (type === "automation_failed") return Zap;
   if (type === "device_status_changed") return Wrench;
@@ -8,6 +11,9 @@ export function iconForType(type: NotificationType) {
   return Bell;
 }
 
+/**
+ *
+ */
 export function relativeTime(value: string) {
   const delta = Date.now() - new Date(value).getTime();
   const minute = 60_000;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { IScannerControls } from "@zxing/browser";
 import { Modal } from "@/components/pcready/Modal";
+import type { IScannerControls } from "@zxing/browser";
 
 interface Props {
   open: boolean;
@@ -23,6 +23,9 @@ export const SUPPORTED_1D_BARCODE_FORMATS = [
   "UPC-E",
 ] as const;
 
+/**
+ *
+ */
 export function BarcodeScanner({
   open,
   onClose,

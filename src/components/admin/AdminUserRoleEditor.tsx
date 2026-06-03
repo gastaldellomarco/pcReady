@@ -1,9 +1,23 @@
-import { useState } from "react";
 import { UserCog } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { AppRole } from "@/lib/auth-context";
 import { ADMIN_ROLES, adminRoleLabel, isAppRole } from "@/lib/admin/admin-constants";
+import type { AppRole } from "@/lib/auth-context";
 
+function roleBgColor(r: AppRole) {
+  if (r === "admin") return "var(--danger, #DC2626)";
+  if (r === "tech") return "var(--primary, #2563EB)";
+  return "var(--muted, #E6E7EA)";
+}
+
+function roleTextColor(r: AppRole) {
+  if (r === "admin" || r === "tech") return "#ffffff";
+  return "var(--foreground)";
+}
+
+/**
+ *
+ */
 export function AdminUserRoleEditor({
   role,
   disabled,
@@ -15,22 +29,12 @@ export function AdminUserRoleEditor({
 }) {
   const [isEditing, setIsEditing] = useState(false);
 
-  function roleBgColor(r: AppRole) {
-    if (r === "admin") return "var(--danger, #DC2626)";
-    if (r === "tech") return "var(--primary, #2563EB)";
-    return "var(--muted, #E6E7EA)";
-  }
-
-  function roleTextColor(r: AppRole) {
-    if (r === "admin" || r === "tech") return "#ffffff";
-    return "var(--foreground)";
-  }
-
   return (
     <div className="inline-flex items-center gap-2">
-      <UserCog className="w-3.5 h-3.5 text-text3" />
+      <UserCog className="size-3.5 text-text3" />
       {!isEditing ? (
-        <span
+        <button
+          type="button"
           className={disabled ? "inline-block" : "inline-block cursor-pointer"}
           onClick={() => {
             if (!disabled) setIsEditing(true);
@@ -43,7 +47,7 @@ export function AdminUserRoleEditor({
           >
             {adminRoleLabel(role)}
           </Badge>
-        </span>
+        </button>
       ) : (
         <select
           className="pc-input h-8 min-w-[165px] py-0 text-[12px] leading-normal"

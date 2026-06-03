@@ -1,8 +1,14 @@
 import { createContext, useContext } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
+/**
+ *
+ */
 export type AppRole = "admin" | "tech" | "viewer";
 
+/**
+ *
+ */
 export interface AuthProfile {
   id: string;
   full_name: string;
@@ -28,6 +34,9 @@ interface AuthCtx {
 
 export const Ctx = createContext<AuthCtx | undefined>(undefined);
 
+/**
+ *
+ */
 export function useAuth() {
   const c = useContext(Ctx);
   if (!c) throw new Error("useAuth must be used inside AuthProvider");

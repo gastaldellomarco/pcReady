@@ -1,13 +1,15 @@
-import OverflowTable from "@/components/ui/overflow-table";
-
-import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 import { Inbox, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import OverflowTable from "@/components/ui/overflow-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "react-i18next";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
+/**
+ *
+ */
 export type PageStateVariant = "app" | "portal";
 
 function shellClass(variant: PageStateVariant) {
@@ -16,6 +18,9 @@ function shellClass(variant: PageStateVariant) {
     : "pc-card p-6 text-center";
 }
 
+/**
+ *
+ */
 export function PageFetchError({
   title: titleProp,
   message,
@@ -62,6 +67,9 @@ export function PageFetchError({
   );
 }
 
+/**
+ *
+ */
 export function PageEmptyState({
   icon: Icon = Inbox,
   title,
@@ -131,6 +139,9 @@ export function PageSkeleton({
   );
 }
 
+/**
+ *
+ */
 export function ListSkeleton({
   rows = 6,
   variant = "app",
@@ -163,6 +174,9 @@ export function ListSkeleton({
   );
 }
 
+/**
+ *
+ */
 export function TableSkeletonRows({
   rows = 8,
   columns = 5,
@@ -187,6 +201,9 @@ export function TableSkeletonRows({
   );
 }
 
+/**
+ *
+ */
 export function TableSkeleton({
   rows = 8,
   columns = 5,
@@ -237,6 +254,9 @@ export function TableSkeleton({
   );
 }
 
+/**
+ *
+ */
 export function CardGridSkeleton({
   cards = 6,
   columnsClass = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",

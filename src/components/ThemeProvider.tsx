@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import type { Theme } from "@/lib/theme";
 import { applyTheme, getStoredTheme, saveTheme, resolveTheme } from "@/lib/theme";
 import { ThemeContext, type ThemeContextValue } from "./ThemeContext";
+import type { Theme } from "@/lib/theme";
 
 interface ThemeProviderProps {
   children: ReactNode;

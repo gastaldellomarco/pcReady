@@ -1,24 +1,6 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useVirtualList } from "@/hooks/useVirtualList";
 import { useQueryClient } from "@tanstack/react-query";
-import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
-import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { useTickets } from "@/hooks/use-tickets";
-import { openDeviceDetail } from "@/lib/detail-navigation";
-import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
-import {
-  DEVICE_CATEGORIES,
-  DEVICE_CATEGORY_LABELS,
-  getDeviceCategoryLabel,
-  getDeviceTypes,
-  type DeviceCategory,
-} from "@/lib/device-taxonomy";
-import { getPublicAppSettings } from "@/lib/app-settings";
-import { useAuth } from "@/lib/auth-context";
+import { createLazyFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Plus,
   FileDown,
@@ -34,24 +16,43 @@ import {
   CalendarDays,
   Wrench,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
-import type { DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
-import { downloadPdf, InventoryPdf } from "@/components/pcready/pdf/dynamic";
-import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
-import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { ImportCsvDialog } from "@/components/inventory/ImportCsvDialog";
+import { QrCodeDialog, type QrDevice } from "@/components/inventory/QrCodeDialog";
+import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
 import { Modal } from "@/components/pcready/Modal";
-import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
-import { supabase } from "@/integrations/supabase/client";
-import { buildDownloadFileName } from "@/lib/downloads";
-import { pcReadyColors } from "@/lib/design-system";
+import { downloadPdf, InventoryPdf } from "@/components/pcready/pdf/dynamic";
 import {
-  daysUntil,
-  getWarrantyStatus,
-  WARRANTY_STATUS_META,
-  type WarrantyFilter,
-} from "@/lib/warranty";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useTickets } from "@/hooks/use-tickets";
+import { useVirtualList } from "@/hooks/useVirtualList";
+import { supabase } from "@/integrations/supabase/client";
+import { getPublicAppSettings } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
+import { pcReadyColors } from "@/lib/design-system";
+import { openDeviceDetail } from "@/lib/detail-navigation";
+import {
+  DEVICE_CATEGORIES,
+  DEVICE_CATEGORY_LABELS,
+  getDeviceCategoryLabel,
+  getDeviceTypes,
+  type DeviceCategory,
+} from "@/lib/device-taxonomy";
+import { buildDownloadFileName } from "@/lib/downloads";
+import { errorMessage } from "@/lib/errors";
+import { buildLabelItems, printLabelBatch } from "@/lib/inventory-labels";
 import {
   MAINTENANCE_RECURRENCE_LABEL,
   fetchMaintenanceCalendar,
@@ -63,18 +64,17 @@ import {
   type MaintenanceStatus,
   type TechnicianOption,
 } from "@/lib/maintenance";
-import { errorMessage } from "@/lib/errors";
-
+import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
+import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  daysUntil,
+  getWarrantyStatus,
+  WARRANTY_STATUS_META,
+  type WarrantyFilter,
+} from "@/lib/warranty";
+
+import type { DevicePdfRow } from "@/components/pcready/pdf/InventoryPdf";
 
 export const Route = createLazyFileRoute("/_app/inventory")({
   component: InventoryPage,
@@ -136,6 +136,27 @@ const DEVICE_STATUS_META: Record<DeviceStatus, { label: string; color: string }>
 
 const PAGE_SIZE = LIST_PAGE_SIZE;
 
+function toPdfRow(r: Row): DevicePdfRow {
+  return {
+    id: r.id,
+    asset_tag: r.asset_tag,
+    serial: r.serial,
+    model: r.model,
+    category: r.category,
+    device_type: r.device_type,
+    os: r.os,
+    status: r.status,
+    client: r.client?.name || "-",
+    assigned_to: r.assigned_to,
+    updated_at: r.updated_at,
+    purchase_date: r.purchase_date,
+    warranty_expiry_date: r.warranty_expiry_date,
+    warranty_type: r.warranty_type,
+    warranty_provider: r.warranty_provider,
+    warranty_notes: r.warranty_notes,
+  };
+}
+
 function InventoryPage() {
   const { t } = useTranslation("inventory");
   const { openAddDevice, openCreate } = useTickets();
@@ -143,7 +164,7 @@ function InventoryPage() {
   const { session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
   const [rows, setRows] = useState<Row[]>([]);
-  const [total, setTotal] = useState(0);
+  const total = useMemo(() => listQuery.data?.pages?.[0]?.count ?? 0, [listQuery.data]);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [fs, setFs] = useState("");
   const [fos, setFos] = useState("");
@@ -229,7 +250,6 @@ function InventoryPage() {
   useEffect(() => {
     if (listQuery.data) {
       setRows(listQuery.data.pages.flatMap((p) => p.data) as Row[]);
-      setTotal(listQuery.data.pages[0]?.count ?? 0);
     }
   }, [listQuery.data]);
 
@@ -511,27 +531,6 @@ function InventoryPage() {
     }
   }
 
-  function toPdfRow(r: Row): DevicePdfRow {
-    return {
-      id: r.id,
-      asset_tag: r.asset_tag,
-      serial: r.serial,
-      model: r.model,
-      category: r.category,
-      device_type: r.device_type,
-      os: r.os,
-      status: r.status,
-      client: r.client?.name || "-",
-      assigned_to: r.assigned_to,
-      updated_at: r.updated_at,
-      purchase_date: r.purchase_date,
-      warranty_expiry_date: r.warranty_expiry_date,
-      warranty_type: r.warranty_type,
-      warranty_provider: r.warranty_provider,
-      warranty_notes: r.warranty_notes,
-    };
-  }
-
   async function exportWarrantyPdf() {
     if (!data.length) return toast.error(t("toast.noDevicesToExport"));
     setPdfBusy("download");
@@ -642,7 +641,7 @@ function InventoryPage() {
           onClick={() => setMaintenanceDueFilter((value) => !value)}
           title={t("filters.maintenanceDueTooltip")}
         >
-          <Wrench className="w-3 h-3" /> {t("filters.maintenanceDue30d")}
+          <Wrench className="size-3" /> {t("filters.maintenanceDue30d")}
         </button>
         <div
           className="grid grid-cols-2 rounded-lg border sm:col-span-2 lg:flex"
@@ -660,7 +659,7 @@ function InventoryPage() {
             className={`pc-btn pc-btn-sm ${view === "calendar" ? "pc-btn-primary" : "pc-btn-ghost"}`}
             onClick={() => setView("calendar")}
           >
-            <CalendarDays className="w-3 h-3" /> {t("viewToggle.calendar")}
+            <CalendarDays className="size-3" /> {t("viewToggle.calendar")}
           </button>
         </div>
         <span className="self-center text-xs text-text3 font-mono lg:ml-auto">
@@ -673,7 +672,7 @@ function InventoryPage() {
           disabled={!data.length}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <FileDown className="w-3 h-3" />
+          <FileDown className="size-3" />
           {t("actions.exportPdf")}
         </button>
         <button
@@ -681,26 +680,26 @@ function InventoryPage() {
           disabled={!!pdfBusy}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <FileDown className="w-3 h-3" /> {t("actions.warrantyReport")}
+          <FileDown className="size-3" /> {t("actions.warrantyReport")}
         </button>
         <button
           onClick={printSelectedLabels}
           disabled={labelsBusy || !selectedRows.length}
           className="pc-btn pc-btn-ghost pc-btn-sm"
         >
-          <Printer className="w-3 h-3" />
+          <Printer className="size-3" />
           {labelsBusy
             ? t("actions.preparing")
             : `${t("actions.printLabels")}${selectedRows.length ? ` (${selectedRows.length})` : ""}`}
         </button>
         <button onClick={() => setScannerOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <ScanLine className="w-3 h-3" /> {t("actions.scan")}
+          <ScanLine className="size-3" /> {t("actions.scan")}
         </button>
         <button onClick={() => setImportOpen(true)} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <Upload className="w-3 h-3" /> {t("actions.importCsv")}
+          <Upload className="size-3" /> {t("actions.importCsv")}
         </button>
         <button onClick={() => openAddDevice()} className="pc-btn pc-btn-primary pc-btn-sm">
-          <Plus className="w-3 h-3" /> {t("actions.addDevice")}
+          <Plus className="size-3" /> {t("actions.addDevice")}
         </button>
       </div>
       {selectedIds.size > 0 && (
@@ -725,7 +724,7 @@ function InventoryPage() {
             disabled={bulkBusy}
             onClick={() => setBulkStatusOpen(true)}
           >
-            <CheckCircle2 className="h-3 w-3" />
+            <CheckCircle2 className="size-3" />
             {t("actions.changeStatus")}
           </button>
           <button
@@ -733,7 +732,7 @@ function InventoryPage() {
             disabled={!!pdfBusy}
             onClick={exportSelectedPdf}
           >
-            <FileDown className="h-3 w-3" />
+            <FileDown className="size-3" />
             {t("actions.exportSelected")}
           </button>
           <button
@@ -741,7 +740,7 @@ function InventoryPage() {
             disabled={compareBusy || selectedIds.size < 2 || selectedIds.size > 3}
             onClick={openCompareDevices}
           >
-            <Columns3 className="h-3 w-3" />
+            <Columns3 className="size-3" />
             {t("actions.compare")}
           </button>
           <button
@@ -749,14 +748,14 @@ function InventoryPage() {
             disabled={bulkBusy}
             onClick={() => setBulkClientOpen(true)}
           >
-            <ClipboardList className="h-3 w-3" />
+            <ClipboardList className="size-3" />
             {t("actions.assignUser")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm text-destructive"
             onClick={() => setSelectedIds(new Set())}
           >
-            <X className="h-3 w-3" />
+            <X className="size-3" />
             {t("actions.deselect")}
           </button>
         </div>
@@ -933,7 +932,7 @@ function InventoryPage() {
                             <div>{r.model}</div>
                             {r.has_maintenance_due_soon ? (
                               <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                                <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
+                                <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
                                 {r.next_maintenance_due_date
                                   ? fmtDate(r.next_maintenance_due_date)
                                   : t("maintenance.expiring")}
@@ -986,7 +985,7 @@ function InventoryPage() {
                                   setTimeout(() => openCreate(), 200);
                                 }}
                               >
-                                <TicketPlus className="h-3.5 w-3.5" />
+                                <TicketPlus className="size-3.5" />
                               </button>
                               <button
                                 className="pc-btn-icon touch-target"
@@ -994,7 +993,7 @@ function InventoryPage() {
                                 aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
                                 onClick={() => setQrDevice(toQrDevice(r))}
                               >
-                                <QrCode className="h-3.5 w-3.5" />
+                                <QrCode className="size-3.5" />
                               </button>
                             </div>
                           </td>
@@ -1040,7 +1039,7 @@ function InventoryPage() {
                         <div>{r.model}</div>
                         {r.has_maintenance_due_soon ? (
                           <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                            <Wrench className="h-3 w-3" /> {t("maintenance.dueSoon")}{" "}
+                            <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
                             {r.next_maintenance_due_date
                               ? fmtDate(r.next_maintenance_due_date)
                               : t("maintenance.expiring")}
@@ -1093,7 +1092,7 @@ function InventoryPage() {
                               setTimeout(() => openCreate(), 200);
                             }}
                           >
-                            <TicketPlus className="h-3.5 w-3.5" />
+                            <TicketPlus className="size-3.5" />
                           </button>
                           <button
                             className="pc-btn-icon touch-target"
@@ -1101,7 +1100,7 @@ function InventoryPage() {
                             aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
                             onClick={() => setQrDevice(toQrDevice(r))}
                           >
-                            <QrCode className="h-3.5 w-3.5" />
+                            <QrCode className="size-3.5" />
                           </button>
                         </div>
                       </td>
@@ -1622,7 +1621,7 @@ function DeviceMobileCard({
       </div>
       {row.has_maintenance_due_soon ? (
         <div className="mt-3 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
-          <Wrench className="h-3 w-3" />
+          <Wrench className="size-3" />
           {t("maintenance.dueSoon", "Manutenzione")} {row.next_maintenance_due_date ? fmtDate(row.next_maintenance_due_date) : t("maintenance.expiring", "in scadenza")}
         </div>
       ) : null}
@@ -1635,11 +1634,11 @@ function DeviceMobileCard({
           onStatusChange={onStatusChange}
         />
         <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCreateTicket}>
-          <TicketPlus className="h-3.5 w-3.5" />
+          <TicketPlus className="size-3.5" />
           {t("actions.ticket")}
         </button>
         <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onQr}>
-          <QrCode className="h-3.5 w-3.5" />
+          <QrCode className="size-3.5" />
           {t("actions.qr")}
         </button>
       </div>

@@ -2,6 +2,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { getSupportContact } from "@/lib/app-settings";
 
+/**
+ *
+ */
 export function SupportContact({ prefix = "Problemi? Contatta" }: { prefix?: string }) {
   const loadSupportContact = useServerFn(getSupportContact);
   const [supportEmail, setSupportEmail] = useState("");

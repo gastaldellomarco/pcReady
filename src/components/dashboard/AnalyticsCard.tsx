@@ -1,16 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import TechnicianRadarWidget from "./TechnicianRadarWidget";
-import { formatAvgDays } from "./analytics-format";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   ChevronDown,
   FileDown,
@@ -18,7 +5,20 @@ import {
   BarChart3,
   LineChart as LineChartIcon,
 } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { pcReadyColors } from "@/lib/design-system";
+import { formatAvgDays } from "./analytics-format";
+import TechnicianRadarWidget from "./TechnicianRadarWidget";
+import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 
 interface AnalyticsCardProps {
   analytics: DashboardAnalytics | null;
@@ -30,6 +30,9 @@ interface AnalyticsCardProps {
 
 type ChartStyle = "bar" | "line";
 
+/**
+ *
+ */
 export function AnalyticsCard({
   analytics,
   loading,
@@ -58,7 +61,7 @@ export function AnalyticsCard({
                 title={t("analytics.barChart", "Grafico a barre")}
                 aria-label={t("analytics.barChart", "Grafico a barre")}
               >
-                <BarChart3 className="w-3.5 h-3.5" />
+                <BarChart3 className="size-3.5" />
               </button>
               <button
                 className={`p-1 rounded ${chartType === "line" ? "bg-white dark:bg-surface3 shadow-sm" : "text-text3 hover:text-text2"}`}
@@ -66,7 +69,7 @@ export function AnalyticsCard({
                 title={t("analytics.lineChart", "Grafico a linee")}
                 aria-label={t("analytics.lineChart", "Grafico a linee")}
               >
-                <LineChartIcon className="w-3.5 h-3.5" />
+                <LineChartIcon className="size-3.5" />
               </button>
             </div>
             <DropdownMenu>

@@ -1,8 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import { buildDownloadFileName, downloadCsv, downloadText } from "@/lib/downloads";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -19,15 +15,16 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
 import { ExportPdf } from "@/components/ExportPdf";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { openTicketDetail } from "@/lib/detail-navigation";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { errorMessage } from "@/lib/errors";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import {
   buildAccountingCsvRows,
   buildFatturaPaXml,
@@ -40,6 +37,9 @@ import {
   type MaterialDraft,
   type QuoteDraft,
 } from "@/lib/costs-finance";
+import { openTicketDetail } from "@/lib/detail-navigation";
+import { buildDownloadFileName, downloadCsv, downloadText } from "@/lib/downloads";
+import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
@@ -946,7 +946,7 @@ function CostsPage() {
               {t("subtitle", "Ticket, manodopera, materiali, contratti e report fatturazione")}
             </div>
           </div>
-          <TrendingUp className="h-5 w-5 text-text3" />
+          <TrendingUp className="size-5 text-text3" />
         </div>
         <div className="pc-card-body">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
@@ -986,10 +986,10 @@ function CostsPage() {
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => setExportModalOpen(true)}
             >
-              <FileDown className="h-3 w-3" /> {t("downloadPdf", "Esporta PDF")}
+              <FileDown className="size-3" /> {t("downloadPdf", "Esporta PDF")}
             </button>
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={exportCsv}>
-              <Download className="h-3 w-3" /> {t("exportCsvBtn", "CSV")}
+              <Download className="size-3" /> {t("exportCsvBtn", "CSV")}
             </button>
           </div>
         </div>
@@ -1018,7 +1018,7 @@ function CostsPage() {
                 {t("finance.profitabilitySubtitle", "Ricavo contratto mensilizzato vs costo effettivo nel periodo")}
               </div>
             </div>
-            <TrendingUp className="h-5 w-5 text-text3" />
+            <TrendingUp className="size-5 text-text3" />
           </div>
           <div className="pc-card-body">
             <div className="h-[280px]">
@@ -1050,7 +1050,7 @@ function CostsPage() {
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">{t("finance.budgetTitle", "Budget clienti")}</div>
-            <AlertTriangle className="h-5 w-5 text-text3" />
+            <AlertTriangle className="size-5 text-text3" />
           </div>
           <div className="pc-card-body space-y-3">
             <div className="grid grid-cols-2 gap-2">
@@ -1106,7 +1106,7 @@ function CostsPage() {
 
               <div>
                 <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !budgetDraft.clientId} onClick={saveBudget}>
-                  <Save className="h-3 w-3" /> {t("finance.saveBudget", "Salva budget")}
+                  <Save className="size-3" /> {t("finance.saveBudget", "Salva budget")}
                 </button>
               </div>
             </div>
@@ -1156,7 +1156,7 @@ function CostsPage() {
                   onClick={cancelEdit}
                   disabled={busy}
                 >
-                  <X className="h-3 w-3" /> {t("contractForm.cancelEdit", "Annulla")}
+                  <X className="size-3" /> {t("contractForm.cancelEdit", "Annulla")}
                 </button>
               )}
               <button
@@ -1164,7 +1164,7 @@ function CostsPage() {
                 onClick={saveContract}
                 disabled={busy || !canEdit || !draft.client_id}
               >
-                <Save className="h-3 w-3" />{" "}
+                <Save className="size-3" />{" "}
                 {editingId
                   ? t("contractForm.update", "Aggiorna contratto")
                   : t("contractForm.save", "Salva contratto")}
@@ -1413,7 +1413,7 @@ function CostsPage() {
                             disabled={busy}
                             title={t("contractTable.edit", "Modifica")}
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="size-3" />
                           </button>
                           <button
                             type="button"
@@ -1422,7 +1422,7 @@ function CostsPage() {
                             disabled={busy}
                             title={t("contractTable.delete", "Elimina")}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="size-3" />
                           </button>
                         </div>
                       </td>
@@ -1450,7 +1450,7 @@ function CostsPage() {
                     : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
                 </div>
               </div>
-              <ReceiptText className="h-5 w-5 text-text3" />
+              <ReceiptText className="size-5 text-text3" />
             </div>
             <div className="pc-card-body space-y-2">
               <label className="space-y-1 text-sm font-medium text-text2">
@@ -1502,7 +1502,7 @@ function CostsPage() {
               </label>
 
               <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={createInvoice} disabled={busy || !selectedClient || !selectedClientTickets.length}>
-                <FileText className="h-3 w-3" /> {t("finance.createInvoice", "Crea fattura PDF")}
+                <FileText className="size-3" /> {t("finance.createInvoice", "Crea fattura PDF")}
               </button>
             </div>
           </div>
@@ -1510,7 +1510,7 @@ function CostsPage() {
           <div className="pc-card">
             <div className="pc-card-hd">
               <div className="pc-card-title">{t("finance.quoteTitle", "Preventivo / quote")}</div>
-              <Send className="h-5 w-5 text-text3" />
+              <Send className="size-5 text-text3" />
             </div>
             <div className="pc-card-body space-y-2">
               <label className="space-y-1 text-sm font-medium text-text2">
@@ -1558,7 +1558,7 @@ function CostsPage() {
               </div>
 
               <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={createQuote} disabled={busy || !quoteDraft.clientId}>
-                <Save className="h-3 w-3" /> {t("finance.createQuote", "Crea preventivo")}
+                <Save className="size-3" /> {t("finance.createQuote", "Crea preventivo")}
               </button>
             </div>
           </div>
@@ -1566,7 +1566,7 @@ function CostsPage() {
           <div className="pc-card">
             <div className="pc-card-hd">
               <div className="pc-card-title">{t("finance.materialTitle", "Materiali / ricambi")}</div>
-              <Wrench className="h-5 w-5 text-text3" />
+              <Wrench className="size-5 text-text3" />
             </div>
             <div className="pc-card-body space-y-2">
               <label className="space-y-1 text-sm font-medium text-text2">
@@ -1615,7 +1615,7 @@ function CostsPage() {
               </div>
 
               <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={addMaterialItem} disabled={busy || !materialDraft.ticketId}>
-                <Save className="h-3 w-3" /> {t("finance.addMaterial", "Aggiungi materiale")}
+                <Save className="size-3" /> {t("finance.addMaterial", "Aggiungi materiale")}
               </button>
             </div>
           </div>
@@ -1628,7 +1628,7 @@ function CostsPage() {
           empty={t("finance.noInvoices", "Nessuna fattura generata.")}
           actions={
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportAccountingCsv} disabled={!invoices.length}>
-              <Download className="h-3 w-3" /> {t("finance.exportAccountingCsv", "CSV contabile")}
+              <Download className="size-3" /> {t("finance.exportAccountingCsv", "CSV contabile")}
             </button>
           }
         >
@@ -1643,13 +1643,13 @@ function CostsPage() {
               <td className="px-3 py-2 text-right">
                 <div className="flex justify-end gap-1">
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => openInvoicePdf(invoice)} title="PDF">
-                    <FileDown className="h-3 w-3" />
+                    <FileDown className="size-3" />
                   </button>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => exportInvoiceXml(invoice)} title="XML">
                     XML
                   </button>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => updateInvoiceStatus(invoice, "paid")} title={t("finance.markPaid", "Pagata")}>
-                    <CheckCircle2 className="h-3 w-3" />
+                    <CheckCircle2 className="size-3" />
                   </button>
                 </div>
               </td>
@@ -1662,7 +1662,7 @@ function CostsPage() {
           empty={t("finance.noQuotes", "Nessun preventivo.")}
           actions={
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={scheduleMonthlyReports} disabled={busy}>
-              <Send className="h-3 w-3" /> {t("finance.scheduleReports", "Report mensili")}
+              <Send className="size-3" /> {t("finance.scheduleReports", "Report mensili")}
             </button>
           }
         >
@@ -1993,7 +1993,7 @@ function CostsPage() {
                 onClick={detailExportCsv}
                 disabled={detailTickets.length === 0}
               >
-                <Download className="h-3 w-3" /> {t("detailDialog.exportCsvBtn", "CSV")}
+                <Download className="size-3" /> {t("detailDialog.exportCsvBtn", "CSV")}
               </button>
             </div>
             <DialogDescription>

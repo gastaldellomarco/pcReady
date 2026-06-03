@@ -1,9 +1,9 @@
-import type { ConditionDef } from "@/types/automation";
 import type {
   AutomationCondition,
   ConditionsGroup,
   ConditionOperator,
 } from "@/domain/automation";
+import type { ConditionDef } from "@/types/automation";
 
 /**
  * Maps legacy ConditionDef type to operator string

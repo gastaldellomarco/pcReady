@@ -1,10 +1,19 @@
 import { useMemo, useState } from "react";
-import type { AutomationRule } from "@/types/automation";
-import type { AutomationRunStats } from "@/lib/automation-runs";
 import { getRuleTriggerType } from "@/lib/automation-constants";
+import type { AutomationRunStats } from "@/lib/automation-runs";
+import type { AutomationRule } from "@/types/automation";
 
+/**
+ *
+ */
 export type SortField = "name" | "last_run" | "executions" | "created";
+/**
+ *
+ */
 export type SortOrder = "asc" | "desc";
+/**
+ *
+ */
 export type ErrorFilterValue = "all" | "active" | "inactive" | "errors";
 
 function ruleLifecycleStatus(rule: AutomationRule): string {

@@ -1,10 +1,10 @@
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { AutomationCondition } from "@/domain/automation";
 import { getFieldDef, isMultiValueOperator } from "@/domain/automation";
 import { FieldSelector } from "./FieldSelector";
 import { OperatorSelector } from "./OperatorSelector";
 import { ValueInput } from "./ValueInput";
+import type { AutomationCondition } from "@/domain/automation";
 
 interface ConditionRowProps {
   condition: AutomationCondition;
@@ -14,6 +14,9 @@ interface ConditionRowProps {
   connectorType?: "AND" | "OR";
 }
 
+/**
+ *
+ */
 export function ConditionRow({
   condition,
   onChange,
@@ -132,7 +135,7 @@ export function ConditionRow({
               className="rounded p-2 text-red-600 hover:bg-red-50"
               title={t("conditionsBuilder.actions.removeCondition", "Rimuovi")}
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>

@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 import type { AdminUserRow } from "@/lib/admin-users";
 
+/**
+ *
+ */
 export function AdminUserStatusBadge({
   status,
   invitedAt,

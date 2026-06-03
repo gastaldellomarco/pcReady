@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ *
+ */
 export interface TicketTimeEntry {
   id: string;
   ticket_id: string;
@@ -13,6 +16,9 @@ export interface TicketTimeEntry {
   user?: { full_name: string; initials: string } | null;
 }
 
+/**
+ *
+ */
 export interface TicketTimeSummary {
   entries: TicketTimeEntry[];
   totalMinutes: number;
@@ -28,6 +34,9 @@ function minutesBetween(start: string, end?: string | null) {
   return Math.max(1, Math.round((to - from) / 60000));
 }
 
+/**
+ *
+ */
 export function formatDuration(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -36,6 +45,9 @@ export function formatDuration(totalMinutes: number) {
   return `${hours}h ${minutes}m`;
 }
 
+/**
+ *
+ */
 export async function fetchTicketTimeSummary(ticketId: string, currentUserId?: string | null) {
   if (!ticketId) return { entries: [], totalMinutes: 0, activeEntry: null } satisfies TicketTimeSummary;
   const { data, error } = await (supabase as any)
@@ -57,6 +69,9 @@ export async function fetchTicketTimeSummary(ticketId: string, currentUserId?: s
   return { entries, totalMinutes, activeEntry } satisfies TicketTimeSummary;
 }
 
+/**
+ *
+ */
 export async function startTicketTimer(ticketId: string, userId: string) {
   const { data: existing, error: existingError } = await (supabase as any)
     .from("ticket_time_entries")
@@ -77,6 +92,9 @@ export async function startTicketTimer(ticketId: string, userId: string) {
   return data;
 }
 
+/**
+ *
+ */
 export async function stopTicketTimer(entry: TicketTimeEntry, description?: string | null) {
   const endedAt = new Date().toISOString();
   const duration = minutesBetween(entry.started_at, endedAt);
@@ -90,6 +108,9 @@ export async function stopTicketTimer(entry: TicketTimeEntry, description?: stri
   return data;
 }
 
+/**
+ *
+ */
 export async function createManualTimeEntry({
   ticketId,
   userId,
@@ -120,12 +141,18 @@ export async function createManualTimeEntry({
   return data;
 }
 
+/**
+ *
+ */
 export async function deleteTimeEntry(id: string) {
   const { error } = await (supabase as any).from("ticket_time_entries").delete().eq("id", id);
   if (error) throw error;
   return true;
 }
 
+/**
+ *
+ */
 export function useTicketTimeSummary(ticketId: string | null, currentUserId?: string | null) {
   return useQuery({
     queryKey: key(ticketId),
@@ -135,6 +162,9 @@ export function useTicketTimeSummary(ticketId: string | null, currentUserId?: st
   });
 }
 
+/**
+ *
+ */
 export function useStartTicketTimer(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -145,6 +175,9 @@ export function useStartTicketTimer(ticketId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useStopTicketTimer(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -156,6 +189,9 @@ export function useStopTicketTimer(ticketId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useCreateManualTimeEntry(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -167,6 +203,9 @@ export function useCreateManualTimeEntry(ticketId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteTimeEntry(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({

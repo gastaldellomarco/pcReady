@@ -10,6 +10,9 @@ import {
   startOfDayIso,
 } from "@/lib/dashboard-helpers";
 
+/**
+ *
+ */
 export function useDashboardDateRange() {
   const defaultRange = useMemo(() => defaultDateRange(), []);
   const [dateFrom, setDateFrom] = useState(defaultRange.from);

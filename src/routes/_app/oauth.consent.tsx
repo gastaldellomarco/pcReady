@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { z } from "zod";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 
 const searchSchema = z.object({
   client_id: z.string(),

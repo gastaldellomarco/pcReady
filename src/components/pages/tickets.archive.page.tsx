@@ -1,18 +1,18 @@
+import { Eye, RotateCw } from "lucide-react";
 import { useEffect, useRef, useMemo } from "react";
-import { useVirtualList } from "@/hooks/useVirtualList";
-import { useArchivedTicketsInfiniteList, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
-import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { openTicketDetail } from "@/lib/detail-navigation";
-import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   StatusBadge,
   PriorityLabel,
   AssigneeChip,
   TicketTypeBadge,
 } from "@/components/pcready/StatusBadge";
-import { toast } from "sonner";
-import { Eye, RotateCw } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useVirtualList } from "@/hooks/useVirtualList";
+import { openTicketDetail } from "@/lib/detail-navigation";
+import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
+import { useArchivedTicketsInfiniteList, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
 
 interface Row {
   id: string;
@@ -32,6 +32,9 @@ interface Row {
 
 const PAGE_SIZE = LIST_PAGE_SIZE;
 
+/**
+ *
+ */
 export default function TicketsArchivePage() {
   const { t } = useTranslation("tickets");
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -258,13 +261,13 @@ export default function TicketsArchivePage() {
                               className="pc-btn pc-btn-ghost pc-btn-sm"
                               onClick={() => openTicketDetail(ticket.id)}
                             >
-                              <Eye className="w-3 h-3" /> {t("details", "Dettagli")}
+                              <Eye className="size-3" /> {t("details", "Dettagli")}
                             </button>
                             <button
                               className="pc-btn pc-btn-ghost pc-btn-sm"
                               onClick={() => reopen(ticket.id)}
                             >
-                              <RotateCw className="w-3 h-3" /> {t("reopen", "Riapri")}
+                              <RotateCw className="size-3" /> {t("reopen", "Riapri")}
                             </button>
                           </div>
                         </td>
@@ -324,13 +327,13 @@ export default function TicketsArchivePage() {
                           className="pc-btn pc-btn-ghost pc-btn-sm"
                           onClick={() => openTicketDetail(ticket.id)}
                         >
-                          <Eye className="w-3 h-3" /> {t("details", "Dettagli")}
+                          <Eye className="size-3" /> {t("details", "Dettagli")}
                         </button>
                         <button
                           className="pc-btn pc-btn-ghost pc-btn-sm"
                           onClick={() => reopen(ticket.id)}
                         >
-                          <RotateCw className="w-3 h-3" /> {t("reopen", "Riapri")}
+                          <RotateCw className="size-3" /> {t("reopen", "Riapri")}
                         </button>
                       </div>
                     </td>
@@ -416,14 +419,14 @@ function TicketArchiveMobileCard({
           className="pc-btn pc-btn-ghost pc-btn-sm"
           onClick={onOpen}
         >
-          <Eye className="w-3 h-3" /> {t("details", "Dettagli")}
+          <Eye className="size-3" /> {t("details", "Dettagli")}
         </button>
         <button
           type="button"
           className="pc-btn pc-btn-ghost pc-btn-sm"
           onClick={onReopen}
         >
-          <RotateCw className="w-3 h-3" /> {t("reopen", "Riapri")}
+          <RotateCw className="size-3" /> {t("reopen", "Riapri")}
         </button>
       </div>
     </article>

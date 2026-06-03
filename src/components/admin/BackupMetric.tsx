@@ -1,6 +1,9 @@
-import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
+/**
+ *
+ */
 export function BackupMetric({
   label,
   value,
@@ -25,7 +28,7 @@ export function BackupMetric({
     >
       {readOnly ? (
         <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-muted/10 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-          <Shield className="h-3 w-3 text-muted-foreground" />
+          <Shield className="size-3 text-muted-foreground" />
           {t("settings.backup.readOnlyBadge", "Gestito dal provider")}
         </span>
       ) : null}

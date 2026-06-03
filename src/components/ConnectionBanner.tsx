@@ -1,6 +1,9 @@
 import { WifiOff } from "lucide-react";
 import { useRealtimeConnectionStatus } from "@/hooks/useRealtimeConnectionStatus";
 
+/**
+ *
+ */
 export function ConnectionBanner() {
   const status = useRealtimeConnectionStatus();
 
@@ -12,7 +15,7 @@ export function ConnectionBanner() {
       role="status"
       aria-live="polite"
     >
-      <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <WifiOff className="size-4 shrink-0" aria-hidden="true" />
       <span>Connessione persa. Riconnessione in corso...</span>
     </div>
   );

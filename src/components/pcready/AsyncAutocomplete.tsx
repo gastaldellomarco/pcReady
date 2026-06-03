@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+/**
+ *
+ */
 export interface AsyncAutocompleteOption {
   value: string;
   label: string;
@@ -18,6 +21,9 @@ interface AsyncAutocompleteProps<T extends AsyncAutocompleteOption> {
   onChange: (value: string, option: T | null) => void;
 }
 
+/**
+ *
+ */
 export function AsyncAutocomplete<T extends AsyncAutocompleteOption>({
   value,
   selectedOption,

@@ -4,10 +4,10 @@ import { sendEmail } from "@/lib/email-templates.server";
 const BUNDLE_SELECT = "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_by, created_at";
 const BUNDLE_ASSIGNMENT_SELECT = "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
 const BUNDLE_USAGE_SUMMARY_SELECT = "client_bundle_assignment_id, client_id, bundle_id, used_hours, onsite_visits, extra_hours, extra_amount, remaining_hours, remaining_onsite_visits, usage_percent";
-import { getPortalSession } from "@/lib/portal-auth.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
-import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import { getPortalSession } from "@/lib/portal-auth.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 
 function urgencyToPriority(urgency: "low" | "normal" | "high" | "urgent") {
   if (urgency === "high" || urgency === "urgent") return "high";
@@ -23,6 +23,9 @@ function statusLabel(status: string) {
   return status;
 }
 
+/**
+ *
+ */
 export async function getPortalDashboardServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const monthStart = new Date();
@@ -161,6 +164,9 @@ function computeMonthlyTicketVolume(tickets: any[]) {
   return months;
 }
 
+/**
+ *
+ */
 export async function listPortalTicketsServer(input: {
   token: string;
   status?: "all" | "open" | "in-progress" | "completed";
@@ -199,6 +205,9 @@ export async function listPortalTicketsServer(input: {
   };
 }
 
+/**
+ *
+ */
 export async function getPortalTicketDetailServer(input: { token: string; ticketId: string }) {
   const session = await getPortalSession(input.token);
   const { data: ticket, error } = await supabaseAdmin
@@ -305,6 +314,9 @@ async function uploadPortalAttachments(
   return uploaded;
 }
 
+/**
+ *
+ */
 export async function createPortalTicketServer(input: {
   token: string;
   title: string;
@@ -391,6 +403,9 @@ export async function createPortalTicketServer(input: {
   return { success: true, ticketId: (ticket as any).id, ticketCode: (ticket as any).ticket_code };
 }
 
+/**
+ *
+ */
 export async function listPortalDevicesServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data: devices, error } = await supabaseAdmin
@@ -428,6 +443,9 @@ export async function listPortalDevicesServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function submitPortalTicketFeedbackServer(input: {
   token: string;
   ticketId: string;
@@ -486,6 +504,9 @@ function normalizeDocumentTicket(ticket: any) {
   return Array.isArray(ticket) ? ticket[0] : ticket;
 }
 
+/**
+ *
+ */
 export async function getPortalProfileOverviewServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const closedStatuses = ["ready", "completed", "archived"];
@@ -590,6 +611,9 @@ export async function getPortalProfileOverviewServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function listPortalDocumentsServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
 
@@ -747,6 +771,9 @@ export async function listPortalDocumentsServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function getPortalTicketCategoriesServer(input: { token: string }) {
   await getPortalSession(input.token);
   const { data: rows, error } = await supabaseAdmin
@@ -758,6 +785,9 @@ export async function getPortalTicketCategoriesServer(input: { token: string }) 
   return { categories: Array.isArray((rows as any)?.value) ? (rows as any).value : [] };
 }
 
+/**
+ *
+ */
 export async function signPortalDocumentServer(input: {
   token: string;
   documentId: string;

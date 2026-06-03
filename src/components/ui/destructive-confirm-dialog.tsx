@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -9,7 +10,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
 
 type DestructiveConfirmDialogProps = {
   open: boolean;
@@ -21,6 +21,9 @@ type DestructiveConfirmDialogProps = {
   onConfirm: () => Promise<void> | void;
 };
 
+/**
+ *
+ */
 export function DestructiveConfirmDialog({
   open,
   title,

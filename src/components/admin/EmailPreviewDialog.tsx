@@ -18,6 +18,9 @@ interface EmailPreviewDialogProps {
   sampleValues: Record<string, string>;
 }
 
+/**
+ *
+ */
 export function EmailPreviewDialog({
   open,
   onOpenChange,
@@ -47,7 +50,7 @@ export function EmailPreviewDialog({
             variant={viewport === "desktop" ? "default" : "outline"}
             onClick={() => setViewport("desktop")}
           >
-            <Monitor className="mr-2 h-4 w-4" />
+            <Monitor className="mr-2 size-4" />
             {t("emailPreview.desktop", "Desktop")}
           </Button>
           <Button
@@ -56,7 +59,7 @@ export function EmailPreviewDialog({
             variant={viewport === "mobile" ? "default" : "outline"}
             onClick={() => setViewport("mobile")}
           >
-            <Smartphone className="mr-2 h-4 w-4" />
+            <Smartphone className="mr-2 size-4" />
             {t("emailPreview.mobile", "Mobile")}
           </Button>
         </div>

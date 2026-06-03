@@ -1,6 +1,6 @@
+import { renderHook, act } from "@testing-library/react";
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { renderHook, act } from "@testing-library/react";
 import { useAutomationDialogs } from "@/hooks/useAutomationDialogs";
 import type { AutomationRule } from "@/types/automation";
 

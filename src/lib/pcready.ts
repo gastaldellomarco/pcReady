@@ -1,5 +1,8 @@
 import { pcReadyColors } from "@/lib/design-system";
 
+/**
+ *
+ */
 export type TicketStatus =
   | "pending"
   | "in-progress"
@@ -7,13 +10,28 @@ export type TicketStatus =
   | "ready"
   | "completed"
   | "archived";
+/**
+ *
+ */
 export type TicketPriority = "high" | "med" | "low";
+/**
+ *
+ */
 export type TicketType = "device" | "support" | "maintenance" | "other";
 
 // SLA limits in hours per priority. `SlaLimits` is kept for backwards compatibility
 // and represents the resolution target. New code should use `SlaConfig`.
+/**
+ *
+ */
 export type SlaLimits = Record<TicketPriority, number>;
+/**
+ *
+ */
 export type SlaPriorityConfig = { responseHours: number; resolutionHours: number };
+/**
+ *
+ */
 export type SlaConfig = Record<TicketPriority, SlaPriorityConfig>;
 
 export const DEFAULT_SLA_CONFIG: SlaConfig = {
@@ -28,6 +46,9 @@ export const DEFAULT_SLA_LIMITS: SlaLimits = {
   low: DEFAULT_SLA_CONFIG.low.resolutionHours,
 };
 
+/**
+ *
+ */
 export function slaConfigToLimits(config?: SlaConfig | null): SlaLimits {
   return {
     high: config?.high?.resolutionHours ?? DEFAULT_SLA_LIMITS.high,
@@ -119,6 +140,9 @@ export const DEVICE_STATUS_LABEL: Record<DeviceInventoryStatus, string> = {
   retired: "Dismesso",
 };
 
+/**
+ *
+ */
 export function formatDeviceStatus(status: string): string {
   return DEVICE_STATUS_LABEL[status as DeviceInventoryStatus] ?? status;
 }
@@ -159,6 +183,9 @@ export const CHECKLIST_TEMPLATE = {
   ],
 } as const;
 
+/**
+ *
+ */
 export type ChecklistKey = keyof typeof CHECKLIST_TEMPLATE;
 export const CHECKLIST_TABS: { key: ChecklistKey; label: string }[] = [
   { key: "os", label: "Setup OS" },
@@ -168,25 +195,40 @@ export const CHECKLIST_TABS: { key: ChecklistKey; label: string }[] = [
 ];
 
 // --- Checklist personalizzate (dinamiche) ----------------------------------
+/**
+ *
+ */
 export interface ChecklistItemDef {
   id: string;
   text: string;
   type?: "checkbox" | "text" | "number";
   required?: boolean;
 }
+/**
+ *
+ */
 export interface ChecklistSection {
   label: string;
   items: ChecklistItemDef[];
   assigned_to?: string | null;
 }
+/**
+ *
+ */
 export interface ChecklistGroup {
   label: string;
   collapsed?: boolean;
   sections: Record<string, ChecklistSection>;
 }
+/**
+ *
+ */
 export type ChecklistStructure = Record<string, ChecklistGroup>;
 
 // Keep ChecklistTabDef as alias for backward compat with older references
+/**
+ *
+ */
 export type ChecklistTabDef = ChecklistSection;
 
 export const DEFAULT_STRUCTURE: ChecklistStructure = {
@@ -201,6 +243,9 @@ export const DEFAULT_STRUCTURE: ChecklistStructure = {
   },
 };
 
+/**
+ *
+ */
 export function structureProgress(state: ChecklistState, struct: ChecklistStructure, groupKey: string) {
   const group = struct[groupKey];
   if (!group?.sections) return { done: 0, total: 1, pct: 0 };
@@ -214,6 +259,9 @@ export function structureProgress(state: ChecklistState, struct: ChecklistStruct
   return { done, total: total || 1, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
+/**
+ *
+ */
 export function structureOverallProgress(state: ChecklistState, struct: ChecklistStructure) {
   let done = 0,
     total = 0;
@@ -229,6 +277,9 @@ export function structureOverallProgress(state: ChecklistState, struct: Checklis
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
+/**
+ *
+ */
 export function avatarColors(initials: string): { bg: string; fg: string } {
   // deterministic palette
   const palette = [
@@ -244,11 +295,17 @@ export function avatarColors(initials: string): { bg: string; fg: string } {
   return palette[h % palette.length];
 }
 
+/**
+ *
+ */
 export function fmtDate(s: string | Date): string {
   const d = typeof s === "string" ? new Date(s) : s;
   return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
 }
 
+/**
+ *
+ */
 export function fmtDateTime(s?: string | Date | null): string {
   if (!s) return "-";
   const d = typeof s === "string" ? new Date(s) : s;
@@ -271,10 +328,16 @@ export function fmtDateTime(s?: string | Date | null): string {
   return `${dateStr} ${time}`;
 }
 
+/**
+ *
+ */
 export interface ChecklistState {
   [tab: string]: { [itemId: string]: boolean };
 }
 
+/**
+ *
+ */
 export function checklistProgress(
   state: ChecklistState,
   key: ChecklistKey,
@@ -284,6 +347,9 @@ export function checklistProgress(
   return { done, total: items.length, pct: Math.round((done / items.length) * 100) };
 }
 
+/**
+ *
+ */
 export function generatePrepScript(t: {
   model: string;
   serial?: string | null;
@@ -325,8 +391,14 @@ Write-Host "✔ Preparazione completata. Riavvio consigliato."
 `;
 }
 
+/**
+ *
+ */
 export type SlaStatus = "ok" | "warning" | "overdue";
 
+/**
+ *
+ */
 export function computeSlaStatus(
   createdAt: string | Date,
   priority: TicketPriority,
@@ -355,6 +427,9 @@ export function computeSlaStatus(
   return { status: "ok", limitHours, deadline: due, remainingMs };
 }
 
+/**
+ *
+ */
 export function formatSlaCountdown(deadline?: string | Date | null): string {
   if (!deadline) return "SLA non impostato";
   const due = typeof deadline === "string" ? new Date(deadline) : deadline;
@@ -370,6 +445,9 @@ export function formatSlaCountdown(deadline?: string | Date | null): string {
   return diffMs >= 0 ? `Scade tra ${parts}` : `Scaduto da ${parts}`;
 }
 
+/**
+ *
+ */
 export function formatOpenDuration(s?: string | Date | null): string {
   if (!s) return "-";
   const d = typeof s === "string" ? new Date(s) : s;
@@ -386,6 +464,9 @@ export function formatOpenDuration(s?: string | Date | null): string {
   return `${days}g ${remHours}h`;
 }
 
+/**
+ *
+ */
 export function timeAgo(s?: string | Date | null): string {
   if (!s) return "-";
   const d = typeof s === "string" ? new Date(s) : s;

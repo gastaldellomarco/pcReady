@@ -6,6 +6,9 @@ type Props = React.PropsWithChildren<{
   tableClassName?: string;
 }>;
 
+/**
+ *
+ */
 export default function OverflowTable({ children, className, tableClassName }: Props) {
   return (
     <div

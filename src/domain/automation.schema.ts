@@ -309,9 +309,21 @@ export const AutomationFlowInputSchema = z.object({
 });
 
 // Type export for form usage
+/**
+ *
+ */
 export type AutomationFlowInputSchemaType = z.infer<typeof AutomationFlowInputSchema>;
+/**
+ *
+ */
 export type AutomationTriggerSchemaType = z.infer<typeof AutomationTriggerSchema>;
+/**
+ *
+ */
 export type AutomationActionSchemaType = z.infer<typeof AutomationActionSchema>;
+/**
+ *
+ */
 export type AutomationConditionSchemaType = z.infer<typeof AutomationConditionSchema>;
 
 // ═══════════════════════════════════════════════════════════════════════════════

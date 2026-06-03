@@ -1,35 +1,5 @@
-import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { Modal } from "./Modal";
-import type { Json, TablesUpdate } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
-import { openDeviceDetail } from "@/lib/detail-navigation";
-import { useTicketDetail } from "@/hooks/use-detail";
-import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/hooks/use-tickets";
-import queries, { loadDeviceOptions } from "@/lib/queries/tickets";
-import {
-  type ChecklistState,
-  STATUS_META,
-  PRIORITY_LABEL,
-  type TicketPriority,
-  type TicketStatus,
-  type TicketType,
-  fmtDate,
-  fmtDateTime,
-  type ChecklistItemDef,
-  type ChecklistStructure,
-  DEFAULT_STRUCTURE,
-  structureProgress,
-  structureOverallProgress,
-  computeSlaStatus,
-  formatSlaCountdown,
-} from "@/lib/pcready";
-import { AssigneeChip, PriorityLabel, StatusBadge, TicketTypeBadge } from "./StatusBadge";
-import { createNotification } from "@/lib/notifications";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { QUERY_KEYS } from "@/lib/queries/keys";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
@@ -49,21 +19,51 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { TicketNotes } from "@/components/tickets/TicketNotes";
+import { BundleUsageBar } from "@/components/bundles/BundleBadges";
 import { TicketAttachments } from "@/components/tickets/TicketAttachments";
+import { TicketNotes } from "@/components/tickets/TicketNotes";
 import { TicketRelations } from "@/components/tickets/TicketRelations";
 import { TicketTimeTracking } from "@/components/tickets/TicketTimeTracking";
-import { sendChecklistCompletedEmail } from "@/lib/email-events";
-import activityQueries from "@/lib/queries/activity";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { parseChecklistStructure } from "@/types/checklist-structure";
-import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
-import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
-import checklistQueries, { type TicketChecklistInstanceRow } from "@/lib/queries/checklist";
-import { BundleUsageBar } from "@/components/bundles/BundleBadges";
+import { useTicketDetail } from "@/hooks/use-detail";
+import { useTickets } from "@/hooks/use-tickets";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { fetchTicketBundleInfo, formatBundleHours, formatBundleMoney } from "@/lib/bundles";
+import { openDeviceDetail } from "@/lib/detail-navigation";
+import { sendChecklistCompletedEmail } from "@/lib/email-events";
 import { parseCostNumber, formatMoney, formatRelativeTime } from "@/lib/format";
+import { createNotification } from "@/lib/notifications";
+import {
+  type ChecklistState,
+  STATUS_META,
+  PRIORITY_LABEL,
+  type TicketPriority,
+  type TicketStatus,
+  type TicketType,
+  fmtDate,
+  fmtDateTime,
+  type ChecklistItemDef,
+  type ChecklistStructure,
+  DEFAULT_STRUCTURE,
+  structureProgress,
+  structureOverallProgress,
+  computeSlaStatus,
+  formatSlaCountdown,
+} from "@/lib/pcready";
+import activityQueries from "@/lib/queries/activity";
+import checklistQueries, { type TicketChecklistInstanceRow } from "@/lib/queries/checklist";
+import { QUERY_KEYS } from "@/lib/queries/keys";
+import queries, { loadDeviceOptions } from "@/lib/queries/tickets";
+import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
+import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
+import { parseChecklistStructure } from "@/types/checklist-structure";
+import { Modal } from "./Modal";
+import { AssigneeChip, PriorityLabel, StatusBadge, TicketTypeBadge } from "./StatusBadge";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 interface TicketRow {
   id: string;
@@ -128,6 +128,9 @@ const DETAIL_TABS: { key: DetailTab; labelKey: string; icon: typeof ListChecks }
   { key: "attachments", labelKey: "detail.tabs.attachments", icon: Paperclip },
 ];
 
+/**
+ *
+ */
 export function TicketDetailModal() {
   const { t } = useTranslation("tickets");
   const { id, close, prevId, nextId, index, total, navigatePrev: navPrev, navigateNext: navNext } = useTicketDetail();
@@ -627,7 +630,7 @@ export function TicketDetailModal() {
               className="pc-btn pc-btn-danger pc-btn-sm mr-auto"
               onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 className="w-3 h-3" /> {t("detail.btn.delete", "Elimina")}
+              <Trash2 className="size-3" /> {t("detail.btn.delete", "Elimina")}
             </button>
           )}
           <button className="pc-btn pc-btn-ghost" onClick={close}>
@@ -653,7 +656,7 @@ export function TicketDetailModal() {
               onClick={navPrev}
               title={t("detail.nav.prev", "Ticket precedente")}
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="size-3.5" />
             </button>
             <span className="mx-1 text-[11px] font-mono font-semibold text-text2 tabular-nums">
               {index}/{total}
@@ -664,7 +667,7 @@ export function TicketDetailModal() {
               onClick={navNext}
               title={t("detail.nav.next", "Ticket successivo")}
             >
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="size-3.5" />
             </button>
             <span className="ml-1 text-[10px] text-text3">
               {t("detail.nav.useArrows", "Usa ← → da tastiera")}
@@ -724,7 +727,7 @@ export function TicketDetailModal() {
               onClick={() => advance("completed")}
               disabled={!canEdit || ticket.status === "completed"}
             >
-              <CheckCircle2 className="h-3 w-3" /> {t("detail.btn.closeTicket", "Chiudi ticket")}
+              <CheckCircle2 className="size-3" /> {t("detail.btn.closeTicket", "Chiudi ticket")}
             </button>
             <select
               className="pc-input h-8 min-w-[150px] w-auto px-3 py-0 text-[12px] leading-none"
@@ -744,19 +747,19 @@ export function TicketDetailModal() {
               onClick={duplicateTicket}
               disabled={!canEdit}
             >
-              <Copy className="h-3 w-3" /> {t("detail.btn.duplicate", "Duplica")}
+              <Copy className="size-3" /> {t("detail.btn.duplicate", "Duplica")}
             </button>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => exportCompletionPdf("customer")}
             >
-              <Printer className="h-3 w-3" /> {t("detail.btn.customerPdf", "PDF cliente")}
+              <Printer className="size-3" /> {t("detail.btn.customerPdf", "PDF cliente")}
             </button>
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => exportCompletionPdf("technical")}
             >
-              <Printer className="h-3 w-3" /> {t("detail.btn.technicalPdf", "PDF tecnico")}
+              <Printer className="size-3" /> {t("detail.btn.technicalPdf", "PDF tecnico")}
             </button>
           </div>
         </div>
@@ -793,7 +796,7 @@ export function TicketDetailModal() {
                   borderColor: active ? "var(--accent)" : "transparent",
                 }}
               >
-                <Icon className="h-3.5 w-3.5" /> {t(labelKey)}
+                <Icon className="size-3.5" /> {t(labelKey)}
               </button>
             );
           })}
@@ -834,19 +837,19 @@ export function TicketDetailModal() {
                   className="pc-btn pc-btn-primary pc-btn-sm"
                   onClick={() => setMainTab("notes")}
                 >
-                  <GitBranch className="h-3 w-3" /> {t("detail.section.addNote", "Aggiungi nota")}
+                  <GitBranch className="size-3" /> {t("detail.section.addNote", "Aggiungi nota")}
                 </button>
                 <button
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                   onClick={() => setMainTab("attachments")}
                 >
-                  <Paperclip className="h-3 w-3" /> {t("detail.section.uploadAttachment", "Carica allegato")}
+                  <Paperclip className="size-3" /> {t("detail.section.uploadAttachment", "Carica allegato")}
                 </button>
                 <button
                   className="pc-btn pc-btn-ghost pc-btn-sm"
                   onClick={() => setMainTab("history")}
                 >
-                  <History className="h-3 w-3" /> {t("detail.section.viewHistory", "Vedi storico")}
+                  <History className="size-3" /> {t("detail.section.viewHistory", "Vedi storico")}
                 </button>
               </div>
             </section>
@@ -877,7 +880,7 @@ export function TicketDetailModal() {
                     className="pc-btn pc-btn-ghost pc-btn-sm ml-auto"
                     onClick={() => changeDevice(null)}
                   >
-                    <X className="h-3 w-3" /> {t("detail.btn.unlink", "Scollega")}
+                    <X className="size-3" /> {t("detail.btn.unlink", "Scollega")}
                   </button>
                 )}
               </div>
@@ -909,7 +912,7 @@ export function TicketDetailModal() {
                           <span className="font-semibold">{device.model}</span>{" "}
                           <span className="font-mono text-text3">{device.serial || "-"}</span>
                         </span>
-                        <LinkIcon className="h-3 w-3" />
+                        <LinkIcon className="size-3" />
                       </button>
                     ))}
                   </div>
@@ -1300,7 +1303,7 @@ function TicketChecklistPanel({
                       className="pc-btn pc-btn-ghost pc-btn-sm"
                       onClick={() => window.print()}
                     >
-                      <Printer className="h-3 w-3" /> {t("detail.btn.exportPdf", "Esporta PDF")}
+                      <Printer className="size-3" /> {t("detail.btn.exportPdf", "Esporta PDF")}
                     </button>
                     {canEdit && instance.status !== "completed" && (
                       <button
@@ -1313,7 +1316,7 @@ function TicketChecklistPanel({
                         }
                         onClick={() => onComplete(instance)}
                       >
-                        <CheckCircle2 className="h-3 w-3" /> {t("detail.btn.completeChecklist", "Completa checklist")}
+                        <CheckCircle2 className="size-3" /> {t("detail.btn.completeChecklist", "Completa checklist")}
                       </button>
                     )}
                   </div>
@@ -1568,8 +1571,8 @@ function TicketHistory({ timeline, loading }: { timeline: TimelineItem[]; loadin
         const Icon = item.icon;
         return (
           <div key={item.id} className="relative pb-5">
-            <span className="absolute -left-5 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-background ring-4 ring-surface">
-              <Icon className="h-3.5 w-3.5 text-accent" />
+            <span className="absolute -left-5 top-0 flex size-5 items-center justify-center rounded-full bg-background ring-4 ring-surface">
+              <Icon className="size-3.5 text-accent" />
             </span>
             <div className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
               <div className="flex flex-wrap items-center justify-between gap-2">

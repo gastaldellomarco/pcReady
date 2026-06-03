@@ -1,7 +1,10 @@
 import i18n from "@/i18n";
-import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
+import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 
+/**
+ *
+ */
 export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
   const rows = [
     [i18n.t("dashboard:help.monthlyReport", "Report mensile")],
@@ -25,6 +28,9 @@ export function downloadAnalyticsCsv(analytics: DashboardAnalytics) {
   downloadCsv(rows, buildDownloadFileName("pcready-dashboard-report", "csv", { dated: true }));
 }
 
+/**
+ *
+ */
 export function defaultDateRange() {
   const to = new Date();
   const from = new Date();
@@ -33,23 +39,38 @@ export function defaultDateRange() {
   return { from: toDateInputValue(from), to: toDateInputValue(to) };
 }
 
+/**
+ *
+ */
 export function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ *
+ */
 export function startOfDayIso(value: string) {
   return new Date(`${value}T00:00:00.000Z`).toISOString();
 }
 
+/**
+ *
+ */
 export function endOfDayIso(value: string) {
   return new Date(`${value}T23:59:59.999Z`).toISOString();
 }
 
+/**
+ *
+ */
 export function formatPeriodLabel(from: string, to: string) {
   const fmt = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", year: "numeric" });
   return `${fmt.format(new Date(from))} - ${fmt.format(new Date(to))}`;
 }
 
+/**
+ *
+ */
 export function computeDailyCounts<T extends { created_at: string }>(
   items: T[],
   dateKey: keyof T & string,

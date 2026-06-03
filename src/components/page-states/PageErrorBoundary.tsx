@@ -8,17 +8,29 @@ type Props = {
 
 type State = { error: Error | null };
 
+/**
+ *
+ */
 export class PageErrorBoundary extends React.Component<Props, State> {
   state: State = { error: null };
 
+  /**
+   *
+   */
   static getDerivedStateFromError(error: Error): State {
     return { error };
   }
 
+  /**
+   *
+   */
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("PageErrorBoundary:", error, info.componentStack);
   }
 
+  /**
+   *
+   */
   render() {
     const { error } = this.state;
     if (error) {

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { BUNDLE_PRIORITY_LABEL, BUNDLE_STATUS_LABEL, bundleUsageTone } from "@/lib/bundles";
-import type { BundleStatus, BundleTicketPriority } from "@/lib/bundles";
 import { cn } from "@/lib/utils";
+import type { BundleStatus, BundleTicketPriority } from "@/lib/bundles";
 
 const STATUS_COLORS: Record<BundleStatus, { color: string; background: string; border: string }> = {
   active: { color: "var(--success, #16a34a)", background: "rgba(22, 163, 74, 0.12)", border: "rgba(22, 163, 74, 0.35)" },
@@ -35,14 +35,23 @@ function BundleBadge({ label, colors }: { label: string; colors: { color: string
   );
 }
 
+/**
+ *
+ */
 export function BundleStatusBadge({ status }: { status: BundleStatus }) {
   return <BundleBadge label={BUNDLE_STATUS_LABEL[status] ?? status} colors={STATUS_COLORS[status]} />;
 }
 
+/**
+ *
+ */
 export function BundlePriorityBadge({ priority }: { priority: BundleTicketPriority }) {
   return <BundleBadge label={BUNDLE_PRIORITY_LABEL[priority] ?? priority} colors={PRIORITY_COLORS[priority]} />;
 }
 
+/**
+ *
+ */
 export function BundleUsageBar({ used, total, label }: { used: number | null | undefined; total: number | null | undefined; label?: string }) {
   const { t } = useTranslation("bundles");
   const usedValue = Number(used ?? 0);

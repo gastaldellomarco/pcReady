@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   Eye,
@@ -8,6 +7,7 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/ui/optimized-image";
@@ -38,6 +38,9 @@ function isImage(attachment: TicketAttachment) {
   return attachment.mime_type?.startsWith("image/") ?? false;
 }
 
+/**
+ *
+ */
 export function TicketAttachments({
   ticketId,
   noteId,
@@ -229,9 +232,9 @@ export function TicketAttachments({
               style={{ background: "var(--surface2)" }}
             >
               {isImage(attachment) ? (
-                <ImageIcon className="h-4 w-4" />
+                <ImageIcon className="size-4" />
               ) : (
-                <FileText className="h-4 w-4" />
+                <FileText className="size-4" />
               )}
             </span>
             <div className="min-w-0 flex-1">
@@ -248,14 +251,14 @@ export function TicketAttachments({
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => openPreview(attachment)}
             >
-              <Eye className="h-3 w-3" /> {t("attachments.preview", "Anteprima")}
+              <Eye className="size-3" /> {t("attachments.preview", "Anteprima")}
             </button>
             <button
               type="button"
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => download(attachment)}
             >
-              <Download className="h-3 w-3" /> {t("attachments.download", "Download")}
+              <Download className="size-3" /> {t("attachments.download", "Download")}
             </button>
             {canEdit && (
               <button
@@ -263,7 +266,7 @@ export function TicketAttachments({
                 className="pc-btn pc-btn-ghost pc-btn-sm text-red-600"
                 onClick={() => remove(attachment)}
               >
-                <Trash2 className="h-3 w-3" /> {t("attachments.delete", "Elimina")}
+                <Trash2 className="size-3" /> {t("attachments.delete", "Elimina")}
               </button>
             )}
           </div>
@@ -272,7 +275,7 @@ export function TicketAttachments({
 
       {compact && attachments.length > 0 && (
         <div className="flex items-center gap-1 text-[11px] text-text3">
-          <Paperclip className="h-3 w-3" /> {t("attachments.noteAttachments", "{{count}} allegati nota", { count: attachments.length })}
+          <Paperclip className="size-3" /> {t("attachments.noteAttachments", "{{count}} allegati nota", { count: attachments.length })}
         </div>
       )}
     </section>

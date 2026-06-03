@@ -1,5 +1,4 @@
 import { Document } from "@react-pdf/renderer";
-import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 import {
   BrandedPage,
   ChartGrid,
@@ -14,7 +13,11 @@ import {
 } from "@/components/pcready/pdf/shared";
 import { pdfPalette } from "@/components/pcready/pdf/theme";
 import { formatAvgDays } from "./analytics-format";
+import type { DashboardAnalytics } from "@/lib/dashboard-analytics";
 
+/**
+ *
+ */
 export function AnalyticsReportPdf({
   analytics,
   periodLabel,

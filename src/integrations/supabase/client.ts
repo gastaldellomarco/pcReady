@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { queryClient } from "@/lib/queries/queryClient";
 import type { Database } from "./types";
 
+/**
+ *
+ */
 export type RealtimeConnectionStatus = "connected" | "connecting" | "disconnected";
 
 type RealtimeConnectionListener = () => void;
@@ -10,10 +13,16 @@ type RealtimeConnectionListener = () => void;
 let realtimeConnectionStatus: RealtimeConnectionStatus = "connected";
 const realtimeConnectionListeners = new Set<RealtimeConnectionListener>();
 
+/**
+ *
+ */
 export function getRealtimeConnectionStatus() {
   return realtimeConnectionStatus;
 }
 
+/**
+ *
+ */
 export function subscribeRealtimeConnectionStatus(listener: RealtimeConnectionListener) {
   realtimeConnectionListeners.add(listener);
 
@@ -22,6 +31,9 @@ export function subscribeRealtimeConnectionStatus(listener: RealtimeConnectionLi
   };
 }
 
+/**
+ *
+ */
 export function setRealtimeConnectionStatus(status: RealtimeConnectionStatus) {
   if (realtimeConnectionStatus === status) return;
   realtimeConnectionStatus = status;

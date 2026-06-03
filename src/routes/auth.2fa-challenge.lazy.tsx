@@ -1,20 +1,20 @@
 import { createLazyFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { errorMessage } from "@/lib/errors";
+import { logMfaAuditEvent, verifyBackupCode } from "@/lib/mfa";
 import {
   clearChallengeStarted,
   markBackupVerified,
   rememberChallengeStarted,
 } from "@/lib/mfa-client";
-import { logMfaAuditEvent, verifyBackupCode } from "@/lib/mfa";
-import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/auth/2fa-challenge")({
   component: TwoFactorChallengePage,
@@ -142,7 +142,7 @@ function TwoFactorChallengePage() {
     >
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <ShieldCheck className="mx-auto h-10 w-10 text-emerald-600" />
+          <ShieldCheck className="mx-auto size-10 text-emerald-600" />
           <CardTitle>Verifica in due passaggi</CardTitle>
           <CardDescription>
             Inserisci il codice per {maskedEmail}. Tempo residuo:{" "}

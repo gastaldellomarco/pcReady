@@ -54,6 +54,9 @@ function detectMimeTypeFromHeader(bytes: Uint8Array): string | null {
   return null;
 }
 
+/**
+ *
+ */
 export async function validateTicketAttachmentFile(file: File) {
   const extension = getFileExtension(file.name || "");
   const expectedType = ALLOWED_FILE_TYPES[extension];
@@ -80,6 +83,9 @@ export async function validateTicketAttachmentFile(file: File) {
   throw new Error("Impossibile determinare il tipo di file");
 }
 
+/**
+ *
+ */
 export interface TicketAttachment {
   id: string;
   ticket_id: string;
@@ -103,6 +109,9 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").slice(0, 120);
 }
 
+/**
+ *
+ */
 export async function fetchTicketAttachments(ticketId: string, noteId?: string | null) {
   if (!ticketId) return [];
   let query = (supabase as any)
@@ -120,6 +129,9 @@ export async function fetchTicketAttachments(ticketId: string, noteId?: string |
   return (data ?? []) as TicketAttachment[];
 }
 
+/**
+ *
+ */
 export async function uploadTicketAttachment({
   ticketId,
   noteId = null,
@@ -163,6 +175,9 @@ export async function uploadTicketAttachment({
   return data;
 }
 
+/**
+ *
+ */
 export async function deleteTicketAttachment(attachment: TicketAttachment) {
   const { error: storageError } = await supabase.storage
     .from(attachment.storage_bucket || STORAGE_BUCKET)
@@ -176,6 +191,9 @@ export async function deleteTicketAttachment(attachment: TicketAttachment) {
   return true;
 }
 
+/**
+ *
+ */
 export async function getAttachmentSignedUrl(attachment: TicketAttachment) {
   const { data, error } = await supabase.storage
     .from(attachment.storage_bucket || STORAGE_BUCKET)
@@ -188,6 +206,9 @@ export async function getAttachmentSignedUrl(attachment: TicketAttachment) {
   return data.signedUrl;
 }
 
+/**
+ *
+ */
 export async function downloadAttachment(attachment: TicketAttachment) {
   const { data, error } = await supabase.storage
     .from(attachment.storage_bucket || STORAGE_BUCKET)
@@ -198,6 +219,9 @@ export async function downloadAttachment(attachment: TicketAttachment) {
   return data.signedUrl;
 }
 
+/**
+ *
+ */
 export function useTicketAttachments(ticketId: string | null, noteId?: string | null) {
   return useQuery({
     queryKey: attachmentKey(ticketId, noteId),
@@ -206,6 +230,9 @@ export function useTicketAttachments(ticketId: string | null, noteId?: string | 
   });
 }
 
+/**
+ *
+ */
 export function useUploadTicketAttachment(ticketId: string, noteId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
@@ -218,6 +245,9 @@ export function useUploadTicketAttachment(ticketId: string, noteId?: string | nu
   });
 }
 
+/**
+ *
+ */
 export function useDeleteTicketAttachment(ticketId: string, noteId?: string | null) {
   const qc = useQueryClient();
   return useMutation({

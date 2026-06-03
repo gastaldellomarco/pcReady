@@ -1,11 +1,17 @@
 import { useSyncExternalStore } from "react";
 
+/**
+ *
+ */
 export interface AddDeviceClientContext {
   id: string;
   name: string;
   lockClient?: boolean;
 }
 
+/**
+ *
+ */
 export interface OpenAddDeviceOptions {
   initialSerial?: string;
   client?: AddDeviceClientContext;
@@ -72,6 +78,9 @@ const subscribe = (cb: () => void) => {
 };
 const getSnapshot = () => s;
 
+/**
+ *
+ */
 export function useTickets(): API {
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return { ...snap, ...actions };

@@ -1,17 +1,5 @@
+import "reactflow/dist/style.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import automationsQueries from "@/lib/queries/automations";
-import type { Json } from "@/integrations/supabase/types";
-import { toast } from "sonner";
-import {
-  validateFlowGraph,
-  summarizeErrors,
-  groupErrorsBySection,
-  getSectionLabel,
-} from "@/lib/automations/flow-validation";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -26,7 +14,19 @@ import ReactFlow, {
   NodeChange,
   EdgeChange,
 } from "reactflow";
-import "reactflow/dist/style.css";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  validateFlowGraph,
+  summarizeErrors,
+  groupErrorsBySection,
+  getSectionLabel,
+} from "@/lib/automations/flow-validation";
+import automationsQueries from "@/lib/queries/automations";
+import type { Json } from "@/integrations/supabase/types";
 
 type Props = {
   initialFlow?: { id: string } | undefined;
@@ -34,6 +34,9 @@ type Props = {
   onCancel?: () => void;
 };
 
+/**
+ *
+ */
 export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string | null>(null);
@@ -224,30 +227,37 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
         <aside className="col-span-3 p-3 border rounded-md">
           <div className="mb-3 font-semibold">Palette blocchi</div>
           <div className="text-sm text-text3">Trigger</div>
-          <ul className="mt-2 space-y-2">
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("trigger", "Quando viene creato un ticket")}
+              disabled={loading}
             >
               Quando viene creato un ticket
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("trigger", "Quando cambia stato ticket")}
+              disabled={loading}
             >
               Quando cambia stato ticket
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("trigger", "Esecuzione pianificata")}
+              disabled={loading}
             >
               Esecuzione pianificata
-            </li>
-          </ul>
+            </button>
+          </div>
           <div className="mt-4 text-sm text-text3">Condizioni</div>
-          <ul className="mt-2 space-y-2">
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
                 !loading &&
                 addNode("condition", "Condizione", {
@@ -256,41 +266,51 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                   value: "high",
                 })
               }
+              disabled={loading}
             >
               Se campo / operatore / valore
-            </li>
-          </ul>
+            </button>
+          </div>
           <div className="mt-4 text-sm text-text3">Azioni</div>
-          <ul className="mt-2 space-y-2">
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("action", "Assegna tecnico")}
+              disabled={loading}
             >
               Assegna tecnico
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("action", "Invia notifica")}
+              disabled={loading}
             >
               Invia notifica
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => !loading && addNode("action", "Crea ticket")}
+              disabled={loading}
             >
               Crea ticket
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
                 !loading &&
                 addNode("action", "Aspetta", { amount: 1, unit: "hours" }, "delay")
               }
+              disabled={loading}
             >
               Aspetta / Delay
-            </li>
-            <li
-              className={`rounded border px-2 py-1 ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
                 !loading &&
                 addNode(
@@ -300,10 +320,11 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                   "send_webhook",
                 )
               }
+              disabled={loading}
             >
               Webhook HTTP POST
-            </li>
-          </ul>
+            </button>
+          </div>
         </aside>
 
         <main className="col-span-6 p-3 border rounded-md">
@@ -540,7 +561,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               <Button onClick={handleSave} disabled={loading || !name.trim()}>
                 {loading ? (
                   <>
-                    <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <svg className="mr-2 size-4 animate-spin" viewBox="0 0 24 24" fill="none">
                       <circle
                         cx="12"
                         cy="12"

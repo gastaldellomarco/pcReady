@@ -1,11 +1,14 @@
+import { useServerFn } from "@tanstack/react-start";
 /**
  * useDashboardAnalytics: gestisce il caricamento degli analytics dashboard.
  * SCOPO SINGOLO: fetch e stato dei dati analytics.
  */
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { getDashboardAnalytics, type DashboardAnalytics } from "@/lib/dashboard-analytics";
 
+/**
+ *
+ */
 export function useDashboardAnalytics(args: {
   accessToken: string | undefined;
   range: { from: string; to: string };

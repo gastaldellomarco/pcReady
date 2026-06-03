@@ -26,6 +26,9 @@ function AuthStateShell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ *
+ */
 export function AuthLoadingScreen({ message = "Caricamento…" }: AuthLoadingScreenProps) {
   return (
     <AuthStateShell>
@@ -34,6 +37,9 @@ export function AuthLoadingScreen({ message = "Caricamento…" }: AuthLoadingScr
   );
 }
 
+/**
+ *
+ */
 export function AuthErrorScreen({ message, onRetry, onSignOut }: AuthErrorScreenProps) {
   return (
     <AuthStateShell>
@@ -55,6 +61,9 @@ export function AuthErrorScreen({ message, onRetry, onSignOut }: AuthErrorScreen
   );
 }
 
+/**
+ *
+ */
 export function MissingProfileScreen({ onRetry, onSignOut }: MissingProfileScreenProps) {
   return (
     <AuthStateShell>

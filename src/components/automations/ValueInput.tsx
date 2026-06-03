@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
 import { X, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { isMultiValueOperator } from "@/domain/automation";
 import type {
   ConditionFieldDef,
   ConditionOperator,
 } from "@/domain/automation";
-import { isMultiValueOperator } from "@/domain/automation";
 
 interface ValueInputProps {
   field: ConditionFieldDef | undefined;
@@ -13,6 +13,9 @@ interface ValueInputProps {
   onChange: (value: string | number | string[]) => void;
 }
 
+/**
+ *
+ */
 export function ValueInput({
   field,
   operator,
@@ -80,7 +83,7 @@ export function ValueInput({
               className="rounded p-1.5 text-red-600 hover:bg-red-50"
               title={t("conditionsBuilder.value.removeItem", "Rimuovi")}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             </button>
           </div>
         ))}
@@ -91,7 +94,7 @@ export function ValueInput({
           }}
           className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-1.5 text-xs font-medium text-text3 hover:border-accent hover:text-accent transition-colors"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-3.5" />
           {t("conditionsBuilder.value.addItem", "+ Aggiungi")}
         </button>
       </div>

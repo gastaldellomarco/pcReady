@@ -1,8 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import type { PostgrestError } from "@supabase/supabase-js";
 
+/**
+ *
+ */
 export type DashboardRange = { from: string; to: string };
 
 type ProfilesEmbed = Pick<
@@ -10,6 +13,9 @@ type ProfilesEmbed = Pick<
   "full_name" | "initials"
 >;
 
+/**
+ *
+ */
 export type DashboardDeviceRow = Pick<
   Database["public"]["Tables"]["devices"]["Row"],
   | "id"
@@ -25,6 +31,9 @@ export type DashboardDeviceRow = Pick<
   | "warranty_provider"
 >;
 
+/**
+ *
+ */
 export type DashboardTicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
   "id" | "ticket_code" | "client" | "status" | "priority" | "created_at"
@@ -33,6 +42,9 @@ export type DashboardTicketRow = Pick<
   assignee: ProfilesEmbed | null;
 };
 
+/**
+ *
+ */
 export type DashboardLogRow = Pick<
   Database["public"]["Tables"]["activity_log"]["Row"],
   "id" | "type" | "message" | "created_at"
@@ -40,11 +52,17 @@ export type DashboardLogRow = Pick<
   actor: ProfilesEmbed | null;
 };
 
+/**
+ *
+ */
 export type DashboardAssignmentRow = Pick<
   Database["public"]["Tables"]["ticket_device_assignments"]["Row"],
   "device_id"
 >;
 
+/**
+ *
+ */
 export type DashboardSnapshot = {
   tickets: DashboardTicketRow[];
   logs: DashboardLogRow[];
@@ -109,6 +127,9 @@ async function fetchWarrantyDevices(): Promise<DashboardDeviceRow[]> {
   return out;
 }
 
+/**
+ *
+ */
 export async function fetchDashboardSnapshot(range: DashboardRange): Promise<DashboardSnapshot> {
   const from = range.from;
   const to = range.to;
@@ -169,6 +190,9 @@ export async function fetchDashboardSnapshot(range: DashboardRange): Promise<Das
   };
 }
 
+/**
+ *
+ */
 export function useDashboardSnapshot(range: DashboardRange) {
   return useQuery({
     queryKey: ["dashboard", range.from, range.to],

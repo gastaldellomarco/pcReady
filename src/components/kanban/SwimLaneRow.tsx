@@ -109,7 +109,7 @@ export function SwimLaneRow({
           <div className="flex items-center gap-2 min-w-0">
             {groupColor && (
               <span
-                className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                className="size-2.5 rounded-full flex-shrink-0"
                 style={{ background: groupColor }}
               />
             )}
@@ -149,7 +149,7 @@ export function SwimLaneRow({
                   title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + status, STATUS_META[status].label) })}
                 >
                   <span
-                    className="h-2 w-2 rounded-full"
+                    className="size-2 rounded-full"
                     style={{ background: STATUS_META[status].color }}
                   />
                 </button>

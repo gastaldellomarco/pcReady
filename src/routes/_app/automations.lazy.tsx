@@ -1,25 +1,25 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
+import { Plus, ScrollText, Search, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AutomationKpiHeader } from "@/components/automations/AutomationKpiHeader";
+import { AutomationRuleCard } from "@/components/automations/AutomationRuleCard";
+import AutomationWizard from "@/components/automations/AutomationWizard";
+import { DryRunDialog } from "@/components/automations/DryRunDialog";
+import { GlobalRunLogsPanel } from "@/components/automations/GlobalRunLogsPanel";
+import { RunConfirmDialog } from "@/components/automations/RunConfirmDialog";
+import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { Button } from "@/components/ui/button";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ScrollText, Search, ArrowUpDown } from "lucide-react";
-import AutomationWizard from "@/components/automations/AutomationWizard";
-import { DryRunDialog } from "@/components/automations/DryRunDialog";
-import { RunConfirmDialog } from "@/components/automations/RunConfirmDialog";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
-import { AutomationRuleCard } from "@/components/automations/AutomationRuleCard";
-import type { WizardFlowPayload } from "@/types/automation";
-import { AutomationKpiHeader } from "@/components/automations/AutomationKpiHeader";
-import { GlobalRunLogsPanel } from "@/components/automations/GlobalRunLogsPanel";
-import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
 import { TRIGGER_TYPE_OPTIONS } from "@/hooks/useAutomationRules";
+import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
+import type { WizardFlowPayload } from "@/types/automation";
 
 export const Route = createLazyFileRoute("/_app/automations")({
   component: AutomationsPage,

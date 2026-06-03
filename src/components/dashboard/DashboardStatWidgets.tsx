@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { STATUS_META, type TicketStatus } from "@/lib/pcready";
+
+import type { ReactNode } from "react";
 
 interface StatCardProps {
   label: string;
@@ -16,6 +16,9 @@ interface StatCardProps {
   highlight?: boolean;
 }
 
+/**
+ *
+ */
 export function DashboardStatCard({
   label,
   value,
@@ -37,7 +40,7 @@ export function DashboardStatCard({
       }}
     >
       <div
-        className="absolute right-4 top-4 w-8 h-8 rounded-lg flex items-center justify-center opacity-15"
+        className="absolute right-4 top-4 size-8 rounded-lg flex items-center justify-center opacity-15"
         style={{ background: accent, color: accent }}
       >
         {icon}
@@ -54,6 +57,9 @@ export function DashboardStatCard({
   return inner;
 }
 
+/**
+ *
+ */
 export function DashboardDonut({
   data,
   total,
@@ -132,6 +138,9 @@ export function DashboardDonut({
   );
 }
 
+/**
+ *
+ */
 export function DashboardAreaSpark({
   data,
   color = "#3b82f6",
@@ -184,6 +193,9 @@ export function DashboardAreaSpark({
   );
 }
 
+/**
+ *
+ */
 export function DashboardAreaSparkMulti({
   series,
 }: {

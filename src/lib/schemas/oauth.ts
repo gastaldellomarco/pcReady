@@ -9,4 +9,7 @@ export const OAuthClientSchema = z.object({
   scopesAllowed: z.array(z.enum(Object.keys(OAUTH_SCOPES) as [string, ...string[]])).optional(),
 });
 
+/**
+ *
+ */
 export type OAuthClientInput = z.infer<typeof OAuthClientSchema>;

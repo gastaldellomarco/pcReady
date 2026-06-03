@@ -1,15 +1,17 @@
-import OverflowTable from "@/components/ui/overflow-table";
-
-import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { Clock, RefreshCw } from "lucide-react";
-import { getOverdueTickets } from "@/lib/dashboard-analytics";
-import { useAuth } from "@/lib/auth-context";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
-import { formatSlaCountdown, type TicketStatus } from "@/lib/pcready";
+import OverflowTable from "@/components/ui/overflow-table";
+import { useAuth } from "@/lib/auth-context";
+import { getOverdueTickets } from "@/lib/dashboard-analytics";
 import { openTicketDetail } from "@/lib/detail-navigation";
+import { formatSlaCountdown, type TicketStatus } from "@/lib/pcready";
 
+/**
+ *
+ */
 export function OverdueTicketsWidget() {
   const { t } = useTranslation("dashboard");
   const { session } = useAuth();
@@ -47,7 +49,7 @@ export function OverdueTicketsWidget() {
           )}
         </div>
         <button onClick={load} className="pc-btn pc-btn-ghost pc-btn-sm" disabled={loading}>
-          <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`size-3 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
       <div className="pc-card-body">
@@ -55,7 +57,7 @@ export function OverdueTicketsWidget() {
           <div className="text-sm text-text3 py-4 text-center">{t("widgets.loading", "Caricamento...")}</div>
         ) : tickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
-            <Clock className="w-5 h-5 mx-auto mb-2 opacity-40" />
+            <Clock className="size-5 mx-auto mb-2 opacity-40" />
             {t("widgets.noOverdueTickets", "Nessun ticket SLA violato o in scadenza")}
           </div>
         ) : (
@@ -104,7 +106,7 @@ export function OverdueTicketsWidget() {
                             : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
                         }`}
                       >
-                        <Clock className="w-3 h-3" />
+                        <Clock className="size-3" />
                         {ticket.sla_deadline ? formatSlaCountdown(ticket.sla_deadline) : `${ticket.days_open}g`}
                       </span>
                     </td>

@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ *
+ */
 export type TicketRelationType = "blocked_by" | "duplicate_of" | "child_of";
 
 export const RELATION_LABELS: Record<TicketRelationType, string> = {
@@ -9,6 +12,9 @@ export const RELATION_LABELS: Record<TicketRelationType, string> = {
   child_of: "Ticket figlio di",
 };
 
+/**
+ *
+ */
 export interface RelatedTicketLite {
   id: string;
   ticket_code: string;
@@ -17,6 +23,9 @@ export interface RelatedTicketLite {
   status: string;
 }
 
+/**
+ *
+ */
 export interface TicketRelation {
   id: string;
   source_ticket_id: string;
@@ -31,6 +40,9 @@ export interface TicketRelation {
 
 const key = (ticketId: string | null) => ["ticket", ticketId, "relations"];
 
+/**
+ *
+ */
 export async function fetchTicketRelations(ticketId: string) {
   if (!ticketId) return [];
   const { data, error } = await (supabase as any)
@@ -44,6 +56,9 @@ export async function fetchTicketRelations(ticketId: string) {
   return (data ?? []) as TicketRelation[];
 }
 
+/**
+ *
+ */
 export async function searchTicketsForRelation(query: string, currentTicketId: string) {
   const term = query.trim().replace(/[,%]/g, "");
   if (!term) return [];
@@ -58,6 +73,9 @@ export async function searchTicketsForRelation(query: string, currentTicketId: s
   return (data ?? []) as RelatedTicketLite[];
 }
 
+/**
+ *
+ */
 export async function createTicketRelation({
   sourceTicketId,
   targetTicketId,
@@ -86,12 +104,18 @@ export async function createTicketRelation({
   return data;
 }
 
+/**
+ *
+ */
 export async function deleteTicketRelation(id: string) {
   const { error } = await (supabase as any).from("ticket_relations").delete().eq("id", id);
   if (error) throw error;
   return true;
 }
 
+/**
+ *
+ */
 export function useTicketRelations(ticketId: string | null) {
   return useQuery({
     queryKey: key(ticketId),
@@ -100,6 +124,9 @@ export function useTicketRelations(ticketId: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useCreateTicketRelation(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -122,6 +149,9 @@ export function useCreateTicketRelation(ticketId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteTicketRelation(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({

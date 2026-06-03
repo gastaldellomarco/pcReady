@@ -1,3 +1,4 @@
+import { AlertTriangle, FileDown, Loader2 } from "lucide-react";
 import { useState, useCallback, type ReactElement } from "react";
 import {
   Dialog,
@@ -5,12 +6,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { DocumentProps } from "@react-pdf/renderer";
 import { EXPORT_WARNING_THRESHOLD } from "@/lib/queries/list-config";
-import { AlertTriangle, FileDown, Loader2 } from "lucide-react";
+import type { DocumentProps } from "@react-pdf/renderer";
 
+/**
+ *
+ */
 export type ExportMode = "page" | "all";
 
+/**
+ *
+ */
 export interface ExportPdfProps<TData, TPdfRow> {
   // ── Visibility ──
   open: boolean;
@@ -61,6 +67,9 @@ function buildFilterSummary(
   return lines.length ? lines : [`Nessun filtro attivo per ${entityLabel}`];
 }
 
+/**
+ *
+ */
 export function ExportPdf<TData, TPdfRow>({
   open,
   onOpenChange,
@@ -139,7 +148,7 @@ export function ExportPdf<TData, TPdfRow>({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileDown className="h-4 w-4" />
+            <FileDown className="size-4" />
             Esporta PDF — {entityLabel}
           </DialogTitle>
         </DialogHeader>
@@ -169,7 +178,7 @@ export function ExportPdf<TData, TPdfRow>({
             <input
               type="radio"
               name="exportMode"
-              className="h-3.5 w-3.5 accent-accent"
+              className="size-3.5 accent-accent"
               checked={exportMode === "page"}
               onChange={() => setExportMode("page")}
             />
@@ -191,7 +200,7 @@ export function ExportPdf<TData, TPdfRow>({
             <input
               type="radio"
               name="exportMode"
-              className="h-3.5 w-3.5 accent-accent"
+              className="size-3.5 accent-accent"
               checked={exportMode === "all"}
               disabled={isEmpty}
               onChange={() => setExportMode("all")}
@@ -219,7 +228,7 @@ export function ExportPdf<TData, TPdfRow>({
               color: "var(--badge-warning-fg, #92400e)",
             }}
           >
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             <span>
               L'export supera {EXPORT_WARNING_THRESHOLD} record ({allCount} {entityLabel}). Il PDF potrebbe essere grande.
             </span>
@@ -258,17 +267,17 @@ export function ExportPdf<TData, TPdfRow>({
           >
             {busy ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" />
                 Esportazione in corso...
               </>
             ) : showWarning ? (
               <>
-                <FileDown className="h-3.5 w-3.5" />
+                <FileDown className="size-3.5" />
                 Conferma ed esporta
               </>
             ) : (
               <>
-                <FileDown className="h-3.5 w-3.5" />
+                <FileDown className="size-3.5" />
                 Esporta PDF
               </>
             )}

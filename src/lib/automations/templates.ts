@@ -1,7 +1,13 @@
 import type { WizardFlowPayload } from "@/types/automation";
 
+/**
+ *
+ */
 export type TemplateCategory = "notification" | "status" | "schedule" | "urgency";
 
+/**
+ *
+ */
 export interface AutomationTemplate {
   id: string;
   name: string;
@@ -193,6 +199,9 @@ export const TEMPLATE_CATEGORIES: Record<TemplateCategory, { label: string; colo
   urgency: { label: "Urgenza", color: "bg-red-100 text-red-700" },
 };
 
+/**
+ *
+ */
 export function getTemplateById(id: string): AutomationTemplate | undefined {
   return AUTOMATION_TEMPLATES.find((t) => t.id === id);
 }

@@ -10,6 +10,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ *
+ */
 export interface MobileCardColumn<T> {
   /** Label displayed left of the value */
   label: string;
@@ -25,6 +28,9 @@ export interface MobileCardColumn<T> {
   desktopOnly?: boolean;
 }
 
+/**
+ *
+ */
 export interface MobileCardViewProps<T> {
   data: T[];
   columns: MobileCardColumn<T>[];
@@ -34,6 +40,9 @@ export interface MobileCardViewProps<T> {
   emptyMessage?: string;
 }
 
+/**
+ *
+ */
 export function MobileCardView<T extends Record<string, any>>({
   data,
   columns,

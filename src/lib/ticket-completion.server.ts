@@ -1,8 +1,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getAppSettings } from "@/lib/app-settings";
 import { getEmailTemplateByEvent, sendEmailEvent } from "@/lib/email-helpers.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { STATUS_META, fmtDate } from "@/lib/pcready";
-import { getAppSettings } from "@/lib/app-settings";
 
 type CompletionPdfTemplate = "customer" | "technical";
 

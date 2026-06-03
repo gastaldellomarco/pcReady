@@ -1,8 +1,8 @@
-import { useTranslation } from "react-i18next";
 import { Monitor, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { VariableTextField } from "../VariableTextField";
 import type { UpdateDeviceAction } from "@/domain/automation";
 import type { AutomationVariable } from "@/domain/automation-variables";
-import { VariableTextField } from "../VariableTextField";
 
 interface UpdateDeviceBlockProps {
   action: UpdateDeviceAction;
@@ -22,6 +22,9 @@ const DEVICE_STATUSES = [
   { value: "retired", label: "Dismesso" },
 ];
 
+/**
+ *
+ */
 export function UpdateDeviceBlock({
   action,
   onChange,
@@ -44,7 +47,7 @@ export function UpdateDeviceBlock({
   return (
     <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <Monitor className="w-5 h-5 text-cyan-500" />
+        <Monitor className="size-5 text-cyan-500" />
         <span className="font-medium text-text">
           {t("actionsBuilder.blocks.update_device.title", "Aggiorna dispositivo")}
         </span>
@@ -57,7 +60,7 @@ export function UpdateDeviceBlock({
             className="p-1.5 text-text3 hover:text-text hover:bg-gray-200 rounded disabled:opacity-30"
             title={t("actionsBuilder.reorder.up", "Sposta su")}
           >
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="size-4" />
           </button>
           <button
             type="button"
@@ -66,7 +69,7 @@ export function UpdateDeviceBlock({
             className="p-1.5 text-text3 hover:text-text hover:bg-gray-200 rounded disabled:opacity-30"
             title={t("actionsBuilder.reorder.down", "Sposta giù")}
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="size-4" />
           </button>
           <button
             type="button"
@@ -74,7 +77,7 @@ export function UpdateDeviceBlock({
             className="p-1.5 text-text3 hover:text-red-500 hover:bg-red-50 rounded ml-1"
             title={t("actionsBuilder.remove", "Rimuovi")}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="size-4" />
           </button>
         </div>
       </div>

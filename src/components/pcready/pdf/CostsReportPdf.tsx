@@ -39,6 +39,9 @@ function formatHours(value: unknown) {
   return `${money(value).toLocaleString("it-IT", { maximumFractionDigits: 2 })} h`;
 }
 
+/**
+ *
+ */
 export function CostsReportPdf({
   rows,
   summary,

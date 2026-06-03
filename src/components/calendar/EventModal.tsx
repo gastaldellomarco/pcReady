@@ -273,7 +273,7 @@ export function EventModal({
 
           {event?.is_recurring_instance && (
             <div className="rounded-md border p-3" style={{ borderColor: pcReadyColors.border }}>
-              <Label className="mb-2 flex items-center gap-2"><Repeat className="h-4 w-4" />{t("modal.recurringEditScope", "Modifica evento ricorrente")}</Label>
+              <Label className="mb-2 flex items-center gap-2"><Repeat className="size-4" />{t("modal.recurringEditScope", "Modifica evento ricorrente")}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant={editScope === "single" ? "default" : "outline"} size="sm" onClick={() => setEditScope("single")}>{t("modal.editSingle", "Solo questa data")}</Button>
                 <Button type="button" variant={editScope === "series" ? "default" : "outline"} size="sm" onClick={() => setEditScope("series")}>{t("modal.editSeries", "Tutta la serie")}</Button>
@@ -328,7 +328,7 @@ export function EventModal({
             <Label>{t("modal.ticketLabel", "Ticket collegati")}</Label>
             <div className="flex gap-2">
               <Input value={ticketSearch} onChange={(e) => setTicketSearch(e.target.value)} placeholder={t("modal.ticketSearchPlaceholder", "Cerca ticket...")} disabled={!canEdit || isPending} />
-              {ticketIds.length > 0 && <Button type="button" variant="outline" size="icon" onClick={() => setTicketIds([])}><X className="h-4 w-4" /></Button>}
+              {ticketIds.length > 0 && <Button type="button" variant="outline" size="icon" onClick={() => setTicketIds([])}><X className="size-4" /></Button>}
             </div>
             <div className="max-h-28 overflow-y-auto rounded-md border" style={{ borderColor: pcReadyColors.border }}>
               {ticketOptions.map((ticket) => (
@@ -343,7 +343,7 @@ export function EventModal({
               <div className="flex flex-wrap gap-1.5">
                 {selectedTickets.map((ticket, index) => ticket && (
                   <span key={`${ticket.id}-${index}`} className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs" style={{ borderColor: pcReadyColors.border }}>
-                    <LinkIcon className="h-3 w-3" />{ticket.ticket_code}
+                    <LinkIcon className="size-3" />{ticket.ticket_code}
                   </span>
                 ))}
               </div>
@@ -361,7 +361,7 @@ export function EventModal({
           )}
 
           <div className="grid gap-3 rounded-md border p-3" style={{ borderColor: pcReadyColors.border }}>
-            <Label className="flex items-center gap-2"><Repeat className="h-4 w-4" />{t("modal.recurrenceLabel", "Ricorrenza")}</Label>
+            <Label className="flex items-center gap-2"><Repeat className="size-4" />{t("modal.recurrenceLabel", "Ricorrenza")}</Label>
             <div className="grid grid-cols-3 gap-3">
               <Select value={recurrence} onValueChange={(v) => setRecurrence(v as "none" | RecurrenceFrequency)} disabled={!canEdit || isPending || !!event?.is_recurring_instance}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -373,7 +373,7 @@ export function EventModal({
           </div>
 
           <div className="grid gap-3 rounded-md border p-3" style={{ borderColor: pcReadyColors.border }}>
-            <Label className="flex items-center gap-2"><Bell className="h-4 w-4" />{t("modal.reminderLabel", "Promemoria")}</Label>
+            <Label className="flex items-center gap-2"><Bell className="size-4" />{t("modal.reminderLabel", "Promemoria")}</Label>
             <div className="grid grid-cols-2 gap-3">
               <Select value={reminderOffset || "__none__"} onValueChange={(v) => setReminderOffset(v === "__none__" ? "" : v)} disabled={!canEdit || isPending}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -422,7 +422,7 @@ export function EventModal({
                 </>
               ) : (
                 <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(true)} disabled={isPending} style={{ color: pcReadyColors.danger, borderColor: pcReadyColors.danger }}>
-                  <Trash2 className="mr-1.5 h-4 w-4" />{t("modal.deleteButton", "Elimina")}
+                  <Trash2 className="mr-1.5 size-4" />{t("modal.deleteButton", "Elimina")}
                 </Button>
               )}
             </div>

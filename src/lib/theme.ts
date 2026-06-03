@@ -1,5 +1,8 @@
 const KEY = "pcready-theme";
 
+/**
+ *
+ */
 export type Theme = "light" | "dark" | "system";
 
 /**

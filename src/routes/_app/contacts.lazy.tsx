@@ -1,12 +1,6 @@
-import { Modal } from "@/components/pcready/Modal";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import { generatePortalAccessLink } from "@/lib/portal-auth";
-import queries, { type GlobalContactRow } from "@/lib/queries/clients";
 import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useTranslation } from "react-i18next";
 import {
   Briefcase,
   Building2,
@@ -22,12 +16,18 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type React from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Modal } from "@/components/pcready/Modal";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { errorMessage } from "@/lib/errors";
-import { useVirtualList } from "@/hooks/useVirtualList";
 import { Field } from "@/components/ui/form-field";
+import { useVirtualList } from "@/hooks/useVirtualList";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { errorMessage } from "@/lib/errors";
+import { generatePortalAccessLink } from "@/lib/portal-auth";
+import queries, { type GlobalContactRow } from "@/lib/queries/clients";
+import type React from "react";
 
 export const Route = createLazyFileRoute("/_app/contacts")({
   component: ContactsPage,
@@ -261,7 +261,7 @@ function ContactsPage() {
             })}
           </div>
         </div>
-        <Users className="h-5 w-5 text-text3" />
+        <Users className="size-5 text-text3" />
       </div>
 
       <div
@@ -272,7 +272,7 @@ function ContactsPage() {
           className="flex items-center gap-2 rounded-lg border px-3 py-2"
           style={{ background: "var(--surface)", borderColor: "var(--border2)" }}
         >
-          <Search className="h-4 w-4 text-text3" />
+          <Search className="size-4 text-text3" />
           <input
             className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
             value={q}
@@ -363,7 +363,7 @@ function ContactsPage() {
                           })
                         }
                       >
-                        <Building2 className="h-4 w-4 shrink-0 text-text3" />
+                        <Building2 className="size-4 shrink-0 text-text3" />
                         <span className="truncate text-sm font-bold text-text">
                           {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
                         </span>
@@ -419,7 +419,7 @@ function ContactsPage() {
                     })
                   }
                 >
-                  <Building2 className="h-4 w-4 shrink-0 text-text3" />
+                  <Building2 className="size-4 shrink-0 text-text3" />
                   <span className="truncate text-sm font-bold text-text">
                     {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
                   </span>
@@ -640,7 +640,7 @@ function GlobalContactCard({
             </button>
             {contact.is_primary && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warn-bg px-2 py-0.5 text-[10px] font-bold text-warn">
-                <Star className="h-3 w-3" /> {t("contact.primaryBadge", "Principale")}
+                <Star className="size-3" /> {t("contact.primaryBadge", "Principale")}
               </span>
             )}
             <PortalBadge active={contact.portal_active} />
@@ -650,18 +650,18 @@ function GlobalContactCard({
             onClick={onOpenClient}
             title={contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
           >
-            <Building2 className="h-3 w-3 shrink-0" />
+            <Building2 className="size-3 shrink-0" />
             <span className="truncate">
               {contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
             </span>
           </button>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-text3">
             <span className="inline-flex items-center gap-1">
-              <Briefcase className="h-3 w-3" /> {contact.job_title || t("contact.noRole", "Ruolo non indicato")}
+              <Briefcase className="size-3" /> {contact.job_title || t("contact.noRole", "Ruolo non indicato")}
             </span>
             {contact.department && (
               <span className="inline-flex items-center gap-1">
-                <Building2 className="h-3 w-3" /> {contact.department}
+                <Building2 className="size-3" /> {contact.department}
               </span>
             )}
           </div>
@@ -709,14 +709,14 @@ function GlobalContactCard({
 
       <div className="mt-4 flex flex-wrap justify-end gap-1.5">
         <button className="pc-btn pc-btn-ghost pc-btn-xs" disabled={!canEdit} onClick={onEdit}>
-          <Pencil className="h-3 w-3" /> {t("contact.editButton", "Modifica")}
+          <Pencil className="size-3" /> {t("contact.editButton", "Modifica")}
         </button>
         <button
           className="pc-btn pc-btn-ghost pc-btn-xs"
           disabled={!canManagePortalAccess || busy}
           onClick={onGeneratePortalLink}
         >
-          <Link2 className="h-3 w-3" /> {t("contact.portalButton", "Portale")}
+          <Link2 className="size-3" /> {t("contact.portalButton", "Portale")}
         </button>
         <button
           className="pc-btn-icon touch-target"
@@ -724,7 +724,7 @@ function GlobalContactCard({
           onClick={onDelete}
           title={t("contact.deleteButtonTooltip", "Elimina referente")}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="size-3" />
         </button>
       </div>
     </div>
@@ -853,11 +853,11 @@ function PortalLinkModal({
           <button className="pc-btn pc-btn-primary" onClick={onCopy}>
             {copied ? (
               <>
-                <CheckCircle2 className="w-3 h-3" /> {t("portalModal.copiedButton", "Copiato")}
+                <CheckCircle2 className="size-3" /> {t("portalModal.copiedButton", "Copiato")}
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3" /> {t("portalModal.copyLinkButton", "Copia link")}
+                <Copy className="size-3" /> {t("portalModal.copyLinkButton", "Copia link")}
               </>
             )}
           </button>

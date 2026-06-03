@@ -1,6 +1,4 @@
 ﻿import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Shield,
   Plus,
@@ -13,15 +11,15 @@ import {
   RotateCcw,
   Skull,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -30,15 +28,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { fmtDateTime } from "@/lib/pcready";
-import type { OAuthClientInfo } from "@/lib/oauth-consent";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import OverflowTable from "@/components/ui/overflow-table";
+import { TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useAdminOAuthClients } from "@/hooks/useAdminOAuthClients";
 import { useAuth } from "@/lib/auth-context";
 import { OAUTH_SCOPES, getScopeLabel } from "@/lib/oauth-scopes";
-import { useAdminOAuthClients } from "@/hooks/useAdminOAuthClients";
-import OverflowTable from "@/components/ui/overflow-table";
+import { fmtDateTime } from "@/lib/pcready";
+import type { OAuthClientInfo } from "@/lib/oauth-consent";
 
+/**
+ *
+ */
 export function AdminOAuthTab() {
   const { t } = useTranslation("admin");
   const { session, isAdmin } = useAuth();
@@ -84,7 +87,7 @@ export function AdminOAuthTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+            <Shield className="size-5" />
             {t("oauth.createCard.title", "Nuovo Client OAuth")}
           </CardTitle>
           <CardDescription>
@@ -95,14 +98,14 @@ export function AdminOAuthTab() {
               to="/docs"
               className="inline-flex items-center gap-1.5 text-primary underline-offset-4 hover:underline"
             >
-              <BookOpen className="h-3.5 w-3.5" />
+              <BookOpen className="size-3.5" />
               {t("oauth.createCard.docLink", "Leggi la documentazione API (OpenAPI / OAuth)")}
             </Link>
           </p>
         </CardHeader>
         <CardContent>
           <Alert className="mb-4">
-            <Shield className="h-4 w-4" />
+            <Shield className="size-4" />
             <AlertTitle>{t("oauth.infoAlert.title", "Cos'è un Client OAuth?")}</AlertTitle>
             <AlertDescription>
               {t("oauth.infoAlert.description", "Un Client OAuth permette a un'applicazione esterna (per esempio un tool di automazione, un'app mobile o un sistema ERP) di accedere ai dati di PCReady in modo sicuro, senza condividere le password degli utenti. Crea un client solo se stai collegando un'applicazione esterna che deve operare per conto degli utenti che la autorizzano.")}
@@ -254,7 +257,7 @@ export function AdminOAuthTab() {
                 </Button>
               ) : (
                 <Button type="submit" disabled={createClientBusy || !oauthForm.formState.isValid}>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="size-4 mr-2" />
                   {createClientBusy ? t("oauth.wizard.creating", "Creazione...") : t("oauth.wizard.create", "Crea client")}
                 </Button>
               )}
@@ -297,7 +300,7 @@ export function AdminOAuthTab() {
                       className="shrink-0 h-8"
                       onClick={() => copyOAuthField("Client ID", oauthCreated.clientId)}
                     >
-                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      <Copy className="size-3.5 mr-1" />
                       {t("oauth.created.copyButton", "Copia")}
                     </Button>
                   </div>
@@ -315,7 +318,7 @@ export function AdminOAuthTab() {
                       className="shrink-0 h-8"
                       onClick={() => copyOAuthField("Client Secret", oauthCreated.clientSecret)}
                     >
-                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      <Copy className="size-3.5 mr-1" />
                       {t("oauth.created.copyButton", "Copia")}
                     </Button>
                   </div>
@@ -328,7 +331,7 @@ export function AdminOAuthTab() {
               <Collapsible className="rounded-lg border px-3 py-2">
                 <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 py-2 text-left text-sm font-medium hover:underline [&[data-state=open]>svg]:rotate-180">
                   {t("oauth.created.howToUse", "Come usare questo client (Authorization Code)")}
-                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform" />
+                  <ChevronDown className="size-4 shrink-0 transition-transform" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-3 pb-3 text-xs text-muted-foreground">
                   <p>
@@ -410,7 +413,7 @@ export function AdminOAuthTab() {
                     size="sm"
                     onClick={() => copyOAuthField("Client Secret", rotatedSecret.clientSecret)}
                   >
-                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    <Copy className="size-3.5 mr-1" />
                     Copia
                   </Button>
                 </div>
@@ -500,7 +503,7 @@ export function AdminOAuthTab() {
                           disabled={busy}
                           onClick={() => void lifecycle.openLifecycle(client.clientId)}
                         >
-                          <History className="h-3.5 w-3.5 mr-1" />
+                          <History className="size-3.5 mr-1" />
                           {t("oauth.clientList.history", "Storico")}
                         </Button>
                         {client.status === "active" ? (
@@ -511,7 +514,7 @@ export function AdminOAuthTab() {
                             disabled={busy}
                             onClick={() => setRotateTarget(client)}
                           >
-                            <KeyRound className="h-3.5 w-3.5 mr-1" />
+                            <KeyRound className="size-3.5 mr-1" />
                             {t("oauth.clientList.rotateSecret", "Ruota secret")}
                           </Button>
                         ) : null}
@@ -523,7 +526,7 @@ export function AdminOAuthTab() {
                             disabled={busy}
                             onClick={() => setDisableTarget(client)}
                           >
-                            <Ban className="h-3.5 w-3.5 mr-1" />
+                            <Ban className="size-3.5 mr-1" />
                             {t("oauth.clientList.disable", "Disattiva")}
                           </Button>
                         ) : null}
@@ -535,7 +538,7 @@ export function AdminOAuthTab() {
                             disabled={busy}
                             onClick={() => void updateClientStatus(client.clientId, "active")}
                           >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                            <RotateCcw className="size-3.5 mr-1" />
                             {t("oauth.clientList.reactivate", "Riattiva")}
                           </Button>
                         ) : null}
@@ -547,7 +550,7 @@ export function AdminOAuthTab() {
                             disabled={busy}
                             onClick={() => setRevokeTarget(client)}
                           >
-                            <Skull className="h-3.5 w-3.5 mr-1" />
+                            <Skull className="size-3.5 mr-1" />
                             {t("oauth.clientList.revoke", "Revoca")}
                           </Button>
                         ) : null}

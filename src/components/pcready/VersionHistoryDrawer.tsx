@@ -1,15 +1,15 @@
-import { useEffect, useState, useCallback } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Clock, User, FileText, RotateCcw, Eye, GitCompare } from "lucide-react";
-import { getVersions, Version, restoreVersion } from "@/lib/versioning";
-import { useAuth } from "@/lib/auth-context";
-import { toast } from "sonner";
-import { VersionDiffViewer } from "./VersionDiffViewer";
-import { RestoreVersionDialog } from "./RestoreVersionDialog";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { getVersions, Version, restoreVersion } from "@/lib/versioning";
+import { RestoreVersionDialog } from "./RestoreVersionDialog";
+import { VersionDiffViewer } from "./VersionDiffViewer";
 
 interface VersionHistoryDrawerProps {
   entityType: string;
@@ -19,6 +19,9 @@ interface VersionHistoryDrawerProps {
   onRestored?: () => void;
 }
 
+/**
+ *
+ */
 export function VersionHistoryDrawer({
   entityType,
   entityId,
@@ -128,7 +131,7 @@ export function VersionHistoryDrawer({
                   onClick={() => setViewingVersion(selectedVersions[0])}
                   className="flex-1"
                 >
-                  <GitCompare className="w-4 h-4 mr-2" />
+                  <GitCompare className="size-4 mr-2" />
                   {t("versionHistory.compareVersions", "Confronta Versioni")}
                 </Button>
               </div>
@@ -171,14 +174,14 @@ export function VersionHistoryDrawer({
 
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <User className="w-3 h-3" />
+                        <User className="size-3" />
                         <span>{formatAuthor(version.created_by)}</span>
-                        <Clock className="w-3 h-3 ml-2" />
+                        <Clock className="size-3 ml-2" />
                         <span>{new Date(version.created_at).toLocaleString()}</span>
                       </div>
                       {version.change_note && (
                         <div className="flex items-start gap-2">
-                          <FileText className="w-3 h-3 mt-0.5 text-muted-foreground" />
+                          <FileText className="size-3 mt-0.5 text-muted-foreground" />
                           <span className="text-sm">{version.change_note}</span>
                         </div>
                       )}
@@ -190,7 +193,7 @@ export function VersionHistoryDrawer({
                         size="sm"
                         onClick={() => setViewingVersion(version)}
                       >
-                        <Eye className="w-4 h-4 mr-2" />
+                        <Eye className="size-4 mr-2" />
                         {t("versionHistory.view", "Visualizza")}
                       </Button>
                       <Button
@@ -199,7 +202,7 @@ export function VersionHistoryDrawer({
                         onClick={() => handleRestore(version)}
                         disabled={profile?.role !== "admin"}
                       >
-                        <RotateCcw className="w-4 h-4 mr-2" />
+                        <RotateCcw className="size-4 mr-2" />
                         {t("versionHistory.restore", "Ripristina")}
                       </Button>
                     </div>

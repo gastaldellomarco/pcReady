@@ -1,5 +1,8 @@
 import type { ImgHTMLAttributes } from "react";
 
+/**
+ *
+ */
 export type OptimizedImageProps = ImgHTMLAttributes<HTMLImageElement> & {
   /** Above-the-fold / LCP candidates: eager load, no lazy deferral. */
   priority?: boolean;

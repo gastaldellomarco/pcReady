@@ -1,9 +1,9 @@
-import type { ActionDef } from "@/types/automation";
 import type {
   AutomationAction,
   UpdateTicketAction,
   UpdateDeviceAction,
 } from "@/domain/automation";
+import type { ActionDef } from "@/types/automation";
 
 /**
  * Converts a legacy ActionDef to the new AutomationAction format

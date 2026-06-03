@@ -1,17 +1,32 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
-import i18n from "@/i18n";
-import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useVirtualList } from "@/hooks/useVirtualList";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { useTickets } from "@/hooks/use-tickets";
-import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList, fetchAllTicketsList } from "@/lib/queries/tickets";
+import { ArrowUpDown, Columns3, FileDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
-import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
+import { TableSkeletonRows, PageFetchError } from "@/components/page-states";
+import {
+  AsyncAutocomplete,
+  type AsyncAutocompleteOption,
+} from "@/components/pcready/AsyncAutocomplete";
+import {
+  StatusBadge,
+  PriorityLabel,
+  AssigneeChip,
+  TicketTypeBadge,
+} from "@/components/pcready/StatusBadge";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { useTickets } from "@/hooks/use-tickets";
+import { useVirtualList } from "@/hooks/useVirtualList";
+import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { getPublicAppSettings } from "@/lib/app-settings";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/detail-navigation";
+import { buildDownloadFileName } from "@/lib/downloads";
+import { errorMessage } from "@/lib/errors";
 import {
   STATUS_META,
   type TicketStatus,
@@ -28,26 +43,11 @@ import {
   type SlaLimits,
   DEFAULT_SLA_LIMITS,
 } from "@/lib/pcready";
-import {
-  StatusBadge,
-  PriorityLabel,
-  AssigneeChip,
-  TicketTypeBadge,
-} from "@/components/pcready/StatusBadge";
-import { toast } from "sonner";
-import { ArrowUpDown, Columns3, FileDown } from "lucide-react";
-import type { TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
-import { getPublicAppSettings } from "@/lib/app-settings";
-import { buildDownloadFileName } from "@/lib/downloads";
-import {
-  AsyncAutocomplete,
-  type AsyncAutocompleteOption,
-} from "@/components/pcready/AsyncAutocomplete";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { insertActivity } from "@/lib/queries/activity";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { errorMessage } from "@/lib/errors";
+import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList, fetchAllTicketsList } from "@/lib/queries/tickets";
+import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
+import type { TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 
 export const Route = createLazyFileRoute("/_app/tickets")({
   component: TicketsPage,
@@ -123,6 +123,44 @@ const EXTENDED_TICKET_COLUMNS: TicketColumnKey[] = [
   "sla",
   "time_open",
 ];
+
+async function loadClientOptsWrapper(q: string) {
+  try {
+    const data = await loadClientOptions(q);
+    return (data ?? []).map((client: any) => ({
+      value: client.id,
+      label: client.company_name || client.name,
+      description: client.email,
+    }));
+  } catch (err: unknown) {
+    toast.error(err instanceof Error ? err.message : i18n.t("tickets:toasts.loadClientsError", "Errore caricamento clienti"));
+    return [];
+  }
+}
+
+function rowToPdf(row: Row): TicketPdfRow {
+  return {
+    ticket_code: row.ticket_code,
+    model: row.device?.model || i18n.t("tickets:noAsset", "Nessun asset"),
+    serial: row.device?.serial || null,
+    client: row.client_ref?.name || row.client || "-",
+    requester: row.requester,
+    ticket_type: row.ticket_type,
+    priority: row.priority,
+    status: row.status,
+    assignee: row.assignee?.full_name || null,
+    created_at: row.created_at,
+  };
+}
+
+function textCell(value: string | null | undefined, empty = "-") {
+  const text = value?.trim() || empty;
+  return (
+    <div className="truncate" title={text}>
+      {text}
+    </div>
+  );
+}
 
 function TicketsPage() {
   const { t } = useTranslation("tickets");
@@ -274,34 +312,7 @@ function TicketsPage() {
     });
   }, [visibleIds]);
 
-  async function loadClientOptsWrapper(q: string) {
-    try {
-      const data = await loadClientOptions(q);
-      return (data ?? []).map((client: any) => ({
-        value: client.id,
-        label: client.company_name || client.name,
-        description: client.email,
-      }));
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t("toasts.loadClientsError", "Errore caricamento clienti"));
-      return [];
-    }
-  }
 
-  function rowToPdf(t: Row): TicketPdfRow {
-    return {
-      ticket_code: t.ticket_code,
-      model: ticketModel(t),
-      serial: ticketSerial(t),
-      client: ticketClient(t),
-      requester: t.requester,
-      ticket_type: t.ticket_type,
-      priority: t.priority,
-      status: t.status,
-      assignee: t.assignee?.full_name || null,
-      created_at: t.created_at,
-    };
-  }
 
   const activeFilterRecord: Record<string, any> = {
     status: fs || undefined,
@@ -494,15 +505,6 @@ function TicketsPage() {
       else if (next.size > 1) next.delete(key);
       return next;
     });
-  }
-
-  function textCell(value: string | null | undefined, empty = "-") {
-    const text = value?.trim() || empty;
-    return (
-      <div className="truncate" title={text}>
-        {text}
-      </div>
-    );
   }
 
   const allTicketColumns: TicketColumnDefinition[] = [
@@ -714,7 +716,7 @@ function TicketsPage() {
           {t("meta.history", "Storico")}
         </Link>
         <button onClick={() => setExportModalOpen(true)} disabled={!data.length} className="pc-btn pc-btn-ghost pc-btn-sm">
-          <FileDown className="w-3 h-3" />
+          <FileDown className="size-3" />
           {t("exportPdf", "Esporta PDF")}
         </button>
       </div>
@@ -795,7 +797,7 @@ function TicketsPage() {
             disabled={!!pdfBusy}
             onClick={exportSelectedPdf}
           >
-            <FileDown className="w-3 h-3" /> {t("exportSelected", "Esporta selezionati")}
+            <FileDown className="size-3" /> {t("exportSelected", "Esporta selezionati")}
           </button>
           <button
             type="button"
@@ -869,7 +871,7 @@ function TicketsPage() {
           </div>
           <details className="relative">
             <summary className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer list-none">
-              <Columns3 className="w-3 h-3" /> {t("columnsMenu", { count: visibleTableColumns.length, defaultValue: "Colonne ({{count}})" })}
+              <Columns3 className="size-3" /> {t("columnsMenu", { count: visibleTableColumns.length, defaultValue: "Colonne ({{count}})" })}
             </summary>
             <div
               className="absolute right-0 z-30 mt-2 w-56 rounded-xl border p-2 shadow-lg"

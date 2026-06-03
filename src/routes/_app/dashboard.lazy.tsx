@@ -249,7 +249,7 @@ function DashboardPage() {
             onClick={() => setDrawerOpen(true)}
             title="Note widget"
           >
-            <StickyNote className="w-4 h-4 mr-1" />
+            <StickyNote className="size-4 mr-1" />
             Note
           </button>
           <button
@@ -257,7 +257,7 @@ function DashboardPage() {
             onClick={() => setEditMode(!editMode)}
             title={t("widgetSettings")}
           >
-            <Settings2 className="w-4 h-4 mr-1" />
+            <Settings2 className="size-4 mr-1" />
             {t("widgets.buttonLabel")}
           </button>
         </div>
@@ -346,7 +346,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             value={ctx.total}
             accent="var(--accent)"
             sub={i18n.t("dashboard:stats.totalSuffix", "totali")}
-            icon={<Boxes className="w-5 h-5" />}
+            icon={<Boxes className="size-5" />}
             href="/tickets"
           />
           <DashboardStatCard
@@ -354,7 +354,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             value={ctx.devices.length}
             accent="var(--accent2)"
             sub={i18n.t("dashboard:stats.totalSuffix", "totali")}
-            icon={<Boxes className="w-5 h-5" />}
+            icon={<Boxes className="size-5" />}
             href="/inventory"
           />
           <DashboardStatCard
@@ -362,7 +362,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             value={ctx.activeClientsCount}
             accent="var(--purple)"
             sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
-            icon={<TrendingUp className="w-5 h-5" />}
+            icon={<TrendingUp className="size-5" />}
             href="/clients"
           />
           {(() => {
@@ -386,7 +386,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 accent={slaColor ?? "var(--accent)"}
                 sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} ${i18n.t("dashboard:stats.inPeriod", "nel periodo")}`}
                 valueColor={slaColor}
-                icon={<Clock className="w-5 h-5" />}
+                icon={<Clock className="size-5" />}
                 href="/tickets"
               />
             );
@@ -397,7 +397,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             accent="var(--warn)"
             sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--accent)"
-            icon={<Clock className="w-5 h-5" />}
+            icon={<Clock className="size-5" />}
             href={"/tickets?status=in-progress"}
             highlight
           />
@@ -407,7 +407,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             accent="var(--success)"
             sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--success)"
-            icon={<CircleCheck className="w-5 h-5" />}
+            icon={<CircleCheck className="size-5" />}
             href="/tickets?status=ready"
           />
           <DashboardStatCard
@@ -416,7 +416,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             accent="var(--purple)"
             sub={i18n.t("dashboard:stats.inPeriod", "nel periodo")}
             valueColor="var(--purple)"
-            icon={<Activity className="w-5 h-5" />}
+            icon={<Activity className="size-5" />}
             href={"/tickets?status=pending"}
             highlight
           />
@@ -430,7 +430,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 : i18n.t("dashboard:stats.noData", "nessun dato")
             }
             valueColor="var(--success)"
-            icon={<CircleCheck className="w-5 h-5" />}
+            icon={<CircleCheck className="size-5" />}
             href="/tickets"
           />
           <DashboardStatCard
@@ -441,7 +441,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             accent="var(--success)"
             sub={ctx.satisfactionStats ? `${ctx.satisfactionStats.count} feedback` : i18n.t("dashboard:stats.noData", "nessun dato")}
             valueColor="var(--success)"
-            icon={<CircleCheck className="w-5 h-5" />}
+            icon={<CircleCheck className="size-5" />}
             href="/tickets"
           />
           <DashboardStatCard
@@ -449,7 +449,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             value={ctx.checklistStats?.avgCompletionLabel ?? i18n.t("dashboard:widgets.na", "N/D")}
             accent="var(--accent)"
             sub={i18n.t("dashboard:stats.perCompletion", "per completamento")}
-            icon={<Clock className="w-5 h-5" />}
+            icon={<Clock className="size-5" />}
             href="/tickets"
           />
           <DashboardStatCard
@@ -461,7 +461,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 ? `${ctx.checklistStats.topTemplate.count} ${i18n.t("dashboard:stats.instances", "istanze")}`
                 : i18n.t("dashboard:stats.noData", "nessun dato")
             }
-            icon={<ListChecksIcon className="w-5 h-5" />}
+            icon={<ListChecksIcon className="size-5" />}
             href="/checklist"
           />
           <DashboardStatCard
@@ -475,7 +475,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 ? `${ctx.checklistStats.topTechnician.completed}/${ctx.checklistStats.topTechnician.total} ${i18n.t("dashboard:stats.completed", "completate")} · ${ctx.checklistStats.topTechnician.id.slice(0, 8)}`
                 : i18n.t("dashboard:stats.noAssignee", "nessun assegnatario")
             }
-            icon={<CircleCheck className="w-5 h-5" />}
+            icon={<CircleCheck className="size-5" />}
             href="/tickets"
           />
         </div>
@@ -501,7 +501,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 search={() => ({ warranty: "all" }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                {i18n.t("dashboard:warranty.inventory", "Inventario")} <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:warranty.inventory", "Inventario")} <ArrowRight className="size-3" />
               </Link>
             </div>
             <div className="pc-card-body grid grid-cols-2 gap-2 text-xs">
@@ -865,7 +865,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 search={() => ({ export: false }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")} <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")} <ArrowRight className="size-3" />
               </Link>
             </div>
             {!ctx.isMobile ? (
@@ -1006,7 +1006,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             <div className="pc-card-hd">
               <span className="pc-card-title">{i18n.t("dashboard:recentActivity.title", "Attivita recente")}</span>
               <Link to="/automations" className="pc-btn pc-btn-ghost pc-btn-sm">
-                {i18n.t("dashboard:recentActivity.fullLog", "Log completo")} <ArrowRight className="w-3 h-3" />
+                {i18n.t("dashboard:recentActivity.fullLog", "Log completo")} <ArrowRight className="size-3" />
               </Link>
             </div>
             <div className="pc-card-body">
@@ -1021,7 +1021,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     }}
                   >
                     <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                      className="size-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
                       title={l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}
                       aria-label={`${i18n.t("dashboard:recentActivity.actionBy", "Azione eseguita da")}: ${l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}`}
                       style={{
@@ -1124,7 +1124,7 @@ function MaintenanceOverviewWidget() {
         <div className="pc-card-hd">
           <span className="pc-card-title">{t("maintenance.upcomingTitle", "Prossime manutenzioni pianificate")}</span>
           <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
-            {t("maintenance.calendar", "Calendario")} <ArrowRight className="w-3 h-3" />
+            {t("maintenance.calendar", "Calendario")} <ArrowRight className="size-3" />
           </Link>
         </div>
         <div className="overflow-x-auto">

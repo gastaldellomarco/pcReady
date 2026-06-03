@@ -1,6 +1,6 @@
-import { z } from "zod";
 import { promises as dns } from "dns";
 import ipaddr from "ipaddr.js";
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const AUTOMATION_RUN_LOG_SELECT =
@@ -65,6 +65,9 @@ interface ExecuteAutomationInput {
   triggerPayload?: Record<string, any>;
 }
 
+/**
+ *
+ */
 export interface SaveAutomationRunInput {
   automationId: string;
   triggeredBy: string;
@@ -137,6 +140,9 @@ export async function executeAutomationFlow(opts: {
   });
 }
 
+/**
+ *
+ */
 export async function requireAutomationRunnerUser(accessToken: string) {
   const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
   if (error || !data.user) throw new Response("Non autenticato", { status: 401 });
@@ -153,6 +159,9 @@ export async function requireAutomationRunnerUser(accessToken: string) {
   return data.user;
 }
 
+/**
+ *
+ */
 export async function executeAutomationRun({
   automationId,
   triggeredBy,
@@ -268,6 +277,9 @@ export async function executeAutomationRun({
   return log;
 }
 
+/**
+ *
+ */
 export async function notifyAutomationFailure({
   flowId,
   flowName,
@@ -286,6 +298,9 @@ export async function notifyAutomationFailure({
   });
 }
 
+/**
+ *
+ */
 export async function simulateAutomationDryRun(flowId: string): Promise<DryRunResult> {
   const { data: flow, error } = await supabaseAdmin
     .from("automation_flows" as any)
@@ -328,6 +343,9 @@ export async function simulateAutomationDryRun(flowId: string): Promise<DryRunRe
   return { steps, summary };
 }
 
+/**
+ *
+ */
 export function computeHealth(logs: Pick<AutomationRunLog, "status">[]): HealthStatus {
   if (!logs.length) return "never_run";
   const lastThree = logs.slice(0, 3);
@@ -982,6 +1000,9 @@ function delayAction(
   };
 }
 
+/**
+ *
+ */
 export async function webhookAction(
   rawConfig: Record<string, any>,
   triggerPayload: Record<string, any>,

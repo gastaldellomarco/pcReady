@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react";
 import { expect, fn, userEvent, within } from "@storybook/test";
 import { DatePickerInput } from "./date-picker-input";
+import type { Meta, StoryObj } from "@storybook/react";
 
 const meta: Meta<typeof DatePickerInput> = {
   title: "UI/DatePickerInput",

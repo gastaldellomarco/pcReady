@@ -14,6 +14,9 @@ export const TRIGGER_TYPES = [
   "manual",
 ] as const;
 
+/**
+ *
+ */
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 
 export const TriggerDefSchema = z.object({
@@ -21,6 +24,9 @@ export const TriggerDefSchema = z.object({
   config: z.record(z.unknown()).optional(),
 });
 
+/**
+ *
+ */
 export type TriggerDef = z.infer<typeof TriggerDefSchema>;
 
 // ─── Condition Definition ─────────────────────────────────────────────
@@ -37,6 +43,9 @@ export const CONDITION_TYPES = [
   "tag_contains",
 ] as const;
 
+/**
+ *
+ */
 export type ConditionType = (typeof CONDITION_TYPES)[number];
 
 export const ConditionConfigSchema = z.object({
@@ -44,6 +53,9 @@ export const ConditionConfigSchema = z.object({
   value: z.string().optional(),
 });
 
+/**
+ *
+ */
 export type ConditionConfig = z.infer<typeof ConditionConfigSchema>;
 
 export const ConditionDefSchema = z.object({
@@ -52,6 +64,9 @@ export const ConditionDefSchema = z.object({
   config: ConditionConfigSchema.optional(),
 });
 
+/**
+ *
+ */
 export type ConditionDef = z.infer<typeof ConditionDefSchema>;
 
 // ─── Action Definition ────────────────────────────────────────────────
@@ -64,6 +79,9 @@ export const ACTION_TYPES = [
   "assign_ticket",
 ] as const;
 
+/**
+ *
+ */
 export type ActionType = (typeof ACTION_TYPES)[number];
 
 /** Per-action config schemas for runtime validation (mirrors server-side schemas). */
@@ -73,12 +91,18 @@ export const SendEmailConfigSchema = z.object({
   body: z.string().optional(),
   is_html: z.boolean().optional(),
 });
+/**
+ *
+ */
 export type SendEmailConfig = z.infer<typeof SendEmailConfigSchema>;
 
 export const UpdateTicketStatusConfigSchema = z.object({
   ticket_id: z.string().optional(),
   status: z.string().optional(),
 });
+/**
+ *
+ */
 export type UpdateTicketStatusConfig = z.infer<typeof UpdateTicketStatusConfigSchema>;
 
 export const CreateNotificationConfigSchema = z.object({
@@ -88,21 +112,33 @@ export const CreateNotificationConfigSchema = z.object({
   body: z.string().optional(),
   link: z.string().optional(),
 });
+/**
+ *
+ */
 export type CreateNotificationConfig = z.infer<typeof CreateNotificationConfigSchema>;
 
 export const UpdateDeviceStatusConfigSchema = z.object({
   device_id: z.string().optional(),
   status: z.string().optional(),
 });
+/**
+ *
+ */
 export type UpdateDeviceStatusConfig = z.infer<typeof UpdateDeviceStatusConfigSchema>;
 
 export const AssignTicketConfigSchema = z.object({
   ticket_id: z.string().optional(),
   assignee_id: z.string().optional(),
 });
+/**
+ *
+ */
 export type AssignTicketConfig = z.infer<typeof AssignTicketConfigSchema>;
 
 export const ActionConfigSchema = z.record(z.unknown());
+/**
+ *
+ */
 export type ActionConfig = Record<string, unknown>;
 
 export const ActionDefSchema = z.object({
@@ -111,11 +147,17 @@ export const ActionDefSchema = z.object({
   config: ActionConfigSchema.optional(),
 });
 
+/**
+ *
+ */
 export type ActionDef = z.infer<typeof ActionDefSchema>;
 
 // ─── Schedule Definition ──────────────────────────────────────────────
 
 export const SCHEDULE_TYPES = ["none", "cron", "interval"] as const;
+/**
+ *
+ */
 export type ScheduleType = (typeof SCHEDULE_TYPES)[number];
 
 export const ScheduleDefSchema = z.object({
@@ -124,6 +166,9 @@ export const ScheduleDefSchema = z.object({
   interval: z.string().optional(),
 });
 
+/**
+ *
+ */
 export type ScheduleDef = z.infer<typeof ScheduleDefSchema>;
 
 // ─── Wizard Payload (Flow Builder) ────────────────────────────────────
@@ -142,6 +187,9 @@ export const WizardFlowPayloadSchema = z.object({
   selectedTemplateId: z.string().nullable().optional(),
 });
 
+/**
+ *
+ */
 export type WizardFlowPayload = z.infer<typeof WizardFlowPayloadSchema>;
 
 // ─── Flow Definition (stored in JSON) ─────────────────────────────────
@@ -163,6 +211,9 @@ export const FlowDefinitionMetaSchema = z
   })
   .catchall(z.unknown());
 
+/**
+ *
+ */
 export type FlowDefinitionMeta = z.infer<typeof FlowDefinitionMetaSchema>;
 
 /** Contenuto JSON `automation_flows.flow_definition` (nodi React Flow + meta wizard). */
@@ -174,6 +225,9 @@ export const AutomationFlowDefinitionSchema = z
   })
   .catchall(z.unknown());
 
+/**
+ *
+ */
 export type AutomationFlowDefinition = z.infer<typeof AutomationFlowDefinitionSchema>;
 
 // ─── Automation Rule (from DB) ────────────────────────────────────────
@@ -191,6 +245,9 @@ export const AutomationRuleSchema = z.object({
   flow_definition: AutomationFlowDefinitionSchema.optional(),
 });
 
+/**
+ *
+ */
 export type AutomationRule = z.infer<typeof AutomationRuleSchema>;
 
 // ─── Automation Flow (full DB row) ────────────────────────────────────
@@ -205,6 +262,9 @@ export const AutomationFlowSchema = AutomationRuleSchema.extend({
   updated_by: z.string().nullable().optional(),
 });
 
+/**
+ *
+ */
 export type AutomationFlow = z.infer<typeof AutomationFlowSchema>;
 
 // ─── Version Snapshot ─────────────────────────────────────────────────
@@ -226,6 +286,9 @@ export const AutomationVersionSnapshotSchema = z.object({
   summary: z.string().nullable().optional(),
 });
 
+/**
+ *
+ */
 export type AutomationVersionSnapshot = z.infer<typeof AutomationVersionSnapshotSchema>;
 
 // ─── Archive Metadata ─────────────────────────────────────────────────
@@ -238,6 +301,9 @@ export const ArchiveMetadataSchema = z.object({
   source_version: z.number().optional(),
 });
 
+/**
+ *
+ */
 export type ArchiveMetadata = z.infer<typeof ArchiveMetadataSchema>;
 
 // ─── Activity Log ─────────────────────────────────────────────────────
@@ -249,6 +315,9 @@ export const ActivityLogSchema = z.object({
   created_at: z.string(),
 });
 
+/**
+ *
+ */
 export type ActivityLog = z.infer<typeof ActivityLogSchema>;
 
 // ─── Run Log ──────────────────────────────────────────────────────────

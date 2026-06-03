@@ -1,10 +1,9 @@
+import { CalendarDays, CheckCircle2, Plus, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { CalendarDays, CheckCircle2, Plus, Wrench } from "lucide-react";
-import OverflowTable from "@/components/ui/overflow-table";
 import { toast } from "sonner";
-import { fmtDate, fmtDateTime } from "@/lib/pcready";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import OverflowTable from "@/components/ui/overflow-table";
 import {
   MAINTENANCE_RECURRENCE_LABEL,
   MAINTENANCE_STATUS_META,
@@ -21,7 +20,11 @@ import {
   type MaintenanceHistoryEntry,
   type TechnicianOption,
 } from "@/lib/maintenance";
+import { fmtDate, fmtDateTime } from "@/lib/pcready";
 
+/**
+ *
+ */
 export function MaintenanceStatusBadge({ schedule }: { schedule: MaintenanceSchedule }) {
   const status = getMaintenanceStatus(schedule);
   const meta = MAINTENANCE_STATUS_META[status];
@@ -35,6 +38,9 @@ export function MaintenanceStatusBadge({ schedule }: { schedule: MaintenanceSche
   );
 }
 
+/**
+ *
+ */
 export function MaintenanceSchedulePanel({
   deviceId,
   currentUserId,
@@ -148,7 +154,7 @@ export function MaintenanceSchedulePanel({
         </div>
         {canEdit ? (
           <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3 w-3" /> {t("maintenance.newMaintenance", "Nuova manutenzione")}
+            <Plus className="size-3" /> {t("maintenance.newMaintenance", "Nuova manutenzione")}
           </button>
         ) : null}
       </div>
@@ -290,7 +296,7 @@ export function MaintenanceSchedulePanel({
                         disabled={completingId === schedule.id}
                         onClick={() => void markCompleted(schedule)}
                       >
-                        <CheckCircle2 className="h-3 w-3" />
+                        <CheckCircle2 className="size-3" />
                         {completingId === schedule.id ? t("maintenance.updating", "Aggiornamento...") : t("maintenance.markCompleted", "Segna completata")}
                       </button>
                     ) : "—"}

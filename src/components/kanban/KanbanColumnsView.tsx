@@ -201,7 +201,7 @@ export function KanbanColumnsView({
                 className="flex items-center gap-1 text-left"
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  className="size-2.5 rounded-full flex-shrink-0"
                   style={{ background: STATUS_META[s].color }}
                 />
                 <span className="text-[12px] font-bold uppercase tracking-wider">

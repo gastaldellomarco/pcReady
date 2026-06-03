@@ -1,8 +1,8 @@
+import { Variable, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Variable, Search } from "lucide-react";
-import type { AutomationVariable } from "@/domain/automation-variables";
 import { groupVariablesByCategory, searchVariables } from "@/domain/automation-variables";
+import type { AutomationVariable } from "@/domain/automation-variables";
 
 interface VariablePickerProps {
   variables: AutomationVariable[];
@@ -10,6 +10,9 @@ interface VariablePickerProps {
   children?: React.ReactNode;
 }
 
+/**
+ *
+ */
 export function VariablePicker({ variables, onSelect, children }: VariablePickerProps) {
   const { t } = useTranslation("automations");
   const [isOpen, setIsOpen] = useState(false);
@@ -36,7 +39,7 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
       >
         {children || (
           <>
-            <Variable className="w-3.5 h-3.5" />
+            <Variable className="size-3.5" />
             <span className="hidden sm:inline">{"{"}</span>
             {"}"}
           </>
@@ -46,13 +49,16 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
       {isOpen && (
         <>
           <div
+            role="button"
+            tabIndex={-1}
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
+            onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setIsOpen(false); }}
           />
           <div className="absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text3" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-text3" />
                 <input
                   type="text"
                   value={searchQuery}

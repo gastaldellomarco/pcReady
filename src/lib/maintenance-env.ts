@@ -26,6 +26,9 @@ function readEnvRaw(...keys: string[]): unknown {
   return undefined;
 }
 
+/**
+ *
+ */
 export function isMaintenanceModeEnabled(): boolean {
   return isTruthyEnv(readEnvRaw("VITE_MAINTENANCE_MODE", "MAINTENANCE_MODE"));
 }

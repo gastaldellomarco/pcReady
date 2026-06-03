@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   STATUS_META,
   type TicketStatus,
@@ -7,19 +8,27 @@ import {
   TICKET_TYPE_META,
   type TicketType,
 } from "@/lib/pcready";
-import { useTranslation } from "react-i18next";
 
+/**
+ *
+ */
 export function StatusBadge({ status }: { status: TicketStatus }) {
   const { t } = useTranslation("tickets");
   const m = STATUS_META[status];
   return <span className={`pc-badge ${m.cls}`}>{t("status." + status, m.label)}</span>;
 }
 
+/**
+ *
+ */
 export function PriorityLabel({ p }: { p: TicketPriority }) {
   const { t } = useTranslation("tickets");
   return <span className={`pc-pri-${p}`}>{t("priority." + p, PRIORITY_LABEL[p])}</span>;
 }
 
+/**
+ *
+ */
 export function TicketTypeBadge({ type }: { type: TicketType }) {
   const { t } = useTranslation("tickets");
   const meta = TICKET_TYPE_META[type];
@@ -30,6 +39,9 @@ export function TicketTypeBadge({ type }: { type: TicketType }) {
   );
 }
 
+/**
+ *
+ */
 export function AssigneeChip({
   initials,
   name,

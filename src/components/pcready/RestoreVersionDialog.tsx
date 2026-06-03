@@ -1,4 +1,7 @@
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,12 +9,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Version } from "@/lib/versioning";
-import { AlertTriangle } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 interface RestoreVersionDialogProps {
   version: Version;
@@ -20,6 +20,9 @@ interface RestoreVersionDialogProps {
   onConfirm: (note?: string) => void;
 }
 
+/**
+ *
+ */
 export function RestoreVersionDialog({
   version,
   open,

@@ -1,5 +1,8 @@
 import type { TicketPriority, TicketType } from "@/lib/pcready";
 
+/**
+ *
+ */
 export function getInitialCreateTicketFormState() {
   return {
     client_id: "",

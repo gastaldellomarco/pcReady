@@ -7,6 +7,9 @@ import type { DashboardLayout } from "@/components/dashboard/widget-registry";
 const USER_PROFILE_SELECT =
   "id, display_name, avatar_url, phone, timezone, language, preferred_theme, notify_ticket_assigned, notify_ticket_status_changed, notify_automation_failed, notify_device_status_changed, notify_checklist_completed, notify_mentions, notify_ticket_completed, email_notify_ticket_assigned, email_notify_ticket_status_changed, email_notify_ticket_completed, email_notify_automation_failed, email_notify_device_status_changed, email_notify_checklist_completed, email_notify_mentions, notification_digest, webhook_url, last_notification_sent_at, password_set, dashboard_layout, created_at, updated_at";
 
+/**
+ *
+ */
 export interface UserProfile {
   id: string;
   display_name: string | null;
@@ -40,6 +43,9 @@ export interface UserProfile {
   recent_activity: UserActivity[];
 }
 
+/**
+ *
+ */
 export interface UserActivity {
   id: string;
   type: string;
@@ -48,6 +54,9 @@ export interface UserActivity {
   created_at: string;
 }
 
+/**
+ *
+ */
 export interface TechnicianProfileOverview {
   stats: {
     closedTickets: number;

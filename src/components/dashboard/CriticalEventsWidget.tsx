@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { XCircle, AlertTriangle, RefreshCw, ArrowRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { getCriticalEvents } from "@/lib/audit-log";
 import { getOverdueTickets } from "@/lib/dashboard-analytics";
 import { fmtDateTime, formatSlaCountdown } from "@/lib/pcready";
@@ -16,6 +16,9 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+/**
+ *
+ */
 export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps) {
   const { t } = useTranslation("dashboard");
   const [events, setEvents] = useState<ActivityLogEntry[]>([]);
@@ -55,7 +58,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
           )}
         </div>
         <button onClick={refresh} className="pc-btn pc-btn-ghost pc-btn-sm" disabled={loading}>
-          <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`size-3 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
       <div className="pc-card-body">
@@ -63,7 +66,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
           <div className="text-sm text-text3 py-4 text-center">{t("widgets.loading", "Caricamento...")}</div>
         ) : events.length === 0 && slaTickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
-            <AlertTriangle className="w-5 h-5 mx-auto mb-2 opacity-40" />
+            <AlertTriangle className="size-5 mx-auto mb-2 opacity-40" />
             {t("widgets.noCriticalEvents", "Nessun evento critico nelle ultime 24h")}
           </div>
         ) : (
@@ -73,7 +76,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
                 key={`sla-${ticket.id}`}
                 className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-[12.5px] bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50"
               >
-                <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                <XCircle className="size-4 text-red-500 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-text2 truncate">
                     {ticket.ticket_code}: {ticket.sla_breached ? t("widgets.slaBreached", "SLA violato") : t("widgets.slaExpiring", "SLA in scadenza")}
@@ -94,7 +97,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
                 key={event.id}
                 className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-[12.5px] bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50"
               >
-                <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                <XCircle className="size-4 text-red-500 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-text2 truncate">{event.message}</div>
                   <div className="flex items-center gap-3 mt-1">
@@ -111,7 +114,7 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
               search={{} as any}
               className="flex items-center justify-center gap-1 text-[11px] text-accent hover:underline mt-1"
             >
-              {t("widgets.viewAllLogs", "Vedi tutti i log")} <ArrowRight className="w-3 h-3" />
+              {t("widgets.viewAllLogs", "Vedi tutti i log")} <ArrowRight className="size-3" />
             </Link>
           </div>
         )}

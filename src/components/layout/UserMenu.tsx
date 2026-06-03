@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { LogOut, Settings, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { AuthProfile } from "@/lib/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import type { AuthProfile } from "@/lib/auth-context";
 
 interface UserMenuProps {
   profile: AuthProfile;
@@ -19,6 +19,9 @@ interface UserMenuProps {
   onNavigate?: () => void;
 }
 
+/**
+ *
+ */
 export function UserMenu({
   profile,
   avatarColor,
@@ -46,7 +49,7 @@ export function UserMenu({
             onClick={onNavigate}
             className="cursor-pointer"
           >
-            <User className="mr-2 h-4 w-4" />
+            <User className="mr-2 size-4" />
             {t("profile.title", "Profilo")}
           </Link>
         </DropdownMenuItem>
@@ -57,13 +60,13 @@ export function UserMenu({
             onClick={onNavigate}
             className="cursor-pointer"
           >
-            <Settings className="mr-2 h-4 w-4" />
+            <Settings className="mr-2 size-4" />
             {t("profile.settings", "Impostazioni")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 size-4" />
           {t("profile.logout", "Esci")}
         </DropdownMenuItem>
       </DropdownMenuContent>

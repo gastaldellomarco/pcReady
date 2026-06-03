@@ -43,6 +43,9 @@ export const AppSettingsSchema = z.object({
   mfa_grace_period_days: numberInput("Giorni di grazia per configurare il 2FA"),
 });
 
+/**
+ *
+ */
 export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;
 
 function numberInput(message: string) {

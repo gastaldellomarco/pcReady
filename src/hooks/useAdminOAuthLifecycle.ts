@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import {
@@ -7,6 +7,9 @@ import {
   type OAuthClientLifecyclePayload,
 } from "@/lib/oauth-consent";
 
+/**
+ *
+ */
 export function useAdminOAuthLifecycle(args: {
   accessToken: string | undefined;
 }) {

@@ -1,12 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ *
+ */
 export type ScriptsListParams = { q?: string; category?: string };
 
 // ── Explicit field select (excludes heavy `content` field loaded on-demand) ──
 const SCRIPTS_LIST_SELECT =
   "id, name, category, description, language, icon, color, created_by, created_at, updated_at";
 
+/**
+ *
+ */
 export async function fetchScriptsList() {
   const { data, error } = await supabase
     .from("scripts")
@@ -19,6 +25,9 @@ export async function fetchScriptsList() {
 
 const SCRIPT_DETAIL_SELECT = `${SCRIPTS_LIST_SELECT}, content`;
 
+/**
+ *
+ */
 export async function fetchScriptById(id: string) {
   const { data, error } = await supabase
     .from("scripts")
@@ -29,6 +38,9 @@ export async function fetchScriptById(id: string) {
   return data as any;
 }
 
+/**
+ *
+ */
 export function useScriptsList() {
   return useQuery({ queryKey: ["scripts"], queryFn: () => fetchScriptsList() });
 }
@@ -39,6 +51,9 @@ async function deleteScript(id: string) {
   return true;
 }
 
+/**
+ *
+ */
 export function useDeleteScript() {
   const qc = useQueryClient();
   return useMutation({
@@ -66,6 +81,9 @@ async function updateScript(id: string, payload: Record<string, any>) {
   return true;
 }
 
+/**
+ *
+ */
 export function useCreateScript() {
   const qc = useQueryClient();
   return useMutation({
@@ -74,6 +92,9 @@ export function useCreateScript() {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateScript() {
   const qc = useQueryClient();
   return useMutation({

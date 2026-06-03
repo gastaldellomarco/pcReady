@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { OAuthClientSchema, type OAuthClientInput } from "@/lib/schemas";
+import { useAdminOAuthLifecycle } from "@/hooks/useAdminOAuthLifecycle";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import {
   listOAuthClients,
@@ -14,9 +14,21 @@ import {
   type OAuthClientInfo,
   type OAuthClientStatus,
 } from "@/lib/oauth-consent";
+import { OAuthClientSchema, type OAuthClientInput } from "@/lib/schemas";
 import type { OAuthScope } from "@/lib/oauth-scopes";
-import { useAdminOAuthLifecycle } from "@/hooks/useAdminOAuthLifecycle";
 
+async function copyOAuthField(label: string, text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiato negli appunti`);
+  } catch {
+    toast.error("Impossibile copiare. Seleziona il testo manualmente.");
+  }
+}
+
+/**
+ *
+ */
 export function useAdminOAuthClients(args: { accessToken: string | undefined; isAdmin: boolean }) {
   const { accessToken, isAdmin } = args;
   const listClients = useServerFn(listOAuthClients);
@@ -90,15 +102,6 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
       setCreateClientBusy(false);
     }
   });
-
-  async function copyOAuthField(label: string, text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(`${label} copiato negli appunti`);
-    } catch {
-      toast.error("Impossibile copiare. Seleziona il testo manualmente.");
-    }
-  }
 
   async function updateClientStatus(clientId: string, nextStatus: OAuthClientStatus) {
     if (!accessToken) return;

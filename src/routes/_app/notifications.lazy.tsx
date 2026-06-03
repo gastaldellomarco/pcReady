@@ -1,10 +1,20 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
 import { CheckCheck, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { iconForType, relativeTime } from "@/components/layout/notification-utils";
+import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import {
   deleteReadNotifications,
@@ -16,16 +26,6 @@ import {
   type NotificationType,
 } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { iconForType, relativeTime } from "@/components/layout/notification-utils";
 
 export const Route = createLazyFileRoute("/_app/notifications")({
   component: NotificationsPage,
@@ -159,11 +159,11 @@ function NotificationsPage() {
         </Select>
         <span className="ml-auto text-xs text-text3 font-mono">{t("count", { count: total })}</span>
         <Button variant="outline" size="sm" onClick={markAll}>
-          <CheckCheck className="h-4 w-4" />
+          <CheckCheck className="size-4" />
           {t("actions.markAllRead", "Segna tutte")}
         </Button>
         <Button variant="outline" size="sm" onClick={removeRead}>
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="size-4" />
           {t("actions.deleteRead", "Elimina lette")}
         </Button>
       </div>
@@ -192,13 +192,13 @@ function NotificationsPage() {
                     unread && "bg-primary/10",
                   )}
                 >
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <Icon className="h-4 w-4" />
+                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <span className="font-medium">{notification.title}</span>
-                      {unread && <span className="h-2 w-2 rounded-full bg-primary" />}
+                      {unread && <span className="size-2 rounded-full bg-primary" />}
                     </span>
                     {notification.body && (
                       <span className="mt-1 block text-sm text-muted-foreground">

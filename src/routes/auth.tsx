@@ -5,20 +5,20 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
-import { initTheme } from "@/lib/theme";
-import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
-import staffLogin from "@/lib/staff-auth";
-import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { supabase } from "@/integrations/supabase/client";
+import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
+import { useAuth } from "@/lib/auth-context";
+import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
 import { errorMessage } from "@/lib/errors";
+import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
+import staffLogin from "@/lib/staff-auth";
+import { initTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

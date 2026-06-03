@@ -1,8 +1,4 @@
-import OverflowTable from "@/components/ui/overflow-table";
-
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   Ban,
@@ -16,19 +12,24 @@ import {
   RefreshCcw,
   Trash2,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-
-import { LoadingSkeleton } from "@/components/RouteHelpers";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { BundleForm, AssignmentForm } from "@/components/bundles/BundleForms";
 import {
   BundlePriorityBadge,
   BundleStatusBadge,
   BundleUsageBar,
 } from "@/components/bundles/BundleBadges";
+import { BundleForm, AssignmentForm } from "@/components/bundles/BundleForms";
+import { LoadingSkeleton } from "@/components/RouteHelpers";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import OverflowTable from "@/components/ui/overflow-table";
+import { useAssignmentManager } from "@/hooks/use-assignment-manager";
+import { useBillingManager, type PaymentDraft } from "@/hooks/use-billing-manager";
+import { useBundleManager } from "@/hooks/use-bundle-manager";
+import { useMonthlyUsage } from "@/hooks/use-monthly-usage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import {
   BILLING_TYPE_LABEL,
   BUNDLE_STATUS_LABEL,
@@ -52,10 +53,7 @@ import {
   useUpdateBundleAssignmentMutation,
   useUpdateBundleMutation,
 } from "@/lib/bundles";
-import { useAssignmentManager } from "@/hooks/use-assignment-manager";
-import { useBundleManager } from "@/hooks/use-bundle-manager";
-import { useBillingManager, type PaymentDraft } from "@/hooks/use-billing-manager";
-import { useMonthlyUsage } from "@/hooks/use-monthly-usage";
+import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { errorMessage } from "@/lib/errors";
 
 export const Route = createLazyFileRoute("/_app/bundles")({
@@ -225,7 +223,7 @@ function BundlesPage() {
         <div className="pc-card-hd">
           <div>
             <div className="pc-card-title flex items-center gap-2">
-              <Package className="h-5 w-5 text-accent" /> {t("title", "Bundle assistenza")}
+              <Package className="size-5 text-accent" /> {t("title", "Bundle assistenza")}
             </div>
             <div className="mt-1 text-sm text-text3">
               {t("pageDescription", "Pacchetti vendibili, SLA, assegnazioni cliente, consumi e fatturazione extra.")}
@@ -241,7 +239,7 @@ function BundlesPage() {
                   bundleManager.startCreate();
                 }}
               >
-                <Plus className="h-3 w-3" /> {t("newBundle", "Nuovo bundle")}
+                <Plus className="size-3" /> {t("newBundle", "Nuovo bundle")}
               </button>
             )}
             {canManageAssignments && (
@@ -253,11 +251,11 @@ function BundlesPage() {
                   assignmentManager.startCreate();
                 }}
               >
-                <Plus className="h-3 w-3" /> {t("assignToClient", "Assegna a cliente")}
+                <Plus className="size-3" /> {t("assignToClient", "Assegna a cliente")}
               </button>
             )}
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportCsv}>
-              <Download className="h-3 w-3" /> {t("exportCsv", "Export CSV")}
+              <Download className="size-3" /> {t("exportCsv", "Export CSV")}
             </button>
           </div>
         </div>
@@ -439,10 +437,10 @@ function CatalogTab({
             {isAdmin && (
               <div className="flex gap-2">
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onEdit(bundle)}>
-                  <Pencil className="h-3 w-3" /> {t("catalog.edit", "Modifica")}
+                  <Pencil className="size-3" /> {t("catalog.edit", "Modifica")}
                 </button>
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onToggle(bundle)}>
-                  {bundle.active ? <Ban className="h-3 w-3" /> : <RefreshCcw className="h-3 w-3" />}
+                  {bundle.active ? <Ban className="size-3" /> : <RefreshCcw className="size-3" />}
                   {bundle.active ? t("catalog.deactivate", "Disattiva") : t("catalog.reactivate", "Riattiva")}
                 </button>
               </div>
@@ -502,7 +500,7 @@ function AssignmentsTab({
             onClick={onToggleShowAll}
             title={showAll ? t("assignments.showActiveOnly", "Mostra solo attivi") : t("assignments.showAll", "Mostra tutti")}
           >
-            <Filter className="h-3 w-3" />
+            <Filter className="size-3" />
             {showAll ? t("assignments.showActiveOnly", "Solo attivi") : t("assignments.showAll", "Mostra tutti")}
           </button>
         </div>
@@ -527,19 +525,19 @@ function AssignmentsTab({
               {canManage && (
                 <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "var(--border)" }}>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onEdit(assignment)} title={t("assignments.edit", "Modifica assegnazione")}>
-                    <Pencil className="h-3 w-3" /> {t("assignments.edit", "Modifica")}
+                    <Pencil className="size-3" /> {t("assignments.edit", "Modifica")}
                   </button>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onViewUsage(assignment)} title={t("assignments.viewUsage", "Storico consumo")}>
-                    <History className="h-3 w-3" /> {t("assignments.viewUsage", "Consumo")}
+                    <History className="size-3" /> {t("assignments.viewUsage", "Consumo")}
                   </button>
                   {assignment.status === "active" && (
                     <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => onCancel(assignment.id)} title={t("assignments.cancel", "Annulla assegnazione")}>
-                      <Ban className="h-3 w-3" /> {t("assignments.cancel", "Annulla")}
+                      <Ban className="size-3" /> {t("assignments.cancel", "Annulla")}
                     </button>
                   )}
                   {assignment.status !== "active" && (
                     <button className="pc-btn pc-btn-ghost pc-btn-xs text-destructive" onClick={() => onDelete(assignment.id)} disabled={busy} title={t("assignments.delete", "Elimina")}>
-                      <Trash2 className="h-3 w-3" /> {t("assignments.delete", "Elimina")}
+                      <Trash2 className="size-3" /> {t("assignments.delete", "Elimina")}
                     </button>
                   )}
                 </div>
@@ -598,14 +596,14 @@ function AssignmentsTab({
                         onClick={() => onEdit(assignment)}
                         title={t("assignments.edit", "Modifica assegnazione")}
                       >
-                        <Pencil className="h-3 w-3" />
+                        <Pencil className="size-3" />
                       </button>
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
                         onClick={() => onViewUsage(assignment)}
                         title={t("assignments.viewUsage", "Storico consumo")}
                       >
-                        <History className="h-3 w-3" />
+                        <History className="size-3" />
                       </button>
                       {assignment.status === "active" && (
                         <button
@@ -613,7 +611,7 @@ function AssignmentsTab({
                           onClick={() => onCancel(assignment.id)}
                           title={t("assignments.cancel", "Annulla assegnazione")}
                         >
-                          <Ban className="h-3 w-3" />
+                          <Ban className="size-3" />
                         </button>
                       )}
                       {assignment.status !== "active" && (
@@ -623,7 +621,7 @@ function AssignmentsTab({
                           disabled={busy}
                           title={t("assignments.delete", "Elimina")}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="size-3" />
                         </button>
                       )}
                     </div>
@@ -721,7 +719,7 @@ function UsageTab({
                     <td className="px-3 py-2">
                       {hasAlert ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-700">
-                          <AlertTriangle className="h-3 w-3" /> {t("usage.warning", "Attenzione")}
+                          <AlertTriangle className="size-3" /> {t("usage.warning", "Attenzione")}
                         </span>
                       ) : (
                         <span className="text-text3">{t("usage.ok", "OK")}</span>
@@ -858,7 +856,7 @@ function BillingTab({
       <div className="pc-card">
         <div className="pc-card-hd">
           <div className="pc-card-title flex items-center gap-2">
-            <CreditCard className="h-4 w-4" /> {t("billing.title", "Canoni e fatturazione")}
+            <CreditCard className="size-4" /> {t("billing.title", "Canoni e fatturazione")}
           </div>
         </div>
         <div className="pc-card-body space-y-3">
@@ -1007,7 +1005,7 @@ function BillingTab({
                       disabled={busy}
                       title={t("billing.delete", "Elimina")}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="size-3" />
                     </button>
                   )}
                 </td>

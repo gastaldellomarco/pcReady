@@ -38,6 +38,9 @@ const LEGACY_TEMPLATES: LegacyEmailTemplate[] = [
   },
 ];
 
+/**
+ *
+ */
 export function getTemplates() {
   return LEGACY_TEMPLATES;
 }
@@ -89,6 +92,9 @@ export function renderTemplate(
   template: LegacyEmailTemplate,
   values: Record<string, string>,
 ): { subject: string; body: string };
+/**
+ *
+ */
 export function renderTemplate(
   template: string | LegacyEmailTemplate,
   values: Record<string, string>,

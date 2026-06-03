@@ -1,13 +1,26 @@
+import { ArrowLeft, ArrowRight, Save, FlaskConical, Check } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { mapLegacyTriggerType } from "@/domain/automation";
+// DSL validation
+import {
+  validateTrigger,
+  validateActions,
+  formatValidationErrors,
+} from "@/domain/automation.schema";
+import {
+  validateWizardPayload,
+  groupErrorsBySection,
+  getSectionLabel,
+} from "@/lib/automations/flow-validation";
+import { getTemplateById } from "@/lib/automations/templates";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, Save, FlaskConical, Check } from "lucide-react";
-import TemplateStep from "./steps/TemplateStep";
+import ActionsStep from "./steps/ActionsStep";
 import EventStep from "./steps/EventStep";
 import FiltersStep from "./steps/FiltersStep";
-import ActionsStep from "./steps/ActionsStep";
 import ReviewStep from "./steps/ReviewStep";
+import TemplateStep from "./steps/TemplateStep";
 import type {
   TriggerDef,
   ConditionDef,
@@ -15,20 +28,21 @@ import type {
   ScheduleDef,
   WizardFlowPayload,
 } from "@/types/automation";
-import {
-  validateWizardPayload,
-  groupErrorsBySection,
-  getSectionLabel,
-} from "@/lib/automations/flow-validation";
-import { getTemplateById } from "@/lib/automations/templates";
-// DSL validation
-import {
-  validateTrigger,
-  validateActions,
-  formatValidationErrors,
-} from "@/domain/automation.schema";
-import { mapLegacyTriggerType } from "@/domain/automation";
 
+function mapLegacyActionType(type: string): string {
+  const mapping: Record<string, string> = {
+    send_email: "send_email",
+    update_ticket_status: "update_ticket",
+    create_notification: "create_notification",
+    update_device_status: "update_device",
+    assign_ticket: "assign_ticket",
+  };
+  return mapping[type] || "send_email";
+}
+
+/**
+ *
+ */
 export default function AutomationWizard({
   initial,
   onCancel,
@@ -157,18 +171,6 @@ export default function AutomationWizard({
     return { ok: true };
   }
 
-  // Helper to map legacy action type to DSL
-  function mapLegacyActionType(type: string): string {
-    const mapping: Record<string, string> = {
-      send_email: "send_email",
-      update_ticket_status: "update_ticket",
-      create_notification: "create_notification",
-      update_device_status: "update_device",
-      assign_ticket: "assign_ticket",
-    };
-    return mapping[type] || "send_email";
-  }
-
   function generateSummary() {
     if (!trigger || actions.length === 0) return t("wizard.validation.incompleteRule", "Incomplete rule");
     const triggerLabel = trigger.type;
@@ -226,14 +228,14 @@ export default function AutomationWizard({
                   if (i < step) setStep(i);
                 }}
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all",
+                  "flex size-8 items-center justify-center rounded-full text-xs font-bold transition-all",
                   i < step && "bg-accent text-accent-foreground cursor-pointer",
                   i === step && "bg-accent/20 text-accent ring-2 ring-accent/40",
                   i > step && "bg-surface3 text-text3 cursor-default",
                 )}
                 disabled={i > step}
               >
-                {i < step ? <Check className="h-4 w-4" /> : i + 1}
+                {i < step ? <Check className="size-4" /> : i + 1}
               </button>
               {i < STEPS.length - 1 && (
                 <div
@@ -400,7 +402,7 @@ export default function AutomationWizard({
         <div>
           {step === 4 && onTest && (
             <Button variant="outline" size="sm" onClick={onTest} className="gap-1.5">
-              <FlaskConical className="h-4 w-4" />
+              <FlaskConical className="size-4" />
               {t("wizard.testRule", "Test rule")}
             </Button>
           )}
@@ -411,19 +413,19 @@ export default function AutomationWizard({
           </Button>
           {step > 0 && (
             <Button variant="outline" onClick={handlePrev} className="gap-1">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               {t("wizard.back", "Back")}
             </Button>
           )}
           {step < STEPS.length - 1 && (
             <Button onClick={handleNext} className="gap-1">
               {t("wizard.next", "Next")}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="size-4" />
             </Button>
           )}
           {step === STEPS.length - 1 && (
             <Button onClick={handleSave} className="gap-1.5">
-              <Save className="h-4 w-4" />
+              <Save className="size-4" />
               {t("wizard.save", "Save rule")}
             </Button>
           )}

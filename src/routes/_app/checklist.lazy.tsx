@@ -1,17 +1,3 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  ListSkeleton,
-  PageEmptyState,
-  PageFetchError,
-} from "@/components/page-states";
-import { errorMessage } from "@/lib/errors";
-import { useEffect, useState } from "react";
-import queries from "@/lib/queries/checklist";
-import type { Json, TablesUpdate } from "@/integrations/supabase/types";
-import { useAuth } from "@/lib/auth-context";
-import { DEFAULT_STRUCTURE, type ChecklistItemDef, type ChecklistStructure } from "@/lib/pcready";
 import {
   DndContext,
   DragOverlay,
@@ -28,6 +14,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { createLazyFileRoute } from "@tanstack/react-router";
 import {
   Plus,
   Trash2,
@@ -45,11 +32,24 @@ import {
   Type,
   Hash,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import {
+  ListSkeleton,
+  PageEmptyState,
+  PageFetchError,
+} from "@/components/page-states";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
-import { createVersion } from "@/lib/versioning";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { errorMessage } from "@/lib/errors";
+import { DEFAULT_STRUCTURE, type ChecklistItemDef, type ChecklistStructure } from "@/lib/pcready";
+import queries from "@/lib/queries/checklist";
+import { createVersion } from "@/lib/versioning";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createLazyFileRoute("/_app/checklist")({
   component: ChecklistPage,
@@ -246,7 +246,7 @@ function ChecklistPage() {
           <span className="pc-card-title">{t("sidebar.templates", "Modelli")}</span>
           {canEdit && (
             <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={createNew}>
-              <Plus className="w-3 h-3" /> {t("actions.new", "Nuovo")}
+              <Plus className="size-3" /> {t("actions.new", "Nuovo")}
             </button>
           )}
         </div>
@@ -315,7 +315,7 @@ function ChecklistPage() {
                   </span>
                   <VersionBadge entityType="checklist_templates" entityId={tmpl.id} />
                   {tmpl.is_default && (
-                    <Star className="w-3 h-3 fill-current" style={{ color: "var(--warn)" }} />
+                    <Star className="size-3 fill-current" style={{ color: "var(--warn)" }} />
                   )}
                 </div>
 
@@ -679,7 +679,7 @@ function TemplateEditor({
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold flex-shrink-0"
                 style={{ background: "var(--warn-bg, #fef9e7)", color: "var(--warn)", border: "1px solid var(--warn-border, #f59e0b40)" }}
               >
-                <Star className="w-3 h-3 fill-current" /> {t("default", "Predefinito")}
+                <Star className="size-3 fill-current" /> {t("default", "Predefinito")}
               </span>
             )}
           </div>
@@ -694,11 +694,11 @@ function TemplateEditor({
               >
                 {previewMode ? (
                   <>
-                    <EyeOff className="w-3 h-3" /> {t("actions.edit", "Modifica")}
+                    <EyeOff className="size-3" /> {t("actions.edit", "Modifica")}
                   </>
                 ) : (
                   <>
-                    <Eye className="w-3 h-3" /> {t("actions.preview", "Anteprima")}
+                    <Eye className="size-3" /> {t("actions.preview", "Anteprima")}
                   </>
                 )}
               </button>
@@ -707,12 +707,12 @@ function TemplateEditor({
             {/* Duplicate */}
             {canEdit && (
               <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onDuplicate}>
-                <Copy className="w-3 h-3" /> {t("actions.duplicate", "Duplica")}
+                <Copy className="size-3" /> {t("actions.duplicate", "Duplica")}
               </button>
             )}
 
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onOpenVersions}>
-              <History className="w-3 h-3" /> {t("actions.versions", "Versioni")}
+              <History className="size-3" /> {t("actions.versions", "Versioni")}
             </button>
 
             {isAdmin && !template.is_default && (
@@ -721,12 +721,12 @@ function TemplateEditor({
                 onClick={onSetDefault}
                 title={t("setAsDefault", "Imposta come predefinito")}
               >
-                <StarOff className="w-3 h-3" /> {t("setDefault", "Imposta predefinito")}
+                <StarOff className="size-3" /> {t("setDefault", "Imposta predefinito")}
               </button>
             )}
             {isAdmin && (
               <button className="pc-btn pc-btn-danger pc-btn-sm" onClick={onDelete}>
-                <Trash2 className="w-3 h-3" /> {t("delete", "Elimina")}
+                <Trash2 className="size-3" /> {t("delete", "Elimina")}
               </button>
             )}
           </div>
@@ -803,10 +803,10 @@ function TemplateEditor({
                             }}
                           />
                           <button className="pc-btn-icon touch-target" onClick={() => { renameGroup(gk, groupLabel); setEditingGroupKey(null); }}>
-                            <Check className="w-3 h-3" />
+                            <Check className="size-3" />
                           </button>
                           <button className="pc-btn-icon touch-target" onClick={() => setEditingGroupKey(null)}>
-                            <X className="w-3 h-3" />
+                            <X className="size-3" />
                           </button>
                         </div>
                       ) : (
@@ -831,7 +831,7 @@ function TemplateEditor({
                         onClick={() => setDeleteGroupKey(gk)}
                         title={t("deleteGroup", "Elimina gruppo")}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="size-3" />
                       </button>
                     )}
                   </div>
@@ -860,10 +860,10 @@ function TemplateEditor({
                                     }}
                                   />
                                   <button className="pc-btn-icon touch-target" onClick={() => { renameSection(sk, tabLabel); setEditingTab(null); }}>
-                                    <Check className="w-3 h-3" />
+                                    <Check className="size-3" />
                                   </button>
                                   <button className="pc-btn-icon touch-target" onClick={() => setEditingTab(null)}>
-                                    <X className="w-3 h-3" />
+                                    <X className="size-3" />
                                   </button>
                                 </div>
                               ) : (
@@ -896,7 +896,7 @@ function TemplateEditor({
                             className="px-2.5 py-2 text-text3 hover:text-accent"
                             title={t("addSectionTitle", "Aggiungi sezione")}
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="size-3.5" />
                           </button>
                         )}
                       </div>
@@ -911,7 +911,7 @@ function TemplateEditor({
                 className="px-2.5 py-2 text-text3 hover:text-accent flex items-center gap-1"
                 title={t("addGroupTitle", "Aggiungi gruppo")}
               >
-                <Plus className="w-3.5 h-3.5" /> {t("addGroup", "Aggiungi gruppo")}
+                <Plus className="size-3.5" /> {t("addGroup", "Aggiungi gruppo")}
               </button>
             )}
           </div>
@@ -932,7 +932,7 @@ function TemplateEditor({
                       setTabLabel(activeSectionData.label);
                     }}
                   >
-                    <Pencil className="w-3 h-3" /> {t("rename", "Rinomina")}
+                    <Pencil className="size-3" /> {t("rename", "Rinomina")}
                   </button>
                 )}
                 {canEdit && !previewMode && sectionKeys.length > 1 && (
@@ -940,7 +940,7 @@ function TemplateEditor({
                     className="pc-btn pc-btn-danger pc-btn-sm"
                     onClick={() => setDeleteSectionKey(activeSection)}
                   >
-                    <Trash2 className="w-3 h-3" /> {t("section", "Sezione")}
+                    <Trash2 className="size-3" /> {t("section", "Sezione")}
                   </button>
                 )}
               </div>
@@ -1000,7 +1000,7 @@ function TemplateEditor({
                         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                       }}
                     >
-                      <GripVertical className="w-3 h-3 text-text3" />
+                      <GripVertical className="size-3 text-text3" />
                       <span className="text-[13px]">
                         {(() => {
                           const parts = activeDragId.split(":");
@@ -1022,7 +1022,7 @@ function TemplateEditor({
                   className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[7px] text-[12px] text-text3 hover:text-accent transition-colors"
                   style={{ border: "1.5px dashed var(--border2)" }}
                 >
-                  <Plus className="w-3.5 h-3.5" /> {t("addItem", "Aggiungi voce")}
+                  <Plus className="size-3.5" /> {t("addItem", "Aggiungi voce")}
                 </button>
               )}
               {!activeSectionData.items.length && (
@@ -1121,7 +1121,7 @@ function SortableChecklistItem({
           {...listeners}
           title={t("dragReorder", "Trascina per riordinare")}
         >
-          <GripVertical className="w-3 h-3" />
+          <GripVertical className="size-3" />
         </button>
       )}
 
@@ -1132,8 +1132,8 @@ function SortableChecklistItem({
           style={{ border: "1.5px solid var(--border2)" }}
         />
       )}
-      {itemType === "text" && <Type className="w-3.5 h-3.5 text-text3 flex-shrink-0" />}
-      {itemType === "number" && <Hash className="w-3.5 h-3.5 text-text3 flex-shrink-0" />}
+      {itemType === "text" && <Type className="size-3.5 text-text3 flex-shrink-0" />}
+      {itemType === "number" && <Hash className="size-3.5 text-text3 flex-shrink-0" />}
 
       {/* Item text or preview input */}
       {inEdit ? (
@@ -1178,7 +1178,7 @@ function SortableChecklistItem({
           onClick={() => onRequiredChange(item.id, !item.required)}
           title={item.required ? t("requiredLabel", "Obbligatoria") : t("notRequired", "Non obbligatoria")}
         >
-          <Asterisk className="w-3 h-3" />
+          <Asterisk className="size-3" />
         </button>
       )}
 
@@ -1202,7 +1202,7 @@ function SortableChecklistItem({
           onClick={() => onRemove(item.id)}
           title={t("remove", "Rimuovi")}
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="size-3" />
         </button>
       )}
     </div>
@@ -1255,7 +1255,7 @@ function TagInput({
                 onClick={() => removeTag(tag)}
                 title={t("remove", "Rimuovi")}
               >
-                <X className="w-3 h-3" />
+                <X className="size-3" />
               </button>
             )}
           </span>
@@ -1280,7 +1280,7 @@ function TagInput({
             onClick={addTag}
             disabled={!input.trim()}
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="size-3" />
           </button>
         </div>
       )}

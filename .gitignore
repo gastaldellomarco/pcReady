@@ -87,3 +87,4 @@ supabase/seed_demo_full.sql
 scripts/generate-history-data.mts
 supabase/seed_demo_full.sql
 docs/superpowers/specs/2026-06-03-checklist-enhancements-design.md
+.claude/skills/react-doctor/SKILL.md

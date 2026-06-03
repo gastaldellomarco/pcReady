@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyRole } from "@/lib/get-my-role";
-import type { Session, User } from "@supabase/supabase-js";
-import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
+import { getMyRole } from "@/lib/get-my-role";
+import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
+import type { Session, User } from "@supabase/supabase-js";
 
 
+/**
+ *
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);

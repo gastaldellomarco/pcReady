@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export type OAuthScope =
   | "openid"
   | "profile"
@@ -6,6 +9,9 @@ export type OAuthScope =
   | "pcready:write"
   | "pcready:admin";
 
+/**
+ *
+ */
 export interface ScopeDefinition {
   label: string;
   /** Breve riepilogo (es. tooltip o elenchi compatti). */
@@ -53,10 +59,16 @@ export const OAUTH_SCOPES: Record<OAuthScope, ScopeDefinition> = {
   },
 } as const;
 
+/**
+ *
+ */
 export function getScopeLabel(scope: OAuthScope): string {
   return OAUTH_SCOPES[scope]?.label || scope;
 }
 
+/**
+ *
+ */
 export function getScopeDescription(scope: OAuthScope): string {
   const def = OAUTH_SCOPES[scope];
   if (!def) return "";

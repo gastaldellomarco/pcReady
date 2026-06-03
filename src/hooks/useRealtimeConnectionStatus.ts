@@ -4,6 +4,9 @@ import {
   subscribeRealtimeConnectionStatus,
 } from "@/integrations/supabase/client";
 
+/**
+ *
+ */
 export function useRealtimeConnectionStatus() {
   return useSyncExternalStore(
     subscribeRealtimeConnectionStatus,

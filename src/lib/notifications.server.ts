@@ -9,6 +9,9 @@ import {
   type NotificationType,
 } from "@/lib/notifications";
 
+/**
+ *
+ */
 export async function getAuthedNotificationUser(accessToken: string) {
   const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
   if (error || !data.user) throw new Response("Non autenticato", { status: 401 });
@@ -26,6 +29,9 @@ function preferenceColumn(type: NotificationType) {
   return null;
 }
 
+/**
+ *
+ */
 export async function createNotificationForUser(params: CreateNotificationParams) {
   const input = CreateNotificationSchema.parse(params);
   const pref = preferenceColumn(input.type);
@@ -68,6 +74,9 @@ export async function createNotificationForUser(params: CreateNotificationParams
   return data as unknown as NotificationRow;
 }
 
+/**
+ *
+ */
 export async function notifyDeviceStatusChangedForAdmins(params: {
   deviceId: string;
   deviceName: string;
@@ -93,6 +102,9 @@ export async function notifyDeviceStatusChangedForAdmins(params: {
   });
 }
 
+/**
+ *
+ */
 export async function createNotificationForAdmins(
   params: Omit<CreateNotificationParams, "userId">,
 ) {
@@ -115,6 +127,9 @@ export async function createNotificationForAdmins(
   );
 }
 
+/**
+ *
+ */
 export async function markNotificationReadForUser(userId: string, notificationId: string) {
   const { error } = await supabaseAdmin
     .from("notifications" as any)
@@ -127,6 +142,9 @@ export async function markNotificationReadForUser(userId: string, notificationId
   return { success: true };
 }
 
+/**
+ *
+ */
 export async function markAllNotificationsReadForUser(userId: string) {
   const { error } = await supabaseAdmin
     .from("notifications" as any)

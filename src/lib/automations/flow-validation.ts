@@ -8,6 +8,9 @@ import type {
 
 // ─── Error Types ─────────────────────────────────────────────────────
 
+/**
+ *
+ */
 export interface FlowValidationError {
   /** Section identifying where the error is (e.g. "trigger", "action.0", "graph") */
   path: string;
@@ -16,6 +19,9 @@ export interface FlowValidationError {
   severity: "error" | "warning";
 }
 
+/**
+ *
+ */
 export interface FlowValidationResult {
   valid: boolean;
   errors: FlowValidationError[];

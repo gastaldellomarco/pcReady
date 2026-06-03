@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Download, Printer } from "lucide-react";
 import QRCode from "qrcode";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Modal } from "@/components/pcready/Modal";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { toast } from "sonner";
 import { deviceUrl, labelHtml } from "@/lib/inventory-labels";
 
+/**
+ *
+ */
 export interface QrDevice {
   id: string;
   serial: string | null;
@@ -18,6 +21,9 @@ interface Props {
   onClose: () => void;
 }
 
+/**
+ *
+ */
 export function QrCodeDialog({ device, onClose }: Props) {
   const { t } = useTranslation("inventory");
   const [dataUrl, setDataUrl] = useState("");
@@ -69,10 +75,10 @@ export function QrCodeDialog({ device, onClose }: Props) {
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={downloadPng} disabled={!dataUrl}>
-            <Download className="w-3 h-3" /> {t("qrCode.downloadPng", "Scarica PNG")}
+            <Download className="size-3" /> {t("qrCode.downloadPng", "Scarica PNG")}
           </button>
           <button className="pc-btn pc-btn-primary" onClick={printLabel} disabled={!dataUrl}>
-            <Printer className="w-3 h-3" /> {t("qrCode.printLabel", "Stampa etichetta")}
+            <Printer className="size-3" /> {t("qrCode.printLabel", "Stampa etichetta")}
           </button>
         </>
       }

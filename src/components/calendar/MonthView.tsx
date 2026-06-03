@@ -105,6 +105,8 @@ function DroppableDay({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       ref={setNodeRef}
       className={cn(
         "min-h-25 p-1 border-b border-r flex flex-col cursor-pointer",
@@ -120,12 +122,18 @@ function DroppableDay({
         borderColor: pcReadyColors.border,
       }}
       onClick={() => onDayClick(date)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onDayClick(date);
+        }
+      }}
     >
       {/* Date number */}
       <div className="flex justify-end mb-1">
         <span
           className={cn(
-            "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
+            "text-xs font-medium size-6 flex items-center justify-center rounded-full",
             today ? "font-bold text-white" : "",
           )}
           style={

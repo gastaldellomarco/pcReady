@@ -1,9 +1,12 @@
-import { useTranslation } from "react-i18next";
-import { useState } from "react";
 import { ChevronDown, ChevronUp, Edit3 } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
 import type { TriggerDef, ConditionDef, ActionDef, ScheduleDef } from "@/types/automation";
 
+/**
+ *
+ */
 export default function ReviewStep({
   name,
   description,
@@ -128,15 +131,16 @@ export default function ReviewStep({
                 className="ml-2 flex items-center gap-1 rounded-md p-1.5 text-xs text-accent hover:bg-accent/10"
                 title={t("reviewStep.editTrigger", "Modifica trigger")}
               >
-                <Edit3 className="h-3.5 w-3.5" />
+                <Edit3 className="size-3.5" />
               </button>
             )}
           </div>
         </div>
 
         <div>
-          <label className="text-sm font-medium">{t("reviewStep.nameLabel", "Nome automazione")}</label>
+          <label htmlFor="automation-name" className="text-sm font-medium">{t("reviewStep.nameLabel", "Nome automazione")}</label>
           <input
+            id="automation-name"
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             value={name}
             onChange={(e) => onChangeName(e.target.value)}
@@ -145,8 +149,9 @@ export default function ReviewStep({
         </div>
 
         <div>
-          <label className="text-sm font-medium">{t("reviewStep.descriptionLabel", "Descrizione")}</label>
+          <label htmlFor="automation-description" className="text-sm font-medium">{t("reviewStep.descriptionLabel", "Descrizione")}</label>
           <textarea
+            id="automation-description"
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             rows={2}
             value={description ?? ""}
@@ -195,9 +200,9 @@ export default function ReviewStep({
               {t("reviewStep.technicalDetails", "Dettagli tecnici (JSON)")}
             </span>
             {jsonOpen ? (
-              <ChevronUp className="h-4 w-4 text-text3" />
+              <ChevronUp className="size-4 text-text3" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-text3" />
+              <ChevronDown className="size-4 text-text3" />
             )}
           </button>
           {jsonOpen && (

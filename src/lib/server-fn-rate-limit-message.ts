@@ -1,5 +1,8 @@
 const RATE = "rate_limit_exceeded";
 
+/**
+ *
+ */
 export type ParsedRateLimitBody = { error: typeof RATE; retryAfter: number };
 
 function tryParseJsonObject(text: string): ParsedRateLimitBody | null {
@@ -43,10 +46,16 @@ export function parseRateLimitFromServerFnError(error: unknown): ParsedRateLimit
   return null;
 }
 
+/**
+ *
+ */
 export function rateLimitToastMessage(parsed: ParsedRateLimitBody): string {
   return `Troppe richieste, riprova tra ${parsed.retryAfter} secondi`;
 }
 
+/**
+ *
+ */
 export function formatServerFnErrorForToast(error: unknown, fallback: string): string {
   const rl = parseRateLimitFromServerFnError(error);
   if (rl) return rateLimitToastMessage(rl);

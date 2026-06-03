@@ -1,9 +1,9 @@
-import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Database, Json } from "@/integrations/supabase/types";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 const StaffTicketPayloadSchema = z.object({
   client: z.string().min(1),

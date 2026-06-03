@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 
 export const NOTIFICATION_TYPES = [
   "ticket_assigned",
@@ -16,8 +16,14 @@ export const NOTIFICATION_TYPES = [
   "mention",
 ] as const;
 
+/**
+ *
+ */
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+/**
+ *
+ */
 export interface NotificationRow {
   id: string;
   user_id: string;
@@ -30,6 +36,9 @@ export interface NotificationRow {
   created_at: string;
 }
 
+/**
+ *
+ */
 export interface CreateNotificationParams {
   userId: string;
   type: NotificationType;

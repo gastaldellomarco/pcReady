@@ -2,6 +2,7 @@ import { Eye, Mail, RotateCcw, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_EVENT_LABELS,
@@ -45,6 +45,9 @@ interface EmailTemplateEditorProps {
   onSendTest: (eventType: EmailEventType, recipientEmail: string) => Promise<void>;
 }
 
+/**
+ *
+ */
 export function EmailTemplateEditor({
   template,
   adminEmail,
@@ -217,11 +220,11 @@ export function EmailTemplateEditor({
             }
             disabled={saving}
           >
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="mr-2 size-4" />
             {saving ? t("emailTemplate.buttons.saving", "Salvataggio...") : t("emailTemplate.buttons.save", "Salva template")}
           </Button>
           <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
-            <Eye className="mr-2 h-4 w-4" />
+            <Eye className="mr-2 size-4" />
             {t("emailTemplate.buttons.preview", "Anteprima")}
           </Button>
           <Button
@@ -230,7 +233,7 @@ export function EmailTemplateEditor({
             onClick={() => setResetOpen(true)}
             disabled={saving || !isDirtyFromDefault}
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
+            <RotateCcw className="mr-2 size-4" />
             {t("emailTemplate.buttons.reset", "Ripristina default")}
           </Button>
           <div className="flex min-w-[260px] flex-1 items-center gap-2">
@@ -246,7 +249,7 @@ export function EmailTemplateEditor({
               disabled={sending || !testEmail}
               onClick={() => onSendTest(template.event_type, testEmail)}
             >
-              <Mail className="mr-2 h-4 w-4" />
+              <Mail className="mr-2 size-4" />
               {sending ? t("emailTemplate.buttons.sending", "Invio...") : t("emailTemplate.buttons.test", "Test")}
             </Button>
           </div>

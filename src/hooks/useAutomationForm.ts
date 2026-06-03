@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import type { AutomationFlowInput } from "@/domain/automation";
 import {
   validateFlowInput,
   formatValidationErrors,
 } from "@/domain/automation.schema";
+import type { AutomationFlowInput } from "@/domain/automation";
 
 interface UseAutomationFormResult {
   data: AutomationFlowInput;
@@ -24,6 +24,9 @@ interface UseAutomationFormResult {
   getFieldError: (path: string) => string | undefined;
 }
 
+/**
+ *
+ */
 export function useAutomationForm(
   initialData: Partial<AutomationFlowInput> = {}
 ): UseAutomationFormResult {

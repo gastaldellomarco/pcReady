@@ -1,9 +1,12 @@
 import { createLazyFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { Check, X, Shield, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, X, Shield, User } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import {
   validateOAuthRequest,
@@ -12,9 +15,6 @@ import {
   type OAuthValidationResult,
 } from "@/lib/oauth-consent";
 import { getScopeLabel, getScopeDescription } from "@/lib/oauth-scopes";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Route = createLazyFileRoute("/_app/oauth/consent")({
   component: OAuthConsentPage,
@@ -155,7 +155,7 @@ function OAuthConsentPage() {
           <div className="flex items-center gap-3 p-4 border rounded-lg">
             <Avatar>
               <AvatarFallback>
-                <User className="h-4 w-4" />
+                <User className="size-4" />
               </AvatarFallback>
             </Avatar>
             <div>
@@ -170,7 +170,7 @@ function OAuthConsentPage() {
             <div className="space-y-2">
               {validation.requestedScopes.map((scope) => (
                 <div key={scope} className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <Check className="size-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{getScopeLabel(scope)}</p>
                     <p className="text-sm text-muted-foreground leading-relaxed">

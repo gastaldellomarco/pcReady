@@ -11,6 +11,9 @@ interface AppLogoProps {
   showWordmark?: boolean;
 }
 
+/**
+ *
+ */
 export function AppLogo({
   variant = "horizontal",
   tone = "default",

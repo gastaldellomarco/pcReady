@@ -10,6 +10,9 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "bg-slate-100 text-slate-700",
 };
 
+/**
+ *
+ */
 export function TicketCard({ ticket }: { ticket: any }) {
   const { t } = useTranslation("tickets");
   return (

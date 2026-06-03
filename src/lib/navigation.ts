@@ -1,5 +1,3 @@
-import i18n from "@/i18n";
-import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
   Ticket,
@@ -16,13 +14,30 @@ import {
   Terminal,
   CalendarDays,
 } from "lucide-react";
+import i18n from "@/i18n";
 import type { AuthProfile } from "@/lib/auth-context";
+import type { LucideIcon } from "lucide-react";
 
+/**
+ *
+ */
 export type NavigationRole = AuthProfile["role"];
+/**
+ *
+ */
 export type NavigationVisibility = "all" | "desktop" | "mobile";
+/**
+ *
+ */
 export type NavigationBadge = "pendingTickets";
+/**
+ *
+ */
 export type NavigationFeatureFlag = string;
 
+/**
+ *
+ */
 export interface NavigationItem {
   to: string;
   label: string;
@@ -34,14 +49,23 @@ export interface NavigationItem {
   featureFlag?: NavigationFeatureFlag;
 }
 
+/**
+ *
+ */
 export interface NavigationGroup {
   id: string;
   label: string;
   items: readonly NavigationItem[];
 }
 
+/**
+ *
+ */
 export type NavPath = string;
 
+/**
+ *
+ */
 export interface ResolvedNavigationGroup extends NavigationGroup {
   items: readonly NavigationItem[];
 }
@@ -113,6 +137,9 @@ export const PAGE_TITLE_FALLBACKS: Record<string, string> = {
   "/calendar": "Calendario",
 };
 
+/**
+ *
+ */
 export function resolveNavigationGroups({
   profile,
   isMobile,
@@ -146,6 +173,9 @@ export function resolveNavigationGroups({
   })).filter((group) => group.items.length > 0);
 }
 
+/**
+ *
+ */
 export function resolveNavigationBadge(
   item: NavigationItem,
   pendingCount: number,
@@ -154,6 +184,9 @@ export function resolveNavigationBadge(
   return undefined;
 }
 
+/**
+ *
+ */
 export function roleLabel(r: string): string {
   return r === "admin"
     ? i18n.t("common:role.admin", "Amministratore")

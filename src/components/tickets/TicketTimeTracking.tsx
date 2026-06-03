@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
 import { Clock, Play, Plus, Square, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -23,6 +23,9 @@ function fromLocalInputValue(value: string) {
   return new Date(value).toISOString();
 }
 
+/**
+ *
+ */
 export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
   const { t } = useTranslation("tickets");
   const { user, canEdit } = useAuth();
@@ -105,7 +108,7 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-[13px] font-bold">
-            <Clock className="h-4 w-4 text-text3" /> {t("timeTracking.title", "Tempo lavorato")}
+            <Clock className="size-4 text-text3" /> {t("timeTracking.title", "Tempo lavorato")}
           </h3>
           <p className="text-[11px] text-text3">
             {t("timeTracking.total", "Totale registrato: {{duration}}", { duration: formatDuration(summary?.totalMinutes ?? 0) })}
@@ -115,18 +118,18 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
           <div className="flex flex-wrap gap-2">
             {activeEntry ? (
               <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => stop(activeEntry)}>
-                <Square className="h-3 w-3" /> {t("timeTracking.stop", "Stop")} {formatDuration(activeMinutes)}
+                <Square className="size-3" /> {t("timeTracking.stop", "Stop")} {formatDuration(activeMinutes)}
               </button>
             ) : (
               <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={start}>
-                <Play className="h-3 w-3" /> {t("timeTracking.start", "Avvia timer")}
+                <Play className="size-3" /> {t("timeTracking.start", "Avvia timer")}
               </button>
             )}
             <button
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => setManualOpen((v) => !v)}
             >
-                <Plus className="h-3 w-3" /> {t("timeTracking.manual", "Manuale")}
+                <Plus className="size-3" /> {t("timeTracking.manual", "Manuale")}
             </button>
           </div>
         )}
@@ -221,7 +224,7 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
                 className="pc-btn pc-btn-ghost pc-btn-sm text-red-600"
                 onClick={() => remove(entry.id)}
               >
-                <Trash2 className="h-3 w-3" /> {t("timeTracking.delete", "Elimina")}
+                <Trash2 className="size-3" /> {t("timeTracking.delete", "Elimina")}
               </button>
             )}
           </div>

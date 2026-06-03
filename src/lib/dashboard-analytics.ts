@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+/**
+ *
+ */
 export interface DashboardMonthMetric {
   month: string;
   label: string;
@@ -9,6 +12,9 @@ export interface DashboardMonthMetric {
   avg_days: number | null;
 }
 
+/**
+ *
+ */
 export interface TechnicianKpi {
   technician_id: string | null;
   full_name: string;
@@ -20,6 +26,9 @@ export interface TechnicianKpi {
   sla_respected_pct?: number | null;
 }
 
+/**
+ *
+ */
 export interface PriorityResolutionMetric {
   priority: "high" | "med" | "low";
   label: string;
@@ -27,6 +36,9 @@ export interface PriorityResolutionMetric {
   completed: number;
 }
 
+/**
+ *
+ */
 export interface DashboardAnalytics {
   ticketsByMonth: DashboardMonthMetric[];
   technicianKpi: TechnicianKpi[];
@@ -445,6 +457,9 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     return { weekStart: start.toISOString(), weekEnd: end.toISOString(), technicians: out };
   });
 
+/**
+ *
+ */
 export interface OverdueTicketRow {
   id: string;
   ticket_code: string;

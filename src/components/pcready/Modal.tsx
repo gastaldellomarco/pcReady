@@ -1,7 +1,6 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Drawer,
   DrawerContent,
@@ -9,6 +8,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const MODAL_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
   md: "560px",
@@ -16,6 +16,9 @@ const MODAL_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
   xl: "920px",
 };
 
+/**
+ *
+ */
 export function Modal({
   open,
   onClose,
@@ -77,9 +80,12 @@ export function Modal({
   // Desktop: render as centered modal
   return createPortal(
     <div
+      role="button"
+      tabIndex={-1}
       className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         onClick={(e) => e.stopPropagation()}

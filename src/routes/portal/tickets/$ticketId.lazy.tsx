@@ -2,9 +2,9 @@ import { createLazyFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { StatusTimeline } from "@/components/portal/StatusTimeline";
 import { PageFetchError } from "@/components/page-states";
+import { StatusTimeline } from "@/components/portal/StatusTimeline";
+import { Button } from "@/components/ui/button";
 import { getPortalTicketDetail, submitPortalTicketFeedback } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/tickets/$ticketId")({

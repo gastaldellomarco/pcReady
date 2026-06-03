@@ -66,7 +66,7 @@ export function BulkActionBar({
             className="pc-btn pc-btn-ghost pc-btn-xs"
             onClick={onDeselect}
           >
-            <X className="h-3 w-3" /> {t("bulk.deselect", "Deseleziona")}
+            <X className="size-3" /> {t("bulk.deselect", "Deseleziona")}
           </button>
         </div>
       )}

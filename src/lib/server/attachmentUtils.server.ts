@@ -66,6 +66,9 @@ function detectMimeTypeFromHeader(bytes: Uint8Array): string | null {
   return null;
 }
 
+/**
+ *
+ */
 export async function validateFileBuffer(name: string, buffer: ArrayBuffer) {
   const extension = getFileExtension(name || "");
   const expectedType = ALLOWED_FILE_TYPES[extension];
@@ -81,6 +84,9 @@ export async function validateFileBuffer(name: string, buffer: ArrayBuffer) {
   return expectedType;
 }
 
+/**
+ *
+ */
 export async function uploadValidatedAttachment({
   bucket = "ticket-documents",
   path,
@@ -104,6 +110,9 @@ export async function uploadValidatedAttachment({
   return data;
 }
 
+/**
+ *
+ */
 export async function enforceAttachmentDownloadPolicy(bucket = "ticket-documents") {
   // There's no direct JS API to force bucket-level Content-Disposition; provide guidance
   // This helper attempts to update object metadata for existing objects to include

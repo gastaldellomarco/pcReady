@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export function getEntityLabel(entityType?: string | null): string {
   if (!entityType) return "N/A";
 

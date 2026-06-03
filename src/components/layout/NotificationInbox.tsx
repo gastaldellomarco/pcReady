@@ -1,7 +1,7 @@
 import { CheckCheck, ExternalLink } from "lucide-react";
-import type { NotificationRow } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { iconForType, relativeTime } from "./notification-utils";
+import type { NotificationRow } from "@/lib/notifications";
 
 interface NotificationInboxProps {
   notifications: NotificationRow[];
@@ -11,6 +11,9 @@ interface NotificationInboxProps {
   onViewAll: () => void;
 }
 
+/**
+ *
+ */
 export function NotificationInbox({
   notifications,
   unread,
@@ -30,7 +33,7 @@ export function NotificationInbox({
           onClick={onMarkAllRead}
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          <CheckCheck className="h-3.5 w-3.5" />
+          <CheckCheck className="size-3.5" />
           Segna tutte
         </button>
       </div>
@@ -49,13 +52,13 @@ export function NotificationInbox({
                 unreadRow && "bg-primary/10",
               )}
             >
-              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <Icon className="h-3.5 w-3.5" />
+              <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <Icon className="size-3.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1">
                   <span className="truncate text-sm font-medium">{notification.title}</span>
-                  {unreadRow && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+                  {unreadRow && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}
                 </span>
                 {notification.body && (
                   <span className="line-clamp-2 text-xs text-muted-foreground">
@@ -82,7 +85,7 @@ export function NotificationInbox({
         className="flex w-full items-center justify-center gap-1 border-t px-3 py-2 text-sm font-medium hover:bg-muted"
       >
         Vedi tutte
-        <ExternalLink className="h-3.5 w-3.5" />
+        <ExternalLink className="size-3.5" />
       </button>
     </div>
   );

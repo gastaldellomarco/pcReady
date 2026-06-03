@@ -1,7 +1,10 @@
-import { useEffect, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState, useRef } from "react";
 import { getAuditLogKpi } from "@/lib/audit-log";
 
+/**
+ *
+ */
 export function useAdminAuditBadge(accessToken: string | undefined, isAdmin: boolean) {
   const [errorCount, setErrorCount] = useState(0);
   const loadKpi = useServerFn(getAuditLogKpi);

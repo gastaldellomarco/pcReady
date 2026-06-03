@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { WarrantyFilter } from "@/lib/warranty";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
+import type { WarrantyFilter } from "@/lib/warranty";
 
+/**
+ *
+ */
 export type DevicesListParams = {
   status?: string;
   os?: string;
@@ -21,6 +24,9 @@ export type DevicesListParams = {
   assignedIdsForFilter?: string[];
 };
 
+/**
+ *
+ */
 export async function fetchAllAssignedDeviceIds() {
   const { data, error } = await supabase
     .from("ticket_device_assignments")
@@ -45,6 +51,9 @@ async function fetchActiveAssignmentsForDeviceIds(deviceIds: string[]) {
   );
 }
 
+/**
+ *
+ */
 export function useAllAssignedDeviceIds(enabled: boolean) {
   return useQuery({
     queryKey: ["inventory", "assigned-device-ids"],
@@ -132,6 +141,9 @@ export async function fetchAllDevicesList(params: DevicesListParams) {
   return { data: (data ?? []) as any[], count: count ?? 0 };
 }
 
+/**
+ *
+ */
 export async function fetchDevicesList(params: DevicesListParams) {
   const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
   const page = params.page ?? 0;
@@ -230,6 +242,9 @@ export async function fetchDevicesList(params: DevicesListParams) {
   return { data: rows as any[], count: count ?? 0 };
 }
 
+/**
+ *
+ */
 export function useInventoryList(params: DevicesListParams) {
   const needsAssignedFilter = !!params.withoutTicket;
   const assignedQuery = useAllAssignedDeviceIds(needsAssignedFilter);
@@ -264,6 +279,9 @@ export function useInventoryList(params: DevicesListParams) {
   });
 }
 
+/**
+ *
+ */
 export async function fetchDeviceBySerial(serial: string) {
   const { data, error } = await supabase
     .from("devices")
@@ -276,6 +294,9 @@ export async function fetchDeviceBySerial(serial: string) {
   return data ?? null;
 }
 
+/**
+ *
+ */
 export async function createDevice(payload: Record<string, any>) {
   const { data, error } = await supabase
     .from("devices")
@@ -286,6 +307,9 @@ export async function createDevice(payload: Record<string, any>) {
   return data;
 }
 
+/**
+ *
+ */
 export async function createDevicesBulk(payloads: Record<string, any>[]) {
   if (!payloads || !payloads.length) return { inserted: 0 };
   const { data, error } = await supabase
@@ -296,6 +320,9 @@ export async function createDevicesBulk(payloads: Record<string, any>[]) {
   return { inserted: Array.isArray(data) ? data.length : 0, data };
 }
 
+/**
+ *
+ */
 export function useCreateDevice() {
   const qc = useQueryClient();
   return useMutation({
@@ -304,6 +331,9 @@ export function useCreateDevice() {
   });
 }
 
+/**
+ *
+ */
 export function useCreateDevicesBulk() {
   const qc = useQueryClient();
   return useMutation({
@@ -312,6 +342,9 @@ export function useCreateDevicesBulk() {
   });
 }
 
+/**
+ *
+ */
 export function useInventoryInfiniteList(params: DevicesListParams) {
   const needsAssignedFilter = !!params.withoutTicket;
   const assignedQuery = useAllAssignedDeviceIds(needsAssignedFilter);

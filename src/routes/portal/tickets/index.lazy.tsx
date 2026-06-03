@@ -1,9 +1,9 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
+import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { TicketCard } from "@/components/portal/TicketCard";
 import { Button } from "@/components/ui/button";
-import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { listPortalTickets, listPortalDevices } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/tickets/")({

@@ -1,15 +1,15 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import { initTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { errorMessage } from "@/lib/errors";
+import { initTheme } from "@/lib/theme";
 
 export const Route = createLazyFileRoute("/auth/set-password")({
   component: SetPasswordPage,
@@ -95,10 +95,10 @@ function SetPasswordPage() {
       <Card className="w-full max-w-md pc-anim-in">
         <CardHeader className="text-center">
           <div
-            className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-[10px]"
+            className="mx-auto mb-2 flex size-10 items-center justify-center rounded-[10px]"
             style={{ background: "var(--text)" }}
           >
-            <KeyRound className="h-5 w-5" style={{ color: "var(--background)" }} />
+            <KeyRound className="size-5" style={{ color: "var(--background)" }} />
           </div>
           <CardTitle>Benvenuto in PCReady</CardTitle>
           <CardDescription>
@@ -108,7 +108,7 @@ function SetPasswordPage() {
         <CardContent>
           {waitingForSession ? (
             <div className="flex items-center justify-center gap-2 py-8 text-sm text-text3">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
               Verifica invito...
             </div>
           ) : missingSession ? (
@@ -152,7 +152,7 @@ function SetPasswordPage() {
                 />
               </div>
               <Button className="w-full" type="submit" disabled={busy}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 {busy ? "Salvataggio..." : "Imposta password e accedi"}
               </Button>
             </form>

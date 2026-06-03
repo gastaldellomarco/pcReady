@@ -1,12 +1,18 @@
 import { Document } from "@react-pdf/renderer";
-import { fmtDate } from "@/lib/pcready";
 import { getDeviceCategoryLabel } from "@/lib/device-taxonomy";
+import { fmtDate } from "@/lib/pcready";
 import { getWarrantyStatus, WARRANTY_STATUS_META, type WarrantyStatus } from "@/lib/warranty";
 import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
+/**
+ *
+ */
 export type DevicePdfStatus = "available" | "assigned" | "maintenance" | "retired";
 
+/**
+ *
+ */
 export interface DevicePdfRow {
   id: string;
   asset_tag?: string | null;
@@ -33,6 +39,9 @@ const DEVICE_STATUS_META: Record<DevicePdfStatus, { label: string; color: string
   retired: { label: "Dismesso", color: pdfPalette.danger },
 };
 
+/**
+ *
+ */
 export function InventoryPdf({
   rows,
   organizationName,

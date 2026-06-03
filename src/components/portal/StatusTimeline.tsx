@@ -16,6 +16,9 @@ interface StatusTimelineProps {
   currentStatus?: TicketStatus;
 }
 
+/**
+ *
+ */
 export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) {
   if (!history || history.length === 0) {
     return (
@@ -63,7 +66,7 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
               <li key={item.id} className="relative flex items-start gap-3">
                 {/* Status dot */}
                 <div
-                  className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`relative z-10 size-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isLatest ? "ring-2 ring-offset-1 ring-primary" : ""
                   }`}
                   style={{

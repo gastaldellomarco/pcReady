@@ -1,9 +1,9 @@
-import type { TechnicianKpi } from "@/lib/dashboard-analytics";
-import { useTranslation } from "react-i18next";
-import { formatAvgDays } from "./analytics-format";
-import { Progress } from "@/components/ui/progress";
-import { Avatar } from "@/components/ui/avatar";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { Avatar } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { formatAvgDays } from "./analytics-format";
+import type { TechnicianKpi } from "@/lib/dashboard-analytics";
 
 function workloadColor(assigned: number) {
   if (assigned >= 6) return "bg-red-500 text-white";
@@ -11,6 +11,9 @@ function workloadColor(assigned: number) {
   return "bg-emerald-600 text-white";
 }
 
+/**
+ *
+ */
 export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
   const { t } = useTranslation("dashboard");
   const navigate = useNavigate();
@@ -31,15 +34,16 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
           ? Math.round((row.completed / Math.max(1, row.assigned)) * 100)
           : 0;
         return (
-          <div
+          <button
+            type="button"
             key={row.technician_id ?? "unassigned"}
-            className="pc-card p-3 min-w-[220px] flex-shrink-0 cursor-pointer"
+            className="pc-card p-3 min-w-[220px] flex-shrink-0 cursor-pointer text-left"
             onClick={() =>
               navigate({ to: "/_app/tickets", search: { technician: row.technician_id } } as any)
             }
           >
             <div className="flex items-center gap-3">
-              <Avatar className="w-9 h-9">
+              <Avatar className="size-9">
                 {(row.full_name || "")
                   .split(" ")
                   .map((p) => p[0])
@@ -76,7 +80,7 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
                     : t("widgets.normalLoad", "Carico normale")}
               </span>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

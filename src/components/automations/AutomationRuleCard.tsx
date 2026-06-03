@@ -1,16 +1,3 @@
-import { timeAgo } from "@/lib/pcready";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 import {
   ChevronDown,
   ChevronUp,
@@ -28,14 +15,27 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { AutomationDetailTabs } from "@/components/automations/AutomationDetailTabs";
-import type { AutomationRule } from "@/types/automation";
-import type { AutomationRunLog, AutomationRunStats, HealthStatus } from "@/lib/automation-runs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getRuleTriggerType, TRIGGER_TYPE_LABELS } from "@/hooks/useAutomationRules";
 import {
   computeRiskLevel,
   checkCompleteness,
   RISK_LEVEL_CONFIG,
 } from "@/lib/automations/automation-guardrails";
+import { timeAgo } from "@/lib/pcready";
+import { cn } from "@/lib/utils";
+import type { AutomationRunLog, AutomationRunStats, HealthStatus } from "@/lib/automation-runs";
+import type { AutomationRule } from "@/types/automation";
 
 const TRIGGER_COLORS: Record<string, string> = {
   ticket_created: "bg-primary-light text-primary border-transparent",
@@ -53,7 +53,7 @@ function ErrorIndicator({ health }: { health: HealthStatus }) {
   if (health === "healthy" || health === "never_run") {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-        <CheckCircle2 className="h-3.5 w-3.5" />
+        <CheckCircle2 className="size-3.5" />
         <span className="hidden sm:inline">OK</span>
       </span>
     );
@@ -61,19 +61,22 @@ function ErrorIndicator({ health }: { health: HealthStatus }) {
   if (health === "degraded") {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-        <AlertTriangle className="h-3.5 w-3.5" />
+        <AlertTriangle className="size-3.5" />
         <span className="hidden sm:inline">Degradato</span>
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 text-xs text-red-600">
-      <AlertCircle className="h-3.5 w-3.5" />
+      <AlertCircle className="size-3.5" />
       <span className="hidden sm:inline">Errori</span>
     </span>
   );
 }
 
+/**
+ *
+ */
 export function AutomationRuleCard({
   rule,
   isAdmin,
@@ -178,9 +181,9 @@ export function AutomationRuleCard({
           >
             <span className="text-base font-bold text-foreground">{rule.name}</span>
             {expanded ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-text3" />
+              <ChevronUp className="size-4 shrink-0 text-text3" />
             ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-text3" />
+              <ChevronDown className="size-4 shrink-0 text-text3" />
             )}
           </button>
           <Badge
@@ -195,7 +198,7 @@ export function AutomationRuleCard({
           <Badge
             className={cn("text-[10px] uppercase border-transparent", riskCfg.bg, riskCfg.color)}
           >
-            <ShieldAlert className="mr-0.5 h-3 w-3" />
+            <ShieldAlert className="mr-0.5 size-3" />
             {riskCfg.label}
           </Badge>
           {/* Incomplete Warning */}
@@ -204,7 +207,7 @@ export function AutomationRuleCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="inline-flex items-center gap-1 text-xs text-amber-600 cursor-help">
-                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <AlertTriangle className="size-3.5" />
                     <span className="hidden sm:inline">Incompleta</span>
                   </span>
                 </TooltipTrigger>
@@ -222,7 +225,7 @@ export function AutomationRuleCard({
           {totalExecutions > 0 && <ErrorIndicator health={health} />}
           <div className="ml-auto flex items-center gap-1.5">
             <Button variant="ghost" size="sm" onClick={onEdit} disabled={!isAdmin}>
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="size-3.5" />
               <span className="hidden sm:inline">Modifica</span>
             </Button>
             <TooltipProvider>
@@ -236,7 +239,7 @@ export function AutomationRuleCard({
                       disabled={!isAdmin || running || !completeness.complete}
                       className="gap-1"
                     >
-                      <Play className="h-3.5 w-3.5" />
+                      <Play className="size-3.5" />
                       {running ? "..." : "Esegui"}
                     </Button>
                   </span>
@@ -251,30 +254,30 @@ export function AutomationRuleCard({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" disabled={!isAdmin}>
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onDryRun} disabled={running}>
-                  <FlaskConical className="mr-2 h-4 w-4" />
+                  <FlaskConical className="mr-2 size-4" />
                   Test (dry-run)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onDuplicate}>
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="mr-2 size-4" />
                   Duplica
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onArchive}>
-                  <Archive className="mr-2 h-4 w-4" />
+                  <Archive className="mr-2 size-4" />
                   Archivia
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onOpenVersions}>
-                  <Clock className="mr-2 h-4 w-4" />
+                  <Clock className="mr-2 size-4" />
                   Versioni
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 size-4" />
                   Elimina
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -291,7 +294,7 @@ export function AutomationRuleCard({
         <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs text-text3">
           {rule.last_run_at && (
             <span className="inline-flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+              <Clock className="size-3" />
               {timeAgo(rule.last_run_at)}
             </span>
           )}

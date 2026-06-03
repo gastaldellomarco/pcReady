@@ -1,8 +1,8 @@
-import { useTranslation } from "react-i18next";
 import { MessageSquare, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { VariableTextField } from "../VariableTextField";
 import type { AddCommentAction } from "@/domain/automation";
 import type { AutomationVariable } from "@/domain/automation-variables";
-import { VariableTextField } from "../VariableTextField";
 
 interface AddCommentBlockProps {
   action: AddCommentAction;
@@ -15,6 +15,9 @@ interface AddCommentBlockProps {
   onMoveDown: () => void;
 }
 
+/**
+ *
+ */
 export function AddCommentBlock({
   action,
   onChange,
@@ -37,7 +40,7 @@ export function AddCommentBlock({
   return (
     <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <MessageSquare className="w-5 h-5 text-purple-500" />
+        <MessageSquare className="size-5 text-purple-500" />
         <span className="font-medium text-text">
           {t("actionsBuilder.blocks.add_comment.title", "Aggiungi commento")}
         </span>
@@ -50,7 +53,7 @@ export function AddCommentBlock({
             className="p-1.5 text-text3 hover:text-text hover:bg-gray-200 rounded disabled:opacity-30"
             title={t("actionsBuilder.reorder.up", "Sposta su")}
           >
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="size-4" />
           </button>
           <button
             type="button"
@@ -59,7 +62,7 @@ export function AddCommentBlock({
             className="p-1.5 text-text3 hover:text-text hover:bg-gray-200 rounded disabled:opacity-30"
             title={t("actionsBuilder.reorder.down", "Sposta giù")}
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="size-4" />
           </button>
           <button
             type="button"
@@ -67,7 +70,7 @@ export function AddCommentBlock({
             className="p-1.5 text-text3 hover:text-red-500 hover:bg-red-50 rounded ml-1"
             title={t("actionsBuilder.remove", "Rimuovi")}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="size-4" />
           </button>
         </div>
       </div>

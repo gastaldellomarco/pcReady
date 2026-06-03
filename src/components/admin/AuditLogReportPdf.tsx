@@ -1,14 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { getEntityLabel } from "@/lib/entity-labels";
 import {
   BrandedPage,
   PdfSection,
   PdfTable,
   type PdfColumn,
 } from "@/components/pcready/pdf/shared";
+import { getEntityLabel } from "@/lib/entity-labels";
 import type { ActivityLogEntry } from "@/lib/audit-log";
 
+/**
+ *
+ */
 export function AuditLogReportPdf({
   entries,
   dateLabel,

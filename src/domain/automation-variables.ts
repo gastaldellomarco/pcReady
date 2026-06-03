@@ -1,6 +1,9 @@
 // Automation variables available for interpolation in action fields
 // Variables are scoped by trigger type - only relevant variables are shown
 
+/**
+ *
+ */
 export interface AutomationVariable {
   name: string; // {{ticket.id}}
   label: string; // "ID Ticket"
@@ -110,11 +113,17 @@ export const VARIABLE_CATEGORIES: Record<AutomationVariable["category"], string>
 };
 
 // Get available variables for a trigger
+/**
+ *
+ */
 export function getVariablesForTrigger(triggerType: string): AutomationVariable[] {
   return VARIABLES_BY_TRIGGER[triggerType] || VARIABLES_BY_TRIGGER["ticket_created"] || [];
 }
 
 // Group variables by category
+/**
+ *
+ */
 export function groupVariablesByCategory(
   variables: AutomationVariable[]
 ): Record<string, AutomationVariable[]> {
@@ -129,6 +138,9 @@ export function groupVariablesByCategory(
 }
 
 // Insert variable placeholder into text at cursor position
+/**
+ *
+ */
 export function insertVariable(
   text: string,
   variableName: string,
@@ -143,6 +155,9 @@ export function insertVariable(
 }
 
 // Search variables by query
+/**
+ *
+ */
 export function searchVariables(
   variables: AutomationVariable[],
   query: string

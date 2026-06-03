@@ -1,6 +1,5 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bell,
   BriefcaseBusiness,
@@ -17,16 +16,17 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { PageFetchError } from "@/components/page-states";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageFetchError } from "@/components/page-states";
 import {
   updatePortalContactProfile,
   updatePortalContactLanguage,
@@ -235,7 +235,7 @@ function PortalProfilePage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
             {initials}
           </div>
           <div>
@@ -272,7 +272,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserRound className="h-5 w-5" /> Dati personali
+                <UserRound className="size-5" /> Dati personali
               </CardTitle>
               <CardDescription>
                 Modifica nome, telefono, ruolo, lingua e password di accesso al portale.
@@ -311,7 +311,7 @@ function PortalProfilePage() {
                       size="sm"
                       onClick={() => switchLanguage("it")}
                     >
-                      <Globe className="mr-1.5 h-4 w-4" />
+                      <Globe className="mr-1.5 size-4" />
                       Italiano
                     </Button>
                     <Button
@@ -320,7 +320,7 @@ function PortalProfilePage() {
                       size="sm"
                       onClick={() => switchLanguage("en")}
                     >
-                      <Globe className="mr-1.5 h-4 w-4" />
+                      <Globe className="mr-1.5 size-4" />
                       English
                     </Button>
                   </div>
@@ -343,7 +343,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" /> Preferenze notifiche
+                <Bell className="size-5" /> Preferenze notifiche
               </CardTitle>
               <CardDescription>Scegli per quali eventi ricevere notifiche email.</CardDescription>
             </CardHeader>
@@ -388,7 +388,7 @@ function PortalProfilePage() {
                 overview.requests.map((ticket: any) => (
                   <RowCard
                     key={ticket.id}
-                    icon={<Mail className="h-4 w-4" />}
+                    icon={<Mail className="size-4" />}
                     title={`${ticket.ticket_code} · ${ticket.title}`}
                     meta={`Aggiornato ${formatDate(ticket.updated_at)}`}
                     badge={ticket.status_label}
@@ -411,7 +411,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" /> Storico interventi ricevuti
+                <History className="size-5" /> Storico interventi ricevuti
               </CardTitle>
               <CardDescription>Interventi completati per la tua azienda.</CardDescription>
             </CardHeader>
@@ -420,7 +420,7 @@ function PortalProfilePage() {
                 overview.interventions.map((item: any) => (
                   <RowCard
                     key={item.id}
-                    icon={<Phone className="h-4 w-4" />}
+                    icon={<Phone className="size-4" />}
                     title={`${item.ticket_code} · ${item.title}`}
                     meta={formatDate(item.date)}
                     badge={item.duration_hours ? `${item.duration_hours}h` : item.status_label}
@@ -443,7 +443,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" /> Documenti e report associati
+                <FileText className="size-5" /> Documenti e report associati
               </CardTitle>
               <CardDescription>
                 Allegati e report collegati ai ticket della tua azienda.
@@ -454,7 +454,7 @@ function PortalProfilePage() {
                 overview.documents.map((doc: any) => (
                   <RowCard
                     key={doc.id}
-                    icon={<FileText className="h-4 w-4" />}
+                    icon={<FileText className="size-4" />}
                     title={doc.file_name}
                     meta={`${doc.ticket_code || "Ticket"} · ${formatDate(doc.created_at)}`}
                     badge={formatFileSize(doc.file_size)}
@@ -473,7 +473,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BriefcaseBusiness className="h-5 w-5" /> Contratti attivi
+                <BriefcaseBusiness className="size-5" /> Contratti attivi
               </CardTitle>
               <CardDescription>Condizioni di assistenza attualmente attive.</CardDescription>
             </CardHeader>
@@ -482,7 +482,7 @@ function PortalProfilePage() {
                 overview.contracts.map((contract: any) => (
                   <RowCard
                     key={contract.id}
-                    icon={<Lock className="h-4 w-4" />}
+                    icon={<Lock className="size-4" />}
                     title={contract.name}
                     meta={`${formatDate(contract.start_date)}${contract.end_date ? ` - ${formatDate(contract.end_date)}` : ""}`}
                     badge={contract.billing_period === "annual" ? "Annuale" : "Mensile"}
@@ -504,7 +504,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" /> Referenti aziendali
+                <Mail className="size-5" /> Referenti aziendali
               </CardTitle>
               <CardDescription>
                 Tutti i contatti della tua azienda con accesso al portale. Ogni referente accede con le proprie credenziali e vede gli stessi dati aziendali.
@@ -558,7 +558,7 @@ function PortalProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" /> Storico accessi
+                <Clock className="size-5" /> Storico accessi
               </CardTitle>
               <CardDescription>Ultimi accessi al portale con data, ora e stato.</CardDescription>
             </CardHeader>
@@ -578,11 +578,11 @@ function PortalProfilePage() {
                       <div className="flex items-center gap-3">
                         <div className={`rounded-full p-1.5 ${session.isActive ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
                           {session.isActive ? (
-                            <CheckCircle2 className="h-4 w-4" />
+                            <CheckCircle2 className="size-4" />
                           ) : session.isRevoked ? (
-                            <XCircle className="h-4 w-4" />
+                            <XCircle className="size-4" />
                           ) : (
-                            <Clock className="h-4 w-4" />
+                            <Clock className="size-4" />
                           )}
                         </div>
                         <div>
@@ -612,9 +612,9 @@ function PortalProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {twoFAEnabled ? (
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  <ShieldCheck className="size-5 text-emerald-600" />
                 ) : (
-                  <ShieldOff className="h-5 w-5 text-muted-foreground" />
+                  <ShieldOff className="size-5 text-muted-foreground" />
                 )}
                 Autenticazione a due fattori
               </CardTitle>
@@ -747,7 +747,7 @@ function LoadingSkeletonPortal() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 animate-pulse rounded-full bg-muted" />
+          <div className="size-16 animate-pulse rounded-full bg-muted" />
           <div className="space-y-2">
             <div className="h-6 w-40 animate-pulse rounded bg-muted" />
             <div className="h-4 w-64 animate-pulse rounded bg-muted" />

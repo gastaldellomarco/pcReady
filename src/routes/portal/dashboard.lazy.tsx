@@ -1,17 +1,17 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, Clock, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { BundleUsageBar } from "@/components/bundles/BundleBadges";
+import { CardGridSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { TicketCard } from "@/components/portal/TicketCard";
 import { Button } from "@/components/ui/button";
-import { CardGridSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
-import { getPortalDashboard } from "@/lib/portal-tickets";
-import { BundleUsageBar } from "@/components/bundles/BundleBadges";
-import { formatBundleHours, formatBundleMoney } from "@/lib/bundles";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { AlertTriangle, Clock, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { formatBundleHours, formatBundleMoney } from "@/lib/bundles";
 import { pcReadyColors } from "@/lib/design-system";
+import { getPortalDashboard } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/dashboard")({
   component: PortalDashboardPage,
@@ -282,7 +282,7 @@ function ServiceStatusSection({ services }: { services: ServiceItem[] }) {
               )}
               {svc.updated_at && (
                 <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="size-3" />
                   Aggiornato: {new Date(svc.updated_at).toLocaleString("it-IT")}
                 </p>
               )}

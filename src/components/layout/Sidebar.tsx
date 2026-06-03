@@ -1,18 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Sun,
   Moon,
   Monitor,
   Languages,
 } from "lucide-react";
-import i18n from "@/i18n";
-import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
-import type { AuthProfile } from "@/lib/auth-context";
-import { useTheme } from "@/hooks/use-theme";
-import { useServerFn } from "@tanstack/react-start";
-import { updateMyProfile } from "@/lib/user-profile";
-import { useAuth } from "@/lib/auth-context";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -22,10 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTheme } from "@/hooks/use-theme";
+import i18n from "@/i18n";
+import { appVersion, viteDeploymentLabel } from "@/lib/app-version-display";
+import { useAuth } from "@/lib/auth-context";
+import { resolveNavigationBadge, roleLabel } from "@/lib/navigation";
+import { updateMyProfile } from "@/lib/user-profile";
+import type { AuthProfile } from "@/lib/auth-context";
 import type {
   ResolvedNavigationGroup,
 } from "@/lib/navigation";
-import { resolveNavigationBadge, roleLabel } from "@/lib/navigation";
 
 /* ── Sub-components ─────────────────────────────────────────── */
 
@@ -117,7 +117,7 @@ function LanguageSelector() {
           }}
         >
           <span className="flex items-center gap-2">
-            <Languages className="w-3 h-3" />
+            <Languages className="size-3" />
             <span>
               {currentLang === "it"
                 ? t("language.italian", "Italiano")
@@ -163,6 +163,9 @@ function LanguageSelector() {
 
 /* ── Sidebar component ──────────────────────────────────────── */
 
+/**
+ *
+ */
 export interface SidebarProps {
   profile: AuthProfile;
   avatarColor: { bg: string; fg: string };
@@ -174,6 +177,9 @@ export interface SidebarProps {
   onSignOut: () => void;
 }
 
+/**
+ *
+ */
 export function Sidebar({
   profile,
   avatarColor,
@@ -250,9 +256,9 @@ export function Sidebar({
               }}
             >
               <span className="flex items-center gap-2">
-                {theme === "light" && <Sun className="w-3 h-3" />}
-                {theme === "dark" && <Moon className="w-3 h-3" />}
-                {theme === "system" && <Monitor className="w-3 h-3" />}
+                {theme === "light" && <Sun className="size-3" />}
+                {theme === "dark" && <Moon className="size-3" />}
+                {theme === "system" && <Monitor className="size-3" />}
                 <span>
                   {theme === "light" && t("sidebar.light", "Chiaro")}
                   {theme === "dark" && t("sidebar.dark", "Scuro")}
@@ -271,7 +277,7 @@ export function Sidebar({
               onClick={() => setTheme("light")}
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
-              <Sun className="w-4 h-4" />
+              <Sun className="size-4" />
               <span>{t("sidebar.light", "Chiaro")}</span>
               {theme === "light" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
@@ -283,7 +289,7 @@ export function Sidebar({
               onClick={() => setTheme("dark")}
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
-              <Moon className="w-4 h-4" />
+              <Moon className="size-4" />
               <span>{t("sidebar.dark", "Scuro")}</span>
               {theme === "dark" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">
@@ -295,7 +301,7 @@ export function Sidebar({
               onClick={() => setTheme("system")}
               className="group flex items-center gap-2 cursor-pointer text-[13px] text-text2 focus:bg-primary focus:text-primary-foreground"
             >
-              <Monitor className="w-4 h-4" />
+              <Monitor className="size-4" />
               <span>{t("sidebar.system", "Sistema")}</span>
               {theme === "system" && (
                 <span className="ml-auto text-[10px] text-primary group-focus:text-primary-foreground">

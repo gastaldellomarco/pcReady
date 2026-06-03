@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
-import type { ChecklistStructure } from "@/lib/pcready";
 import { parseChecklistStructure } from "@/types/checklist-structure";
 import { QUERY_KEYS } from "./keys";
+import type { Json } from "@/integrations/supabase/types";
+import type { ChecklistStructure } from "@/lib/pcready";
 
 const CHECKLIST_INSTANCE_SELECT =
   "id, ticket_id, template_id, title, structure, status, assigned_to, section_assignments, completed_by, completion_confirmed, signature_name, created_at, updated_at, completed_at";
 const CHECKLIST_RESPONSE_SELECT = "id, instance_id, item_key, value, compiled_by, compiled_at";
 
+/**
+ *
+ */
 export interface ChecklistTemplateRow {
   id: string;
   name: string;
@@ -18,6 +21,9 @@ export interface ChecklistTemplateRow {
   tags: string[];
 }
 
+/**
+ *
+ */
 export interface TicketChecklistResponseRow {
   id: string;
   instance_id: string;
@@ -27,6 +33,9 @@ export interface TicketChecklistResponseRow {
   compiled_at: string;
 }
 
+/**
+ *
+ */
 export interface TicketChecklistInstanceRow {
   id: string;
   ticket_id: string;
@@ -70,6 +79,9 @@ function mapInstance(row: any): TicketChecklistInstanceRow {
   };
 }
 
+/**
+ *
+ */
 export async function fetchChecklistTemplates(): Promise<ChecklistTemplateRow[]> {
   const { data, error } = await supabase
     .from("checklist_templates")
@@ -84,6 +96,9 @@ export async function fetchChecklistTemplates(): Promise<ChecklistTemplateRow[]>
   }));
 }
 
+/**
+ *
+ */
 export function useChecklistTemplates() {
   return useQuery({ queryKey: ["checklist_templates"], queryFn: () => fetchChecklistTemplates() });
 }
@@ -127,6 +142,9 @@ async function setDefaultTemplate(id: string) {
   return true;
 }
 
+/**
+ *
+ */
 export function useCreateTemplate() {
   const qc = useQueryClient();
   return useMutation({
@@ -135,6 +153,9 @@ export function useCreateTemplate() {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateTemplate() {
   const qc = useQueryClient();
   return useMutation({
@@ -144,6 +165,9 @@ export function useUpdateTemplate() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteTemplate() {
   const qc = useQueryClient();
   return useMutation({
@@ -152,6 +176,9 @@ export function useDeleteTemplate() {
   });
 }
 
+/**
+ *
+ */
 export function useSetDefaultTemplate() {
   const qc = useQueryClient();
   return useMutation({
@@ -160,6 +187,9 @@ export function useSetDefaultTemplate() {
   });
 }
 
+/**
+ *
+ */
 export async function fetchTicketChecklistInstances(
   ticketId: string,
 ): Promise<TicketChecklistInstanceRow[]> {
@@ -175,6 +205,9 @@ export async function fetchTicketChecklistInstances(
   return ((data ?? []) as any[]).map(mapInstance);
 }
 
+/**
+ *
+ */
 export function useTicketChecklistInstances(ticketId?: string | null) {
   return useQuery({
     queryKey: [...QUERY_KEYS.ticket(ticketId || ""), "checklist-instances"],
@@ -183,6 +216,9 @@ export function useTicketChecklistInstances(ticketId?: string | null) {
   });
 }
 
+/**
+ *
+ */
 export async function createTicketChecklistInstanceFromTemplate(params: {
   ticketId: string;
   templateId: string;
@@ -213,6 +249,9 @@ export async function createTicketChecklistInstanceFromTemplate(params: {
   return mapInstance(data);
 }
 
+/**
+ *
+ */
 export async function upsertTicketChecklistResponse(params: {
   instanceId: string;
   itemKey: string;
@@ -244,6 +283,9 @@ export async function upsertTicketChecklistResponse(params: {
   return data as TicketChecklistResponseRow;
 }
 
+/**
+ *
+ */
 export async function completeTicketChecklistInstance(params: {
   instanceId: string;
   completedBy: string;
@@ -267,6 +309,9 @@ export async function completeTicketChecklistInstance(params: {
   return mapInstance(data);
 }
 
+/**
+ *
+ */
 export function useCreateTicketChecklistInstance() {
   const qc = useQueryClient();
   return useMutation({
@@ -279,6 +324,9 @@ export function useCreateTicketChecklistInstance() {
   });
 }
 
+/**
+ *
+ */
 export function useUpsertTicketChecklistResponse(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -289,6 +337,9 @@ export function useUpsertTicketChecklistResponse(ticketId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useCompleteTicketChecklistInstance(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -301,8 +352,14 @@ export function useCompleteTicketChecklistInstance(ticketId: string) {
 }
 
 // ── Template completion stats ───────────────────────────────────────────
+/**
+ *
+ */
 export type TemplateCompletionStats = Record<string, { total: number; completed: number }>;
 
+/**
+ *
+ */
 export async function fetchTemplateCompletionStats(): Promise<TemplateCompletionStats> {
   const { data, error } = await supabase
     .from("ticket_checklist_instances")
@@ -318,6 +375,9 @@ export async function fetchTemplateCompletionStats(): Promise<TemplateCompletion
   return stats;
 }
 
+/**
+ *
+ */
 export function useTemplateCompletionStats() {
   return useQuery({
     queryKey: ["checklist_templates", "completion-stats"],

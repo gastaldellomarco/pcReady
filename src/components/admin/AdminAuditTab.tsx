@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   FileText,
   Search,
@@ -19,31 +20,11 @@ import {
   Save,
   Link2,
 } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TabsContent } from "@/components/ui/tabs";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import OverflowTable from "@/components/ui/overflow-table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -52,19 +33,38 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import OverflowTable from "@/components/ui/overflow-table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { TabsContent } from "@/components/ui/tabs";
 import { useAdminAudit, type DatePreset } from "@/hooks/useAdminAudit";
-import type { ActivityLogEntry, AuditLogFilters } from "@/lib/audit-log";
+import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import {
   listAuditPresets,
   saveAuditPreset,
   deleteAuditPreset,
   type AuditPreset,
 } from "@/lib/audit-log";
-import { Route } from "@/routes/_app/admin";
-import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
+import { useAuth } from "@/lib/auth-context";
 import { getEntityLabel } from "@/lib/entity-labels";
+import { cn } from "@/lib/utils";
+import { Route } from "@/routes/_app/admin";
+import type { ActivityLogEntry, AuditLogFilters } from "@/lib/audit-log";
 
 // Represents the shape of the search params validated by the admin route
 type AdminSearch = {
@@ -178,11 +178,11 @@ function getActionBadge(actionType: string | null | undefined): { label: string;
 function getSeverityIcon(severity: string | null | undefined) {
   switch (severity) {
     case "critical":
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="size-4 text-red-500" />;
     case "warning":
-      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      return <AlertTriangle className="size-4 text-amber-500" />;
     default:
-      return <Info className="h-4 w-4 text-blue-400" />;
+      return <Info className="size-4 text-blue-400" />;
   }
 }
 
@@ -215,7 +215,7 @@ function KpiCard({
       style={{ borderColor: "var(--border)" }}
     >
       <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center"
+        className="size-10 rounded-lg flex items-center justify-center"
         style={{ background: `${accent}15` }}
       >
         {icon}
@@ -326,7 +326,7 @@ function RowDetail({ entry }: { entry: ActivityLogEntry }) {
       {entry.entity_type && entry.entity_id && (
         <div className="pt-1">
           <Button variant="outline" size="sm" className="text-xs gap-1.5">
-            <FileText className="h-3 w-3" />
+            <FileText className="size-3" />
             Apri {getEntityLabel(entry.entity_type)} #{entry.entity_id.slice(0, 8)}
           </Button>
         </div>
@@ -356,7 +356,10 @@ function AuditTableRow({
   return (
     <>
       <TableRow
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
         className={cn(
           "cursor-pointer transition-colors",
           index % 2 === 0 ? "bg-white dark:bg-zinc-950" : "bg-zinc-50/60 dark:bg-zinc-900/40",
@@ -367,9 +370,9 @@ function AuditTableRow({
       >
         <TableCell className="py-3 pl-3 w-[24px]">
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronRight className="size-3.5 text-muted-foreground" />
           )}
         </TableCell>
         <TableCell className="py-3 w-[32px]">{sevIcon}</TableCell>
@@ -423,7 +426,7 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
 
   return (
     <div className="relative pl-8 pb-4 border-l-2 border-border last:border-0">
-      <div className="absolute left-[-5px] top-1 w-2 h-2 rounded-full bg-accent" />
+      <div className="absolute left-[-5px] top-1 size-2 rounded-full bg-accent" />
       <div className="flex items-start gap-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <span className="text-xs font-mono text-text3 whitespace-nowrap mt-0.5">{time}</span>
         <span
@@ -439,9 +442,9 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
           <span className="font-medium">{entry.actor_name}</span> — {entry.message}
         </span>
         {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" />
+          <ChevronDown className="size-3.5 text-text3 mt-1 shrink-0" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-text3 mt-1 shrink-0" />
+          <ChevronRight className="size-3.5 text-text3 mt-1 shrink-0" />
         )}
       </div>
       {expanded && (
@@ -455,6 +458,9 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
 
 // ---- Main Component ----
 
+/**
+ *
+ */
 export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, unknown> }) {
   const { session, isAdmin } = useAuth();
   const accessToken = session?.access_token;
@@ -730,19 +736,19 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
         <KpiCard
           label="Eventi oggi"
           value={kpi.eventsToday}
-          icon={<Clock className="h-5 w-5 text-blue-500" />}
+          icon={<Clock className="size-5 text-blue-500" />}
           accent="#3b82f6"
         />
         <KpiCard
           label="Ultimi 7 giorni"
           value={kpi.events7d}
-          icon={<Calendar className="h-5 w-5 text-purple-500" />}
+          icon={<Calendar className="size-5 text-purple-500" />}
           accent="#8b5cf6"
         />
         <KpiCard
           label="Errori (24h)"
           value={kpi.recentErrors}
-          icon={<AlertCircle className="h-5 w-5 text-red-500" />}
+          icon={<AlertCircle className="size-5 text-red-500" />}
           accent="#ef4444"
         />
       </div>
@@ -753,7 +759,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-5 w-5" />
+                <FileText className="size-5" />
                 Log di Audit
               </CardTitle>
               <CardDescription>Registro delle attivita amministrative e di sistema</CardDescription>
@@ -787,17 +793,17 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
-                    <Download className="h-4 w-4" />
+                    <Download className="size-4" />
                     Esporta
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleExportCsv}>
-                    <Download className="mr-2 h-4 w-4" />
+                    <Download className="mr-2 size-4" />
                     Esporta CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportPdf}>
-                    <FileText className="mr-2 h-4 w-4" />
+                    <FileText className="mr-2 size-4" />
                     Report PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -809,7 +815,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                 onClick={() => loadAudit(auditPage, auditFilters)}
                 disabled={loadingAudit}
               >
-                <RefreshCw className={cn("h-4 w-4", loadingAudit && "animate-spin")} />
+                <RefreshCw className={cn("size-4", loadingAudit && "animate-spin")} />
               </Button>
             </div>
           </div>
@@ -818,7 +824,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
           <div className="space-y-4">
             {/* Search bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text3" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text3" />
               <Input
                 placeholder="Cerca per utente, descrizione, ID entita..."
                 value={searchValue}
@@ -929,7 +935,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
 
               {/* Reset */}
               <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-xs">
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="size-3" />
                 Azzera
               </Button>
 
@@ -938,9 +944,9 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                     {activePresetId ? (
-                      <BookmarkCheck className="h-3.5 w-3.5" />
+                      <BookmarkCheck className="size-3.5" />
                     ) : (
-                      <Bookmark className="h-3.5 w-3.5" />
+                      <Bookmark className="size-3.5" />
                     )}
                     {activePresetId
                       ? (presets.find((p) => p.id === activePresetId)?.name ?? "Viste")
@@ -971,14 +977,14 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                           className="ml-2 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-text3 hover:text-red-600 touch-target"
                           title="Elimina vista"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="size-3" />
                         </button>
                       </DropdownMenuItem>
                     ))
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setSaveDialogOpen(true)}>
-                    <Save className="mr-2 h-3.5 w-3.5" />
+                    <Save className="mr-2 size-3.5" />
                     Salva vista corrente
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -992,7 +998,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
                 className="gap-1 text-xs"
                 title="Copia permalink con i filtri attuali"
               >
-                <Link2 className="h-3 w-3" />
+                <Link2 className="size-3" />
               </Button>
             </div>
 
@@ -1000,13 +1006,13 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
             {loadingAudit ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-2 text-text3">
-                  <RefreshCw className="h-6 w-6 animate-spin" />
+                  <RefreshCw className="size-6 animate-spin" />
                   <span className="text-sm">Caricamento log...</span>
                 </div>
               </div>
             ) : auditEntries.length === 0 ? (
               <div className="text-center py-12 text-text3">
-                <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <FileText className="size-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">Nessuna attivita trovata</p>
                 <p className="text-xs mt-1">Prova a modificare i filtri o azzerarli</p>
               </div>
@@ -1159,7 +1165,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               Annulla
             </Button>
             <Button onClick={handleSavePreset} disabled={!presetName.trim()}>
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-2 size-4" />
               Salva
             </Button>
           </DialogFooter>

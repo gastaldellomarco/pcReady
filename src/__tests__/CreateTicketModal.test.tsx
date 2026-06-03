@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 // ── Mock di react-i18next ──────────────────────────────────────────────
 vi.mock("react-i18next", () => ({
@@ -205,10 +205,10 @@ vi.mock("@/lib/pcready", async () => {
   };
 });
 
-// ── Import del componente dopo i mock ──────────────────────────────────
-import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 import { toast } from "sonner";
 import { axe } from "vitest-axe";
+// ── Import del componente dopo i mock ──────────────────────────────────
+import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
 
 async function renderModal() {
   // Apri la modale

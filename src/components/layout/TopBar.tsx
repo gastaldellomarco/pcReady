@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { Menu, Plus, Boxes, Search } from "lucide-react";
-import { useTickets } from "@/hooks/use-tickets";
+import { useTranslation } from "react-i18next";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { useTickets } from "@/hooks/use-tickets";
 
 /* ── Search box sub-component ───────────────────────────────── */
 
@@ -14,11 +14,12 @@ function SearchBox() {
       className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[7px]"
       style={{ background: "var(--surface2)", border: "1px solid var(--border2)" }}
     >
-      <Search className="w-3 h-3 text-text3" />
+      <Search className="size-3 text-text3" />
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t("search.placeholder", "Cerca ticket, modello, seriale...")}
+        aria-label={t("search.label", "Cerca")}
         className="bg-transparent outline-none text-[13px] w-44"
       />
     </div>
@@ -27,6 +28,9 @@ function SearchBox() {
 
 /* ── TopBar component ────────────────────────────────────────── */
 
+/**
+ *
+ */
 export interface TopBarProps {
   /** Current page title displayed in the header */
   pageTitle: string;
@@ -38,6 +42,9 @@ export interface TopBarProps {
   onCreateTicket: () => void;
 }
 
+/**
+ *
+ */
 export function TopBar({ pageTitle, isMobile, onMobileMenuOpen, onCreateTicket }: TopBarProps) {
   const { t } = useTranslation("common");
 
@@ -52,7 +59,7 @@ export function TopBar({ pageTitle, isMobile, onMobileMenuOpen, onCreateTicket }
           onClick={onMobileMenuOpen}
           title={t("sidebar.openMenu", "Apri menu")}
         >
-          <Menu className="w-4 h-4" />
+          <Menu className="size-4" />
         </button>
       )}
       <h1
@@ -65,20 +72,20 @@ export function TopBar({ pageTitle, isMobile, onMobileMenuOpen, onCreateTicket }
         <SearchBox />
         <NotificationBell />
         <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm hidden sm:inline-flex">
-          <Boxes className="w-3 h-3" /> {t("sidebar.inventory", "Inventario")}
+          <Boxes className="size-3" /> {t("sidebar.inventory", "Inventario")}
         </Link>
         <button
           onClick={onCreateTicket}
           className="pc-btn pc-btn-primary pc-btn-sm hidden sm:inline-flex"
         >
-          <Plus className="w-3 h-3" /> {t("sidebar.newTicket", "Nuovo Ticket")}
+          <Plus className="size-3" /> {t("sidebar.newTicket", "Nuovo Ticket")}
         </button>
         <button
           onClick={onCreateTicket}
           className="pc-btn-icon touch-target sm:hidden"
           aria-label={t("sidebar.newTicket", "Nuovo ticket")}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="size-4" />
         </button>
       </div>
     </header>

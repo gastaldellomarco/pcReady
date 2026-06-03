@@ -1,9 +1,21 @@
 import { pcReadyColors } from "@/lib/design-system";
 
+/**
+ *
+ */
 export type WarrantyType = "standard" | "extended" | "onsite" | "none";
+/**
+ *
+ */
 export type WarrantyStatus = "valid" | "expiring" | "urgent" | "expired" | "missing";
+/**
+ *
+ */
 export type WarrantyFilter = "all" | WarrantyStatus;
 
+/**
+ *
+ */
 export type WarrantyFields = {
   purchase_date?: string | null;
   warranty_expiry_date?: string | null;
@@ -46,10 +58,16 @@ export const WARRANTY_STATUS_META: Record<
   },
 };
 
+/**
+ *
+ */
 export function todayDateOnly(now = new Date()) {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+/**
+ *
+ */
 export function parseDateOnly(value?: string | null) {
   if (!value) return null;
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -57,6 +75,9 @@ export function parseDateOnly(value?: string | null) {
   return new Date(year, month - 1, day);
 }
 
+/**
+ *
+ */
 export function daysUntil(date?: string | null, now = new Date()) {
   const target = parseDateOnly(date);
   if (!target) return null;
@@ -64,6 +85,9 @@ export function daysUntil(date?: string | null, now = new Date()) {
   return Math.ceil((target.getTime() - today.getTime()) / 86400000);
 }
 
+/**
+ *
+ */
 export function getWarrantyStatus(expiryDate?: string | null, now = new Date()): WarrantyStatus {
   const days = daysUntil(expiryDate, now);
   if (days === null) return "missing";
@@ -73,10 +97,16 @@ export function getWarrantyStatus(expiryDate?: string | null, now = new Date()):
   return "valid";
 }
 
+/**
+ *
+ */
 export function warrantyStatusLabel(status: WarrantyStatus) {
   return WARRANTY_STATUS_META[status].label;
 }
 
+/**
+ *
+ */
 export function warrantyProgress(fields: WarrantyFields, now = new Date()) {
   const purchase = parseDateOnly(fields.purchase_date);
   const expiry = parseDateOnly(fields.warranty_expiry_date);
@@ -97,11 +127,17 @@ export function warrantyProgress(fields: WarrantyFields, now = new Date()) {
   };
 }
 
+/**
+ *
+ */
 export function isProbablyUrl(value?: string | null) {
   if (!value) return false;
   return /^https?:\/\//i.test(value.trim());
 }
 
+/**
+ *
+ */
 export function toDateInputValue(value?: string | null) {
   return value ? value.slice(0, 10) : "";
 }

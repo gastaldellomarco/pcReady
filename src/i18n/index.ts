@@ -1,40 +1,39 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next";
 
-import commonIt from "./locales/it/common.json";
-import ticketsIt from "./locales/it/tickets.json";
-import dashboardIt from "./locales/it/dashboard.json";
-import inventoryIt from "./locales/it/inventory.json";
-import kanbanIt from "./locales/it/kanban.json";
-import clientsIt from "./locales/it/clients.json";
-import contactsIt from "./locales/it/contacts.json";
-import costsIt from "./locales/it/costs.json";
-import checklistIt from "./locales/it/checklist.json";
-import automationsIt from "./locales/it/automations.json";
-import bundlesIt from "./locales/it/bundles.json";
-import scriptsIt from "./locales/it/scripts.json";
-import notificationsIt from "./locales/it/notifications.json";
-import calendarIt from "./locales/it/calendar.json";
-import adminIt from "./locales/it/admin.json";
-import profileIt from "./locales/it/profile.json";
-
+import adminEn from "./locales/en/admin.json";
+import automationsEn from "./locales/en/automations.json";
+import bundlesEn from "./locales/en/bundles.json";
+import calendarEn from "./locales/en/calendar.json";
+import checklistEn from "./locales/en/checklist.json";
+import clientsEn from "./locales/en/clients.json";
 import commonEn from "./locales/en/common.json";
-import ticketsEn from "./locales/en/tickets.json";
+import contactsEn from "./locales/en/contacts.json";
+import costsEn from "./locales/en/costs.json";
 import dashboardEn from "./locales/en/dashboard.json";
 import inventoryEn from "./locales/en/inventory.json";
 import kanbanEn from "./locales/en/kanban.json";
-import clientsEn from "./locales/en/clients.json";
-import contactsEn from "./locales/en/contacts.json";
-import costsEn from "./locales/en/costs.json";
-import checklistEn from "./locales/en/checklist.json";
-import automationsEn from "./locales/en/automations.json";
-import bundlesEn from "./locales/en/bundles.json";
-import scriptsEn from "./locales/en/scripts.json";
 import notificationsEn from "./locales/en/notifications.json";
-import calendarEn from "./locales/en/calendar.json";
-import adminEn from "./locales/en/admin.json";
 import profileEn from "./locales/en/profile.json";
+import scriptsEn from "./locales/en/scripts.json";
+import ticketsEn from "./locales/en/tickets.json";
+import adminIt from "./locales/it/admin.json";
+import automationsIt from "./locales/it/automations.json";
+import bundlesIt from "./locales/it/bundles.json";
+import calendarIt from "./locales/it/calendar.json";
+import checklistIt from "./locales/it/checklist.json";
+import clientsIt from "./locales/it/clients.json";
+import commonIt from "./locales/it/common.json";
+import contactsIt from "./locales/it/contacts.json";
+import costsIt from "./locales/it/costs.json";
+import dashboardIt from "./locales/it/dashboard.json";
+import inventoryIt from "./locales/it/inventory.json";
+import kanbanIt from "./locales/it/kanban.json";
+import notificationsIt from "./locales/it/notifications.json";
+import profileIt from "./locales/it/profile.json";
+import scriptsIt from "./locales/it/scripts.json";
+import ticketsIt from "./locales/it/tickets.json";
 
 void i18n
   .use(LanguageDetector)

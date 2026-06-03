@@ -1,28 +1,7 @@
-import OverflowTable from "@/components/ui/overflow-table";
-import { useVirtualList } from "@/hooks/useVirtualList";
-
-import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { ListSkeleton, PageFetchError } from "@/components/page-states";
-import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ClientSchema,
-  ContactSchema,
-  type ClientInput,
-  type ContactInput,
-} from "@/lib/schemas/clients";
-import { supabase } from "@/integrations/supabase/client";
-import queries from "@/lib/queries/clients";
-import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import { useAuth } from "@/lib/auth-context";
-import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
-import { useTickets } from "@/hooks/use-tickets";
-import { fmtDate } from "@/lib/pcready";
-import { Modal } from "@/components/pcready/Modal";
+import { useQueryClient } from "@tanstack/react-query";
+import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Building2,
   Bell,
@@ -46,15 +25,35 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { toast } from "sonner";
-import { generatePortalAccessLink, revokePortalAccessLink } from "@/lib/portal-auth";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { downloadCsv } from "@/lib/downloads";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
-import { errorMessage } from "@/lib/errors";
+import { toast } from "sonner";
+import { ListSkeleton, PageFetchError } from "@/components/page-states";
+import { Modal } from "@/components/pcready/Modal";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { Field } from "@/components/ui/form-field";
+import OverflowTable from "@/components/ui/overflow-table";
+import { useTickets } from "@/hooks/use-tickets";
+import { useVirtualList } from "@/hooks/useVirtualList";
+import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
+import { downloadCsv } from "@/lib/downloads";
+import { errorMessage } from "@/lib/errors";
 import { formatMoney } from "@/lib/format";
+import { fmtDate } from "@/lib/pcready";
+import { generatePortalAccessLink, revokePortalAccessLink } from "@/lib/portal-auth";
+import queries from "@/lib/queries/clients";
+import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
+import {
+  ClientSchema,
+  ContactSchema,
+  type ClientInput,
+  type ContactInput,
+} from "@/lib/schemas/clients";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createLazyFileRoute("/_app/clients")({
   component: ClientsPage,
@@ -669,12 +668,12 @@ function ClientsPage() {
         <div className="pc-card-hd">
           <div className="pc-card-title">{t("list.title", "Clienti")}</div>
           <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={startNewClient}>
-            <Plus className="w-3 h-3" /> {t("list.new", "Nuovo")}
+            <Plus className="size-3" /> {t("list.new", "Nuovo")}
           </button>
         </div>
         <div className="space-y-3 border-b p-3" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-text3" />
+            <Search className="size-4 text-text3" />
             <input
               className="pc-input"
               value={q}
@@ -705,7 +704,7 @@ function ClientsPage() {
           </div>
           {allTags.length > 0 && (
             <div className="flex items-center gap-2">
-              <Tags className="h-4 w-4 text-text3" />
+              <Tags className="size-4 text-text3" />
               <select
                 className="pc-input h-9 text-xs"
                 value={tagFilter}
@@ -747,7 +746,7 @@ function ClientsPage() {
                   setDestructiveAction({ type: "bulkClients", ids: Array.from(selectedIds) })
                 }
               >
-                <Trash2 className="w-3 h-3" /> {t("list.delete", "Elimina")}
+                <Trash2 className="size-3" /> {t("list.delete", "Elimina")}
               </button>
             </div>
           )}
@@ -807,7 +806,7 @@ function ClientsPage() {
                           onClick={(event) => event.stopPropagation()}
                           onChange={(event) => toggleSelected(client.id, event.target.checked)}
                         />
-                        <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-text3" />
+                        <Building2 className="mt-0.5 size-4 flex-shrink-0 text-text3" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-[13px] font-bold">{name}</div>
                           <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
@@ -818,17 +817,17 @@ function ClientsPage() {
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         <SmallMetric
                           tone={clientStats.openTickets > 0 ? "danger" : "muted"}
-                          icon={<Ticket className="h-3 w-3" />}
+                          icon={<Ticket className="size-3" />}
                           label={t("list.ticketCount", { defaultValue: "{{count}} ticket", count: clientStats.openTickets })}
                         />
                         <SmallMetric
                           tone="muted"
-                          icon={<HardDrive className="h-3 w-3" />}
+                          icon={<HardDrive className="size-3" />}
                           label={t("list.deviceCount", { defaultValue: "{{count}} dispositivi", count: clientStats.devices })}
                         />
                         <SmallMetric
                           tone="muted"
-                          icon={<Users className="h-3 w-3" />}
+                          icon={<Users className="size-3" />}
                           label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
                         />
                       </div>
@@ -873,7 +872,7 @@ function ClientsPage() {
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event) => toggleSelected(client.id, event.target.checked)}
                       />
-                      <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-text3" />
+                      <Building2 className="mt-0.5 size-4 flex-shrink-0 text-text3" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[13px] font-bold">{name}</div>
                         <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
@@ -884,17 +883,17 @@ function ClientsPage() {
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <SmallMetric
                         tone={clientStats.openTickets > 0 ? "danger" : "muted"}
-                        icon={<Ticket className="h-3 w-3" />}
+                        icon={<Ticket className="size-3" />}
                         label={t("list.ticketCount", { defaultValue: "{{count}} ticket", count: clientStats.openTickets })}
                       />
                       <SmallMetric
                         tone="muted"
-                        icon={<HardDrive className="h-3 w-3" />}
+                        icon={<HardDrive className="size-3" />}
                         label={t("list.deviceCount", { defaultValue: "{{count}} dispositivi", count: clientStats.devices })}
                       />
                       <SmallMetric
                         tone="muted"
-                        icon={<Users className="h-3 w-3" />}
+                        icon={<Users className="size-3" />}
                         label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
                       />
                     </div>
@@ -1010,14 +1009,14 @@ function ClientsPage() {
                     disabled={!canDelete}
                     onClick={() => setDestructiveAction({ type: "client", client: selected })}
                   >
-                    <Trash2 className="w-3 h-3" /> {t("form.delete", "Elimina")}
+                    <Trash2 className="size-3" /> {t("form.delete", "Elimina")}
                   </button>
                   <button
                     className="pc-btn pc-btn-primary pc-btn-sm"
                     disabled={busy || !canEdit}
                     onClick={onSaveClient}
                   >
-                    <Save className="w-3 h-3" /> {t("form.saveClient", "Salva cliente")}
+                    <Save className="size-3" /> {t("form.saveClient", "Salva cliente")}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
@@ -1137,14 +1136,14 @@ function ClientsPage() {
                       disabled={!canEdit}
                       onClick={() => setContactImportOpen(true)}
                     >
-                      <FileUp className="w-3 h-3" /> {t("contacts.importCsv", "Importa da CSV")}
+                      <FileUp className="size-3" /> {t("contacts.importCsv", "Importa da CSV")}
                     </button>
                     <button
                       className="pc-btn pc-btn-primary pc-btn-sm"
                       disabled={!canEdit}
                       onClick={openNewContactModal}
                     >
-                      <Plus className="w-3 h-3" /> {t("contacts.newContact", "Nuovo referente")}
+                      <Plus className="size-3" /> {t("contacts.newContact", "Nuovo referente")}
                     </button>
                   </div>
                 </div>
@@ -1162,7 +1161,7 @@ function ClientsPage() {
                   rows={contacts.map((contact) => [
                     <span className="inline-flex items-center gap-1 font-semibold">
                       {contact.is_primary && (
-                        <Star className="h-3 w-3" style={{ color: "var(--warn)" }} />
+                        <Star className="size-3" style={{ color: "var(--warn)" }} />
                       )}
                       {contactLabel(contact)}
                     </span>,
@@ -1176,14 +1175,14 @@ function ClientsPage() {
                         className="pc-btn pc-btn-ghost pc-btn-xs"
                         onClick={() => openEditContactModal(contact)}
                       >
-                        <Pencil className="h-3 w-3" /> {t("contacts.edit", "Modifica")}
+                        <Pencil className="size-3" /> {t("contacts.edit", "Modifica")}
                       </button>
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-xs"
                         disabled={!canManagePortalAccess || portalBusyContactId === contact.id}
                         onClick={() => generateContactPortalLink(contact)}
                       >
-                        <Link2 className="h-3 w-3" /> {t("contacts.link", "Link")}
+                        <Link2 className="size-3" /> {t("contacts.link", "Link")}
                       </button>
                       {portalAccess[contact.id] && (
                         <button
@@ -1202,7 +1201,7 @@ function ClientsPage() {
                         onClick={() => setDestructiveAction({ type: "contact", contact })}
                         title={t("contacts.deleteTitle", "Elimina referente")}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="size-3" />
                       </button>
                     </div>,
                   ])}
@@ -1215,14 +1214,14 @@ function ClientsPage() {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm text-text3">{t("tickets.count", { defaultValue: "{{count}} ticket collegati", count: tickets.length })}</div>
                   <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openCreate}>
-                    <Plus className="w-3 h-3" /> {t("tickets.newTicket", "Nuovo ticket")}
+                    <Plus className="size-3" /> {t("tickets.newTicket", "Nuovo ticket")}
                   </button>
                 </div>
                 <ResponsiveTable
                   empty={t("tickets.empty", "Nessun ticket per questo cliente.")}
                   emptyAction={
                     <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openCreate}>
-                      <Plus className="w-3 h-3" /> {t("tickets.createFirst", "Crea primo ticket")}
+                      <Plus className="size-3" /> {t("tickets.createFirst", "Crea primo ticket")}
                     </button>
                   }
                   headers={[
@@ -1258,7 +1257,7 @@ function ClientsPage() {
                     className="pc-btn pc-btn-primary pc-btn-sm"
                     onClick={openAddDeviceForSelectedClient}
                   >
-                    <Plus className="w-3 h-3" /> {t("devices.addDevice", "Aggiungi dispositivo")}
+                    <Plus className="size-3" /> {t("devices.addDevice", "Aggiungi dispositivo")}
                   </button>
                 </div>
                 <ResponsiveTable
@@ -1268,7 +1267,7 @@ function ClientsPage() {
                       className="pc-btn pc-btn-primary pc-btn-sm"
                       onClick={openAddDeviceForSelectedClient}
                     >
-                      <Plus className="w-3 h-3" /> {t("devices.addFirstDevice", "Aggiungi primo dispositivo")}
+                      <Plus className="size-3" /> {t("devices.addFirstDevice", "Aggiungi primo dispositivo")}
                     </button>
                   }
                   headers={[
@@ -1332,7 +1331,7 @@ function ClientsPage() {
                 disabled={busy || !canEdit}
                 onClick={onSaveClient}
               >
-                <Save className="w-3 h-3" /> {t("form.saveClient", "Salva cliente")}
+                <Save className="size-3" /> {t("form.saveClient", "Salva cliente")}
               </button>
             </div>
             <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
@@ -1496,7 +1495,7 @@ function ContactModal({
             {t("form.cancel", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" disabled={busy || !canEdit} onClick={onSave}>
-            <Save className="w-3 h-3" /> {busy ? t("contacts.saving", "Salvataggio...") : t("contacts.save", "Salva referente")}
+            <Save className="size-3" /> {busy ? t("contacts.saving", "Salvataggio...") : t("contacts.save", "Salva referente")}
           </button>
         </>
       }
@@ -1569,11 +1568,11 @@ function PortalLinkModal({
           <button className="pc-btn pc-btn-primary" onClick={onCopy}>
             {copied ? (
               <>
-                <CheckCircle2 className="w-3 h-3" /> {t("portal.copied", "Copiato")}
+                <CheckCircle2 className="size-3" /> {t("portal.copied", "Copiato")}
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3" /> {t("portal.copyLink", "Copia link")}
+                <Copy className="size-3" /> {t("portal.copyLink", "Copia link")}
               </>
             )}
           </button>
@@ -1674,7 +1673,7 @@ function ClientOverviewPanel({
               <div className="text-xs text-text3">{t("overview.bundleSubtitle", "SLA effettivi e scadenza contratto")}</div>
             </div>
             <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" onClick={onOpenSettings}>
-              <Pencil className="h-3 w-3" /> {t("overview.configure", "Configura")}
+              <Pencil className="size-3" /> {t("overview.configure", "Configura")}
             </button>
           </div>
           {bundle ? (
@@ -1705,7 +1704,7 @@ function ClientOverviewPanel({
             <SummaryBox label={t("overview.devices", "Device")} value={devicesCount} />
           </div>
           <button className="pc-btn pc-btn-primary pc-btn-sm mt-3 w-full" type="button" onClick={onOpenDocuments}>
-            <Upload className="h-3 w-3" /> {t("overview.uploadDocument", "Carica documento")}
+            <Upload className="size-3" /> {t("overview.uploadDocument", "Carica documento")}
           </button>
         </div>
       </div>
@@ -1817,7 +1816,7 @@ function ClientNotesPanel({
             </button>
           )}
           <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !content.trim()} onClick={() => void saveNote()}>
-            <Save className="h-3 w-3" /> {editingId ? t("notes.update", "Aggiorna nota") : t("notes.add", "Aggiungi nota")}
+            <Save className="size-3" /> {editingId ? t("notes.update", "Aggiorna nota") : t("notes.add", "Aggiungi nota")}
           </button>
         </div>
       </div>
@@ -1833,13 +1832,13 @@ function ClientNotesPanel({
                 </div>
                 <div className="flex gap-1">
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => setHistoryNoteId(note.id)}>
-                    <History className="h-3 w-3" /> {t("notes.history", "Storico")}
+                    <History className="size-3" /> {t("notes.history", "Storico")}
                   </button>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canEdit} onClick={() => { setEditingId(note.id); setContent(note.content); }}>
-                    <Pencil className="h-3 w-3" /> {t("form.edit", "Modifica")}
+                    <Pencil className="size-3" /> {t("form.edit", "Modifica")}
                   </button>
                   <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete} onClick={() => void removeNote(note.id)}>
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="size-3" />
                   </button>
                 </div>
               </div>
@@ -1886,7 +1885,7 @@ function ClientActivityTimeline({ clientId }: { clientId: string }) {
           {items.map((item) => (
             <div key={item.id} className="flex gap-3 rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
               <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-surface2 text-text3">
-                <History className="h-4 w-4" />
+                <History className="size-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1976,7 +1975,7 @@ function ClientDocumentsPanel({
         </select>
         <input className="pc-input" value={description} disabled={!canEdit || busy} placeholder={t("documents.description", "Descrizione documento")} onChange={(event) => setDescription(event.target.value)} />
         <label className="pc-btn pc-btn-primary pc-btn-sm justify-center">
-          <Upload className="h-3 w-3" /> {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
+          <Upload className="size-3" /> {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
           <input type="file" className="hidden" disabled={!canEdit || busy} onChange={(event) => void upload(event.target.files?.[0] ?? null)} />
         </label>
       </div>
@@ -1996,10 +1995,10 @@ function ClientDocumentsPanel({
           fmtDate(document.uploaded_at),
           <div className="flex gap-1">
             <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => void openDocument(document)}>
-              <Download className="h-3 w-3" />
+              <Download className="size-3" />
             </button>
             <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete || busy} onClick={() => void removeDocument(document)}>
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="size-3" />
             </button>
           </div>,
         ])}
@@ -2126,7 +2125,7 @@ function ClientSettingsPanel({
     <div className="pc-card-body space-y-4">
       <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
         <div className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Tags className="h-4 w-4" /> {t("tags.title", "Segmentazione cliente")}
+          <Tags className="size-4" /> {t("tags.title", "Segmentazione cliente")}
         </div>
         <div className="flex flex-wrap gap-2">
           {allTags.map((tag) => (
@@ -2149,7 +2148,7 @@ function ClientSettingsPanel({
         <div className="mt-3 flex gap-2">
           <input className="pc-input" value={newTag} disabled={!canEdit || busy} placeholder={t("tags.newPlaceholder", "Nuovo tag, es. VIP")} onChange={(event) => setNewTag(event.target.value)} />
           <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !newTag.trim()} onClick={() => void addTag()}>
-            <Plus className="h-3 w-3" /> {t("tags.add", "Aggiungi")}
+            <Plus className="size-3" /> {t("tags.add", "Aggiungi")}
           </button>
         </div>
       </div>
@@ -2157,7 +2156,7 @@ function ClientSettingsPanel({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
           <div className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Clock className="h-4 w-4" /> {t("sla.title", "SLA personalizzato")}
+            <Clock className="size-4" /> {t("sla.title", "SLA personalizzato")}
           </div>
           {bundle ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -2168,7 +2167,7 @@ function ClientSettingsPanel({
                 <input className="pc-input" type="number" min={0} step={0.5} value={resolutionHours} disabled={!canEdit || busy} onChange={(event) => setResolutionHours(event.target.value)} />
               </Field>
               <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveSla()}>
-                <Save className="h-3 w-3" /> {t("sla.save", "Salva override SLA")}
+                <Save className="size-3" /> {t("sla.save", "Salva override SLA")}
               </button>
             </div>
           ) : (
@@ -2178,7 +2177,7 @@ function ClientSettingsPanel({
 
         <div className="rounded-md border p-4" style={{ borderColor: "var(--border)" }}>
           <div className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Bell className="h-4 w-4" /> {t("alerts.title", "Notifica scadenza contratto")}
+            <Bell className="size-4" /> {t("alerts.title", "Notifica scadenza contratto")}
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Field label={t("alerts.daysBefore", "Giorni prima")}>
@@ -2195,7 +2194,7 @@ function ClientSettingsPanel({
               {t("alerts.enabled", "Alert attivo")}
             </label>
             <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveAlert()}>
-              <Save className="h-3 w-3" /> {t("alerts.save", "Salva alert")}
+              <Save className="size-3" /> {t("alerts.save", "Salva alert")}
             </button>
           </div>
         </div>

@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
 import { GitBranch, Link2, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { openTicketDetail } from "@/lib/detail-navigation";
-import { useAuth } from "@/lib/auth-context";
 import { StatusBadge } from "@/components/pcready/StatusBadge";
-import type { TicketStatus } from "@/lib/pcready";
+import { useAuth } from "@/lib/auth-context";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import {
   RELATION_LABELS,
   searchTicketsForRelation,
@@ -16,7 +15,11 @@ import {
   useDeleteTicketRelation,
   useTicketRelations,
 } from "@/lib/queries/ticketRelations";
+import type { TicketStatus } from "@/lib/pcready";
 
+/**
+ *
+ */
 export function TicketRelations({ ticketId }: { ticketId: string }) {
   const { t } = useTranslation("tickets");
   const { user, canEdit } = useAuth();
@@ -90,7 +93,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-[13px] font-bold">
-            <GitBranch className="h-4 w-4 text-text3" /> {t("relations.title", "Ticket collegati")}
+            <GitBranch className="size-4 text-text3" /> {t("relations.title", "Ticket collegati")}
           </h3>
           <p className="text-[11px] text-text3">{t("relations.description", "Dipendenze, duplicati e subtask.")}</p>
         </div>
@@ -107,7 +110,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
             ))}
           </select>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text3" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-text3" />
             <input className="pc-input w-full pl-8" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("relations.searchPlaceholder", "Cerca ticket per codice, titolo o cliente...")} />
             {search && (
               <div className="absolute left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg" style={{ borderColor: "var(--border)" }}>
@@ -120,7 +123,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
                       <span className="font-semibold">{ticket.model || "Ticket"}</span>
                       <span className="ml-2 text-text3">{ticket.client}</span>
                     </span>
-                    <Link2 className="h-3 w-3" />
+                    <Link2 className="size-3" />
                   </button>
                 ))}
               </div>
@@ -143,7 +146,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
               <StatusBadge status={ticket.status as TicketStatus} />
               {canEdit && (
                 <button className="pc-btn pc-btn-ghost pc-btn-sm text-red-600" onClick={() => removeRelation(relation.id)}>
-                  <Trash2 className="h-3 w-3" /> {t("relations.remove", "Rimuovi")}
+                  <Trash2 className="size-3" /> {t("relations.remove", "Rimuovi")}
                 </button>
               )}
             </div>

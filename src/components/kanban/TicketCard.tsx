@@ -93,6 +93,18 @@ export function TicketCard({
       onDragEnd={onDragEnd}
       onMouseEnter={() => onHover(card.id)}
       onMouseLeave={() => onHover(null)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (onClick) {
+            onClick(event as any, card.id);
+          } else {
+            onOpenDetail();
+          }
+        }
+      }}
       onClick={(event) => {
         if (onClick) {
           onClick(event, card.id);

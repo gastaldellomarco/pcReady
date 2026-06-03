@@ -29,6 +29,9 @@ export const ClientSchema = z.object({
   portal_name: optionalTrimmed(),
 });
 
+/**
+ *
+ */
 export type ClientInput = z.infer<typeof ClientSchema>;
 
 export const ContactSchema = z.object({
@@ -41,4 +44,7 @@ export const ContactSchema = z.object({
   notes: optionalTrimmed(),
 });
 
+/**
+ *
+ */
 export type ContactInput = z.infer<typeof ContactSchema>;

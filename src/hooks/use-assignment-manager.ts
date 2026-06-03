@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/errors";
 import type { ClientBundleAssignment } from "@/lib/bundles";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "@/lib/errors";
 
 interface AssignmentMutations {
   create: UseMutationResult<unknown, Error, Partial<ClientBundleAssignment>>;
@@ -22,6 +22,9 @@ interface UseAssignmentManagerOptions {
   mutations: AssignmentMutations;
 }
 
+/**
+ *
+ */
 export function useAssignmentManager(options: UseAssignmentManagerOptions) {
   const { t } = useTranslation("bundles");
   const { canManage, userId, mutations } = options;

@@ -1,4 +1,16 @@
-import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Barcode,
+  Cpu,
+  HardDrive,
+  Monitor,
+  Network,
+  QrCode,
+  Save,
+  ScanLine,
+  TicketPlus,
+  Wrench,
+} from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -7,12 +19,37 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { Modal } from "./Modal";
-import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
-import { openTicketDetail } from "@/lib/detail-navigation";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import OverflowTable from "@/components/ui/overflow-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDeviceDetail } from "@/hooks/use-detail";
+import { useTickets } from "@/hooks/use-tickets";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { pcReadyColors } from "@/lib/design-system";
+import { openTicketDetail } from "@/lib/detail-navigation";
+import { updateDeviceStatus } from "@/lib/device-status";
+import { getDeviceCategoryLabel } from "@/lib/device-taxonomy";
 import {
   DEVICE_STATUS_LABEL,
   fmtDateTime,
@@ -27,43 +64,6 @@ import {
   type DeviceInventoryStatus,
   type TicketType,
 } from "@/lib/pcready";
-import { useAuth } from "@/lib/auth-context";
-import { updateDeviceStatus } from "@/lib/device-status";
-import { useTickets } from "@/hooks/use-tickets";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import OverflowTable from "@/components/ui/overflow-table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Barcode,
-  Cpu,
-  HardDrive,
-  Monitor,
-  Network,
-  QrCode,
-  Save,
-  ScanLine,
-  TicketPlus,
-  Wrench,
-} from "lucide-react";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
-import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 import {
   daysUntil,
   getWarrantyStatus,
@@ -74,8 +74,8 @@ import {
   WARRANTY_TYPES,
   type WarrantyType,
 } from "@/lib/warranty";
-import { pcReadyColors } from "@/lib/design-system";
-import { getDeviceCategoryLabel } from "@/lib/device-taxonomy";
+import { Modal } from "./Modal";
+import type { Json } from "@/integrations/supabase/types";
 
 interface DeviceRow {
   id: string;
@@ -249,6 +249,9 @@ type HardwareDraft = {
 };
 
 
+/**
+ *
+ */
 export function DeviceDetailModal() {
   const { t } = useTranslation("tickets");
   const { id, close } = useDeviceDetail();
@@ -760,7 +763,7 @@ export function DeviceDetailModal() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-background text-accent">
-            <Monitor className="h-5 w-5" />
+            <Monitor className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-lg font-semibold leading-tight">
@@ -791,17 +794,17 @@ export function DeviceDetailModal() {
                 .then(() => toast.success(t("device.toasts.linkCopied", "Link dispositivo copiato")))
             }
           >
-            <QrCode className="h-3 w-3" /> {t("device.generateQR", "Genera QR")}
+            <QrCode className="size-3" /> {t("device.generateQR", "Genera QR")}
           </button>
           <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => openCreate()}>
-            <TicketPlus className="h-3 w-3" /> {t("device.assignTicket", "Assegna ticket")}
+            <TicketPlus className="size-3" /> {t("device.assignTicket", "Assegna ticket")}
           </button>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm"
             disabled={statusSaving}
             onClick={() => void commitDeviceStatus("maintenance")}
           >
-            <Wrench className="h-3 w-3" /> {t("device.moveToMaintenance", "Sposta in manutenzione")}
+            <Wrench className="size-3" /> {t("device.moveToMaintenance", "Sposta in manutenzione")}
           </button>
         </div>
       </div>
@@ -930,7 +933,7 @@ export function DeviceDetailModal() {
                         disabled={savingIdentity}
                         onClick={() => void saveIdentity()}
                       >
-                        <Save className="h-3 w-3" />
+                        <Save className="size-3" />
                         {savingIdentity ? t("device.saving", "Salvataggio...") : t("device.saveCodes", "Salva codici")}
                       </button>
                       <button
@@ -1101,7 +1104,7 @@ export function DeviceDetailModal() {
                     disabled={savingWarranty}
                     onClick={saveWarranty}
                   >
-                    <Save className="h-3 w-3" />{" "}
+                    <Save className="size-3" />{" "}
                     {savingWarranty ? t("device.saving", "Salvataggio...") : t("device.saveWarranty", "Salva garanzia")}
                   </button>
                   <button
@@ -1268,7 +1271,7 @@ export function DeviceDetailModal() {
                         disabled={savingNotes}
                         onClick={saveNotes}
                       >
-                        <Save className="h-3 w-3" />
+                        <Save className="size-3" />
                         {savingNotes ? t("device.saving", "Salvataggio...") : t("device.save", "Salva")}
                       </button>
                       <button
@@ -1283,8 +1286,9 @@ export function DeviceDetailModal() {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className="text-[12.5px] text-text2 whitespace-pre-wrap cursor-pointer hover:bg-background/50 rounded px-1 -mx-1 py-1"
+                  <button
+                    type="button"
+                    className="text-[12.5px] text-text2 whitespace-pre-wrap cursor-pointer hover:bg-background/50 rounded px-1 -mx-1 py-1 text-left w-full"
                     onClick={() => {
                       if (!canEdit) return;
                       setNotesDraft(d?.notes ?? "");
@@ -1296,7 +1300,7 @@ export function DeviceDetailModal() {
                         {t("device.notes.empty", "Nessuna nota tecnica")}{canEdit ? t("device.notes.clickToAdd", " — clicca per aggiungere") : ""}
                       </span>
                     )}
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -1739,7 +1743,7 @@ function HardwareTab({
             className="flex h-10 w-10 items-center justify-center rounded-lg"
             style={{ background: systemHealth.background, color: systemHealth.color }}
           >
-            <Cpu className="h-5 w-5" />
+            <Cpu className="size-5" />
           </div>
           <div className="flex-1">
             <div className="text-sm font-semibold">{t("device.hardware.systemHealth", { label: systemHealth.label, defaultValue: "Stato sistema: {{label}}" })}</div>
@@ -1919,7 +1923,7 @@ function HardwareTab({
           </div>
           <div className="mt-3 flex gap-2">
             <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={saving} onClick={onSave}>
-              <Save className="h-3 w-3" /> {saving ? t("device.saving", "Salvataggio...") : t("device.saveHardware", "Salva hardware")}
+              <Save className="size-3" /> {saving ? t("device.saving", "Salvataggio...") : t("device.saveHardware", "Salva hardware")}
             </button>
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCancel}>
               {t("device.cancel", "Annulla")}
@@ -1933,17 +1937,17 @@ function HardwareTab({
             return (
               <div className="grid gap-3 md:grid-cols-2">
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Rete"
                   rows={[["IP", device.ip_address], ["MAC", device.mac_address], ["Firmware", device.firmware_version]]}
                 />
                 <HardwareSection
-                  icon={<Monitor className="h-4 w-4" />}
+                  icon={<Monitor className="size-4" />}
                   title="Stampa"
                   rows={[["Tecnologia", device.print_technology], ["Toner", device.toner_model], ["Contatore", device.page_count]]}
                 />
                 <HardwareSection
-                  icon={<HardDrive className="h-4 w-4" />}
+                  icon={<HardDrive className="size-4" />}
                   title="Altro"
                   rows={[["VLAN", device.vlan_config], ["Scadenza licenza", device.license_expiry], ["PoE", device.poe_supported ? "Sì" : "—"]]}
                 />
@@ -1954,17 +1958,17 @@ function HardwareTab({
             return (
               <div className="grid gap-3 md:grid-cols-2">
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Management"
                   rows={[["IP", device.ip_address], ["MAC", device.mac_address], ["Firmware", device.firmware_version]]}
                 />
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Porte"
                   rows={[["Numero porte", device.port_count], ["VLAN", device.vlan_config], ["PoE", device.poe_supported ? "Sì" : "—"]]}
                 />
                 <HardwareSection
-                  icon={<Monitor className="h-4 w-4" />}
+                  icon={<Monitor className="size-4" />}
                   title="Licenza"
                   rows={[["Scadenza licenza", device.license_expiry], ["Note firmware", device.firmware_version]]}
                 />
@@ -1975,27 +1979,27 @@ function HardwareTab({
             return (
               <div className="grid gap-3 md:grid-cols-2">
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Rete"
                   rows={[["IP", device.ip_address], ["MAC", device.mac_address]]}
                 />
                 <HardwareSection
-                  icon={<HardDrive className="h-4 w-4" />}
+                  icon={<HardDrive className="size-4" />}
                   title="Rack & ruolo"
                   rows={[["Rack", device.rack_position], ["Ruolo", device.server_role]]}
                 />
                 <HardwareSection
-                  icon={<Cpu className="h-4 w-4" />}
+                  icon={<Cpu className="size-4" />}
                   title="CPU"
                   rows={[["Nome", device.cpu_name], ["Frequenza", device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null], ["Core", device.cpu_cores]]}
                 />
                 <HardwareSection
-                  icon={<Cpu className="h-4 w-4" />}
+                  icon={<Cpu className="size-4" />}
                   title="RAM"
                   rows={[["Totale", device.ram_gb ? `${device.ram_gb} GB` : null], ["Tipo", device.ram_type]]}
                 />
                 <HardwareSection
-                  icon={<HardDrive className="h-4 w-4" />}
+                  icon={<HardDrive className="size-4" />}
                   title="Storage"
                   rows={[["Tipo", device.storage_type], ["Capacità", device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null]]}
                 />
@@ -2006,17 +2010,17 @@ function HardwareTab({
             return (
               <div className="grid gap-3 md:grid-cols-2">
                 <HardwareSection
-                  icon={<Monitor className="h-4 w-4" />}
+                  icon={<Monitor className="size-4" />}
                   title="Sistema operativo"
                   rows={[["OS", device.os], ["Versione", device.os_version]]}
                 />
                 <HardwareSection
-                  icon={<Monitor className="h-4 w-4" />}
+                  icon={<Monitor className="size-4" />}
                   title="Schermo"
                   rows={[["Risoluzione", device.screen_resolution], ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}"` : null]]}
                 />
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Connettività"
                   rows={[["Wi‑Fi", device.wifi], ["Bluetooth", device.bluetooth]]}
                 />
@@ -2027,12 +2031,12 @@ function HardwareTab({
             return (
               <div className="grid gap-3 md:grid-cols-2">
                 <HardwareSection
-                  icon={<Monitor className="h-4 w-4" />}
+                  icon={<Monitor className="size-4" />}
                   title="Specifiche"
                   rows={[["Modello", device.model], ["IP", device.ip_address], ["MAC", device.mac_address]]}
                 />
                 <HardwareSection
-                  icon={<Network className="h-4 w-4" />}
+                  icon={<Network className="size-4" />}
                   title="Connettività"
                   rows={[["Ethernet", device.ethernet], ["Wi‑Fi", device.wifi], ["Bluetooth", device.bluetooth]]}
                 />
@@ -2044,32 +2048,32 @@ function HardwareTab({
           return (
             <div className="grid gap-3 md:grid-cols-2">
               <HardwareSection
-                icon={<Cpu className="h-4 w-4" />}
+                icon={<Cpu className="size-4" />}
                 title="CPU"
                 rows={[["Nome", device.cpu_name], ["Frequenza", device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null], ["Core", device.cpu_cores]]}
               />
               <HardwareSection
-                icon={<Cpu className="h-4 w-4" />}
+                icon={<Cpu className="size-4" />}
                 title="RAM"
                 rows={[["Totale", device.ram_gb ? `${device.ram_gb} GB` : null], ["Tipo", device.ram_type]]}
               />
               <HardwareSection
-                icon={<HardDrive className="h-4 w-4" />}
+                icon={<HardDrive className="size-4" />}
                 title="Storage"
                 rows={[["Tipo", device.storage_type], ["Capacità", device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null]]}
               />
               <HardwareSection
-                icon={<Monitor className="h-4 w-4" />}
+                icon={<Monitor className="size-4" />}
                 title="Sistema operativo"
                 rows={[["Nome", device.os], ["Versione", device.os_version], ["Architettura", device.os_architecture]]}
               />
               <HardwareSection
-                icon={<Monitor className="h-4 w-4" />}
+                icon={<Monitor className="size-4" />}
                 title="Schermo"
                 rows={[["Risoluzione", device.screen_resolution], ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}"` : null], ["Tipo", device.screen_type]]}
               />
               <HardwareSection
-                icon={<Network className="h-4 w-4" />}
+                icon={<Network className="size-4" />}
                 title="Connettività"
                 rows={[["Wi‑Fi", device.wifi], ["Ethernet", device.ethernet], ["Bluetooth", device.bluetooth]]}
               />
@@ -2118,7 +2122,7 @@ function HardwareCheckbox({
     <label className="text-xs flex items-center gap-2">
       <input
         type="checkbox"
-        className="mt-1 h-4 w-4"
+        className="mt-1 size-4"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />

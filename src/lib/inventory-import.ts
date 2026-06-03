@@ -1,6 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import { WARRANTY_TYPES, type WarrantyType } from "@/lib/warranty";
 import {
   DEFAULT_DEVICE_CATEGORY,
   DEFAULT_DEVICE_TYPE,
@@ -8,7 +6,12 @@ import {
   isDeviceCategory,
   type DeviceCategory,
 } from "@/lib/device-taxonomy";
+import { WARRANTY_TYPES, type WarrantyType } from "@/lib/warranty";
+import type { Database, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
+/**
+ *
+ */
 export type DeviceStatus = Database["public"]["Enums"]["device_status"];
 
 export const DEVICE_STATUSES: DeviceStatus[] = ["available", "assigned", "maintenance", "retired"];
@@ -30,6 +33,9 @@ export const INVENTORY_CSV_HEADERS = [
   "warranty_notes",
 ] as const;
 
+/**
+ *
+ */
 export interface CsvRow {
   rowNumber: number;
   asset_tag?: string | null;
@@ -49,12 +55,18 @@ export interface CsvRow {
   warranty_notes?: string | null;
 }
 
+/**
+ *
+ */
 export interface ClientLookup {
   id: string;
   name: string;
   company_name: string | null;
 }
 
+/**
+ *
+ */
 export interface PreviewRow extends CsvRow {
   action: "insert" | "update" | "skip";
   existingDeviceId: string | null;
@@ -62,16 +74,25 @@ export interface PreviewRow extends CsvRow {
   errors: string[];
 }
 
+/**
+ *
+ */
 export interface ImportResult {
   inserted: number;
   updated: number;
   errors: { rowNumber: number; serial: string; error: string }[];
 }
 
+/**
+ *
+ */
 export function csvTemplate() {
   return `${INVENTORY_CSV_HEADERS.join(",")}\n,DellSN123,Dell,Dell Latitude 5540,endpoint,Laptop,Windows 11 Pro,available,Cliente Demo,Prima fornitura,2026-01-15,2029-01-15,standard,Dell Support,Contratto WTY-123`;
 }
 
+/**
+ *
+ */
 export function parseDevicesCsv(text: string): CsvRow[] {
   const records = parseCsv(text);
   if (records.length < 2) return [];
@@ -107,6 +128,9 @@ export function parseDevicesCsv(text: string): CsvRow[] {
   });
 }
 
+/**
+ *
+ */
 export async function loadInventoryImportContext(rows: CsvRow[]) {
   const clientNames = uniqueValues(rows.map((row) => row.client_name));
   const serials = uniqueValues(rows.map((row) => row.serial));
@@ -122,6 +146,9 @@ export async function loadInventoryImportContext(rows: CsvRow[]) {
   };
 }
 
+/**
+ *
+ */
 export function validateImportRows(
   rows: CsvRow[],
   clients: ClientLookup[],
@@ -186,6 +213,9 @@ export function validateImportRows(
   });
 }
 
+/**
+ *
+ */
 export async function importDevicesFromCsv(
   rows: PreviewRow[],
   userId: string | null,

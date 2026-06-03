@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/errors";
 import type { AssistanceBundle } from "@/lib/bundles";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "@/lib/errors";
 
 interface BundleMutations {
   create: UseMutationResult<unknown, Error, Partial<AssistanceBundle>>;
@@ -20,6 +20,9 @@ interface UseBundleManagerOptions {
   mutations: BundleMutations;
 }
 
+/**
+ *
+ */
 export function useBundleManager(options: UseBundleManagerOptions) {
   const { t } = useTranslation("bundles");
   const { isAdmin, userId, mutations } = options;

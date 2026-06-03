@@ -1,8 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { buildDownloadFileName, csvCell } from "@/lib/export-format";
 
+/**
+ *
+ */
 export type ExportTableName = "tickets" | "devices" | "clients";
 
+/**
+ *
+ */
 export type ExportAllDataResult = {
   generatedAt: string;
   files: Record<ExportTableName, { filename: string; csv: string; rowCount: number }>;

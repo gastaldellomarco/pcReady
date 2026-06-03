@@ -1,15 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import i18n from "@/i18n";
-import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { sql } from "@codemirror/lang-sql";
+import { StreamLanguage } from "@codemirror/language";
+import { powerShell } from "@codemirror/legacy-modes/mode/powershell";
+import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
-import { supabase } from "@/integrations/supabase/client";
-import queries, { fetchScriptById } from "@/lib/queries/scripts";
-import { useAuth } from "@/lib/auth-context";
-import { Modal } from "@/components/pcready/Modal";
+import { createFileRoute } from "@tanstack/react-router";
+import CodeMirror from "@uiw/react-codemirror";
 import {
   Plus,
   Search,
@@ -29,24 +26,27 @@ import {
   Check,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { buildDownloadFileName, downloadText } from "@/lib/downloads";
-import { createVersion } from "@/lib/versioning";
-import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
+import { Modal } from "@/components/pcready/Modal";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
+import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { errorMessage } from "@/lib/errors";
-import CodeMirror from "@uiw/react-codemirror";
 import { Field } from "@/components/ui/form-field";
-import { python } from "@codemirror/lang-python";
-import { sql } from "@codemirror/lang-sql";
-import { javascript } from "@codemirror/lang-javascript";
-import { StreamLanguage } from "@codemirror/language";
-import { shell } from "@codemirror/legacy-modes/mode/shell";
-import { powerShell } from "@codemirror/legacy-modes/mode/powershell";
 import { useTheme } from "@/hooks/use-theme";
+import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { buildDownloadFileName, downloadText } from "@/lib/downloads";
+import { errorMessage } from "@/lib/errors";
+import queries, { fetchScriptById } from "@/lib/queries/scripts";
+import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
+import { createVersion } from "@/lib/versioning";
 import type { Extension } from "@codemirror/state";
+import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
@@ -199,7 +199,7 @@ function ScriptsPage() {
           className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] flex-1 min-w-[220px] max-w-[340px]"
           style={{ background: "var(--surface2)", border: "1px solid var(--border2)" }}
         >
-          <Search className="w-3 h-3 text-text3" />
+          <Search className="size-3 text-text3" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -222,7 +222,7 @@ function ScriptsPage() {
         </span>
         {canEdit && (
           <button onClick={() => setCreateOpen(true)} className="pc-btn pc-btn-primary pc-btn-sm">
-            <Plus className="w-3 h-3" /> {t("newScript", "Nuovo script")}
+            <Plus className="size-3" /> {t("newScript", "Nuovo script")}
           </button>
         )}
       </div>
@@ -230,7 +230,7 @@ function ScriptsPage() {
       {/* EMPTY */}
       {!rows.length && (
         <div className="pc-card p-10 text-center">
-          <Terminal className="w-10 h-10 mx-auto mb-3 text-text3" />
+          <Terminal className="size-10 mx-auto mb-3 text-text3" />
           <div className="text-[15px] font-bold mb-1" style={{ fontFamily: "var(--font-head)" }}>
             {t("emptyTitle", "Nessuno script ancora")}
           </div>
@@ -242,7 +242,7 @@ function ScriptsPage() {
               onClick={() => setCreateOpen(true)}
               className="pc-btn pc-btn-primary pc-btn-sm mx-auto"
             >
-              <Plus className="w-3 h-3" /> {t("newScript", "Nuovo script")}
+              <Plus className="size-3" /> {t("newScript", "Nuovo script")}
             </button>
           )}
         </div>
@@ -371,10 +371,10 @@ function ScriptCard({
     >
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+          className="size-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
           style={{ background: color + "1A", color }}
         >
-          <Icon className="w-5 h-5" />
+          <Icon className="size-5" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -402,7 +402,7 @@ function ScriptCard({
         <div className="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {onEdit && (
             <button onClick={onEdit} className="pc-btn-icon touch-target" title={t("card.edit", "Modifica")}>
-              <Pencil className="w-3 h-3" />
+              <Pencil className="size-3" />
             </button>
           )}
           {onDelete && (
@@ -412,7 +412,7 @@ function ScriptCard({
               title={t("card.delete", "Elimina")}
               style={{ color: "var(--danger, #DC2626)" }}
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="size-3" />
             </button>
           )}
         </div>
@@ -570,7 +570,7 @@ function ScriptViewer({
             {editing ? (
               <>
                 <button className="pc-btn pc-btn-ghost" onClick={cancelEdit} disabled={saving}>
-                  <X className="w-3 h-3" /> {t("viewer.cancel", "Annulla")}
+                  <X className="size-3" /> {t("viewer.cancel", "Annulla")}
                 </button>
                 <button
                   className="pc-btn pc-btn-primary"
@@ -581,7 +581,7 @@ function ScriptViewer({
                     t("editor.saving", "Salvataggio…")
                   ) : (
                     <>
-                      <Check className="w-3 h-3" /> {t("viewer.save", "Salva")}
+                      <Check className="size-3" /> {t("viewer.save", "Salva")}
                     </>
                   )}
                 </button>
@@ -592,18 +592,18 @@ function ScriptViewer({
                   {t("viewer.close", "Chiudi")}
                 </button>
                 <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
-                  <History className="w-3 h-3" /> {t("viewer.versions", "Versioni")}
+                  <History className="size-3" /> {t("viewer.versions", "Versioni")}
                 </button>
                 {canEdit && (
                   <button className="pc-btn pc-btn-ghost" onClick={enterEdit} disabled={loadingContent}>
-                    <Pencil className="w-3 h-3" /> {t("viewer.edit", "Modifica")}
+                    <Pencil className="size-3" /> {t("viewer.edit", "Modifica")}
                   </button>
                 )}
                 <button className="pc-btn pc-btn-ghost" onClick={download} disabled={!hasContent}>
-                  <Download className="w-3 h-3" /> {t("viewer.download", "Scarica")}
+                  <Download className="size-3" /> {t("viewer.download", "Scarica")}
                 </button>
                 <button className="pc-btn pc-btn-primary" onClick={copy} disabled={!hasContent}>
-                  <Copy className="w-3 h-3" /> {t("viewer.copy", "Copia")}
+                  <Copy className="size-3" /> {t("viewer.copy", "Copia")}
                 </button>
               </>
             )}
@@ -615,7 +615,7 @@ function ScriptViewer({
             className="w-12 h-12 rounded-[12px] flex items-center justify-center flex-shrink-0"
             style={{ background: color + "1A", color }}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="size-6" />
           </div>
           <div className="flex-1">
             {editing ? (
@@ -890,7 +890,7 @@ function ScriptEditor({
                       color: active ? form.getValues().color || COLORS[0] : "var(--text2)",
                     }}
                   >
-                    <I className="w-4 h-4" />
+                    <I className="size-4" />
                   </button>
                 );
               })}

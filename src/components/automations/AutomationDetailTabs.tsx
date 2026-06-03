@@ -1,11 +1,3 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { RunLogDrawer } from "@/components/automations/RunLogDrawer";
-import { cn } from "@/lib/utils";
-import type { AutomationRule } from "@/types/automation";
-import type { AutomationRunLog, AutomationRunStats } from "@/lib/automation-runs";
-import { TRIGGER_TYPE_LABELS } from "@/hooks/useAutomationRules";
-import { timeAgo } from "@/lib/pcready";
 import {
   CheckCircle2,
   XCircle,
@@ -15,7 +7,18 @@ import {
   Activity,
   Zap,
 } from "lucide-react";
+import { RunLogDrawer } from "@/components/automations/RunLogDrawer";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TRIGGER_TYPE_LABELS } from "@/hooks/useAutomationRules";
+import { timeAgo } from "@/lib/pcready";
+import { cn } from "@/lib/utils";
+import type { AutomationRunLog, AutomationRunStats } from "@/lib/automation-runs";
+import type { AutomationRule } from "@/types/automation";
 
+/**
+ *
+ */
 export function AutomationDetailTabs({
   rule,
   stats,
@@ -76,7 +79,7 @@ export function AutomationDetailTabs({
         {/* Trigger card */}
         <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-blue-600" />
+            <Zap className="size-4 text-blue-600" />
             <span className="text-sm font-semibold text-blue-800">Trigger</span>
           </div>
           <p className="mt-1 text-sm text-blue-700">
@@ -95,10 +98,10 @@ export function AutomationDetailTabs({
         {/* Conditions */}
         {conditionsDef.length > 0 && (
           <div className="space-y-1.5">
-            <ArrowRight className="mx-auto h-4 w-4 text-text3" />
+            <ArrowRight className="mx-auto size-4 text-text3" />
             <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-amber-600" />
+                <Activity className="size-4 text-amber-600" />
                 <span className="text-sm font-semibold text-amber-800">Condizioni</span>
               </div>
               <ul className="mt-1.5 space-y-1">
@@ -118,10 +121,10 @@ export function AutomationDetailTabs({
         {/* Actions */}
         {actionsDef.length > 0 && (
           <div className="space-y-1.5">
-            <ArrowRight className="mx-auto h-4 w-4 text-text3" />
+            <ArrowRight className="mx-auto size-4 text-text3" />
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <CheckCircle2 className="size-4 text-emerald-600" />
                 <span className="text-sm font-semibold text-emerald-800">Azioni</span>
               </div>
               <ul className="mt-1.5 space-y-1.5">
@@ -146,10 +149,10 @@ export function AutomationDetailTabs({
         {/* Schedule */}
         {scheduleDef && scheduleDef.type && scheduleDef.type !== "none" && (
           <div className="space-y-1.5">
-            <ArrowRight className="mx-auto h-4 w-4 text-text3" />
+            <ArrowRight className="mx-auto size-4 text-text3" />
             <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3">
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-purple-600" />
+                <Zap className="size-4 text-purple-600" />
                 <span className="text-sm font-semibold text-purple-800">Schedule</span>
               </div>
               <p className="mt-1 text-sm text-purple-700">
@@ -190,11 +193,11 @@ export function AutomationDetailTabs({
                 className="flex items-center gap-2 rounded-md border border-border bg-background/60 p-2 text-xs"
               >
                 {log.status === "success" ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
                 ) : log.status === "error" ? (
-                  <XCircle className="h-3.5 w-3.5 shrink-0 text-red-600" />
+                  <XCircle className="size-3.5 shrink-0 text-red-600" />
                 ) : (
-                  <MinusCircle className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <MinusCircle className="size-3.5 shrink-0 text-slate-400" />
                 )}
                 <span className="text-text3">{timeAgo(log.triggered_at)}</span>
                 <Badge
@@ -277,7 +280,7 @@ export function AutomationDetailTabs({
           <div className="mt-1 flex items-center gap-2">
             {stats?.health === "healthy" && (
               <>
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <CheckCircle2 className="size-5 text-emerald-600" />
                 <span className="text-sm font-medium text-emerald-700">
                   Tutto ok — nessun errore nelle ultime esecuzioni
                 </span>
@@ -285,7 +288,7 @@ export function AutomationDetailTabs({
             )}
             {stats?.health === "degraded" && (
               <>
-                <FlaskConical className="h-5 w-5 text-amber-600" />
+                <FlaskConical className="size-5 text-amber-600" />
                 <span className="text-sm font-medium text-amber-700">
                   Degradato — alcuni errori recenti
                 </span>
@@ -293,7 +296,7 @@ export function AutomationDetailTabs({
             )}
             {stats?.health === "failing" && (
               <>
-                <XCircle className="h-5 w-5 text-red-600" />
+                <XCircle className="size-5 text-red-600" />
                 <span className="text-sm font-medium text-red-700">
               In errore — la regola non funziona correttamente
                 </span>
@@ -301,7 +304,7 @@ export function AutomationDetailTabs({
             )}
             {(!stats || stats.health === "never_run") && (
               <>
-                <MinusCircle className="h-5 w-5 text-slate-400" />
+                <MinusCircle className="size-5 text-slate-400" />
                 <span className="text-sm font-medium text-slate-600">
                   Mai eseguita
                 </span>

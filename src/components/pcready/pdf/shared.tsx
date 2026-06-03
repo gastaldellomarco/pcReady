@@ -1,7 +1,10 @@
 import { Circle, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
-import type { Style } from "@react-pdf/stylesheet";
 import { pdfFonts, pdfPalette } from "./theme";
+import type { Style } from "@react-pdf/stylesheet";
 
+/**
+ *
+ */
 export interface PdfStat {
   label: string;
   value: string | number;
@@ -9,6 +12,9 @@ export interface PdfStat {
   helper?: string;
 }
 
+/**
+ *
+ */
 export interface PdfColumn<T> {
   key: string;
   label: string;
@@ -294,6 +300,9 @@ const styles = StyleSheet.create({
   },
 });
 
+/**
+ *
+ */
 export function BrandedPage({
   title,
   meta,
@@ -364,6 +373,9 @@ export function BrandedPage({
   );
 }
 
+/**
+ *
+ */
 export function StatStrip({ stats }: { stats: PdfStat[] }) {
   return (
     <View style={styles.stats}>
@@ -378,6 +390,9 @@ export function StatStrip({ stats }: { stats: PdfStat[] }) {
   );
 }
 
+/**
+ *
+ */
 export function PdfSection({
   title,
   meta,
@@ -399,10 +414,16 @@ export function PdfSection({
   );
 }
 
+/**
+ *
+ */
 export function ChartGrid({ children }: { children: React.ReactNode }) {
   return <View style={styles.chartGrid}>{children}</View>;
 }
 
+/**
+ *
+ */
 export function ChartPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.chartPanel} wrap={false}>
@@ -412,6 +433,9 @@ export function ChartPanel({ title, children }: { title: string; children: React
   );
 }
 
+/**
+ *
+ */
 export function MonthlyBars({
   rows,
 }: {
@@ -457,6 +481,9 @@ export function MonthlyBars({
   );
 }
 
+/**
+ *
+ */
 export function HorizontalBars({
   rows,
 }: {
@@ -498,6 +525,9 @@ export function HorizontalBars({
   );
 }
 
+/**
+ *
+ */
 export function DonutChart({
   items,
 }: {
@@ -578,6 +608,9 @@ function Legend({ items }: { items: { label: string; color: string }[] }) {
   );
 }
 
+/**
+ *
+ */
 export function PdfTable<T>({ rows, columns }: { rows: T[]; columns: PdfColumn<T>[] }) {
   return (
     <View style={styles.table}>

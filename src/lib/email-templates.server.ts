@@ -2,8 +2,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "@/lib/admin-users.server";
 import { getAppSettings } from "@/lib/app-settings";
-import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 
 export const EMAIL_TEMPLATE_SELECT =
   "id, event_type, subject, body_html, body_text, variables, is_active, last_modified_at, last_modified_by, created_at";
@@ -66,10 +66,16 @@ const LEGACY_TEMPLATES: LegacyEmailTemplate[] = [
   },
 ];
 
+/**
+ *
+ */
 export function getTemplates() {
   return LEGACY_TEMPLATES;
 }
 
+/**
+ *
+ */
 export async function sendEmail(
   to: string,
   subject: string,
@@ -118,6 +124,9 @@ export async function sendEmail(
   console.log("Email inviata:", info.messageId);
 }
 
+/**
+ *
+ */
 export async function listEmailTemplatesServer({ accessToken }: { accessToken: string }) {
   await requireAdmin(accessToken);
   await ensureDefaultTemplates();
@@ -131,6 +140,9 @@ export async function listEmailTemplatesServer({ accessToken }: { accessToken: s
   return hydrateTemplates((data ?? []) as unknown as EmailTemplateRow[]);
 }
 
+/**
+ *
+ */
 export async function getEmailTemplateServer({
   accessToken,
   eventType,
@@ -152,6 +164,9 @@ export async function getEmailTemplateServer({
   return (await hydrateTemplates([data as unknown as EmailTemplateRow]))[0];
 }
 
+/**
+ *
+ */
 export async function updateEmailTemplateServer(data: z.input<typeof TemplateUpdateSchema>) {
   const actorId = await requireAdmin(data.accessToken);
   const validated = TemplateUpdateSchema.parse(data);
@@ -184,6 +199,9 @@ export async function updateEmailTemplateServer(data: z.input<typeof TemplateUpd
   return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
 }
 
+/**
+ *
+ */
 export async function sendTestEmailServer(data: z.input<typeof TestEmailSchema>) {
   const actorId = await requireAdmin(data.accessToken);
   throwIfRateLimited(actorId, RATE_LIMITER_KEYS.SEND_TEST_EMAIL);
@@ -220,6 +238,9 @@ export async function sendTestEmailServer(data: z.input<typeof TestEmailSchema>)
   return { ok: true, delivered, subject };
 }
 
+/**
+ *
+ */
 export async function createDefaultEmailTemplateServer(data: z.input<typeof CreateTemplateSchema>) {
   const actorId = await requireAdmin(data.accessToken);
   const validated = CreateTemplateSchema.parse(data);
@@ -255,6 +276,9 @@ export async function createDefaultEmailTemplateServer(data: z.input<typeof Crea
   return (await hydrateTemplates([saved as unknown as EmailTemplateRow]))[0];
 }
 
+/**
+ *
+ */
 export async function resetEmailTemplateServer(data: z.input<typeof ResetTemplateSchema>) {
   const actorId = await requireAdmin(data.accessToken);
   const validated = ResetTemplateSchema.parse(data);
@@ -337,6 +361,9 @@ export function renderTemplate(
   template: LegacyEmailTemplate,
   values: Record<string, string>,
 ): { subject: string; body: string };
+/**
+ *
+ */
 export function renderTemplate(
   template: string | LegacyEmailTemplate,
   values: Record<string, string>,

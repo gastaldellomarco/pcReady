@@ -15,9 +15,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Eye, EyeOff, X } from "lucide-react";
-import type { WidgetLayoutItem, WidgetId } from "./widget-registry";
-import { DASHBOARD_WIDGETS } from "./widget-registry";
 import { useTranslation } from "react-i18next";
+import { DASHBOARD_WIDGETS } from "./widget-registry";
+import type { WidgetLayoutItem, WidgetId } from "./widget-registry";
 
 interface WidgetSettingsPanelProps {
   allWidgets: WidgetLayoutItem[];
@@ -58,7 +58,7 @@ function SortableWidgetItem({
         {...listeners}
         aria-label={t("widgets.dragToReorder", "Trascina per riordinare")}
       >
-        <GripVertical className="w-4 h-4" />
+        <GripVertical className="size-4" />
       </button>
       <div className="flex-1 min-w-0">
         <div className="font-semibold truncate">{entry?.label ?? widget.id}</div>
@@ -72,12 +72,15 @@ function SortableWidgetItem({
         aria-label={widget.visible ? t("widgets.hideWidget", "Nascondi widget") : t("widgets.showWidget", "Mostra widget")}
         title={widget.visible ? t("widgets.hide", "Nascondi") : t("widgets.show", "Mostra")}
       >
-        {widget.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        {widget.visible ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
       </button>
     </div>
   );
 }
 
+/**
+ *
+ */
 export function WidgetSettingsPanel({
   allWidgets,
   onReorder,
@@ -103,7 +106,7 @@ export function WidgetSettingsPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div role="button" tabIndex={-1} className="absolute inset-0 bg-black/30" onClick={onClose} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }} />
       <div
         className="relative h-full w-full max-w-sm overflow-y-auto border-l border-border bg-white shadow-xl dark:bg-surface"
         style={{ background: "var(--surface)" }}
@@ -115,7 +118,7 @@ export function WidgetSettingsPanel({
             onClick={onClose}
             aria-label={t("widgets.close", "Chiudi")}
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
         <div className="p-4">

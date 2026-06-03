@@ -2,12 +2,15 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
+import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import type { Database } from "@/integrations/supabase/types";
 import type { OAuthScope } from "@/lib/oauth-scopes";
-import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
-import { throwIfRateLimited } from "@/lib/rate-limit";
-import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 
+/**
+ *
+ */
 export type OAuthClientStatus = Database["public"]["Enums"]["oauth_client_status"];
 
 interface AuthedInput {
@@ -79,6 +82,9 @@ export function buildDenyConsentRedirect(data: DenyConsentInput): string {
   return `${data.redirectUri}?${params.toString()}`;
 }
 
+/**
+ *
+ */
 export function invalidOAuthScopesAgainstAllowed(
   requestedScopes: OAuthScope[],
   allowed: OAuthScope[],
@@ -86,6 +92,9 @@ export function invalidOAuthScopesAgainstAllowed(
   return requestedScopes.filter((scope) => !allowed.includes(scope));
 }
 
+/**
+ *
+ */
 export interface OAuthClientInfo {
   clientId: string;
   name: string;
@@ -102,12 +111,18 @@ export interface OAuthClientCreated extends OAuthClientInfo {
   clientSecret: string;
 }
 
+/**
+ *
+ */
 export interface OAuthValidationResult {
   client: OAuthClientInfo;
   requestedScopes: OAuthScope[];
   state?: string;
 }
 
+/**
+ *
+ */
 export interface OAuthConsentHistoryRow {
   userId: string;
   userName: string | null;
@@ -117,12 +132,18 @@ export interface OAuthConsentHistoryRow {
   expiresAt: string | null;
 }
 
+/**
+ *
+ */
 export interface OAuthAuthorizationEventRow {
   createdAt: string;
   expiresAt: string;
   redeemed: boolean;
 }
 
+/**
+ *
+ */
 export interface OAuthAdminEventRow {
   id: string;
   message: string;
@@ -131,6 +152,9 @@ export interface OAuthAdminEventRow {
   actorId: string | null;
 }
 
+/**
+ *
+ */
 export interface OAuthClientLifecyclePayload {
   consents: OAuthConsentHistoryRow[];
   authorizationEvents: OAuthAuthorizationEventRow[];

@@ -7,6 +7,9 @@ interface OperatorSelectorProps {
   onChange: (value: ConditionOperator) => void;
 }
 
+/**
+ *
+ */
 export function OperatorSelector({
   fieldValue,
   value,

@@ -1,6 +1,6 @@
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { getLatestVersionNumber } from "@/lib/versioning";
-import { useEffect, useState } from "react";
 
 interface VersionBadgeProps {
   entityType: string;
@@ -8,6 +8,9 @@ interface VersionBadgeProps {
   className?: string;
 }
 
+/**
+ *
+ */
 export function VersionBadge({ entityType, entityId, className }: VersionBadgeProps) {
   const [version, setVersion] = useState<number | null>(null);
 

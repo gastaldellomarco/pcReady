@@ -1,14 +1,17 @@
 import { AlertCircle, CheckCircle2, CircleDashed, FlaskConical } from "lucide-react";
-import { fmtDateTime } from "@/lib/pcready";
-import type { AutomationRunLog, RunLogStatus } from "@/lib/automation-runs";
 import { Badge } from "@/components/ui/badge";
+import { fmtDateTime } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
+import type { AutomationRunLog, RunLogStatus } from "@/lib/automation-runs";
 
 interface RunLogDrawerProps {
   logs: AutomationRunLog[];
   loading?: boolean;
 }
 
+/**
+ *
+ */
 export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
   return (
     <div className="rounded-xl border border-border bg-background p-3">
@@ -100,6 +103,9 @@ export function RunLogDrawer({ logs, loading }: RunLogDrawerProps) {
   );
 }
 
+/**
+ *
+ */
 export function RunStatusBadge({ status, isDryRun }: { status: RunLogStatus; isDryRun?: boolean }) {
   const Icon =
     status === "error"
@@ -119,7 +125,7 @@ export function RunStatusBadge({ status, isDryRun }: { status: RunLogStatus; isD
         status === "skipped" && "bg-slate-100 text-slate-700",
       )}
     >
-      <Icon className="mr-1 h-3 w-3" />
+      <Icon className="mr-1 size-3" />
       {status === "dry_run" ? "dry-run" : status}
     </Badge>
   );

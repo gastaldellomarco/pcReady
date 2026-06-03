@@ -13,4 +13,7 @@ export const QUERY_KEYS = {
   calendarEvent: (id: string) => ["calendar_events", id] as const,
 } as const;
 
+/**
+ *
+ */
 export type QueryKeys = typeof QUERY_KEYS;

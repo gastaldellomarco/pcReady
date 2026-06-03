@@ -1,16 +1,16 @@
+import { Plus, Mail, Ticket, MessageSquare, PlusCircle, Bell, UserCheck, Monitor } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Mail, Ticket, MessageSquare, PlusCircle, Bell, UserCheck, Monitor } from "lucide-react";
-import type { AutomationAction, AutomationActionType } from "@/domain/automation";
 import { AUTOMATION_ACTION_TYPES, createDefaultAction } from "@/domain/automation";
-import type { AutomationVariable } from "@/domain/automation-variables";
-import { SendEmailBlock } from "./blocks/SendEmailBlock";
-import { UpdateTicketBlock } from "./blocks/UpdateTicketBlock";
 import { AddCommentBlock } from "./blocks/AddCommentBlock";
-import { CreateTicketBlock } from "./blocks/CreateTicketBlock";
-import { CreateNotificationBlock } from "./blocks/CreateNotificationBlock";
 import { AssignTicketBlock } from "./blocks/AssignTicketBlock";
+import { CreateNotificationBlock } from "./blocks/CreateNotificationBlock";
+import { CreateTicketBlock } from "./blocks/CreateTicketBlock";
+import { SendEmailBlock } from "./blocks/SendEmailBlock";
 import { UpdateDeviceBlock } from "./blocks/UpdateDeviceBlock";
+import { UpdateTicketBlock } from "./blocks/UpdateTicketBlock";
+import type { AutomationAction, AutomationActionType } from "@/domain/automation";
+import type { AutomationVariable } from "@/domain/automation-variables";
 
 interface AutomationActionsBuilderProps {
   value: AutomationAction[];
@@ -19,15 +19,18 @@ interface AutomationActionsBuilderProps {
 }
 
 const ICON_MAP: Record<AutomationActionType, React.ReactNode> = {
-  send_email: <Mail className="w-4 h-4" />,
-  update_ticket: <Ticket className="w-4 h-4" />,
-  add_comment: <MessageSquare className="w-4 h-4" />,
-  create_ticket: <PlusCircle className="w-4 h-4" />,
-  create_notification: <Bell className="w-4 h-4" />,
-  assign_ticket: <UserCheck className="w-4 h-4" />,
-  update_device: <Monitor className="w-4 h-4" />,
+  send_email: <Mail className="size-4" />,
+  update_ticket: <Ticket className="size-4" />,
+  add_comment: <MessageSquare className="size-4" />,
+  create_ticket: <PlusCircle className="size-4" />,
+  create_notification: <Bell className="size-4" />,
+  assign_ticket: <UserCheck className="size-4" />,
+  update_device: <Monitor className="size-4" />,
 };
 
+/**
+ *
+ */
 export function AutomationActionsBuilder({
   value,
   onChange,
@@ -174,15 +177,18 @@ export function AutomationActionsBuilder({
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="size-4" />
           {t("actionsBuilder.addAction", "Aggiungi azione")}
         </button>
 
         {isMenuOpen && (
           <>
             <div
+              role="button"
+              tabIndex={-1}
               className="fixed inset-0 z-40"
               onClick={() => setIsMenuOpen(false)}
+              onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setIsMenuOpen(false); }}
             />
             <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
               <div className="py-1">

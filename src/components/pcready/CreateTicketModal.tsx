@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Modal } from "./Modal";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   PRIORITY_LABEL,
   type TicketPriority,
@@ -9,8 +9,7 @@ import {
   DEFAULT_STRUCTURE,
   type ChecklistStructure,
 } from "@/lib/pcready";
-import { getInitialCreateTicketFormState } from "./createTicketFormState";
-import { supabase } from "@/integrations/supabase/client";
+import activityQueries from "@/lib/queries/activity";
 import {
   loadClientOptions,
   fetchClientById,
@@ -19,20 +18,21 @@ import {
   loadDeviceOptions,
   fetchDeviceById,
 } from "@/lib/queries/tickets";
-import activityQueries from "@/lib/queries/activity";
+import { getInitialCreateTicketFormState } from "./createTicketFormState";
+import { Modal } from "./Modal";
 const insertActivity = activityQueries.insertActivity as any;
-import type { Json } from "@/integrations/supabase/types";
-import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/hooks/use-tickets";
 import { useTranslation } from "react-i18next";
-import { createNotification } from "@/lib/notifications";
-import { sendTicketAssignedEmail } from "@/lib/email-events";
 import { toast } from "sonner";
-import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
-import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
-import { createTicket } from "@/lib/tickets";
-import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { Field } from "@/components/ui/form-field";
+import { useTickets } from "@/hooks/use-tickets";
+import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
+import { sendTicketAssignedEmail } from "@/lib/email-events";
+import { createNotification } from "@/lib/notifications";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
+import { createTicket } from "@/lib/tickets";
+import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
+import type { Json } from "@/integrations/supabase/types";
 
 interface Tech {
   id: string;
@@ -138,6 +138,9 @@ async function loadDeviceAutocompleteOptions(
   });
 }
 
+/**
+ *
+ */
 export function CreateTicketModal() {
   const { t } = useTranslation("tickets");
   const { createOpen, closeCreate } = useTickets();

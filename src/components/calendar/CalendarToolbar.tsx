@@ -94,10 +94,10 @@ export function CalendarToolbar({
       {/* ── Left: Navigation ─────────────────────────────────── */}
       <div className="flex items-center gap-1">
         <Button variant="outline" size="icon" onClick={onNavigatePrev} title={t("toolbar.navPrevTitle", "Mese/settimana/giorno precedente")}>
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="size-4" />
         </Button>
         <Button variant="outline" size="icon" onClick={onNavigateNext} title={t("toolbar.navNextTitle", "Mese/settimana/giorno successivo")}>
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="size-4" />
         </Button>
         <Button variant="outline" size="sm" onClick={onNavigateToday} className="ml-1">
           {t("toolbar.today", "Oggi")}
@@ -173,7 +173,7 @@ export function CalendarToolbar({
           title={t("toolbar.switchColorMode", "Cambia criterio colori")}
           className="gap-1.5"
         >
-          <Palette className="h-4 w-4" />
+          <Palette className="size-4" />
           <span className="hidden sm:inline">
             {colorMode === 'type'
               ? t("toolbar.colorType", "Tipo")
@@ -191,7 +191,7 @@ export function CalendarToolbar({
           title={t("toolbar.exportIcalTitle", "Esporta come file iCal (.ics)")}
           className="gap-1.5"
         >
-          <Download className="h-4 w-4" />
+          <Download className="size-4" />
           <span className="hidden sm:inline">iCal</span>
         </Button>
 
@@ -203,7 +203,7 @@ export function CalendarToolbar({
             className="gap-1.5"
             style={{ background: pcReadyColors.primary, color: '#fff' }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             <span className="hidden sm:inline">{t("toolbar.newEvent", "Nuovo evento")}</span>
           </Button>
         )}

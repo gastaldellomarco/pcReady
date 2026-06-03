@@ -1,32 +1,31 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
-import { useAuth } from "@/lib/auth-context";
-
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useTickets } from "@/hooks/use-tickets";
-import { useAdminAuditBadge } from "@/hooks/useAdminAuditBadge";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { avatarColors } from "@/lib/pcready";
-import {
-  PAGE_TITLE_KEYS,
-  PAGE_TITLE_FALLBACKS,
-  resolveNavigationGroups,
-} from "@/lib/navigation";
-import { PageErrorBoundary } from "@/components/page-states";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { TopBar } from "@/components/layout/TopBar";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
-import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
-import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
-import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
 import {
   AuthErrorScreen,
   AuthLoadingScreen,
   MissingProfileScreen,
 } from "@/components/auth/AuthStateScreens";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
+import { PageErrorBoundary } from "@/components/page-states";
+import { AddDeviceModal } from "@/components/pcready/AddDeviceModal";
+import { CreateTicketModal } from "@/components/pcready/CreateTicketModal";
+import { DeviceDetailModal } from "@/components/pcready/DeviceDetailModal";
+import { TicketDetailModal } from "@/components/pcready/TicketDetailModal";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTickets } from "@/hooks/use-tickets";
+import { useAdminAuditBadge } from "@/hooks/useAdminAuditBadge";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import i18n from "@/i18n";
+import { useAuth } from "@/lib/auth-context";
+import {
+  PAGE_TITLE_KEYS,
+  PAGE_TITLE_FALLBACKS,
+  resolveNavigationGroups,
+} from "@/lib/navigation";
+import { avatarColors } from "@/lib/pcready";
 
 // Ensure a safe global fallback so accidental bare references don't crash rendering
 try {
@@ -36,6 +35,9 @@ try {
   // Ignore environments where globalThis is not writable.
 }
 
+/**
+ *
+ */
 export function AppShell() {
   const { session, profile, authError, refreshProfile, signOut } = useAuth();
   const { t } = useTranslation("common");

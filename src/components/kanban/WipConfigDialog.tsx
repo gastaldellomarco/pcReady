@@ -45,8 +45,11 @@ export function WipConfigDialog({
 
   return (
     <div
+      role="button"
+      tabIndex={-1}
       className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         className="w-full max-w-2xl rounded-xl border bg-surface p-5 shadow-lg"
@@ -61,7 +64,7 @@ export function WipConfigDialog({
             </p>
           </div>
           <button className="pc-btn-icon touch-target" onClick={onClose}>
-            <X className="h-3 w-3" />
+            <X className="size-3" />
           </button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">

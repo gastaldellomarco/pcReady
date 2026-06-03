@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import {
   Ticket,
   ClipboardCheck,
@@ -10,6 +8,8 @@ import {
   ShieldAlert,
   ShieldX,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import type { TriggerDef } from "@/types/automation";
 
 interface EventStepProps {
@@ -17,6 +17,9 @@ interface EventStepProps {
   onChange: (v: TriggerDef) => void;
 }
 
+/**
+ *
+ */
 export default function EventStep({ value, onChange }: EventStepProps) {
   const { t } = useTranslation("automations");
 
@@ -157,13 +160,13 @@ export default function EventStep({ value, onChange }: EventStepProps) {
             >
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg",
                   isSelected ? `${opt.bgColor}` : "bg-surface2"
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-5 w-5",
+                    "size-5",
                     isSelected ? opt.color : "text-text3"
                   )}
                 />
@@ -189,10 +192,11 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       {/* Conditional config for warranty_expiring_soon */}
       {value?.type === "warranty_expiring_soon" && (
         <div className="mt-4 rounded-lg border border-border bg-surface1 p-4">
-          <label className="text-sm font-medium">
+          <label htmlFor="warranty-days" className="text-sm font-medium">
             {t("eventStep.warrantyDaysLabel", "Giorni prima della scadenza")}
           </label>
           <input
+            id="warranty-days"
             type="number"
             min={1}
             max={365}
@@ -221,10 +225,11 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       {/* Conditional config for scheduled */}
       {value?.type === "scheduled" && (
         <div className="mt-4 rounded-lg border border-border bg-surface1 p-4">
-          <label className="text-sm font-medium">
+          <label htmlFor="cron-expression" className="text-sm font-medium">
             {t("eventStep.cronLabel", "Espressione Cron")}
           </label>
           <input
+            id="cron-expression"
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background sm:w-80"
             value={(value.config?.cron as string) ?? ""}
             onChange={(e) =>

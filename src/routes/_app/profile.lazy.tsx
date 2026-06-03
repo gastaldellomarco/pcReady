@@ -1,10 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { ListSkeleton, PageFetchError } from "@/components/page-states";
-import { errorMessage } from "@/lib/errors";
 import { useServerFn } from "@tanstack/react-start";
-import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Award,
@@ -21,24 +16,26 @@ import {
   Timer,
   UserRound,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
-import { OptimizedImage } from "@/components/ui/optimized-image";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
-import {
-  changePassword,
-  getMyProfile,
-  getMyTechnicianOverview,
-  updateMyProfile,
-  type TechnicianProfileOverview,
-  type UserProfile,
-} from "@/lib/user-profile";
-import { avatarColors, fmtDateTime } from "@/lib/pcready";
-import { cn } from "@/lib/utils";
+import { ListSkeleton, PageFetchError } from "@/components/page-states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import {
   Select,
   SelectContent,
@@ -48,23 +45,26 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import i18n from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { errorMessage } from "@/lib/errors";
 import {
   getBackupCodeStatus,
   logMfaAuditEvent,
   regenerateBackupCodes,
   type MfaBackupCodeStatus,
 } from "@/lib/mfa";
+import { avatarColors, fmtDateTime } from "@/lib/pcready";
+import {
+  changePassword,
+  getMyProfile,
+  getMyTechnicianOverview,
+  updateMyProfile,
+  type TechnicianProfileOverview,
+  type UserProfile,
+} from "@/lib/user-profile";
+import { cn } from "@/lib/utils";
 
 type ProfileTab = "personal" | "activity" | "security" | "notifications";
 
@@ -566,7 +566,7 @@ function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserRound className="h-5 w-5" />
+                <UserRound className="size-5" />
                 {t("personal.cardTitle", "Dati personali")}
               </CardTitle>
               <CardDescription>{t("personal.cardDescription", "Gestisci identità, contatti e localizzazione.")}</CardDescription>
@@ -664,7 +664,7 @@ function ProfilePage() {
               </div>
 
               <Button onClick={submitPersonal} disabled={saving === "personal"}>
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 size-4" />
                 {saving === "personal" ? t("personal.saving", "Salvataggio...") : t("personal.save", "Salva")}
               </Button>
             </CardContent>
@@ -710,7 +710,7 @@ function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
+                  <Shield className="size-5" />
                   {t("security.cardTitle", "Sicurezza")}
                 </CardTitle>
                 <CardDescription>
@@ -741,7 +741,7 @@ function ProfilePage() {
                   onClick={submitPassword}
                   disabled={saving === "security" || password.next.length < 8 || !password.confirm}
                 >
-                  <KeyRound className="mr-2 h-4 w-4" />
+                  <KeyRound className="mr-2 size-4" />
                   {saving === "security" ? t("security.saving", "Salvataggio...") : t("security.updatePassword", "Aggiorna password")}
                 </Button>
               </CardContent>
@@ -751,9 +751,9 @@ function ProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {mfaEnabled ? (
-                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <ShieldCheck className="size-5 text-emerald-600" />
                   ) : (
-                    <Shield className="h-5 w-5" />
+                    <Shield className="size-5" />
                   )}
                   {t("security.twoFactorAuth", "Autenticazione a due fattori")}
                 </CardTitle>
@@ -768,7 +768,7 @@ function ProfilePage() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 text-emerald-600" /> {t("security.twoFactorActive", "2FA attivo")}
+                            <ShieldCheck className="size-4 text-emerald-600" /> {t("security.twoFactorActive", "2FA attivo")}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {t("security.lastUsed", "Ultimo utilizzo: ")}
@@ -791,7 +791,7 @@ function ProfilePage() {
                         </div>
                         {backupStatus && backupStatus.remaining < 3 ? (
                           <Badge variant="destructive" className="gap-1">
-                            <AlertTriangle className="h-3 w-3" /> {t("security.fewCodes", "Pochi codici")}
+                            <AlertTriangle className="size-3" /> {t("security.fewCodes", "Pochi codici")}
                           </Badge>
                         ) : null}
                       </div>
@@ -831,7 +831,7 @@ function ProfilePage() {
                 ) : (
                   <div className="rounded-lg border p-4 space-y-3">
                     <div className="font-medium flex items-center gap-2">
-                      <Shield className="h-4 w-4" /> {t("security.twoFactorInactive", "2FA non attivo")}
+                      <Shield className="size-4" /> {t("security.twoFactorInactive", "2FA non attivo")}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {t("security.twoFactorInactiveDesc", "Proteggi l'accesso con Google Authenticator, Authy, 1Password o app compatibili TOTP.")}
@@ -889,7 +889,7 @@ function ProfilePage() {
               ) : null}
               {setupStep === 4 ? (
                 <div className="rounded-lg border p-4 space-y-2 text-center">
-                  <ShieldCheck className="mx-auto h-10 w-10 text-emerald-600" />
+                  <ShieldCheck className="mx-auto size-10 text-emerald-600" />
                   <p className="font-medium">{t("security.twoFactorActivated", "2FA attivato correttamente")}</p>
                   <p className="text-sm text-muted-foreground">
                     {t("security.twoFactorActivatedDesc", "Dal prossimo login ti verrà richiesto un codice temporaneo.")}
@@ -933,7 +933,7 @@ function ProfilePage() {
               <div className="space-y-4">
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
+                    <AlertTriangle className="mt-0.5 size-4 text-destructive" />
                     <div>
                       <p className="font-medium">{t("security.confirmTitle", "Conferma richiesta")}</p>
                       <p className="text-muted-foreground">
@@ -1083,7 +1083,7 @@ function ProfilePage() {
                 </div>
 
                 <Button onClick={submitNotifications} disabled={saving === "notifications"}>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 size-4" />
                   {saving === "notifications" ? t("notifications.saving", "Salvataggio...") : t("notifications.savePreferences", "Salva preferenze")}
                 </Button>
               </CardContent>
@@ -1191,17 +1191,17 @@ function TechnicianOverviewSection({
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-3">
         <ProfileStatCard
-          icon={<TicketCheck className="h-5 w-5" />}
+          icon={<TicketCheck className="size-5" />}
           label={t("activity.closedTickets", "Ticket chiusi")}
           value={overview.stats.closedTickets.toString()}
         />
         <ProfileStatCard
-          icon={<Timer className="h-5 w-5" />}
+          icon={<Timer className="size-5" />}
           label={t("activity.avgResolutionTime", "Tempo medio risoluzione")}
           value={formatHours(overview.stats.averageResolutionHours)}
         />
         <ProfileStatCard
-          icon={<Clock className="h-5 w-5" />}
+          icon={<Clock className="size-5" />}
           label={t("activity.hoursWorked", "Ore lavorate")}
           value={`${overview.stats.workedHours}${t("activity.hoursSuffix", "h")}`}
         />
@@ -1211,7 +1211,7 @@ function TechnicianOverviewSection({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="size-5" />
               {t("activity.monthlyActivity", "Attività mensile")}
             </CardTitle>
             <CardDescription>{t("activity.monthlyActivityDesc", "Ticket chiusi e ore registrate negli ultimi 6 mesi.")}</CardDescription>
@@ -1239,7 +1239,7 @@ function TechnicianOverviewSection({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
+              <Award className="size-5" />
               {t("activity.performanceBadges", "Badge performance")}
             </CardTitle>
             <CardDescription>{t("activity.performanceBadgesDesc", "Riconoscimenti calcolati sulle tue attività.")}</CardDescription>

@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import type { ActionDef } from "@/types/automation";
-import type { AutomationAction } from "@/domain/automation";
 import { getVariablesForTrigger } from "@/domain/automation-variables";
-import { AutomationActionsBuilder } from "../AutomationActionsBuilder";
 import { fromActionDefs, toActionDefs } from "@/lib/automations/action-adapter";
+import { AutomationActionsBuilder } from "../AutomationActionsBuilder";
+import type { AutomationAction } from "@/domain/automation";
+import type { ActionDef } from "@/types/automation";
 
 interface ActionsStepProps {
   value: ActionDef[];
@@ -11,6 +11,9 @@ interface ActionsStepProps {
   triggerType?: string;
 }
 
+/**
+ *
+ */
 export default function ActionsStep({ value, onChange, triggerType }: ActionsStepProps) {
   const { t } = useTranslation("automations");
 

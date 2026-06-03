@@ -1,6 +1,6 @@
+import { renderHook, act, waitFor } from "@testing-library/react";
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAdminOAuthClients } from "@/hooks/useAdminOAuthClients";
 import type { OAuthClientInfo, OAuthClientCreated } from "@/lib/oauth-consent";
 

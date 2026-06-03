@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useAuth } from "@/lib/auth-context";
+import { useEffect, useState } from "react";
 import { getPublicAppSettings, setClientAppSettings } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
 import { getMfaClientStatus } from "@/lib/mfa-client";
 
+/**
+ *
+ */
 export interface AuthGuardState {
   /** True while initial auth/profile/secondary checks are in progress. */
   guardLoading: boolean;

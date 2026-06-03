@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import {
   Mail,
   AlertTriangle,
@@ -10,11 +8,13 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   AUTOMATION_TEMPLATES,
   TEMPLATE_CATEGORIES,
   type AutomationTemplate,
 } from "@/lib/automations/templates";
+import { cn } from "@/lib/utils";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Mail,
@@ -30,6 +30,9 @@ interface TemplateStepProps {
   onSelectTemplate: (templateId: string | null) => void;
 }
 
+/**
+ *
+ */
 export default function TemplateStep({
   selectedTemplateId,
   onSelectTemplate,
@@ -71,13 +74,13 @@ export default function TemplateStep({
         >
           <div
             className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+              "flex size-10 shrink-0 items-center justify-center rounded-lg",
               selectedTemplateId === null ? "bg-accent/10" : "bg-surface2"
             )}
           >
             <Plus
               className={cn(
-                "h-5 w-5",
+                "size-5",
                 selectedTemplateId === null ? "text-accent" : "text-text3"
               )}
             />
@@ -137,12 +140,12 @@ function TemplateCard({ template, isSelected, onClick }: TemplateCardProps) {
 
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+          "flex size-10 shrink-0 items-center justify-center rounded-lg",
           isSelected ? "bg-accent/10" : "bg-surface2"
         )}
       >
         <Icon
-          className={cn("h-5 w-5", isSelected ? "text-accent" : "text-text3")}
+          className={cn("size-5", isSelected ? "text-accent" : "text-text3")}
         />
       </div>
       <div className="min-w-0 pr-16">

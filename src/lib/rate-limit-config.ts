@@ -15,6 +15,9 @@ export const RATE_LIMITER_KEYS = {
   CREATE_NOTIFICATION: "notification:create",
 } as const;
 
+/**
+ *
+ */
 export type RateLimiterKey = (typeof RATE_LIMITER_KEYS)[keyof typeof RATE_LIMITER_KEYS];
 
 /** Presets aligned with security recommendations (see issue description). */

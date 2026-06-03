@@ -11,6 +11,9 @@ import {
   closeDeviceDetail,
 } from "@/lib/detail-navigation";
 
+/**
+ *
+ */
 export function useTicketDetail() {
   const cur = useSyncExternalStore(subscribeTicket, getTicketId, getTicketId);
   const neighbors = useSyncExternalStore(
@@ -23,6 +26,9 @@ export function useTicketDetail() {
   return { id: cur, close: () => closeTicketDetail(), ...neighbors, navigatePrev: navPrev, navigateNext: navNext };
 }
 
+/**
+ *
+ */
 export function useDeviceDetail() {
   const cur = useSyncExternalStore(subscribeDevice, getDeviceId, getDeviceId);
   return { id: cur, close: () => closeDeviceDetail() };

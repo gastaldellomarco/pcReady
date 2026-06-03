@@ -1,6 +1,9 @@
-import { useRef } from "react";
 import { useVirtualizer, type VirtualItem, type Virtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 
+/**
+ *
+ */
 export interface UseVirtualListOptions {
   /** Number of items in the list */
   count: number;
@@ -14,6 +17,9 @@ export interface UseVirtualListOptions {
   enabled?: boolean;
 }
 
+/**
+ *
+ */
 export interface UseVirtualListReturn<T extends HTMLElement = HTMLDivElement> {
   /** Ref to attach to the scrollable container element */
   containerRef: React.RefObject<T | null>;

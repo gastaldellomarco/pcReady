@@ -1,16 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import i18n from "@/i18n";
-import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/lib/auth-context";
-import { useServerFn } from "@tanstack/react-start";
-import { checkAdmin } from "@/lib/check-admin";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
+import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
 import { AdminOAuthTab } from "@/components/admin/AdminOAuthTab";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
-import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
+import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import i18n from "@/i18n";
+import { useAuth } from "@/lib/auth-context";
+import { checkAdmin } from "@/lib/check-admin";
 
 export const Route = createFileRoute("/_app/admin")({
   validateSearch: (search: Record<string, unknown>) => ({

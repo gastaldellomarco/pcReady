@@ -22,6 +22,9 @@ export const AUDIT_ACTIONS = {
   PORTAL_LINK_REVOKED: "portal.link_revoked",
 } as const;
 
+/**
+ *
+ */
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
 
 export const AUDIT_ACTION_OPTIONS = Object.values(AUDIT_ACTIONS);

@@ -1,11 +1,14 @@
 import { Outlet } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageErrorBoundary } from "@/components/page-states";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { Monitor } from "lucide-react";
 import { validatePortalSession } from "@/lib/portal-auth";
 
+/**
+ *
+ */
 export function PortalLayout() {
   const validate = useServerFn(validatePortalSession);
   const [branding, setBranding] = useState<any>(null);

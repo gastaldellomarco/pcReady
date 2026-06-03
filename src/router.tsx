@@ -4,6 +4,9 @@ import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
 import { PageSkeleton } from "@/components/page-states";
 import { routeTree } from "./routeTree.gen";
 
+/**
+ *
+ */
 export const getRouter = () => {
   const router = createRouter({
     routeTree,

@@ -1,11 +1,11 @@
-import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
 
 function dayLabels(startIso: string) {
   const start = new Date(startIso);
@@ -28,6 +28,9 @@ function normalizeWeekCounts(value: unknown) {
   return Array.from({ length: 7 }, (_, index) => Number(counts[index] ?? 0));
 }
 
+/**
+ *
+ */
 export default function TechnicianHeatmapWidget() {
   const { t } = useTranslation("dashboard");
   const { session } = useAuth();

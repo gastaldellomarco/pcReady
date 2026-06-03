@@ -16,6 +16,10 @@ const WIDGET_LABELS = new Map(
   DASHBOARD_WIDGETS.map((w) => [w.id, w.label]),
 );
 
+function widgetLabel(widgetId: string) {
+  return WIDGET_LABELS.get(widgetId as WidgetId) ?? widgetId;
+}
+
 /**
  * Aggregated annotations drawer listing all personal widget notes.
  * Groups notes by widget with tab-based filtering.
@@ -50,10 +54,6 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
     });
     return map;
   }, [filtered]);
-
-  function widgetLabel(widgetId: string) {
-    return WIDGET_LABELS.get(widgetId as WidgetId) ?? widgetId;
-  }
 
   function startEdit(a: WidgetAnnotationRow) {
     setEditingId(a.id);
@@ -93,7 +93,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
       <DrawerContent className="max-h-[92dvh] overflow-y-auto px-4 pb-8 pt-2 safe-area-bottom">
         <DrawerHeader className="px-0">
           <DrawerTitle className="text-[16px] flex items-center gap-2">
-            <StickyNote className="w-4 h-4" />
+            <StickyNote className="size-4" />
             Le mie annotazioni
           </DrawerTitle>
         </DrawerHeader>
@@ -107,7 +107,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
 
           {!isLoading && !annotations.length && (
             <div className="text-sm text-text3 py-8 text-center space-y-2">
-              <StickyNote className="w-8 h-8 mx-auto opacity-30" />
+              <StickyNote className="size-8 mx-auto opacity-30" />
               <p>Nessuna annotazione.</p>
               <p className="text-xs">
                 Clicca l'icona 📝 su un widget per aggiungerne una.
@@ -226,7 +226,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
                                   title="Modifica"
                                   onClick={() => startEdit(a)}
                                 >
-                                  <Pencil className="w-3.5 h-3.5 text-text3" />
+                                  <Pencil className="size-3.5 text-text3" />
                                 </button>
                                 <button
                                   className="p-1 rounded hover:bg-[var(--surface3)]"
@@ -234,7 +234,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
                                   onClick={() => handleDelete(a.id)}
                                   disabled={isPending}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
+                                  <Trash2 className="size-3.5 text-[var(--danger)]" />
                                 </button>
                               </div>
                             </div>

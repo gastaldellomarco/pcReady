@@ -15,6 +15,9 @@ import {
 import { useDashboardAnalytics } from "./useDashboardAnalytics";
 import { useDashboardDateRange } from "./useDashboardDateRange";
 
+/**
+ *
+ */
 export function useDashboardData(args: {
   accessToken: string | undefined;
   setPendingCount: (n: number) => void;

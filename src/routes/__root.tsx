@@ -1,14 +1,14 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import i18n from "@/i18n";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { MaintenancePage } from "@/components/errors/MaintenancePage";
 import NotFoundPage from "@/components/errors/NotFoundPage";
 import { ServerErrorPage } from "@/components/errors/ServerErrorPage";
-import { AuthProvider } from "@/lib/auth-provider";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import QueryProvider from "@/lib/queries/queryClient";
 import { Toaster } from "@/components/ui/sonner";
-import { ConnectionBanner } from "@/components/ConnectionBanner";
+import i18n from "@/i18n";
+import { AuthProvider } from "@/lib/auth-provider";
 import { isMaintenanceModeEnabled } from "@/lib/maintenance-env";
+import QueryProvider from "@/lib/queries/queryClient";
 
 import appCss from "@/styles.css?url";
 
@@ -56,6 +56,9 @@ export const Route = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
+/**
+ *
+ */
 export function ErrorBoundary({ error }: { error: Error }) {
   return (
     <ThemeProvider defaultTheme="system" enableSystem>

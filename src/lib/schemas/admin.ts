@@ -6,4 +6,7 @@ export const AdminUserInviteSchema = z.object({
   role: z.enum(["admin", "tech", "viewer"]),
 });
 
+/**
+ *
+ */
 export type AdminUserInviteInput = z.infer<typeof AdminUserInviteSchema>;

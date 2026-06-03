@@ -95,7 +95,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
     <div className="pc-card">
       <div className="pc-card-hd">
         <div className="flex items-center gap-2">
-          <KanbanSquare className="w-4 h-4" />
+          <KanbanSquare className="size-4" />
           <span className="pc-card-title">
             {t("widgets.kanbanWip.title", "Limiti WIP Kanban")}
           </span>
@@ -141,7 +141,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                      className="size-2.5 rounded-full flex-shrink-0"
                       style={{ background: STATUS_META[status].color }}
                     />
                     <span className="text-[11.5px] font-bold uppercase tracking-wide truncate">
@@ -178,7 +178,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
                     </span>
                   )}
                   {isOverLimit && (
-                    <AlertTriangle className="w-4 h-4 text-red-500 ml-auto flex-shrink-0" />
+                    <AlertTriangle className="size-4 text-red-500 ml-auto flex-shrink-0" />
                   )}
                 </div>
 
@@ -221,7 +221,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
         {/* Empty state */}
         {totalTickets === 0 && (
           <div className="mt-4 text-center text-sm text-text3 py-4">
-            <KanbanSquare className="w-6 h-6 mx-auto mb-2 opacity-40" />
+            <KanbanSquare className="size-6 mx-auto mb-2 opacity-40" />
             <p>{t("widgets.kanbanWip.noTickets", "Nessun ticket nelle colonne Kanban")}</p>
           </div>
         )}
@@ -233,7 +233,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
             className="flex items-center gap-1 text-[11px] text-accent hover:underline"
           >
             {t("widgets.kanbanWip.openKanban", "Apri Kanban")}
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="size-3" />
           </Link>
         </div>
       </div>

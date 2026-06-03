@@ -2,9 +2,12 @@ import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypt
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 import { sendEmail } from "@/lib/email-templates.server";
-import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { throwIfRateLimited } from "@/lib/rate-limit";
+import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 
+/**
+ *
+ */
 export interface PortalBranding {
   portalName: string;
   logoUrl: string | null;
@@ -12,6 +15,9 @@ export interface PortalBranding {
   welcomeMessage: string | null;
 }
 
+/**
+ *
+ */
 export interface PortalSessionContext {
   token: string;
   sessionId: string;
@@ -100,6 +106,9 @@ async function createPortalSession(contact: any, ttlHours = 24) {
   return { token, loginUrl: portalLoginUrl(token), expiresAt };
 }
 
+/**
+ *
+ */
 export async function requestPortalLoginServer(input: { email: string; sendMail?: boolean }) {
   const email = input.email.trim().toLowerCase();
   throwIfRateLimited(`email:${email}`, RATE_LIMITER_KEYS.PORTAL_MAGIC_LINK);
@@ -161,6 +170,9 @@ export async function requestPortalLoginServer(input: { email: string; sendMail?
   return { success: true, sent: false, loginUrl, expiresAt };
 }
 
+/**
+ *
+ */
 export async function loginPortalWithPasswordServer(input: { email: string; password: string }) {
   const email = input.email.trim().toLowerCase();
   throwIfRateLimited(`password:${email}`, RATE_LIMITER_KEYS.PORTAL_MAGIC_LINK);
@@ -211,6 +223,9 @@ export async function loginPortalWithPasswordServer(input: { email: string; pass
   return { success: true, token, loginUrl, expiresAt };
 }
 
+/**
+ *
+ */
 export async function updatePortalContactProfileServer(input: {
   token: string;
   fullName: string;
@@ -245,6 +260,9 @@ export async function updatePortalContactProfileServer(input: {
   return { success: true };
 }
 
+/**
+ *
+ */
 export async function generatePortalAccessLinkServer(input: {
   accessToken: string;
   contactId: string;
@@ -295,6 +313,9 @@ export async function generatePortalAccessLinkServer(input: {
   };
 }
 
+/**
+ *
+ */
 export async function revokePortalAccessLinkServer(input: {
   accessToken: string;
   contactId: string;
@@ -344,6 +365,9 @@ export async function revokePortalAccessLinkServer(input: {
   return { success: true, revokedCount };
 }
 
+/**
+ *
+ */
 export async function getPortalSession(token: string): Promise<PortalSessionContext> {
   const { data, error } = await supabaseAdmin
     .from("portal_sessions" as any)
@@ -386,6 +410,9 @@ export async function getPortalSession(token: string): Promise<PortalSessionCont
   };
 }
 
+/**
+ *
+ */
 export async function logoutPortalSessionServer(input: { token: string }) {
   await supabaseAdmin
     .from("portal_sessions" as any)
@@ -394,6 +421,9 @@ export async function logoutPortalSessionServer(input: { token: string }) {
   return { success: true };
 }
 
+/**
+ *
+ */
 export async function updatePortalNotificationPreferencesServer(input: {
   token: string;
   preferences: Record<string, boolean>;
@@ -413,6 +443,9 @@ export async function updatePortalNotificationPreferencesServer(input: {
   return { success: true, preferences: cleaned };
 }
 
+/**
+ *
+ */
 export async function getPortalClientContactsServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data, error } = await supabaseAdmin
@@ -436,6 +469,9 @@ export async function getPortalClientContactsServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function updatePortalContactLanguageServer(input: {
   token: string;
   language: "it" | "en";
@@ -450,6 +486,9 @@ export async function updatePortalContactLanguageServer(input: {
   return { success: true, language: input.language };
 }
 
+/**
+ *
+ */
 export async function getPortalAccessHistoryServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data, error } = await supabaseAdmin
@@ -471,6 +510,9 @@ export async function getPortalAccessHistoryServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function setupPortal2FAServer(input: { token: string; enable: boolean }) {
   const session = await getPortalSession(input.token);
   if (input.enable) {
@@ -509,6 +551,9 @@ export async function setupPortal2FAServer(input: { token: string; enable: boole
   }
 }
 
+/**
+ *
+ */
 export async function verifyPortal2FAServer(input: { token: string; code: string }) {
   const session = await getPortalSession(input.token);
   const { data: contact, error } = await supabaseAdmin
@@ -539,6 +584,9 @@ export async function verifyPortal2FAServer(input: { token: string; code: string
   return { success: true, enabled: true };
 }
 
+/**
+ *
+ */
 export async function verifyPortalLogin2FAServer(input: {
   pendingToken: string;
   code: string;

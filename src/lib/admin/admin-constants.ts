@@ -23,10 +23,16 @@ export const ADMIN_SLA_CONFIG_FIELDS = [
   ["low", "Bassa"],
 ] as const;
 
+/**
+ *
+ */
 export function isAppRole(value: string): value is AppRole {
   return value === "admin" || value === "tech" || value === "viewer";
 }
 
+/**
+ *
+ */
 export function adminRoleLabel(role: AppRole) {
   if (role === "admin") return "Amministratore";
   if (role === "tech") return "Tecnico";

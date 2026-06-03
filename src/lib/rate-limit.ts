@@ -1,8 +1,14 @@
-import type { RateLimiterKey } from "@/lib/rate-limit-config";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit-config";
+import type { RateLimiterKey } from "@/lib/rate-limit-config";
 
+/**
+ *
+ */
 export type CheckRateLimitOptions = { limit: number; windowMs: number };
 
+/**
+ *
+ */
 export type RateLimitResult = {
   allowed: boolean;
   remaining: number;
@@ -71,6 +77,9 @@ export function checkRateLimit(
   };
 }
 
+/**
+ *
+ */
 export function buildRateLimitResponse(result: RateLimitResult): Response {
   const retryAfter = String(result.retryAfterSeconds);
   const body = JSON.stringify({
@@ -89,6 +98,9 @@ export function buildRateLimitResponse(result: RateLimitResult): Response {
   });
 }
 
+/**
+ *
+ */
 export function throwIfRateLimited(
   identifier: string,
   presetKey: RateLimiterKey,

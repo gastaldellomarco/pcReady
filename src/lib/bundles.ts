@@ -1,10 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ *
+ */
 export type BundleBillingType = "monthly" | "annual" | "one_time";
+/**
+ *
+ */
 export type BundleTicketPriority = "low" | "med" | "high" | "critical";
+/**
+ *
+ */
 export type BundleStatus = "active" | "expired" | "cancelled" | "pending" | "renewed";
 
+/**
+ *
+ */
 export type AssistanceBundle = {
   id: string;
   name: string;
@@ -26,6 +38,9 @@ export type AssistanceBundle = {
   created_by: string | null;
 };
 
+/**
+ *
+ */
 export type BundleClient = {
   id: string;
   name: string | null;
@@ -33,6 +48,9 @@ export type BundleClient = {
   email: string | null;
 };
 
+/**
+ *
+ */
 export type ClientBundleAssignment = {
   id: string;
   client_id: string;
@@ -56,6 +74,9 @@ export type ClientBundleAssignment = {
   client?: BundleClient | null;
 };
 
+/**
+ *
+ */
 export type BundleUsageSummary = {
   client_bundle_assignment_id: string;
   assignment_id?: string;
@@ -85,6 +106,9 @@ export type BundleUsageSummary = {
   [key: string]: unknown;
 };
 
+/**
+ *
+ */
 export type BundlePayment = {
   id: string;
   client_bundle_assignment_id: string;
@@ -103,6 +127,9 @@ export type BundlePayment = {
   [key: string]: unknown;
 };
 
+/**
+ *
+ */
 export type BundleUsageEntry = {
   id: string;
   client_bundle_assignment_id: string;
@@ -121,6 +148,9 @@ export type BundleUsageEntry = {
   [key: string]: unknown;
 };
 
+/**
+ *
+ */
 export type TicketBundleInfo = {
   ticket: Record<string, unknown> | null;
   assignment: ClientBundleAssignment | null;
@@ -184,6 +214,9 @@ export const BUNDLE_QUERY_KEYS = {
   ticketInfo: (ticketId: string) => [...BUNDLE_QUERY_KEYS.all, "ticket", ticketId] as const,
 };
 
+/**
+ *
+ */
 export function formatBundleMoney(value: number | null | undefined, currency = "EUR") {
   const amount = Number(value ?? 0);
   return new Intl.NumberFormat("it-IT", {
@@ -192,16 +225,25 @@ export function formatBundleMoney(value: number | null | undefined, currency = "
   }).format(amount);
 }
 
+/**
+ *
+ */
 export function formatBundleHours(value: number | null | undefined) {
   if (value == null) return "Illimitate";
   return `${new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(Number(value))} h`;
 }
 
+/**
+ *
+ */
 export function formatBundleVisits(value: number | null | undefined) {
   if (value == null) return "Illimitati";
   return new Intl.NumberFormat("it-IT", { maximumFractionDigits: 0 }).format(Number(value));
 }
 
+/**
+ *
+ */
 export function bundleUsageTone(percent: number): "success" | "warning" | "danger" {
   if (percent < 70) return "success";
   if (percent < 90) return "warning";
@@ -215,6 +257,9 @@ function formatDateOnly(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ *
+ */
 export function computeEndDate(startDate: string, billingType: BundleBillingType) {
   if (!startDate || billingType === "one_time") return "";
   const [year, month, day] = startDate.split("-").map(Number);
@@ -226,6 +271,9 @@ export function computeEndDate(startDate: string, billingType: BundleBillingType
   return formatDateOnly(end);
 }
 
+/**
+ *
+ */
 export async function listBundles(includeInactive = true) {
   let query = (supabase as any)
     .from("assistance_bundles")
@@ -238,6 +286,9 @@ export async function listBundles(includeInactive = true) {
   return (data ?? []) as AssistanceBundle[];
 }
 
+/**
+ *
+ */
 export async function createBundle(data: Partial<AssistanceBundle>) {
   const { data: row, error } = await (supabase as any)
     .from("assistance_bundles")
@@ -248,6 +299,9 @@ export async function createBundle(data: Partial<AssistanceBundle>) {
   return row as AssistanceBundle;
 }
 
+/**
+ *
+ */
 export async function updateBundle(id: string, data: Partial<AssistanceBundle>) {
   const { data: row, error } = await (supabase as any)
     .from("assistance_bundles")
@@ -259,10 +313,16 @@ export async function updateBundle(id: string, data: Partial<AssistanceBundle>) 
   return row as AssistanceBundle;
 }
 
+/**
+ *
+ */
 export async function deactivateBundle(id: string) {
   return updateBundle(id, { active: false });
 }
 
+/**
+ *
+ */
 export async function listClientBundleAssignments(clientId?: string | null) {
   let query = (supabase as any)
     .from("client_bundle_assignments")
@@ -274,6 +334,9 @@ export async function listClientBundleAssignments(clientId?: string | null) {
   return (data ?? []) as ClientBundleAssignment[];
 }
 
+/**
+ *
+ */
 export async function createClientBundleAssignment(data: Partial<ClientBundleAssignment>) {
   const { data: row, error } = await (supabase as any)
     .from("client_bundle_assignments")
@@ -284,6 +347,9 @@ export async function createClientBundleAssignment(data: Partial<ClientBundleAss
   return row as ClientBundleAssignment;
 }
 
+/**
+ *
+ */
 export async function updateClientBundleAssignment(
   id: string,
   data: Partial<ClientBundleAssignment>,
@@ -298,15 +364,24 @@ export async function updateClientBundleAssignment(
   return row as ClientBundleAssignment;
 }
 
+/**
+ *
+ */
 export async function cancelClientBundleAssignment(id: string) {
   return updateClientBundleAssignment(id, { status: "cancelled" });
 }
 
+/**
+ *
+ */
 export async function deleteClientBundleAssignment(id: string) {
   const { error } = await (supabase as any).from("client_bundle_assignments").delete().eq("id", id);
   if (error) throw error;
 }
 
+/**
+ *
+ */
 export async function listBundleUsageSummaries(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_assignment_usage_summary")
@@ -318,6 +393,9 @@ export async function listBundleUsageSummaries(clientId?: string | null) {
   return (data ?? []) as BundleUsageSummary[];
 }
 
+/**
+ *
+ */
 export async function listBundleMonthlyUsage(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_monthly_usage")
@@ -329,6 +407,9 @@ export async function listBundleMonthlyUsage(clientId?: string | null) {
   return data ?? [];
 }
 
+/**
+ *
+ */
 export async function listBundlePayments(clientId?: string | null) {
   let query = (supabase as any)
     .from("bundle_fee_payments")
@@ -342,6 +423,9 @@ export async function listBundlePayments(clientId?: string | null) {
   return (data ?? []) as BundlePayment[];
 }
 
+/**
+ *
+ */
 export async function createBundlePayment(data: Partial<BundlePayment>) {
   const { data: row, error } = await (supabase as any)
     .from("bundle_fee_payments")
@@ -352,11 +436,17 @@ export async function createBundlePayment(data: Partial<BundlePayment>) {
   return row as BundlePayment;
 }
 
+/**
+ *
+ */
 export async function deleteBundlePayment(id: string) {
   const { error } = await (supabase as any).from("bundle_fee_payments").delete().eq("id", id);
   if (error) throw error;
 }
 
+/**
+ *
+ */
 export async function fetchTicketBundleInfo(ticketId: string): Promise<TicketBundleInfo> {
   const { data: ticket, error: ticketError } = await (supabase as any)
     .from("tickets")
@@ -399,6 +489,9 @@ function useInvalidateBundles() {
   return () => queryClient.invalidateQueries({ queryKey: BUNDLE_QUERY_KEYS.all });
 }
 
+/**
+ *
+ */
 export function useBundles(includeInactive = true) {
   return useQuery({
     queryKey: BUNDLE_QUERY_KEYS.list(includeInactive),
@@ -406,6 +499,9 @@ export function useBundles(includeInactive = true) {
   });
 }
 
+/**
+ *
+ */
 export function useBundleAssignments(clientId?: string | null) {
   return useQuery({
     queryKey: BUNDLE_QUERY_KEYS.assignments(clientId),
@@ -413,6 +509,9 @@ export function useBundleAssignments(clientId?: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useBundleUsageSummaries(clientId?: string | null) {
   return useQuery({
     queryKey: BUNDLE_QUERY_KEYS.usageSummaries(clientId),
@@ -420,6 +519,9 @@ export function useBundleUsageSummaries(clientId?: string | null) {
   });
 }
 
+/**
+ *
+ */
 export function useCreateBundleMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -428,6 +530,9 @@ export function useCreateBundleMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateBundleMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -437,6 +542,9 @@ export function useUpdateBundleMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useDeactivateBundleMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -445,6 +553,9 @@ export function useDeactivateBundleMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useCreateBundleAssignmentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -453,6 +564,9 @@ export function useCreateBundleAssignmentMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateBundleAssignmentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -462,6 +576,9 @@ export function useUpdateBundleAssignmentMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useCancelBundleAssignmentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -470,6 +587,9 @@ export function useCancelBundleAssignmentMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteBundleAssignmentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -478,6 +598,9 @@ export function useDeleteBundleAssignmentMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useCreateBundlePaymentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({
@@ -486,6 +609,9 @@ export function useCreateBundlePaymentMutation() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteBundlePaymentMutation() {
   const invalidate = useInvalidateBundles();
   return useMutation({

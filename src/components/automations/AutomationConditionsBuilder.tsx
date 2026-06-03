@@ -1,13 +1,13 @@
-import { useTranslation } from "react-i18next";
 import { Plus, FilterX } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { createDefaultCondition } from "@/domain/automation";
 import { cn } from "@/lib/utils";
+import { ConditionRow } from "./ConditionRow";
 import type {
   ConditionsGroup,
   AutomationCondition,
   ConditionLogic,
 } from "@/domain/automation";
-import { createDefaultCondition } from "@/domain/automation";
-import { ConditionRow } from "./ConditionRow";
 
 interface AutomationConditionsBuilderProps {
   value?: ConditionsGroup;
@@ -15,6 +15,9 @@ interface AutomationConditionsBuilderProps {
   triggerName?: string;
 }
 
+/**
+ *
+ */
 export function AutomationConditionsBuilder({
   value,
   onChange,
@@ -75,6 +78,8 @@ export function AutomationConditionsBuilder({
         {/* Logic toggle */}
         <div className="flex flex-wrap gap-2 relative z-10">
           <label
+            role="button"
+            tabIndex={0}
             className={cn(
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "AND"
@@ -82,6 +87,7 @@ export function AutomationConditionsBuilder({
                 : "border-border hover:border-accent/50"
             )}
             onClick={() => handleLogicChange("AND")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleLogicChange("AND"); } }}
           >
             <input
               type="radio"
@@ -95,6 +101,8 @@ export function AutomationConditionsBuilder({
           </label>
 
           <label
+            role="button"
+            tabIndex={0}
             className={cn(
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "OR"
@@ -102,6 +110,7 @@ export function AutomationConditionsBuilder({
                 : "border-border hover:border-accent/50"
             )}
             onClick={() => handleLogicChange("OR")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleLogicChange("OR"); } }}
           >
             <input
               type="radio"
@@ -133,7 +142,7 @@ export function AutomationConditionsBuilder({
       ) : (
         /* Empty state */
         <div className="rounded-xl border border-dashed border-border bg-surface1/50 p-6 text-center">
-          <FilterX className="mx-auto h-8 w-8 text-text3" />
+          <FilterX className="mx-auto size-8 text-text3" />
           <p className="mt-2 text-sm font-medium text-foreground">
             {t("conditionsBuilder.emptyState.title", "Nessun filtro configurato")}
           </p>

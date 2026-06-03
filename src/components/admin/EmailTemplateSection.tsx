@@ -18,13 +18,13 @@ import {
   sendTestEmail,
   updateEmailTemplate,
 } from "@/lib/email-templates";
+import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import {
   EMAIL_EVENT_LABELS,
   EMAIL_EVENT_TYPES,
   type EmailEventType,
   type EmailTemplate,
 } from "@/types/email";
-import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
 interface EmailTemplateSectionProps {
   accessToken: string;
@@ -33,6 +33,9 @@ interface EmailTemplateSectionProps {
   supportEmail: string;
 }
 
+/**
+ *
+ */
 export function EmailTemplateSection({
   accessToken,
   adminEmail,

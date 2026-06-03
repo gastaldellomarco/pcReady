@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
-import { Field } from "@/components/ui/form-field";
-import { useTranslation } from "react-i18next";
-import { useForm, Controller, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useServerFn } from "@tanstack/react-start";
-import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
-import { Modal } from "./Modal";
-import { OS_OPTIONS } from "@/lib/pcready";
+import { Barcode, ScanLine } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useForm, Controller, type UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { Field } from "@/components/ui/form-field";
+import { useTickets } from "@/hooks/use-tickets";
+import { getClientAppSettings, getPublicAppSettings } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
 import {
   DEFAULT_DEVICE_CATEGORY,
   DEFAULT_DEVICE_TYPE,
@@ -15,18 +19,14 @@ import {
   getDeviceTypes,
   type DeviceCategory,
 } from "@/lib/device-taxonomy";
-import { getClientAppSettings, getPublicAppSettings } from "@/lib/app-settings";
-import { loadClientOptions } from "@/lib/queries/tickets";
+import { errorMessage } from "@/lib/errors";
+import { OS_OPTIONS } from "@/lib/pcready";
 import activityQueries from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";
+import { loadClientOptions } from "@/lib/queries/tickets";
+import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
+import { Modal } from "./Modal";
 import type { TablesInsert } from "@/integrations/supabase/types";
-import { useAuth } from "@/lib/auth-context";
-import { useTickets } from "@/hooks/use-tickets";
-import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { Barcode, ScanLine } from "lucide-react";
-import { toast } from "sonner";
-import { errorMessage } from "@/lib/errors";
 
 
 function normalizeOptions(values: unknown): string[] {
@@ -41,6 +41,9 @@ interface ClientOption {
 
 type BarcodeTarget = "asset_tag" | "serial";
 
+/**
+ *
+ */
 export function AddDeviceModal() {
   const { addDeviceOpen, addDeviceInitialSerial, addDeviceClient, closeAddDevice } = useTickets();
   const { user, canEdit, session } = useAuth();
@@ -320,7 +323,7 @@ export function AddDeviceModal() {
           style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
         >
           <div className="flex items-start gap-2">
-            <Barcode className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <Barcode className="mt-0.5 size-4 shrink-0 text-accent" />
             <div>
               <div className="font-semibold text-text">{t("addDevice.barcodeTitle", "Barcode 1D per inserimento rapido")}</div>
               <div className="text-text3">

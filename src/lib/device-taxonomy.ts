@@ -7,6 +7,9 @@ export const DEVICE_CATEGORIES = [
   "peripheral",
 ] as const;
 
+/**
+ *
+ */
 export type DeviceCategory = (typeof DEVICE_CATEGORIES)[number];
 
 export const DEVICE_CATEGORY_LABELS: Record<DeviceCategory, string> = {
@@ -39,18 +42,30 @@ export const MVP_DEVICE_TYPES_BY_CATEGORY: Record<DeviceCategory, string[]> = {
 export const DEFAULT_DEVICE_CATEGORY: DeviceCategory = "endpoint";
 export const DEFAULT_DEVICE_TYPE = "Desktop";
 
+/**
+ *
+ */
 export function isDeviceCategory(value: unknown): value is DeviceCategory {
   return typeof value === "string" && DEVICE_CATEGORIES.includes(value as DeviceCategory);
 }
 
+/**
+ *
+ */
 export function getDeviceTypes(category: DeviceCategory, mvpOnly = false) {
   return mvpOnly ? MVP_DEVICE_TYPES_BY_CATEGORY[category] : DEVICE_TYPES_BY_CATEGORY[category];
 }
 
+/**
+ *
+ */
 export function getDeviceCategoryLabel(category?: string | null) {
   return isDeviceCategory(category) ? DEVICE_CATEGORY_LABELS[category] : category || "Endpoint";
 }
 
+/**
+ *
+ */
 export function getDeviceTypeLabel(type?: string | null) {
   return type?.trim() || DEFAULT_DEVICE_TYPE;
 }

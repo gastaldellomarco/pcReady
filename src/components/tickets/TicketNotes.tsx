@@ -1,14 +1,14 @@
+import { useServerFn } from "@tanstack/react-start";
 import { MessageSquare, Paperclip, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { TicketAttachments } from "@/components/tickets/TicketAttachments";
 import { useAuth } from "@/lib/auth-context";
 import { fmtDateTime } from "@/lib/pcready";
+import { uploadTicketAttachment } from "@/lib/queries/ticketAttachments";
 import ticketNotesQueries from "@/lib/queries/ticketNotes";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
-import { uploadTicketAttachment } from "@/lib/queries/ticketAttachments";
-import { TicketAttachments } from "@/components/tickets/TicketAttachments";
 
 const { useTicketNotes, useCreateTicketNote } = ticketNotesQueries as any;
 
@@ -22,6 +22,9 @@ interface TicketNote {
   author?: { full_name: string; initials: string } | null;
 }
 
+/**
+ *
+ */
 export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChanged?: () => void }) {
   const { t } = useTranslation("tickets");
   const { user, canEdit, session } = useAuth();
@@ -89,7 +92,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-text3" />
+          <MessageSquare className="size-4 text-text3" />
           <h3 className="text-[13px] font-bold">{t("notes.title", "Note")}</h3>
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-mono text-text3"
@@ -168,7 +171,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer">
-              <Paperclip className="h-3 w-3" /> {t("notes.attachFiles", "Allegati nota")}
+              <Paperclip className="size-3" /> {t("notes.attachFiles", "Allegati nota")}
               <input
                 type="file"
                 multiple
@@ -191,7 +194,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
                   type="button"
                   onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="size-3" />
                 </button>
               </span>
             ))}

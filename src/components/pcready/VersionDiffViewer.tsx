@@ -1,9 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Version, compareVersions } from "@/lib/versioning";
 import { Clock, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Version, compareVersions } from "@/lib/versioning";
 
 interface VersionDiffViewerProps {
   version1: Version;
@@ -57,6 +57,9 @@ function ValueBlock({ value, tone, t: tFn }: { value: unknown; tone: "old" | "ne
   );
 }
 
+/**
+ *
+ */
 export function VersionDiffViewer({
   version1,
   version2,
@@ -102,11 +105,11 @@ export function VersionDiffViewer({
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <User className="w-3 h-3" />
+                    <User className="size-3" />
                     <span>{authorLabel(version1.created_by)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
+                    <Clock className="size-3" />
                     <span>{new Date(version1.created_at).toLocaleString()}</span>
                   </div>
                   {version1.change_note && (
@@ -135,11 +138,11 @@ export function VersionDiffViewer({
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <User className="w-3 h-3" />
+                      <User className="size-3" />
                       <span>{authorLabel(version2.created_by)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="size-3" />
                       <span>{new Date(version2.created_at).toLocaleString()}</span>
                     </div>
                     {version2.change_note && (

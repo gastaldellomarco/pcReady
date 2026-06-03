@@ -5,9 +5,18 @@ const MAINTENANCE_SCHEDULE_SELECT =
   "id, device_id, title, description, recurrence, next_due_date, last_done_date, assigned_to, auto_create_ticket, ticket_template, created_at";
 const MAINTENANCE_HISTORY_SELECT = "id, schedule_id, device_id, completed_at, completed_by, notes";
 
+/**
+ *
+ */
 export type MaintenanceRecurrence = "once" | "weekly" | "monthly" | "quarterly" | "yearly";
+/**
+ *
+ */
 export type MaintenanceStatus = "scheduled" | "due_soon" | "overdue" | "completed";
 
+/**
+ *
+ */
 export interface MaintenanceSchedule {
   id: string;
   device_id: string;
@@ -30,6 +39,9 @@ export interface MaintenanceSchedule {
   assignee?: { display_name: string | null } | null;
 }
 
+/**
+ *
+ */
 export interface MaintenanceHistoryEntry {
   id: string;
   schedule_id: string;
@@ -39,6 +51,9 @@ export interface MaintenanceHistoryEntry {
   notes: string | null;
 }
 
+/**
+ *
+ */
 export interface TechnicianOption {
   id: string;
   name: string;
@@ -76,10 +91,16 @@ export const MAINTENANCE_STATUS_META: Record<
 
 const DAY_MS = 86_400_000;
 
+/**
+ *
+ */
 export function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ *
+ */
 export function daysUntilDate(date: string | null | undefined) {
   if (!date) return null;
   const today = new Date(todayIsoDate()).getTime();
@@ -88,6 +109,9 @@ export function daysUntilDate(date: string | null | undefined) {
   return Math.ceil((target - today) / DAY_MS);
 }
 
+/**
+ *
+ */
 export function getMaintenanceStatus(
   schedule: Pick<MaintenanceSchedule, "next_due_date" | "last_done_date" | "recurrence">,
 ): MaintenanceStatus {
@@ -99,6 +123,9 @@ export function getMaintenanceStatus(
   return "scheduled";
 }
 
+/**
+ *
+ */
 export function calculateNextDueDate(fromDate: string, recurrence: MaintenanceRecurrence) {
   if (recurrence === "once") return fromDate;
   const date = new Date(`${fromDate}T00:00:00Z`);
@@ -110,6 +137,9 @@ export function calculateNextDueDate(fromDate: string, recurrence: MaintenanceRe
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ *
+ */
 export async function fetchTechnicianOptions(): Promise<TechnicianOption[]> {
   const { data, error } = await supabase
     .from("profiles")
@@ -124,6 +154,9 @@ export async function fetchTechnicianOptions(): Promise<TechnicianOption[]> {
   }));
 }
 
+/**
+ *
+ */
 export async function fetchDeviceMaintenanceSchedules(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("maintenance_schedules")
@@ -136,6 +169,9 @@ export async function fetchDeviceMaintenanceSchedules(deviceId: string) {
   return (data ?? []) as MaintenanceSchedule[];
 }
 
+/**
+ *
+ */
 export async function fetchMaintenanceHistory(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("maintenance_history")
@@ -146,6 +182,9 @@ export async function fetchMaintenanceHistory(deviceId: string) {
   return (data ?? []) as MaintenanceHistoryEntry[];
 }
 
+/**
+ *
+ */
 export async function createMaintenanceSchedule(payload: {
   device_id: string;
   title: string;
@@ -174,6 +213,9 @@ export async function createMaintenanceSchedule(payload: {
   return data as MaintenanceSchedule;
 }
 
+/**
+ *
+ */
 export async function completeMaintenanceSchedule(
   schedule: MaintenanceSchedule,
   userId?: string | null,
@@ -201,6 +243,9 @@ export async function completeMaintenanceSchedule(
   return { ...schedule, ...nextPayload } as MaintenanceSchedule;
 }
 
+/**
+ *
+ */
 export async function fetchMaintenanceCalendar(params: {
   from: string;
   to: string;
@@ -227,6 +272,9 @@ export async function fetchMaintenanceCalendar(params: {
   return rows;
 }
 
+/**
+ *
+ */
 export async function fetchMaintenanceDashboard() {
   const today = todayIsoDate();
   const { data, error } = await (supabase as any)

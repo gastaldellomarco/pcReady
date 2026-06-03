@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DependencyList } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { randomUUID } from "@/lib/random-uuid";
+import type { DependencyList } from "react";
 
 /**
  * Loads rows via `query`, then keeps them in sync with Postgres changes on `table`

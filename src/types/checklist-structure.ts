@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { ChecklistStructure } from "@/lib/pcready";
 import { DEFAULT_STRUCTURE } from "@/lib/pcready";
+import type { ChecklistStructure } from "@/lib/pcready";
 
 /** Voce checklist (modello DB / JSON `structure`). */
 export const ChecklistItemDefSchema = z.object({
@@ -27,6 +27,9 @@ export const ChecklistGroupSchema = z.object({
 /** Struttura completa (due livelli): gruppo → sezioni → voci. */
 export const ChecklistStructureSchema = z.record(z.string(), ChecklistGroupSchema);
 
+/**
+ *
+ */
 export function parseChecklistStructure(raw: unknown): ChecklistStructure {
   if (!raw || typeof raw !== "object") return DEFAULT_STRUCTURE;
 

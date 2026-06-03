@@ -16,6 +16,9 @@ const defaultOptions: DefaultOptions = {
 
 export const queryClient = new QueryClient({ defaultOptions });
 
+/**
+ *
+ */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   return React.createElement(QueryClientProvider, { client: queryClient }, children);
 }

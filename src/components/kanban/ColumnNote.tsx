@@ -73,7 +73,7 @@ export function ColumnNote({
         className="group flex w-full cursor-text items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-[11px] text-text3 transition-colors hover:border-text3 hover:text-text2"
         style={{ borderColor: "var(--border)" }}
       >
-        <FileText className="h-3 w-3" />
+        <FileText className="size-3" />
         <span>{saving ? "Salvataggio…" : "Aggiungi nota…"}</span>
       </button>
     );
@@ -106,9 +106,9 @@ export function ColumnNote({
             style={{ color: "var(--accent)" }}
           >
             {saving ? (
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              <span className="size-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
             ) : (
-              <Check className="h-3 w-3" />
+              <Check className="size-3" />
             )}
             {saving ? "Salvataggio…" : "Salva"}
           </button>
@@ -124,7 +124,7 @@ export function ColumnNote({
       style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
     >
       <div className="mb-1 flex items-center gap-1.5">
-        <FileText className="h-3 w-3 shrink-0" style={{ color: "var(--accent)" }} />
+        <FileText className="size-3 shrink-0" style={{ color: "var(--accent)" }} />
         <span className="text-[9.5px] font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
           Nota
         </span>

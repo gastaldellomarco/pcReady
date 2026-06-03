@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import type { AutomationVariable } from "@/domain/automation-variables";
 import { VariablePicker } from "./VariablePicker";
+import type { AutomationVariable } from "@/domain/automation-variables";
 
 interface VariableTextFieldProps {
   value: string;
@@ -12,6 +12,9 @@ interface VariableTextFieldProps {
   label?: string;
 }
 
+/**
+ *
+ */
 export function VariableTextField({
   value,
   onChange,

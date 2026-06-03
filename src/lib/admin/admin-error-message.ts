@@ -3,6 +3,9 @@ import {
   rateLimitToastMessage,
 } from "@/lib/server-fn-rate-limit-message";
 
+/**
+ *
+ */
 export function getAdminErrorMessage(error: unknown, fallback: string): string {
   try {
     const rl = parseRateLimitFromServerFnError(error);

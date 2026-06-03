@@ -1,8 +1,10 @@
-import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Bell } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -12,10 +14,11 @@ import {
   markNotificationRead,
   type NotificationRow,
 } from "@/lib/notifications";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NotificationInbox } from "./NotificationInbox";
 
+/**
+ *
+ */
 export function NotificationBell() {
   const { session, user } = useAuth();
   const navigate = useNavigate();

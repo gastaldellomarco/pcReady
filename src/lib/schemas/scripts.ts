@@ -11,4 +11,7 @@ export const ScriptSchema = z.object({
   changeNote: z.string().trim().optional().nullable(),
 });
 
+/**
+ *
+ */
 export type ScriptInput = z.infer<typeof ScriptSchema>;

@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import type { AdminUserRow } from "@/lib/admin-users";
 
+/**
+ *
+ */
 export function useAdminUsersFilters(rows: AdminUserRow[]) {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");

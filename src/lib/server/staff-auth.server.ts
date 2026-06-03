@@ -26,6 +26,9 @@ async function verifyTurnstile(token: string) {
 // Core server-only implementation function. Exported so client-side wrappers
 // can dynamically import and call it via a server RPC wrapper without
 // importing this .server module into client bundles.
+/**
+ *
+ */
 export async function staffLoginServer(data: { email: string; password: string; captchaToken?: string }) {
   const email = data.email.trim().toLowerCase();
   // Apply server-side rate limiting (hard limit)

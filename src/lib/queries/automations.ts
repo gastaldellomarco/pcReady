@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { AutomationRule, AutomationFlow, AutomationFlowDefinition } from "@/types/automation";
 
+/**
+ *
+ */
 export async function fetchAutomationFlows() {
   const { data, error } = await supabase
     .from("automation_flows")
@@ -13,10 +16,16 @@ export async function fetchAutomationFlows() {
   return (data ?? []) as unknown as AutomationRule[];
 }
 
+/**
+ *
+ */
 export function useAutomationFlows() {
   return useQuery({ queryKey: ["automation_flows"], queryFn: () => fetchAutomationFlows() });
 }
 
+/**
+ *
+ */
 export async function fetchAutomationFlowDefinition(id: string) {
   const { data, error } = await supabase
     .from("automation_flows")
@@ -27,6 +36,9 @@ export async function fetchAutomationFlowDefinition(id: string) {
   return data?.flow_definition ?? {};
 }
 
+/**
+ *
+ */
 export function useAutomationFlowDefinition(id: string | null) {
   return useQuery({
     queryKey: ["automation_flows", id, "definition"],
@@ -109,6 +121,9 @@ async function toggleAutomationActive(id: string, active: boolean) {
   return data;
 }
 
+/**
+ *
+ */
 export function useCreateAutomation() {
   const qc = useQueryClient();
   return useMutation({
@@ -117,6 +132,9 @@ export function useCreateAutomation() {
   });
 }
 
+/**
+ *
+ */
 export function useUpdateAutomation() {
   const qc = useQueryClient();
   return useMutation({
@@ -129,6 +147,9 @@ export function useUpdateAutomation() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteAutomation() {
   const qc = useQueryClient();
   return useMutation({
@@ -137,6 +158,9 @@ export function useDeleteAutomation() {
   });
 }
 
+/**
+ *
+ */
 export function useDuplicateAutomation() {
   const qc = useQueryClient();
   return useMutation({
@@ -145,6 +169,9 @@ export function useDuplicateAutomation() {
   });
 }
 
+/**
+ *
+ */
 export function useArchiveAutomation() {
   const qc = useQueryClient();
   return useMutation({
@@ -153,6 +180,9 @@ export function useArchiveAutomation() {
   });
 }
 
+/**
+ *
+ */
 export function useToggleAutomation() {
   const qc = useQueryClient();
   return useMutation({

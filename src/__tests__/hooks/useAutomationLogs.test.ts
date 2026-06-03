@@ -1,9 +1,9 @@
+import { renderHook, act, waitFor } from "@testing-library/react";
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAutomationLogs } from "@/hooks/useAutomationLogs";
-import type { AutomationRule } from "@/types/automation";
 import type { AutomationRunLog } from "@/lib/automation-runs";
+import type { AutomationRule } from "@/types/automation";
 
 // ── Mock @/lib/automation-runs (evita la catena createServerFn) ─────────
 const serverFnMocks = vi.hoisted(() => ({

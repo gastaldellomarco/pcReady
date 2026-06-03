@@ -1,5 +1,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+/**
+ *
+ */
 export async function requireAdmin(accessToken: string) {
   const {
     data: { user },

@@ -73,10 +73,16 @@ function formatCurrency(value: unknown) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(Number(value ?? 0));
 }
 
+/**
+ *
+ */
 export function InvoicePdf(props: BillingPdfProps) {
   return <BillingPdf {...props} title={props.title || "Fattura"} />;
 }
 
+/**
+ *
+ */
 export function QuotePdf(props: BillingPdfProps) {
   return <BillingPdf {...props} title={props.title || "Preventivo"} />;
 }

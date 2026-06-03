@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import * as React from "react";
 import userEvent from "@testing-library/user-event";
+import * as React from "react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 // ── Mock @/components/ui/dialog ────────────────────────────────────────
 // Radix Dialog uses portals; mock to render children inline when open=true
@@ -67,9 +67,9 @@ vi.mock("sonner", () => ({
   },
 }));
 
+import { axe } from "vitest-axe";
 // ── Import after mocks ──────────────────────────────────────────────────
 import { ExportPdf } from "@/components/ExportPdf";
-import { axe } from "vitest-axe";
 
 // ── Test helpers ────────────────────────────────────────────────────────
 interface TestRow {

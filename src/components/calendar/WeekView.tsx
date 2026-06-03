@@ -211,6 +211,8 @@ export function WeekView({
                   return (
                     <div
                       key={event.id}
+                      role="button"
+                      tabIndex={0}
                       className="absolute left-0.5 right-0.5 rounded text-xs px-1.5 py-0.5 overflow-hidden z-10 cursor-pointer hover:opacity-80 transition-opacity"
                       style={{
                         top: `${top}px`,
@@ -222,6 +224,13 @@ export function WeekView({
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick(event);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEventClick(event);
+                        }
                       }}
                     >
                       <p className="font-medium truncate leading-tight">{event.title}</p>

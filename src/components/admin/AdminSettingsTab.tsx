@@ -1,7 +1,4 @@
-﻿import OverflowTable from "@/components/ui/overflow-table";
-
-import { useState, type ReactNode } from "react";
-import {
+﻿import {
   Bell,
   CheckCircle2,
   DatabaseBackup,
@@ -13,18 +10,20 @@ import {
   Shield,
   SlidersHorizontal,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, type ReactNode } from "react";
+import { BackupMetric } from "@/components/admin/BackupMetric";
 import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
 import { TagListEditor } from "@/components/admin/TagListEditor";
-import { BackupMetric } from "@/components/admin/BackupMetric";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import OverflowTable from "@/components/ui/overflow-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 import { ADMIN_WIP_LIMIT_FIELDS, ADMIN_SLA_CONFIG_FIELDS } from "@/lib/admin/admin-constants";
 import { useAuth } from "@/lib/auth-context";
-import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 
 function SettingSection({
   icon,
@@ -51,6 +50,9 @@ function SettingSection({
   );
 }
 
+/**
+ *
+ */
 export function AdminSettingsTab() {
   const { session, user, isAdmin } = useAuth();
   const accessToken = session?.access_token;
@@ -105,7 +107,7 @@ export function AdminSettingsTab() {
           <Card className="mb-5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DatabaseBackup className="h-5 w-5" />
+                <DatabaseBackup className="size-5" />
                 Backup &amp; Disaster Recovery
               </CardTitle>
               <CardDescription>
@@ -158,12 +160,12 @@ export function AdminSettingsTab() {
                   </p>
                 </div>
                 <Button onClick={handleExportAllData} disabled={exportAllBusy} variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="size-4 mr-2" />
                   {exportAllBusy ? "Esportazione..." : "Esporta tutti i dati"}
                 </Button>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Shield className="h-3 w-3" />
+                <Shield className="size-3" />
                 <span>Dati protetti con backup giornalieri automatici</span>
               </div>
             </CardContent>
@@ -171,7 +173,7 @@ export function AdminSettingsTab() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+                <Settings className="size-5" />
                 Impostazioni Applicazione
               </CardTitle>
               <CardDescription>
@@ -201,7 +203,7 @@ export function AdminSettingsTab() {
 
                   {lastSavedAt ? (
                     <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-                      <CheckCircle2 className="h-4 w-4" />
+                      <CheckCircle2 className="size-4" />
                       Ultimo salvataggio completato alle{" "}
                       {lastSavedAt.toLocaleTimeString("it-IT", {
                         hour: "2-digit",
@@ -211,7 +213,7 @@ export function AdminSettingsTab() {
                   ) : null}
 
                   <SettingSection
-                    icon={<Globe2 className="h-4 w-4" />}
+                    icon={              <Globe2 className="size-4" />}
                     title="Generale"
                     description="Impostazioni visibili in tutta l'app: nome organizzazione, timezone e canali di supporto."
                   >
@@ -282,7 +284,7 @@ export function AdminSettingsTab() {
                   </SettingSection>
 
                   <SettingSection
-                    icon={<SlidersHorizontal className="h-4 w-4" />}
+                    icon={              <SlidersHorizontal className="size-4" />}
                     title="Operatività"
                     description="Valori usati da ticket, inventario, Kanban e automazioni SLA. Modificarli impatta i flussi operativi del team."
                   >
@@ -466,7 +468,7 @@ export function AdminSettingsTab() {
                     <div className="space-y-4 rounded-lg border p-4 mt-4">
                       <div>
                         <h3 className="font-medium flex items-center gap-2">
-                          <Shield className="h-4 w-4" /> Autenticazione a due fattori
+                          <Shield className="size-4" /> Autenticazione a due fattori
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           Imposta policy 2FA obbligatorie e periodo di grazia per gli utenti.
@@ -528,7 +530,7 @@ export function AdminSettingsTab() {
                   </SettingSection>
 
                   <SettingSection
-                    icon={<DatabaseBackup className="h-4 w-4" />}
+                    icon={              <DatabaseBackup className="size-4" />}
                     title="Audit e conservazione"
                     description="Definisce per quanto tempo conservare i log operativi prima dell'archiviazione."
                   >
@@ -570,14 +572,14 @@ export function AdminSettingsTab() {
 
                   <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-2 py-3 backdrop-blur">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="h-3.5 w-3.5" />
+                      <Mail className="size-3.5" />
                       Le modifiche vengono applicate ai nuovi flussi e alle configurazioni globali.
                     </div>
                     <Button
                       type="submit"
                       disabled={!settingsForm.formState.isValid || saveSettingsBusy}
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="size-4 mr-2" />
                       {saveSettingsBusy ? (
                         <>
                           <svg

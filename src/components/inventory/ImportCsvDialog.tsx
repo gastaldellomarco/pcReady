@@ -1,9 +1,11 @@
+import { CheckCircle2, Download, FileUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Download, FileUp } from "lucide-react";
+import { toast } from "sonner";
 import { Modal } from "@/components/pcready/Modal";
 import OverflowTable from "@/components/ui/overflow-table";
 import { useAuth } from "@/lib/auth-context";
+import { downloadCsv } from "@/lib/downloads";
 import {
   csvTemplate,
   importDevicesFromCsv,
@@ -13,8 +15,10 @@ import {
   type ImportResult,
   type PreviewRow,
 } from "@/lib/inventory-import";
-import { toast } from "sonner";
-import { downloadCsv } from "@/lib/downloads";
+
+function downloadTemplate() {
+  downloadCsv(csvTemplate(), "pcready-template-inventario.csv");
+}
 
 interface Props {
   open: boolean;
@@ -22,6 +26,9 @@ interface Props {
   onImported: () => void;
 }
 
+/**
+ *
+ */
 export function ImportCsvDialog({ open, onClose, onImported }: Props) {
   const { t } = useTranslation("inventory");
   const { user, canEdit } = useAuth();
@@ -70,10 +77,6 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
     } finally {
       setBusy(false);
     }
-  }
-
-  function downloadTemplate() {
-    downloadCsv(csvTemplate(), "pcready-template-inventario.csv");
   }
 
   async function confirmImport() {
@@ -165,7 +168,7 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
-              <Download className="w-3 h-3" /> {t("importCsv.downloadTemplate", "Scarica template CSV")}
+              <Download className="size-3" /> {t("importCsv.downloadTemplate", "Scarica template CSV")}
             </button>
           </div>
         )}

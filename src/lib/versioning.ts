@@ -6,8 +6,14 @@ const ENTITY_VERSION_SELECT =
 
 const supabaseAny = supabase as any;
 
+/**
+ *
+ */
 export type VersionOperation = "create" | "update" | "restore" | "delete";
 
+/**
+ *
+ */
 export interface Version {
   id: string;
   entity_type: string;
@@ -24,12 +30,18 @@ export interface Version {
   request_id?: string | null;
 }
 
+/**
+ *
+ */
 export interface DiffResult {
   added: Record<string, unknown>;
   removed: Record<string, unknown>;
   changed: Record<string, { old: unknown; new: unknown }>;
 }
 
+/**
+ *
+ */
 export interface CreateVersionParams {
   entityType: string;
   entityId: string;
@@ -56,6 +68,9 @@ function isEqualValue(a: unknown, b: unknown) {
   return false;
 }
 
+/**
+ *
+ */
 export function computeChangedFields(
   previous: Record<string, unknown> | null,
   current: Record<string, unknown>,
@@ -77,6 +92,9 @@ export function computeChangedFields(
   return changed;
 }
 
+/**
+ *
+ */
 export async function getNextVersionNumber(entityType: string, entityId: string): Promise<number> {
   const { data, error } = await supabaseAny
     .from("entity_versions")
@@ -90,6 +108,9 @@ export async function getNextVersionNumber(entityType: string, entityId: string)
   return data?.[0]?.version_number || 0;
 }
 
+/**
+ *
+ */
 export async function getLatestVersionNumber(
   entityType: string,
   entityId: string,
@@ -97,6 +118,9 @@ export async function getLatestVersionNumber(
   return getNextVersionNumber(entityType, entityId);
 }
 
+/**
+ *
+ */
 export async function createVersionSnapshot({
   entityType,
   entityId,
@@ -137,6 +161,9 @@ export async function createVersionSnapshot({
   return versionNumber;
 }
 
+/**
+ *
+ */
 export async function createVersion(
   entityType: string,
   entityId: string,
@@ -182,6 +209,9 @@ export async function getVersions(entityType: string, entityId: string): Promise
   }
 }
 
+/**
+ *
+ */
 export function compareVersions(v1: Version, v2: Version): DiffResult {
   const result: DiffResult = { added: {}, removed: {}, changed: {} };
 
@@ -209,6 +239,9 @@ export function compareVersions(v1: Version, v2: Version): DiffResult {
   return result;
 }
 
+/**
+ *
+ */
 export async function restoreEntityVersion(
   entityType: string,
   entityId: string,
@@ -263,6 +296,9 @@ export async function restoreEntityVersion(
   });
 }
 
+/**
+ *
+ */
 export async function restoreVersion(
   entityType: string,
   entityId: string,

@@ -6,6 +6,9 @@ import type { ExportAllDataResult } from "@/lib/export-data";
 
 type ExportServerFn = (opts: { data: { accessToken: string } }) => Promise<ExportAllDataResult>;
 
+/**
+ *
+ */
 export function useAdminExport(args: {
   accessToken: string | undefined;
   exportData: ExportServerFn;

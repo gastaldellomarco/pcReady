@@ -16,6 +16,9 @@ type EmailTemplateRow = {
   created_at: string;
 };
 
+/**
+ *
+ */
 export function renderTemplate(template: string, values: Record<string, string>): string {
   return template.replace(
     /\{\{[a-z0-9_]+\}\}/gi,
@@ -23,6 +26,9 @@ export function renderTemplate(template: string, values: Record<string, string>)
   );
 }
 
+/**
+ *
+ */
 export async function getEmailTemplateByEvent(
   eventType: EmailEventType,
 ): Promise<EmailTemplateRow | null> {
@@ -41,6 +47,9 @@ export async function getEmailTemplateByEvent(
   return (data as unknown as EmailTemplateRow | null) ?? null;
 }
 
+/**
+ *
+ */
 export async function fetchEmailForUser(userId: string): Promise<string | null> {
   const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
   if (error) {
@@ -50,6 +59,9 @@ export async function fetchEmailForUser(userId: string): Promise<string | null> 
   return data.user?.email ?? null;
 }
 
+/**
+ *
+ */
 export async function fetchProfileName(userId: string): Promise<string> {
   const { data, error } = await supabaseAdmin
     .from("profiles")
@@ -65,6 +77,9 @@ export async function fetchProfileName(userId: string): Promise<string> {
   return data?.full_name || "Utente";
 }
 
+/**
+ *
+ */
 export async function userAllowsEmail(
   userId: string,
   preference: "notify_ticket_assigned" | "notify_checklist_completed",
@@ -87,6 +102,9 @@ export async function userAllowsEmail(
   return !data || (data as any)[preference] !== false;
 }
 
+/**
+ *
+ */
 export async function getEmailCommonVariables(userId?: string | null, userEmail?: string | null) {
   const { data, error } = await supabaseAdmin.from("app_settings" as any).select("key, value");
   if (error) console.error("getEmailCommonVariables settings failed:", error);
@@ -104,6 +122,9 @@ export async function getEmailCommonVariables(userId?: string | null, userEmail?
   };
 }
 
+/**
+ *
+ */
 export async function sendEmailEvent(params: {
   eventType: EmailEventType;
   to: string | null | undefined;

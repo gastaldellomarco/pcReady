@@ -1,11 +1,11 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
-import { listPortalDevices } from "@/lib/portal-tickets";
-import { fmtDateTime } from "@/lib/pcready";
 import { ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, ShieldOff, RotateCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
+import { Button } from "@/components/ui/button";
+import { fmtDateTime } from "@/lib/pcready";
+import { listPortalDevices } from "@/lib/portal-tickets";
 
 export const Route = createLazyFileRoute("/portal/devices")({
   component: PortalDevicesPage,
@@ -133,7 +133,7 @@ function DeviceCard({ device, expanded, onToggle }: { device: DeviceInfo; expand
               <h2 className="font-semibold">{device.model}</h2>
               {/* Warranty badge */}
               <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${WARRANTY_BADGE_STYLES[warranty.variant]}`}>
-                <WarrantyIcon className="h-3 w-3" />
+                <WarrantyIcon className="size-3" />
                 {warranty.label}
               </span>
             </div>
@@ -143,7 +143,7 @@ function DeviceCard({ device, expanded, onToggle }: { device: DeviceInfo; expand
             <span className="rounded-full bg-secondary px-2 py-1 text-xs font-medium">{device.status}</span>
             {hasDetail && (
               <span className="text-muted-foreground">
-                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </span>
             )}
           </div>

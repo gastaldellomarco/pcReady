@@ -1,18 +1,3 @@
-import { useState } from "react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import { cn } from "@/lib/utils";
-import { timeAgo } from "@/lib/pcready";
-import OverflowTable from "@/components/ui/overflow-table";
 import {
   CheckCircle2,
   XCircle,
@@ -22,6 +7,21 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { useState } from "react";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import OverflowTable from "@/components/ui/overflow-table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { timeAgo } from "@/lib/pcready";
+import { cn } from "@/lib/utils";
 import type { AutomationRunLog } from "@/lib/automation-runs";
 import type { AutomationRule } from "@/types/automation";
 
@@ -29,6 +29,9 @@ interface GlobalLogEntry extends AutomationRunLog {
   automation_flows?: { name: string };
 }
 
+/**
+ *
+ */
 export function GlobalRunLogsPanel({
   logs,
   loading,
@@ -65,7 +68,7 @@ export function GlobalRunLogsPanel({
             Aggiorna
           </Button>
           <Button variant="outline" size="sm" onClick={onExportCsv} disabled={logs.length === 0}>
-            <Download className="mr-1 h-3.5 w-3.5" />
+            <Download className="mr-1 size-3.5" />
             CSV
           </Button>
         </div>
@@ -137,9 +140,9 @@ export function GlobalRunLogsPanel({
                     >
                       <TableCell>
                         {expandedLogId === log.id ? (
-                          <ChevronDown className="h-4 w-4 text-text3" />
+                          <ChevronDown className="size-4 text-text3" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-text3" />
+                          <ChevronRight className="size-4 text-text3" />
                         )}
                       </TableCell>
                       <TableCell className="text-sm font-medium">{ruleName}</TableCell>
@@ -293,7 +296,7 @@ function LogStatusBadge({
         status === "skipped" && "bg-slate-100 text-slate-700",
       )}
     >
-      <Icon className="mr-1 h-3 w-3" />
+      <Icon className="mr-1 size-3" />
       {status === "dry_run" ? "dry-run" : status === "success" ? "OK" : status}
     </Badge>
   );

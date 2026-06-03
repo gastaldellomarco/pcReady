@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export type EmailEventType =
   | "invite"
   | "reset_password"
@@ -10,11 +13,17 @@ export type EmailEventType =
   | "portal_public_note_added"
   | "portal_ticket_closed_feedback";
 
+/**
+ *
+ */
 export interface EmailTemplateVariable {
   token: string;
   description: string;
 }
 
+/**
+ *
+ */
 export interface EmailTemplate {
   id: string;
   event_type: EmailEventType;

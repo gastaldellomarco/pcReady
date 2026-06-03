@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import type { ConditionDef } from "@/types/automation";
-import type { ConditionsGroup } from "@/domain/automation";
-import { AutomationConditionsBuilder } from "../AutomationConditionsBuilder";
 import {
   fromConditionDefs,
   toConditionDefs,
 } from "@/lib/automations/condition-adapter";
+import { AutomationConditionsBuilder } from "../AutomationConditionsBuilder";
+import type { ConditionsGroup } from "@/domain/automation";
+import type { ConditionDef } from "@/types/automation";
 
 interface FiltersStepProps {
   value: ConditionDef[];
@@ -13,6 +13,9 @@ interface FiltersStepProps {
   triggerName?: string;
 }
 
+/**
+ *
+ */
 export default function FiltersStep({
   value,
   onChange,

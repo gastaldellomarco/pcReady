@@ -90,13 +90,13 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="absolute top-2 right-2 z-10 flex items-center justify-center w-7 h-7 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--surface2)] max-sm:opacity-100"
+          className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--surface2)] max-sm:opacity-100"
           title="Note widget"
           aria-label="Apri note widget"
         >
-          <StickyNote className="w-4 h-4 text-text2" />
+          <StickyNote className="size-4 text-text2" />
           {count > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--accent)]" />
+            <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-[var(--accent)]" />
           )}
         </button>
       </PopoverTrigger>
@@ -178,7 +178,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                             title="Modifica"
                             onClick={() => startEdit(a)}
                           >
-                            <Pencil className="w-3 h-3 text-text3" />
+                            <Pencil className="size-3 text-text3" />
                           </button>
                           <button
                             className="p-0.5 rounded hover:bg-[var(--surface3)]"
@@ -186,7 +186,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                             onClick={() => handleDelete(a.id)}
                             disabled={isPending}
                           >
-                            <Trash2 className="w-3 h-3 text-[var(--danger)]" />
+                            <Trash2 className="size-3 text-[var(--danger)]" />
                           </button>
                         </div>
                       </div>
@@ -228,7 +228,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                 onClick={handleAdd}
                 disabled={!text.trim() || isPending}
               >
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="size-3 mr-1" />
                 Aggiungi
               </button>
             </div>

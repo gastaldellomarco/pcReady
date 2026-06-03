@@ -1,11 +1,9 @@
 ﻿import { MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
+import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
 import { TableSkeletonRows } from "@/components/page-states";
-import OverflowTable from "@/components/ui/overflow-table";
-import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { TabsContent } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,18 +14,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth, type AppRole } from "@/lib/auth-context";
+import { MobileCardView, type MobileCardColumn } from "@/components/ui/mobile-card-view";
+import OverflowTable from "@/components/ui/overflow-table";
+import { TabsContent } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
-import { fmtDateTime } from "@/lib/pcready";
-import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
-import { ADMIN_ROLES, adminRoleLabel } from "@/lib/admin/admin-constants";
-import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
-import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
-import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
-import { Badge } from "@/components/ui/badge";
+import { ADMIN_ROLES, adminRoleLabel } from "@/lib/admin/admin-constants";
+import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
+import { useAuth, type AppRole } from "@/lib/auth-context";
+import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
+import { fmtDateTime } from "@/lib/pcready";
 
 function MfaStatusBadge({ enabled, required, role }: { enabled: boolean; required: boolean; role?: string }) {
   const { t } = useTranslation("admin");
@@ -37,18 +37,21 @@ function MfaStatusBadge({ enabled, required, role }: { enabled: boolean; require
   if (role === "admin")
     return (
       <Badge className="bg-red-600 flex items-center gap-1">
-        <AlertTriangle className="w-3.5 h-3.5" />
+        <AlertTriangle className="size-3.5" />
         {t("users.mfa.notActive", "Non attivo")}
       </Badge>
     );
   return (
     <Badge variant="secondary" className="flex items-center gap-1">
-      <AlertTriangle className="w-3.5 h-3.5" />
+      <AlertTriangle className="size-3.5" />
       {t("users.mfa.notActive", "Non attivo")}
     </Badge>
   );
 }
 
+/**
+ *
+ */
 export function AdminUsersTab() {
   const { t } = useTranslation("admin");
   const { session, user, isAdmin } = useAuth();
@@ -108,7 +111,7 @@ export function AdminUsersTab() {
       accessor: (row: any) => (
         <div className="flex items-center gap-2.5">
           <span
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            className="size-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
             style={{
               background: "var(--accent2)",
               color: "var(--accent)",
@@ -167,9 +170,9 @@ export function AdminUsersTab() {
             onClick={() => toggleDisabled(row)}
           >
             {row.status === "disabled" ? (
-              <UserCheck className="w-3.5 h-3.5" />
+              <UserCheck className="size-3.5" />
             ) : (
-              <UserX className="w-3.5 h-3.5" />
+              <UserX className="size-3.5" />
             )}
           </button>
           <button
@@ -179,7 +182,7 @@ export function AdminUsersTab() {
             onClick={() => remove(row)}
             style={{ color: "var(--danger, #DC2626)" }}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="size-3.5" />
           </button>
         </div>
       ),
@@ -245,7 +248,7 @@ export function AdminUsersTab() {
           disabled={!isInviteButtonEnabled}
           type="submit"
         >
-          <MailPlus className="w-3.5 h-3.5" /> {inviteBusy ? t("users.invite.submitting", "Invio...") : t("users.invite.submit", "Invita")}
+          <MailPlus className="size-3.5" /> {inviteBusy ? t("users.invite.submitting", "Invio...") : t("users.invite.submit", "Invita")}
         </button>
       </form>
 
@@ -254,7 +257,7 @@ export function AdminUsersTab() {
           className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] flex-1 min-w-[220px] max-w-[360px]"
           style={{ background: "var(--surface2)", border: "1px solid var(--border2)" }}
         >
-          <Search className="w-3 h-3 text-text3" />
+          <Search className="size-3 text-text3" />
           <input
             value={q}
             onChange={(event) => setQ(event.target.value)}
@@ -494,7 +497,7 @@ export function AdminUsersTab() {
                   <td className="px-[14px] py-[10px]">
                     <div className="flex items-center gap-2.5">
                       <span
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                        className="size-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
                         style={{
                           background: "var(--accent2)",
                           color: "var(--accent)",
@@ -546,9 +549,9 @@ export function AdminUsersTab() {
                         onClick={() => toggleDisabled(row)}
                       >
                         {row.status === "disabled" ? (
-                          <UserCheck className="w-3.5 h-3.5" />
+                          <UserCheck className="size-3.5" />
                         ) : (
-                          <UserX className="w-3.5 h-3.5" />
+                          <UserX className="size-3.5" />
                         )}
                       </button>
                       <button
@@ -558,7 +561,7 @@ export function AdminUsersTab() {
                         onClick={() => remove(row)}
                         style={{ color: "var(--danger, #DC2626)" }}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="size-3.5" />
                       </button>
                     </div>
                   </td>

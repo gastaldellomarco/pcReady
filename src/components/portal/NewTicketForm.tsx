@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { createPortalTicket, listPortalDevices } from "@/lib/portal-tickets";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 
+/**
+ *
+ */
 export function NewTicketForm({ token, categories }: { token: string; categories: string[] }) {
   const createTicket = useServerFn(createPortalTicket);
   const loadDevices = useServerFn(listPortalDevices);

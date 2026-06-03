@@ -1,5 +1,11 @@
+/**
+ *
+ */
 export type MoneyLike = string | number | null | undefined;
 
+/**
+ *
+ */
 export type ClientCostProfile = {
   clientId: string | null;
   clientName: string;
@@ -12,6 +18,9 @@ export type ClientCostProfile = {
   hours: number;
 };
 
+/**
+ *
+ */
 export type InvoiceDraft = {
   invoiceNumber: string;
   senderName: string;
@@ -25,6 +34,9 @@ export type InvoiceDraft = {
   logoUrl: string;
 };
 
+/**
+ *
+ */
 export type QuoteDraft = {
   clientId: string;
   quoteNumber: string;
@@ -36,6 +48,9 @@ export type QuoteDraft = {
   notes: string;
 };
 
+/**
+ *
+ */
 export type MaterialDraft = {
   ticketId: string;
   description: string;
@@ -46,6 +61,9 @@ export type MaterialDraft = {
   resaleMarginPercent: string;
 };
 
+/**
+ *
+ */
 export type BudgetDraft = {
   clientId: string;
   period: "monthly" | "annual";
@@ -55,6 +73,9 @@ export type BudgetDraft = {
   endsOn: string;
 };
 
+/**
+ *
+ */
 export type TicketLike = {
   id: string;
   ticket_code: string;
@@ -66,6 +87,9 @@ export type TicketLike = {
   total_cost: number | null;
 };
 
+/**
+ *
+ */
 export type ContractLike = {
   client_id: string;
   status: string;
@@ -73,15 +97,24 @@ export type ContractLike = {
   recurring_fee: number;
 };
 
+/**
+ *
+ */
 export function money(value: MoneyLike) {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ *
+ */
 export function positiveNumber(value: MoneyLike) {
   return Math.max(0, money(value));
 }
 
+/**
+ *
+ */
 export function invoiceSeed(prefix = "INV") {
   const now = new Date();
   return `${prefix}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(
@@ -89,6 +122,9 @@ export function invoiceSeed(prefix = "INV") {
   ).slice(-5)}`;
 }
 
+/**
+ *
+ */
 export function quoteSeed(prefix = "PREV") {
   const now = new Date();
   return `${prefix}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(
@@ -96,6 +132,9 @@ export function quoteSeed(prefix = "PREV") {
   ).slice(-5)}`;
 }
 
+/**
+ *
+ */
 export function computeClientProfitability(
   tickets: TicketLike[],
   contracts: ContractLike[],
@@ -158,10 +197,16 @@ export function computeClientProfitability(
     .sort((a, b) => b.margin - a.margin);
 }
 
+/**
+ *
+ */
 export function normalizeRecurringFee(contract: ContractLike) {
   return contract.billing_period === "annual" ? money(contract.recurring_fee) / 12 : money(contract.recurring_fee);
 }
 
+/**
+ *
+ */
 export function buildAccountingCsvRows(invoices: Array<Record<string, any>>) {
   return [
     [
@@ -191,6 +236,9 @@ export function buildAccountingCsvRows(invoices: Array<Record<string, any>>) {
   ];
 }
 
+/**
+ *
+ */
 export function buildFatturaPaXml(invoice: Record<string, any>, items: Array<Record<string, any>>) {
   const total = money(invoice.total_amount).toFixed(2);
   const body = items
@@ -230,6 +278,9 @@ export function buildFatturaPaXml(invoice: Record<string, any>, items: Array<Rec
 </FatturaElettronica>`;
 }
 
+/**
+ *
+ */
 export function escapeXml(value: string) {
   return String(value)
     .replaceAll("&", "&amp;")

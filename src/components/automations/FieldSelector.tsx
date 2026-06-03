@@ -6,6 +6,9 @@ interface FieldSelectorProps {
   onChange: (value: string) => void;
 }
 
+/**
+ *
+ */
 export function FieldSelector({ value, onChange }: FieldSelectorProps) {
   const { t } = useTranslation("automations");
 

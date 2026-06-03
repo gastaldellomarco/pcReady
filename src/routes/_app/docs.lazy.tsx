@@ -1,7 +1,7 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createLazyFileRoute("/_app/docs")({
@@ -50,7 +50,7 @@ function ApiDocsPage() {
           className="w-9 h-9 rounded-[8px] flex items-center justify-center"
           style={{ background: "var(--accent2)", color: "var(--accent)" }}
         >
-          <ShieldCheck className="w-4 h-4" />
+          <ShieldCheck className="size-4" />
         </div>
         <div>
           <div className="font-bold text-[15px]" style={{ fontFamily: "var(--font-head)" }}>

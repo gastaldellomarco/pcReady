@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { buildDownloadFileName } from "@/lib/export-format";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildDownloadFileName } from "@/lib/export-format";
 import { requireAdmin } from "./admin-users.server";
 
+/**
+ *
+ */
 export type ActivityLogEntry = {
   id: string;
   type: "sys" | "auto" | "user";
@@ -22,8 +25,14 @@ export type ActivityLogEntry = {
   session_id?: string | null;
 };
 
+/**
+ *
+ */
 export type AuditLogEntryRaw = Record<string, unknown>;
 
+/**
+ *
+ */
 export type AuditLogFilters = {
   user?: string;
   actionType?: string;
@@ -35,12 +44,18 @@ export type AuditLogFilters = {
   pageSize?: number;
 };
 
+/**
+ *
+ */
 export type AuditLogKpi = {
   eventsToday: number;
   events7d: number;
   recentErrors: number;
 };
 
+/**
+ *
+ */
 export type AuditLogUserOption = {
   actor_name: string;
   count: number;
@@ -367,6 +382,9 @@ export const exportAuditLog = createServerFn({ method: "GET" })
 
 // ---- Audit Presets ----
 
+/**
+ *
+ */
 export type AuditPreset = {
   id: string;
   name: string;

@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { UseMutationResult } from "@tanstack/react-query";
-import { errorMessage } from "@/lib/errors";
 import {
   listBundlePayments,
   type BundlePayment,
   type ClientBundleAssignment,
 } from "@/lib/bundles";
+import { errorMessage } from "@/lib/errors";
+import type { UseMutationResult } from "@tanstack/react-query";
 
+/**
+ *
+ */
 export type PaymentDraft = {
   client_bundle_assignment_id: string;
   amount: string;
@@ -48,6 +51,9 @@ interface UseBillingManagerOptions {
   mutations: BillingMutations;
 }
 
+/**
+ *
+ */
 export function useBillingManager(options: UseBillingManagerOptions) {
   const { t } = useTranslation("bundles");
   const { canManage, userId, assignmentById, mutations } = options;

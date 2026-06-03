@@ -1,3 +1,4 @@
+import { AlertTriangle, Info, Play, ShieldAlert, ListChecks } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -9,8 +10,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import type { AutomationRule } from "@/types/automation";
 import {
   computeRiskLevel,
   checkCompleteness,
@@ -18,7 +17,8 @@ import {
   getSideEffects,
   RISK_LEVEL_CONFIG,
 } from "@/lib/automations/automation-guardrails";
-import { AlertTriangle, Info, Play, ShieldAlert, ListChecks } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { AutomationRule } from "@/types/automation";
 
 interface RunConfirmDialogProps {
   open: boolean;
@@ -28,6 +28,9 @@ interface RunConfirmDialogProps {
   loading?: boolean;
 }
 
+/**
+ *
+ */
 export function RunConfirmDialog({
   open,
   rule,
@@ -50,7 +53,7 @@ export function RunConfirmDialog({
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5 text-accent" />
+            <Play className="size-5 text-accent" />
             Esecuzione: {rule.name}
           </AlertDialogTitle>
           <AlertDialogDescription>
@@ -67,7 +70,7 @@ export function RunConfirmDialog({
               riskCfg.border,
             )}
           >
-            <ShieldAlert className={cn("h-5 w-5", riskCfg.color)} />
+            <ShieldAlert className={cn("size-5", riskCfg.color)} />
             <div className="flex-1">
               <span className={cn("text-sm font-semibold", riskCfg.color)}>
                 Rischio: {riskCfg.label}
@@ -87,7 +90,7 @@ export function RunConfirmDialog({
           {/* Completeness Warning */}
           {!canRun && (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600" />
               <div>
                 <p className="text-sm font-medium text-red-700">
                   Regola incompleta — esecuzione bloccata
@@ -105,7 +108,7 @@ export function RunConfirmDialog({
           {canRun && impacts.length > 0 && (
             <div className="rounded-lg border border-border bg-background/60 p-3">
               <div className="flex items-center gap-1.5 mb-2">
-                <ListChecks className="h-4 w-4 text-text3" />
+                <ListChecks className="size-4 text-text3" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-text3">
                   Impatto previsto
                 </span>
@@ -129,7 +132,7 @@ export function RunConfirmDialog({
           {/* Side Effects Warning */}
           {canRun && sideEffects.length > 0 && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <div>
                 <p className="text-sm font-medium text-amber-700">
                   Side-effect esterni
@@ -158,7 +161,7 @@ export function RunConfirmDialog({
               "Esecuzione in corso..."
             ) : (
               <>
-                <Play className="h-4 w-4" />
+                <Play className="size-4" />
                 Esegui ora
               </>
             )}

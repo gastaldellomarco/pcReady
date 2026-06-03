@@ -18,6 +18,9 @@ const MIME_TYPES = {
   zip: "application/zip",
 } as const;
 
+/**
+ *
+ */
 export function downloadBlob(
   blob: Blob,
   fileName: string,
@@ -35,12 +38,18 @@ export function downloadBlob(
   revokeObjectUrl(url, options.revokeDelayMs ?? 1_000);
 }
 
+/**
+ *
+ */
 export function openBlobPreview(blob: Blob, options: { revokeDelayMs?: number } = {}) {
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank", "noopener,noreferrer");
   revokeObjectUrl(url, options.revokeDelayMs ?? 60_000);
 }
 
+/**
+ *
+ */
 export function downloadText(
   content: string,
   fileName: string,
@@ -49,15 +58,24 @@ export function downloadText(
   downloadBlob(new Blob([content], { type: options.type ?? MIME_TYPES.text }), fileName, options);
 }
 
+/**
+ *
+ */
 export function downloadCsv(content: string | CsvCell[][], fileName: string) {
   const csv = Array.isArray(content) ? rowsToCsv(content) : content;
   downloadText(csv, fileName, { type: MIME_TYPES.csv });
 }
 
+/**
+ *
+ */
 export function downloadZip(files: ZipTextFile[], fileName: string) {
   downloadBlob(createZipBlob(files), fileName);
 }
 
+/**
+ *
+ */
 export async function withDownloadToast<T>(
   action: () => Promise<T> | T,
   messages: {
@@ -76,8 +94,14 @@ export async function withDownloadToast<T>(
   }
 }
 
+/**
+ *
+ */
 export type ZipTextFile = { name: string; content: string };
 
+/**
+ *
+ */
 export function createZipBlob(files: ZipTextFile[]) {
   const encoder = new TextEncoder();
   const parts: Uint8Array[] = [];

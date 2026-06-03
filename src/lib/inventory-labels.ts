@@ -2,6 +2,9 @@ import QRCode from "qrcode";
 import { toast } from "sonner";
 import type { QrDevice } from "@/components/inventory/QrCodeDialog";
 
+/**
+ *
+ */
 export async function buildLabelItems(devices: QrDevice[]) {
   return Promise.all(
     devices.map(async (device) => ({
@@ -11,6 +14,9 @@ export async function buildLabelItems(devices: QrDevice[]) {
   );
 }
 
+/**
+ *
+ */
 export function printLabelBatch(items: { device: QrDevice; dataUrl: string }[]) {
   const win = window.open("", "_blank", "width=900,height=700");
   if (!win) {
@@ -23,10 +29,16 @@ export function printLabelBatch(items: { device: QrDevice; dataUrl: string }[]) 
   win.print();
 }
 
+/**
+ *
+ */
 export function deviceUrl(deviceId: string) {
   return `${window.location.origin}/inventory?device=${deviceId}`;
 }
 
+/**
+ *
+ */
 export function labelHtml(items: { device: QrDevice; dataUrl: string }[]) {
   const labels = items
     .map(

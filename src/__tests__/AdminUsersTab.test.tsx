@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { AppRole } from "@/lib/auth-context";
 
 // ── Mock di react-i18next ──────────────────────────────────────────────
@@ -195,9 +195,9 @@ vi.mock("@/lib/downloads", () => ({
   downloadCsv: vi.fn(),
 }));
 
+import { axe } from "vitest-axe";
 // ── Import dopo i mock ──────────────────────────────────────────────────
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
-import { axe } from "vitest-axe";
 
 const MOCK_ROWS = [
   {
