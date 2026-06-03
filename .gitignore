@@ -63,3 +63,26 @@ storybook-static/
 # Windows null device (accidental redirects like `cmd > nul`)
 nul
 
+supabase/seed_demo_full.sql
+analyze-uniques.mjs
+find-last-issue.mjs
+fix-all-seed-issues.mjs
+fix-all-where-not-exists.mjs
+fix-contracts-paren.mjs
+fix-corruption.mjs
+fix-cost-close.mjs
+fix-duplicate-where.mjs
+fix-final-where.mjs
+fix-remaining-parens.mjs
+fix-returning-null.mjs
+fix-ticket-where.mjs
+.superpowers/brainstorm/codex-20260528225855/content/bundles-layout-options.html
+fix-trailing-paren.mjs
+.superpowers/brainstorm/codex-20260528225855/content/waiting-after-layout.html
+scripts/cleanup-all-data.sql
+scripts/cleanup-duplicates.sql
+scripts/cleanup-generated-data.sql
+supabase/.temp/cli-latest
+supabase/seed_demo_full.sql
+scripts/generate-history-data.mts
+supabase/seed_demo_full.sql
