@@ -1,6 +1,14 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { Field } from "@/components/ui/form-field";
+import { useTickets } from "@/hooks/use-tickets";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
+import { useAuth } from "@/lib/auth-context";
+import { sendTicketAssignedEmail } from "@/lib/email-events";
+import { createNotification } from "@/lib/notifications";
 import {
   PRIORITY_LABEL,
   type TicketPriority,
@@ -9,7 +17,7 @@ import {
   DEFAULT_STRUCTURE,
   type ChecklistStructure,
 } from "@/lib/pcready";
-import activityQueries from "@/lib/queries/activity";
+import { insertActivity } from "@/lib/queries/activity";
 import {
   loadClientOptions,
   fetchClientById,
@@ -18,20 +26,11 @@ import {
   loadDeviceOptions,
   fetchDeviceById,
 } from "@/lib/queries/tickets";
-import { getInitialCreateTicketFormState } from "./createTicketFormState";
-import { Modal } from "./Modal";
-const insertActivity = activityQueries.insertActivity as any;
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Field } from "@/components/ui/form-field";
-import { useTickets } from "@/hooks/use-tickets";
-import { getPublicAppSettings, validateTechnicianDeviceLimit } from "@/lib/app-settings";
-import { useAuth } from "@/lib/auth-context";
-import { sendTicketAssignedEmail } from "@/lib/email-events";
-import { createNotification } from "@/lib/notifications";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import { createTicket } from "@/lib/tickets";
 import { AsyncAutocomplete, type AsyncAutocompleteOption } from "./AsyncAutocomplete";
+import { getInitialCreateTicketFormState } from "./createTicketFormState";
+import { Modal } from "./Modal";
 import type { Json } from "@/integrations/supabase/types";
 
 interface Tech {

@@ -3,12 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { queryClient } from "@/lib/queries/queryClient";
 
+let channelSubscribeCallback: ((status: string) => void) | undefined;
+
 const realtimeMock = {
-  stateChangeCallbacks: {
-    open: [] as [string, () => void][],
-    close: [] as [string, () => void][],
-    error: [] as [string, (error: unknown) => void][],
-  },
+  channel: vi.fn(() => ({
+    subscribe: vi.fn((cb: (status: string) => void) => {
+      channelSubscribeCallback = cb;
+      return { unsubscribe: vi.fn() };
+    }),
+  })),
   connect: vi.fn(),
   onHeartbeat: vi.fn(),
   setAuth: vi.fn(),
@@ -22,6 +25,7 @@ vi.mock("@supabase/supabase-js", () => ({
 
 describe("Realtime connection monitoring", () => {
   beforeEach(async () => {
+    channelSubscribeCallback = undefined;
     process.env.SUPABASE_URL = "https://example.supabase.co";
     process.env.SUPABASE_PUBLISHABLE_KEY = "publishable-key";
     realtimeMock.connect.mockReset();
@@ -46,7 +50,7 @@ describe("Realtime connection monitoring", () => {
     void client.supabase.realtime;
 
     client.setRealtimeConnectionStatus("disconnected");
-    realtimeMock.stateChangeCallbacks.open[0][1]();
+    channelSubscribeCallback?.("SUBSCRIBED");
 
     expect(client.getRealtimeConnectionStatus()).toBe("connected");
     expect(queryClient.refetchQueries).toHaveBeenCalledWith({ type: "active" });

@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
-import { getMyRole } from "@/lib/get-my-role";
-import { Ctx, type AppRole, type AuthProfile } from "./auth-context";
+import { Ctx, type AuthProfile } from "./auth-context";
+import { getMyAuthProfile } from "./get-my-auth-profile";
 import type { Session, User } from "@supabase/supabase-js";
 
 
@@ -20,54 +20,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const profileRequestId = useRef(0);
 
-  const getRole = useServerFn(getMyRole);
+  const getProfile = useServerFn(getMyAuthProfile);
 
-  const loadProfile = useCallback(async (uid: string, accessToken?: string | null) => {
+  const loadProfile = useCallback(async (accessToken?: string | null) => {
     const requestId = ++profileRequestId.current;
     setProfileLoading(true);
     setAuthError(null);
 
     try {
-      const [
-        { data: p, error: profileError },
-        { data: up, error: userProfileError },
-      ] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, initials").eq("id", uid).maybeSingle(),
-        supabase
-          .from("user_profiles")
-          .select("display_name, avatar_url, password_set, language")
-          .eq("id", uid)
-          .maybeSingle(),
-      ]);
-
-      // Fetch role server-side to avoid exposing admin RPC to client
-      let r: any = null;
-      let roleError: unknown = null;
-      try {
-        const roleResp = await getRole({ data: { accessToken: accessToken ?? "" } });
-        r = roleResp as any;
-      } catch (e) {
-        roleError = e;
-      }
+      // Single server round-trip: profiles + user_profiles + role all in parallel via supabaseAdmin
+      const result = await getProfile({ data: { accessToken: accessToken ?? "" } });
 
       if (requestId !== profileRequestId.current) return;
-      if (profileError) throw profileError;
-      if (userProfileError) throw userProfileError;
-      if (roleError) throw roleError;
-      if (!p) throw new Error("Profilo utente non trovato");
-      const displayName = (up as any)?.display_name || p.full_name;
-      const userLang: "it" | "en" = (up as any)?.language === "en" ? "en" : "it";
-      void i18n.changeLanguage(userLang);
 
-      setProfile({
-        id: p.id,
-        full_name: displayName,
-        initials: p.initials || displayName.slice(0, 2).toUpperCase(),
-        avatar_url: (up as any)?.avatar_url ?? null,
-        password_set: (up as any)?.password_set ?? true,
-        role: (r?.role as AppRole) ?? "viewer",
-        language: userLang,
-      });
+      void i18n.changeLanguage(result.language);
+      setProfile(result);
     } catch (err: unknown) {
       if (requestId !== profileRequestId.current) return;
       setProfile(null);
@@ -75,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (requestId === profileRequestId.current) setProfileLoading(false);
     }
-  }, [getRole]);
+  }, [getProfile]);
 
   const applySession = useCallback(
     async (s: Session | null) => {
@@ -91,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await loadProfile(s.user.id, s?.access_token ?? null);
+      await loadProfile(s?.access_token ?? null);
     },
     [loadProfile],
   );
@@ -143,7 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     canEdit: profile?.role === "admin" || profile?.role === "tech",
     isAdmin: profile?.role === "admin",
     refreshProfile: async () => {
-      if (user) await loadProfile(user.id);
+      if (!user) return;
+      const { data: { session: current } } = await supabase.auth.getSession();
+      await loadProfile(current?.access_token);
     },
     signOut: async () => {
       await supabase.auth.signOut();

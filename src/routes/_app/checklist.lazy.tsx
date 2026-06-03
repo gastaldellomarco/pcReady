@@ -47,7 +47,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { errorMessage } from "@/lib/errors";
 import { DEFAULT_STRUCTURE, type ChecklistItemDef, type ChecklistStructure } from "@/lib/pcready";
-import queries from "@/lib/queries/checklist";
+import {
+  useChecklistTemplates,
+  useTemplateCompletionStats,
+  useCreateTemplate,
+  useUpdateTemplate,
+  useDeleteTemplate,
+  useSetDefaultTemplate,
+} from "@/lib/queries/checklist";
 import { createVersion } from "@/lib/versioning";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -79,14 +86,6 @@ function ChecklistPage() {
   const [deleteTemplateTarget, setDeleteTemplateTarget] = useState<Template | null>(null);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const {
-    useChecklistTemplates,
-    useCreateTemplate,
-    useUpdateTemplate,
-    useDeleteTemplate,
-    useSetDefaultTemplate,
-    useTemplateCompletionStats,
-  } = queries as any;
   const listQuery = useChecklistTemplates();
   const statsQuery = useTemplateCompletionStats();
   const createMut = useCreateTemplate();

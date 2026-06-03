@@ -21,7 +21,7 @@ import {
 } from "@/lib/device-taxonomy";
 import { errorMessage } from "@/lib/errors";
 import { OS_OPTIONS } from "@/lib/pcready";
-import activityQueries from "@/lib/queries/activity";
+import { insertActivity } from "@/lib/queries/activity";
 import inventoryQueries from "@/lib/queries/inventory";
 import { loadClientOptions } from "@/lib/queries/tickets";
 import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/schemas/devices";
@@ -226,7 +226,6 @@ export function AddDeviceModal() {
         created_by: user!.id,
       };
       const data = await createDeviceMut.mutateAsync(deviceInsert as any);
-      const insertActivity = activityQueries.insertActivity as any;
       await insertActivity({
         type: "user",
         message: t("addDevice.activityAdded", { tag: data.asset_tag || data.serial || values.model, defaultValue: "Dispositivo {{tag}} aggiunto all'inventario" }),

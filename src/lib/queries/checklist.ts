@@ -385,17 +385,3 @@ export function useTemplateCompletionStats() {
   });
 }
 
-export default {
-  fetchChecklistTemplates,
-  useChecklistTemplates,
-  useCreateTemplate,
-  useUpdateTemplate,
-  useDeleteTemplate,
-  useSetDefaultTemplate,
-  fetchTicketChecklistInstances,
-  useTicketChecklistInstances,
-  useCreateTicketChecklistInstance,
-  useUpsertTicketChecklistResponse,
-  useCompleteTicketChecklistInstance,
-  useTemplateCompletionStats,
-};

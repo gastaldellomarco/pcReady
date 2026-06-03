@@ -209,26 +209,27 @@ const STATUS_ORDER: Record<string, number> = {
   archived: 5,
 };
 
-/**
- *
- */
-export async function fetchTicketsList(params: TicketsListParams) {
-  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
-  const page = params.page ?? 0;
+const TICKET_LIST_SELECT =
+  "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
 
+const ARCHIVED_TICKET_LIST_SELECT =
+  "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
+
+/**
+ * Shared query builder for ticket list queries.
+ * Applies all dynamic filters and sorting to a Supabase query.
+ * Used by both fetchTicketsList (paginated) and fetchAllTicketsList (full export).
+ */
+function buildTicketsQuery(params: TicketsListParams, opts?: { count?: boolean }) {
   let query = supabase
     .from("tickets")
-    .select(
-      "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)",
-      { count: "exact" },
-    )
+    .select(TICKET_LIST_SELECT, opts?.count ? { count: "exact" } : undefined)
     .not("status", "eq", "archived" as any);
 
-  // Apply dynamic sorting
+  // Dynamic sorting
   const sortBy = params.sortBy ?? "created_at";
   const sortDir = params.sortDir ?? "desc";
   if (sortBy === "priority") {
-    // Sort by priority field directly — we'll re-sort client-side for custom order
     query = query.order("priority", { ascending: sortDir === "asc" });
   } else if (sortBy === "status") {
     query = query.order("status", { ascending: sortDir === "asc" });
@@ -236,8 +237,8 @@ export async function fetchTicketsList(params: TicketsListParams) {
     query = query.order("created_at", { ascending: sortDir === "asc" });
   }
 
-  if (params.status && params.status !== "archived")
-    query = query.eq("status", params.status as any);
+  // Dynamic filters
+  if (params.status && params.status !== "archived") query = query.eq("status", params.status as any);
   if (params.priority) query = query.eq("priority", params.priority as any);
   if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
   if (params.client_id) query = query.eq("client_id", params.client_id as any);
@@ -247,22 +248,38 @@ export async function fetchTicketsList(params: TicketsListParams) {
   const q = (params.q || "").trim().replace(/[,%]/g, "");
   if (q) query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
 
-  const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-  if (error) throw error;
+  return { query, sortBy, sortDir };
+}
 
-  // Client-side sort for priority if needed
-  const result = (data ?? []) as any[];
+/**
+ * Client-side sort for priority/status fields which need custom ordering.
+ */
+function applyClientSideSort<T extends Record<string, any>>(data: T[], sortBy: string, sortDir: string): T[] {
   if (sortBy === "priority") {
     const dir = sortDir === "asc" ? 1 : -1;
-    result.sort(
+    return [...data].sort(
       (a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir,
     );
   } else if (sortBy === "status") {
     const dir = sortDir === "asc" ? 1 : -1;
-    result.sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
+    return [...data].sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
   }
+  return data;
+}
 
-  return { data: result, count: count ?? 0 };
+/**
+ * Fetch a paginated list of tickets with filters.
+ */
+export async function fetchTicketsList(params: TicketsListParams) {
+  const PAGE_SIZE = params.pageSize ?? LIST_PAGE_SIZE;
+  const page = params.page ?? 0;
+
+  const { query, sortBy, sortDir } = buildTicketsQuery(params, { count: true });
+
+  const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  if (error) throw error;
+
+  return { data: applyClientSideSort(data ?? [], sortBy, sortDir), count: count ?? 0 };
 }
 
 /**
@@ -452,59 +469,18 @@ export async function fetchStatusChangeTimestamps(ticketIds: string[]): Promise<
   return map;
 }
 
-const ARCHIVED_TICKET_LIST_SELECT =
-  "id, ticket_code, client, client_id, requester, ticket_type, priority, status, created_at, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
-
-const TICKET_LIST_SELECT =
-  "id, ticket_code, client, client_id, requester, ticket_type, priority, source, status, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, assignee_id, completed_at, client_ref:clients(name), device:devices(model, serial, os), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";
-
 /**
  * Fetch ALL matching tickets without pagination (for PDF export).
- * Reuses the same filtering logic as fetchTicketsList but omits .range().
+ * Uses the same shared query builder as fetchTicketsList.
  */
 export async function fetchAllTicketsList(params: TicketsListParams) {
-  let query = supabase
-    .from("tickets")
-    .select(TICKET_LIST_SELECT, { count: "exact" })
-    .not("status", "eq", "archived" as any);
-
-  const sortBy = params.sortBy ?? "created_at";
-  const sortDir = params.sortDir ?? "desc";
-  if (sortBy === "priority") {
-    query = query.order("priority", { ascending: sortDir === "asc" });
-  } else if (sortBy === "status") {
-    query = query.order("status", { ascending: sortDir === "asc" });
-  } else {
-    query = query.order("created_at", { ascending: sortDir === "asc" });
-  }
-
-  if (params.status && params.status !== "archived")
-    query = query.eq("status", params.status as any);
-  if (params.priority) query = query.eq("priority", params.priority as any);
-  if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
-  if (params.client_id) query = query.eq("client_id", params.client_id as any);
-  if (params.assignee_id) query = query.eq("assignee_id", params.assignee_id as any);
-  if (params.dateFrom) query = query.gte("created_at", params.dateFrom);
-  if (params.dateTo) query = query.lte("created_at", params.dateTo + "T23:59:59.999Z");
-  const q = (params.q || "").trim().replace(/[,%]/g, "");
-  if (q) query = query.or(`ticket_code.ilike.%${q}%,requester.ilike.%${q}%`);
+  const { query, sortBy, sortDir } = buildTicketsQuery(params, { count: true });
 
   // No .range() — fetches all matching rows
   const { data, count, error } = await query;
   if (error) throw error;
 
-  const result = (data ?? []) as any[];
-  if (sortBy === "priority") {
-    const dir = sortDir === "asc" ? 1 : -1;
-    result.sort(
-      (a, b) => ((PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)) * dir,
-    );
-  } else if (sortBy === "status") {
-    const dir = sortDir === "asc" ? 1 : -1;
-    result.sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
-  }
-
-  return { data: result, count: count ?? 0 };
+  return { data: applyClientSideSort(data ?? [], sortBy, sortDir), count: count ?? 0 };
 }
 
 /**
@@ -543,31 +519,3 @@ export function useArchivedTicketsInfiniteList(params: { pageSize?: number }) {
   });
 }
 
-export default {
-  loadClientOptions,
-  fetchClientById,
-  loadContactOptions,
-  fetchContactById,
-  loadDeviceOptions,
-  fetchDeviceById,
-  useCreateTicket,
-  fetchTicketById,
-  fetchTicketAssignments,
-  fetchTicketAssignmentHistory,
-  fetchTicketStatusHistory,
-  useTicketQuery,
-  useTicketAssignmentsQuery,
-  useTicketHistoryQuery,
-  useTicketStatusHistoryQuery,
-  useUpdateTicket,
-  useDeleteTicket,
-  fetchTicketsList,
-  fetchAllTicketsList,
-  useTicketsList,
-  useTicketsInfiniteList,
-  fetchArchivedTicketsList,
-  useArchivedTicketsInfiniteList,
-  addTicketStatusHistory,
-  useAddTicketStatusHistory,
-  fetchStatusChangeTimestamps,
-};

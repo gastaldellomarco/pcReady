@@ -17,4 +17,3 @@ export function useInsertActivity() {
   return useMutation({ mutationFn: (payload: Record<string, any>) => insertActivity(payload) });
 }
 
-export default { insertActivity, useInsertActivity };

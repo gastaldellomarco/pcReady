@@ -49,9 +49,8 @@ import {
   PRIORITY_LABEL,
   TICKET_TYPE_LABEL,
 } from "@/lib/pcready";
-import activityQueries from "@/lib/queries/activity";
-import { fetchTicketsList, fetchStatusChangeTimestamps, loadClientOptions } from "@/lib/queries/tickets";
-import queries from "@/lib/queries/tickets";
+import { insertActivity } from "@/lib/queries/activity";
+import { fetchTicketsList, fetchStatusChangeTimestamps, loadClientOptions, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { cn } from "@/lib/utils";
 
@@ -229,7 +228,6 @@ function KanbanPage() {
     window.localStorage.setItem(KANBAN_VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
-  const { useUpdateTicket } = queries as any;
   const updateTicket = useUpdateTicket();
   const { data: liveTickets, loading: ticketsLoading } = useRealtimeTable<Card>(
     "tickets",
@@ -369,7 +367,7 @@ function KanbanPage() {
     }
     // Insert status history record when status changes
     if (card.status !== status) {
-      await (queries as any).addTicketStatusHistory(id, {
+      await addTicketStatusHistory(id, {
         from_status: card.status,
         to_status: status,
         changed_by: user!.id,
@@ -396,7 +394,7 @@ function KanbanPage() {
         toast.error(t("toasts.completeEmailError", "Ticket completato, ma errore invio email/verbale"));
       });
     }
-    await (activityQueries.insertActivity as any)({
+    await insertActivity({
       type: "user",
       message: `${card.ticket_code}: stato → "${t("tickets:status." + status, STATUS_META[status].label)}" (kanban)`,
       ticket_id: card.id,
@@ -555,7 +553,7 @@ function KanbanPage() {
       if (patch.status) {
         await Promise.all(
           ids.map((ticketId) =>
-            (queries as any).addTicketStatusHistory(ticketId, {
+            addTicketStatusHistory(ticketId, {
               from_status: previousById.get(ticketId)?.status ?? null,
               to_status: patch.status,
               changed_by: user!.id,
@@ -566,7 +564,7 @@ function KanbanPage() {
         );
       }
 
-      await (activityQueries.insertActivity as any)({
+      await insertActivity({
         type: "user",
         message: `${actionLabel}: ${ids.length} ticket da Kanban`,
         actor_id: user!.id,

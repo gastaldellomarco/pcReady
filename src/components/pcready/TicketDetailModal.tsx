@@ -54,10 +54,26 @@ import {
   computeSlaStatus,
   formatSlaCountdown,
 } from "@/lib/pcready";
-import activityQueries from "@/lib/queries/activity";
-import checklistQueries, { type TicketChecklistInstanceRow } from "@/lib/queries/checklist";
+import { insertActivity } from "@/lib/queries/activity";
+import {
+  useChecklistTemplates,
+  useTicketChecklistInstances,
+  useCreateTicketChecklistInstance,
+  useUpsertTicketChecklistResponse,
+  useCompleteTicketChecklistInstance,
+  type TicketChecklistInstanceRow,
+} from "@/lib/queries/checklist";
 import { QUERY_KEYS } from "@/lib/queries/keys";
-import queries, { loadDeviceOptions } from "@/lib/queries/tickets";
+import {
+  loadDeviceOptions,
+  useTicketQuery,
+  useTicketAssignmentsQuery,
+  useTicketHistoryQuery,
+  useTicketStatusHistoryQuery,
+  useUpdateTicket,
+  useDeleteTicket,
+  addTicketStatusHistory,
+} from "@/lib/queries/tickets";
 import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import { parseChecklistStructure } from "@/types/checklist-structure";
@@ -158,22 +174,12 @@ export function TicketDetailModal() {
     cost_notes: "",
   });
 
-  const {
-    useTicketQuery,
-    useTicketAssignmentsQuery,
-    useTicketHistoryQuery,
-    useTicketStatusHistoryQuery,
-    useUpdateTicket,
-    useDeleteTicket,
-  } = queries as any;
   const ticketQuery = useTicketQuery(id);
   const assignmentsQuery = useTicketAssignmentsQuery(id);
   const deviceHistoryQuery = useTicketHistoryQuery(id);
   const statusHistoryQuery = useTicketStatusHistoryQuery(id);
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
-  const insertActivity = activityQueries.insertActivity as any;
-  const addTicketStatusHistory = (queries as any).addTicketStatusHistory as any;
   const qc = useQueryClient();
   const timeSummaryQuery = useTicketTimeSummary(id, user?.id);
   const bundleInfoQuery = useQuery({
@@ -181,13 +187,13 @@ export function TicketDetailModal() {
     queryFn: () => fetchTicketBundleInfo(id as string),
     enabled: !!id,
   });
-  const checklistTemplatesQuery = (checklistQueries as any).useChecklistTemplates();
-  const checklistInstancesQuery = (checklistQueries as any).useTicketChecklistInstances(id);
-  const createChecklistInstance = (checklistQueries as any).useCreateTicketChecklistInstance();
-  const upsertChecklistResponse = (checklistQueries as any).useUpsertTicketChecklistResponse(
+  const checklistTemplatesQuery = useChecklistTemplates();
+  const checklistInstancesQuery = useTicketChecklistInstances(id);
+  const createChecklistInstance = useCreateTicketChecklistInstance();
+  const upsertChecklistResponse = useUpsertTicketChecklistResponse(
     id || "",
   );
-  const completeChecklistInstance = (checklistQueries as any).useCompleteTicketChecklistInstance(
+  const completeChecklistInstance = useCompleteTicketChecklistInstance(
     id || "",
   );
 

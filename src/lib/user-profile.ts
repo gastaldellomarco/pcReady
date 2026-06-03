@@ -151,16 +151,30 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const user = await getAuthedUser(accessToken);
 
     const fallbackName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente";
-    const { data: profile, error } = await supabaseAdmin
-      .from("user_profiles")
-      .select(USER_PROFILE_SELECT)
-      .eq("id", user.id)
-      .maybeSingle();
+
+    // Run user_profiles and activity_log in parallel — they're independent
+    const [
+      { data: profile, error },
+      { data: activity, error: activityError },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("user_profiles")
+        .select(USER_PROFILE_SELECT)
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("activity_log")
+        .select("id, type, message, ticket_id, created_at")
+        .eq("actor_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(8),
+    ]);
 
     if (error) {
       console.error("[getMyProfile] failed to load user profile:", error);
       throw error;
     }
+    if (activityError) throw activityError;
 
     let row = profile as Partial<UserProfile> | null;
     if (!row) {
@@ -175,15 +189,6 @@ export const getMyProfile = createServerFn({ method: "GET" })
       }
       row = inserted as Partial<UserProfile>;
     }
-
-    const { data: activity, error: activityError } = await supabaseAdmin
-      .from("activity_log")
-      .select("id, type, message, ticket_id, created_at")
-      .eq("actor_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(8);
-
-    if (activityError) throw activityError;
 
     return {
       id: user.id,
