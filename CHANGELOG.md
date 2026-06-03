@@ -13,6 +13,60 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## [1.3.0] - 2026-06-03
+
+### Added
+- Refactor activity logging and improve auth profile fetching
+- Enhance costs page with date presets and localStorage persistence
+- Implement 2FA login flow in portal
+- Enhance checklist structure with groups and sections
+- Extract reusable Field component for form handling
+- Update material_cost precision and add finance extensions
+- Implement reusable TicketCard component for Kanban and SwimLane views
+- Refactor Kanban components and introduce new features
+- Add client detail extensions including notes, tags, documents, and contract alerts
+- Enhance event management with client support, recurrence, and reminders
+- Add widget annotations feature with CRUD operations
+- Update GitHub Actions workflows to use latest action versions and improve accessibility tests
+- Enhance ticket navigation and script management
+- Add DatePickerInput component and integrate it across various forms
+- Add tests for useAutomationRules and flow-builder functionality
+- Implement AppShell layout with Sidebar, TopBar, and AuthGuard
+- Add hooks for admin audit, settings, and automation management
+- Implement virtual list for inventory and tickets pages
+
+### Changed
+- Refactor activity logging and improve auth profile fetching
+- Enhance costs page with date presets and localStorage persistence
+- Reorganize imports and update icon sizes across portal routes
+- Implement 2FA login flow in portal
+- Enhance checklist structure with groups and sections
+- Add UNIQUE constraints to various tables for idempotent seed execution
+- Add bundles renewal design spec
+- Extract reusable Field component for form handling
+- Update material_cost precision and add finance extensions
+- Implement reusable TicketCard component for Kanban and SwimLane views
+- Refactor Kanban components and introduce new features
+- Add client detail extensions including notes, tags, documents, and contract alerts
+- Enhance event management with client support, recurrence, and reminders
+- Add widget annotations feature with CRUD operations
+- Enhance mobile responsiveness and UI improvements across various components
+- Update GitHub Actions workflows to use latest action versions and improve accessibility tests
+- Enhance ticket navigation and script management
+- Add DatePickerInput component and integrate it across various forms
+- Add tests for useAutomationRules and flow-builder functionality
+- Remove unused runningRuleId state and related logic from useAutomationRules and AutomationsPage
+- Reorganize hooks and utilities into src/hooks and src/lib
+- Implement AppShell layout with Sidebar, TopBar, and AuthGuard
+- Enhance useAdminSettingsForm tests with submit functionality and mocks
+- Add hooks for admin audit, settings, and automation management
+- Untrack generated routeTree.gen.ts
+- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
+- Implement virtual list for inventory and tickets pages
+
+### Fixed
+- Enhance costs page with date presets and localStorage persistence
+
 ## [1.2.0] - 2026-05-26
 
 ### Added
@@ -182,5 +236,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 [1.0.0]: https://github.com/gastaldellomarco/pcReady/compare/vv0.23.0...v1.0.0
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
 [1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
-[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...v1.2.0
+
+[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...v1.3.0
