@@ -211,6 +211,7 @@ function ScriptsPage() {
           className="pc-input max-w-[200px]"
           value={cat}
           onChange={(e) => setCat(e.target.value)}
+          aria-label={t("filter.categoryLabel", "Filtra per categoria")}
         >
           <option value="">{t("allCategories", "Tutte le categorie")}</option>
           {cats.map((c) => (
@@ -858,7 +859,7 @@ function ScriptEditor({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label={t("editor.fieldLanguage", "Linguaggio")}>
-            <select className="pc-input" {...form.register("language")}>
+            <select className="pc-input" {...form.register("language")} aria-label={t("editor.fieldLanguage", "Linguaggio")}>
               {LANGUAGES.map((l) => (
                 <option key={l} value={l}>
                   {l}

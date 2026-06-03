@@ -167,8 +167,27 @@ type PeriodicReportRow = {
 };
 
 const today = new Date();
-const defaultDateFrom = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
 const defaultDateTo = today.toISOString().slice(0, 10);
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(today.getDate() - 30);
+const defaultDateFrom = thirtyDaysAgo.toISOString().slice(0, 10);
+
+function getPeriodPresets(t: (key: string, def: string) => string): Array<{ label: string; from: string; to: string }> {
+  const now = new Date();
+  const to = now.toISOString().slice(0, 10);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const daysAgo = (n: number) => { const d = new Date(now); d.setDate(now.getDate() - n); return d; };
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  return [
+    { label: t("presets.today", "Oggi"), from: fmt(now), to },
+    { label: t("presets.last7", "Ultimi 7 giorni"), from: fmt(daysAgo(7)), to },
+    { label: t("presets.lastMonth", "Ultimo mese"), from: fmt(daysAgo(30)), to },
+    { label: t("presets.last3Months", "Ultimi 3 mesi"), from: fmt(daysAgo(90)), to },
+    { label: t("presets.currentMonth", "Mese corrente"), from: fmt(startOfMonth), to },
+    { label: t("presets.currentYear", "Anno corrente"), from: fmt(startOfYear), to },
+  ];
+}
 
 const emptyContractDraft: ContractDraft = {
   client_id: "",
@@ -228,10 +247,18 @@ function CostsPage() {
   const { canEdit, profile } = useAuth();
   const canManageCosts = profile?.role === "admin" || profile?.role === "tech";
   const { t } = useTranslation("costs");
-  const [dateFrom, setDateFrom] = useState(defaultDateFrom);
-  const [dateTo, setDateTo] = useState(defaultDateTo);
-  const [clientFilter, setClientFilter] = useState("all");
-  const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState(() => {
+    try { return localStorage.getItem("costs.dateFrom") || defaultDateFrom; } catch { return defaultDateFrom; }
+  });
+  const [dateTo, setDateTo] = useState(() => {
+    try { return localStorage.getItem("costs.dateTo") || defaultDateTo; } catch { return defaultDateTo; }
+  });
+  const [clientFilter, setClientFilter] = useState(() => {
+    try { return localStorage.getItem("costs.clientFilter") || "all"; } catch { return "all"; }
+  });
+  const [technicianFilter, setTechnicianFilter] = useState(() => {
+    try { return localStorage.getItem("costs.technicianFilter") || "all"; } catch { return "all"; }
+  });
   const [tickets, setTickets] = useState<TicketCostRow[]>([]);
   const [contracts, setContracts] = useState<ContractRow[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -318,6 +345,16 @@ function CostsPage() {
     void loadData();
   }, [loadData]);
 
+  // Persist date range to localStorage so it's remembered across visits
+  useEffect(() => {
+    try {
+      localStorage.setItem("costs.dateFrom", dateFrom);
+      localStorage.setItem("costs.dateTo", dateTo);
+      localStorage.setItem("costs.clientFilter", clientFilter);
+      localStorage.setItem("costs.technicianFilter", technicianFilter);
+    } catch { /* localStorage unavailable — ignore */ }
+  }, [dateFrom, dateTo, clientFilter, technicianFilter]);
+
   const technicians = useMemo(
     () =>
       Array.from(
@@ -330,14 +367,33 @@ function CostsPage() {
     [tickets],
   );
 
+  const clientNameMap = useMemo(
+    () =>
+      new Map(
+        clients.map((c) => [c.id, c.company_name || c.name] as const),
+      ),
+    [clients],
+  );
+
+  const enrichedTickets = useMemo(
+    () =>
+      tickets.map((ticket) => ({
+        ...ticket,
+        client_name:
+          ticket.client_name ||
+          (ticket.client_id ? (clientNameMap.get(ticket.client_id) ?? null) : null),
+      })),
+    [tickets, clientNameMap],
+  );
+
   const filteredTickets = useMemo(
     () =>
-      tickets.filter((ticket) => {
+      enrichedTickets.filter((ticket) => {
         if (clientFilter !== "all" && ticket.client_id !== clientFilter) return false;
         if (technicianFilter !== "all" && ticket.assignee_id !== technicianFilter) return false;
         return true;
       }),
-    [clientFilter, technicianFilter, tickets],
+    [clientFilter, technicianFilter, enrichedTickets],
   );
 
   const filteredContracts = useMemo(
@@ -962,6 +1018,7 @@ function CostsPage() {
               className="pc-input"
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
+              aria-label={t("filters.clientLabel", "Filtra per cliente")}
             >
               <option value="all">{t("filters.allClients", "Tutti i clienti")}</option>
               {clients.map((client) => (
@@ -974,6 +1031,7 @@ function CostsPage() {
               className="pc-input"
               value={technicianFilter}
               onChange={(e) => setTechnicianFilter(e.target.value)}
+              aria-label={t("filters.technicianLabel", "Filtra per tecnico")}
             >
               <option value="all">{t("filters.allTechnicians", "Tutti i tecnici")}</option>
               {technicians.map(([id, name]) => (
@@ -992,6 +1050,21 @@ function CostsPage() {
               <Download className="size-3" /> {t("exportCsvBtn", "CSV")}
             </button>
           </div>
+          <div className="flex flex-wrap items-center gap-1 -mt-1">
+            {getPeriodPresets(t).map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                className={`pc-btn pc-btn-xs ${dateFrom === preset.from && dateTo === preset.to ? "pc-btn-primary" : "pc-btn-ghost"}`}
+                onClick={() => {
+                  setDateFrom(preset.from);
+                  setDateTo(preset.to);
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1003,11 +1076,18 @@ function CostsPage() {
         <CostStat label={t("stats.recurring", "Canoni attivi")} value={formatCurrency(summary.recurring)} />
         <CostStat
           label={t("stats.estimatedMargin", "Margine stimato")}
-          value={formatCurrency(summary.estimatedRevenue - summary.materials)}
+          value={summary.recurring > 0 ? `${formatCurrency(summary.estimatedRevenue - summary.materials)} (${((summary.estimatedRevenue - summary.materials) / summary.recurring * 100).toFixed(0)}%)` : formatCurrency(summary.estimatedRevenue - summary.materials)}
           tone="success"
-          helpText={t("stats.marginFormula", "Canoni attivi + Totale ticket − Costi materiali")}
+          helpText={summary.ticketTotal === 0 && summary.recurring > 0
+            ? t("stats.marginRecurringOnly", "Solo canoni contrattuali")
+            : t("stats.marginFormula", "Canoni attivi + Totale ticket − Costi materiali")}
         />
       </div>
+      {summary.ticketTotal === 0 && summary.recurring > 0 && (
+        <div className="rounded-lg border border-dashed px-4 py-2.5 text-sm text-text3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+          {t("stats.noTicketMarginNote", "Nessun ticket fatturabile nel periodo. Il margine include solo i canoni contrattuali.")}
+        </div>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="pc-card">
@@ -1111,26 +1191,38 @@ function CostsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              {budgetUsage.slice(0, 5).map((budget) => (
-                <div key={budget.budget_id} className="rounded-lg border p-3" style={{ borderColor: budget.alert_active ? "var(--warning)" : "var(--border)" }}>
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-semibold">{budget.client_name}</span>
-                    <span className="font-mono">{money(budget.used_percent).toFixed(0)}%</span>
+              {budgetUsage.slice(0, 5).map((budget) => {
+                const pct = money(budget.used_percent);
+                const overBudget = pct > 100;
+                const warning = pct >= 80 && pct <= 100;
+                const budgetColor = overBudget ? "#ef4444" : warning ? "#f97316" : "#22c55e";
+                const overAmount = overBudget ? money(budget.used_amount) - money(budget.budget_amount) : 0;
+                return (
+                  <div key={budget.budget_id} className="rounded-lg border p-3" style={{ borderColor: overBudget ? "#ef4444" : warning ? "#f97316" : "var(--border)" }}>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="font-semibold">{budget.client_name}</span>
+                      <span className="font-mono" style={{ color: overBudget ? "#ef4444" : undefined }}>{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface2">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, pct)}%`,
+                          background: budgetColor,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-text3">
+                      <span>{formatCurrency(budget.used_amount)} / {formatCurrency(budget.budget_amount)}</span>
+                      {overBudget && (
+                        <span style={{ color: "#ef4444" }}>
+                          {t("budget.overBudget", "Superato di {{amount}}", { amount: formatCurrency(overAmount) })}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface2">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.min(100, money(budget.used_percent))}%`,
-                        background: budget.alert_active ? "var(--warning)" : "var(--success)",
-                      }}
-                    />
-                  </div>
-                  <div className="mt-1 text-xs text-text3">
-                    {formatCurrency(budget.used_amount)} / {formatCurrency(budget.budget_amount)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {!budgetUsage.length && <div className="text-sm text-text3">{t("finance.noBudgets", "Nessun budget attivo.")}</div>}
             </div>
           </div>
@@ -1625,7 +1717,13 @@ function CostsPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         <FinanceTable
           title={t("finance.invoicesTitle", "Fatture e pagamenti")}
-          empty={t("finance.noInvoices", "Nessuna fattura generata.")}
+          empty={t("finance.noInvoices", "Nessuna fattura nel periodo selezionato.")}
+          emptyIcon={<FileText className="h-8 w-8" />}
+          emptyAction={canManageCosts ? (
+            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              {t("finance.createFirstInvoice", "Crea prima fattura")}
+            </button>
+          ) : undefined}
           actions={
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportAccountingCsv} disabled={!invoices.length}>
               <Download className="size-3" /> {t("finance.exportAccountingCsv", "CSV contabile")}
@@ -1659,7 +1757,13 @@ function CostsPage() {
 
         <FinanceTable
           title={`${t("finance.quotesTitle", "Preventivi")} · ${periodicReports.length} report`}
-          empty={t("finance.noQuotes", "Nessun preventivo.")}
+          empty={t("finance.noQuotes", "Nessun preventivo nel periodo selezionato.")}
+          emptyIcon={<Send className="h-8 w-8" />}
+          emptyAction={canManageCosts ? (
+            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}>
+              {t("finance.createFirstQuote", "Crea primo preventivo")}
+            </button>
+          ) : undefined}
           actions={
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={scheduleMonthlyReports} disabled={busy}>
               <Send className="size-3" /> {t("finance.scheduleReports", "Report mensili")}
@@ -1737,6 +1841,7 @@ function CostsPage() {
                 className="pc-input text-xs w-auto"
                 value={detailGroupBy}
                 onChange={(e) => setDetailGroupBy(e.target.value as "none" | "client" | "technician")}
+                aria-label={t("detailTable.groupByLabel", "Raggruppamento")}
               >
                 <option value="none">{t("detailTable.groupByNone", "Nessun raggruppamento")}</option>
                 <option value="client">{t("detailTable.groupByClient", "Raggruppa per cliente")}</option>
@@ -1865,10 +1970,21 @@ function CostsPage() {
         </div>
         <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-2">
           {filteredContracts.map((contract) => {
-            const usedHours = filteredTickets
-              .filter((ticket) => ticket.client_id === contract.client_id)
-              .reduce((sum, ticket) => sum + money(ticket.billable_hours), 0);
-            const extraHours = Math.max(0, usedHours - money(contract.included_hours));
+            const contractTickets = enrichedTickets.filter((ticket) => {
+              // Match by client_id (primary)
+              if (ticket.client_id && ticket.client_id === contract.client_id) return true;
+              // Fallback: match by client name when client_id is NULL (pre-backfill tickets)
+              if (!ticket.client_id && ticket.client_name && contract.client) {
+                const contractName = (contract.client.company_name || contract.client.name || "").toLowerCase().trim();
+                return contractName !== "" && ticket.client_name.toLowerCase().trim() === contractName;
+              }
+              return false;
+            });
+            const associatedCount = contractTickets.length;
+            const usedHours = contractTickets.reduce((sum, ticket) => sum + money(ticket.billable_hours), 0);
+            const includedH = money(contract.included_hours);
+            const usedPct = includedH > 0 ? Math.min(100, (usedHours / includedH) * 100) : 0;
+            const extraHours = Math.max(0, usedHours - includedH);
             return (
               <div
                 key={contract.id}
@@ -1894,12 +2010,34 @@ function CostsPage() {
                     label={t("contracts.includedHours", "Ore incluse")}
                     value={formatHours(contract.included_hours)}
                   />
-                  <ContractMetric label={t("contracts.usedHours", "Ore usate")} value={formatHours(usedHours)} />
+                  <ContractMetric label={t("contracts.associatedTickets", "Ticket associati")} value={String(associatedCount)} />
                   <ContractMetric
                     label={t("contracts.estimatedExtra", "Extra stimato")}
                     value={formatCurrency(extraHours * money(contract.extra_hourly_rate))}
                   />
                 </div>
+                {includedH > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-text3 mb-1">
+                      <span>{t("contracts.hoursUsed", "Ore usate")}</span>
+                      <span className="font-mono">{formatHours(usedHours)} / {formatHours(contract.included_hours)} ({usedPct.toFixed(0)}%)</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-surface2">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, usedPct)}%`,
+                          background: usedPct >= 100 ? "#ef4444" : usedPct >= 80 ? "#f97316" : "#22c55e",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {associatedCount === 0 && (
+                  <div className="mt-2 text-xs text-text4">
+                    {t("contracts.noLinkedTickets", "Nessun ticket collegato a questo contratto")}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2102,11 +2240,15 @@ function CostsPage() {
 function FinanceTable({
   title,
   empty,
+  emptyIcon,
+  emptyAction,
   actions,
   children,
 }: {
   title: string;
   empty: string;
+  emptyIcon?: ReactNode;
+  emptyAction?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -2131,7 +2273,13 @@ function FinanceTable({
             {children}
             {Array.isArray(children) && children.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-text3" colSpan={5}>{empty}</td>
+                <td className="px-3 py-10 text-center" colSpan={5}>
+                  <div className="flex flex-col items-center gap-2 text-text3">
+                    {emptyIcon && <div className="text-text4">{emptyIcon}</div>}
+                    <div className="text-sm">{empty}</div>
+                    {emptyAction && <div className="mt-1">{emptyAction}</div>}
+                  </div>
+                </td>
               </tr>
             )}
           </tbody>

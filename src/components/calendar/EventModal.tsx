@@ -364,7 +364,7 @@ export function EventModal({
             <Label className="flex items-center gap-2"><Repeat className="size-4" />{t("modal.recurrenceLabel", "Ricorrenza")}</Label>
             <div className="grid grid-cols-3 gap-3">
               <Select value={recurrence} onValueChange={(v) => setRecurrence(v as "none" | RecurrenceFrequency)} disabled={!canEdit || isPending || !!event?.is_recurring_instance}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label={t("modal.recurrenceLabel", "Ricorrenza")}><SelectValue /></SelectTrigger>
                 <SelectContent>{RECURRENCE_VALUES.map((value) => <SelectItem key={value} value={value}>{t(`recurrence.${value}`)}</SelectItem>)}</SelectContent>
               </Select>
               <Input type="number" min="1" value={recurrenceInterval} onChange={(e) => setRecurrenceInterval(e.target.value)} disabled={!canEdit || isPending || recurrence === "none" || !!event?.is_recurring_instance} />

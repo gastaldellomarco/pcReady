@@ -585,7 +585,7 @@ export function DeviceDetailModal() {
     setSavingIdentity(true);
     try {
       const payload = {
-        asset_tag: identityDraft.asset_tag.trim() || null,
+        asset_tag: identityDraft.asset_tag.trim() || "",
         serial: identityDraft.serial.trim() || null,
       };
       const { error } = await supabase.from("devices").update(payload).eq("id", d.id);

@@ -90,6 +90,7 @@ export function ColumnNote({
           onBlur={commit}
           onKeyDown={handleKeyDown}
           placeholder="Scrivi una nota per questa colonna…"
+          aria-label="Nota colonna"
           rows={2}
           className="w-full resize-none rounded-[7px] border-0 bg-transparent px-2.5 py-2 text-[11px] leading-relaxed text-text outline-none placeholder:text-text4"
           autoFocus

@@ -706,6 +706,7 @@ function ClientsPage() {
             <div className="flex items-center gap-2">
               <Tags className="size-4 text-text3" />
               <select
+                aria-label={t("tags.filterLabel", "Filtra per tag")}
                 className="pc-input h-9 text-xs"
                 value={tagFilter}
                 onChange={(event) => setTagFilter(event.target.value)}
@@ -1967,13 +1968,13 @@ function ClientDocumentsPanel({
   return (
     <div className="pc-card-body space-y-4">
       <div className="grid grid-cols-1 gap-3 rounded-md border p-3 md:grid-cols-[180px_minmax(0,1fr)_auto]" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
-        <select className="pc-input" value={documentType} disabled={!canEdit || busy} onChange={(event) => setDocumentType(event.target.value as any)}>
+        <select className="pc-input" value={documentType} disabled={!canEdit || busy} onChange={(event) => setDocumentType(event.target.value as any)} aria-label={t("documents.typeLabel", "Tipo documento")}>
           <option value="contract">{t("documents.typeContract", "Contratto")}</option>
           <option value="nda">{t("documents.typeNda", "NDA")}</option>
           <option value="technical">{t("documents.typeTechnical", "Tecnico")}</option>
           <option value="other">{t("documents.typeOther", "Altro")}</option>
         </select>
-        <input className="pc-input" value={description} disabled={!canEdit || busy} placeholder={t("documents.description", "Descrizione documento")} onChange={(event) => setDescription(event.target.value)} />
+        <input className="pc-input" value={description} disabled={!canEdit || busy} placeholder={t("documents.description", "Descrizione documento")} onChange={(event) => setDescription(event.target.value)} aria-label={t("documents.descriptionLabel", "Descrizione documento")} />
         <label className="pc-btn pc-btn-primary pc-btn-sm justify-center">
           <Upload className="size-3" /> {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
           <input type="file" className="hidden" disabled={!canEdit || busy} onChange={(event) => void upload(event.target.files?.[0] ?? null)} />
@@ -2184,7 +2185,7 @@ function ClientSettingsPanel({
               <input className="pc-input" type="number" min={1} value={daysBefore} disabled={!canEdit || busy} onChange={(event) => setDaysBefore(Number(event.target.value || 30))} />
             </Field>
             <Field label={t("alerts.channel", "Canale")}>
-              <select className="pc-input" value={channel} disabled={!canEdit || busy} onChange={(event) => setChannel(event.target.value as any)}>
+              <select className="pc-input" value={channel} disabled={!canEdit || busy} onChange={(event) => setChannel(event.target.value as any)} aria-label={t("alerts.channelLabel", "Canale notifica")}>
                 <option value="in_app">{t("alerts.inApp", "In-app")}</option>
                 <option value="email">{t("alerts.email", "Email")}</option>
               </select>

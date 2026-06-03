@@ -166,9 +166,7 @@ function TicketsPage() {
   const { t } = useTranslation("tickets");
   const { search } = useTickets();
   const { session, user, canEdit } = useAuth();
-  const [rows, setRows] = useState<Row[]>([]);
   const [selectedClient, setSelectedClient] = useState<AsyncAutocompleteOption | null>(null);
-  const [total, setTotal] = useState(0);
   const [fs, setFs] = useState("");
   const [fp, setFp] = useState("");
   const [ft, setFt] = useState("");
@@ -194,18 +192,6 @@ function TicketsPage() {
   const loadSettings = useServerFn(getPublicAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
-    count: rows.length,
-    estimateSize: 40,
-    overscan: 15,
-    threshold: 50,
-  });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
-    count: rows.length,
-    estimateSize: 220,
-    overscan: 5,
-    threshold: 20,
-  });
   const listQuery = useTicketsInfiniteList({
     status: fs || undefined,
     priority: fp || undefined,
@@ -220,12 +206,22 @@ function TicketsPage() {
     pageSize: PAGE_SIZE,
   });
 
-  useEffect(() => {
-    if (listQuery.data) {
-      setRows(listQuery.data.pages.flatMap((p) => p.data) as Row[]);
-      setTotal(listQuery.data.pages[0]?.count ?? 0);
-    }
-  }, [listQuery.data]);
+  const rows = useMemo(() => listQuery.data?.pages.flatMap((p) => p.data) as Row[] ?? [], [listQuery.data]);
+  const total = useMemo(() => listQuery.data?.pages[0]?.count ?? 0, [listQuery.data]);
+  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 40,
+    overscan: 15,
+    threshold: 50,
+  });
+  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 220,
+    overscan: 5,
+    threshold: 20,
+  });
+
+
 
   // IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -734,6 +730,7 @@ function TicketsPage() {
             value=""
             disabled={bulkBusy || !canEdit}
             onChange={(event) => requestBulkStatus(event.target.value as TicketStatus)}
+            aria-label={t("bulk.changeStatus", "Cambia stato bulk")}
           >
             <option value="">{t("changeStatus", "Cambia stato...")}</option>
             {Object.entries(STATUS_META).map(([status, meta]) => (
@@ -754,6 +751,7 @@ function TicketsPage() {
                   t("toasts.bulkReassignment", "riassegnazione bulk"),
                 );
             }}
+            aria-label={t("bulk.reassign", "Riassegna bulk")}
           >
             <option value="">{t("reassign", "Riassegna...")}</option>
             <option value="unassigned">{t("unassigned", "Non assegnato")}</option>
@@ -775,6 +773,7 @@ function TicketsPage() {
                   t("toasts.priorityChange", { label: PRIORITY_LABEL[value], defaultValue: "cambio priorità a {{label}}" }),
                 );
             }}
+            aria-label={t("bulk.changePriority", "Cambia priorità bulk")}
           >
             <option value="">{t("changePriority", "Cambia priorità...")}</option>
             {Object.entries(PRIORITY_LABEL).map(([priority, label]) => (
@@ -833,6 +832,7 @@ function TicketsPage() {
             className="pc-input w-16"
             value={pendingDays}
             onChange={(event) => setPendingDays(Math.max(1, Number(event.target.value) || 1))}
+            aria-label={t("bulk.pendingDays", "Giorni in attesa")}
           />
           <span>{t("days", "giorni")}</span>
         </div>

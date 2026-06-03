@@ -385,8 +385,9 @@ export default function AutomationWizard({
         )}
         {step === 4 && (
           <div>
-            <label className="text-sm font-medium">{t("wizard.changeNote", "Change note")}</label>
+            <label htmlFor="change-note" className="text-sm font-medium">{t("wizard.changeNote", "Change note")}</label>
             <textarea
+              id="change-note"
               className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
               rows={2}
               value={changeNote}

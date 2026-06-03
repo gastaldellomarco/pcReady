@@ -147,6 +147,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               value={content}
               onChange={(event) => setContent(event.target.value)}
               placeholder={t("notes.placeholder", "Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico")}
+              aria-label={t("notes.noteLabel", "Testo della nota")}
             />
             {mentionSuggestions.length > 0 && (
               <div

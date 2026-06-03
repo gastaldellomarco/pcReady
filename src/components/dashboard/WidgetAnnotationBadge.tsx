@@ -129,6 +129,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                         rows={2}
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
+                        aria-label="Modifica testo nota"
                       />
                       <div className="flex items-center gap-2">
                         <input
@@ -137,6 +138,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                           style={{ borderColor: "var(--border)", background: "var(--surface1)" }}
                           value={editDate}
                           onChange={(e) => setEditDate(e.target.value)}
+                          aria-label="Data nota"
                         />
                         <button
                           className="text-[11px] text-[var(--accent)] font-medium"
@@ -214,6 +216,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
+              aria-label="Aggiungi una nota"
             />
             <div className="flex items-center gap-2">
               <input
@@ -222,6 +225,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                 style={{ borderColor: "var(--border)", background: "var(--surface1)" }}
                 value={noteDate}
                 onChange={(e) => setNoteDate(e.target.value)}
+                aria-label="Data nota"
               />
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm h-7 text-[11px]"

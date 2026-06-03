@@ -66,6 +66,7 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
                   placeholder={t("actionsBuilder.variablePicker.search", "Cerca variabili...")}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   autoFocus
+                  aria-label={t("actionsBuilder.variablePicker.search", "Cerca variabili")}
                 />
               </div>
             </div>

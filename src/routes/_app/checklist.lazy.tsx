@@ -668,6 +668,7 @@ function TemplateEditor({
           {/* Row 1: title + default badge */}
           <div className="flex items-center gap-2">
             <input
+              aria-label={t("templateName", "Nome modello")}
               className="pc-input max-w-[280px] !text-[14px] !font-semibold"
               value={name}
               disabled={!canEdit}
@@ -734,6 +735,7 @@ function TemplateEditor({
 
         <div className="px-5 pt-4 flex flex-col gap-3">
           <input
+            aria-label={t("descriptionLabel", "Descrizione")}
             className="pc-input"
             placeholder={t("descriptionPlaceholder", "Descrizione (opzionale)")}
             value={desc}
@@ -952,6 +954,7 @@ function TemplateEditor({
                 <span className="text-[12px] font-semibold">{t("assignTech", "Assegna sezione a tecnico")}</span>
                 {canEdit && !previewMode ? (
                   <select
+                    aria-label={t("assignTech", "Assegna sezione a tecnico")}
                     className="pc-input h-8 max-w-[260px] py-0 text-[12px] leading-normal"
                     value={(activeSectionData as any)?.assigned_to ?? ""}
                     onChange={(event) => updateSectionAssignee(activeSection, event.target.value)}
@@ -1185,6 +1188,7 @@ function SortableChecklistItem({
       {/* Type selector (edit) */}
       {inEdit && (
         <select
+          aria-label={t("itemType", "Tipo voce")}
           className="pc-input !py-0 !text-[11px] w-[90px] flex-shrink-0"
           value={itemType}
           onChange={(e) => onTypeChange(item.id, e.target.value as "checkbox" | "text" | "number")}

@@ -169,6 +169,7 @@ export function VersionHistoryDrawer({
                         checked={selectedVersions.some((v) => v.id === version.id)}
                         onChange={() => toggleVersionSelection(version)}
                         className="rounded"
+                        aria-label={t("versionHistory.selectVersion", "Seleziona versione {{n}}", { n: version.version_number })}
                       />
                     </div>
 

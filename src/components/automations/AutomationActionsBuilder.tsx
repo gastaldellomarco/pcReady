@@ -189,6 +189,7 @@ export function AutomationActionsBuilder({
               className="fixed inset-0 z-40"
               onClick={() => setIsMenuOpen(false)}
               onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setIsMenuOpen(false); }}
+              aria-label={t("actionsBuilder.closeMenu", "Chiudi menu")}
             />
             <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
               <div className="py-1">

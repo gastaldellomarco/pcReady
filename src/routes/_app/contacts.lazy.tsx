@@ -278,12 +278,14 @@ function ContactsPage() {
             value={q}
             onChange={(event) => setQ(event.target.value)}
             placeholder={t("search.placeholder", "Cerca nome, azienda, email, telefono, ruolo...")}
+            aria-label={t("search.label", "Cerca referente")}
           />
         </div>
         <select
           className="pc-input"
           value={clientFilter}
           onChange={(event) => setClientFilter(event.target.value)}
+          aria-label={t("filters.clientLabel", "Filtra per azienda")}
         >
           <option value="all">{t("filters.allCompanies", "Tutte le aziende")}</option>
           {clients.map((client) => (
@@ -296,6 +298,7 @@ function ContactsPage() {
           className="pc-input"
           value={roleFilter}
           onChange={(event) => setRoleFilter(event.target.value)}
+          aria-label={t("filters.roleLabel", "Filtra per ruolo")}
         >
           <option value="all">{t("filters.allRoles", "Tutti i ruoli")}</option>
           {roles.map((role) => (
@@ -308,6 +311,7 @@ function ContactsPage() {
           className="pc-input"
           value={departmentFilter}
           onChange={(event) => setDepartmentFilter(event.target.value)}
+          aria-label={t("filters.departmentLabel", "Filtra per reparto")}
         >
           <option value="all">{t("filters.allDepartments", "Tutti i reparti")}</option>
           {departments.map((department) => (
@@ -320,6 +324,7 @@ function ContactsPage() {
           className="pc-input"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+          aria-label={t("filters.statusLabel", "Filtra per stato")}
         >
           <option value="all">{t("filters.allStatuses", "Tutti gli stati")}</option>
           <option value="primary">{t("filters.primary", "Referente principale")}</option>

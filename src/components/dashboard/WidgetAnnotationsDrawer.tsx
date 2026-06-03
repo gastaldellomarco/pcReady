@@ -171,6 +171,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
                               rows={2}
                               value={editText}
                               onChange={(e) => setEditText(e.target.value)}
+                              aria-label="Modifica testo annotazione"
                             />
                             <div className="flex items-center gap-2">
                               <input
@@ -182,6 +183,7 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
                                 }}
                                 value={editDate}
                                 onChange={(e) => setEditDate(e.target.value)}
+                                aria-label="Data annotazione"
                               />
                               <button
                                 className="text-[12px] text-[var(--accent)] font-medium"

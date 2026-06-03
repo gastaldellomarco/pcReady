@@ -40,7 +40,7 @@ function PortalLoginPage() {
         setPendingToken(result.pendingToken);
         toast.success("Codice di verifica inviato alla tua email");
       } else {
-        localStorage.setItem("pcready_portal_token", result.token);
+        localStorage.setItem("pcready_portal_token", result.token ?? "");
         navigate({ to: "/portal/dashboard", replace: true });
       }
     } catch (error) {

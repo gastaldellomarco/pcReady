@@ -873,6 +873,7 @@ function BillingTab({
                     clearFieldError("client_bundle_assignment_id");
                     setPaymentDraft((v) => ({ ...v, client_bundle_assignment_id: e.target.value }));
                   }}
+                  aria-label={t("billing.assignmentLabel", "Assegnazione")}
                 >
                   <option value="" disabled>
                     {t("billing.selectAssignment", "Seleziona assegnazione...")}
@@ -943,6 +944,7 @@ function BillingTab({
                       status: e.target.value as PaymentDraft["status"],
                     }))
                   }
+                  aria-label={t("billing.statusLabel", "Stato pagamento")}
                 >
                   <option value="pending">{t("billing.status.pending", "In attesa")}</option>
                   <option value="paid">{t("billing.status.paid", "Pagato")}</option>

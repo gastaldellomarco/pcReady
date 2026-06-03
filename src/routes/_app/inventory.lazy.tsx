@@ -164,7 +164,6 @@ function InventoryPage() {
   const { session } = useAuth();
   const loadSettings = useServerFn(getPublicAppSettings);
   const [rows, setRows] = useState<Row[]>([]);
-  const total = useMemo(() => listQuery.data?.pages?.[0]?.count ?? 0, [listQuery.data]);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [fs, setFs] = useState("");
   const [fos, setFos] = useState("");
@@ -204,19 +203,6 @@ function InventoryPage() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareBusy, setCompareBusy] = useState(false);
   const [compareRows, setCompareRows] = useState<CompareDevice[]>([]);
-  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
-    count: rows.length,
-    estimateSize: 40,
-    overscan: 15,
-    threshold: 50,
-  });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
-    count: rows.length,
-    estimateSize: 212,
-    overscan: 5,
-    threshold: 20,
-  });
-
   const listQuery = useInventoryInfiniteList({
     status: fs || undefined,
     os: fos || undefined,
@@ -230,6 +216,20 @@ function InventoryPage() {
     updatedBefore: updatedBeforeDays
       ? new Date(Date.now() - updatedBeforeDays * 24 * 60 * 60 * 1000).toISOString()
       : undefined,
+  });
+
+  const total = useMemo(() => listQuery.data?.pages?.[0]?.count ?? 0, [listQuery.data]);
+  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 40,
+    overscan: 15,
+    threshold: 50,
+  });
+  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+    count: rows.length,
+    estimateSize: 212,
+    overscan: 5,
+    threshold: 20,
   });
 
   useEffect(() => {
@@ -558,6 +558,7 @@ function InventoryPage() {
     <div className="flex min-w-0 flex-col gap-4">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
         <select
+          aria-label={t("filters.statusLabel", "Filtra per stato")}
           className="pc-input lg:max-w-[160px]"
           value={fs}
           onChange={(e) => setFs(e.target.value)}
@@ -570,6 +571,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
+          aria-label={t("filters.osLabel", "Filtra per sistema operativo")}
           className="pc-input lg:max-w-[200px]"
           value={fos}
           onChange={(e) => setFos(e.target.value)}
@@ -580,6 +582,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
+          aria-label={t("filters.categoryLabel", "Filtra per categoria")}
           className="pc-input lg:max-w-[190px]"
           value={fcategory}
           onChange={(e) => setFcategory(e.target.value)}
@@ -592,6 +595,7 @@ function InventoryPage() {
           ))}
         </select>
         <select
+          aria-label={t("filters.typeLabel", "Filtra per tipo dispositivo")}
           className="pc-input lg:max-w-[190px]"
           value={ftype}
           onChange={(e) => setFtype(e.target.value)}
@@ -607,12 +611,14 @@ function InventoryPage() {
           ))}
         </select>
         <input
+          aria-label={t("filters.searchLabel", "Cerca dispositivo")}
           className="pc-input lg:max-w-[260px]"
           placeholder={t("filters.searchPlaceholder")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <select
+          aria-label={t("filters.updatedLabel", "Filtra per data aggiornamento")}
           className="pc-input lg:max-w-[210px]"
           value={updatedBeforeDays ?? ""}
           onChange={(e) => setUpdatedBeforeDays(e.target.value ? Number(e.target.value) : null)}
@@ -624,6 +630,7 @@ function InventoryPage() {
           <option value="60">{t("filters.notUpdated60")}</option>
         </select>
         <select
+          aria-label={t("filters.warrantyLabel", "Filtra per stato garanzia")}
           className="pc-input lg:max-w-[190px]"
           value={warrantyFilter}
           onChange={(e) => setWarrantyFilter(e.target.value as WarrantyFilter)}
@@ -1160,6 +1167,7 @@ function InventoryPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <select
+            aria-label={t("bulkStatus.statusLabel", "Nuovo stato")}
             className="pc-input w-full"
             value={bulkTargetStatus}
             onChange={(e) => setBulkTargetStatus(e.target.value as DeviceStatus)}
@@ -1194,6 +1202,7 @@ function InventoryPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
+            aria-label={t("bulkClient.clientLabel", "Nome cliente")}
             className="pc-input w-full"
             placeholder={t("bulkClient.placeholder")}
             value={bulkTargetClientName}

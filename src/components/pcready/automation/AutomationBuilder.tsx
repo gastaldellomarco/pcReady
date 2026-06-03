@@ -450,6 +450,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                         value={selectedNode.data?.config?.operator ?? "equals"}
                         onChange={(e) => updateSelectedNodeConfig({ operator: e.target.value })}
                         disabled={loading}
+                        aria-label="Operatore condizione"
                       >
                         <option value="equals">uguale a</option>
                         <option value="not_equals">diverso da</option>
@@ -491,6 +492,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                           value={selectedNode.data?.config?.unit ?? "hours"}
                           onChange={(e) => updateSelectedNodeConfig({ unit: e.target.value })}
                           disabled={loading}
+                          aria-label="Unità delay"
                         >
                           <option value="hours">ore</option>
                           <option value="days">giorni</option>
@@ -526,6 +528,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                     value={(selectedEdge.data?.branch as string) ?? ""}
                     onChange={(e) => updateSelectedEdgeData({ branch: e.target.value || null })}
                     disabled={loading}
+                    aria-label="Ramo condizione"
                   >
                     <option value="">Sequenziale</option>
                     <option value="true">True</option>

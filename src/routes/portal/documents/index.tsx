@@ -272,8 +272,8 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
   return (
@@ -360,15 +360,13 @@ function SignatureModal({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawing, setHasDrawing] = useState(false);
-  const [canvasReady, setCanvasReady] = useState(false);
-
   // Close on Escape
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && !busy) onClose();
     }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, busy]);
 
   useEffect(() => {
@@ -387,7 +385,7 @@ function SignatureModal({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#1e293b";
-    setCanvasReady(true);
+
   }, []);
 
   function getPos(e: React.MouseEvent | React.TouchEvent): { x: number; y: number } {
@@ -574,7 +572,7 @@ function DocumentRow({
         )}
         {canDownload && (
           <Button size="sm" variant="outline" asChild>
-            <a href={document.download_url} target="_blank" rel="noreferrer">
+            <a href={document.download_url ?? undefined} target="_blank" rel="noreferrer">
               <Download className="mr-2 size-4" />
               Scarica
             </a>

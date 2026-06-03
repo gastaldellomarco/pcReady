@@ -40,6 +40,7 @@ export function ValueInput({
                   newValues[idx] = e.target.value;
                   onChange(newValues);
                 }}
+                aria-label={t("conditionsBuilder.value.selectLabel", "Seleziona valore")}
                 className="flex-1 rounded-md border border-border px-2 py-1.5 text-sm bg-background"
               >
                 <option value="">{t("conditionsBuilder.value.placeholder", "Seleziona")}</option>
@@ -107,6 +108,7 @@ export function ValueInput({
       <select
         value={String(value || "")}
         onChange={(e) => onChange(e.target.value)}
+        aria-label={t("conditionsBuilder.value.selectLabel", "Seleziona valore")}
         className="w-full rounded-md border border-border px-2 py-1.5 text-sm bg-background"
       >
         <option value="">{t("conditionsBuilder.value.placeholder", "Seleziona")}</option>
@@ -128,6 +130,7 @@ export function ValueInput({
           const num = e.target.value === "" ? "" : Number(e.target.value);
           onChange(num);
         }}
+        aria-label={t("conditionsBuilder.value.numberLabel", "Inserisci numero")}
         placeholder={t("conditionsBuilder.value.placeholderNumber", "Inserisci numero")}
         className="w-full rounded-md border border-border px-2 py-1.5 text-sm bg-background"
       />

@@ -253,7 +253,7 @@ export async function importDevicesFromCsv(
       } else {
         const insert: TablesInsert<"devices"> = {
           client_id: row.client_id!,
-          asset_tag: row.asset_tag,
+          asset_tag: row.asset_tag ?? "",
           serial: row.serial,
           category: row.category ?? DEFAULT_DEVICE_CATEGORY,
           device_type: row.device_type ?? DEFAULT_DEVICE_TYPE,

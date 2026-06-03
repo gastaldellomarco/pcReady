@@ -38,7 +38,6 @@ vi.mock("@/components/ui/popover", () => ({
 // ── Mock Calendar (react-day-picker) ─────────────────────────────────────
 vi.mock("@/components/ui/calendar", () => ({
   Calendar: ({
-    selected,
     onSelect,
     disabled: disabledFn,
   }: {

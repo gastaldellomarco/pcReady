@@ -104,7 +104,7 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
 
       {canEdit && (
         <div className="mb-3 grid gap-2 md:grid-cols-[180px_1fr]">
-          <select className="pc-input" value={relationType} onChange={(event) => setRelationType(event.target.value as TicketRelationType)}>
+          <select className="pc-input" value={relationType} onChange={(event) => setRelationType(event.target.value as TicketRelationType)} aria-label={t("relations.typeLabel", "Tipo relazione")}>
             {Object.entries(RELATION_LABELS).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}

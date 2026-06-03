@@ -79,7 +79,7 @@ function PortalProfilePage() {
   const [clientContacts, setClientContacts] = useState<any[] | null>(null);
   const [contactsLoading, setContactsLoading] = useState(false);
 
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
 
   const session = overview?.session;
 

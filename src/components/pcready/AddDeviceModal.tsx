@@ -60,7 +60,7 @@ export function AddDeviceModal() {
     defaultValues: {
       category: DEFAULT_DEVICE_CATEGORY,
       device_type: DEFAULT_DEVICE_TYPE,
-      asset_tag: null,
+      asset_tag: "",
       brand: null,
       model: "",
       serial: "",
@@ -197,7 +197,7 @@ export function AddDeviceModal() {
       const deviceInsert: TablesInsert<"devices"> = {
         category: values.category,
         device_type: values.device_type,
-        asset_tag: values.asset_tag || null,
+        asset_tag: values.asset_tag || "",
         brand: (values.brand as string) || null,
         client_id: client.id,
         model: values.model,
@@ -236,7 +236,7 @@ export function AddDeviceModal() {
       form.reset({
         category: DEFAULT_DEVICE_CATEGORY,
         device_type: DEFAULT_DEVICE_TYPE,
-        asset_tag: null,
+        asset_tag: "",
         brand: null,
         model: "",
         serial: "",

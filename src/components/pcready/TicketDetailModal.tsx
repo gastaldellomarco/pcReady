@@ -711,6 +711,7 @@ export function TicketDetailModal() {
                 className="pc-input h-8 min-w-[120px] w-auto px-3 py-0 text-[12px] leading-none"
                 value={ticket.status}
                 onChange={(event) => advance(event.target.value as TicketStatus)}
+                aria-label={t("detail.statusLabel", "Stato ticket")}
               >
                 {Object.entries(STATUS_META).map(([key, value]) => (
                   <option key={key} value={key}>
@@ -734,6 +735,7 @@ export function TicketDetailModal() {
               value={ticket.assignee_id ?? ""}
               disabled={!canEdit}
               onChange={(event) => changeAssignee(event.target.value)}
+              aria-label={t("detail.assigneeLabel", "Assegna tecnico")}
             >
               <option value="">{t("detail.btn.reassign", "Riassegna...")}</option>
               {technicians.map((tech) => (
@@ -1228,6 +1230,7 @@ function TicketChecklistPanel({
                 className="pc-input max-w-[320px] text-[12px]"
                 value={selectedTemplateId}
                 onChange={(event) => onSelectedTemplateIdChange(event.target.value)}
+                aria-label={t("detail.checklistTemplateLabel", "Seleziona template checklist")}
               >
                 <option value="">{t("detail.btn.attachChecklist", "— Collega checklist —")}</option>
                 {templates.map((template) => (

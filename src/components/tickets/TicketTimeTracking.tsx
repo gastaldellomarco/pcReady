@@ -148,6 +148,7 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder={t("timeTracking.descriptionPlaceholder", "Descrizione lavoro (opzionale, salvata allo stop)")}
+            aria-label={t("timeTracking.descriptionLabel", "Descrizione lavoro")}
           />
         </div>
       )}
@@ -181,6 +182,7 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
             value={manualDescription}
             onChange={(event) => setManualDescription(event.target.value)}
             placeholder={t("timeTracking.activityPlaceholder", "Descrizione attività")}
+            aria-label={t("timeTracking.activityLabel", "Descrizione attività")}
           />
           <div className="md:col-span-2 flex justify-end">
             <button className="pc-btn pc-btn-primary pc-btn-sm" type="submit">
