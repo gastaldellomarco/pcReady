@@ -1,6 +1,5 @@
 import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 import { sendEmail } from "@/lib/email-templates.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
@@ -35,7 +34,11 @@ export interface PortalSessionContext {
   notificationPreferences?: Record<string, boolean> | null;
 }
 
-function hashToken(token: string) {
+/**
+ * Shared helpers — exported for use by domain-split sibling files.
+ */
+
+export function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
@@ -43,7 +46,7 @@ function portalBaseUrl() {
   return process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000";
 }
 
-function hashPortalPassword(password: string) {
+export function hashPortalPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const hash = pbkdf2Sync(password, salt, 120_000, 32, "sha256").toString("hex");
   return `pbkdf2_sha256$120000$${salt}$${hash}`;
@@ -70,11 +73,11 @@ function clientBranding(client: any): PortalBranding {
   };
 }
 
-function portalLoginUrl(token: string) {
+export function portalLoginUrl(token: string) {
   return `${portalBaseUrl().replace(/\/$/, "")}/portal?token=${encodeURIComponent(token)}`;
 }
 
-async function assertPortalLinkOperator(accessToken: string) {
+export async function assertPortalLinkOperator(accessToken: string) {
   const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
   if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
@@ -90,7 +93,7 @@ async function assertPortalLinkOperator(accessToken: string) {
   return userData.user;
 }
 
-async function createPortalSession(contact: any, ttlHours = 24) {
+export async function createPortalSession(contact: any, ttlHours = 24) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * ttlHours).toISOString();
 
@@ -226,148 +229,6 @@ export async function loginPortalWithPasswordServer(input: { email: string; pass
 /**
  *
  */
-export async function updatePortalContactProfileServer(input: {
-  token: string;
-  fullName: string;
-  phone?: string | null;
-  jobTitle?: string | null;
-  password?: string | null;
-}) {
-  const session = await getPortalSession(input.token);
-  const fullName = input.fullName.trim();
-  if (!fullName) throw new Response("Nome e cognome obbligatori", { status: 400 });
-  const [firstName, ...lastParts] = fullName.split(/\s+/);
-  const payload: Record<string, unknown> = {
-    full_name: fullName,
-    first_name: firstName,
-    last_name: lastParts.join(" ") || null,
-    phone: input.phone?.trim() || null,
-    job_title: input.jobTitle?.trim() || null,
-    role: input.jobTitle?.trim() || null,
-  };
-  if (input.password?.trim()) {
-    if (input.password.length < 8)
-      throw new Response("Password minimo 8 caratteri", { status: 400 });
-    payload.portal_password_hash = hashPortalPassword(input.password);
-    payload.portal_password_updated_at = new Date().toISOString();
-  }
-  const { error } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .update(payload)
-    .eq("id", session.contactId)
-    .eq("client_id", session.clientId);
-  if (error) throw error;
-  return { success: true };
-}
-
-/**
- *
- */
-export async function generatePortalAccessLinkServer(input: {
-  accessToken: string;
-  contactId: string;
-  ttlHours?: number;
-}) {
-  const user = await assertPortalLinkOperator(input.accessToken);
-  const ttlHours = input.ttlHours ?? 24;
-
-  const { data: contact, error } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .select(
-      "id, client_id, full_name, email, clients!inner(id, name, company_name, portal_enabled)",
-    )
-    .eq("id", input.contactId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!contact) throw new Response("Referente non trovato", { status: 404 });
-  if ((contact as any).clients?.portal_enabled === false) {
-    throw new Response("Portale disabilitato per questo cliente", { status: 403 });
-  }
-
-  const { loginUrl, expiresAt } = await createPortalSession(contact, ttlHours);
-  const contactName = (contact as any).full_name || (contact as any).email || "referente";
-  const clientName =
-    (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
-
-  await supabaseAdmin.from("activity_log" as any).insert({
-    type: "user",
-    action_type: AUDIT_ACTIONS.PORTAL_LINK_GENERATED,
-    actor_id: user.id,
-    entity_type: "client_contact",
-    entity_id: (contact as any).id,
-    severity: "info",
-    message: `Link portale generato per ${contactName} (${clientName})`,
-    new_value: {
-      contact_id: (contact as any).id,
-      client_id: (contact as any).client_id,
-      expires_at: expiresAt,
-      generated_by: user.id,
-    },
-  });
-
-  return {
-    loginUrl,
-    expiresAt,
-    contactName,
-    clientName,
-  };
-}
-
-/**
- *
- */
-export async function revokePortalAccessLinkServer(input: {
-  accessToken: string;
-  contactId: string;
-}) {
-  const user = await assertPortalLinkOperator(input.accessToken);
-  const now = new Date().toISOString();
-
-  const { data: contact, error: contactError } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .select("id, client_id, full_name, email, clients(name, company_name)")
-    .eq("id", input.contactId)
-    .maybeSingle();
-  if (contactError) throw contactError;
-  if (!contact) throw new Response("Referente non trovato", { status: 404 });
-
-  const { data: revoked, error } = await supabaseAdmin
-    .from("portal_sessions" as any)
-    .update({ revoked_at: now })
-    .eq("contact_id", input.contactId)
-    .is("revoked_at", null)
-    .gt("expires_at", now)
-    .select("id");
-  if (error) throw error;
-
-  const contactName = (contact as any).full_name || (contact as any).email || "referente";
-  const clientName =
-    (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
-  const revokedCount = Array.isArray(revoked) ? revoked.length : 0;
-
-  await supabaseAdmin.from("activity_log" as any).insert({
-    type: "user",
-    action_type: AUDIT_ACTIONS.PORTAL_LINK_REVOKED,
-    actor_id: user.id,
-    entity_type: "client_contact",
-    entity_id: (contact as any).id,
-    severity: "info",
-    message: `Accesso portale revocato per ${contactName} (${clientName})`,
-    new_value: {
-      contact_id: (contact as any).id,
-      client_id: (contact as any).client_id,
-      revoked_count: revokedCount,
-      revoked_by: user.id,
-      revoked_at: now,
-    },
-  });
-
-  return { success: true, revokedCount };
-}
-
-/**
- *
- */
 export async function getPortalSession(token: string): Promise<PortalSessionContext> {
   const { data, error } = await supabaseAdmin
     .from("portal_sessions" as any)
@@ -411,6 +272,14 @@ export async function getPortalSession(token: string): Promise<PortalSessionCont
 }
 
 /**
+ * Wrapper so validatePortalSession client wrapper can pass { token } object
+ * instead of a raw string.
+ */
+export async function validatePortalSessionServer(input: { token: string }) {
+  return getPortalSession(input.token);
+}
+
+/**
  *
  */
 export async function logoutPortalSessionServer(input: { token: string }) {
@@ -419,28 +288,6 @@ export async function logoutPortalSessionServer(input: { token: string }) {
     .update({ revoked_at: new Date().toISOString() })
     .eq("token_hash", hashToken(input.token));
   return { success: true };
-}
-
-/**
- *
- */
-export async function updatePortalNotificationPreferencesServer(input: {
-  token: string;
-  preferences: Record<string, boolean>;
-}) {
-  const session = await getPortalSession(input.token);
-  const allowedKeys = ["ticket_updated", "ticket_closed", "document_available", "bundle_expiring"];
-  const cleaned: Record<string, boolean> = {};
-  for (const key of allowedKeys) {
-    cleaned[key] = input.preferences[key] ?? true;
-  }
-  const { error } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .update({ notification_preferences: cleaned as any })
-    .eq("id", session.contactId)
-    .eq("client_id", session.clientId);
-  if (error) throw error;
-  return { success: true, preferences: cleaned };
 }
 
 /**
@@ -467,121 +314,6 @@ export async function getPortalClientContactsServer(input: { token: string }) {
       isSelf: contact.id === session.contactId,
     })),
   };
-}
-
-/**
- *
- */
-export async function updatePortalContactLanguageServer(input: {
-  token: string;
-  language: "it" | "en";
-}) {
-  const session = await getPortalSession(input.token);
-  const { error } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .update({ preferred_language: input.language })
-    .eq("id", session.contactId)
-    .eq("client_id", session.clientId);
-  if (error) throw error;
-  return { success: true, language: input.language };
-}
-
-/**
- *
- */
-export async function getPortalAccessHistoryServer(input: { token: string }) {
-  const session = await getPortalSession(input.token);
-  const { data, error } = await supabaseAdmin
-    .from("portal_sessions" as any)
-    .select("id, created_at, last_used_at, expires_at, revoked_at")
-    .eq("contact_id", session.contactId)
-    .order("created_at", { ascending: false })
-    .limit(30);
-  if (error) throw error;
-  return {
-    sessions: ((data ?? []) as any[]).map((s) => ({
-      id: s.id,
-      createdAt: s.created_at,
-      lastUsedAt: s.last_used_at,
-      expiresAt: s.expires_at,
-      isRevoked: !!s.revoked_at,
-      isActive: !s.revoked_at && new Date(s.expires_at).getTime() > Date.now(),
-    })),
-  };
-}
-
-/**
- *
- */
-export async function setupPortal2FAServer(input: { token: string; enable: boolean }) {
-  const session = await getPortalSession(input.token);
-  if (input.enable) {
-    // Generate a random 6-digit code and send via email
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    const { error } = await supabaseAdmin
-      .from("client_contacts" as any)
-      .update({
-        portal_2fa_enabled: false,
-        portal_2fa_pending_code: code,
-        portal_2fa_pending_expires: expiresAt,
-      })
-      .eq("id", session.contactId)
-      .eq("client_id", session.clientId);
-    if (error) throw error;
-    await sendEmail(
-      session.contactEmail,
-      "Verifica 2FA - Portale PCReady",
-      `<p>Ciao ${session.contactName || ""},</p><p>Il tuo codice di verifica per attivare l'autenticazione a due fattori è: <strong>${code}</strong></p><p>Il codice scade tra 10 minuti.</p>`,
-      `Codice verifica 2FA: ${code}`,
-    );
-    return { success: true, pending: true, message: "Codice di verifica inviato via email" };
-  } else {
-    const { error } = await supabaseAdmin
-      .from("client_contacts" as any)
-      .update({
-        portal_2fa_enabled: false,
-        portal_2fa_pending_code: null,
-        portal_2fa_pending_expires: null,
-      })
-      .eq("id", session.contactId)
-      .eq("client_id", session.clientId);
-    if (error) throw error;
-    return { success: true, enabled: false };
-  }
-}
-
-/**
- *
- */
-export async function verifyPortal2FAServer(input: { token: string; code: string }) {
-  const session = await getPortalSession(input.token);
-  const { data: contact, error } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .select("portal_2fa_pending_code, portal_2fa_pending_expires")
-    .eq("id", session.contactId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!(contact as any)?.portal_2fa_pending_code) {
-    throw new Response("Nessuna richiesta 2FA in corso", { status: 400 });
-  }
-  if (new Date((contact as any).portal_2fa_pending_expires).getTime() < Date.now()) {
-    throw new Response("Codice scaduto. Richiedi un nuovo codice.", { status: 400 });
-  }
-  if ((contact as any).portal_2fa_pending_code !== input.code) {
-    throw new Response("Codice non valido", { status: 400 });
-  }
-  const { error: updateError } = await supabaseAdmin
-    .from("client_contacts" as any)
-    .update({
-      portal_2fa_enabled: true,
-      portal_2fa_pending_code: null,
-      portal_2fa_pending_expires: null,
-    })
-    .eq("id", session.contactId)
-    .eq("client_id", session.clientId);
-  if (updateError) throw updateError;
-  return { success: true, enabled: true };
 }
 
 /**

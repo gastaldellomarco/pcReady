@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getMfaPolicyForUser } from "@/lib/mfa";
+import { getMfaPolicyForUser } from "@/lib/mfa.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";

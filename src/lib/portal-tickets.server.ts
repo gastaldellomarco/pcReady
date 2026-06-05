@@ -15,7 +15,8 @@ function urgencyToPriority(urgency: "low" | "normal" | "high" | "urgent") {
   return "med";
 }
 
-function statusLabel(status: string) {
+/** Shared helper — exported for use by sibling domain files. */
+export function statusLabel(status: string) {
   if (status === "pending") return "Aperto";
   if (status === "in-progress") return "In lavorazione";
   if (status === "testing") return "In verifica";
@@ -69,6 +70,7 @@ export async function getPortalDashboardServer(input: { token: string }) {
     ]),
   );
   const activeBundles = ((bundleAssignments ?? []) as any[])
+
     .filter(
       (assignment) =>
         !assignment.end_date || assignment.end_date >= new Date().toISOString().slice(0, 10),
@@ -164,6 +166,43 @@ function computeMonthlyTicketVolume(tickets: any[]) {
   return months;
 }
 
+async function uploadPortalAttachments(
+  ticketId: string,
+  attachments: Array<{ fileName: string; mimeType?: string; dataUrl: string }> | undefined,
+) {
+  if (!attachments?.length) return [];
+  const uploaded: any[] = [];
+  for (const attachment of attachments) {
+    const match = /^data:([^;]+);base64,(.+)$/.exec(attachment.dataUrl);
+    if (!match) continue;
+    const mimeType = attachment.mimeType || match[1] || "application/octet-stream";
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.byteLength > 5 * 1024 * 1024)
+      throw new Response("Allegato troppo grande", { status: 400 });
+    const safeName = attachment.fileName.replace(/[^a-z0-9._-]/gi, "_");
+    const storagePath = `portal/${ticketId}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("ticket-documents")
+      .upload(storagePath, buffer, { contentType: mimeType, upsert: false });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabaseAdmin
+      .from("ticket_attachments" as any)
+      .insert({
+        ticket_id: ticketId,
+        storage_bucket: "ticket-documents",
+        storage_path: storagePath,
+        file_name: attachment.fileName,
+        file_size: buffer.byteLength,
+        mime_type: mimeType,
+      })
+      .select("id, file_name")
+      .single();
+    if (error) throw error;
+    uploaded.push(data);
+  }
+  return uploaded;
+}
+
 /**
  *
  */
@@ -221,7 +260,6 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
   if (error) throw error;
   if (!ticket) throw new Response("Ticket non trovato", { status: 404 });
 
-  // Fetch status history from the new ticket_status_history table
   const { data: history, error: historyError } = await supabaseAdmin
     .from("ticket_status_history" as any)
     .select("id, ticket_id, from_status, to_status, changed_by, changed_at, note")
@@ -231,7 +269,6 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
     console.error("Error fetching status history:", historyError);
   }
 
-  // Fetch actor info for status history
   const actorIds = [
     ...new Set(((history ?? []) as any[]).map((h) => h.changed_by).filter(Boolean)),
   ];
@@ -275,43 +312,6 @@ export async function getPortalTicketDetailServer(input: { token: string; ticket
   if (feedbackError) throw feedbackError;
 
   return { session, ticket, history: historyWithActors, publicNotes: notesWithAuthors, feedback };
-}
-
-async function uploadPortalAttachments(
-  ticketId: string,
-  attachments: Array<{ fileName: string; mimeType?: string; dataUrl: string }> | undefined,
-) {
-  if (!attachments?.length) return [];
-  const uploaded: any[] = [];
-  for (const attachment of attachments) {
-    const match = /^data:([^;]+);base64,(.+)$/.exec(attachment.dataUrl);
-    if (!match) continue;
-    const mimeType = attachment.mimeType || match[1] || "application/octet-stream";
-    const buffer = Buffer.from(match[2], "base64");
-    if (buffer.byteLength > 5 * 1024 * 1024)
-      throw new Response("Allegato troppo grande", { status: 400 });
-    const safeName = attachment.fileName.replace(/[^a-z0-9._-]/gi, "_");
-    const storagePath = `portal/${ticketId}/${Date.now()}-${safeName}`;
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from("ticket-documents")
-      .upload(storagePath, buffer, { contentType: mimeType, upsert: false });
-    if (uploadError) throw uploadError;
-    const { data, error } = await supabaseAdmin
-      .from("ticket_attachments" as any)
-      .insert({
-        ticket_id: ticketId,
-        storage_bucket: "ticket-documents",
-        storage_path: storagePath,
-        file_name: attachment.fileName,
-        file_size: buffer.byteLength,
-        mime_type: mimeType,
-      })
-      .select("id, file_name")
-      .single();
-    if (error) throw error;
-    uploaded.push(data);
-  }
-  return uploaded;
 }
 
 /**
@@ -370,12 +370,11 @@ export async function createPortalTicketServer(input: {
 
   if (error) throw error;
 
-  // Insert initial status history record for portal-created tickets
   await supabaseAdmin.from("ticket_status_history" as any).insert({
     ticket_id: (ticket as any).id,
     from_status: null,
     to_status: "pending",
-    changed_by: null, // Portal/system created
+    changed_by: null,
     changed_at: new Date().toISOString(),
     note: "Ticket creato dal portale cliente",
   });
@@ -401,46 +400,6 @@ export async function createPortalTicketServer(input: {
   }
 
   return { success: true, ticketId: (ticket as any).id, ticketCode: (ticket as any).ticket_code };
-}
-
-/**
- *
- */
-export async function listPortalDevicesServer(input: { token: string }) {
-  const session = await getPortalSession(input.token);
-  const { data: devices, error } = await supabaseAdmin
-    .from("devices" as any)
-    .select("id, model, serial, os, status, assigned_to, updated_at, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes")
-    .eq("client_id", session.clientId)
-    .order("model", { ascending: true })
-    .limit(200);
-  if (error) throw error;
-  const deviceIds = ((devices ?? []) as any[]).map((device) => device.id);
-  const { data: tickets, error: ticketError } = deviceIds.length
-    ? await supabaseAdmin
-        .from("tickets" as any)
-        .select("id, ticket_code, device_id, status, created_at, model, updated_at, closed_at, completed_at")
-        .in("device_id", deviceIds)
-        .order("created_at", { ascending: false })
-        .limit(500)
-    : { data: [], error: null };
-  if (ticketError) throw ticketError;
-  const latestByDevice = new Map<string, any>();
-  const ticketsByDevice = new Map<string, any[]>();
-  ((tickets ?? []) as any[]).forEach((ticket) => {
-    if (!latestByDevice.has(ticket.device_id)) latestByDevice.set(ticket.device_id, ticket);
-    const list = ticketsByDevice.get(ticket.device_id) || [];
-    list.push(ticket);
-    ticketsByDevice.set(ticket.device_id, list);
-  });
-  return {
-    session,
-    devices: ((devices ?? []) as any[]).map((device) => ({
-      ...device,
-      lastTicket: latestByDevice.get(device.id) ?? null,
-      ticketHistory: ticketsByDevice.get(device.id) ?? [],
-    })),
-  };
 }
 
 /**
@@ -476,32 +435,6 @@ export async function submitPortalTicketFeedbackServer(input: {
   );
   if (upsertError) throw upsertError;
   return { success: true };
-}
-
-const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 15;
-
-async function createDocumentSignedUrl(
-  bucket: string,
-  path: string,
-  fileName: string,
-  download: boolean,
-) {
-  const { data, error } = await supabaseAdmin.storage
-    .from(bucket)
-    .createSignedUrl(
-      path,
-      DOCUMENT_SIGNED_URL_TTL_SECONDS,
-      download ? { download: fileName } : undefined,
-    );
-  if (error) {
-    console.error("[portal-documents] signed URL error", { bucket, path, error });
-    return null;
-  }
-  return data?.signedUrl ?? null;
-}
-
-function normalizeDocumentTicket(ticket: any) {
-  return Array.isArray(ticket) ? ticket[0] : ticket;
 }
 
 /**
@@ -614,166 +547,6 @@ export async function getPortalProfileOverviewServer(input: { token: string }) {
 /**
  *
  */
-export async function listPortalDocumentsServer(input: { token: string }) {
-  const session = await getPortalSession(input.token);
-
-  const { data: attachments, error: attachmentsError } = await (supabaseAdmin as any)
-    .from("ticket_attachments")
-    .select(
-      "id, storage_bucket, storage_path, file_name, file_size, mime_type, created_at, ticket:tickets!inner(id, ticket_code, model, client_id, status, closed_at, completed_at)",
-    )
-    .eq("ticket.client_id", session.clientId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (attachmentsError) {
-    console.error("[portal-documents] attachment query failed", {
-      clientId: session.clientId,
-      error: attachmentsError,
-    });
-    throw new Response("Impossibile caricare i documenti associati al cliente", { status: 500 });
-  }
-
-  const { data: closedTickets, error: ticketsError } = await (supabaseAdmin as any)
-    .from("tickets")
-    .select("id, ticket_code, model, status, closed_at, completed_at, updated_at")
-    .eq("client_id", session.clientId)
-    .in("status", ["ready", "completed", "archived"])
-    .order("closed_at", { ascending: false, nullsFirst: false })
-    .limit(200);
-
-  if (ticketsError) {
-    console.error("[portal-documents] completed ticket query failed", {
-      clientId: session.clientId,
-      error: ticketsError,
-    });
-    throw new Response("Impossibile caricare i report degli interventi", { status: 500 });
-  }
-
-  const attachmentDocuments = await Promise.all(
-    ((attachments ?? []) as any[]).map(async (attachment) => {
-      const ticket = normalizeDocumentTicket(attachment.ticket);
-      const bucket = attachment.storage_bucket || "ticket-documents";
-      return {
-        id: `attachment:${attachment.id}`,
-        type: "attachment" as const,
-        file_name: attachment.file_name,
-        file_size: attachment.file_size ?? null,
-        mime_type: attachment.mime_type ?? null,
-        created_at: attachment.created_at,
-        ticket_id: ticket?.id ?? null,
-        ticket_code: ticket?.ticket_code ?? null,
-        ticket_title: ticket?.model ?? null,
-        status: ticket?.status ?? null,
-        view_url: await createDocumentSignedUrl(
-          bucket,
-          attachment.storage_path,
-          attachment.file_name,
-          false,
-        ),
-        download_url: await createDocumentSignedUrl(
-          bucket,
-          attachment.storage_path,
-          attachment.file_name,
-          true,
-        ),
-      };
-    }),
-  );
-
-  const ticketByCode = new Map(
-    ((closedTickets ?? []) as any[]).map((ticket) => [String(ticket.ticket_code), ticket]),
-  );
-  let completionDocuments: any[] = [];
-  const { data: completionFiles, error: completionError } = await supabaseAdmin.storage
-    .from("ticket-documents")
-    .list("completions", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
-
-  if (completionError) {
-    console.error("[portal-documents] completion PDF list failed", {
-      clientId: session.clientId,
-      error: completionError,
-    });
-  } else {
-    completionDocuments = await Promise.all(
-      (completionFiles ?? [])
-        .filter((file) => file.name.toLowerCase().endsWith(".pdf"))
-        .map(async (file) => {
-          const code = [...ticketByCode.keys()].find((ticketCode) =>
-            file.name.startsWith(ticketCode),
-          );
-          if (!code) return null;
-          const ticket = ticketByCode.get(code);
-          const path = `completions/${file.name}`;
-          return {
-            id: `completion:${file.name}`,
-            type: "completion_report" as const,
-            file_name: `Report intervento ${code}.pdf`,
-            file_size: file.metadata?.size ?? null,
-            mime_type: "application/pdf",
-            created_at:
-              file.created_at || ticket.completed_at || ticket.closed_at || ticket.updated_at,
-            ticket_id: ticket.id,
-            ticket_code: ticket.ticket_code,
-            ticket_title: ticket.model || "Intervento completato",
-            status: ticket.status,
-            view_url: await createDocumentSignedUrl(
-              "ticket-documents",
-              path,
-              `Report-${code}.pdf`,
-              false,
-            ),
-            download_url: await createDocumentSignedUrl(
-              "ticket-documents",
-              path,
-              `Report-${code}.pdf`,
-              true,
-            ),
-          };
-        }),
-    ).then((rows) => rows.filter(Boolean));
-  }
-
-  const seen = new Set<string>();
-  const documents = [...attachmentDocuments, ...completionDocuments]
-    .filter((doc) => {
-      const key = `${doc.type}:${doc.ticket_id}:${doc.file_name}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-
-  // Fetch signatures for this client's documents
-  const documentIds = documents.map((d) => d.id);
-  const { data: signatures, error: signaturesError } = documentIds.length
-    ? await supabaseAdmin
-        .from("document_signatures" as any)
-        .select("document_id, signed_at, signature_path")
-        .in("document_id", documentIds)
-        .eq("client_id", session.clientId)
-    : { data: [], error: null };
-  if (signaturesError) console.error("[portal-documents] signatures query failed:", signaturesError);
-  const signatureByDocument = new Map(
-    ((signatures ?? []) as any[]).map((s) => [s.document_id, s]),
-  );
-
-  return {
-    session,
-    documents: documents.map((d) => ({
-      ...d,
-      signature: signatureByDocument.get(d.id) ?? null,
-    })),
-    diagnostics: {
-      attachments: attachmentDocuments.length,
-      completionReports: completionDocuments.length,
-    },
-  };
-}
-
-/**
- *
- */
 export async function getPortalTicketCategoriesServer(input: { token: string }) {
   await getPortalSession(input.token);
   const { data: rows, error } = await supabaseAdmin
@@ -783,61 +556,4 @@ export async function getPortalTicketCategoriesServer(input: { token: string }) 
     .maybeSingle();
   if (error) throw error;
   return { categories: Array.isArray((rows as any)?.value) ? (rows as any).value : [] };
-}
-
-/**
- *
- */
-export async function signPortalDocumentServer(input: {
-  token: string;
-  documentId: string;
-  signatureDataUrl: string;
-}) {
-  const session = await getPortalSession(input.token);
-
-  // Extract base64 data from data URL
-  const match = /^data:image\/png;base64,(.+)$/.exec(input.signatureDataUrl);
-  if (!match) throw new Response("Formato firma non valido", { status: 400 });
-  const buffer = Buffer.from(match[1], "base64");
-  if (buffer.byteLength > 500 * 1024)
-    throw new Response("Firma troppo grande", { status: 400 });
-
-  // Store signature in storage
-  const now = Date.now();
-  const sanitizedId = input.documentId.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const storagePath = `signatures/${session.clientId}/${now}-${sanitizedId}.png`;
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from("ticket-documents")
-    .upload(storagePath, buffer, {
-      contentType: "image/png",
-      upsert: false,
-      cacheControl: "private, max-age=31536000",
-    });
-  if (uploadError) throw uploadError;
-
-  // Upsert signature record
-  const { error: upsertError } = await supabaseAdmin
-    .from("document_signatures" as any)
-    .upsert(
-      {
-        document_id: input.documentId,
-        client_id: session.clientId,
-        contact_id: session.contactId,
-        signature_path: storagePath,
-        signed_at: new Date().toISOString(),
-      },
-      { onConflict: "document_id,contact_id" },
-    );
-  if (upsertError) throw upsertError;
-
-  // Create signed URL for the signature
-  const { data: signedUrlData } = await supabaseAdmin.storage
-    .from("ticket-documents")
-    .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-
-  return {
-    success: true,
-    signatureUrl: signedUrlData?.signedUrl ?? null,
-    signedAt: new Date().toISOString(),
-  };
 }
