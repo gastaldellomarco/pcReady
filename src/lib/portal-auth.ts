@@ -1,5 +1,6 @@
-import { createPortalFn, PortalTokenSchema } from "@/lib/portal-shared";
+import { createServerFn } from "@tanstack/react-start";
 import type { PortalSessionContext } from "@/lib/portal-auth.server";
+import { PortalTokenSchema } from "@/lib/portal-shared";
 import { z } from "zod";
 
 export type { PortalSessionContext };
@@ -33,11 +34,6 @@ const RevokePortalContactLinkSchema = z.object({
   contactId: z.string().uuid(),
 });
 
-const CORE_MODULE = "@/lib/portal-auth.server";
-const MODULE_2FA = "@/lib/portal-auth-2fa.server";
-const MODULE_PROFILE = "@/lib/portal-auth-profile.server";
-const MODULE_LINKS = "@/lib/portal-auth-links.server";
-
 const PortalLanguageSchema = z.object({
   token: z.string().min(32),
   language: z.enum(["it", "en"]),
@@ -67,23 +63,100 @@ const Portal2FALoginSchema = z.object({
   code: z.string().length(6),
 });
 
-export const requestPortalLogin = createPortalFn(RequestPortalLoginSchema, CORE_MODULE, "requestPortalLoginServer");
-export const loginPortalWithPassword = createPortalFn(PortalPasswordLoginSchema, CORE_MODULE, "loginPortalWithPasswordServer");
+export const requestPortalLogin = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => RequestPortalLoginSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { requestPortalLoginServer } = await import("@/lib/portal-auth.server");
+    return requestPortalLoginServer(data);
+  });
 
-// validatePortalSession is a special case — getPortalSession takes a string, not an object
-export const validatePortalSession = createPortalFn(PortalTokenSchema, CORE_MODULE, "validatePortalSessionServer");
+export const loginPortalWithPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalPasswordLoginSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { loginPortalWithPasswordServer } = await import("@/lib/portal-auth.server");
+    return loginPortalWithPasswordServer(data);
+  });
 
-export const updatePortalContactProfile = createPortalFn(PortalProfileUpdateSchema, MODULE_PROFILE, "updatePortalContactProfileServer");
-export const updatePortalContactLanguage = createPortalFn(PortalLanguageSchema, MODULE_PROFILE, "updatePortalContactLanguageServer");
-export const getPortalAccessHistory = createPortalFn(PortalAccessHistorySchema, MODULE_PROFILE, "getPortalAccessHistoryServer");
-export const updatePortalNotificationPreferences = createPortalFn(PortalNotificationPrefsSchema, MODULE_PROFILE, "updatePortalNotificationPreferencesServer");
+export const validatePortalSession = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { validatePortalSessionServer } = await import("@/lib/portal-auth.server");
+    return validatePortalSessionServer(data);
+  });
 
-export const setupPortal2FA = createPortalFn(Portal2FASetupSchema, MODULE_2FA, "setupPortal2FAServer");
-export const verifyPortal2FA = createPortalFn(Portal2FAVerifySchema, MODULE_2FA, "verifyPortal2FAServer");
+export const updatePortalContactProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalProfileUpdateSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { updatePortalContactProfileServer } = await import("@/lib/portal-auth-profile.server");
+    return updatePortalContactProfileServer(data);
+  });
 
-export const generatePortalAccessLink = createPortalFn(PortalContactLinkSchema, MODULE_LINKS, "generatePortalAccessLinkServer");
-export const revokePortalAccessLink = createPortalFn(RevokePortalContactLinkSchema, MODULE_LINKS, "revokePortalAccessLinkServer");
+export const updatePortalContactLanguage = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalLanguageSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { updatePortalContactLanguageServer } = await import("@/lib/portal-auth-profile.server");
+    return updatePortalContactLanguageServer(data);
+  });
 
-export const getPortalClientContacts = createPortalFn(PortalTokenSchema, CORE_MODULE, "getPortalClientContactsServer");
-export const verifyPortalLogin2FA = createPortalFn(Portal2FALoginSchema, CORE_MODULE, "verifyPortalLogin2FAServer");
-export const logoutPortalSession = createPortalFn(PortalTokenSchema, CORE_MODULE, "logoutPortalSessionServer");
+export const getPortalAccessHistory = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalAccessHistorySchema.parse(data))
+  .handler(async ({ data }) => {
+    const { getPortalAccessHistoryServer } = await import("@/lib/portal-auth-profile.server");
+    return getPortalAccessHistoryServer(data);
+  });
+
+export const updatePortalNotificationPreferences = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalNotificationPrefsSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { updatePortalNotificationPreferencesServer } = await import("@/lib/portal-auth-profile.server");
+    return updatePortalNotificationPreferencesServer(data);
+  });
+
+export const setupPortal2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => Portal2FASetupSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { setupPortal2FAServer } = await import("@/lib/portal-auth-2fa.server");
+    return setupPortal2FAServer(data);
+  });
+
+export const verifyPortal2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => Portal2FAVerifySchema.parse(data))
+  .handler(async ({ data }) => {
+    const { verifyPortal2FAServer } = await import("@/lib/portal-auth-2fa.server");
+    return verifyPortal2FAServer(data);
+  });
+
+export const generatePortalAccessLink = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalContactLinkSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { generatePortalAccessLinkServer } = await import("@/lib/portal-auth-links.server");
+    return generatePortalAccessLinkServer(data);
+  });
+
+export const revokePortalAccessLink = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => RevokePortalContactLinkSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { revokePortalAccessLinkServer } = await import("@/lib/portal-auth-links.server");
+    return revokePortalAccessLinkServer(data);
+  });
+
+export const getPortalClientContacts = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { getPortalClientContactsServer } = await import("@/lib/portal-auth.server");
+    return getPortalClientContactsServer(data);
+  });
+
+export const verifyPortalLogin2FA = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => Portal2FALoginSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { verifyPortalLogin2FAServer } = await import("@/lib/portal-auth.server");
+    return verifyPortalLogin2FAServer(data);
+  });
+
+export const logoutPortalSession = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { logoutPortalSessionServer } = await import("@/lib/portal-auth.server");
+    return logoutPortalSessionServer(data);
+  });
