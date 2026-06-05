@@ -18,6 +18,7 @@ import notificationsEn from "./locales/en/notifications.json";
 import profileEn from "./locales/en/profile.json";
 import scriptsEn from "./locales/en/scripts.json";
 import ticketsEn from "./locales/en/tickets.json";
+import warehouseEn from "./locales/en/warehouse.json";
 import adminIt from "./locales/it/admin.json";
 import automationsIt from "./locales/it/automations.json";
 import bundlesIt from "./locales/it/bundles.json";
@@ -34,6 +35,7 @@ import notificationsIt from "./locales/it/notifications.json";
 import profileIt from "./locales/it/profile.json";
 import scriptsIt from "./locales/it/scripts.json";
 import ticketsIt from "./locales/it/tickets.json";
+import warehouseIt from "./locales/it/warehouse.json";
 
 void i18n
   .use(LanguageDetector)
@@ -43,6 +45,7 @@ void i18n
       it: {
         common: commonIt,
         tickets: ticketsIt,
+        warehouse: warehouseIt,
         dashboard: dashboardIt,
         inventory: inventoryIt,
         kanban: kanbanIt,
@@ -61,6 +64,7 @@ void i18n
       en: {
         common: commonEn,
         tickets: ticketsEn,
+        warehouse: warehouseEn,
         dashboard: dashboardEn,
         inventory: inventoryEn,
         kanban: kanbanEn,
@@ -82,6 +86,7 @@ void i18n
     ns: [
       "common",
       "tickets",
+      "warehouse",
       "dashboard",
       "inventory",
       "kanban",

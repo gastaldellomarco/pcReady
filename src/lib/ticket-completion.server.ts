@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getAppSettings } from "@/lib/app-settings";
+import { pcReadyColors } from "@/lib/design-system";
 import { getEmailTemplateByEvent, sendEmailEvent } from "@/lib/email-helpers.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { STATUS_META, fmtDate } from "@/lib/pcready";
@@ -339,16 +340,19 @@ async function generateCompletionPdf(
     const marginX = 46;
     const contentWidth = pageWidth - marginX * 2;
     const brand = {
-      blue: "#1B4FD8",
-      navy: "#0F172A",
-      cyan: "#0EA5E9",
-      slate: "#475569",
-      muted: "#64748B",
-      border: "#DDE5F2",
-      soft: "#F5F8FF",
-      panel: "#F8FAFC",
-      success: "#0F9F6E",
-      warning: "#D97706",
+      accent: pcReadyColors.primary,
+      accentSoft: pcReadyColors.primaryLight,
+      ink: pcReadyColors.textPrimary,
+      muted: pcReadyColors.textSecondary,
+      faint: pcReadyColors.textMuted,
+      line: pcReadyColors.border,
+      surface: pcReadyColors.surface,
+      paper: pcReadyColors.card,
+      success: pcReadyColors.success,
+      successSoft: pcReadyColors.successLight,
+      warn: pcReadyColors.warning,
+      warnSoft: pcReadyColors.warningLight,
+      info: pcReadyColors.info,
     };
 
     const isTechnicalTemplate = template === "technical";
@@ -366,23 +370,57 @@ async function generateCompletionPdf(
     const workDuration = formatMinutesDuration(ticket.total_work_minutes ?? 0) || "Non registrato";
 
     let y = 42;
+    let consecutivePageBreaks = 0;
+    const MAX_CONSECUTIVE_PAGE_BREAKS = 20;
+
+    function drawPcReadyIcon(x: number, yPos: number, scale: number) {
+      doc.save();
+      doc
+        .roundedRect(x + 5 * scale, yPos + 8 * scale, 38 * scale, 27 * scale, 6 * scale)
+        .fill(brand.accentSoft);
+      doc
+        .lineWidth(3 * scale)
+        .roundedRect(x + 5 * scale, yPos + 8 * scale, 38 * scale, 27 * scale, 6 * scale)
+        .strokeColor(brand.accent)
+        .stroke();
+      doc
+        .moveTo(x + 17 * scale, yPos + 22.5 * scale)
+        .lineTo(x + 22.2 * scale, yPos + 27.5 * scale)
+        .lineTo(x + 32 * scale, yPos + 17 * scale)
+        .lineWidth(4 * scale)
+        .lineCap("round")
+        .lineJoin("round")
+        .strokeColor(brand.success)
+        .stroke();
+      doc
+        .moveTo(x + 20 * scale, yPos + 39 * scale)
+        .lineTo(x + 28 * scale, yPos + 39 * scale)
+        .lineWidth(3 * scale)
+        .lineCap("round")
+        .strokeColor(brand.accent)
+        .stroke();
+      doc
+        .moveTo(x + 16 * scale, yPos + 43 * scale)
+        .lineTo(x + 32 * scale, yPos + 43 * scale)
+        .lineWidth(3 * scale)
+        .lineCap("round")
+        .strokeColor(brand.accent)
+        .stroke();
+      doc.restore();
+    }
 
     function drawLogo(x: number, yPos: number) {
-      doc.save();
-      doc.roundedRect(x, yPos, 38, 38, 10).fill(brand.blue);
-      doc.roundedRect(x + 9, yPos + 9, 20, 20, 5).fill("#FFFFFF");
-      doc.roundedRect(x + 14, yPos + 14, 10, 10, 3).fill(brand.cyan);
-      doc.restore();
+      drawPcReadyIcon(x, yPos, 38 / 48);
       doc
         .font("Helvetica-Bold")
-        .fontSize(20)
-        .fillColor(brand.navy)
+        .fontSize(15)
+        .fillColor(brand.accent)
         .text("PCReady", x + 50, yPos + 2);
       doc
-        .font("Helvetica")
-        .fontSize(8.5)
-        .fillColor(brand.muted)
-        .text(`Assistenza tecnica · ${templateLabel}`, x + 51, yPos + 25);
+        .font("Helvetica-Bold")
+        .fontSize(11)
+        .fillColor(brand.ink)
+        .text(templateLabel, x + 51, yPos + 22);
     }
 
     function chip(text: string, x: number, yPos: number, color: string, width = 86) {
@@ -400,45 +438,80 @@ async function generateCompletionPdf(
       doc.addPage();
       y = 44;
       drawContinuationHeader();
-      y = 82;
+      y = y + 60;
     }
 
     function drawContinuationHeader() {
-      doc.font("Helvetica-Bold").fontSize(10).fillColor(brand.blue).text("PCReady", marginX, y);
+      const hh = 52;
+      doc.save();
+      doc.roundedRect(marginX, y, contentWidth, hh, 6).fillAndStroke(brand.surface, brand.line);
+      doc.restore();
+
+      const lx = marginX + 10;
+      const ly = y + 10;
+      drawPcReadyIcon(lx, ly, 22 / 48);
+
+      const tx = lx + 34;
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(12)
+        .fillColor(brand.accent)
+        .text("PCReady", tx, y + 10, { width: 220 });
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9)
+        .fillColor(brand.ink)
+        .text(`${templateLabel} · ${ticket.ticket_code}`, tx, y + 28, { width: 280 });
+
       doc
         .font("Helvetica")
-        .fontSize(8.5)
+        .fontSize(7)
         .fillColor(brand.muted)
-        .text(`${templateLabel} ${ticket.ticket_code}`, marginX + 76, y, { width: 220 });
-      doc
-        .font("Helvetica")
-        .fontSize(8.5)
-        .fillColor(brand.muted)
-        .text(formatPdfDateTime(generatedAt), pageWidth - marginX - 170, y, {
-          width: 170,
+        .text(formatPdfDateTime(generatedAt), pageWidth - marginX - 150, y + 12, {
+          width: 140,
           align: "right",
         });
+      doc.save();
+      const cx = pageWidth - marginX - 68;
+      const cy = y + 28;
+      doc.roundedRect(cx, cy, 56, 15, 8).fill(brand.accentSoft);
       doc
-        .moveTo(marginX, y + 18)
-        .lineTo(pageWidth - marginX, y + 18)
-        .strokeColor(brand.border)
-        .stroke();
+        .font("Helvetica-Bold")
+        .fontSize(6)
+        .fillColor(brand.accent)
+        .text("A4 verticale", cx, cy + 4, { width: 56, align: "center" });
+      doc.restore();
     }
 
     function ensureSpace(height: number) {
-      if (y + height <= pageHeight - 78) return;
+      if (y + height <= pageHeight - 78) {
+        consecutivePageBreaks = 0;
+        return;
+      }
+      consecutivePageBreaks += 1;
+      if (consecutivePageBreaks > MAX_CONSECUTIVE_PAGE_BREAKS) {
+        // Safety net: prevent infinite page-break loops from edge cases
+        // (e.g. a single unbreakable word taller than the usable page area).
+        console.error(
+          `[ticket-completion] Aborting PDF generation: ${consecutivePageBreaks} consecutive page breaks. Ticket: ${ticket.ticket_code}`,
+        );
+        throw new Error("PDF layout overflow: content exceeds page capacity");
+      }
       addManagedPage();
     }
 
     function sectionTitle(title: string, subtitle?: string) {
-      ensureSpace(132);
-      doc.font("Helvetica-Bold").fontSize(14).fillColor(brand.navy).text(title, marginX, y);
+      ensureSpace(56);
+      doc
+        .roundedRect(marginX, y + 3, 4, 14, 2)
+        .fill(brand.accent);
+      doc.font("Helvetica-Bold").fontSize(12).fillColor(brand.accent).text(title, marginX + 12, y);
       if (subtitle) {
         doc
           .font("Helvetica")
           .fontSize(9)
           .fillColor(brand.muted)
-          .text(subtitle, marginX, y + 18, { width: contentWidth });
+          .text(subtitle, marginX + 12, y + 18, { width: contentWidth - 12 });
         y += 38;
       } else {
         y += 24;
@@ -448,7 +521,7 @@ async function generateCompletionPdf(
     function drawCard(height: number) {
       ensureSpace(height + 12);
       doc.save();
-      doc.roundedRect(marginX, y, contentWidth, height, 12).fillAndStroke("#FFFFFF", brand.border);
+      doc.roundedRect(marginX, y, contentWidth, height, 12).fillAndStroke(brand.paper, brand.line);
       doc.restore();
     }
 
@@ -461,7 +534,7 @@ async function generateCompletionPdf(
       doc
         .font("Helvetica")
         .fontSize(10.5)
-        .fillColor(brand.navy)
+        .fillColor(brand.ink)
         .text(cleanPdfText(value || "-"), x, yPos + 13, { width });
     }
 
@@ -510,7 +583,10 @@ async function generateCompletionPdf(
       const safeValue = cleanPdfText(value) || "-";
       const innerWidth = contentWidth - 38;
       const textWidth = innerWidth - 18;
-      const chunks = splitTextForHeight(safeValue, textWidth, pageHeight - 190, 10);
+      // Max chunk height must leave room for workField overhead (42pt) + gap (12pt)
+      // on continuation pages where usable area = pageHeight - 78 - 104 = 660pt.
+      // 660 - 54 = 606 safe text height; use pageHeight - 250 (~592) with safety margin.
+      const chunks = splitTextForHeight(safeValue, textWidth, pageHeight - 250, 10);
 
       chunks.forEach((chunk, index) => {
         const panelTitle = index === 0 ? title : `${title} (continua)`;
@@ -523,7 +599,7 @@ async function generateCompletionPdf(
         doc.save();
         doc
           .roundedRect(marginX, y, contentWidth, height, 10)
-          .fillAndStroke("#FFFFFF", brand.border);
+          .fillAndStroke(brand.paper, brand.line);
         if (options?.accent) {
           doc.roundedRect(marginX, y, 5, height, 3).fill(options.accent);
         }
@@ -531,13 +607,13 @@ async function generateCompletionPdf(
         doc
           .font("Helvetica-Bold")
           .fontSize(9)
-          .fillColor(brand.navy)
+          .fillColor(brand.ink)
           .text(cleanPdfText(panelTitle), marginX + 18, y + 13, { width: innerWidth });
         doc
           .font("Helvetica")
           .fontSize(10)
           .lineGap(3)
-          .fillColor(brand.slate)
+          .fillColor(brand.muted)
           .text(chunk, marginX + 18, y + 31, { width: textWidth });
         y += height + 12;
       });
@@ -551,7 +627,9 @@ async function generateCompletionPdf(
       const chunks: string[][] = [];
       let currentChunk: string[] = [];
       let currentHeight = 0;
-      const maxBodyHeight = pageHeight - 210;
+      // Max body height must leave room for workBulletList overhead (42pt) + gap (12pt)
+      // on continuation pages (usable = 660pt). 660 - 54 = 606; use pageHeight - 250 with margin.
+      const maxBodyHeight = pageHeight - 250;
 
       safeItems.forEach((item) => {
         const itemHeight = Math.max(
@@ -589,12 +667,12 @@ async function generateCompletionPdf(
         doc.save();
         doc
           .roundedRect(marginX, y, contentWidth, height, 10)
-          .fillAndStroke(brand.panel, brand.border);
+          .fillAndStroke(brand.surface, brand.line);
         doc.restore();
         doc
           .font("Helvetica-Bold")
           .fontSize(9)
-          .fillColor(brand.navy)
+          .fillColor(brand.ink)
           .text(
             cleanPdfText(chunkIndex === 0 ? title : `${title} (continua)`),
             marginX + 18,
@@ -612,12 +690,12 @@ async function generateCompletionPdf(
               .fontSize(10)
               .heightOfString(item, { width: innerWidth - 28 }) + 8,
           );
-          doc.circle(marginX + 23, bulletY + 6, 2.4).fill(brand.blue);
+          doc.circle(marginX + 23, bulletY + 6, 2.4).fill(brand.accent);
           doc
             .font("Helvetica")
             .fontSize(10)
             .lineGap(3)
-            .fillColor(brand.slate)
+            .fillColor(brand.muted)
             .text(item, marginX + 36, bulletY, { width: innerWidth - 28 });
           bulletY += itemHeight;
         });
@@ -660,16 +738,16 @@ async function generateCompletionPdf(
         doc.save();
         doc
           .roundedRect(marginX, y, contentWidth, height, 12)
-          .fillAndStroke("#FFFFFF", brand.border);
+          .fillAndStroke(brand.paper, brand.line);
         doc.restore();
         doc
           .font("Helvetica-Bold")
           .fontSize(11)
-          .fillColor(brand.navy)
+          .fillColor(brand.ink)
           .text(cleanPdfText(`${index + 1}. ${checklist.title}`), marginX + 16, y + 14, {
             width: contentWidth - 180,
           });
-        const statusColor = checklist.requiredMissing ? brand.warning : brand.success;
+        const statusColor = checklist.requiredMissing ? brand.warn : brand.success;
         chip(
           checklistStatusToLabel(checklist.status),
           marginX + contentWidth - 112,
@@ -697,7 +775,7 @@ async function generateCompletionPdf(
         const barX = marginX + 16;
         const barY = y + 56;
         const barWidth = contentWidth - 32;
-        doc.roundedRect(barX, barY, barWidth, 8, 4).fill("#E2E8F0");
+        doc.roundedRect(barX, barY, barWidth, 8, 4).fill(brand.line);
         doc
           .roundedRect(barX, barY, Math.max(4, Math.round((barWidth * pct) / 100)), 8, 4)
           .fill(statusColor);
@@ -705,7 +783,7 @@ async function generateCompletionPdf(
         doc
           .font("Helvetica-Bold")
           .fontSize(8.5)
-          .fillColor(checklist.requiredMissing ? brand.warning : brand.success)
+          .fillColor(checklist.requiredMissing ? brand.warn : brand.success)
           .text(
             checklist.requiredMissing
               ? `${checklist.requiredMissing} step obbligatori non completati`
@@ -720,11 +798,11 @@ async function generateCompletionPdf(
           const isMissing = item.startsWith("Obbligatorio non completato");
           doc
             .circle(marginX + 21, detailY + 5, 2.2)
-            .fill(isMissing ? brand.warning : brand.success);
+            .fill(isMissing ? brand.warn : brand.success);
           doc
             .font("Helvetica")
             .fontSize(8.5)
-            .fillColor(brand.slate)
+            .fillColor(brand.muted)
             .text(cleanPdfText(item), marginX + 32, detailY, { width: contentWidth - 48 });
           detailY += 18;
         });
@@ -771,7 +849,7 @@ async function generateCompletionPdf(
               )}.`
             : ""
         }`,
-        { accent: missing > 0 ? brand.warning : brand.success },
+        { accent: missing > 0 ? brand.warn : brand.success },
       );
     }
 
@@ -784,7 +862,7 @@ async function generateCompletionPdf(
       const height = 188;
       ensureSpace(height + 14);
       doc.save();
-      doc.roundedRect(marginX, y, contentWidth, height, 14).fillAndStroke("#FFFFFF", brand.border);
+      doc.roundedRect(marginX, y, contentWidth, height, 14).fillAndStroke(brand.paper, brand.line);
       doc.restore();
 
       const confirmedBy = (ticket.checklist_summaries ?? [])
@@ -799,7 +877,7 @@ async function generateCompletionPdf(
       doc
         .font("Helvetica-Bold")
         .fontSize(10)
-        .fillColor(brand.navy)
+        .fillColor(brand.ink)
         .text("Firma tecnico", leftX, y + 18, { width: signatureWidth });
       doc
         .font("Helvetica")
@@ -816,7 +894,7 @@ async function generateCompletionPdf(
       doc
         .moveTo(leftX, y + 96)
         .lineTo(leftX + signatureWidth, y + 96)
-        .strokeColor(brand.border)
+        .strokeColor(brand.line)
         .stroke();
       doc
         .font("Helvetica-Oblique")
@@ -834,7 +912,7 @@ async function generateCompletionPdf(
       doc
         .font("Helvetica-Bold")
         .fontSize(10)
-        .fillColor(brand.navy)
+        .fillColor(brand.ink)
         .text("Firma cliente / referente", rightX, y + 18, { width: signatureWidth });
       doc
         .font("Helvetica")
@@ -849,7 +927,7 @@ async function generateCompletionPdf(
       doc
         .moveTo(rightX, y + 96)
         .lineTo(rightX + signatureWidth, y + 96)
-        .strokeColor(brand.border)
+        .strokeColor(brand.line)
         .stroke();
       doc
         .font("Helvetica-Oblique")
@@ -860,11 +938,11 @@ async function generateCompletionPdf(
         });
 
       const acceptanceY = y + 136;
-      doc.roundedRect(leftX, acceptanceY, 14, 14, 3).strokeColor(brand.border).stroke();
+      doc.roundedRect(leftX, acceptanceY, 14, 14, 3).strokeColor(brand.line).stroke();
       doc
         .font("Helvetica")
         .fontSize(9)
-        .fillColor(brand.slate)
+        .fillColor(brand.ink)
         .text(
           "Presa visione: il referente dichiara di aver ricevuto il verbale e prende atto dell'esito dell'intervento indicato nel presente documento.",
           leftX + 22,
@@ -886,16 +964,16 @@ async function generateCompletionPdf(
       y += height + 14;
     }
 
-    // Header with identity and document metadata.
+    // Header matching BrandedPage style.
     drawLogo(marginX, y);
     doc
       .font("Helvetica-Bold")
-      .fontSize(19)
-      .fillColor(brand.navy)
+      .fontSize(15)
+      .fillColor(brand.accent)
       .text(
         isTechnicalTemplate ? "Report tecnico completamento" : "Verbale di completamento",
         marginX + 245,
-        y + 1,
+        y + 2,
         {
           width: contentWidth - 245,
           align: "right",
@@ -903,22 +981,22 @@ async function generateCompletionPdf(
       );
     doc
       .font("Helvetica")
-      .fontSize(9.5)
+      .fontSize(8)
       .fillColor(brand.muted)
-      .text(`Generato il ${formatPdfDateTime(generatedAt)}`, marginX + 245, y + 26, {
+      .text(`Generato il ${formatPdfDateTime(generatedAt)}`, marginX + 245, y + 22, {
         width: contentWidth - 245,
         align: "right",
       });
     y += 62;
 
-    // Hero summary box: key facts readable immediately.
+    // Hero summary box matching StatStrip style.
     doc.save();
-    doc.roundedRect(marginX, y, contentWidth, 112, 16).fillAndStroke(brand.soft, "#C8D8F5");
+    doc.roundedRect(marginX, y, contentWidth, 112, 16).fillAndStroke(brand.surface, brand.accentSoft);
     doc.restore();
     doc
       .font("Helvetica-Bold")
       .fontSize(22)
-      .fillColor(brand.blue)
+      .fillColor(brand.accent)
       .text(ticket.ticket_code, marginX + 18, y + 18, { width: 170 });
     doc
       .font("Helvetica")
@@ -926,7 +1004,7 @@ async function generateCompletionPdf(
       .fillColor(brand.muted)
       .text("Riferimento ticket", marginX + 20, y + 45, { width: 170 });
     chip(statusLabel, marginX + 20, y + 68, brand.success, 108);
-    chip(priorityLabel, marginX + 136, y + 68, priorityColor(ticket.priority, brand), 94);
+    chip(priorityLabel, marginX + 136, y + 68, priorityColor(ticket.priority), 94);
 
     const summaryX = marginX + 258;
     const summaryCol = (contentWidth - 284) / 2;
@@ -946,7 +1024,7 @@ async function generateCompletionPdf(
       y + 63,
       summaryCol,
     );
-    y += 136;
+    y += 124;
 
     sectionTitle(
       "Dati ticket",
@@ -969,7 +1047,7 @@ async function generateCompletionPdf(
     labelValue("Durata totale ticket", totalTicketDuration, marginX + 18, y + 98, col);
     labelValue("Tempo presa in carico", takeoverDuration, marginX + 28 + col, y + 98, col);
     labelValue("Tempo lavorato registrato", workDuration, marginX + 38 + col * 2, y + 98, col);
-    y += 156;
+    y += 148;
 
     sectionTitle(
       "Dispositivo",
@@ -986,24 +1064,28 @@ async function generateCompletionPdf(
       y + 55,
       contentWidth - 36,
     );
-    y += 104;
+    y += 96;
 
     const execution = buildWorkExecutionSummary(ticket, statusLabel, template);
+    y += 12;
     sectionTitle(
       "Esecuzione del lavoro",
       isTechnicalTemplate
         ? "Riepilogo tecnico operativo dell'intervento, utile per audit e storico manutenzione."
         : "Riepilogo dell'intervento in linguaggio chiaro per cliente e amministrazione.",
     );
-    workField("Problema segnalato", execution.problem, { accent: brand.blue });
-    workField("Diagnosi tecnica", execution.diagnosis, { accent: brand.cyan });
+    workField("Problema segnalato", execution.problem, { accent: brand.accent });
+    workField("Diagnosi tecnica", execution.diagnosis, { accent: brand.info });
     workBulletList("Attività svolte", execution.activities);
     workField("Esito finale", execution.outcome, { accent: brand.success });
-    workField("Eventuali anomalie residue", execution.residualIssues, { accent: brand.warning });
-    workField("Raccomandazioni post-intervento", execution.recommendations, { accent: brand.blue });
+    workField("Eventuali anomalie residue", execution.residualIssues, { accent: brand.warn });
+    workField("Raccomandazioni post-intervento", execution.recommendations, { accent: brand.accent });
+    y += 12;
 
     drawChecklistSection(ticket.checklist_summaries ?? [], isTechnicalTemplate);
+    y += 12;
     drawFinalVerificationSection(ticket.checklist_summaries ?? []);
+    y += 12;
 
     if (isTechnicalTemplate) {
       sectionTitle(
@@ -1011,7 +1093,7 @@ async function generateCompletionPdf(
         "Informazioni complete per uso tecnico/amministrativo.",
       );
       workField("Note tecniche", ticket.notes || "Nessuna nota tecnica interna disponibile.", {
-        accent: brand.cyan,
+        accent: brand.info,
       });
       workBulletList(
         "Log sintetico stati",
@@ -1026,10 +1108,11 @@ async function generateCompletionPdf(
         { accent: brand.muted },
       );
     }
+    y += 12;
 
     drawSignatureSection();
 
-    // Footer with page numbering and ticket reference.
+    // Footer matching BrandedPage style.
     const range = doc.bufferedPageRange();
     for (let i = range.start; i < range.start + range.count; i += 1) {
       doc.switchToPage(i);
@@ -1037,26 +1120,34 @@ async function generateCompletionPdf(
       doc
         .moveTo(marginX, footerY - 10)
         .lineTo(pageWidth - marginX, footerY - 10)
-        .strokeColor(brand.border)
+        .strokeColor(brand.line)
         .stroke();
       doc
         .font("Helvetica")
-        .fontSize(8.5)
+        .fontSize(7)
         .fillColor(brand.muted)
-        .text("Documento generato automaticamente da PCReady", marginX, footerY, {
-          width: 220,
+        .text("PCReady", marginX, footerY, {
+          width: 120,
         });
       doc
         .font("Helvetica")
-        .fontSize(8.5)
+        .fontSize(7)
         .fillColor(brand.muted)
-        .text(`Ticket ${ticket.ticket_code}`, marginX + 225, footerY, {
-          width: 130,
+        .text(`Ticket ${ticket.ticket_code}`, marginX + 130, footerY, {
+          width: 160,
           align: "center",
         });
       doc
         .font("Helvetica")
-        .fontSize(8.5)
+        .fontSize(7)
+        .fillColor(brand.muted)
+        .text(`Generato: ${formatPdfDateTime(generatedAt)}`, marginX + 300, footerY, {
+          width: 180,
+          align: "center",
+        });
+      doc
+        .font("Helvetica")
+        .fontSize(7)
         .fillColor(brand.muted)
         .text(`Pagina ${i + 1} di ${range.count}`, pageWidth - marginX - 110, footerY, {
           width: 110,
@@ -1072,8 +1163,141 @@ async function generateCompletionPdf(
 
     return Buffer.concat(chunks);
   } catch (error) {
-    console.error("PDF generation failed, falling back to placeholder:", error);
-    return Buffer.from("PDF Placeholder - Ticket Completion Report");
+    console.error("PDF generation failed, falling back to error page:", error);
+    return generateErrorPdf(
+      error instanceof Error ? error.message : "Errore sconosciuto durante la generazione del PDF",
+    );
+  }
+}
+
+/**
+ * Generates a minimal valid PDF with an error message.
+ * Used as fallback when the main PDF generation fails,
+ * ensuring the buffer uploaded to Supabase Storage is always a valid PDF.
+ */
+async function generateErrorPdf(errorMessage: string): Promise<Buffer> {
+  try {
+    const pdfkitModule = (await import("pdfkit").catch(() => null)) as unknown as {
+      default: new (options?: Record<string, unknown>) => any;
+    } | null;
+    if (!pdfkitModule) {
+      // Minimal valid PDF bytes (triple-fallback: only if pdfkit import itself fails).
+      // Content stream is exactly 54 bytes.
+      return Buffer.from(
+        "%PDF-1.4\n" +
+          "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+          "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+          "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj\n" +
+          "4 0 obj<</Length 54>>stream\n" +
+          "BT /F1 12 Tf 50 750 Td (Errore generazione PDF) Tj ET\n" +
+          "endstream\nendobj\n" +
+          "trailer<</Size 5/Root 1 0 R>>",
+        "utf-8",
+      );
+    }
+
+    const PDFDocument = pdfkitModule.default;
+    const doc = new PDFDocument({
+      size: "A4",
+      margins: { top: 48, bottom: 64, left: 46, right: 46 },
+      info: {
+        Title: "Errore generazione PDF",
+        Author: "PCReady",
+        Subject: "Fallback error page",
+      },
+    });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+    const pageWidth = doc.page.width;
+    const marginX = 46;
+    const contentWidth = pageWidth - marginX * 2;
+
+    // Error icon (red circle with X)
+    doc
+      .circle(marginX + 28, 88, 22)
+      .lineWidth(3)
+      .strokeColor("#DC2626")
+      .stroke();
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(24)
+      .fillColor("#DC2626")
+      .text("!", marginX + 28 - 6, 79, { width: 12, align: "center" });
+
+    // Title
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(18)
+      .fillColor("#1E293B")
+      .text("Errore nella generazione del PDF", marginX + 70, 76, {
+        width: contentWidth - 70,
+      });
+
+    // Subtitle
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .fillColor("#64748B")
+      .text(
+        "Si è verificato un problema durante la creazione del verbale di completamento. " +
+          "Di seguito i dettagli tecnici per l'assistenza.",
+        marginX,
+        130,
+        { width: contentWidth },
+      );
+
+    // Error details card
+    doc
+      .roundedRect(marginX, 180, contentWidth, 100, 8)
+      .fillAndStroke("#FEF2F2", "#FECACA");
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9)
+      .fillColor("#991B1B")
+      .text("Dettagli errore", marginX + 16, 196, { width: contentWidth - 32 });
+    doc
+      .font("Courier")
+      .fontSize(8)
+      .fillColor("#7F1D1D")
+      .text(errorMessage || "Nessun dettaglio disponibile.", marginX + 16, 216, {
+        width: contentWidth - 32,
+        height: 48,
+        ellipsis: true,
+      });
+
+    // Footer
+    doc
+      .font("Helvetica")
+      .fontSize(8)
+      .fillColor("#94A3B8")
+      .text(
+        "PCReady · Sistema di gestione assistenza tecnica · Documento generato automaticamente",
+        marginX,
+        doc.page.height - 64,
+        { width: contentWidth, align: "center" },
+      );
+
+    doc.end();
+
+    await new Promise<void>((resolve) => {
+      doc.on("end", () => resolve());
+    });
+
+    return Buffer.concat(chunks);
+  } catch {
+    // Ultimate fallback: raw valid PDF bytes
+    return Buffer.from(
+      "%PDF-1.4\n" +
+        "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+        "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+        "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj\n" +
+        "4 0 obj<</Length 62>>stream\n" +
+        "BT /F1 12 Tf 50 750 Td (Errore generazione PDF) Tj ET\n" +
+        "endstream\nendobj\n" +
+        "trailer<</Size 5/Root 1 0 R>>",
+      "utf-8",
+    );
   }
 }
 
@@ -1105,10 +1329,10 @@ function priorityToLabel(priority: string) {
   return labels[priority] || humanizeValue(priority);
 }
 
-function priorityColor(priority: string, brand: { warning: string; muted: string; blue: string }) {
-  if (priority === "high" || priority === "urgent") return brand.warning;
-  if (priority === "low") return brand.muted;
-  return brand.blue;
+function priorityColor(priority: string) {
+  if (priority === "high" || priority === "urgent") return pcReadyColors.warning;
+  if (priority === "low") return pcReadyColors.textSecondary;
+  return pcReadyColors.primary;
 }
 
 function checklistStatusToLabel(status: string) {

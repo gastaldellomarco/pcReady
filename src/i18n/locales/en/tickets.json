@@ -329,7 +329,28 @@
       "bundleActive": "Active bundle: {{name}}",
       "bundleSla": "SLA response {{response}}h · resolution {{resolution}}h · extra ticket {{cost}}",
       "extraHours": "{{hours}} extra",
-      "hourlyConsumption": "Bundle hourly consumption"
+      "hourlyConsumption": "Bundle hourly consumption",
+      "materialItems": "Materials / Parts",
+      "materialSummary": "{{count}} items · Cost {{cost}} · Revenue {{revenue}}",
+      "noMaterials": "No materials registered",
+      "loading": "Loading...",
+      "materialDesc": "Description",
+      "materialDescPlaceholder": "e.g. 1TB NVMe SSD",
+      "materialSupplier": "Supplier",
+      "materialSupplierPlaceholder": "Amazon",
+      "materialSku": "SKU",
+      "materialSkuPlaceholder": "WD40EZAX",
+      "materialQty": "Qty",
+      "materialUnitCost": "Unit cost",
+      "materialMargin": "Markup %",
+      "materialPreview": "Final price preview",
+      "materialUnitPrice": "Unit price",
+      "materialTotalPrice": "Total price",
+      "materialCost": "Cost",
+      "materialActions": "Actions",
+      "materialAddBtn": "Add material",
+      "materialDeleteBtn": "Delete material",
+      "materialDeleteConfirm": "Delete this material?"
     },
     "btn": {
       "save": "Save",
@@ -412,7 +433,13 @@
       "checklistSectionAssigned": "This section is assigned to another technician",
       "responseSaveError": "Error saving response",
       "filledRequired": "Fill in {{count}} required items first",
-      "checklistAlreadyCompleted": "Checklist already completed"
+      "checklistAlreadyCompleted": "Checklist already completed",
+      "materialDescRequired": "Enter a description",
+      "materialQtyInvalid": "Quantity must be > 0",
+      "materialAdded": "Material added",
+      "materialAddError": "Error saving material",
+      "materialDeleted": "Material deleted",
+      "materialDeleteError": "Error deleting material"
     }
   },
   "device": {

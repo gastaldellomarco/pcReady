@@ -13,6 +13,7 @@ import {
   Users,
   Terminal,
   CalendarDays,
+  Wrench,
 } from "lucide-react";
 import i18n from "@/i18n";
 import type { AuthProfile } from "@/lib/auth-context";
@@ -93,6 +94,7 @@ export const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
       { to: "/costs", label: "Costi", icon: Euro, requiredRoles: ["admin", "tech"] },
       { to: "/bundles", label: "Bundle", icon: Package, requiredRoles: ["admin", "tech"] },
       { to: "/inventory", label: "Inventario", icon: Boxes },
+      { to: "/warehouse", label: "Magazzino", icon: Wrench, requiredRoles: ["admin", "tech"] },
       { to: "/docs", label: "API Docs", icon: BookOpenText, requiredRoles: ["admin", "tech"] },
       { to: "/admin", label: "Admin / Utenti", icon: Users, requiredRoles: ["admin"] },
     ],
@@ -111,6 +113,7 @@ export const PAGE_TITLE_KEYS: Record<string, string> = {
   "/costs": "pageTitle.costs",
   "/bundles": "pageTitle.bundles",
   "/inventory": "pageTitle.inventory",
+  "/warehouse": "pageTitle.warehouse",
   "/docs": "pageTitle.docs",
   "/admin": "pageTitle.admin",
   "/profile": "pageTitle.profile",
@@ -130,6 +133,7 @@ export const PAGE_TITLE_FALLBACKS: Record<string, string> = {
   "/costs": "Costi",
   "/bundles": "Bundle assistenza",
   "/inventory": "Inventario",
+  "/warehouse": "Magazzino",
   "/docs": "API Docs",
   "/admin": "Admin / Utenti",
   "/profile": "Profilo",

@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "title": "Magazzino / Ricambi - PCReady",
+    "description": "Gestione materiali e ricambi. Aggiungi fornitori, SKU, quantità e calcola prezzi con ricarico in tempo reale."
+  },
+  "title": "Magazzino / Ricambi",
+  "subtitle": "Gestione materiali e ricambi con calcolo prezzi in tempo reale",
+  "stats": {
+    "totalCost": "Costo totale",
+    "totalRevenue": "Ricavo stimato",
+    "margin": "Margine",
+    "items": "Materiali"
+  },
+  "form": {
+    "addTitle": "Aggiungi materiale / ricambio",
+    "editTitle": "Modifica materiale",
+    "ticketLabel": "Ticket",
+    "ticketPlaceholder": "Cerca ticket per codice o cliente...",
+    "supplierLabel": "Fornitore",
+    "supplierPlaceholder": "es. Amazon, MediaWorld...",
+    "skuLabel": "SKU / Codice",
+    "skuPlaceholder": "es. WD40EZAX",
+    "descriptionLabel": "Descrizione",
+    "descriptionPlaceholder": "es. SSD NVMe 1TB...",
+    "quantityLabel": "Quantità",
+    "unitCostLabel": "Costo unitario (€)",
+    "marginLabel": "Ricarico (%)",
+    "previewLabel": "Anteprima prezzo finale",
+    "unitPrice": "Prezzo unitario",
+    "totalPrice": "Prezzo totale",
+    "saveBtn": "Salva materiale",
+    "updateBtn": "Aggiorna materiale",
+    "cancelBtn": "Annulla"
+  },
+  "table": {
+    "title": "Materiali registrati",
+    "count": "{{count}} materiali trovati",
+    "allSuppliers": "Tutti i fornitori",
+    "supplierFilterLabel": "Filtra per fornitore",
+    "loading": "Caricamento materiali...",
+    "empty": "Nessun materiale registrato.",
+    "addFirst": "Aggiungi primo materiale",
+    "viewDetails": "Dettagli",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "deleting": "Eliminazione...",
+    "confirmDelete": "Eliminare questo materiale?",
+    "confirmDeleteDescription": "L'azione non può essere annullata.",
+    "headers": {
+      "description": "Descrizione",
+      "supplier": "Fornitore",
+      "sku": "SKU",
+      "quantity": "Qtà",
+      "unitCost": "Costo unit.",
+      "margin": "Ricarico",
+      "unitPrice": "Prezzo unit.",
+      "totalPrice": "Prezzo tot.",
+      "ticket": "Ticket",
+      "actions": "Azioni"
+    }
+  },
+  "detail": {
+    "title": "Dettaglio materiale",
+    "description": "Descrizione",
+    "supplier": "Fornitore",
+    "sku": "SKU",
+    "quantity": "Quantità",
+    "unitCost": "Costo unitario",
+    "margin": "Ricarico",
+    "unitPrice": "Prezzo unitario",
+    "totalCost": "Costo totale",
+    "totalPrice": "Prezzo totale",
+    "ticket": "Ticket",
+    "createdAt": "Data creazione",
+    "openTicket": "Apri ticket",
+    "close": "Chiudi"
+  },
+  "validation": {
+    "ticketRequired": "Seleziona un ticket",
+    "descriptionRequired": "Inserisci una descrizione",
+    "quantityInvalid": "La quantità deve essere > 0",
+    "costInvalid": "Il costo deve essere ≥ 0"
+  },
+  "chart": {
+    "title": "Andamento spesa materiali",
+    "byMonth": "Per mese",
+    "bySupplier": "Per fornitore",
+    "cost": "Costo",
+    "empty": "Nessun dato disponibile",
+    "unknownSupplier": "Sconosciuto"
+  },
+  "feedback": {
+    "insufficientPermissions": "Permessi insufficienti",
+    "loadError": "Errore caricamento materiali",
+    "materialSaved": "Materiale salvato",
+    "materialUpdated": "Materiale aggiornato",
+    "materialDeleted": "Materiale eliminato",
+    "saveError": "Errore salvataggio materiale",
+    "deleteError": "Errore eliminazione materiale"
+  }
+}

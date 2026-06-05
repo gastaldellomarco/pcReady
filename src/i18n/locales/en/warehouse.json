@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "title": "Warehouse / Spare Parts - PCReady",
+    "description": "Materials and spare parts management. Add suppliers, SKUs, quantities and calculate prices with live markup."
+  },
+  "title": "Warehouse / Spare Parts",
+  "subtitle": "Materials and spare parts with real-time price calculation",
+  "stats": {
+    "totalCost": "Total cost",
+    "totalRevenue": "Estimated revenue",
+    "margin": "Margin",
+    "items": "Items"
+  },
+  "form": {
+    "addTitle": "Add material / spare part",
+    "editTitle": "Edit material",
+    "ticketLabel": "Ticket",
+    "ticketPlaceholder": "Search ticket by code or client...",
+    "supplierLabel": "Supplier",
+    "supplierPlaceholder": "e.g. Amazon, Newegg...",
+    "skuLabel": "SKU / Code",
+    "skuPlaceholder": "e.g. WD40EZAX",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "e.g. 1TB NVMe SSD...",
+    "quantityLabel": "Quantity",
+    "unitCostLabel": "Unit cost (€)",
+    "marginLabel": "Markup (%)",
+    "previewLabel": "Final price preview",
+    "unitPrice": "Unit price",
+    "totalPrice": "Total price",
+    "saveBtn": "Save material",
+    "updateBtn": "Update material",
+    "cancelBtn": "Cancel"
+  },
+  "table": {
+    "title": "Registered materials",
+    "count": "{{count}} materials found",
+    "allSuppliers": "All suppliers",
+    "supplierFilterLabel": "Filter by supplier",
+    "loading": "Loading materials...",
+    "empty": "No materials registered.",
+    "addFirst": "Add first material",
+    "viewDetails": "Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "confirmDelete": "Delete this material?",
+    "confirmDeleteDescription": "This action cannot be undone.",
+    "headers": {
+      "description": "Description",
+      "supplier": "Supplier",
+      "sku": "SKU",
+      "quantity": "Qty",
+      "unitCost": "Unit cost",
+      "margin": "Markup",
+      "unitPrice": "Unit price",
+      "totalPrice": "Total price",
+      "ticket": "Ticket",
+      "actions": "Actions"
+    }
+  },
+  "detail": {
+    "title": "Material detail",
+    "description": "Description",
+    "supplier": "Supplier",
+    "sku": "SKU",
+    "quantity": "Quantity",
+    "unitCost": "Unit cost",
+    "margin": "Markup",
+    "unitPrice": "Unit price",
+    "totalCost": "Total cost",
+    "totalPrice": "Total price",
+    "ticket": "Ticket",
+    "createdAt": "Created at",
+    "openTicket": "Open ticket",
+    "close": "Close"
+  },
+  "validation": {
+    "ticketRequired": "Select a ticket",
+    "descriptionRequired": "Enter a description",
+    "quantityInvalid": "Quantity must be > 0",
+    "costInvalid": "Cost must be ≥ 0"
+  },
+  "chart": {
+    "title": "Material spending trend",
+    "byMonth": "By month",
+    "bySupplier": "By supplier",
+    "cost": "Cost",
+    "empty": "No data available",
+    "unknownSupplier": "Unknown"
+  },
+  "feedback": {
+    "insufficientPermissions": "Insufficient permissions",
+    "loadError": "Error loading materials",
+    "materialSaved": "Material saved",
+    "materialUpdated": "Material updated",
+    "materialDeleted": "Material deleted",
+    "saveError": "Error saving material",
+    "deleteError": "Error deleting material"
+  }
+}

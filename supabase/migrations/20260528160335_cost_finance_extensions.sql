@@ -173,50 +173,64 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
   public.cost_periodic_reports
 TO authenticated;
 
+DROP POLICY IF EXISTS "team can read cost invoices" ON public.cost_invoices;
 CREATE POLICY "team can read cost invoices" ON public.cost_invoices
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage cost invoices" ON public.cost_invoices;
 CREATE POLICY "admin and tech can manage cost invoices" ON public.cost_invoices
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read cost invoice items" ON public.cost_invoice_items;
 CREATE POLICY "team can read cost invoice items" ON public.cost_invoice_items
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage cost invoice items" ON public.cost_invoice_items;
 CREATE POLICY "admin and tech can manage cost invoice items" ON public.cost_invoice_items
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read cost quotes" ON public.cost_quotes;
 CREATE POLICY "team can read cost quotes" ON public.cost_quotes
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage cost quotes" ON public.cost_quotes;
 CREATE POLICY "admin and tech can manage cost quotes" ON public.cost_quotes
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read cost quote items" ON public.cost_quote_items;
 CREATE POLICY "team can read cost quote items" ON public.cost_quote_items
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage cost quote items" ON public.cost_quote_items;
 CREATE POLICY "admin and tech can manage cost quote items" ON public.cost_quote_items
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read ticket material items" ON public.ticket_material_items;
 CREATE POLICY "team can read ticket material items" ON public.ticket_material_items
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage ticket material items" ON public.ticket_material_items;
 CREATE POLICY "admin and tech can manage ticket material items" ON public.ticket_material_items
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read client budgets" ON public.client_budgets;
 CREATE POLICY "team can read client budgets" ON public.client_budgets
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage client budgets" ON public.client_budgets;
 CREATE POLICY "admin and tech can manage client budgets" ON public.client_budgets
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))
   WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));
 
+DROP POLICY IF EXISTS "team can read cost periodic reports" ON public.cost_periodic_reports;
 CREATE POLICY "team can read cost periodic reports" ON public.cost_periodic_reports
   FOR SELECT TO authenticated USING (auth.uid() IN (SELECT id FROM public.profiles));
+DROP POLICY IF EXISTS "admin and tech can manage cost periodic reports" ON public.cost_periodic_reports;
 CREATE POLICY "admin and tech can manage cost periodic reports" ON public.cost_periodic_reports
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'))

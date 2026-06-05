@@ -13,11 +13,11 @@ import {
   Link as LinkIcon,
   ListChecks,
   Paperclip,
+  Plus,
   Printer,
   RefreshCw,
   Trash2,
   UserRound,
-  Wrench,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -394,6 +394,63 @@ export function TicketDetailModal() {
   function useTrackedHoursAsBillable() {
     const hours = ((timeSummaryQuery.data?.totalMinutes ?? 0) / 60).toFixed(2);
     setCostDraft((current) => ({ ...current, billable_hours: hours }));
+  }
+
+  async function saveMaterialItem() {
+    if (!canEdit) return;
+    if (!materialDraft.description.trim())
+      return toast.error(t("detail.toasts.materialDescRequired", "Inserisci una descrizione"));
+    const quantity = parseCostNumber(materialDraft.quantity);
+    const unitCost = parseCostNumber(materialDraft.unitCost);
+    const margin = parseCostNumber(materialDraft.resaleMarginPercent);
+    if (quantity <= 0)
+      return toast.error(t("detail.toasts.materialQtyInvalid", "La quantità deve essere > 0"));
+    const totalCost = unitCost * quantity;
+    setMaterialBusy(true);
+    try {
+      const { error } = await (supabase as any).from("ticket_material_items").insert({
+        ticket_id: ticket.id,
+        description: materialDraft.description.trim(),
+        supplier: materialDraft.supplier.trim() || null,
+        sku: materialDraft.sku.trim() || null,
+        quantity,
+        unit_cost: unitCost,
+        resale_margin_percent: margin,
+      });
+      if (error) throw error;
+      setMaterialDraft(emptyMaterialDraft);
+      qc.invalidateQueries({ queryKey: ["tickets", ticket.id, "material-items"] });
+      const newTotal = materialItemsCost + totalCost;
+      void update({ material_cost: newTotal } as any);
+      toast.success(t("detail.toasts.materialAdded", "Materiale aggiunto"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("detail.toasts.materialAddError", "Errore salvataggio materiale");
+      toast.error(message);
+    } finally {
+      setMaterialBusy(false);
+    }
+  }
+
+  async function deleteMaterialItem(itemId: string) {
+    if (!canEdit) return;
+    if (!window.confirm(t("detail.section.materialDeleteConfirm", "Eliminare questo materiale?"))) return;
+    const item = materialItems.find((i) => i.id === itemId);
+    setMaterialBusy(true);
+    try {
+      const { error } = await (supabase as any).from("ticket_material_items").delete().eq("id", itemId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["tickets", ticket.id, "material-items"] });
+      if (item) {
+        const newTotal = Math.max(0, materialItemsCost - parseCostNumber(item.total_cost));
+        void update({ material_cost: newTotal } as any);
+      }
+      toast.success(t("detail.toasts.materialDeleted", "Materiale eliminato"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("detail.toasts.materialDeleteError", "Errore eliminazione materiale");
+      toast.error(message);
+    } finally {
+      setMaterialBusy(false);
+    }
   }
 
   async function saveTitle() {
@@ -1263,6 +1320,194 @@ export function TicketDetailModal() {
                 )}
               />
             </label>
+          </section>
+
+          <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[13px] font-bold">
+                  {t("detail.section.materialItems", "Materiali / Ricambi")}
+                </h3>
+                <p className="text-[11px] text-text3">
+                  {materialItemsQuery.isLoading
+                    ? t("detail.section.loading", "Caricamento...")
+                    : materialItems.length
+                      ? t("detail.section.materialSummary", {
+                          count: materialItems.length,
+                          cost: formatMoney(materialItemsCost),
+                          revenue: formatMoney(materialItemsRevenue),
+                          defaultValue: "{{count}} voci · Costo {{cost}} · Ricavo {{revenue}}",
+                        })
+                      : t("detail.section.noMaterials", "Nessun materiale registrato")}
+                </p>
+              </div>
+            </div>
+
+            {/* Add form */}
+            {canEdit && (
+              <div className="mb-4 grid gap-2 rounded-lg bg-surface2 p-3 md:grid-cols-6">
+                <label className="text-[12px] font-semibold text-text2 md:col-span-2">
+                  {t("detail.section.materialDesc", "Descrizione")}
+                  <input
+                    className="pc-input mt-1"
+                    value={materialDraft.description}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, description: e.target.value }))}
+                    placeholder={t("detail.section.materialDescPlaceholder", "es. SSD NVMe 1TB")}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold text-text2">
+                  {t("detail.section.materialSupplier", "Fornitore")}
+                  <input
+                    className="pc-input mt-1"
+                    value={materialDraft.supplier}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, supplier: e.target.value }))}
+                    placeholder={t("detail.section.materialSupplierPlaceholder", "Amazon")}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold text-text2">
+                  {t("detail.section.materialSku", "SKU")}
+                  <input
+                    className="pc-input mt-1"
+                    value={materialDraft.sku}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, sku: e.target.value }))}
+                    placeholder={t("detail.section.materialSkuPlaceholder", "WD40EZAX")}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold text-text2">
+                  {t("detail.section.materialQty", "Qtà")}
+                  <input
+                    className="pc-input mt-1"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={materialDraft.quantity}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, quantity: e.target.value }))}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold text-text2">
+                  {t("detail.section.materialUnitCost", "Costo unit.")}
+                  <input
+                    className="pc-input mt-1"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={materialDraft.unitCost}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, unitCost: e.target.value }))}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold text-text2">
+                  {t("detail.section.materialMargin", "Ricarico %")}
+                  <input
+                    className="pc-input mt-1"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={materialDraft.resaleMarginPercent}
+                    onChange={(e) => setMaterialDraft((d) => ({ ...d, resaleMarginPercent: e.target.value }))}
+                  />
+                </label>
+
+                {/* Live preview */}
+                <div className="md:col-span-3">
+                  <div className="rounded-lg bg-background p-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-text3">
+                      {t("detail.section.materialPreview", "Anteprima prezzo finale")}
+                    </div>
+                    <div className="mt-1 flex items-center gap-4">
+                      <div>
+                        <div className="text-[11px] text-text3">
+                          {t("detail.section.materialUnitPrice", "Prezzo unitario")}
+                        </div>
+                        <div className="font-mono text-sm font-bold text-success">
+                          {formatMoney(materialPreviewUnitPrice)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-text3">
+                          {t("detail.section.materialTotalPrice", "Prezzo totale")}
+                        </div>
+                        <div className="font-mono text-base font-bold">
+                          {formatMoney(materialPreviewTotalPrice)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-end md:col-span-3">
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm w-full"
+                    onClick={saveMaterialItem}
+                    disabled={materialBusy}
+                  >
+                    <Plus className="size-3" /> {t("detail.section.materialAddBtn", "Aggiungi materiale")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Materials list */}
+            {materialItems.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-[12px]">
+                  <thead style={{ background: "var(--surface2)" }}>
+                    <tr>
+                      <th className="px-2 py-1.5 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialDesc", "Descrizione")}
+                      </th>
+                      <th className="px-2 py-1.5 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialSupplier", "Fornitore")}
+                      </th>
+                      <th className="px-2 py-1.5 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialQty", "Qtà")}
+                      </th>
+                      <th className="px-2 py-1.5 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialCost", "Costo")}
+                      </th>
+                      <th className="px-2 py-1.5 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialMargin", "Ricarico")}
+                      </th>
+                      <th className="px-2 py-1.5 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialTotalPrice", "Prezzo tot.")}
+                      </th>
+                      <th className="px-2 py-1.5 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detail.section.materialActions", "Azioni")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materialItems.map((item) => (
+                      <tr key={item.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <td className="px-2 py-1.5 max-w-[180px] truncate" title={item.description}>
+                          {item.description}
+                        </td>
+                        <td className="px-2 py-1.5 text-text2">{item.supplier || "-"}</td>
+                        <td className="px-2 py-1.5 text-right font-mono">{item.quantity}</td>
+                        <td className="px-2 py-1.5 text-right font-mono">
+                          {formatMoney(item.total_cost)}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono">{item.resale_margin_percent}%</td>
+                        <td className="px-2 py-1.5 text-right font-mono font-bold text-success">
+                          {formatMoney(item.total_price)}
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          {canEdit && (
+                            <button
+                              className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
+                              onClick={() => deleteMaterialItem(item.id)}
+                              disabled={materialBusy}
+                              title={t("detail.section.materialDeleteBtn", "Elimina materiale")}
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           <section className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>

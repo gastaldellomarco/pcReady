@@ -309,7 +309,28 @@
       "bundleActive": "Bundle attivo: {{name}}",
       "bundleSla": "SLA risposta {{response}}h · risoluzione {{resolution}}h · extra ticket {{cost}}",
       "extraHours": "{{hours}} extra",
-      "hourlyConsumption": "Consumo ore bundle cliente"
+      "hourlyConsumption": "Consumo ore bundle cliente",
+      "materialItems": "Materiali / Ricambi",
+      "materialSummary": "{{count}} voci · Costo {{cost}} · Ricavo {{revenue}}",
+      "noMaterials": "Nessun materiale registrato",
+      "loading": "Caricamento...",
+      "materialDesc": "Descrizione",
+      "materialDescPlaceholder": "es. SSD NVMe 1TB",
+      "materialSupplier": "Fornitore",
+      "materialSupplierPlaceholder": "Amazon",
+      "materialSku": "SKU",
+      "materialSkuPlaceholder": "WD40EZAX",
+      "materialQty": "Qtà",
+      "materialUnitCost": "Costo unit.",
+      "materialMargin": "Ricarico %",
+      "materialPreview": "Anteprima prezzo finale",
+      "materialUnitPrice": "Prezzo unitario",
+      "materialTotalPrice": "Prezzo totale",
+      "materialCost": "Costo",
+      "materialActions": "Azioni",
+      "materialAddBtn": "Aggiungi materiale",
+      "materialDeleteBtn": "Elimina materiale",
+      "materialDeleteConfirm": "Eliminare questo materiale?"
     },
     "btn": {
       "save": "Salva",
@@ -392,7 +413,13 @@
       "checklistSectionAssigned": "Questa sezione è assegnata a un altro tecnico",
       "responseSaveError": "Errore salvataggio risposta",
       "filledRequired": "Compila prima {{count}} elementi obbligatori",
-      "checklistAlreadyCompleted": "Checklist già completata"
+      "checklistAlreadyCompleted": "Checklist già completata",
+      "materialDescRequired": "Inserisci una descrizione",
+      "materialQtyInvalid": "La quantità deve essere > 0",
+      "materialAdded": "Materiale aggiunto",
+      "materialAddError": "Errore salvataggio materiale",
+      "materialDeleted": "Materiale eliminato",
+      "materialDeleteError": "Errore eliminazione materiale"
     }
   },
   "device": {
