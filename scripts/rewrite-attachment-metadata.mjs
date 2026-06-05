@@ -38,7 +38,9 @@ async function rewrite(bucket = "ticket-documents") {
 }
 
 const bucketArg = process.argv[2] || "ticket-documents";
-rewrite(bucketArg).then(() => console.log("Done")).catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+rewrite(bucketArg)
+  .then(() => console.log("Done"))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

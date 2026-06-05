@@ -16,4 +16,3 @@ export async function insertActivity(payload: Record<string, any>) {
 export function useInsertActivity() {
   return useMutation({ mutationFn: (payload: Record<string, any>) => insertActivity(payload) });
 }
-

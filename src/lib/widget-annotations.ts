@@ -16,8 +16,7 @@ export interface WidgetAnnotationRow {
   updated_at: string;
 }
 
-const ANNOTATION_SELECT =
-  "id, user_id, widget_id, text, note_date, created_at, updated_at";
+const ANNOTATION_SELECT = "id, user_id, widget_id, text, note_date, created_at, updated_at";
 
 async function getAuthedUser(accessToken: string) {
   const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
@@ -30,9 +29,7 @@ async function getAuthedUser(accessToken: string) {
  * optionally filtered by widgetId.
  */
 export const listWidgetAnnotations = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; widgetId?: string }) => data,
-  )
+  .inputValidator((data: { accessToken: string; widgetId?: string }) => data)
   .handler(async ({ data: { accessToken, widgetId } }) => {
     const user = await getAuthedUser(accessToken);
 
@@ -62,10 +59,7 @@ export const CreateAnnotationSchema = z.object({
  */
 export const createWidgetAnnotation = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: {
-      accessToken: string;
-      annotation: z.input<typeof CreateAnnotationSchema>;
-    }) => data,
+    (data: { accessToken: string; annotation: z.input<typeof CreateAnnotationSchema> }) => data,
   )
   .handler(async ({ data: { accessToken, annotation } }) => {
     const user = await getAuthedUser(accessToken);
@@ -125,9 +119,7 @@ export const updateWidgetAnnotation = createServerFn({ method: "POST" })
  * Server function: deletes an annotation owned by the authenticated user.
  */
 export const deleteWidgetAnnotation = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; annotationId: string }) => data,
-  )
+  .inputValidator((data: { accessToken: string; annotationId: string }) => data)
   .handler(async ({ data: { accessToken, annotationId } }) => {
     const user = await getAuthedUser(accessToken);
 

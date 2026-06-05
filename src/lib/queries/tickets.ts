@@ -238,7 +238,8 @@ function buildTicketsQuery(params: TicketsListParams, opts?: { count?: boolean }
   }
 
   // Dynamic filters
-  if (params.status && params.status !== "archived") query = query.eq("status", params.status as any);
+  if (params.status && params.status !== "archived")
+    query = query.eq("status", params.status as any);
   if (params.priority) query = query.eq("priority", params.priority as any);
   if (params.ticket_type) query = query.eq("ticket_type", params.ticket_type as any);
   if (params.client_id) query = query.eq("client_id", params.client_id as any);
@@ -254,7 +255,11 @@ function buildTicketsQuery(params: TicketsListParams, opts?: { count?: boolean }
 /**
  * Client-side sort for priority/status fields which need custom ordering.
  */
-function applyClientSideSort<T extends Record<string, any>>(data: T[], sortBy: string, sortDir: string): T[] {
+function applyClientSideSort<T extends Record<string, any>>(
+  data: T[],
+  sortBy: string,
+  sortDir: string,
+): T[] {
   if (sortBy === "priority") {
     const dir = sortDir === "asc" ? 1 : -1;
     return [...data].sort(
@@ -262,7 +267,9 @@ function applyClientSideSort<T extends Record<string, any>>(data: T[], sortBy: s
     );
   } else if (sortBy === "status") {
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...data].sort((a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir);
+    return [...data].sort(
+      (a, b) => ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir,
+    );
   }
   return data;
 }
@@ -434,12 +441,9 @@ export function useTicketsInfiniteList(params: TicketsListParams) {
       params.sortBy ?? "created_at",
       params.sortDir ?? "desc",
     ],
-    queryFn: ({ pageParam }) =>
-      fetchTicketsList({ ...params, page: pageParam as number }),
+    queryFn: ({ pageParam }) => fetchTicketsList({ ...params, page: pageParam as number }),
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
-        ? allPages.length
-        : undefined,
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE) ? allPages.length : undefined,
     initialPageParam: 0,
     staleTime: LIST_QUERY_STALE_MS,
     gcTime: LIST_QUERY_GC_MS,
@@ -452,7 +456,9 @@ export function useTicketsInfiniteList(params: TicketsListParams) {
  * Returns a Map<ticketId, changed_at_iso_string>.
  * Tickets with no history entry will not appear in the map.
  */
-export async function fetchStatusChangeTimestamps(ticketIds: string[]): Promise<Map<string, string>> {
+export async function fetchStatusChangeTimestamps(
+  ticketIds: string[],
+): Promise<Map<string, string>> {
   if (!ticketIds.length) return new Map();
   const { data, error } = await supabase
     .from("ticket_status_history")
@@ -506,16 +512,12 @@ export async function fetchArchivedTicketsList(params: { page?: number; pageSize
 export function useArchivedTicketsInfiniteList(params: { pageSize?: number }) {
   return useInfiniteQuery({
     queryKey: [...QUERY_KEYS.tickets, "archived", "infinite"],
-    queryFn: ({ pageParam }) =>
-      fetchArchivedTicketsList({ ...params, page: pageParam as number }),
+    queryFn: ({ pageParam }) => fetchArchivedTicketsList({ ...params, page: pageParam as number }),
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
-        ? allPages.length
-        : undefined,
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE) ? allPages.length : undefined,
     initialPageParam: 0,
     staleTime: LIST_QUERY_STALE_MS,
     gcTime: LIST_QUERY_GC_MS,
     placeholderData: (previousData) => previousData,
   });
 }
-

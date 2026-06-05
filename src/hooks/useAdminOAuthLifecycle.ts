@@ -2,23 +2,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
-import {
-  getOAuthClientLifecycle,
-  type OAuthClientLifecyclePayload,
-} from "@/lib/oauth-consent";
+import { getOAuthClientLifecycle, type OAuthClientLifecyclePayload } from "@/lib/oauth-consent";
 
 /**
  *
  */
-export function useAdminOAuthLifecycle(args: {
-  accessToken: string | undefined;
-}) {
+export function useAdminOAuthLifecycle(args: { accessToken: string | undefined }) {
   const { accessToken } = args;
   const lifecycleFn = useServerFn(getOAuthClientLifecycle);
 
   const [lifecycleOpenFor, setLifecycleOpenFor] = useState<string | null>(null);
-  const [lifecycleData, setLifecycleData] =
-    useState<OAuthClientLifecyclePayload | null>(null);
+  const [lifecycleData, setLifecycleData] = useState<OAuthClientLifecyclePayload | null>(null);
   const [lifecycleLoading, setLifecycleLoading] = useState(false);
 
   const openLifecycle = useCallback(
@@ -31,9 +25,7 @@ export function useAdminOAuthLifecycle(args: {
         const payload = await lifecycleFn({ data: { accessToken, clientId } });
         setLifecycleData(payload);
       } catch (error) {
-        toast.error(
-          getAdminErrorMessage(error, "Impossibile caricare lo storico"),
-        );
+        toast.error(getAdminErrorMessage(error, "Impossibile caricare lo storico"));
         setLifecycleOpenFor(null);
       } finally {
         setLifecycleLoading(false);

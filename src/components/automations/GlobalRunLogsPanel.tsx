@@ -106,9 +106,7 @@ export function GlobalRunLogsPanel({
         />
       </div>
 
-      {loading && (
-        <div className="py-6 text-center text-sm text-text3">Caricamento log...</div>
-      )}
+      {loading && <div className="py-6 text-center text-sm text-text3">Caricamento log...</div>}
       {!loading && logs.length === 0 && (
         <div className="py-6 text-center text-sm text-text3">Nessun log trovato</div>
       )}
@@ -128,15 +126,16 @@ export function GlobalRunLogsPanel({
             </TableHeader>
             <TableBody>
               {logs.map((log) => {
-                const ruleName = log.automation_flows?.name ?? ruleMap.get(log.automation_id)?.name ?? log.automation_id;
+                const ruleName =
+                  log.automation_flows?.name ??
+                  ruleMap.get(log.automation_id)?.name ??
+                  log.automation_id;
                 return (
                   <>
                     <TableRow
                       key={log.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() =>
-                        setExpandedLogId(expandedLogId === log.id ? null : log.id)
-                      }
+                      onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
                     >
                       <TableCell>
                         {expandedLogId === log.id ? (
@@ -224,8 +223,7 @@ export function GlobalRunLogsPanel({
                                             "text-[10px] border-transparent",
                                             action.status === "success" &&
                                               "bg-emerald-100 text-emerald-700",
-                                            action.status === "error" &&
-                                              "bg-red-100 text-red-700",
+                                            action.status === "error" && "bg-red-100 text-red-700",
                                             action.status === "skipped" &&
                                               "bg-slate-100 text-slate-600",
                                           )}
@@ -271,13 +269,7 @@ export function GlobalRunLogsPanel({
   );
 }
 
-function LogStatusBadge({
-  status,
-  isDryRun,
-}: {
-  status: string;
-  isDryRun?: boolean;
-}) {
+function LogStatusBadge({ status, isDryRun }: { status: string; isDryRun?: boolean }) {
   const Icon =
     status === "error"
       ? XCircle

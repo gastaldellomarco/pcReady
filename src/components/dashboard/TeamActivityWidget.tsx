@@ -5,12 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
@@ -62,16 +57,25 @@ export function TeamActivityWidget() {
           <div className="text-[11px] text-text3 flex items-center gap-1">
             {t("widgets.activeTechnicians", "{{count}} tecnici attivi", { count: activeCount })}
             <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} role="button" aria-label={t("widgets.activeTooltipAria", "Info: criterio tecnici attivi")}>
-                  <Info className="h-3 w-3 cursor-help" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[220px] text-xs">
-                <p>{t("widgets.activeTooltip", "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti")}</p>
-              </TooltipContent>
-            </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    tabIndex={0}
+                    role="button"
+                    aria-label={t("widgets.activeTooltipAria", "Info: criterio tecnici attivi")}
+                  >
+                    <Info className="h-3 w-3 cursor-help" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                  <p>
+                    {t(
+                      "widgets.activeTooltip",
+                      "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti",
+                    )}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </TooltipProvider>
           </div>
         </div>
@@ -84,7 +88,11 @@ export function TeamActivityWidget() {
               }`}
               onClick={() => setPeriod(p)}
             >
-              {p === "today" ? t("widgets.periodToday", "Oggi") : p === "week" ? t("widgets.periodWeek", "Settimana") : t("widgets.periodMonth", "Mese")}
+              {p === "today"
+                ? t("widgets.periodToday", "Oggi")
+                : p === "week"
+                  ? t("widgets.periodWeek", "Settimana")
+                  : t("widgets.periodMonth", "Mese")}
             </button>
           ))}
         </div>
@@ -97,7 +105,9 @@ export function TeamActivityWidget() {
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <div className="text-sm text-text3 py-4 text-center">{t("widgets.noActivity", "Nessuna attività nel periodo")}</div>
+          <div className="text-sm text-text3 py-4 text-center">
+            {t("widgets.noActivity", "Nessuna attività nel periodo")}
+          </div>
         ) : (
           <div className="flex flex-col gap-2.5">
             {rows.map((tech) => (
@@ -114,24 +124,37 @@ export function TeamActivityWidget() {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{tech.name}</div>
                   <div className="flex items-center gap-2 text-[11px] text-text3">
-                    <span>{t("widgets.assigned", "Assegnati")}: {tech.assigned}</span>
-                    <span>{t("widgets.completed", "Completati")}: {tech.completed}</span>
-                    <span>{t("widgets.pending", "In attesa")}: {tech.pending}</span>
+                    <span>
+                      {t("widgets.assigned", "Assegnati")}: {tech.assigned}
+                    </span>
+                    <span>
+                      {t("widgets.completed", "Completati")}: {tech.completed}
+                    </span>
+                    <span>
+                      {t("widgets.pending", "In attesa")}: {tech.pending}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-16">
                     <Progress
-                      value={tech.assigned > 0 ? Math.round((tech.completed / tech.assigned) * 100) : 0}
+                      value={
+                        tech.assigned > 0 ? Math.round((tech.completed / tech.assigned) * 100) : 0
+                      }
                       className="h-1.5"
                     />
                   </div>
                   <span
                     className={
-                      "px-1.5 py-0.5 rounded text-[10px] font-medium " + workloadColor(tech.assigned)
+                      "px-1.5 py-0.5 rounded text-[10px] font-medium " +
+                      workloadColor(tech.assigned)
                     }
                   >
-                    {tech.assigned >= 10 ? t("widgets.high", "Alto") : tech.assigned >= 5 ? t("widgets.medium", "Medio") : t("widgets.low", "Basso")}
+                    {tech.assigned >= 10
+                      ? t("widgets.high", "Alto")
+                      : tech.assigned >= 5
+                        ? t("widgets.medium", "Medio")
+                        : t("widgets.low", "Basso")}
                   </span>
                 </div>
               </button>

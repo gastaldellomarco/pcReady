@@ -42,8 +42,10 @@ export function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+import { getAppBaseUrl } from "@/lib/server-utils";
+
 function portalBaseUrl() {
-  return process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000";
+  return getAppBaseUrl();
 }
 
 export function hashPortalPassword(password: string) {
@@ -297,7 +299,9 @@ export async function getPortalClientContactsServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data, error } = await supabaseAdmin
     .from("client_contacts")
-    .select("id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes")
+    .select(
+      "id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes",
+    )
     .eq("client_id", session.clientId)
     .order("is_primary", { ascending: false })
     .order("full_name");
@@ -319,10 +323,7 @@ export async function getPortalClientContactsServer(input: { token: string }) {
 /**
  *
  */
-export async function verifyPortalLogin2FAServer(input: {
-  pendingToken: string;
-  code: string;
-}) {
+export async function verifyPortalLogin2FAServer(input: { pendingToken: string; code: string }) {
   // Look up the contact by pending login token and validate the code
   const { data: contact, error } = await supabaseAdmin
     .from("client_contacts" as any)

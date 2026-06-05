@@ -16,7 +16,11 @@ vi.mock("react-i18next", () => ({
 
 // ── Mock di SwimLaneRow e OverflowTable (figli) ─────────────────────────
 vi.mock("@/components/kanban/SwimLaneRow", () => ({
-  SwimLaneRow: vi.fn(() => <tr data-testid="swimlane-row"><td colSpan={10}>row</td></tr>),
+  SwimLaneRow: vi.fn(() => (
+    <tr data-testid="swimlane-row">
+      <td colSpan={10}>row</td>
+    </tr>
+  )),
 }));
 
 vi.mock("@/components/ui/overflow-table", () => ({
@@ -37,7 +41,14 @@ import { SwimLaneView, type SwimLaneCard } from "@/components/kanban/SwimLaneVie
 import type { WipLimits } from "@/lib/app-settings";
 import type { TechnicianOption } from "@/lib/technicians";
 
-const STATUSES: TicketStatus[] = ["pending", "in-progress", "testing", "ready", "completed", "archived"];
+const STATUSES: TicketStatus[] = [
+  "pending",
+  "in-progress",
+  "testing",
+  "ready",
+  "completed",
+  "archived",
+];
 
 const MOCK_TECHNICIANS: TechnicianOption[] = [
   { id: "tech-1", full_name: "Mario Rossi", initials: "MR" },

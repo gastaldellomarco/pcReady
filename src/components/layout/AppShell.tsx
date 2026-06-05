@@ -20,11 +20,7 @@ import { useAdminAuditBadge } from "@/hooks/useAdminAuditBadge";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import i18n from "@/i18n";
 import { useAuth } from "@/lib/auth-context";
-import {
-  PAGE_TITLE_KEYS,
-  PAGE_TITLE_FALLBACKS,
-  resolveNavigationGroups,
-} from "@/lib/navigation";
+import { PAGE_TITLE_KEYS, PAGE_TITLE_FALLBACKS, resolveNavigationGroups } from "@/lib/navigation";
 import { avatarColors } from "@/lib/pcready";
 
 // Ensure a safe global fallback so accidental bare references don't crash rendering

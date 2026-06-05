@@ -15,17 +15,35 @@ import {
   Send,
   Trash2,
   TrendingUp,
-  Wrench,
   X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip as ChartTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { QuoteModal, QuoteStatusBadge, QuoteActions, createEmptyQuoteLine } from "@/components/pcready/QuoteModal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  QuoteModal,
+  QuoteStatusBadge,
+  QuoteActions,
+  createEmptyQuoteLine,
+} from "@/components/pcready/QuoteModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +57,6 @@ import {
   quoteSeed,
   type BudgetDraft,
   type InvoiceDraft,
-  type MaterialDraft,
   type QuoteDraft,
 } from "@/lib/costs-finance";
 import { openTicketDetail } from "@/lib/detail-navigation";
@@ -190,7 +207,7 @@ type PeriodicReportRow = {
   client?: ClientOption | null;
 };
 
-type CostsTab = "dashboard" | "contracts" | "billing" | "materials" | "report";
+type CostsTab = "dashboard" | "contracts" | "billing" | "report";
 
 const today = new Date();
 const defaultDateTo = today.toISOString().slice(0, 10);
@@ -198,11 +215,17 @@ const thirtyDaysAgo = new Date(today);
 thirtyDaysAgo.setDate(today.getDate() - 30);
 const defaultDateFrom = thirtyDaysAgo.toISOString().slice(0, 10);
 
-function getPeriodPresets(t: (key: string, def: string) => string): Array<{ label: string; from: string; to: string }> {
+function getPeriodPresets(
+  t: (key: string, def: string) => string,
+): Array<{ label: string; from: string; to: string }> {
   const now = new Date();
   const to = now.toISOString().slice(0, 10);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const daysAgo = (n: number) => { const d = new Date(now); d.setDate(now.getDate() - n); return d; };
+  const daysAgo = (n: number) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() - n);
+    return d;
+  };
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfYear = new Date(now.getFullYear(), 0, 1);
   return [
@@ -250,16 +273,6 @@ const emptyQuoteDraft: QuoteDraft = {
   notes: "",
 };
 
-const emptyMaterialDraft: MaterialDraft = {
-  ticketId: "",
-  description: "",
-  supplier: "",
-  sku: "",
-  quantity: "1",
-  unitCost: "0",
-  resaleMarginPercent: "30",
-};
-
 const emptyBudgetDraft: BudgetDraft = {
   clientId: "",
   period: "monthly",
@@ -274,16 +287,32 @@ function CostsPage() {
   const canManageCosts = profile?.role === "admin" || profile?.role === "tech";
   const { t } = useTranslation("costs");
   const [dateFrom, setDateFrom] = useState(() => {
-    try { return localStorage.getItem("costs.dateFrom") || defaultDateFrom; } catch { return defaultDateFrom; }
+    try {
+      return localStorage.getItem("costs.dateFrom") || defaultDateFrom;
+    } catch {
+      return defaultDateFrom;
+    }
   });
   const [dateTo, setDateTo] = useState(() => {
-    try { return localStorage.getItem("costs.dateTo") || defaultDateTo; } catch { return defaultDateTo; }
+    try {
+      return localStorage.getItem("costs.dateTo") || defaultDateTo;
+    } catch {
+      return defaultDateTo;
+    }
   });
   const [clientFilter, setClientFilter] = useState(() => {
-    try { return localStorage.getItem("costs.clientFilter") || "all"; } catch { return "all"; }
+    try {
+      return localStorage.getItem("costs.clientFilter") || "all";
+    } catch {
+      return "all";
+    }
   });
   const [technicianFilter, setTechnicianFilter] = useState(() => {
-    try { return localStorage.getItem("costs.technicianFilter") || "all"; } catch { return "all"; }
+    try {
+      return localStorage.getItem("costs.technicianFilter") || "all";
+    } catch {
+      return "all";
+    }
   });
   const [tickets, setTickets] = useState<TicketCostRow[]>([]);
   const [contracts, setContracts] = useState<ContractRow[]>([]);
@@ -311,20 +340,30 @@ function CostsPage() {
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(emptyQuoteDraft);
   const [quoteLines, setQuoteLines] = useState<QuoteLineDraft[]>(() => [createEmptyQuoteLine()]);
   const [quoteTicketId, setQuoteTicketId] = useState("");
-  const [materialDraft, setMaterialDraft] = useState<MaterialDraft>(emptyMaterialDraft);
   const [budgetDraft, setBudgetDraft] = useState<BudgetDraft>(emptyBudgetDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailEntity, setDetailEntity] = useState<{ type: "client" | "technician"; name: string } | null>(null);
+  const [detailEntity, setDetailEntity] = useState<{
+    type: "client" | "technician";
+    name: string;
+  } | null>(null);
   const [detailGroupBy, setDetailGroupBy] = useState<"none" | "client" | "technician">("none");
   const [activeTab, setActiveTab] = useState<CostsTab>("dashboard");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [ticketResult, contractResult, clientResult, invoiceResult, quoteResult, budgetResult, reportResult] = await Promise.all([
+      const [
+        ticketResult,
+        contractResult,
+        clientResult,
+        invoiceResult,
+        quoteResult,
+        budgetResult,
+        reportResult,
+      ] = await Promise.all([
         (supabase as any)
           .from("ticket_cost_summary")
           .select(COST_SUMMARY_SELECT)
@@ -389,7 +428,9 @@ function CostsPage() {
       localStorage.setItem("costs.dateTo", dateTo);
       localStorage.setItem("costs.clientFilter", clientFilter);
       localStorage.setItem("costs.technicianFilter", technicianFilter);
-    } catch { /* localStorage unavailable — ignore */ }
+    } catch {
+      /* localStorage unavailable — ignore */
+    }
   }, [dateFrom, dateTo, clientFilter, technicianFilter]);
 
   const technicians = useMemo(
@@ -398,17 +439,17 @@ function CostsPage() {
         new Map(
           tickets
             .filter((ticket) => ticket.assignee_id)
-            .map((ticket) => [ticket.assignee_id!, ticket.technician_name || t("fallbacks.noName", "Senza nome")]),
+            .map((ticket) => [
+              ticket.assignee_id!,
+              ticket.technician_name || t("fallbacks.noName", "Senza nome"),
+            ]),
         ).entries(),
       ).sort((a, b) => a[1].localeCompare(b[1])),
     [tickets],
   );
 
   const clientNameMap = useMemo(
-    () =>
-      new Map(
-        clients.map((c) => [c.id, c.company_name || c.name] as const),
-      ),
+    () => new Map(clients.map((c) => [c.id, c.company_name || c.name] as const)),
     [clients],
   );
 
@@ -457,17 +498,25 @@ function CostsPage() {
   );
 
   const profitability = useMemo(
-    () => computeClientProfitability(filteredTickets, filteredContracts, t("fallbacks.clientNotIndicated", "Cliente non indicato")),
+    () =>
+      computeClientProfitability(
+        filteredTickets,
+        filteredContracts,
+        t("fallbacks.clientNotIndicated", "Cliente non indicato"),
+      ),
     [filteredContracts, filteredTickets, t],
   );
 
   const selectedClientTickets = useMemo(
-    () => (clientFilter === "all" ? filteredTickets : filteredTickets.filter((ticket) => ticket.client_id === clientFilter)),
+    () =>
+      clientFilter === "all"
+        ? filteredTickets
+        : filteredTickets.filter((ticket) => ticket.client_id === clientFilter),
     [clientFilter, filteredTickets],
   );
 
   const invoiceSourceRows = useMemo(
-    () => selectedClient && clientFilter !== "all" ? selectedClientTickets : [],
+    () => (selectedClient && clientFilter !== "all" ? selectedClientTickets : []),
     [clientFilter, selectedClient, selectedClientTickets],
   );
 
@@ -486,7 +535,7 @@ function CostsPage() {
   const invoicePreviewTotals = useMemo(() => {
     const subtotal = invoiceSourceRows.reduce((sum, ticket) => sum + money(ticket.total_cost), 0);
     const taxRate = positiveNumber(invoiceDraft.taxRate);
-    const taxAmount = roundMoney(subtotal * taxRate / 100);
+    const taxAmount = roundMoney((subtotal * taxRate) / 100);
     return {
       subtotal,
       taxRate,
@@ -496,9 +545,12 @@ function CostsPage() {
   }, [invoiceDraft.taxRate, invoiceSourceRows]);
 
   const quoteTotals = useMemo(() => {
-    const subtotal = quoteLines.reduce((sum, line) => sum + positiveNumber(line.quantity) * positiveNumber(line.unitPrice), 0);
+    const subtotal = quoteLines.reduce(
+      (sum, line) => sum + positiveNumber(line.quantity) * positiveNumber(line.unitPrice),
+      0,
+    );
     const taxRate = 22;
-    const taxAmount = roundMoney(subtotal * taxRate / 100);
+    const taxAmount = roundMoney((subtotal * taxRate) / 100);
     return {
       subtotal: roundMoney(subtotal),
       taxRate,
@@ -527,20 +579,27 @@ function CostsPage() {
   );
 
   const byClient = useMemo(
-    () => groupCosts(filteredTickets, "client_name", { client: t("fallbacks.clientNotIndicated", "Cliente non indicato") }),
+    () =>
+      groupCosts(filteredTickets, "client_name", {
+        client: t("fallbacks.clientNotIndicated", "Cliente non indicato"),
+      }),
     [filteredTickets, t],
   );
   const byTechnician = useMemo(
-    () => groupCosts(filteredTickets, "technician_name", { technician: t("fallbacks.notAssigned", "Non assegnato") }),
+    () =>
+      groupCosts(filteredTickets, "technician_name", {
+        technician: t("fallbacks.notAssigned", "Non assegnato"),
+      }),
     [filteredTickets, t],
   );
 
   const detailTickets = useMemo(() => {
     if (!detailEntity) return [] as TicketCostRow[];
     const key = detailEntity.type === "client" ? "client_name" : "technician_name";
-    const fallback = detailEntity.type === "technician"
-      ? t("fallbacks.notAssigned", "Non assegnato")
-      : t("fallbacks.clientNotIndicated", "Cliente non indicato");
+    const fallback =
+      detailEntity.type === "technician"
+        ? t("fallbacks.notAssigned", "Non assegnato")
+        : t("fallbacks.clientNotIndicated", "Cliente non indicato");
     return filteredTickets.filter((ticket) => {
       const name = ticket[key] || fallback;
       return name === detailEntity.name;
@@ -555,17 +614,15 @@ function CostsPage() {
     return { hours, labor, materials, total };
   }, [detailTickets]);
 
-  const nextInvoiceNumber = useMemo(
-    () => buildNextInvoiceNumber(invoices),
-    [invoices],
-  );
+  const nextInvoiceNumber = useMemo(() => buildNextInvoiceNumber(invoices), [invoices]);
 
   const groupedDetail = useMemo(() => {
     if (detailGroupBy === "none") return null;
     const key = detailGroupBy === "client" ? "client_name" : "technician_name";
-    const fallback = detailGroupBy === "technician"
-      ? t("fallbacks.notAssigned", "Non assegnato")
-      : t("fallbacks.clientNotIndicated", "Cliente non indicato");
+    const fallback =
+      detailGroupBy === "technician"
+        ? t("fallbacks.notAssigned", "Non assegnato")
+        : t("fallbacks.clientNotIndicated", "Cliente non indicato");
     const groups = groupCosts(filteredTickets, key, { technician: fallback, client: fallback });
     return groups.map((group) => ({
       name: group.name,
@@ -662,7 +719,9 @@ function CostsPage() {
       await loadData();
       toast.success(t("contractTable.deleted", "Contratto eliminato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("contractTable.deleteError", "Errore eliminazione contratto")));
+      toast.error(
+        errorMessage(error, t("contractTable.deleteError", "Errore eliminazione contratto")),
+      );
     } finally {
       setBusy(false);
     }
@@ -721,7 +780,8 @@ function CostsPage() {
   }
 
   async function saveContract() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     if (!validateDraft()) return;
     setBusy(true);
     try {
@@ -738,7 +798,10 @@ function CostsPage() {
       };
       let error;
       if (editingId) {
-        ({ error } = await (supabase as any).from("client_contracts").update(payload).eq("id", editingId));
+        ({ error } = await (supabase as any)
+          .from("client_contracts")
+          .update(payload)
+          .eq("id", editingId));
       } else {
         ({ error } = await (supabase as any).from("client_contracts").insert(payload));
       }
@@ -748,21 +811,30 @@ function CostsPage() {
       setErrors({});
       setTouched({});
       await loadData();
-      toast.success(editingId
-        ? t("feedback.contractUpdated", "Contratto aggiornato")
-        : t("feedback.contractSaved", "Contratto salvato"));
+      toast.success(
+        editingId
+          ? t("feedback.contractUpdated", "Contratto aggiornato")
+          : t("feedback.contractSaved", "Contratto salvato"),
+      );
     } catch (error) {
-      toast.error(errorMessage(error, t("feedback.contractSaveError", "Errore salvataggio contratto")));
+      toast.error(
+        errorMessage(error, t("feedback.contractSaveError", "Errore salvataggio contratto")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function createInvoice() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (clientFilter === "all" || !selectedClient) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (clientFilter === "all" || !selectedClient)
+      return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
     const rows = invoiceSourceRows;
-    if (!rows.length) return toast.error(t("finance.invoiceNoRows", "Nessun ticket da fatturare per il cliente selezionato"));
+    if (!rows.length)
+      return toast.error(
+        t("finance.invoiceNoRows", "Nessun ticket da fatturare per il cliente selezionato"),
+      );
     setBusy(true);
     try {
       const { subtotal, taxRate, taxAmount, total } = invoicePreviewTotals;
@@ -782,7 +854,8 @@ function CostsPage() {
         logo_url: invoiceDraft.logoUrl.trim() || null,
         sender_name: invoiceDraft.senderName.trim() || "PCReady",
         sender_address: invoiceDraft.senderAddress.trim() || null,
-        recipient_name: invoiceDraft.recipientName.trim() || selectedClient.company_name || selectedClient.name,
+        recipient_name:
+          invoiceDraft.recipientName.trim() || selectedClient.company_name || selectedClient.name,
         recipient_address: invoiceDraft.recipientAddress.trim() || null,
         notes: invoiceDraft.notes.trim() || null,
       };
@@ -800,7 +873,9 @@ function CostsPage() {
         unit_price: money(ticket.total_cost),
         item_type: "service",
       }));
-      const { error: itemsError } = await (supabase as any).from("cost_invoice_items").insert(items);
+      const { error: itemsError } = await (supabase as any)
+        .from("cost_invoice_items")
+        .insert(items);
       if (itemsError) throw itemsError;
       const createdInvoice = { ...(invoice as InvoiceRow), client: selectedClient };
       setSelectedInvoice(createdInvoice);
@@ -808,7 +883,10 @@ function CostsPage() {
       setInvoiceModalOpen(false);
       setInvoiceStep("details");
       setInvoicePdfOpen(true);
-      setInvoiceDraft({ ...emptyInvoiceDraft, invoiceNumber: buildNextInvoiceNumber([createdInvoice, ...invoices]) });
+      setInvoiceDraft({
+        ...emptyInvoiceDraft,
+        invoiceNumber: buildNextInvoiceNumber([createdInvoice, ...invoices]),
+      });
       await loadData();
       toast.success(t("finance.invoiceCreated", "Fattura creata"));
     } catch (error) {
@@ -850,7 +928,9 @@ function CostsPage() {
       setQuotePdfMeta(quote);
       setQuotePdfOpen(true);
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteLoadError", "Errore caricamento preventivo")));
+      toast.error(
+        errorMessage(error, t("finance.quoteLoadError", "Errore caricamento preventivo")),
+      );
     } finally {
       setBusy(false);
     }
@@ -859,7 +939,12 @@ function CostsPage() {
   async function updateInvoiceStatus(invoice: InvoiceRow, status: InvoiceRow["status"]) {
     setBusy(true);
     try {
-      const paidAmount = status === "paid" ? invoice.total_amount : status === "partial" ? Math.max(0, invoice.paid_amount || invoice.total_amount / 2) : invoice.paid_amount;
+      const paidAmount =
+        status === "paid"
+          ? invoice.total_amount
+          : status === "partial"
+            ? Math.max(0, invoice.paid_amount || invoice.total_amount / 2)
+            : invoice.paid_amount;
       const { error } = await (supabase as any)
         .from("cost_invoices")
         .update({ status, paid_amount: paidAmount })
@@ -868,15 +953,19 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.paymentUpdated", "Stato pagamento aggiornato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.paymentUpdateError", "Errore aggiornamento pagamento")));
+      toast.error(
+        errorMessage(error, t("finance.paymentUpdateError", "Errore aggiornamento pagamento")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function createQuote() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (!quoteDraft.clientId) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!quoteDraft.clientId)
+      return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
     const validLines = quoteLines
       .map((line) => ({
         ...line,
@@ -885,14 +974,19 @@ function CostsPage() {
         unitPrice: positiveNumber(line.unitPrice),
       }))
       .filter((line) => line.description && line.quantity > 0 && line.unitPrice >= 0);
-    if (!validLines.length || quoteTotals.subtotal <= 0) return toast.error(t("finance.quoteAmountRequired", "Inserisci almeno una voce di preventivo"));
+    if (!validLines.length || quoteTotals.subtotal <= 0)
+      return toast.error(
+        t("finance.quoteAmountRequired", "Inserisci almeno una voce di preventivo"),
+      );
     setBusy(true);
     try {
       const linkedTicket = quoteTicketOptions.find((ticket) => ticket.id === quoteTicketId);
       const notes = [
         quoteDraft.notes.trim(),
         linkedTicket ? `Ticket collegato: ${linkedTicket.ticket_code}` : "",
-      ].filter(Boolean).join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
       const { data: quote, error: quoteError } = await (supabase as any)
         .from("cost_quotes")
         .insert({
@@ -924,14 +1018,17 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.quoteCreated", "Preventivo creato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteCreateError", "Errore creazione preventivo")));
+      toast.error(
+        errorMessage(error, t("finance.quoteCreateError", "Errore creazione preventivo")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function convertQuoteToTicket(quote: QuoteRow) {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     setBusy(true);
     try {
       const client = quote.client ?? clients.find((c) => c.id === quote.client_id);
@@ -955,20 +1052,27 @@ function CostsPage() {
       if (ticketError) throw ticketError;
       const { error: quoteError } = await (supabase as any)
         .from("cost_quotes")
-        .update({ status: "converted", converted_ticket_id: ticket.id, approved_at: new Date().toISOString() })
+        .update({
+          status: "converted",
+          converted_ticket_id: ticket.id,
+          approved_at: new Date().toISOString(),
+        })
         .eq("id", quote.id);
       if (quoteError) throw quoteError;
       await loadData();
       toast.success(t("finance.quoteConverted", "Preventivo convertito in ticket"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteConvertError", "Errore conversione preventivo")));
+      toast.error(
+        errorMessage(error, t("finance.quoteConvertError", "Errore conversione preventivo")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function updateQuoteStatus(quote: QuoteRow, status: QuoteRow["status"]) {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     setBusy(true);
     try {
       const payload: Record<string, unknown> = { status };
@@ -981,15 +1085,21 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.quoteStatusUpdated", "Stato preventivo aggiornato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteStatusError", "Errore aggiornamento preventivo")));
+      toast.error(
+        errorMessage(error, t("finance.quoteStatusError", "Errore aggiornamento preventivo")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function convertQuoteToInvoice(quote: QuoteRow) {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (quote.status !== "approved") return toast.error(t("finance.quoteMustBeApproved", "Approva il preventivo prima di convertirlo in fattura"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (quote.status !== "approved")
+      return toast.error(
+        t("finance.quoteMustBeApproved", "Approva il preventivo prima di convertirlo in fattura"),
+      );
     setBusy(true);
     try {
       const { data: quoteItems, error: itemLoadError } = await (supabase as any)
@@ -999,7 +1109,8 @@ function CostsPage() {
         .order("created_at", { ascending: true });
       if (itemLoadError) throw itemLoadError;
       const items = (quoteItems ?? []) as QuoteItemRow[];
-      if (!items.length) throw new Error(t("finance.quoteNoRows", "Il preventivo non contiene righe"));
+      if (!items.length)
+        throw new Error(t("finance.quoteNoRows", "Il preventivo non contiene righe"));
 
       const client = quote.client ?? clients.find((c) => c.id === quote.client_id);
       const invoiceNumber = buildNextInvoiceNumber(invoices);
@@ -1035,7 +1146,9 @@ function CostsPage() {
         unit_price: money(item.unit_price),
         item_type: item.item_type ?? "extra",
       }));
-      const { error: invoiceItemsError } = await (supabase as any).from("cost_invoice_items").insert(invoiceRows);
+      const { error: invoiceItemsError } = await (supabase as any)
+        .from("cost_invoice_items")
+        .insert(invoiceRows);
       if (invoiceItemsError) throw invoiceItemsError;
 
       const { error: quoteError } = await (supabase as any)
@@ -1051,14 +1164,17 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.quoteConvertedToInvoice", "Preventivo convertito in fattura"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteInvoiceError", "Errore conversione in fattura")));
+      toast.error(
+        errorMessage(error, t("finance.quoteInvoiceError", "Errore conversione in fattura")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteQuote(quote: QuoteRow) {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     if (!window.confirm(t("finance.confirmDeleteQuote", "Eliminare questo preventivo?"))) return;
     setBusy(true);
     try {
@@ -1067,42 +1183,19 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.quoteDeleted", "Preventivo eliminato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.quoteDeleteError", "Errore eliminazione preventivo")));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function addMaterialItem() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (!materialDraft.ticketId || !materialDraft.description.trim()) {
-      return toast.error(t("finance.materialRequired", "Seleziona ticket e materiale"));
-    }
-    setBusy(true);
-    try {
-      const { error } = await (supabase as any).from("ticket_material_items").insert({
-        ticket_id: materialDraft.ticketId,
-        description: materialDraft.description.trim(),
-        supplier: materialDraft.supplier.trim() || null,
-        sku: materialDraft.sku.trim() || null,
-        quantity: positiveNumber(materialDraft.quantity) || 1,
-        unit_cost: positiveNumber(materialDraft.unitCost),
-        resale_margin_percent: positiveNumber(materialDraft.resaleMarginPercent),
-      });
-      if (error) throw error;
-      setMaterialDraft(emptyMaterialDraft);
-      await loadData();
-      toast.success(t("finance.materialAdded", "Materiale aggiunto al ticket"));
-    } catch (error) {
-      toast.error(errorMessage(error, t("finance.materialAddError", "Errore salvataggio materiale")));
+      toast.error(
+        errorMessage(error, t("finance.quoteDeleteError", "Errore eliminazione preventivo")),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function saveBudget() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
-    if (!budgetDraft.clientId) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!budgetDraft.clientId)
+      return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
     setBusy(true);
     try {
       const { error } = await (supabase as any).from("client_budgets").insert({
@@ -1126,18 +1219,22 @@ function CostsPage() {
   }
 
   async function scheduleMonthlyReports() {
-    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!canManageCosts || !canEdit)
+      return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     setBusy(true);
     try {
       const month = `${dateFrom.slice(0, 7)}-01`;
-      const activeClients = clients.filter((client) => filteredTickets.some((ticket) => ticket.client_id === client.id));
+      const activeClients = clients.filter((client) =>
+        filteredTickets.some((ticket) => ticket.client_id === client.id),
+      );
       const payload = activeClients.map((client) => ({
         client_id: client.id,
         report_month: month,
         status: "scheduled",
         email_to: null,
       }));
-      if (!payload.length) return toast.error(t("finance.noReportsToSchedule", "Nessun cliente attivo nel periodo"));
+      if (!payload.length)
+        return toast.error(t("finance.noReportsToSchedule", "Nessun cliente attivo nel periodo"));
       const { error } = await (supabase as any).from("cost_periodic_reports").upsert(payload, {
         onConflict: "client_id,report_month",
       });
@@ -1145,7 +1242,9 @@ function CostsPage() {
       await loadData();
       toast.success(t("finance.reportsScheduled", "Report mensili pianificati"));
     } catch (error) {
-      toast.error(errorMessage(error, t("finance.reportsScheduleError", "Errore pianificazione report")));
+      toast.error(
+        errorMessage(error, t("finance.reportsScheduleError", "Errore pianificazione report")),
+      );
     } finally {
       setBusy(false);
     }
@@ -1168,7 +1267,9 @@ function CostsPage() {
       if (error) throw error;
       downloadText(
         buildFatturaPaXml(invoice as any, (data ?? []) as any[]),
-        buildDownloadFileName(`fattura-pa-${invoice.invoice_number}`, "xml" as any, { dated: false }),
+        buildDownloadFileName(`fattura-pa-${invoice.invoice_number}`, "xml" as any, {
+          dated: false,
+        }),
         { type: "application/xml;charset=utf-8" },
       );
       toast.success(t("finance.invoiceXmlExported", "XML fattura esportato"));
@@ -1288,14 +1389,8 @@ function CostsPage() {
         </div>
         <div className="pc-card-body">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-[150px_150px_1fr_1fr_auto_auto]">
-            <DatePickerInput
-              value={dateFrom}
-              onChange={setDateFrom}
-            />
-            <DatePickerInput
-              value={dateTo}
-              onChange={setDateTo}
-            />
+            <DatePickerInput value={dateFrom} onChange={setDateFrom} />
+            <DatePickerInput value={dateTo} onChange={setDateTo} />
             <select
               className="pc-input"
               value={clientFilter}
@@ -1350,1036 +1445,1311 @@ function CostsPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as CostsTab)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:w-auto lg:grid-cols-5">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as CostsTab)}
+        className="space-y-4"
+      >
+        <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-4 lg:w-auto">
           <TabsTrigger value="dashboard">{t("tabs.dashboard", "Dashboard")}</TabsTrigger>
           <TabsTrigger value="contracts">{t("tabs.contracts", "Contratti / SLA")}</TabsTrigger>
           <TabsTrigger value="billing">{t("tabs.billing", "Fatturazione")}</TabsTrigger>
-          <TabsTrigger value="materials">{t("tabs.materials", "Materiali")}</TabsTrigger>
           <TabsTrigger value="report">{t("tabs.report", "Report")}</TabsTrigger>
         </TabsList>
 
-      {activeTab === "dashboard" && (
-        <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <CostStat label={t("stats.ticketTotal", "Totale ticket")} value={formatCurrency(summary.ticketTotal)} />
-        <CostStat label={t("stats.labor", "Manodopera")} value={formatCurrency(summary.labor)} />
-        <CostStat label={t("stats.materials", "Materiali")} value={formatCurrency(summary.materials)} />
-        <CostStat label={t("stats.billableHours", "Ore fatturabili")} value={formatHours(summary.hours)} />
-        <CostStat label={t("stats.recurring", "Canoni attivi")} value={formatCurrency(summary.recurring)} />
-        <CostStat
-          label={t("stats.estimatedMargin", "Margine stimato")}
-          value={summary.recurring > 0 ? `${formatCurrency(summary.estimatedRevenue - summary.materials)} (${((summary.estimatedRevenue - summary.materials) / summary.recurring * 100).toFixed(0)}%)` : formatCurrency(summary.estimatedRevenue - summary.materials)}
-          tone="success"
-          helpText={summary.ticketTotal === 0 && summary.recurring > 0
-            ? t("stats.marginRecurringOnly", "Solo canoni contrattuali")
-            : t("stats.marginFormula", "Canoni attivi + Totale ticket − Costi materiali")}
-        />
-      </div>
-      {summary.ticketTotal === 0 && summary.recurring > 0 && (
-        <div className="rounded-lg border border-dashed px-4 py-2.5 text-sm text-text3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
-          {t("stats.noTicketMarginNote", "Nessun ticket fatturabile nel periodo. Il margine include solo i canoni contrattuali.")}
-        </div>
-      )}
-
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="pc-card">
-          <div className="pc-card-hd">
-            <div>
-              <div className="pc-card-title">{t("finance.profitabilityTitle", "Dashboard profittabilita")}</div>
-              <div className="mt-1 text-sm text-text3">
-                {t("finance.profitabilitySubtitle", "Ricavo contratto mensilizzato vs costo effettivo nel periodo")}
+        {activeTab === "dashboard" && (
+          <>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <CostStat
+                label={t("stats.ticketTotal", "Totale ticket")}
+                value={formatCurrency(summary.ticketTotal)}
+              />
+              <CostStat
+                label={t("stats.labor", "Manodopera")}
+                value={formatCurrency(summary.labor)}
+              />
+              <CostStat
+                label={t("stats.materials", "Materiali")}
+                value={formatCurrency(summary.materials)}
+              />
+              <CostStat
+                label={t("stats.billableHours", "Ore fatturabili")}
+                value={formatHours(summary.hours)}
+              />
+              <CostStat
+                label={t("stats.recurring", "Canoni attivi")}
+                value={formatCurrency(summary.recurring)}
+              />
+              <CostStat
+                label={t("stats.estimatedMargin", "Margine stimato")}
+                value={
+                  summary.recurring > 0
+                    ? `${formatCurrency(summary.estimatedRevenue - summary.materials)} (${(((summary.estimatedRevenue - summary.materials) / summary.recurring) * 100).toFixed(0)}%)`
+                    : formatCurrency(summary.estimatedRevenue - summary.materials)
+                }
+                tone="success"
+                helpText={
+                  summary.ticketTotal === 0 && summary.recurring > 0
+                    ? t("stats.marginRecurringOnly", "Solo canoni contrattuali")
+                    : t("stats.marginFormula", "Canoni attivi + Totale ticket − Costi materiali")
+                }
+              />
+            </div>
+            {summary.ticketTotal === 0 && summary.recurring > 0 && (
+              <div
+                className="rounded-lg border border-dashed px-4 py-2.5 text-sm text-text3"
+                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+              >
+                {t(
+                  "stats.noTicketMarginNote",
+                  "Nessun ticket fatturabile nel periodo. Il margine include solo i canoni contrattuali.",
+                )}
               </div>
-            </div>
-            <TrendingUp className="size-5 text-text3" />
-          </div>
-          <div className="pc-card-body">
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={profitability.slice(0, 8)} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
-                  <CartesianGrid stroke="var(--border)" vertical={false} />
-                  <XAxis
-                    dataKey="clientName"
-                    tick={{ fill: "var(--text3)", fontSize: 11 }}
-                    interval={0}
-                    angle={-18}
-                    textAnchor="end"
-                    height={54}
-                  />
-                  <YAxis tick={{ fill: "var(--text3)", fontSize: 11 }} tickFormatter={(value) => `${value}€`} />
-                  <ChartTooltip
-                    formatter={(value: any, name) => [formatCurrency(value), name === "margin" ? "Margine" : name === "revenue" ? "Ricavo" : "Costo"]}
-                    contentStyle={{ background: "var(--surface)", borderColor: "var(--border)", borderRadius: 8 }}
-                  />
-                  <Bar dataKey="revenue" fill="var(--accent)" name="Ricavo" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actualCost" fill="var(--warning)" name="Costo" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="margin" fill="var(--success)" name="Margine" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+            )}
 
-        <div className="pc-card">
-          <div className="pc-card-hd">
-            <div className="pc-card-title">{t("finance.budgetTitle", "Budget clienti")}</div>
-            <AlertTriangle className="size-5 text-text3" />
-          </div>
-          <div className="pc-card-body space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="space-y-1 text-sm font-medium text-text2 col-span-2">
-                {t("contractForm.clientLabel", "Cliente")}
-                <select
-                  className="pc-input"
-                  value={budgetDraft.clientId}
-                  onChange={(e) => setBudgetDraft((v) => ({ ...v, clientId: e.target.value }))}
-                >
-                  <option value="">{t("contractForm.clientPlaceholder", "Seleziona cliente...")}</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>{client.company_name || client.name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.billingPeriodLabel", "Fatturazione")}
-                <select
-                  className="pc-input"
-                  value={budgetDraft.period}
-                  onChange={(e) => setBudgetDraft((v) => ({ ...v, period: e.target.value as BudgetDraft["period"] }))}
-                >
-                  <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
-                  <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
-                </select>
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.budgetAmountLabel", "Budget")}
-                <input
-                  className="pc-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={budgetDraft.budgetAmount}
-                  onChange={(e) => setBudgetDraft((v) => ({ ...v, budgetAmount: e.target.value }))}
-                />
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.alertThresholdLabel", "Alert %")}
-                <input
-                  className="pc-input"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={budgetDraft.alertThresholdPercent}
-                  onChange={(e) => setBudgetDraft((v) => ({ ...v, alertThresholdPercent: e.target.value }))}
-                />
-              </label>
-
-              <div>
-                <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={busy || !budgetDraft.clientId} onClick={saveBudget}>
-                  <Save className="size-3" /> {t("finance.saveBudget", "Salva budget")}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {budgetUsage.slice(0, 5).map((budget) => {
-                const pct = money(budget.used_percent);
-                const overBudget = pct > 100;
-                const warning = pct >= 80 && pct <= 100;
-                const budgetColor = overBudget ? "#ef4444" : warning ? "#f97316" : "#22c55e";
-                const overAmount = overBudget ? money(budget.used_amount) - money(budget.budget_amount) : 0;
-                return (
-                  <div key={budget.budget_id} className="rounded-lg border p-3" style={{ borderColor: overBudget ? "#ef4444" : warning ? "#f97316" : "var(--border)" }}>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="font-semibold">{budget.client_name}</span>
-                      <span className="font-mono" style={{ color: overBudget ? "#ef4444" : undefined }}>{pct.toFixed(0)}%</span>
+            <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+              <div className="pc-card">
+                <div className="pc-card-hd">
+                  <div>
+                    <div className="pc-card-title">
+                      {t("finance.profitabilityTitle", "Dashboard profittabilita")}
                     </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface2">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(100, pct)}%`,
-                          background: budgetColor,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-xs text-text3">
-                      <span>{formatCurrency(budget.used_amount)} / {formatCurrency(budget.budget_amount)}</span>
-                      {overBudget && (
-                        <span style={{ color: "#ef4444" }}>
-                          {t("budget.overBudget", "Superato di {{amount}}", { amount: formatCurrency(overAmount) })}
-                        </span>
+                    <div className="mt-1 text-sm text-text3">
+                      {t(
+                        "finance.profitabilitySubtitle",
+                        "Ricavo contratto mensilizzato vs costo effettivo nel periodo",
                       )}
                     </div>
                   </div>
-                );
-              })}
-              {!budgetUsage.length && <div className="text-sm text-text3">{t("finance.noBudgets", "Nessun budget attivo.")}</div>}
-            </div>
-          </div>
-        </div>
-      </div>
-        </>
-      )}
+                  <TrendingUp className="size-5 text-text3" />
+                </div>
+                <div className="pc-card-body">
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={profitability.slice(0, 8)}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 32 }}
+                      >
+                        <CartesianGrid stroke="var(--border)" vertical={false} />
+                        <XAxis
+                          dataKey="clientName"
+                          tick={{ fill: "var(--text3)", fontSize: 11 }}
+                          interval={0}
+                          angle={-18}
+                          textAnchor="end"
+                          height={54}
+                        />
+                        <YAxis
+                          tick={{ fill: "var(--text3)", fontSize: 11 }}
+                          tickFormatter={(value) => `${value}€`}
+                        />
+                        <ChartTooltip
+                          formatter={(value: any, name) => [
+                            formatCurrency(value),
+                            name === "margin" ? "Margine" : name === "revenue" ? "Ricavo" : "Costo",
+                          ]}
+                          contentStyle={{
+                            background: "var(--surface)",
+                            borderColor: "var(--border)",
+                            borderRadius: 8,
+                          }}
+                        />
+                        <Bar
+                          dataKey="revenue"
+                          fill="var(--accent)"
+                          name="Ricavo"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="actualCost"
+                          fill="var(--warning)"
+                          name="Costo"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="margin"
+                          fill="var(--success)"
+                          name="Margine"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
 
-      {activeTab === "contracts" && canManageCosts && (
-        <div className="pc-card">
-          <div className="pc-card-hd">
-            <div className="pc-card-title">
-              {t("contractForm.title", "Contratti / SLA cliente")}
-              {editingId && (
-                <span className="ml-2 text-xs font-normal text-accent">
-                  {t("contractForm.editing", "Modifica in corso")}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {editingId && (
-                <button
-                  type="button"
-                  className="pc-btn pc-btn-ghost pc-btn-sm"
-                  onClick={cancelEdit}
-                  disabled={busy}
-                >
-                  <X className="size-3" /> {t("contractForm.cancelEdit", "Annulla")}
-                </button>
-              )}
-              <button
-                className="pc-btn pc-btn-primary pc-btn-sm"
-                onClick={saveContract}
-                disabled={busy || !canEdit || !draft.client_id}
-              >
-                <Save className="size-3" />{" "}
-                {editingId
-                  ? t("contractForm.update", "Aggiorna contratto")
-                  : t("contractForm.save", "Salva contratto")}
-              </button>
-            </div>
-          </div>
-          <div className="pc-card-body grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-8">
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.clientLabel", "Cliente")}
-              <select
-                className="pc-input"
-                value={draft.client_id}
-                onBlur={() => touchField("client_id")}
-                onChange={(e) => {
-                  clearFieldError("client_id");
-                  setDraft((v) => ({ ...v, client_id: e.target.value }));
-                }}
-              >
-                <option value="" disabled>
-                  {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
-                </option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.company_name || client.name}
-                  </option>
-                ))}
-              </select>
-              {touched.client_id && errors.client_id && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.client_id}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.nameLabel", "Nome contratto")}
-              <input
-                className="pc-input"
-                value={draft.name}
-                onBlur={() => touchField("name")}
-                onChange={(e) => {
-                  clearFieldError("name");
-                  setDraft((v) => ({ ...v, name: e.target.value }));
-                }}
-                placeholder={t("contractForm.namePlaceholder", "es. Contratto base")}
-              />
-              {touched.name && errors.name && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.name}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.billingPeriodLabel", "Fatturazione")}
-              <select
-                className="pc-input"
-                value={draft.billing_period}
-                onChange={(e) =>
-                  setDraft((v) => ({
-                    ...v,
-                    billing_period: e.target.value as ContractDraft["billing_period"],
-                  }))
-                }
-              >
-                <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
-                <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
-              </select>
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.feeLabel", "Canone (€)")}
-              <input
-                className="pc-input"
-                type="number"
-                min="0"
-                step="0.01"
-                value={draft.recurring_fee}
-                onBlur={() => touchField("recurring_fee")}
-                onChange={(e) => {
-                  clearFieldError("recurring_fee");
-                  setDraft((v) => ({ ...v, recurring_fee: e.target.value }));
-                }}
-                placeholder={t("contractForm.feePlaceholder", "0")}
-              />
-              {touched.recurring_fee && errors.recurring_fee && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.recurring_fee}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.hoursLabel", "Ore incluse")}
-              <input
-                className="pc-input"
-                type="number"
-                min="0"
-                step="0.25"
-                value={draft.included_hours}
-                onBlur={() => touchField("included_hours")}
-                onChange={(e) => {
-                  clearFieldError("included_hours");
-                  setDraft((v) => ({ ...v, included_hours: e.target.value }));
-                }}
-                placeholder={t("contractForm.hoursPlaceholder", "0")}
-              />
-              {touched.included_hours && errors.included_hours && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.included_hours}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.extraRateLabel", "Tariffa extra/h (€)")}
-              <input
-                className="pc-input"
-                type="number"
-                min="0"
-                step="0.01"
-                value={draft.extra_hourly_rate}
-                onBlur={() => touchField("extra_hourly_rate")}
-                onChange={(e) => {
-                  clearFieldError("extra_hourly_rate");
-                  setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }));
-                }}
-                placeholder={t("contractForm.extraRatePlaceholder", "0")}
-              />
-              {touched.extra_hourly_rate && errors.extra_hourly_rate && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.extra_hourly_rate}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.startDateLabel", "Data inizio")}
-              <DatePickerInput
-                value={draft.start_date}
-                minDate={defaultDateFrom}
-                onBlur={() => touchField("start_date")}
-                onChange={(v) => {
-                  clearFieldError("start_date");
-                  clearFieldError("end_date");
-                  setDraft((prev) => ({ ...prev, start_date: v }));
-                }}
-              />
-              {touched.start_date && errors.start_date && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.start_date}</p>
-              )}
-            </label>
-            <label className="space-y-1 text-sm font-medium text-text2">
-              {t("contractForm.endDateLabel", "Data fine")}
-              <DatePickerInput
-                value={draft.end_date}
-                minDate={draft.start_date || undefined}
-                onBlur={() => touchField("end_date")}
-                onChange={(v) => {
-                  clearFieldError("end_date");
-                  setDraft((prev) => ({ ...prev, end_date: v }));
-                }}
-              />
-              {touched.end_date && errors.end_date && (
-                <p className="text-xs" style={{ color: "var(--destructive)" }}>{errors.end_date}</p>
-              )}
-            </label>
-          </div>
-          {filteredContracts.length > 0 && (
-            <div className="border-t overflow-x-auto" style={{ borderColor: "var(--border)" }}>
-              <table className="w-full min-w-[800px] text-[12.5px]">
-                <thead style={{ background: "var(--surface2)" }}>
-                  <tr>
-                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.client", "Cliente")}
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.name", "Contratto")}
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.period", "Periodo")}
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.fee", "Canone")}
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.hours", "Ore")}
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.status", "Stato")}
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.dates", "Date")}
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-                      {t("contractTable.headers.actions", "Azioni")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContracts.map((contract) => (
-                    <tr
-                      key={contract.id}
-                      className="border-t"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: editingId === contract.id ? "var(--accent-alpha)" : undefined,
-                      }}
-                    >
-                      <td className="px-3 py-2 text-sm">
-                        {contract.client?.company_name || contract.client?.name || t("fallbacks.client", "Cliente")}
-                      </td>
-                      <td className="px-3 py-2 font-medium">{contract.name}</td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs rounded-full bg-surface2 px-2 py-0.5">
-                          {contract.billing_period === "monthly"
-                            ? t("contracts.period.monthly", "Mensile")
-                            : t("contracts.period.annual", "Annuale")}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(contract.recurring_fee)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatHours(contract.included_hours)}</td>
-                      <td className="px-3 py-2">
-                        <span
-                          className="text-xs rounded-full px-2 py-0.5 font-bold"
+              <div className="pc-card">
+                <div className="pc-card-hd">
+                  <div className="pc-card-title">{t("finance.budgetTitle", "Budget clienti")}</div>
+                  <AlertTriangle className="size-5 text-text3" />
+                </div>
+                <div className="pc-card-body space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="space-y-1 text-sm font-medium text-text2 col-span-2">
+                      {t("contractForm.clientLabel", "Cliente")}
+                      <select
+                        className="pc-input"
+                        value={budgetDraft.clientId}
+                        onChange={(e) =>
+                          setBudgetDraft((v) => ({ ...v, clientId: e.target.value }))
+                        }
+                      >
+                        <option value="">
+                          {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
+                        </option>
+                        {clients.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.company_name || client.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1 text-sm font-medium text-text2">
+                      {t("contractForm.billingPeriodLabel", "Fatturazione")}
+                      <select
+                        className="pc-input"
+                        value={budgetDraft.period}
+                        onChange={(e) =>
+                          setBudgetDraft((v) => ({
+                            ...v,
+                            period: e.target.value as BudgetDraft["period"],
+                          }))
+                        }
+                      >
+                        <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+                        <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
+                      </select>
+                    </label>
+
+                    <label className="space-y-1 text-sm font-medium text-text2">
+                      {t("finance.budgetAmountLabel", "Budget")}
+                      <input
+                        className="pc-input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={budgetDraft.budgetAmount}
+                        onChange={(e) =>
+                          setBudgetDraft((v) => ({ ...v, budgetAmount: e.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-sm font-medium text-text2">
+                      {t("finance.alertThresholdLabel", "Alert %")}
+                      <input
+                        className="pc-input"
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={budgetDraft.alertThresholdPercent}
+                        onChange={(e) =>
+                          setBudgetDraft((v) => ({ ...v, alertThresholdPercent: e.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <div>
+                      <button
+                        className="pc-btn pc-btn-primary pc-btn-sm"
+                        disabled={busy || !budgetDraft.clientId}
+                        onClick={saveBudget}
+                      >
+                        <Save className="size-3" /> {t("finance.saveBudget", "Salva budget")}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {budgetUsage.slice(0, 5).map((budget) => {
+                      const pct = money(budget.used_percent);
+                      const overBudget = pct > 100;
+                      const warning = pct >= 80 && pct <= 100;
+                      const budgetColor = overBudget ? "#ef4444" : warning ? "#f97316" : "#22c55e";
+                      const overAmount = overBudget
+                        ? money(budget.used_amount) - money(budget.budget_amount)
+                        : 0;
+                      return (
+                        <div
+                          key={budget.budget_id}
+                          className="rounded-lg border p-3"
                           style={{
-                            background:
-                              contract.status === "active"
-                                ? "var(--success-alpha)"
-                                : contract.status === "paused"
-                                  ? "var(--warning-alpha)"
-                                  : "var(--surface2)",
-                            color:
-                              contract.status === "active"
-                                ? "var(--success)"
-                                : contract.status === "paused"
-                                  ? "var(--warning)"
-                                  : "var(--text3)",
+                            borderColor: overBudget
+                              ? "#ef4444"
+                              : warning
+                                ? "#f97316"
+                                : "var(--border)",
                           }}
                         >
-                          {contract.status === "active"
-                            ? t("contractTable.statusActive", "Attivo")
-                            : contract.status === "paused"
-                              ? t("contractTable.statusPaused", "In pausa")
-                              : contract.status === "expired"
-                                ? t("contractTable.statusExpired", "Scaduto")
-                                : t("contractTable.statusDraft", "Bozza")}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-text3">
-                        {new Date(contract.start_date).toLocaleDateString("it-IT")}
-                        {contract.end_date
-                          ? ` \u2192 ${new Date(contract.end_date).toLocaleDateString("it-IT")}`
-                          : ""}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            className="pc-btn pc-btn-ghost pc-btn-xs"
-                            onClick={() => startEdit(contract)}
-                            disabled={busy}
-                            title={t("contractTable.edit", "Modifica")}
-                          >
-                            <Pencil className="size-3" />
-                          </button>
-                          <button
-                            type="button"
-                            className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
-                            onClick={() => deleteContract(contract.id)}
-                            disabled={busy}
-                            title={t("contractTable.delete", "Elimina")}
-                          >
-                            <Trash2 className="size-3" />
-                          </button>
+                          <div className="flex items-center justify-between gap-2 text-sm">
+                            <span className="font-semibold">{budget.client_name}</span>
+                            <span
+                              className="font-mono"
+                              style={{ color: overBudget ? "#ef4444" : undefined }}
+                            >
+                              {pct.toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface2">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(100, pct)}%`,
+                                background: budgetColor,
+                              }}
+                            />
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-xs text-text3">
+                            <span>
+                              {formatCurrency(budget.used_amount)} /{" "}
+                              {formatCurrency(budget.budget_amount)}
+                            </span>
+                            {overBudget && (
+                              <span style={{ color: "#ef4444" }}>
+                                {t("budget.overBudget", "Superato di {{amount}}", {
+                                  amount: formatCurrency(overAmount),
+                                })}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(activeTab === "billing" || activeTab === "materials") && canManageCosts && (
-        <div className={`grid gap-4 ${activeTab === "billing" ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
-          {activeTab === "billing" && (
-            <>
-          <div className="pc-card">
-            <div className="pc-card-hd">
-              <div>
-                <div className="pc-card-title">{t("finance.invoiceTitle", "Generazione fattura")}</div>
-                <div className="mt-1 text-sm text-text3">
-                  {selectedClient
-                    ? t("finance.invoiceClientHint", "{{count}} ticket per {{client}}", {
-                        count: invoiceSourceRows.length,
-                        client: selectedClient.company_name || selectedClient.name,
-                      })
-                    : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
+                      );
+                    })}
+                    {!budgetUsage.length && (
+                      <div className="text-sm text-text3">
+                        {t("finance.noBudgets", "Nessun budget attivo.")}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <ReceiptText className="size-5 text-text3" />
             </div>
-            <div className="pc-card-body space-y-4">
-              <div className="grid gap-2 sm:grid-cols-3">
-                <ContractMetric label={t("finance.invoiceContextPeriod", "Periodo")} value={`${dateFrom} - ${dateTo}`} />
-                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
-                <ContractMetric label={t("finance.invoiceContextNextNumber", "Prossimo numero")} value={nextInvoiceNumber} />
-              </div>
-              <div className="rounded-lg border border-dashed p-3 text-sm text-text3" style={{ borderColor: "var(--border)" }}>
-                {selectedClient
-                  ? t("finance.invoiceContextHint", "La fattura userà i ticket del cliente selezionato nei filtri correnti.")
-                  : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
-              </div>
-              <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={openNewInvoice} disabled={busy || !selectedClient || !invoiceSourceRows.length}>
-                <Plus className="size-3" /> {t("finance.newInvoice", "Nuova fattura")}
-              </button>
-            </div>
-          </div>
+          </>
+        )}
 
+        {activeTab === "contracts" && canManageCosts && (
           <div className="pc-card">
             <div className="pc-card-hd">
-              <div>
-                <div className="pc-card-title">{t("finance.quoteTitle", "Preventivi")}</div>
-                <div className="mt-1 text-sm text-text3">
-                  {t("finance.quoteSubtitle", "{{count}} preventivi trovati", { count: filteredQuotes.length })}
-                </div>
+              <div className="pc-card-title">
+                {t("contractForm.title", "Contratti / SLA cliente")}
+                {editingId && (
+                  <span className="ml-2 text-xs font-normal text-accent">
+                    {t("contractForm.editing", "Modifica in corso")}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewQuote} disabled={busy}>
-                  <Plus className="size-3" /> {t("finance.newQuote", "Nuovo preventivo")}
+                {editingId && (
+                  <button
+                    type="button"
+                    className="pc-btn pc-btn-ghost pc-btn-sm"
+                    onClick={cancelEdit}
+                    disabled={busy}
+                  >
+                    <X className="size-3" /> {t("contractForm.cancelEdit", "Annulla")}
+                  </button>
+                )}
+                <button
+                  className="pc-btn pc-btn-primary pc-btn-sm"
+                  onClick={saveContract}
+                  disabled={busy || !canEdit || !draft.client_id}
+                >
+                  <Save className="size-3" />{" "}
+                  {editingId
+                    ? t("contractForm.update", "Aggiorna contratto")
+                    : t("contractForm.save", "Salva contratto")}
                 </button>
               </div>
             </div>
-            <div className="pc-card-body">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="pc-card-body grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-8">
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.clientLabel", "Cliente")}
                 <select
-                  className="pc-input w-auto"
-                  value={quoteStatusFilter}
-                  onChange={(e) => setQuoteStatusFilter(e.target.value as QuoteRow["status"] | "all")}
+                  className="pc-input"
+                  value={draft.client_id}
+                  onBlur={() => touchField("client_id")}
+                  onChange={(e) => {
+                    clearFieldError("client_id");
+                    setDraft((v) => ({ ...v, client_id: e.target.value }));
+                  }}
                 >
-                  <option value="all">{t("finance.allStatuses", "Tutti gli stati")}</option>
-                  <option value="draft">{t("finance.quoteStatusDraft", "Bozza")}</option>
-                  <option value="sent">{t("finance.quoteStatusSent", "Inviato")}</option>
-                  <option value="approved">{t("finance.quoteStatusApproved", "Approvato")}</option>
-                  <option value="rejected">{t("finance.quoteStatusRejected", "Rifiutato")}</option>
-                  <option value="converted">{t("finance.quoteStatusConverted", "Convertito")}</option>
-                  <option value="expired">{t("finance.quoteStatusExpired", "Scaduto")}</option>
-                </select>
-                <select
-                  className="pc-input w-auto"
-                  value={quoteClientFilter}
-                  onChange={(e) => setQuoteClientFilter(e.target.value)}
-                >
-                  <option value="all">{t("filters.allClients", "Tutti i clienti")}</option>
+                  <option value="" disabled>
+                    {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
+                  </option>
                   {clients.map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.company_name || client.name}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {filteredQuotes.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[600px] text-[12.5px]">
-                    <thead style={{ background: "var(--surface2)" }}>
-                      <tr>
-                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                          {t("finance.quoteNumberLabel", "Numero")}
-                        </th>
-                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                          {t("contractForm.clientLabel", "Cliente")}
-                        </th>
-                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                          {t("finance.quoteTitleLabel", "Titolo")}
-                        </th>
-                        <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-                          {t("detailTable.headers.total", "Totale")}
-                        </th>
-                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-                          {t("contractTable.headers.status", "Stato")}
-                        </th>
-                        <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-                          {t("contractTable.headers.actions", "Azioni")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredQuotes.map((quote) => (
-                        <tr key={quote.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                          <td className="px-3 py-2 font-mono font-semibold">{quote.quote_number}</td>
-                          <td className="px-3 py-2">
-                            {quote.client?.company_name || quote.client?.name || "-"}
-                          </td>
-                          <td className="px-3 py-2 max-w-[180px] truncate" title={quote.title}>
-                            {quote.title}
-                          </td>
-                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(quote.total_amount)}</td>
-                          <td className="px-3 py-2">
-                            <QuoteStatusBadge status={quote.status} />
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            <QuoteActions
-                              quote={quote}
-                              busy={busy} onStatusChange={updateQuoteStatus}
-                              onConvertToTicket={convertQuoteToTicket}
-                              onConvertToInvoice={convertQuoteToInvoice}
-                              onDelete={deleteQuote}
-                              onViewPdf={openQuotePdf}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-6 text-center text-sm text-text3">
-                  <Send className="mx-auto h-8 w-8 mb-2 opacity-40" />
-                  <p>{t("finance.noQuotes", "Nessun preventivo creato.")}</p>
-                  <button
-                    className="pc-btn pc-btn-primary pc-btn-sm mt-3"
-                    onClick={openNewQuote}
-                    disabled={busy}
-                  >
-                    <Plus className="size-3" /> {t("finance.createFirstQuote", "Crea primo preventivo")}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-            </>
-          )}
-
-          {activeTab === "materials" && (
-          <div className="pc-card">
-            <div className="pc-card-hd">
-              <div className="pc-card-title">{t("finance.materialTitle", "Materiali / ricambi")}</div>
-              <Wrench className="size-5 text-text3" />
-            </div>
-            <div className="pc-card-body space-y-2">
+                {touched.client_id && errors.client_id && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.client_id}
+                  </p>
+                )}
+              </label>
               <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.selectTicketLabel", "Seleziona ticket")}
+                {t("contractForm.nameLabel", "Nome contratto")}
+                <input
+                  className="pc-input"
+                  value={draft.name}
+                  onBlur={() => touchField("name")}
+                  onChange={(e) => {
+                    clearFieldError("name");
+                    setDraft((v) => ({ ...v, name: e.target.value }));
+                  }}
+                  placeholder={t("contractForm.namePlaceholder", "es. Contratto base")}
+                />
+                {touched.name && errors.name && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.name}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.billingPeriodLabel", "Fatturazione")}
                 <select
                   className="pc-input"
-                  value={materialDraft.ticketId}
-                  onChange={(e) => setMaterialDraft((v) => ({ ...v, ticketId: e.target.value }))}
+                  value={draft.billing_period}
+                  onChange={(e) =>
+                    setDraft((v) => ({
+                      ...v,
+                      billing_period: e.target.value as ContractDraft["billing_period"],
+                    }))
+                  }
                 >
-                  <option value="">{t("finance.selectTicket", "Seleziona ticket")}</option>
-                  {filteredTickets.slice(0, 80).map((ticket) => (
-                    <option key={ticket.id} value={ticket.id}>{ticket.ticket_code} - {ticket.client_name || "-"}</option>
-                  ))}
+                  <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+                  <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
                 </select>
               </label>
-
               <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.materialDescriptionLabel", "Descrizione materiale")}
-                <input className="pc-input" value={materialDraft.description} onChange={(e) => setMaterialDraft((v) => ({ ...v, description: e.target.value }))} />
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.supplierLabel", "Fornitore")}
-                  <input className="pc-input" value={materialDraft.supplier} onChange={(e) => setMaterialDraft((v) => ({ ...v, supplier: e.target.value }))} />
-                </label>
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.skuLabel", "SKU")}
-                  <input className="pc-input" value={materialDraft.sku} onChange={(e) => setMaterialDraft((v) => ({ ...v, sku: e.target.value }))} />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.quantityLabel", "Quantità")}
-                  <input className="pc-input" type="number" min="0" step="0.25" value={materialDraft.quantity} onChange={(e) => setMaterialDraft((v) => ({ ...v, quantity: e.target.value }))} />
-                </label>
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.unitCostLabel", "Costo unitario")}
-                  <input className="pc-input" type="number" min="0" step="0.01" value={materialDraft.unitCost} onChange={(e) => setMaterialDraft((v) => ({ ...v, unitCost: e.target.value }))} />
-                </label>
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.resaleMarginLabel", "Ricarico %")}
-                  <input className="pc-input" type="number" min="0" step="1" value={materialDraft.resaleMarginPercent} onChange={(e) => setMaterialDraft((v) => ({ ...v, resaleMarginPercent: e.target.value }))} />
-                </label>
-              </div>
-
-              <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={addMaterialItem} disabled={busy || !materialDraft.ticketId}>
-                <Save className="size-3" /> {t("finance.addMaterial", "Aggiungi materiale")}
-              </button>
-            </div>
-          </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === "billing" && (
-      <div className="grid gap-4 xl:grid-cols-2">
-        <FinanceTable
-          title={t("finance.invoicesTitle", "Fatture e pagamenti")}
-          empty={t("finance.noInvoices", "Nessuna fattura nel periodo selezionato.")}
-          emptyIcon={<FileText className="h-8 w-8" />}
-          emptyAction={canManageCosts ? (
-            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewInvoice} disabled={!selectedClient || !invoiceSourceRows.length}>
-              {t("finance.createFirstInvoice", "Crea prima fattura")}
-            </button>
-          ) : undefined}
-          actions={
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportAccountingCsv} disabled={!invoices.length}>
-              <Download className="size-3" /> {t("finance.exportAccountingCsv", "CSV contabile")}
-            </button>
-          }
-        >
-          {invoices.map((invoice) => (
-            <tr key={invoice.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-              <td className="px-3 py-2 font-mono font-semibold">{invoice.invoice_number}</td>
-              <td className="px-3 py-2">{invoice.client?.company_name || invoice.client?.name || invoice.recipient_name || "-"}</td>
-              <td className="px-3 py-2 font-mono">{formatCurrency(invoice.total_amount)}</td>
-              <td className="px-3 py-2">
-                <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold">{invoice.status}</span>
-              </td>
-              <td className="px-3 py-2 text-right">
-                <div className="flex justify-end gap-1">
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => openInvoicePdf(invoice)} title="PDF">
-                    <FileDown className="size-3" />
-                  </button>
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => exportInvoiceXml(invoice)} title="XML">
-                    XML
-                  </button>
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => updateInvoiceStatus(invoice, "paid")} title={t("finance.markPaid", "Pagata")}>
-                    <CheckCircle2 className="size-3" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </FinanceTable>
-
-        <FinanceTable
-          title={`${t("finance.quotesTitle", "Tutti i preventivi")}`}
-          empty={t("finance.noQuotes", "Nessun preventivo creato.")}
-          emptyIcon={<Send className="h-8 w-8" />}
-          emptyAction={canManageCosts ? (
-            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewQuote}>
-              <Plus className="size-3" /> {t("finance.createFirstQuote", "Crea primo preventivo")}
-            </button>
-          ) : undefined}
-          actions={
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={scheduleMonthlyReports} disabled={busy}>
-              <Send className="size-3" /> {t("finance.scheduleReports", "Report mensili")}
-            </button>
-          }
-        >
-          {quotes.map((quote) => (
-            <tr key={quote.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-              <td className="px-3 py-2 font-mono font-semibold">{quote.quote_number}</td>
-              <td className="px-3 py-2">{quote.client?.company_name || quote.client?.name || "-"}</td>
-              <td className="px-3 py-2 font-mono">{formatCurrency(quote.total_amount)}</td>
-              <td className="px-3 py-2">
-                <QuoteStatusBadge status={quote.status} />
-              </td>
-              <td className="px-3 py-2 text-right">
-                <QuoteActions
-                  quote={quote}
-                  busy={busy} onStatusChange={updateQuoteStatus}
-                  onConvertToTicket={convertQuoteToTicket}
-                  onConvertToInvoice={convertQuoteToInvoice}
-                  onDelete={deleteQuote}
-                              onViewPdf={openQuotePdf}
+                {t("contractForm.feeLabel", "Canone (€)")}
+                <input
+                  className="pc-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draft.recurring_fee}
+                  onBlur={() => touchField("recurring_fee")}
+                  onChange={(e) => {
+                    clearFieldError("recurring_fee");
+                    setDraft((v) => ({ ...v, recurring_fee: e.target.value }));
+                  }}
+                  placeholder={t("contractForm.feePlaceholder", "0")}
                 />
-              </td>
-            </tr>
-          ))}
-        </FinanceTable>
-      </div>
-      )}
-
-      {activeTab === "report" && (
-        <>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <SummaryTable
-          title={t("summaryTables.perClient", "Costi per cliente")}
-          rows={byClient}
-          onRowClick={(name) => openDetail("client", name)}
-        />
-        <SummaryTable
-          title={t("summaryTables.perTechnician", "Costi per tecnico")}
-          rows={byTechnician}
-          onRowClick={(name) => openDetail("technician", name)}
-        />
-      </div>
-
-      {/* Mobile card view for ticket detail */}
-      <div className="md:hidden">
-        {filteredTickets.map((ticket) => (
-          <div key={ticket.id} className="mb-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-sm font-bold text-accent">{ticket.ticket_code}</span>
-              <span className="text-[11px] text-text3">{ticket.status}</span>
+                {touched.recurring_fee && errors.recurring_fee && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.recurring_fee}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.hoursLabel", "Ore incluse")}
+                <input
+                  className="pc-input"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={draft.included_hours}
+                  onBlur={() => touchField("included_hours")}
+                  onChange={(e) => {
+                    clearFieldError("included_hours");
+                    setDraft((v) => ({ ...v, included_hours: e.target.value }));
+                  }}
+                  placeholder={t("contractForm.hoursPlaceholder", "0")}
+                />
+                {touched.included_hours && errors.included_hours && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.included_hours}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.extraRateLabel", "Tariffa extra/h (€)")}
+                <input
+                  className="pc-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draft.extra_hourly_rate}
+                  onBlur={() => touchField("extra_hourly_rate")}
+                  onChange={(e) => {
+                    clearFieldError("extra_hourly_rate");
+                    setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }));
+                  }}
+                  placeholder={t("contractForm.extraRatePlaceholder", "0")}
+                />
+                {touched.extra_hourly_rate && errors.extra_hourly_rate && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.extra_hourly_rate}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.startDateLabel", "Data inizio")}
+                <DatePickerInput
+                  value={draft.start_date}
+                  minDate={defaultDateFrom}
+                  onBlur={() => touchField("start_date")}
+                  onChange={(v) => {
+                    clearFieldError("start_date");
+                    clearFieldError("end_date");
+                    setDraft((prev) => ({ ...prev, start_date: v }));
+                  }}
+                />
+                {touched.start_date && errors.start_date && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.start_date}
+                  </p>
+                )}
+              </label>
+              <label className="space-y-1 text-sm font-medium text-text2">
+                {t("contractForm.endDateLabel", "Data fine")}
+                <DatePickerInput
+                  value={draft.end_date}
+                  minDate={draft.start_date || undefined}
+                  onBlur={() => touchField("end_date")}
+                  onChange={(v) => {
+                    clearFieldError("end_date");
+                    setDraft((prev) => ({ ...prev, end_date: v }));
+                  }}
+                />
+                {touched.end_date && errors.end_date && (
+                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                    {errors.end_date}
+                  </p>
+                )}
+              </label>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[12px]">
-              <div><span className="text-text3">{t("detailTable.headers.client", "Cliente")}:</span> <span className="font-medium">{ticket.client_name || "-"}</span></div>
-              <div><span className="text-text3">{t("detailTable.headers.technician", "Tecnico")}:</span> <span className="font-medium">{ticket.technician_name || "-"}</span></div>
-              <div><span className="text-text3">{t("detailTable.headers.hours", "Ore")}:</span> <span className="font-mono font-medium">{formatHours(money(ticket.billable_hours))}</span></div>
-              <div><span className="text-text3">{t("detailTable.headers.rate", "Tariffa")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.hourly_rate)}</span></div>
-              <div><span className="text-text3">{t("detailTable.headers.labor", "Manodopera")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.labor_cost)}</span></div>
-              <div><span className="text-text3">{t("detailTable.headers.materials", "Materiali")}:</span> <span className="font-mono font-medium">{formatCurrency(ticket.material_cost)}</span></div>
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: "var(--border)" }}>
-              <span className="text-[11px] text-text3">{t("detailTable.headers.total", "Totale")}</span>
-              <span className="font-mono text-sm font-bold">{formatCurrency(ticket.total_cost)}</span>
-            </div>
-          </div>
-        ))}
-        {!filteredTickets.length && !loading && (
-          <div className="py-8 text-center text-sm text-text3">
-            {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
-          </div>
-        )}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden md:block pc-card overflow-hidden">
-        <div className="pc-card-hd">
-          <div>
-            <div className="pc-card-title">{t("detailTable.title", "Dettaglio ticket fatturabili")}</div>
-            <div className="mt-1 flex items-center gap-3 text-sm text-text3">
-              <span>{t("detailTable.ticketsInPeriod", { count: filteredTickets.length })}</span>
-              <select
-                className="pc-input text-xs w-auto"
-                value={detailGroupBy}
-                onChange={(e) => setDetailGroupBy(e.target.value as "none" | "client" | "technician")}
-                aria-label={t("detailTable.groupByLabel", "Raggruppamento")}
-              >
-                <option value="none">{t("detailTable.groupByNone", "Nessun raggruppamento")}</option>
-                <option value="client">{t("detailTable.groupByClient", "Raggruppa per cliente")}</option>
-                <option value="technician">{t("detailTable.groupByTechnician", "Raggruppa per tecnico")}</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-[12.5px]">
-            <thead style={{ background: "var(--surface2)" }}>
-              <tr>
-                {[
-                  { key: "ticket", label: t("detailTable.headers.ticket", "Ticket") },
-                  { key: "client", label: t("detailTable.headers.client", "Cliente") },
-                  { key: "technician", label: t("detailTable.headers.technician", "Tecnico") },
-                  { key: "hours", label: t("detailTable.headers.hours", "Ore") },
-                  { key: "rate", label: t("detailTable.headers.rate", "Tariffa") },
-                  { key: "labor", label: t("detailTable.headers.labor", "Manodopera") },
-                  { key: "materials", label: t("detailTable.headers.materials", "Materiali") },
-                  { key: "total", label: t("detailTable.headers.total", "Totale") },
-                ].map(({ key, label }) => (
-                  <th
-                    key={key}
-                    className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                    {t("detailTable.loading", "Caricamento costi...")}
-                  </td>
-                </tr>
-              ) : filteredTickets.length === 0 ? (
-                <tr>
-                  <td className="px-3 py-8 text-center text-text3" colSpan={8}>
-                    {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
-                  </td>
-                </tr>
-              ) : groupedDetail ? (
-                groupedDetail.map((group) => (
-                  <Fragment key={group.name}>
-                    <tr
-                      className="border-t bg-surface2 cursor-pointer transition-colors"
-                      style={{ borderColor: "var(--border)" }}
-                      tabIndex={0}
-                      role="button"
-                      onClick={() => openDetail(detailGroupBy === "client" ? "client" : "technician", group.name)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openDetail(detailGroupBy === "client" ? "client" : "technician", group.name);
-                        }
-                      }}
-                    >
-                      <td className="px-3 py-2 font-bold" colSpan={3}>
-                        {group.name} ({group.tickets.length})
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-bold">
-                        {formatHours(group.hours)}
-                      </td>
-                      <td className="px-3 py-2" />
-                      <td className="px-3 py-2 text-right font-mono font-bold">
-                        {formatCurrency(group.labor)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-bold">
-                        {formatCurrency(group.materials)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-bold">
-                        {formatCurrency(group.total)}
-                      </td>
+            {filteredContracts.length > 0 && (
+              <div className="border-t overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+                <table className="w-full min-w-[800px] text-[12.5px]">
+                  <thead style={{ background: "var(--surface2)" }}>
+                    <tr>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.client", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.name", "Contratto")}
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.period", "Periodo")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.fee", "Canone")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.hours", "Ore")}
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.status", "Stato")}
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.dates", "Date")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("contractTable.headers.actions", "Azioni")}
+                      </th>
                     </tr>
-                    {group.tickets.map((ticket) => (
-                      <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                        <td className="px-3 py-2 pl-8 font-mono font-semibold text-accent">
-                          {ticket.ticket_code}
+                  </thead>
+                  <tbody>
+                    {filteredContracts.map((contract) => (
+                      <tr
+                        key={contract.id}
+                        className="border-t"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: editingId === contract.id ? "var(--accent-alpha)" : undefined,
+                        }}
+                      >
+                        <td className="px-3 py-2 text-sm">
+                          {contract.client?.company_name ||
+                            contract.client?.name ||
+                            t("fallbacks.client", "Cliente")}
                         </td>
-                        <td className="px-3 py-2">{ticket.client_name || "-"}</td>
-                        <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
+                        <td className="px-3 py-2 font-medium">{contract.name}</td>
+                        <td className="px-3 py-2">
+                          <span className="text-xs rounded-full bg-surface2 px-2 py-0.5">
+                            {contract.billing_period === "monthly"
+                              ? t("contracts.period.monthly", "Mensile")
+                              : t("contracts.period.annual", "Annuale")}
+                          </span>
+                        </td>
                         <td className="px-3 py-2 text-right font-mono">
-                          {formatHours(money(ticket.billable_hours))}
+                          {formatCurrency(contract.recurring_fee)}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.hourly_rate)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
-                        <td className="px-3 py-2 text-right font-mono font-bold">
-                          {formatCurrency(ticket.total_cost)}
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatHours(contract.included_hours)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className="text-xs rounded-full px-2 py-0.5 font-bold"
+                            style={{
+                              background:
+                                contract.status === "active"
+                                  ? "var(--success-alpha)"
+                                  : contract.status === "paused"
+                                    ? "var(--warning-alpha)"
+                                    : "var(--surface2)",
+                              color:
+                                contract.status === "active"
+                                  ? "var(--success)"
+                                  : contract.status === "paused"
+                                    ? "var(--warning)"
+                                    : "var(--text3)",
+                            }}
+                          >
+                            {contract.status === "active"
+                              ? t("contractTable.statusActive", "Attivo")
+                              : contract.status === "paused"
+                                ? t("contractTable.statusPaused", "In pausa")
+                                : contract.status === "expired"
+                                  ? t("contractTable.statusExpired", "Scaduto")
+                                  : t("contractTable.statusDraft", "Bozza")}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-text3">
+                          {new Date(contract.start_date).toLocaleDateString("it-IT")}
+                          {contract.end_date
+                            ? ` \u2192 ${new Date(contract.end_date).toLocaleDateString("it-IT")}`
+                            : ""}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              className="pc-btn pc-btn-ghost pc-btn-xs"
+                              onClick={() => startEdit(contract)}
+                              disabled={busy}
+                              title={t("contractTable.edit", "Modifica")}
+                            >
+                              <Pencil className="size-3" />
+                            </button>
+                            <button
+                              type="button"
+                              className="pc-btn pc-btn-ghost pc-btn-xs text-destructive"
+                              onClick={() => deleteContract(contract.id)}
+                              disabled={busy}
+                              title={t("contractTable.delete", "Elimina")}
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                  </Fragment>
-                ))
-              ) : (
-                filteredTickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                    <td className="px-3 py-2 font-mono font-semibold text-accent">
-                      {ticket.ticket_code}
-                    </td>
-                    <td className="px-3 py-2">{ticket.client_name || "-"}</td>
-                    <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
-                    <td className="px-3 py-2 font-mono">
-                      {formatHours(money(ticket.billable_hours))}
-                    </td>
-                    <td className="px-3 py-2 font-mono">{formatCurrency(ticket.hourly_rate)}</td>
-                    <td className="px-3 py-2 font-mono">{formatCurrency(ticket.labor_cost)}</td>
-                    <td className="px-3 py-2 font-mono">{formatCurrency(ticket.material_cost)}</td>
-                    <td className="px-3 py-2 font-mono font-bold">
-                      {formatCurrency(ticket.total_cost)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-        </>
-      )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
-      {activeTab === "contracts" && (
-      <div className="pc-card overflow-hidden">
-        <div className="pc-card-hd">
-          <div className="pc-card-title">{t("contracts.title", "Contratti attivi e ore extra")}</div>
-        </div>
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-2">
-          {filteredContracts.map((contract) => {
-            const contractTickets = enrichedTickets.filter((ticket) => {
-              // Match by client_id (primary)
-              if (ticket.client_id && ticket.client_id === contract.client_id) return true;
-              // Fallback: match by client name when client_id is NULL (pre-backfill tickets)
-              if (!ticket.client_id && ticket.client_name && contract.client) {
-                const contractName = (contract.client.company_name || contract.client.name || "").toLowerCase().trim();
-                return contractName !== "" && ticket.client_name.toLowerCase().trim() === contractName;
-              }
-              return false;
-            });
-            const associatedCount = contractTickets.length;
-            const usedHours = contractTickets.reduce((sum, ticket) => sum + money(ticket.billable_hours), 0);
-            const includedH = money(contract.included_hours);
-            const usedPct = includedH > 0 ? Math.min(100, (usedHours / includedH) * 100) : 0;
-            const extraHours = Math.max(0, usedHours - includedH);
-            return (
-              <div
-                key={contract.id}
-                className="rounded-xl border p-4"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="font-bold">{contract.name}</div>
-                    <div className="text-sm text-text3">
-                      {contract.client
-                        ? contract.client.company_name || contract.client.name
-                        : t("fallbacks.client", "Cliente")}
-                    </div>
+        {activeTab === "billing" && canManageCosts && (
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="pc-card">
+              <div className="pc-card-hd">
+                <div>
+                  <div className="pc-card-title">
+                    {t("finance.invoiceTitle", "Generazione fattura")}
                   </div>
-                  <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold text-text2">
-                    {contract.billing_period === "monthly" ? t("contracts.period.monthly", "Mensile") : t("contracts.period.annual", "Annuale")}
-                  </span>
+                  <div className="mt-1 text-sm text-text3">
+                    {selectedClient
+                      ? t("finance.invoiceClientHint", "{{count}} ticket per {{client}}", {
+                          count: invoiceSourceRows.length,
+                          client: selectedClient.company_name || selectedClient.name,
+                        })
+                      : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
+                  </div>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <ContractMetric label={t("contracts.fee", "Canone")} value={formatCurrency(contract.recurring_fee)} />
+                <ReceiptText className="size-5 text-text3" />
+              </div>
+              <div className="pc-card-body space-y-4">
+                <div className="grid gap-2 sm:grid-cols-3">
                   <ContractMetric
-                    label={t("contracts.includedHours", "Ore incluse")}
-                    value={formatHours(contract.included_hours)}
+                    label={t("finance.invoiceContextPeriod", "Periodo")}
+                    value={`${dateFrom} - ${dateTo}`}
                   />
-                  <ContractMetric label={t("contracts.associatedTickets", "Ticket associati")} value={String(associatedCount)} />
                   <ContractMetric
-                    label={t("contracts.estimatedExtra", "Extra stimato")}
-                    value={formatCurrency(extraHours * money(contract.extra_hourly_rate))}
+                    label={t("finance.invoiceContextRows", "Righe")}
+                    value={String(invoiceSourceRows.length)}
+                  />
+                  <ContractMetric
+                    label={t("finance.invoiceContextNextNumber", "Prossimo numero")}
+                    value={nextInvoiceNumber}
                   />
                 </div>
-                {includedH > 0 && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs text-text3 mb-1">
-                      <span>{t("contracts.hoursUsed", "Ore usate")}</span>
-                      <span className="font-mono">{formatHours(usedHours)} / {formatHours(contract.included_hours)} ({usedPct.toFixed(0)}%)</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-surface2">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(100, usedPct)}%`,
-                          background: usedPct >= 100 ? "#ef4444" : usedPct >= 80 ? "#f97316" : "#22c55e",
-                        }}
-                      />
-                    </div>
+                <div
+                  className="rounded-lg border border-dashed p-3 text-sm text-text3"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  {selectedClient
+                    ? t(
+                        "finance.invoiceContextHint",
+                        "La fattura userà i ticket del cliente selezionato nei filtri correnti.",
+                      )
+                    : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
+                </div>
+                <button
+                  className="pc-btn pc-btn-primary pc-btn-sm w-full"
+                  onClick={openNewInvoice}
+                  disabled={busy || !selectedClient || !invoiceSourceRows.length}
+                >
+                  <Plus className="size-3" /> {t("finance.newInvoice", "Nuova fattura")}
+                </button>
+              </div>
+            </div>
+
+            <div className="pc-card">
+              <div className="pc-card-hd">
+                <div>
+                  <div className="pc-card-title">{t("finance.quoteTitle", "Preventivi")}</div>
+                  <div className="mt-1 text-sm text-text3">
+                    {t("finance.quoteSubtitle", "{{count}} preventivi trovati", {
+                      count: filteredQuotes.length,
+                    })}
                   </div>
-                )}
-                {associatedCount === 0 && (
-                  <div className="mt-2 text-xs text-text4">
-                    {t("contracts.noLinkedTickets", "Nessun ticket collegato a questo contratto")}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    onClick={openNewQuote}
+                    disabled={busy}
+                  >
+                    <Plus className="size-3" /> {t("finance.newQuote", "Nuovo preventivo")}
+                  </button>
+                </div>
+              </div>
+              <div className="pc-card-body">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <select
+                    className="pc-input w-auto"
+                    value={quoteStatusFilter}
+                    onChange={(e) =>
+                      setQuoteStatusFilter(e.target.value as QuoteRow["status"] | "all")
+                    }
+                  >
+                    <option value="all">{t("finance.allStatuses", "Tutti gli stati")}</option>
+                    <option value="draft">{t("finance.quoteStatusDraft", "Bozza")}</option>
+                    <option value="sent">{t("finance.quoteStatusSent", "Inviato")}</option>
+                    <option value="approved">
+                      {t("finance.quoteStatusApproved", "Approvato")}
+                    </option>
+                    <option value="rejected">
+                      {t("finance.quoteStatusRejected", "Rifiutato")}
+                    </option>
+                    <option value="converted">
+                      {t("finance.quoteStatusConverted", "Convertito")}
+                    </option>
+                    <option value="expired">{t("finance.quoteStatusExpired", "Scaduto")}</option>
+                  </select>
+                  <select
+                    className="pc-input w-auto"
+                    value={quoteClientFilter}
+                    onChange={(e) => setQuoteClientFilter(e.target.value)}
+                  >
+                    <option value="all">{t("filters.allClients", "Tutti i clienti")}</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.company_name || client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {filteredQuotes.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px] text-[12.5px]">
+                      <thead style={{ background: "var(--surface2)" }}>
+                        <tr>
+                          <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                            {t("finance.quoteNumberLabel", "Numero")}
+                          </th>
+                          <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                            {t("contractForm.clientLabel", "Cliente")}
+                          </th>
+                          <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                            {t("finance.quoteTitleLabel", "Titolo")}
+                          </th>
+                          <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                            {t("detailTable.headers.total", "Totale")}
+                          </th>
+                          <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                            {t("contractTable.headers.status", "Stato")}
+                          </th>
+                          <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                            {t("contractTable.headers.actions", "Azioni")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredQuotes.map((quote) => (
+                          <tr
+                            key={quote.id}
+                            className="border-t"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            <td className="px-3 py-2 font-mono font-semibold">
+                              {quote.quote_number}
+                            </td>
+                            <td className="px-3 py-2">
+                              {quote.client?.company_name || quote.client?.name || "-"}
+                            </td>
+                            <td className="px-3 py-2 max-w-[180px] truncate" title={quote.title}>
+                              {quote.title}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono">
+                              {formatCurrency(quote.total_amount)}
+                            </td>
+                            <td className="px-3 py-2">
+                              <QuoteStatusBadge status={quote.status} />
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <QuoteActions
+                                quote={quote}
+                                busy={busy}
+                                onStatusChange={updateQuoteStatus}
+                                onConvertToTicket={convertQuoteToTicket}
+                                onConvertToInvoice={convertQuoteToInvoice}
+                                onDelete={deleteQuote}
+                                onViewPdf={openQuotePdf}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-sm text-text3">
+                    <Send className="mx-auto h-8 w-8 mb-2 opacity-40" />
+                    <p>{t("finance.noQuotes", "Nessun preventivo creato.")}</p>
+                    <button
+                      className="pc-btn pc-btn-primary pc-btn-sm mt-3"
+                      onClick={openNewQuote}
+                      disabled={busy}
+                    >
+                      <Plus className="size-3" />{" "}
+                      {t("finance.createFirstQuote", "Crea primo preventivo")}
+                    </button>
                   </div>
                 )}
               </div>
-            );
-          })}
-          {!filteredContracts.length && (
-            <div className="text-sm text-text3">{t("contracts.noContracts", "Nessun contratto configurato.")}</div>
-          )}
-        </div>
-      </div>
-      )}
+            </div>
+          </div>
+        )}
 
+        {activeTab === "billing" && (
+          <div className="grid gap-4 xl:grid-cols-2">
+            <FinanceTable
+              title={t("finance.invoicesTitle", "Fatture e pagamenti")}
+              empty={t("finance.noInvoices", "Nessuna fattura nel periodo selezionato.")}
+              emptyIcon={<FileText className="h-8 w-8" />}
+              emptyAction={
+                canManageCosts ? (
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    onClick={openNewInvoice}
+                    disabled={!selectedClient || !invoiceSourceRows.length}
+                  >
+                    {t("finance.createFirstInvoice", "Crea prima fattura")}
+                  </button>
+                ) : undefined
+              }
+              actions={
+                <button
+                  className="pc-btn pc-btn-ghost pc-btn-sm"
+                  onClick={exportAccountingCsv}
+                  disabled={!invoices.length}
+                >
+                  <Download className="size-3" />{" "}
+                  {t("finance.exportAccountingCsv", "CSV contabile")}
+                </button>
+              }
+            >
+              {invoices.map((invoice) => (
+                <tr key={invoice.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <td className="px-3 py-2 font-mono font-semibold">{invoice.invoice_number}</td>
+                  <td className="px-3 py-2">
+                    {invoice.client?.company_name ||
+                      invoice.client?.name ||
+                      invoice.recipient_name ||
+                      "-"}
+                  </td>
+                  <td className="px-3 py-2 font-mono">{formatCurrency(invoice.total_amount)}</td>
+                  <td className="px-3 py-2">
+                    <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold">
+                      {invoice.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-xs"
+                        onClick={() => openInvoicePdf(invoice)}
+                        title="PDF"
+                      >
+                        <FileDown className="size-3" />
+                      </button>
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-xs"
+                        onClick={() => exportInvoiceXml(invoice)}
+                        title="XML"
+                      >
+                        XML
+                      </button>
+                      <button
+                        className="pc-btn pc-btn-ghost pc-btn-xs"
+                        onClick={() => updateInvoiceStatus(invoice, "paid")}
+                        title={t("finance.markPaid", "Pagata")}
+                      >
+                        <CheckCircle2 className="size-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </FinanceTable>
+
+            <FinanceTable
+              title={`${t("finance.quotesTitle", "Tutti i preventivi")}`}
+              empty={t("finance.noQuotes", "Nessun preventivo creato.")}
+              emptyIcon={<Send className="h-8 w-8" />}
+              emptyAction={
+                canManageCosts ? (
+                  <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewQuote}>
+                    <Plus className="size-3" />{" "}
+                    {t("finance.createFirstQuote", "Crea primo preventivo")}
+                  </button>
+                ) : undefined
+              }
+              actions={
+                <button
+                  className="pc-btn pc-btn-ghost pc-btn-sm"
+                  onClick={scheduleMonthlyReports}
+                  disabled={busy}
+                >
+                  <Send className="size-3" /> {t("finance.scheduleReports", "Report mensili")}
+                </button>
+              }
+            >
+              {quotes.map((quote) => (
+                <tr key={quote.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <td className="px-3 py-2 font-mono font-semibold">{quote.quote_number}</td>
+                  <td className="px-3 py-2">
+                    {quote.client?.company_name || quote.client?.name || "-"}
+                  </td>
+                  <td className="px-3 py-2 font-mono">{formatCurrency(quote.total_amount)}</td>
+                  <td className="px-3 py-2">
+                    <QuoteStatusBadge status={quote.status} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <QuoteActions
+                      quote={quote}
+                      busy={busy}
+                      onStatusChange={updateQuoteStatus}
+                      onConvertToTicket={convertQuoteToTicket}
+                      onConvertToInvoice={convertQuoteToInvoice}
+                      onDelete={deleteQuote}
+                      onViewPdf={openQuotePdf}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </FinanceTable>
+          </div>
+        )}
+
+        {activeTab === "report" && (
+          <>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <SummaryTable
+                title={t("summaryTables.perClient", "Costi per cliente")}
+                rows={byClient}
+                onRowClick={(name) => openDetail("client", name)}
+              />
+              <SummaryTable
+                title={t("summaryTables.perTechnician", "Costi per tecnico")}
+                rows={byTechnician}
+                onRowClick={(name) => openDetail("technician", name)}
+              />
+            </div>
+
+            {/* Mobile card view for ticket detail */}
+            <div className="md:hidden">
+              {filteredTickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="mb-3 rounded-xl border p-4"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-sm font-bold text-accent">
+                      {ticket.ticket_code}
+                    </span>
+                    <span className="text-[11px] text-text3">{ticket.status}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[12px]">
+                    <div>
+                      <span className="text-text3">
+                        {t("detailTable.headers.client", "Cliente")}:
+                      </span>{" "}
+                      <span className="font-medium">{ticket.client_name || "-"}</span>
+                    </div>
+                    <div>
+                      <span className="text-text3">
+                        {t("detailTable.headers.technician", "Tecnico")}:
+                      </span>{" "}
+                      <span className="font-medium">{ticket.technician_name || "-"}</span>
+                    </div>
+                    <div>
+                      <span className="text-text3">{t("detailTable.headers.hours", "Ore")}:</span>{" "}
+                      <span className="font-mono font-medium">
+                        {formatHours(money(ticket.billable_hours))}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text3">
+                        {t("detailTable.headers.rate", "Tariffa")}:
+                      </span>{" "}
+                      <span className="font-mono font-medium">
+                        {formatCurrency(ticket.hourly_rate)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text3">
+                        {t("detailTable.headers.labor", "Manodopera")}:
+                      </span>{" "}
+                      <span className="font-mono font-medium">
+                        {formatCurrency(ticket.labor_cost)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text3">
+                        {t("detailTable.headers.materials", "Materiali")}:
+                      </span>{" "}
+                      <span className="font-mono font-medium">
+                        {formatCurrency(ticket.material_cost)}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="mt-3 flex items-center justify-between border-t pt-3"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <span className="text-[11px] text-text3">
+                      {t("detailTable.headers.total", "Totale")}
+                    </span>
+                    <span className="font-mono text-sm font-bold">
+                      {formatCurrency(ticket.total_cost)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {!filteredTickets.length && !loading && (
+                <div className="py-8 text-center text-sm text-text3">
+                  {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block pc-card overflow-hidden">
+              <div className="pc-card-hd">
+                <div>
+                  <div className="pc-card-title">
+                    {t("detailTable.title", "Dettaglio ticket fatturabili")}
+                  </div>
+                  <div className="mt-1 flex items-center gap-3 text-sm text-text3">
+                    <span>
+                      {t("detailTable.ticketsInPeriod", { count: filteredTickets.length })}
+                    </span>
+                    <select
+                      className="pc-input text-xs w-auto"
+                      value={detailGroupBy}
+                      onChange={(e) =>
+                        setDetailGroupBy(e.target.value as "none" | "client" | "technician")
+                      }
+                      aria-label={t("detailTable.groupByLabel", "Raggruppamento")}
+                    >
+                      <option value="none">
+                        {t("detailTable.groupByNone", "Nessun raggruppamento")}
+                      </option>
+                      <option value="client">
+                        {t("detailTable.groupByClient", "Raggruppa per cliente")}
+                      </option>
+                      <option value="technician">
+                        {t("detailTable.groupByTechnician", "Raggruppa per tecnico")}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px] text-[12.5px]">
+                  <thead style={{ background: "var(--surface2)" }}>
+                    <tr>
+                      {[
+                        { key: "ticket", label: t("detailTable.headers.ticket", "Ticket") },
+                        { key: "client", label: t("detailTable.headers.client", "Cliente") },
+                        {
+                          key: "technician",
+                          label: t("detailTable.headers.technician", "Tecnico"),
+                        },
+                        { key: "hours", label: t("detailTable.headers.hours", "Ore") },
+                        { key: "rate", label: t("detailTable.headers.rate", "Tariffa") },
+                        { key: "labor", label: t("detailTable.headers.labor", "Manodopera") },
+                        {
+                          key: "materials",
+                          label: t("detailTable.headers.materials", "Materiali"),
+                        },
+                        { key: "total", label: t("detailTable.headers.total", "Totale") },
+                      ].map(({ key, label }) => (
+                        <th
+                          key={key}
+                          className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+                        >
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td className="px-3 py-8 text-center text-text3" colSpan={8}>
+                          {t("detailTable.loading", "Caricamento costi...")}
+                        </td>
+                      </tr>
+                    ) : filteredTickets.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-8 text-center text-text3" colSpan={8}>
+                          {t("detailTable.empty", "Nessun costo nel periodo selezionato")}
+                        </td>
+                      </tr>
+                    ) : groupedDetail ? (
+                      groupedDetail.map((group) => (
+                        <Fragment key={group.name}>
+                          <tr
+                            className="border-t bg-surface2 cursor-pointer transition-colors"
+                            style={{ borderColor: "var(--border)" }}
+                            tabIndex={0}
+                            role="button"
+                            onClick={() =>
+                              openDetail(
+                                detailGroupBy === "client" ? "client" : "technician",
+                                group.name,
+                              )
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                openDetail(
+                                  detailGroupBy === "client" ? "client" : "technician",
+                                  group.name,
+                                );
+                              }
+                            }}
+                          >
+                            <td className="px-3 py-2 font-bold" colSpan={3}>
+                              {group.name} ({group.tickets.length})
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-bold">
+                              {formatHours(group.hours)}
+                            </td>
+                            <td className="px-3 py-2" />
+                            <td className="px-3 py-2 text-right font-mono font-bold">
+                              {formatCurrency(group.labor)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-bold">
+                              {formatCurrency(group.materials)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-bold">
+                              {formatCurrency(group.total)}
+                            </td>
+                          </tr>
+                          {group.tickets.map((ticket) => (
+                            <tr
+                              key={ticket.id}
+                              className="border-t"
+                              style={{ borderColor: "var(--border)" }}
+                            >
+                              <td className="px-3 py-2 pl-8 font-mono font-semibold text-accent">
+                                {ticket.ticket_code}
+                              </td>
+                              <td className="px-3 py-2">{ticket.client_name || "-"}</td>
+                              <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
+                              <td className="px-3 py-2 text-right font-mono">
+                                {formatHours(money(ticket.billable_hours))}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono">
+                                {formatCurrency(ticket.hourly_rate)}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono">
+                                {formatCurrency(ticket.labor_cost)}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono">
+                                {formatCurrency(ticket.material_cost)}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono font-bold">
+                                {formatCurrency(ticket.total_cost)}
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      ))
+                    ) : (
+                      filteredTickets.map((ticket) => (
+                        <tr
+                          key={ticket.id}
+                          className="border-t"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <td className="px-3 py-2 font-mono font-semibold text-accent">
+                            {ticket.ticket_code}
+                          </td>
+                          <td className="px-3 py-2">{ticket.client_name || "-"}</td>
+                          <td className="px-3 py-2">{ticket.technician_name || "-"}</td>
+                          <td className="px-3 py-2 font-mono">
+                            {formatHours(money(ticket.billable_hours))}
+                          </td>
+                          <td className="px-3 py-2 font-mono">
+                            {formatCurrency(ticket.hourly_rate)}
+                          </td>
+                          <td className="px-3 py-2 font-mono">
+                            {formatCurrency(ticket.labor_cost)}
+                          </td>
+                          <td className="px-3 py-2 font-mono">
+                            {formatCurrency(ticket.material_cost)}
+                          </td>
+                          <td className="px-3 py-2 font-mono font-bold">
+                            {formatCurrency(ticket.total_cost)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === "contracts" && (
+          <div className="pc-card overflow-hidden">
+            <div className="pc-card-hd">
+              <div className="pc-card-title">
+                {t("contracts.title", "Contratti attivi e ore extra")}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-2">
+              {filteredContracts.map((contract) => {
+                const contractTickets = enrichedTickets.filter((ticket) => {
+                  // Match by client_id (primary)
+                  if (ticket.client_id && ticket.client_id === contract.client_id) return true;
+                  // Fallback: match by client name when client_id is NULL (pre-backfill tickets)
+                  if (!ticket.client_id && ticket.client_name && contract.client) {
+                    const contractName = (
+                      contract.client.company_name ||
+                      contract.client.name ||
+                      ""
+                    )
+                      .toLowerCase()
+                      .trim();
+                    return (
+                      contractName !== "" &&
+                      ticket.client_name.toLowerCase().trim() === contractName
+                    );
+                  }
+                  return false;
+                });
+                const associatedCount = contractTickets.length;
+                const usedHours = contractTickets.reduce(
+                  (sum, ticket) => sum + money(ticket.billable_hours),
+                  0,
+                );
+                const includedH = money(contract.included_hours);
+                const usedPct = includedH > 0 ? Math.min(100, (usedHours / includedH) * 100) : 0;
+                const extraHours = Math.max(0, usedHours - includedH);
+                return (
+                  <div
+                    key={contract.id}
+                    className="rounded-xl border p-4"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="font-bold">{contract.name}</div>
+                        <div className="text-sm text-text3">
+                          {contract.client
+                            ? contract.client.company_name || contract.client.name
+                            : t("fallbacks.client", "Cliente")}
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold text-text2">
+                        {contract.billing_period === "monthly"
+                          ? t("contracts.period.monthly", "Mensile")
+                          : t("contracts.period.annual", "Annuale")}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      <ContractMetric
+                        label={t("contracts.fee", "Canone")}
+                        value={formatCurrency(contract.recurring_fee)}
+                      />
+                      <ContractMetric
+                        label={t("contracts.includedHours", "Ore incluse")}
+                        value={formatHours(contract.included_hours)}
+                      />
+                      <ContractMetric
+                        label={t("contracts.associatedTickets", "Ticket associati")}
+                        value={String(associatedCount)}
+                      />
+                      <ContractMetric
+                        label={t("contracts.estimatedExtra", "Extra stimato")}
+                        value={formatCurrency(extraHours * money(contract.extra_hourly_rate))}
+                      />
+                    </div>
+                    {includedH > 0 && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs text-text3 mb-1">
+                          <span>{t("contracts.hoursUsed", "Ore usate")}</span>
+                          <span className="font-mono">
+                            {formatHours(usedHours)} / {formatHours(contract.included_hours)} (
+                            {usedPct.toFixed(0)}%)
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-surface2">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(100, usedPct)}%`,
+                              background:
+                                usedPct >= 100 ? "#ef4444" : usedPct >= 80 ? "#f97316" : "#22c55e",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {associatedCount === 0 && (
+                      <div className="mt-2 text-xs text-text4">
+                        {t(
+                          "contracts.noLinkedTickets",
+                          "Nessun ticket collegato a questo contratto",
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {!filteredContracts.length && (
+                <div className="text-sm text-text3">
+                  {t("contracts.noContracts", "Nessun contratto configurato.")}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Tabs>
 
       <ExportPdf<TicketCostRow, TicketCostRow>
@@ -2388,13 +2758,15 @@ function CostsPage() {
         entityLabel="ticket"
         renderPdf={async (rows) => {
           const { CostsReportPdf } = await import("@/components/pcready/pdf/CostsReportPdf");
-          return <CostsReportPdf
-            rows={rows}
-            summary={summary}
-            period={`${dateFrom} - ${dateTo}`}
-            byClient={byClient.slice(0, 8)}
-            byTechnician={byTechnician.slice(0, 8)}
-          />;
+          return (
+            <CostsReportPdf
+              rows={rows}
+              summary={summary}
+              period={`${dateFrom} - ${dateTo}`}
+              byClient={byClient.slice(0, 8)}
+              byTechnician={byTechnician.slice(0, 8)}
+            />
+          );
         }}
         mapRow={(row) => row}
         fileName={buildDownloadFileName("pcready-report-costi", "pdf", { dated: true })}
@@ -2421,12 +2793,16 @@ function CostsPage() {
             </DialogTitle>
             <DialogDescription>
               {selectedClient
-                ? t("finance.invoiceModalDescription", "{{count}} ticket di {{client}} dal {{from}} al {{to}}", {
-                    count: invoiceSourceRows.length,
-                    client: selectedClient.company_name || selectedClient.name,
-                    from: dateFrom,
-                    to: dateTo,
-                  })
+                ? t(
+                    "finance.invoiceModalDescription",
+                    "{{count}} ticket di {{client}} dal {{from}} al {{to}}",
+                    {
+                      count: invoiceSourceRows.length,
+                      client: selectedClient.company_name || selectedClient.name,
+                      from: dateFrom,
+                      to: dateTo,
+                    },
+                  )
                 : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
             </DialogDescription>
           </DialogHeader>
@@ -2453,11 +2829,18 @@ function CostsPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-1 text-sm font-medium text-text2">
                     {t("finance.issueDateLabel", "Data emissione")}
-                    <DatePickerInput value={invoiceDraft.issueDate} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, issueDate: v }))} />
+                    <DatePickerInput
+                      value={invoiceDraft.issueDate}
+                      onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, issueDate: v }))}
+                    />
                   </label>
                   <label className="space-y-1 text-sm font-medium text-text2">
                     {t("finance.dueDateLabel", "Scadenza")}
-                    <DatePickerInput value={invoiceDraft.dueDate} minDate={invoiceDraft.issueDate || undefined} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, dueDate: v }))} />
+                    <DatePickerInput
+                      value={invoiceDraft.dueDate}
+                      minDate={invoiceDraft.issueDate || undefined}
+                      onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, dueDate: v }))}
+                    />
                   </label>
                 </div>
 
@@ -2466,7 +2849,9 @@ function CostsPage() {
                   <input
                     className="pc-input"
                     value={invoiceDraft.recipientName}
-                    onChange={(e) => setInvoiceDraft((v) => ({ ...v, recipientName: e.target.value }))}
+                    onChange={(e) =>
+                      setInvoiceDraft((v) => ({ ...v, recipientName: e.target.value }))
+                    }
                     placeholder={selectedClient?.company_name || selectedClient?.name || undefined}
                   />
                 </label>
@@ -2476,7 +2861,9 @@ function CostsPage() {
                   <textarea
                     className="pc-input min-h-16"
                     value={invoiceDraft.recipientAddress}
-                    onChange={(e) => setInvoiceDraft((v) => ({ ...v, recipientAddress: e.target.value }))}
+                    onChange={(e) =>
+                      setInvoiceDraft((v) => ({ ...v, recipientAddress: e.target.value }))
+                    }
                   />
                 </label>
 
@@ -2505,49 +2892,110 @@ function CostsPage() {
 
               <div className="space-y-3">
                 <div className="rounded-lg bg-surface2 p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">{t("finance.invoiceNumberLabel", "Numero fattura")}</div>
-                  <div className="mt-1 font-mono text-lg font-bold">{invoiceDraft.invoiceNumber}</div>
-                  <div className="mt-1 text-xs text-text3">{t("finance.invoiceNumberAutoHint", "Generato automaticamente in sequenza.")}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">
+                    {t("finance.invoiceNumberLabel", "Numero fattura")}
+                  </div>
+                  <div className="mt-1 font-mono text-lg font-bold">
+                    {invoiceDraft.invoiceNumber}
+                  </div>
+                  <div className="mt-1 text-xs text-text3">
+                    {t("finance.invoiceNumberAutoHint", "Generato automaticamente in sequenza.")}
+                  </div>
                 </div>
                 <div className="rounded-lg bg-surface2 p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">{t("finance.senderNameLabel", "Ragione sociale emittente")}</div>
-                  <div className="mt-1 text-sm font-semibold">{invoiceDraft.senderName || "PCReady"}</div>
-                  {invoiceDraft.senderAddress && <div className="mt-1 whitespace-pre-line text-xs text-text3">{invoiceDraft.senderAddress}</div>}
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">
+                    {t("finance.senderNameLabel", "Ragione sociale emittente")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold">
+                    {invoiceDraft.senderName || "PCReady"}
+                  </div>
+                  {invoiceDraft.senderAddress && (
+                    <div className="mt-1 whitespace-pre-line text-xs text-text3">
+                      {invoiceDraft.senderAddress}
+                    </div>
+                  )}
                 </div>
-                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
-                <ContractMetric label={t("finance.invoicePreviewTotal", "Totale")} value={formatCurrency(invoicePreviewTotals.total)} />
+                <ContractMetric
+                  label={t("finance.invoiceContextRows", "Righe")}
+                  value={String(invoiceSourceRows.length)}
+                />
+                <ContractMetric
+                  label={t("finance.invoicePreviewTotal", "Totale")}
+                  value={formatCurrency(invoicePreviewTotals.total)}
+                />
               </div>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="grid gap-2 sm:grid-cols-4">
-                <ContractMetric label={t("finance.invoiceNumberLabel", "Numero fattura")} value={invoiceDraft.invoiceNumber} />
-                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
-                <ContractMetric label={t("finance.invoicePreviewSubtotal", "Imponibile")} value={formatCurrency(invoicePreviewTotals.subtotal)} />
-                <ContractMetric label={t("finance.invoicePreviewTotal", "Totale")} value={formatCurrency(invoicePreviewTotals.total)} />
+                <ContractMetric
+                  label={t("finance.invoiceNumberLabel", "Numero fattura")}
+                  value={invoiceDraft.invoiceNumber}
+                />
+                <ContractMetric
+                  label={t("finance.invoiceContextRows", "Righe")}
+                  value={String(invoiceSourceRows.length)}
+                />
+                <ContractMetric
+                  label={t("finance.invoicePreviewSubtotal", "Imponibile")}
+                  value={formatCurrency(invoicePreviewTotals.subtotal)}
+                />
+                <ContractMetric
+                  label={t("finance.invoicePreviewTotal", "Totale")}
+                  value={formatCurrency(invoicePreviewTotals.total)}
+                />
               </div>
 
-              <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
+              <div
+                className="overflow-x-auto rounded-lg border"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <table className="w-full min-w-[680px] text-[12.5px]">
                   <thead style={{ background: "var(--surface2)" }}>
                     <tr>
-                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.ticket", "Ticket")}</th>
-                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.client", "Cliente")}</th>
-                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.hours", "Ore")}</th>
-                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.labor", "Manodopera")}</th>
-                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.materials", "Materiali")}</th>
-                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.total", "Totale")}</th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.ticket", "Ticket")}
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.client", "Cliente")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.hours", "Ore")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.labor", "Manodopera")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.materials", "Materiali")}
+                      </th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                        {t("detailTable.headers.total", "Totale")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoiceSourceRows.map((ticket) => (
-                      <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                      <tr
+                        key={ticket.id}
+                        className="border-t"
+                        style={{ borderColor: "var(--border)" }}
+                      >
                         <td className="px-3 py-2 font-mono font-semibold">{ticket.ticket_code}</td>
-                        <td className="px-3 py-2">{ticket.client_name || selectedClient?.name || "-"}</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatHours(ticket.billable_hours)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
-                        <td className="px-3 py-2 text-right font-mono font-bold">{formatCurrency(ticket.total_cost)}</td>
+                        <td className="px-3 py-2">
+                          {ticket.client_name || selectedClient?.name || "-"}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatHours(ticket.billable_hours)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatCurrency(ticket.labor_cost)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatCurrency(ticket.material_cost)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono font-bold">
+                          {formatCurrency(ticket.total_cost)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -2555,25 +3003,63 @@ function CostsPage() {
               </div>
 
               <div className="ml-auto grid max-w-sm gap-2 text-sm">
-                <div className="flex justify-between gap-4"><span className="text-text3">{t("finance.invoicePreviewSubtotal", "Imponibile")}</span><span className="font-mono font-semibold">{formatCurrency(invoicePreviewTotals.subtotal)}</span></div>
-                <div className="flex justify-between gap-4"><span className="text-text3">IVA {invoicePreviewTotals.taxRate}%</span><span className="font-mono font-semibold">{formatCurrency(invoicePreviewTotals.taxAmount)}</span></div>
-                <div className="flex justify-between gap-4 border-t pt-2 text-base" style={{ borderColor: "var(--border)" }}><span className="font-bold">{t("finance.invoicePreviewTotal", "Totale")}</span><span className="font-mono font-bold">{formatCurrency(invoicePreviewTotals.total)}</span></div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-text3">
+                    {t("finance.invoicePreviewSubtotal", "Imponibile")}
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {formatCurrency(invoicePreviewTotals.subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-text3">IVA {invoicePreviewTotals.taxRate}%</span>
+                  <span className="font-mono font-semibold">
+                    {formatCurrency(invoicePreviewTotals.taxAmount)}
+                  </span>
+                </div>
+                <div
+                  className="flex justify-between gap-4 border-t pt-2 text-base"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <span className="font-bold">{t("finance.invoicePreviewTotal", "Totale")}</span>
+                  <span className="font-mono font-bold">
+                    {formatCurrency(invoicePreviewTotals.total)}
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end" style={{ borderColor: "var(--border)" }}>
+          <div
+            className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end"
+            style={{ borderColor: "var(--border)" }}
+          >
             {invoiceStep === "preview" && (
-              <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => setInvoiceStep("details")} disabled={busy}>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+                onClick={() => setInvoiceStep("details")}
+                disabled={busy}
+              >
                 <ArrowLeft className="size-3" /> {t("finance.backToDetails", "Torna ai dettagli")}
               </button>
             )}
             {invoiceStep === "details" ? (
-              <button type="button" className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => setInvoiceStep("preview")} disabled={!selectedClient || !invoiceSourceRows.length}>
+              <button
+                type="button"
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                onClick={() => setInvoiceStep("preview")}
+                disabled={!selectedClient || !invoiceSourceRows.length}
+              >
                 <Eye className="size-3" /> {t("finance.previewInvoice", "Anteprima")}
               </button>
             ) : (
-              <button type="button" className="pc-btn pc-btn-primary pc-btn-sm" onClick={createInvoice} disabled={busy || !selectedClient || !invoiceSourceRows.length}>
+              <button
+                type="button"
+                className="pc-btn pc-btn-primary pc-btn-sm"
+                onClick={createInvoice}
+                disabled={busy || !selectedClient || !invoiceSourceRows.length}
+              >
                 <FileText className="size-3" /> {t("finance.createInvoice", "Crea fattura PDF")}
               </button>
             )}
@@ -2629,7 +3115,9 @@ function CostsPage() {
         }}
         fileName={`preventivo-${quotePdfMeta?.quote_number ?? "export"}`}
         onSuccess={() => toast.success(t("finance.quotePdfExported", "PDF preventivo esportato"))}
-        onError={(err) => toast.error(errorMessage(err, t("finance.quotePdfError", "Errore export PDF preventivo")))}
+        onError={(err) =>
+          toast.error(errorMessage(err, t("finance.quotePdfError", "Errore export PDF preventivo")))
+        }
       />
 
       <ExportPdf<InvoiceItemRow, InvoiceItemRow>
@@ -2639,33 +3127,48 @@ function CostsPage() {
         renderPdf={async (rows) => {
           const { InvoicePdf } = await import("@/components/pcready/pdf/InvoicePdf");
           const invoice = selectedInvoice;
-          return <InvoicePdf
-            title="Fattura"
-            number={invoice?.invoice_number ?? invoiceDraft.invoiceNumber}
-            status={invoice?.status ?? "draft"}
-            issueDate={invoice?.issue_date ?? invoiceDraft.issueDate}
-            dueDate={invoice?.due_date ?? invoiceDraft.dueDate}
-            senderName={invoice?.sender_name ?? invoiceDraft.senderName}
-            senderAddress={invoice?.sender_address ?? invoiceDraft.senderAddress}
-            recipientName={invoice?.recipient_name ?? selectedClient?.company_name ?? selectedClient?.name}
-            recipientAddress={invoice?.recipient_address ?? invoiceDraft.recipientAddress}
-            notes={invoice?.notes ?? invoiceDraft.notes}
-            subtotal={invoice?.subtotal ?? rows.reduce((sum, row) => sum + money(row.line_total ?? money(row.quantity) * money(row.unit_price)), 0)}
-            taxRate={invoice?.tax_rate ?? money(invoiceDraft.taxRate)}
-            taxAmount={invoice?.tax_amount ?? 0}
-            total={invoice?.total_amount ?? 0}
-            paidAmount={invoice?.paid_amount ?? 0}
-            items={rows.map((row) => ({
-              description: row.description,
-              quantity: money(row.quantity),
-              unit_price: money(row.unit_price),
-              line_total: money(row.line_total ?? money(row.quantity) * money(row.unit_price)),
-              item_type: row.item_type,
-            }))}
-          />;
+          return (
+            <InvoicePdf
+              title="Fattura"
+              number={invoice?.invoice_number ?? invoiceDraft.invoiceNumber}
+              status={invoice?.status ?? "draft"}
+              issueDate={invoice?.issue_date ?? invoiceDraft.issueDate}
+              dueDate={invoice?.due_date ?? invoiceDraft.dueDate}
+              senderName={invoice?.sender_name ?? invoiceDraft.senderName}
+              senderAddress={invoice?.sender_address ?? invoiceDraft.senderAddress}
+              recipientName={
+                invoice?.recipient_name ?? selectedClient?.company_name ?? selectedClient?.name
+              }
+              recipientAddress={invoice?.recipient_address ?? invoiceDraft.recipientAddress}
+              notes={invoice?.notes ?? invoiceDraft.notes}
+              subtotal={
+                invoice?.subtotal ??
+                rows.reduce(
+                  (sum, row) =>
+                    sum + money(row.line_total ?? money(row.quantity) * money(row.unit_price)),
+                  0,
+                )
+              }
+              taxRate={invoice?.tax_rate ?? money(invoiceDraft.taxRate)}
+              taxAmount={invoice?.tax_amount ?? 0}
+              total={invoice?.total_amount ?? 0}
+              paidAmount={invoice?.paid_amount ?? 0}
+              items={rows.map((row) => ({
+                description: row.description,
+                quantity: money(row.quantity),
+                unit_price: money(row.unit_price),
+                line_total: money(row.line_total ?? money(row.quantity) * money(row.unit_price)),
+                item_type: row.item_type,
+              }))}
+            />
+          );
         }}
         mapRow={(row) => row}
-        fileName={buildDownloadFileName(`pcready-fattura-${selectedInvoice?.invoice_number ?? "bozza"}`, "pdf", { dated: true })}
+        fileName={buildDownloadFileName(
+          `pcready-fattura-${selectedInvoice?.invoice_number ?? "bozza"}`,
+          "pdf",
+          { dated: true },
+        )}
         fetchAll={async () => ({ data: invoiceItems, count: invoiceItems.length })}
         currentPageRows={invoiceItems}
         activeFilters={{ invoice: selectedInvoice?.invoice_number }}
@@ -2692,11 +3195,14 @@ function CostsPage() {
             <DialogDescription>
               {detailEntity
                 ? t("detailDialog.entityLabel", "{{entity}}: {{name}}", {
-                    entity: detailEntity.type === "client"
-                      ? t("summaryTables.perClient", "Cliente")
-                      : t("summaryTables.perTechnician", "Tecnico"),
+                    entity:
+                      detailEntity.type === "client"
+                        ? t("summaryTables.perClient", "Cliente")
+                        : t("summaryTables.perTechnician", "Tecnico"),
                     name: detailEntity.name,
-                  }) + " \u2022 " + t("detailDialog.ticketCount", { count: detailTickets.length })
+                  }) +
+                  " \u2022 " +
+                  t("detailDialog.ticketCount", { count: detailTickets.length })
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -2737,7 +3243,11 @@ function CostsPage() {
                 </thead>
                 <tbody>
                   {detailTickets.map((ticket) => (
-                    <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                    <tr
+                      key={ticket.id}
+                      className="border-t"
+                      style={{ borderColor: "var(--border)" }}
+                    >
                       <td className="px-3 py-2 font-mono font-semibold text-accent">
                         <button
                           type="button"
@@ -2756,9 +3266,15 @@ function CostsPage() {
                       <td className="px-3 py-2 text-right font-mono">
                         {formatHours(money(ticket.billable_hours))}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.hourly_rate)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatCurrency(ticket.hourly_rate)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatCurrency(ticket.labor_cost)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {formatCurrency(ticket.material_cost)}
+                      </td>
                       <td className="px-3 py-2 text-right font-mono font-bold">
                         {formatCurrency(ticket.total_cost)}
                       </td>
@@ -2772,11 +3288,19 @@ function CostsPage() {
                     </td>
                     {detailEntity?.type === "technician" && <td className="px-3 py-2" />}
                     {detailEntity?.type === "client" && <td className="px-3 py-2" />}
-                    <td className="px-3 py-2 text-right font-mono">{formatHours(detailTotals.hours)}</td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      {formatHours(detailTotals.hours)}
+                    </td>
                     <td className="px-3 py-2" />
-                    <td className="px-3 py-2 text-right font-mono">{formatCurrency(detailTotals.labor)}</td>
-                    <td className="px-3 py-2 text-right font-mono">{formatCurrency(detailTotals.materials)}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold">{formatCurrency(detailTotals.total)}</td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      {formatCurrency(detailTotals.labor)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      {formatCurrency(detailTotals.materials)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono font-bold">
+                      {formatCurrency(detailTotals.total)}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -2818,7 +3342,10 @@ function FinanceTable({
           <thead style={{ background: "var(--surface2)" }}>
             <tr>
               {["Numero", "Cliente", "Totale", "Stato", "Azioni"].map((header) => (
-                <th key={header} className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                <th
+                  key={header}
+                  className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+                >
                   {header}
                 </th>
               ))}
@@ -2971,11 +3498,15 @@ type CostGroup = { name: string; hours: number; total: number; materials: number
 function groupCosts(
   rows: TicketCostRow[],
   key: "client_name" | "technician_name",
-  fallbacks?: { technician?: string; client?: string }
+  fallbacks?: { technician?: string; client?: string },
 ): CostGroup[] {
   const map = new Map<string, CostGroup>();
   rows.forEach((row) => {
-    const name = row[key] || (key === "technician_name" ? (fallbacks?.technician ?? "Non assegnato") : (fallbacks?.client ?? "Cliente non indicato"));
+    const name =
+      row[key] ||
+      (key === "technician_name"
+        ? (fallbacks?.technician ?? "Non assegnato")
+        : (fallbacks?.client ?? "Cliente non indicato"));
     const current = map.get(name) ?? { name, hours: 0, total: 0, materials: 0, labor: 0 };
     current.hours += money(row.billable_hours);
     current.total += money(row.total_cost);
@@ -2985,7 +3516,6 @@ function groupCosts(
   });
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
-
 
 function money(value: unknown) {
   const n = Number(value ?? 0);

@@ -15,6 +15,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -26,10 +27,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the authentication flow in PCReady, focusing on Supabase Auth with email/password login, session establishment and persistence, automatic session restoration on page reload, and authentication state management via React Context. It also covers OAuth callback handling, the password set flow for new users, password reset procedures, error handling strategies, session persistence and automatic logout scenarios, and practical guidance for integrating authentication checks in components. Multi-tab session management and concurrent login prevention are addressed conceptually.
 
 ## Project Structure
+
 PCReady’s authentication implementation spans several modules:
+
 - Supabase client configuration with persistent sessions and token auto-refresh
 - A React Context provider that manages session, user, and profile state
 - Route handlers for login, OAuth callback, and password set flows
@@ -71,6 +75,7 @@ G --> B
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [client.ts:5-41](file://src/integrations/supabase/client.ts#L5-L41)
 - [auth.tsx:19-84](file://src/routes/auth.tsx#L19-L84)
@@ -83,6 +88,7 @@ G --> B
 - [client.server.ts:8-42](file://src/integrations/supabase/client.server.ts#L8-L42)
 
 **Section sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [client.ts:5-41](file://src/integrations/supabase/client.ts#L5-L41)
 - [auth.tsx:19-84](file://src/routes/auth.tsx#L19-L84)
@@ -95,6 +101,7 @@ G --> B
 - [client.server.ts:8-42](file://src/integrations/supabase/client.server.ts#L8-L42)
 
 ## Core Components
+
 - Supabase client configured with persistent sessions and token auto-refresh, ensuring seamless re-authentication after reload.
 - AuthProvider that:
   - Subscribes to Supabase auth state changes
@@ -109,6 +116,7 @@ G --> B
 - Server-side utilities for admin operations and user profile management.
 
 **Section sources**
+
 - [client.ts:22-28](file://src/integrations/supabase/client.ts#L22-L28)
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [auth.tsx:44-84](file://src/routes/auth.tsx#L44-L84)
@@ -119,6 +127,7 @@ G --> B
 - [user-profile.ts:73-134](file://src/lib/user-profile.ts#L73-L134)
 
 ## Architecture Overview
+
 The authentication architecture centers on Supabase Auth with a React Context provider managing state and UI flows.
 
 ```mermaid
@@ -148,6 +157,7 @@ end
 ```
 
 **Diagram sources**
+
 - [auth.tsx:70-84](file://src/routes/auth.tsx#L70-L84)
 - [auth-rate-limit.ts:18-25](file://src/lib/auth-rate-limit.ts#L18-L25)
 - [client.ts:22-28](file://src/integrations/supabase/client.ts#L22-L28)
@@ -156,7 +166,9 @@ end
 ## Detailed Component Analysis
 
 ### AuthProvider and Session Management
+
 AuthProvider subscribes to Supabase auth state changes, restores the session on startup, and loads profile and role data. It exposes:
+
 - session, user, profile, loading flags
 - profileLoading and authError
 - refreshProfile and signOut
@@ -187,15 +199,18 @@ AuthProvider --> SupabaseClient : "uses"
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:24-35](file://src/lib/auth-context.tsx#L24-L35)
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [client.ts:5-41](file://src/integrations/supabase/client.ts#L5-L41)
 
 **Section sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [client.ts:22-28](file://src/integrations/supabase/client.ts#L22-L28)
 
 ### Email/Password Login Flow
+
 - Validates rate limit server-side before attempting login
 - Calls Supabase signInWithPassword
 - On success, navigates to dashboard or password set based on profile.password_set
@@ -220,14 +235,17 @@ end
 ```
 
 **Diagram sources**
+
 - [auth.tsx:70-84](file://src/routes/auth.tsx#L70-L84)
 - [auth-rate-limit.ts:18-25](file://src/lib/auth-rate-limit.ts#L18-L25)
 
 **Section sources**
+
 - [auth.tsx:44-84](file://src/routes/auth.tsx#L44-L84)
 - [auth-rate-limit.ts:18-25](file://src/lib/auth-rate-limit.ts#L18-L25)
 
 ### OAuth Callback Handling
+
 - Parses hash parameters to detect invite/recovery flows
 - Retrieves session and redirects accordingly
 - Subscribes to auth state changes to detect password recovery events
@@ -254,13 +272,16 @@ CB-->>U : "Redirect to /auth/set-password"
 ```
 
 **Diagram sources**
+
 - [auth.callback.tsx:37-72](file://src/routes/auth.callback.tsx#L37-L72)
 - [client.ts:22-28](file://src/integrations/supabase/client.ts#L22-L28)
 
 **Section sources**
+
 - [auth.callback.tsx:30-72](file://src/routes/auth.callback.tsx#L30-L72)
 
 ### Password Set Flow for New Users
+
 - Ensures a session exists before allowing password setting
 - Validates password confirmation and length
 - Updates user password and marks password_set in user_profiles
@@ -281,13 +302,16 @@ Refresh --> Done(["Navigate to /dashboard"])
 ```
 
 **Diagram sources**
+
 - [auth.set-password.tsx:50-105](file://src/routes/auth.set-password.tsx#L50-L105)
 - [auth-context.tsx:157-159](file://src/lib/auth-context.tsx#L157-L159)
 
 **Section sources**
+
 - [auth.set-password.tsx:38-105](file://src/routes/auth.set-password.tsx#L38-L105)
 
 ### Password Reset Procedures
+
 - Recovery flow is detected by auth state change event PASSWORD_RECOVERY
 - Redirects to /auth/set-password to allow setting a new password
 - Server-side admin utilities support password updates for authorized operations
@@ -302,29 +326,36 @@ CB-->>U : "Redirect to /auth/set-password"
 ```
 
 **Diagram sources**
+
 - [auth.callback.tsx:59-64](file://src/routes/auth.callback.tsx#L59-L64)
 
 **Section sources**
+
 - [auth.callback.tsx:59-64](file://src/routes/auth.callback.tsx#L59-L64)
 - [user-profile.ts:179-203](file://src/lib/user-profile.ts#L179-L203)
 
 ### Authentication State Screens
+
 - AuthLoadingScreen: renders while authentication resolves
 - AuthErrorScreen: displays error messages with retry and sign out actions
 - MissingProfileScreen: informs about missing profile and offers retry/sign out
 
 **Section sources**
+
 - [AuthStateScreens.tsx:29-79](file://src/components/auth/AuthStateScreens.tsx#L29-L79)
 
 ### OAuth Consent Utilities
+
 - Validates OAuth requests, grants consent, denies consent, and generates authorization codes
 - Uses server-side Supabase client with service role key for admin operations
 
 **Section sources**
+
 - [oauth-consent.ts:141-194](file://src/lib/oauth-consent.ts#L141-L194)
 - [client.server.ts:8-42](file://src/integrations/supabase/client.server.ts#L8-L42)
 
 ## Dependency Analysis
+
 - AuthProvider depends on Supabase client for auth state and session persistence
 - Routes depend on Supabase client for authentication operations and on AuthProvider for state
 - Rate limiting server function is invoked before login attempts
@@ -342,6 +373,7 @@ OC["oauth-consent.ts"] --> SCA["client.server.ts"]
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:10-11](file://src/lib/auth-context.tsx#L10-L11)
 - [client.ts:5-41](file://src/integrations/supabase/client.ts#L5-L41)
 - [auth.tsx:11-12](file://src/routes/auth.tsx#L11-L12)
@@ -353,6 +385,7 @@ OC["oauth-consent.ts"] --> SCA["client.server.ts"]
 - [client.server.ts:5-42](file://src/integrations/supabase/client.server.ts#L5-L42)
 
 **Section sources**
+
 - [auth-context.tsx:10-11](file://src/lib/auth-context.tsx#L10-L11)
 - [client.ts:5-41](file://src/integrations/supabase/client.ts#L5-L41)
 - [auth.tsx:11-12](file://src/routes/auth.tsx#L11-L12)
@@ -364,12 +397,15 @@ OC["oauth-consent.ts"] --> SCA["client.server.ts"]
 - [client.server.ts:5-42](file://src/integrations/supabase/client.server.ts#L5-L42)
 
 ## Performance Considerations
+
 - Token auto-refresh and persisted sessions reduce redundant login prompts and improve UX.
 - Parallel profile and role loading minimizes profile fetch latency.
 - Debounced profile refresh prevents unnecessary re-fetches during rapid state changes.
 
 ## Troubleshooting Guide
+
 Common issues and remedies:
+
 - Invalid credentials or rate-limited attempts: The login route surfaces server-provided error messages via toasts. Verify rate limit configuration and user credentials.
 - Session restoration failure: AuthProvider catches errors during getSession and clears state with an error message. Check environment variables for Supabase URL and keys.
 - Missing profile: AuthProvider sets an error state when profile data is unavailable. Ensure profile tables exist and user has a valid role.
@@ -377,10 +413,12 @@ Common issues and remedies:
 - Password set errors: Validate password length and confirmation, and ensure session is present before proceeding.
 
 **Section sources**
+
 - [auth.tsx:79-83](file://src/routes/auth.tsx#L79-L83)
 - [auth-context.tsx:130-139](file://src/lib/auth-context.tsx#L130-L139)
 - [auth.set-password.tsx:100-104](file://src/routes/auth.set-password.tsx#L100-L104)
 - [auth.callback.tsx:45-49](file://src/routes/auth.callback.tsx#L45-L49)
 
 ## Conclusion
+
 PCReady’s authentication system leverages Supabase Auth with persistent sessions and React Context for robust state management. The login, OAuth callback, and password set flows are designed for clarity and resilience, with rate limiting, error handling, and profile loading integrated seamlessly. Developers can rely on AuthProvider to centralize authentication state and use the provided routes and utilities to implement secure, user-friendly authentication experiences.

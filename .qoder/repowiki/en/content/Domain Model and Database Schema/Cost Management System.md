@@ -12,6 +12,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
@@ -67,6 +68,7 @@ Components --> Toast
 ```
 
 **Diagram sources**
+
 - [costs.tsx:1-774](file://src/routes/_app/costs.tsx#L1-L774)
 - [auth-context.tsx:1-35](file://src/lib/auth-context.tsx#L1-L35)
 
@@ -134,6 +136,7 @@ CostsPage --> ContractRow : manages
 ```
 
 **Diagram sources**
+
 - [costs.tsx:32-66](file://src/routes/_app/costs.tsx#L32-L66)
 - [costs.tsx:94-136](file://src/routes/_app/costs.tsx#L94-L136)
 
@@ -155,9 +158,11 @@ ShowSuccess --> End
 ```
 
 **Diagram sources**
+
 - [costs.tsx:188-213](file://src/routes/_app/costs.tsx#L188-L213)
 
 **Section sources**
+
 - [costs.tsx:94-556](file://src/routes/_app/costs.tsx#L94-L556)
 
 ## Data Model
@@ -216,6 +221,7 @@ CLIENT_CONTRACTS ||--|| CLIENTS : "client_id"
 ```
 
 **Diagram sources**
+
 - [20260524120000_cost_management.sql:31-45](file://supabase/migrations/20260524120000_cost_management.sql#L31-L45)
 
 ### Key Database Features
@@ -229,6 +235,7 @@ The system implements several advanced database features:
 - **Row Level Security**: Role-based access control
 
 **Section sources**
+
 - [20260524120000_cost_management.sql:1-118](file://supabase/migrations/20260524120000_cost_management.sql#L1-L118)
 
 ## User Interface
@@ -270,6 +277,7 @@ ContractForm --> ContractCards
 ```
 
 **Diagram sources**
+
 - [costs.tsx:271-555](file://src/routes/_app/costs.tsx#L271-L555)
 
 ### Cost Calculation Logic
@@ -290,9 +298,11 @@ RecalculateSummary --> RenderCharts["Render Updated Charts"]
 ```
 
 **Diagram sources**
+
 - [costs.tsx:637-649](file://src/routes/_app/costs.tsx#L637-L649)
 
 **Section sources**
+
 - [costs.tsx:271-555](file://src/routes/_app/costs.tsx#L271-L555)
 
 ## PDF Reporting
@@ -318,6 +328,7 @@ Downloader-->>User : Save PDF File
 ```
 
 **Diagram sources**
+
 - [costs.tsx:246-269](file://src/routes/_app/costs.tsx#L246-L269)
 - [export.tsx:1-18](file://src/components/pcready/pdf/export.tsx#L1-L18)
 
@@ -325,15 +336,16 @@ Downloader-->>User : Save PDF File
 
 The PDF reports follow a standardized structure with multiple sections:
 
-| Report Section | Content | Purpose |
-|---------------|---------|---------|
-| Header | Company branding, report title, date | Professional presentation |
-| Summary Stats | Key financial metrics | Quick overview |
-| Client Breakdown | Cost analysis by client | Client profitability |
-| Technician Breakdown | Cost analysis by technician | Performance evaluation |
-| Detailed Records | Complete ticket records | Invoice support |
+| Report Section       | Content                              | Purpose                   |
+| -------------------- | ------------------------------------ | ------------------------- |
+| Header               | Company branding, report title, date | Professional presentation |
+| Summary Stats        | Key financial metrics                | Quick overview            |
+| Client Breakdown     | Cost analysis by client              | Client profitability      |
+| Technician Breakdown | Cost analysis by technician          | Performance evaluation    |
+| Detailed Records     | Complete ticket records              | Invoice support           |
 
 **Section sources**
+
 - [shared.tsx:297-365](file://src/components/pcready/pdf/shared.tsx#L297-L365)
 - [costs.tsx:651-750](file://src/routes/_app/costs.tsx#L651-L750)
 
@@ -364,20 +376,22 @@ FullControl --> ["Manage Users<br/>System Configuration"]
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:4-26](file://src/lib/auth-context.tsx#L4-L26)
 
 ### Contract Management Permissions
 
 Contract creation and modification requires elevated permissions:
 
-| Action | Required Role | Description |
-|--------|---------------|-------------|
-| View Contracts | Viewer | Read-only access to contract data |
-| Create Contracts | Tech/Admin | Add new client contracts |
-| Modify Contracts | Admin | Edit existing contracts |
-| Delete Contracts | Admin | Remove contracts from system |
+| Action           | Required Role | Description                       |
+| ---------------- | ------------- | --------------------------------- |
+| View Contracts   | Viewer        | Read-only access to contract data |
+| Create Contracts | Tech/Admin    | Add new client contracts          |
+| Modify Contracts | Admin         | Edit existing contracts           |
+| Delete Contracts | Admin         | Remove contracts from system      |
 
 **Section sources**
+
 - [costs.tsx:95-96](file://src/routes/_app/costs.tsx#L95-L96)
 - [auth-context.tsx:1-35](file://src/lib/auth-context.tsx#L1-L35)
 
@@ -429,6 +443,7 @@ React --> Sonner
 ```
 
 **Diagram sources**
+
 - [costs.tsx:1-18](file://src/routes/_app/costs.tsx#L1-L18)
 
 ### Data Flow Architecture
@@ -448,18 +463,19 @@ Query-->>UI : Rendered Components
 ```
 
 **Diagram sources**
+
 - [costs.tsx:109-136](file://src/routes/_app/costs.tsx#L109-L136)
 
 ## Troubleshooting Guide
 
 ### Common Issues and Solutions
 
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| Data Loading Errors | Empty tables, loading spinners | Check network connectivity, verify database permissions |
-| PDF Generation Failures | Blank PDFs, export errors | Verify @react-pdf installation, check browser compatibility |
-| Permission Denied | Contract creation fails | Ensure user has appropriate role (admin/tech) |
-| Performance Issues | Slow loading times | Check database indexes, optimize queries |
+| Issue                   | Symptoms                       | Solution                                                    |
+| ----------------------- | ------------------------------ | ----------------------------------------------------------- |
+| Data Loading Errors     | Empty tables, loading spinners | Check network connectivity, verify database permissions     |
+| PDF Generation Failures | Blank PDFs, export errors      | Verify @react-pdf installation, check browser compatibility |
+| Permission Denied       | Contract creation fails        | Ensure user has appropriate role (admin/tech)               |
+| Performance Issues      | Slow loading times             | Check database indexes, optimize queries                    |
 
 ### Error Handling Patterns
 
@@ -482,9 +498,11 @@ Retry --> End([End])
 ```
 
 **Diagram sources**
+
 - [costs.tsx:131-135](file://src/routes/_app/costs.tsx#L131-L135)
 
 **Section sources**
+
 - [costs.tsx:131-135](file://src/routes/_app/costs.tsx#L131-L135)
 
 ## Conclusion

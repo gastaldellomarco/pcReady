@@ -224,7 +224,11 @@ export function TableSkeleton({
       : "pc-card overflow-hidden";
 
   return (
-    <div className={cn(wrap, className)} aria-busy aria-label={t("pageStates.loadingTable", "Caricamento tabella")}>
+    <div
+      className={cn(wrap, className)}
+      aria-busy
+      aria-label={t("pageStates.loadingTable", "Caricamento tabella")}
+    >
       {showToolbar && (
         <div className="flex flex-wrap gap-2 border-b border-border p-3">
           <Skeleton className="h-9 w-40" />
@@ -235,18 +239,18 @@ export function TableSkeleton({
       <OverflowTable>
         <OverflowTable>
           <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
-              {Array.from({ length: columns }).map((_, c) => (
-                <th key={c} className="px-3 py-2">
-                  <Skeleton className="h-3 w-20" />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <TableSkeletonRows rows={rows} columns={columns} />
-          </tbody>
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                {Array.from({ length: columns }).map((_, c) => (
+                  <th key={c} className="px-3 py-2">
+                    <Skeleton className="h-3 w-20" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <TableSkeletonRows rows={rows} columns={columns} />
+            </tbody>
           </table>
         </OverflowTable>
       </OverflowTable>
@@ -275,7 +279,11 @@ export function CardGridSkeleton({
       : "pc-card p-4 space-y-3";
 
   return (
-    <div className={cn(columnsClass, className)} aria-busy aria-label={t("pageStates.loadingCards", "Caricamento schede")}>
+    <div
+      className={cn(columnsClass, className)}
+      aria-busy
+      aria-label={t("pageStates.loadingCards", "Caricamento schede")}
+    >
       {Array.from({ length: cards }).map((_, i) => (
         <div key={i} className={cardClass}>
           <Skeleton className="h-5 w-2/3" />

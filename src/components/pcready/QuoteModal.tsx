@@ -1,4 +1,14 @@
-import { CheckCircle2, Eye, FileText, Plus, ReceiptText, Save, Send, Trash2, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Eye,
+  FileText,
+  Plus,
+  ReceiptText,
+  Save,
+  Send,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -260,7 +270,9 @@ export function QuoteModal({
                 value={quoteDraft.clientId}
                 onChange={(e) => setQuoteDraft((v) => ({ ...v, clientId: e.target.value }))}
               >
-                <option value="">{t("contractForm.clientPlaceholder", "Seleziona cliente...")}</option>
+                <option value="">
+                  {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
+                </option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.company_name || client.name}
@@ -318,11 +330,7 @@ export function QuoteModal({
               <span className="text-sm font-semibold text-text2">
                 {t("finance.quoteDescriptionLabel", "Voci preventivo")}
               </span>
-              <button
-                type="button"
-                className="pc-btn pc-btn-ghost pc-btn-xs"
-                onClick={addLine}
-              >
+              <button type="button" className="pc-btn pc-btn-ghost pc-btn-xs" onClick={addLine}>
                 <Plus className="size-3" /> {t("finance.addQuoteLine", "Aggiungi voce")}
               </button>
             </div>
@@ -374,7 +382,9 @@ export function QuoteModal({
                       className="pc-input w-full text-sm"
                       value={line.itemType}
                       onChange={(e) =>
-                        updateLine(line.id, { itemType: e.target.value as QuoteLineDraft["itemType"] })
+                        updateLine(line.id, {
+                          itemType: e.target.value as QuoteLineDraft["itemType"],
+                        })
                       }
                     >
                       <option value="service">Servizio</option>
@@ -425,7 +435,10 @@ export function QuoteModal({
               <span className="text-text3">{t("finance.quoteTax", "IVA 22%")}</span>
               <span className="font-mono">€{totals.taxAmount.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between border-t pt-1 font-bold" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="flex items-center justify-between border-t pt-1 font-bold"
+              style={{ borderColor: "var(--border)" }}
+            >
               <span>{t("finance.quoteTotal", "Totale")}</span>
               <span className="font-mono">€{totals.total.toFixed(2)}</span>
             </div>

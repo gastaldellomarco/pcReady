@@ -108,7 +108,8 @@ export const getPortalAccessHistory = createServerFn({ method: "POST" })
 export const updatePortalNotificationPreferences = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => PortalNotificationPrefsSchema.parse(data))
   .handler(async ({ data }) => {
-    const { updatePortalNotificationPreferencesServer } = await import("@/lib/portal-auth-profile.server");
+    const { updatePortalNotificationPreferencesServer } =
+      await import("@/lib/portal-auth-profile.server");
     return updatePortalNotificationPreferencesServer(data);
   });
 

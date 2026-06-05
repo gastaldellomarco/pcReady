@@ -359,7 +359,12 @@ function AuditTableRow({
         role="button"
         tabIndex={0}
         onClick={onToggle}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
         className={cn(
           "cursor-pointer transition-colors",
           index % 2 === 0 ? "bg-white dark:bg-zinc-950" : "bg-zinc-50/60 dark:bg-zinc-900/40",
@@ -892,24 +897,14 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
               {/* Date from/to */}
               <DatePickerInput
                 value={auditFilters.dateFrom ? auditFilters.dateFrom.slice(0, 10) : ""}
-                onChange={(v) =>
-                  setFilter(
-                    "dateFrom",
-                    v ? new Date(v).toISOString() : undefined,
-                  )
-                }
+                onChange={(v) => setFilter("dateFrom", v ? new Date(v).toISOString() : undefined)}
                 className="max-w-[140px] text-xs"
                 placeholder="Da"
               />
               <DatePickerInput
                 value={auditFilters.dateTo ? auditFilters.dateTo.slice(0, 10) : ""}
                 onChange={(v) =>
-                  setFilter(
-                    "dateTo",
-                    v
-                      ? new Date(v + "T23:59:59.999Z").toISOString()
-                      : undefined,
-                  )
+                  setFilter("dateTo", v ? new Date(v + "T23:59:59.999Z").toISOString() : undefined)
                 }
                 className="max-w-[140px] text-xs"
                 placeholder="A"
@@ -1019,8 +1014,8 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
             ) : viewMode === "table" ? (
               <>
                 {/* Table View */}
-                  <OverflowTable className="rounded-lg border border-border">
-                    <Table className="table-fixed">
+                <OverflowTable className="rounded-lg border border-border">
+                  <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="bg-muted/50 dark:bg-muted/10">
                         <TableHead className="w-[24px] pl-3" />

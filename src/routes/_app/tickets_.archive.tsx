@@ -6,7 +6,10 @@ export const Route = createFileRoute("/_app/tickets_/archive")({
   head: () => ({
     meta: [
       { title: i18n.t("tickets:meta.archiveTitle", "Storico ticket — PCReady") },
-      { name: "description", content: i18n.t("tickets:meta.archiveDescription", "Lista dei ticket archiviati.") },
+      {
+        name: "description",
+        content: i18n.t("tickets:meta.archiveDescription", "Lista dei ticket archiviati."),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

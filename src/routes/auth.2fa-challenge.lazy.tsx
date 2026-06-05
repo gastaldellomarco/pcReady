@@ -20,7 +20,6 @@ export const Route = createLazyFileRoute("/auth/2fa-challenge")({
   component: TwoFactorChallengePage,
 });
 
-
 function TwoFactorChallengePage() {
   const { session, user, loading } = useAuth();
   const navigate = useNavigate();

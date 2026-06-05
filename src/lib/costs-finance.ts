@@ -143,19 +143,17 @@ export function computeClientProfitability(
   const map = new Map<string, ClientCostProfile>();
   tickets.forEach((ticket) => {
     const key = ticket.client_id ?? ticket.client_name ?? fallbackClient;
-    const current =
-      map.get(key) ??
-      {
-        clientId: ticket.client_id,
-        clientName: ticket.client_name || fallbackClient,
-        revenue: 0,
-        labor: 0,
-        materials: 0,
-        actualCost: 0,
-        margin: 0,
-        marginPercent: 0,
-        hours: 0,
-      };
+    const current = map.get(key) ?? {
+      clientId: ticket.client_id,
+      clientName: ticket.client_name || fallbackClient,
+      revenue: 0,
+      labor: 0,
+      materials: 0,
+      actualCost: 0,
+      margin: 0,
+      marginPercent: 0,
+      hours: 0,
+    };
     current.labor += money(ticket.labor_cost);
     current.materials += money(ticket.material_cost);
     current.actualCost += money(ticket.total_cost);
@@ -166,19 +164,17 @@ export function computeClientProfitability(
   contracts
     .filter((contract) => contract.status === "active")
     .forEach((contract) => {
-      const current =
-        map.get(contract.client_id) ??
-        {
-          clientId: contract.client_id,
-          clientName: fallbackClient,
-          revenue: 0,
-          labor: 0,
-          materials: 0,
-          actualCost: 0,
-          margin: 0,
-          marginPercent: 0,
-          hours: 0,
-        };
+      const current = map.get(contract.client_id) ?? {
+        clientId: contract.client_id,
+        clientName: fallbackClient,
+        revenue: 0,
+        labor: 0,
+        materials: 0,
+        actualCost: 0,
+        margin: 0,
+        marginPercent: 0,
+        hours: 0,
+      };
       current.revenue += normalizeRecurringFee(contract);
       map.set(contract.client_id, current);
     });
@@ -201,7 +197,9 @@ export function computeClientProfitability(
  *
  */
 export function normalizeRecurringFee(contract: ContractLike) {
-  return contract.billing_period === "annual" ? money(contract.recurring_fee) / 12 : money(contract.recurring_fee);
+  return contract.billing_period === "annual"
+    ? money(contract.recurring_fee) / 12
+    : money(contract.recurring_fee);
 }
 
 /**

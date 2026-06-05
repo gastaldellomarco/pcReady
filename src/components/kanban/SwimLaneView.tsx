@@ -172,7 +172,13 @@ export function SwimLaneView({
         groupColor: undefined as string | undefined,
         cards: map.get(technician.id) ?? [],
       })),
-      { id: "unassigned", technician: null, groupLabel: t("tickets:unassigned", "Non assegnato"), groupColor: undefined as string | undefined, cards: map.get(null) ?? [] },
+      {
+        id: "unassigned",
+        technician: null,
+        groupLabel: t("tickets:unassigned", "Non assegnato"),
+        groupColor: undefined as string | undefined,
+        cards: map.get(null) ?? [],
+      },
     ];
   }, [cards, technicians, groupMode, t]);
 
@@ -207,7 +213,9 @@ export function SwimLaneView({
                         type="button"
                         onClick={() => onToggleCollapseColumn(status)}
                         className="flex flex-col items-center gap-0.5 mx-auto cursor-pointer"
-                        title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + status, STATUS_META[status].label) })}
+                        title={t("expandColumn", "Espandi {{column}}", {
+                          column: t("tickets:status." + status, STATUS_META[status].label),
+                        })}
                       >
                         <span
                           className="h-2 w-2 rounded-full"

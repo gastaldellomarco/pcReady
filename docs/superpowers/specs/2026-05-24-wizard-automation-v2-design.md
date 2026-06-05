@@ -3,13 +3,16 @@
 ## 1. Panoramica
 
 ### Obiettivo
+
 Migliorare l'UX del wizard automazioni rendendo più veloce la creazione di automazioni reali, riducendo errori e tempo di configurazione per i tecnici.
 
 ### Scope
+
 - Solo UI/UX lato frontend e struttura dei dati passati all'API
 - Nessuna modifica al motore di esecuzione
 
 ### Criteri di Accettazione
+
 - [ ] Wizard con 4 step fissi: Evento, Filtri, Azioni, Riepilogo
 - [ ] Ogni step ha titolo orientato al problema + descrizione max 1 riga con esempio
 - [ ] Schermata iniziale con elenco di 6 template preconfigurati
@@ -32,6 +35,7 @@ AutomationWizard (container)
 ```
 
 ### Principio Chiave
+
 Ogni step ha un **titolo orientato al problema** (es. "Quando deve partire questa automazione?") e una **descrizione max 1 riga con esempio concreto**.
 
 ---
@@ -43,7 +47,7 @@ Ogni step ha un **titolo orientato al problema** (es. "Quando deve partire quest
 File: `src/lib/automations/templates.ts`
 
 ```typescript
-export type TemplateCategory = 'notification' | 'status' | 'schedule' | 'urgency';
+export type TemplateCategory = "notification" | "status" | "schedule" | "urgency";
 
 export interface AutomationTemplate {
   id: string;
@@ -57,14 +61,14 @@ export interface AutomationTemplate {
 
 ### 3.2 I 6 Template Base
 
-| # | Nome | Trigger | Filtri | Azioni | Config Speciale |
-|---|------|---------|--------|--------|-----------------|
-| 1 | Notifica email nuovo ticket | `ticket_created` | — | `send_email` | subject: "Nuovo ticket #{{id}}" |
-| 2 | Ticket urgente → avvisa tecnico | `ticket_created` | `priority_high` | `create_notification` | title: "Ticket urgente!" |
-| 3 | Ticket in scadenza SLA | `sla_warning` | — | `send_email` | subject: "SLA in scadenza" |
-| 4 | Dispositivo in scadenza garanzia | `warranty_expiring_soon` | — | `send_email` | config.days = 30 |
-| 5 | Ticket inattivo da N giorni | `scheduled` (cron: daily) | `field_last_activity > N days` | `send_email` | cron: `0 9 * * *` |
-| 6 | Report settimanale ticket | `scheduled` (cron: weekly) | — | `send_email` | cron: `0 9 * * 1` |
+| #   | Nome                             | Trigger                    | Filtri                         | Azioni                | Config Speciale                 |
+| --- | -------------------------------- | -------------------------- | ------------------------------ | --------------------- | ------------------------------- |
+| 1   | Notifica email nuovo ticket      | `ticket_created`           | —                              | `send_email`          | subject: "Nuovo ticket #{{id}}" |
+| 2   | Ticket urgente → avvisa tecnico  | `ticket_created`           | `priority_high`                | `create_notification` | title: "Ticket urgente!"        |
+| 3   | Ticket in scadenza SLA           | `sla_warning`              | —                              | `send_email`          | subject: "SLA in scadenza"      |
+| 4   | Dispositivo in scadenza garanzia | `warranty_expiring_soon`   | —                              | `send_email`          | config.days = 30                |
+| 5   | Ticket inattivo da N giorni      | `scheduled` (cron: daily)  | `field_last_activity > N days` | `send_email`          | cron: `0 9 * * *`               |
+| 6   | Report settimanale ticket        | `scheduled` (cron: weekly) | —                              | `send_email`          | cron: `0 9 * * 1`               |
 
 ---
 
@@ -73,10 +77,12 @@ export interface AutomationTemplate {
 ### 4.1 Step 0: Scegli un modello
 
 **Header dello step:**
-- Titolo: *"Scegli un modello"*
-- Descrizione: *"Seleziona un template preconfigurato o inizia da zero. Puoi modificare tutto nei prossimi passaggi."*
+
+- Titolo: _"Scegli un modello"_
+- Descrizione: _"Seleziona un template preconfigurato o inizia da zero. Puoi modificare tutto nei prossimi passaggi."_
 
 **Layout:** Grid 2 colonne, card cliccabili con:
+
 - Icona a sinistra (40×40, colore accent)
 - Titolo (bold, 14px)
 - Descrizione (text-text3, 12px, max 2 righe)
@@ -85,6 +91,7 @@ export interface AutomationTemplate {
 **Card "Inizia da zero"** — ultima posizione, stile outline tratteggiato, icona Plus.
 
 **Comportamento:**
+
 - Click su template → precompila stato wizard → avanza a Step 1
 - Click "Inizia da zero" → wizard vuoto → avanza a Step 1
 - Se editing automazione esistente → salta questo step, inizia da Step 1 con dati caricati
@@ -94,17 +101,20 @@ export interface AutomationTemplate {
 ### 4.2 Step 1: Evento (refactor TriggerStep)
 
 **Header orientato:**
-- Titolo: *"Quando deve partire questa automazione?"*
-- Descrizione: *"Scegli l'evento che attiva questa regola. Esempio: quando arriva un nuovo ticket urgente."*
+
+- Titolo: _"Quando deve partire questa automazione?"_
+- Descrizione: _"Scegli l'evento che attiva questa regola. Esempio: quando arriva un nuovo ticket urgente."_
 
 **Layout:** Griglia 3 colonne (desktop) / 2 (tablet) / 1 (mobile)
 
 **Card trigger:**
+
 - Icona colorata (esistente, migliorata)
 - Nome trigger (bold)
-- Frase esempio concreto (es. *"Quando un ticket viene contrassegnato come urgente"*)
+- Frase esempio concreto (es. _"Quando un ticket viene contrassegnato come urgente"_)
 
 **Configurazione condizionale inline:**
+
 - Trigger = `scheduled` → input cron appare sotto la card
 - Trigger = `warranty_expiring_soon` → input "Giorni prima" (default 30)
 - Altri trigger → solo selezione card
@@ -114,19 +124,22 @@ export interface AutomationTemplate {
 ### 4.3 Step 2: Filtri (refactor ConditionsStep)
 
 **Header orientato:**
-- Titolo: *"Sotto quali condizioni?"*
-- Descrizione: *"Opzionale — filtra solo i casi che corrispondono ai criteri. Esempio: solo ticket con priorità alta."*
+
+- Titolo: _"Sotto quali condizioni?"_
+- Descrizione: _"Opzionale — filtra solo i casi che corrispondono ai criteri. Esempio: solo ticket con priorità alta."_
 
 **Layout:** Lista verticale di "chip condizione" espandibili
 
 **Chip condizione:**
+
 - Icona operatore (≈, ≠, >, <, etc.)
-- Testo leggibile: *"Priorità è alta"* invece di `priority_high`
+- Testo leggibile: _"Priorità è alta"_ invece di `priority_high`
 - Azioni: modifica (espande), elimina, drag per riordino
 
 **Stato vuoto:**
+
 - Box tratteggiato con icona FilterX
-- Testo: *"Nessun filtro — l'automazione si attiva per ogni {{triggerName}}"*
+- Testo: _"Nessun filtro — l'automazione si attiva per ogni {{triggerName}}"_
 
 **Aggiungi condizione:** Button outline con dropdown tipo condizione
 
@@ -135,17 +148,20 @@ export interface AutomationTemplate {
 ### 4.4 Step 3: Azioni (ActionsStep con tweaks minori)
 
 **Header orientato:**
-- Titolo: *"Cosa deve succedere?"*
-- Descrizione: *"Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti."*
+
+- Titolo: _"Cosa deve succedere?"_
+- Descrizione: _"Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti."_
 
 **Layout:** Lista azioni verticali con card espandibili
 
 **Card azione:**
+
 - Header: Icona azione + nome leggibile + badge tipo
 - Body: form specifico per tipo
 - Preview inline: per email mostra subject, per notifica mostra title/body
 
 **Azione send_email:**
+
 - Preview immediata subject line
 - Toggle "Visualizza in HTML"
 
@@ -156,8 +172,9 @@ export interface AutomationTemplate {
 ### 4.5 Step 4: Riepilogo (refactor ReviewStep)
 
 **Header:**
-- Titolo: *"Controlla prima di salvare"*
-- Descrizione: *"Verifica che tutto sia corretto. Puoi tornare indietro per modificare."*
+
+- Titolo: _"Controlla prima di salvare"_
+- Descrizione: _"Verifica che tutto sia corretto. Puoi tornare indietro per modificare."_
 
 **Human-friendly summary card:**
 
@@ -172,16 +189,19 @@ export interface AutomationTemplate {
 ```
 
 **Formato frase naturale:**
+
 - Quando + [trigger descrittivo] + (opzionale: con [filtri])
 - → [azione 1]
 - → [azione 2] (se multiple)
 
 **Accordions:**
+
 - "📝 Dettagli tecnici (JSON)" — collassato by default
 - "⏱️ Schedulazione" — visibile solo se trigger schedulato
 - "🔧 Configurazione avanzata" — changeNote, versione, categoria
 
 **Form finali:**
+
 - Nome regola (required)
 - Descrizione (optional)
 - Categoria (dropdown)
@@ -212,19 +232,20 @@ interface WizardState {
 
 ### 5.2 Navigazione Step
 
-| Step | Nome | Valida prima di proseguire | Pulsante Avanti abilitato |
-|------|------|---------------------------|---------------------------|
-| 0 | Template | No (opzionale) | Sempre |
-| 1 | Evento | Sì — trigger required | trigger !== null |
-| 2 | Filtri | No | Sempre |
-| 3 | Azioni | Sì — almeno 1 azione | actions.length > 0 |
-| 4 | Riepilogo | Sì — nome required | name.trim() !== '' |
+| Step | Nome      | Valida prima di proseguire | Pulsante Avanti abilitato |
+| ---- | --------- | -------------------------- | ------------------------- |
+| 0    | Template  | No (opzionale)             | Sempre                    |
+| 1    | Evento    | Sì — trigger required      | trigger !== null          |
+| 2    | Filtri    | No                         | Sempre                    |
+| 3    | Azioni    | Sì — almeno 1 azione       | actions.length > 0        |
+| 4    | Riepilogo | Sì — nome required         | name.trim() !== ''        |
 
 **Validazione inline:** Errori mostrati nel contesto dello step, non solo in Review.
 
 ### 5.3 Progress Bar
 
 Barra orizzontale con 5 punti (0-4):
+
 - Completato: checkmark verde
 - Corrente: numero evidenziato
 - Futuro: grigio
@@ -239,10 +260,10 @@ Barra orizzontale con 5 punti (0-4):
 ```typescript
 function selectTemplate(templateId: string | null) {
   if (templateId) {
-    const template = AUTOMATION_TEMPLATES.find(t => t.id === templateId);
+    const template = AUTOMATION_TEMPLATES.find((t) => t.id === templateId);
     if (template) {
       // Precompila tutti i campi
-      setName(template.defaultPayload.name || '');
+      setName(template.defaultPayload.name || "");
       setTrigger(template.defaultPayload.trigger_definition || null);
       setConditions(template.defaultPayload.conditions_definition || []);
       setActions(template.defaultPayload.actions_definition || []);
@@ -250,7 +271,7 @@ function selectTemplate(templateId: string | null) {
     }
   } else {
     // Inizia da zero
-    setName('');
+    setName("");
     setTrigger(null);
     setConditions([]);
     setActions([]);
@@ -314,30 +335,30 @@ function selectTemplate(templateId: string | null) {
 
 ### 8.1 Nuovi File
 
-| File | Scopo |
-|------|-------|
-| `src/lib/automations/templates.ts` | Definizione 6 template + tipi |
-| `src/components/automations/steps/TemplateStep.tsx` | UI selezione template |
-| `src/components/automations/steps/EventStep.tsx` | Refactor TriggerStep |
-| `src/components/automations/steps/FiltersStep.tsx` | Refactor ConditionsStep |
+| File                                                | Scopo                         |
+| --------------------------------------------------- | ----------------------------- |
+| `src/lib/automations/templates.ts`                  | Definizione 6 template + tipi |
+| `src/components/automations/steps/TemplateStep.tsx` | UI selezione template         |
+| `src/components/automations/steps/EventStep.tsx`    | Refactor TriggerStep          |
+| `src/components/automations/steps/FiltersStep.tsx`  | Refactor ConditionsStep       |
 
 ### 8.2 File da Modificare
 
-| File | Modifiche |
-|------|-----------|
-| `src/components/automations/AutomationWizard.tsx` | Restructure a 5 step, gestione stato template |
-| `src/components/automations/steps/ActionsStep.tsx` | Header orientato + preview inline |
-| `src/components/automations/steps/ReviewStep.tsx` | Human-friendly summary + accordion JSON |
-| `src/i18n/locales/it/automations.json` | Nuove chiavi copy |
-| `src/types/automation.ts` | Aggiungere campo `selectedTemplateId` a WizardFlowPayload |
+| File                                               | Modifiche                                                 |
+| -------------------------------------------------- | --------------------------------------------------------- |
+| `src/components/automations/AutomationWizard.tsx`  | Restructure a 5 step, gestione stato template             |
+| `src/components/automations/steps/ActionsStep.tsx` | Header orientato + preview inline                         |
+| `src/components/automations/steps/ReviewStep.tsx`  | Human-friendly summary + accordion JSON                   |
+| `src/i18n/locales/it/automations.json`             | Nuove chiavi copy                                         |
+| `src/types/automation.ts`                          | Aggiungere campo `selectedTemplateId` a WizardFlowPayload |
 
 ### 8.3 File da Eliminare
 
-| File | Motivo |
-|------|--------|
-| `src/components/automations/steps/TriggerStep.tsx` | Sostituito da EventStep |
-| `src/components/automations/steps/ConditionsStep.tsx` | Sostituito da FiltersStep |
-| `src/components/automations/steps/ScheduleStep.tsx` | Funzionalità mergiata in EventStep |
+| File                                                  | Motivo                             |
+| ----------------------------------------------------- | ---------------------------------- |
+| `src/components/automations/steps/TriggerStep.tsx`    | Sostituito da EventStep            |
+| `src/components/automations/steps/ConditionsStep.tsx` | Sostituito da FiltersStep          |
+| `src/components/automations/steps/ScheduleStep.tsx`   | Funzionalità mergiata in EventStep |
 
 ---
 
@@ -389,5 +410,5 @@ function selectTemplate(templateId: string | null) {
 
 ---
 
-*Design creato: 2026-05-24*  
-*Stato: In attesa approvazione*
+_Design creato: 2026-05-24_  
+_Stato: In attesa approvazione_

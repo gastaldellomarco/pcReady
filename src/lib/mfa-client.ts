@@ -24,10 +24,7 @@ export function backupVerificationKey(userId: string) {
  *
  */
 export function markBackupVerified(userId: string, ttlMinutes = 12 * 60) {
-  localStorage.setItem(
-    backupVerificationKey(userId),
-    String(Date.now() + ttlMinutes * 60 * 1000),
-  );
+  localStorage.setItem(backupVerificationKey(userId), String(Date.now() + ttlMinutes * 60 * 1000));
 }
 
 /**

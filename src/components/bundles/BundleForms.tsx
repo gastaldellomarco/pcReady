@@ -537,9 +537,14 @@ export function AssignmentForm({
 
       <div className="rounded-xl border border-border bg-surface2/40 p-4">
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-text2">{t("assignment.customOverrides", "Override personalizzati")}</h3>
+          <h3 className="text-sm font-semibold text-text2">
+            {t("assignment.customOverrides", "Override personalizzati")}
+          </h3>
           <p className={hintClass}>
-            {t("assignment.customHint", "Lascia vuoto un campo per usare il valore configurato nel bundle.")}
+            {t(
+              "assignment.customHint",
+              "Lascia vuoto un campo per usare il valore configurato nel bundle.",
+            )}
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">

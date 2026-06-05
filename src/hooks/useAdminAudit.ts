@@ -106,17 +106,11 @@ export function useAdminAudit(args: {
     [accessToken, isAdmin, loadAuditLog, auditPageSize, onFiltersChange],
   );
 
-  const {
-    auditFilters,
-    setAuditFilters,
-    datePreset,
-    updateSearch,
-    applyDatePreset,
-    resetFilters,
-  } = useAdminAuditFilters({
-    loadAudit,
-    initialFilters: initFilters,
-  });
+  const { auditFilters, setAuditFilters, datePreset, updateSearch, applyDatePreset, resetFilters } =
+    useAdminAuditFilters({
+      loadAudit,
+      initialFilters: initFilters,
+    });
 
   const { handleExportCsv, handleExportPdf, getTimelineGroups } = useAdminAuditExport({
     accessToken,

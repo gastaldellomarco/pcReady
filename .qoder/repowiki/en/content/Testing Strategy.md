@@ -24,7 +24,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Enhanced file attachment validation testing documentation with improved mock setup patterns
 - Added documentation for hoisted mocks migration from inline mocks for better test isolation
 - Updated test suite modernization section covering helper functions for creating test files
@@ -32,6 +34,7 @@
 - Added security testing documentation for SSRF protection validation
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -45,10 +48,13 @@
 11. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes PCReady's quality assurance approach with a focus on unit and integration testing using Vitest. It covers mocking strategies for Supabase client/server functions and React components, integration testing patterns for database operations and server functions, component testing with React Testing Library, and test organization across file-based routing tests, server function tests, and utility function tests. The framework has been enhanced with improved file attachment validation testing, hoisted mock patterns for better isolation, and modernized test suite helper functions. It also outlines best practices for asynchronous operations, database transactions, real-time data synchronization, environment setup, test data management, CI/CD integration, performance testing, and coverage requirements.
 
 ## Project Structure
+
 The testing setup is centered around Vitest configured in the project's Vite configuration. Tests are organized under a dedicated test directory and grouped by functional areas:
+
 - Routing and query tests under routes
 - Server-side logic tests under lib
 - Utilities and helper functions under lib
@@ -56,6 +62,7 @@ The testing setup is centered around Vitest configured in the project's Vite con
 - Component tests using React Testing Library
 
 Key configuration highlights:
+
 - Test environment: Node
 - Global test APIs enabled
 - Coverage provider: v8
@@ -74,16 +81,19 @@ L["Mutation Tests<br/>queries.mutations.test.ts"] --> M["Database Mocks<br/>Supa
 ```
 
 **Diagram sources**
+
 - [vite.config.ts:39-55](file://vite.config.ts#L39-L55)
 - [package.json:17-18](file://package.json#L17-L18)
-- [src/__tests__/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
-- [src/__tests__/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
+- [src/**tests**/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
+- [src/**tests**/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
 
 **Section sources**
+
 - [vite.config.ts:39-55](file://vite.config.ts#L39-L55)
 - [package.json:17-18](file://package.json#L17-L18)
 
 ## Core Components
+
 This section outlines the primary testing components and how they are exercised in unit and integration tests.
 
 - Supabase client mocks
@@ -110,13 +120,14 @@ This section outlines the primary testing components and how they are exercised 
   - Server-side notifications invoked during automation dry runs to notify administrators of failures.
 
 **Section sources**
-- [src/__tests__/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
-- [src/__tests__/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
-- [src/__tests__/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
-- [src/__tests__/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
-- [src/__tests__/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
-- [src/__tests__/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
-- [src/__tests__/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
+
+- [src/**tests**/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
+- [src/**tests**/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
+- [src/**tests**/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
+- [src/**tests**/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
+- [src/**tests**/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
+- [src/**tests**/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
+- [src/**tests**/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
 - [src/integrations/supabase/client.ts:1-32](file://src/integrations/supabase/client.ts#L1-L32)
 - [src/integrations/supabase/client.server.ts:1-62](file://src/integrations/supabase/client.server.ts#L1-L62)
 - [src/lib/admin-users.server.ts:1-200](file://src/lib/admin-users.server.ts#L1-L200)
@@ -127,7 +138,9 @@ This section outlines the primary testing components and how they are exercised 
 - [src/lib/queries/ticketAttachments.ts:1-242](file://src/lib/queries/ticketAttachments.ts#L1-L242)
 
 ## Architecture Overview
+
 The testing architecture separates concerns across:
+
 - Unit tests for pure functions and small units
 - Integration tests for Supabase interactions and server functions
 - Component tests for UI behavior using React Testing Library
@@ -180,6 +193,7 @@ T5 --> I4
 ## Detailed Component Analysis
 
 ### Supabase Client Mocking Patterns
+
 This pattern centralizes mocking of Supabase clients to isolate tests from external dependencies. It enables deterministic outcomes for database queries and mutations.
 
 ```mermaid
@@ -195,19 +209,23 @@ SUT-->>Test : Return processed result
 ```
 
 **Diagram sources**
-- [src/__tests__/routes/clients.test.ts:5-32](file://src/__tests__/routes/clients.test.ts#L5-L32)
-- [src/__tests__/routes/tickets.test.ts:5-13](file://src/__tests__/routes/tickets.test.ts#L5-L13)
+
+- [src/**tests**/routes/clients.test.ts:5-32](file://src/__tests__/routes/clients.test.ts#L5-L32)
+- [src/**tests**/routes/tickets.test.ts:5-13](file://src/__tests__/routes/tickets.test.ts#L5-L13)
 
 Key patterns:
+
 - Select chain mocking: methods like select, order, or, and range are chained to return consistent builders.
 - Table-specific mocks: different tables return tailored builders to simulate realistic query patterns.
 - Single-row retrieval: maybeSingle and single methods are stubbed to return controlled payloads.
 
 **Section sources**
-- [src/__tests__/routes/clients.test.ts:5-32](file://src/__tests__/routes/clients.test.ts#L5-L32)
-- [src/__tests__/routes/tickets.test.ts:5-13](file://src/__tests__/routes/tickets.test.ts#L5-L13)
+
+- [src/**tests**/routes/clients.test.ts:5-32](file://src/__tests__/routes/clients.test.ts#L5-L32)
+- [src/**tests**/routes/tickets.test.ts:5-13](file://src/__tests__/routes/tickets.test.ts#L5-L13)
 
 ### Enhanced File Attachment Validation Testing
+
 The file attachment validation system has been significantly enhanced with comprehensive MIME type detection and security validation.
 
 ```mermaid
@@ -232,20 +250,24 @@ Accept --> End
 ```
 
 **Diagram sources**
-- [src/__tests__/ticketAttachments.test.ts:12-46](file://src/__tests__/ticketAttachments.test.ts#L12-L46)
+
+- [src/**tests**/ticketAttachments.test.ts:12-46](file://src/__tests__/ticketAttachments.test.ts#L12-L46)
 - [src/lib/queries/ticketAttachments.ts:57-81](file://src/lib/queries/ticketAttachments.ts#L57-L81)
 
 Key enhancements:
+
 - Comprehensive MIME type detection from file headers (PNG, JPEG, GIF, WebP, PDF)
 - Extension-based type validation with fallback to header-based detection
 - Special handling for .txt files with content validation
 - Security-focused validation preventing type confusion attacks
 
 **Section sources**
-- [src/__tests__/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
+
+- [src/**tests**/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
 - [src/lib/queries/ticketAttachments.ts:1-242](file://src/lib/queries/ticketAttachments.ts#L1-L242)
 
 ### Hoisted Mocks Migration Pattern
+
 The testing framework has migrated from inline mocks to hoisted mocks for improved test isolation and stability.
 
 ```mermaid
@@ -264,20 +286,24 @@ Inline-->>Test : May cause instability
 ```
 
 **Diagram sources**
-- [src/__tests__/queries.mutations.test.ts:3-23](file://src/__tests__/queries.mutations.test.ts#L3-L23)
-- [src/__tests__/webhook-ssrf.test.ts:3-11](file://src/__tests__/webhook-ssrf.test.ts#L3-L11)
+
+- [src/**tests**/queries.mutations.test.ts:3-23](file://src/__tests__/queries.mutations.test.ts#L3-L23)
+- [src/**tests**/webhook-ssrf.test.ts:3-11](file://src/__tests__/webhook-ssrf.test.ts#L3-L11)
 
 Benefits of hoisted mocks:
+
 - Stable mock instances across module loads
 - Better test isolation and reduced state leakage
 - Improved reliability in complex test suites
 - Consistent behavior across test runs
 
 **Section sources**
-- [src/__tests__/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
-- [src/__tests__/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
+
+- [src/**tests**/queries.mutations.test.ts:1-64](file://src/__tests__/queries.mutations.test.ts#L1-L64)
+- [src/**tests**/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
 
 ### SSRF Protection Testing
+
 Security testing validates protection against Server-Side Request Forgery attacks in webhook automation.
 
 ```mermaid
@@ -302,18 +328,22 @@ Webhook-->>Test : Return Success
 ```
 
 **Diagram sources**
-- [src/__tests__/webhook-ssrf.test.ts:15-50](file://src/__tests__/webhook-ssrf.test.ts#L15-L50)
+
+- [src/**tests**/webhook-ssrf.test.ts:15-50](file://src/__tests__/webhook-ssrf.test.ts#L15-L50)
 
 Key security validations:
+
 - Private IP address blocking (127.0.0.1, 10.x.x.x, 172.16.x.x-172.31.x.x, 192.168.x.x)
 - Public IP address allowance
 - DNS resolution mocking for predictable testing
 - Fetch interception for network request validation
 
 **Section sources**
-- [src/__tests__/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
+
+- [src/**tests**/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
 
 ### Component Testing with React Testing Library
+
 Component tests validate UI behavior, event handling, and rendering under various conditions. The testing framework includes comprehensive component validation patterns.
 
 ```mermaid
@@ -330,9 +360,11 @@ Reset --> Validate["Validate State Equality"]
 ```
 
 **Diagram sources**
-- [src/__tests__/CreateTicketModal.test.tsx:4-27](file://src/__tests__/CreateTicketModal.test.tsx#L4-L27)
+
+- [src/**tests**/CreateTicketModal.test.tsx:4-27](file://src/__tests__/CreateTicketModal.test.tsx#L4-L27)
 
 Recommended patterns:
+
 - Render components using React Testing Library
 - Interact via user events (click, type, select)
 - Assert DOM changes and accessibility attributes
@@ -340,9 +372,11 @@ Recommended patterns:
 - Test form state management and validation
 
 **Section sources**
-- [src/__tests__/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
+
+- [src/**tests**/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
 
 ### Supabase Admin Client Mocking Patterns
+
 Admin client mocking supports server-side authorization and administrative RPC calls.
 
 ```mermaid
@@ -364,21 +398,25 @@ end
 ```
 
 **Diagram sources**
-- [src/__tests__/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
-- [src/__tests__/lib/admin-users.test.ts:16-55](file://src/__tests__/lib/admin-users.test.ts#L16-L55)
+
+- [src/**tests**/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
+- [src/**tests**/lib/admin-users.test.ts:16-55](file://src/__tests__/lib/admin-users.test.ts#L16-L55)
 - [src/integrations/supabase/client.server.ts:1-62](file://src/integrations/supabase/client.server.ts#L1-L62)
 - [src/lib/admin-users.server.ts:1-200](file://src/lib/admin-users.server.ts#L1-L200)
 
 Key patterns:
+
 - Hoisted mocks: vi.hoisted ensures stable mock instances across module loads.
 - Conditional RPC behavior: rpc returns success or failure based on test scenarios.
 - Token validation: getUser simulates valid/invalid user extraction.
 
 **Section sources**
-- [src/__tests__/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
-- [src/__tests__/lib/admin-users.test.ts:16-55](file://src/__tests__/lib/admin-users.test.ts#L16-L55)
+
+- [src/**tests**/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
+- [src/**tests**/lib/admin-users.test.ts:16-55](file://src/__tests__/lib/admin-users.test.ts#L16-L55)
 
 ### Automation Runs Integration Tests
+
 These tests validate the end-to-end behavior of automation execution, including health computation, dry-run failure simulation, and database mutations.
 
 ```mermaid
@@ -400,20 +438,24 @@ SUT-->>Test : Returns run log
 ```
 
 **Diagram sources**
-- [src/__tests__/lib/automation-runs.test.ts:35-62](file://src/__tests__/lib/automation-runs.test.ts#L35-L62)
-- [src/__tests__/lib/automation-runs.test.ts:121-154](file://src/__tests__/lib/automation-runs.test.ts#L121-L154)
+
+- [src/**tests**/lib/automation-runs.test.ts:35-62](file://src/__tests__/lib/automation-runs.test.ts#L35-L62)
+- [src/**tests**/lib/automation-runs.test.ts:121-154](file://src/__tests__/lib/automation-runs.test.ts#L121-L154)
 - [src/lib/automation-runs.server.ts:1-300](file://src/lib/automation-runs.server.ts#L1-L300)
 - [src/lib/notifications.server.ts:1-200](file://src/lib/notifications.server.ts#L1-L200)
 
 Key patterns:
+
 - Health computation assertions for empty logs and recent statuses.
 - Dry-run failure triggers admin notifications.
 - Database mutations verified via insert/select chains.
 
 **Section sources**
-- [src/__tests__/lib/automation-runs.test.ts:64-156](file://src/__tests__/lib/automation-runs.test.ts#L64-L156)
+
+- [src/**tests**/lib/automation-runs.test.ts:64-156](file://src/__tests__/lib/automation-runs.test.ts#L64-L156)
 
 ### Routing and Query Tests
+
 These tests exercise data access functions that rely on Supabase client mocks to validate pagination and record retrieval.
 
 ```mermaid
@@ -427,43 +469,52 @@ Assert --> End(["Test Exit"])
 ```
 
 **Diagram sources**
-- [src/__tests__/routes/clients.test.ts:34-51](file://src/__tests__/routes/clients.test.ts#L34-L51)
-- [src/__tests__/routes/tickets.test.ts:15-35](file://src/__tests__/routes/tickets.test.ts#L15-L35)
+
+- [src/**tests**/routes/clients.test.ts:34-51](file://src/__tests__/routes/clients.test.ts#L34-L51)
+- [src/**tests**/routes/tickets.test.ts:15-35](file://src/__tests__/routes/tickets.test.ts#L15-L35)
 
 Key patterns:
+
 - Pagination: range-based queries return counts and rows.
 - Absence handling: maybeSingle returns null payloads for missing records.
 
 **Section sources**
-- [src/__tests__/routes/clients.test.ts:34-51](file://src/__tests__/routes/clients.test.ts#L34-L51)
-- [src/__tests__/routes/tickets.test.ts:15-35](file://src/__tests__/routes/tickets.test.ts#L15-L35)
+
+- [src/**tests**/routes/clients.test.ts:34-51](file://src/__tests__/routes/clients.test.ts#L34-L51)
+- [src/**tests**/routes/tickets.test.ts:15-35](file://src/__tests__/routes/tickets.test.ts#L15-L35)
 
 ## Enhanced Testing Framework
 
 ### Modernized Test Suite Architecture
+
 The testing framework has been modernized with several key improvements:
 
 **Hoisted Mock Implementation**
+
 - vi.hoisted() for stable mock instances across module loads
 - Elimination of inline mock instability issues
 - Improved test isolation and reliability
 
 **Helper Functions for Test Data Creation**
+
 - Standardized file creation utilities for consistent test data
 - Enhanced test file generation with proper ArrayBuffer handling
 - Reusable helper functions reducing code duplication
 
 **Comprehensive Security Testing**
+
 - File attachment validation with MIME type detection
 - SSRF protection validation for webhook endpoints
 - DNS resolution mocking for network security tests
 
 **Section sources**
-- [src/__tests__/queries.mutations.test.ts:3-23](file://src/__tests__/queries.mutations.test.ts#L3-L23)
-- [src/__tests__/ticketAttachments.test.ts:4-10](file://src/__tests__/ticketAttachments.test.ts#L4-L10)
-- [src/__tests__/webhook-ssrf.test.ts:3-11](file://src/__tests__/webhook-ssrf.test.ts#L3-L11)
+
+- [src/**tests**/queries.mutations.test.ts:3-23](file://src/__tests__/queries.mutations.test.ts#L3-L23)
+- [src/**tests**/ticketAttachments.test.ts:4-10](file://src/__tests__/ticketAttachments.test.ts#L4-L10)
+- [src/**tests**/webhook-ssrf.test.ts:3-11](file://src/__tests__/webhook-ssrf.test.ts#L3-L11)
 
 ### Test Organization and File Layout
+
 - Routing and query tests
   - Located under routes with descriptive names reflecting the tested functions.
   - Examples: clients and tickets tests demonstrate pagination and record retrieval.
@@ -481,16 +532,18 @@ The testing framework has been modernized with several key improvements:
   - Form state management and interaction testing.
 
 **Section sources**
-- [src/__tests__/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
-- [src/__tests__/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
-- [src/__tests__/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
-- [src/__tests__/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
-- [src/__tests__/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
-- [src/__tests__/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
-- [src/__tests__/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
+
+- [src/**tests**/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
+- [src/**tests**/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
+- [src/**tests**/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
+- [src/**tests**/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
+- [src/**tests**/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
+- [src/**tests**/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
+- [src/**tests**/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
 - [vite.config.ts:43-54](file://vite.config.ts#L43-L54)
 
 ## Dependency Analysis
+
 This section maps test dependencies and their roles in the testing ecosystem.
 
 ```mermaid
@@ -514,15 +567,16 @@ SecTests --> DNSMock["Node DNS Module"]
 ```
 
 **Diagram sources**
+
 - [package.json:17-18](file://package.json#L17-L18)
 - [vite.config.ts:39-55](file://vite.config.ts#L39-L55)
-- [src/__tests__/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
-- [src/__tests__/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
-- [src/__tests__/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
-- [src/__tests__/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
-- [src/__tests__/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
-- [src/__tests__/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
-- [src/__tests__/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
+- [src/**tests**/lib/admin-users.test.ts:1-56](file://src/__tests__/lib/admin-users.test.ts#L1-L56)
+- [src/**tests**/lib/automation-runs.test.ts:1-156](file://src/__tests__/lib/automation-runs.test.ts#L1-L156)
+- [src/**tests**/routes/clients.test.ts:1-52](file://src/__tests__/routes/clients.test.ts#L1-L52)
+- [src/**tests**/routes/tickets.test.ts:1-36](file://src/__tests__/routes/tickets.test.ts#L1-L36)
+- [src/**tests**/ticketAttachments.test.ts:1-47](file://src/__tests__/ticketAttachments.test.ts#L1-L47)
+- [src/**tests**/webhook-ssrf.test.ts:1-51](file://src/__tests__/webhook-ssrf.test.ts#L1-L51)
+- [src/**tests**/CreateTicketModal.test.tsx:1-28](file://src/__tests__/CreateTicketModal.test.tsx#L1-L28)
 - [src/integrations/supabase/client.server.ts:1-62](file://src/integrations/supabase/client.server.ts#L1-L62)
 - [src/integrations/supabase/client.ts:1-32](file://src/integrations/supabase/client.ts#L1-L32)
 - [src/lib/admin-users.server.ts:1-200](file://src/lib/admin-users.server.ts#L1-L200)
@@ -532,10 +586,12 @@ SecTests --> DNSMock["Node DNS Module"]
 - [src/lib/queries/ticketAttachments.ts:1-242](file://src/lib/queries/ticketAttachments.ts#L1-L242)
 
 **Section sources**
+
 - [package.json:17-18](file://package.json#L17-L18)
 - [vite.config.ts:39-55](file://vite.config.ts#L39-L55)
 
 ## Performance Considerations
+
 - Favor mocking over real database connections to keep tests fast and deterministic.
 - Keep test suites focused and isolated; avoid cross-test state sharing.
 - Use hoisted mocks for stable behavior across module loads.
@@ -545,7 +601,9 @@ SecTests --> DNSMock["Node DNS Module"]
 - Prefer targeted assertions to reduce flakiness and improve readability.
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Mock not applied
   - Ensure mocks are hoisted and imported before the module under test.
   - Verify mock paths match the actual import paths used by the code.
@@ -566,28 +624,33 @@ Common issues and resolutions:
   - Ensure environment variables and secrets are properly injected.
 
 **Section sources**
-- [src/__tests__/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
-- [src/__tests__/lib/automation-runs.test.ts:64-156](file://src/__tests__/lib/automation-runs.test.ts#L64-L156)
-- [src/__tests__/ticketAttachments.test.ts:4-10](file://src/__tests__/ticketAttachments.test.ts#L4-L10)
-- [src/__tests__/webhook-ssrf.test.ts:19-28](file://src/__tests__/webhook-ssrf.test.ts#L19-L28)
+
+- [src/**tests**/lib/admin-users.test.ts:3-14](file://src/__tests__/lib/admin-users.test.ts#L3-L14)
+- [src/**tests**/lib/automation-runs.test.ts:64-156](file://src/__tests__/lib/automation-runs.test.ts#L64-L156)
+- [src/**tests**/ticketAttachments.test.ts:4-10](file://src/__tests__/ticketAttachments.test.ts#L4-L10)
+- [src/**tests**/webhook-ssrf.test.ts:19-28](file://src/__tests__/webhook-ssrf.test.ts#L19-L28)
 - [vite.config.ts:43-54](file://vite.config.ts#L43-L54)
 - [package.json:17](file://package.json#L17)
 
 ## Conclusion
+
 PCReady's enhanced testing strategy leverages Vitest to deliver comprehensive unit, integration, and security tests. The migration to hoisted mocks improves test stability and isolation, while enhanced file attachment validation provides robust security against malicious file uploads. The modernized test suite with helper functions reduces code duplication and improves maintainability. Component tests using React Testing Library ensure UI correctness, and security tests validate critical protections like SSRF prevention. The configured coverage thresholds and selective inclusion promote maintainable and meaningful test suites. Following the outlined patterns and best practices will help sustain high-quality software delivery with strong security guarantees.
 
 ## Appendices
 
 ### CI/CD Integration
+
 - GitHub Actions workflow executes tests and coverage reporting.
 - The test script invokes Vitest with coverage enabled.
 - Security tests and mutation tests are included in the comprehensive test suite.
 
 **Section sources**
+
 - [.github/workflows/test.yml:1-200](file://.github/workflows/test.yml#L1-L200)
 - [package.json:17](file://package.json#L17)
 
 ### Testing Best Practices
+
 - **Mock Management**: Use vi.hoisted() for stable mock instances across tests
 - **File Validation**: Implement comprehensive MIME type detection and extension validation
 - **Security Testing**: Include SSRF protection validation for network-dependent functionality
@@ -597,8 +660,9 @@ PCReady's enhanced testing strategy leverages Vitest to deliver comprehensive un
 - **Coverage**: Maintain balanced coverage thresholds while focusing on critical functionality
 
 ### Test Coverage Requirements
+
 - **Lines**: 60% minimum coverage threshold
-- **Functions**: 60% minimum coverage threshold  
+- **Functions**: 60% minimum coverage threshold
 - **Branches**: 50% minimum coverage threshold
 - **Modules**: Selective inclusion focusing on testable logic
 - **Exclusions**: Type declarations and non-executable server functions excluded from coverage calculations

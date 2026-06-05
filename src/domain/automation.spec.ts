@@ -69,14 +69,20 @@ describe("Automation DSL", () => {
 
   describe("Action DSL", () => {
     it("should create valid send_email action", () => {
-      const action = createDefaultAction("send_email") as { type: "send_email"; config: { subject: string; body: string } };
+      const action = createDefaultAction("send_email") as {
+        type: "send_email";
+        config: { subject: string; body: string };
+      };
       expect(action.type).toBe("send_email");
       expect(action.config.subject).toBe("");
       expect(action.config.body).toBe("");
     });
 
     it("should validate send_email action with schema", () => {
-      const action = createDefaultAction("send_email") as { type: "send_email"; config: { subject: string; body: string } };
+      const action = createDefaultAction("send_email") as {
+        type: "send_email";
+        config: { subject: string; body: string };
+      };
       action.config.subject = "Test Subject";
       action.config.body = "Test Body";
       const result = validateActions([action]);
@@ -84,26 +90,38 @@ describe("Automation DSL", () => {
     });
 
     it("should reject send_email without subject", () => {
-      const action = createDefaultAction("send_email") as { type: "send_email"; config: { subject: string } };
+      const action = createDefaultAction("send_email") as {
+        type: "send_email";
+        config: { subject: string };
+      };
       action.config.subject = "";
       const result = validateActions([action]);
       expect(result.valid).toBe(false);
     });
 
     it("should create valid update_ticket action", () => {
-      const action = createDefaultAction("update_ticket") as { type: "update_ticket"; config: object };
+      const action = createDefaultAction("update_ticket") as {
+        type: "update_ticket";
+        config: object;
+      };
       expect(action.type).toBe("update_ticket");
     });
 
     it("should validate update_ticket with at least one field", () => {
-      const action = createDefaultAction("update_ticket") as { type: "update_ticket"; config: { status?: string } };
+      const action = createDefaultAction("update_ticket") as {
+        type: "update_ticket";
+        config: { status?: string };
+      };
       action.config.status = "ready";
       const result = validateActions([action]);
       expect(result.valid).toBe(true);
     });
 
     it("should reject update_ticket without any field", () => {
-      const action = createDefaultAction("update_ticket") as { type: "update_ticket"; config: object };
+      const action = createDefaultAction("update_ticket") as {
+        type: "update_ticket";
+        config: object;
+      };
       const result = validateActions([action]);
       expect(result.valid).toBe(false);
     });
@@ -136,14 +154,20 @@ describe("Automation DSL", () => {
     });
 
     it("should serialize and deserialize trigger preserving config", () => {
-      const trigger = createDefaultTrigger("sla_due") as { type: "sla_due"; config: { hours_before: number } };
+      const trigger = createDefaultTrigger("sla_due") as {
+        type: "sla_due";
+        config: { hours_before: number };
+      };
       trigger.config.hours_before = 48;
 
       const serialized = serializeTrigger(trigger);
       expect(serialized.type).toBe("sla_warning");
       expect((serialized.config as { hours_before: number }).hours_before).toBe(48);
 
-      const deserialized = deserializeTrigger(serialized) as { type: "sla_due"; config: { hours_before: number } };
+      const deserialized = deserializeTrigger(serialized) as {
+        type: "sla_due";
+        config: { hours_before: number };
+      };
       expect(deserialized.type).toBe("sla_due");
       expect(deserialized.config.hours_before).toBe(48);
     });
@@ -279,7 +303,12 @@ describe("Automation DSL", () => {
         name: "Test Flow",
         trigger: createDefaultTrigger("ticket_created"),
         conditions: { conditions: [], logic: "AND" as const },
-        actions: [createDefaultAction("send_email") as { type: "send_email"; config: { subject: string; body: string } }],
+        actions: [
+          createDefaultAction("send_email") as {
+            type: "send_email";
+            config: { subject: string; body: string };
+          },
+        ],
       };
       flowInput.actions[0].config.subject = "Test";
       flowInput.actions[0].config.body = "Body";
@@ -314,7 +343,10 @@ describe("Automation DSL", () => {
     });
 
     it("should reject flow with invalid action", () => {
-      const action = createDefaultAction("send_email") as { type: "send_email"; config: { subject: string } };
+      const action = createDefaultAction("send_email") as {
+        type: "send_email";
+        config: { subject: string };
+      };
       action.config.subject = ""; // Invalid: empty subject
 
       const result = validateFlowInput({

@@ -76,9 +76,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
     return (
       <div className="pc-card">
         <div className="pc-card-hd">
-          <span className="pc-card-title">
-            {t("widgets.kanbanWip.title", "Limiti WIP Kanban")}
-          </span>
+          <span className="pc-card-title">{t("widgets.kanbanWip.title", "Limiti WIP Kanban")}</span>
         </div>
         <div className="pc-card-body">
           <div className="flex items-center justify-center py-6 text-sm text-text3">
@@ -96,9 +94,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
       <div className="pc-card-hd">
         <div className="flex items-center gap-2">
           <KanbanSquare className="size-4" />
-          <span className="pc-card-title">
-            {t("widgets.kanbanWip.title", "Limiti WIP Kanban")}
-          </span>
+          <span className="pc-card-title">{t("widgets.kanbanWip.title", "Limiti WIP Kanban")}</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-text3 font-mono">
@@ -122,14 +118,8 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
             const limit = wipLimits[status] ?? 0;
             const isOverLimit = limit > 0 && count > limit;
             const wipPct = limit > 0 ? (count / limit) * 100 : 0;
-            const barColor =
-              wipPct >= 90 ? "#DC2626" : wipPct >= 70 ? "#CA8A04" : "#16A34A";
-            const barBg =
-              wipPct >= 90
-                ? "#FEE2E2"
-                : wipPct >= 70
-                  ? "#FEF9C3"
-                  : "#DCFCE7";
+            const barColor = wipPct >= 90 ? "#DC2626" : wipPct >= 70 ? "#CA8A04" : "#16A34A";
+            const barBg = wipPct >= 90 ? "#FEE2E2" : wipPct >= 70 ? "#FEF9C3" : "#DCFCE7";
 
             return (
               <div
@@ -172,11 +162,7 @@ export function KanbanWipWidget({ accessToken }: KanbanWipWidgetProps) {
                   >
                     {count}
                   </span>
-                  {limit > 0 && (
-                    <span className="text-[12px] text-text3 font-mono">
-                      / {limit}
-                    </span>
-                  )}
+                  {limit > 0 && <span className="text-[12px] text-text3 font-mono">/ {limit}</span>}
                   {isOverLimit && (
                     <AlertTriangle className="size-4 text-red-500 ml-auto flex-shrink-0" />
                   )}

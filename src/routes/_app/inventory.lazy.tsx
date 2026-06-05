@@ -65,7 +65,11 @@ import {
   type TechnicianOption,
 } from "@/lib/maintenance";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
-import queries, { useInventoryInfiniteList, fetchAllDevicesList, fetchAllAssignedDeviceIds } from "@/lib/queries/inventory";
+import queries, {
+  useInventoryInfiniteList,
+  fetchAllDevicesList,
+  fetchAllAssignedDeviceIds,
+} from "@/lib/queries/inventory";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
 import {
   daysUntil,
@@ -219,13 +223,23 @@ function InventoryPage() {
   });
 
   const total = useMemo(() => listQuery.data?.pages?.[0]?.count ?? 0, [listQuery.data]);
-  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+  const {
+    containerRef: tableContainerRef,
+    virtualizer: rowVirtualizer,
+    virtualItems,
+    totalSize: virtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 40,
     overscan: 15,
     threshold: 50,
   });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+  const {
+    containerRef: mobileContainerRef,
+    virtualizer: mobileVirtualizer,
+    virtualItems: mobileVirtualItems,
+    totalSize: mobileVirtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 212,
     overscan: 5,
@@ -298,17 +312,34 @@ function InventoryPage() {
 
   const filterSummary = useMemo(() => {
     const lines: string[] = [];
-    if (fs) lines.push(`Stato: ${t("status." + fs, DEVICE_STATUS_META[fs as DeviceStatus]?.label || fs)}`);
+    if (fs)
+      lines.push(
+        `Stato: ${t("status." + fs, DEVICE_STATUS_META[fs as DeviceStatus]?.label || fs)}`,
+      );
     if (fos) lines.push(`OS: ${fos}`);
     if (fcategory) lines.push(`Categoria: ${getDeviceCategoryLabel(fcategory)}`);
     if (ftype) lines.push(`Tipo: ${ftype}`);
-    if (warrantyFilter !== "all") lines.push(`Garanzia: ${t("filters.warranty" + warrantyFilter.charAt(0).toUpperCase() + warrantyFilter.slice(1), warrantyFilter)}`);
+    if (warrantyFilter !== "all")
+      lines.push(
+        `Garanzia: ${t("filters.warranty" + warrantyFilter.charAt(0).toUpperCase() + warrantyFilter.slice(1), warrantyFilter)}`,
+      );
     if (maintenanceDueFilter) lines.push(t("filters.maintenanceDue30d"));
     if (withoutTicketFilter) lines.push(t("filters.withoutTicket", "Senza ticket"));
     if (updatedBeforeDays) lines.push(t("filters.notUpdatedX", { days: updatedBeforeDays }));
     if (q) lines.push(`Ricerca: "${q}"`);
     return lines.length ? lines : [`Nessun filtro attivo per dispositivo`];
-  }, [fs, fos, fcategory, ftype, warrantyFilter, maintenanceDueFilter, withoutTicketFilter, updatedBeforeDays, q, t]);
+  }, [
+    fs,
+    fos,
+    fcategory,
+    ftype,
+    warrantyFilter,
+    maintenanceDueFilter,
+    withoutTicketFilter,
+    updatedBeforeDays,
+    q,
+    t,
+  ]);
 
   function pdfRows(): DevicePdfRow[] {
     return data.map((r) => ({
@@ -429,7 +460,11 @@ function InventoryPage() {
             : r,
         ),
       );
-      toast.success(t("toast.statusUpdated", { status: t("status." + nextStatus, DEVICE_STATUS_META[nextStatus].label) }));
+      toast.success(
+        t("toast.statusUpdated", {
+          status: t("status." + nextStatus, DEVICE_STATUS_META[nextStatus].label),
+        }),
+      );
       void qc.invalidateQueries({ queryKey: ["inventory"] });
     } catch (error) {
       toast.error(errorMessage(error, t("toast.statusUpdateError")));
@@ -460,13 +495,17 @@ function InventoryPage() {
     setBulkStatusOpen(false);
     setSelectedIds(new Set());
     void qc.invalidateQueries({ queryKey: ["inventory"] });
-    toast.success(t("toast.bulkStatusUpdated", { success, failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "" }));
+    toast.success(
+      t("toast.bulkStatusUpdated", {
+        success,
+        failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "",
+      }),
+    );
   }
 
   async function openCompareDevices() {
     const ids = [...selectedIds];
-    if (ids.length < 2 || ids.length > 3)
-      return toast.error(t("toast.selectTwoOrThree"));
+    if (ids.length < 2 || ids.length > 3) return toast.error(t("toast.selectTwoOrThree"));
     setCompareBusy(true);
     try {
       const { data: rows, error } = await supabase
@@ -508,7 +547,12 @@ function InventoryPage() {
     setBulkTargetClientName("");
     setSelectedIds(new Set());
     void qc.invalidateQueries({ queryKey: ["inventory"] });
-    toast.success(t("toast.bulkStatusUpdated", { success, failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "" }));
+    toast.success(
+      t("toast.bulkStatusUpdated", {
+        success,
+        failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "",
+      }),
+    );
   }
 
   async function exportSelectedPdf() {
@@ -670,9 +714,7 @@ function InventoryPage() {
           </button>
         </div>
         <span className="self-center text-xs text-text3 font-mono lg:ml-auto">
-          {total
-            ? t("counts.range", { from: 1, to: loadedCount, total })
-            : t("counts.zeroDevices")}
+          {total ? t("counts.range", { from: 1, to: loadedCount, total }) : t("counts.zeroDevices")}
         </span>
         <button
           onClick={() => setExportModalOpen(true)}
@@ -770,28 +812,27 @@ function InventoryPage() {
       {view === "calendar" ? (
         <MaintenanceCalendarView onOpenDevice={openDeviceDetail} />
       ) : listQuery.isError ? (
-        <PageFetchError
-          message={t("error.pageFetch")}
-          onRetry={() => listQuery.refetch()}
-        />
+        <PageFetchError message={t("error.pageFetch")} onRetry={() => listQuery.refetch()} />
       ) : (
         <>
           <div
             ref={mobileContainerRef}
             className="md:hidden"
             style={{
-              maxHeight: data.length > 20 ? 'calc(100vh - 200px)' : undefined,
-              overflow: data.length > 20 ? 'auto' : undefined,
+              maxHeight: data.length > 20 ? "calc(100vh - 200px)" : undefined,
+              overflow: data.length > 20 ? "auto" : undefined,
             }}
           >
             {listLoading ? (
-              <div className="pc-card pc-card-body text-sm text-text3">{t("loading.inventory")}</div>
+              <div className="pc-card pc-card-body text-sm text-text3">
+                {t("loading.inventory")}
+              </div>
             ) : !data.length ? (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
                 <span dangerouslySetInnerHTML={{ __html: t("empty.mobile") }} />
               </div>
             ) : data.length > 20 ? (
-              <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+              <div style={{ position: "relative", height: mobileVirtualTotalSize }}>
                 {mobileVirtualItems.map((virtualItem) => {
                   const r = data[virtualItem.index];
                   return (
@@ -799,12 +840,12 @@ function InventoryPage() {
                       key={r.id}
                       ref={mobileVirtualizer.measureElement}
                       style={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         transform: `translateY(${virtualItem.start}px)`,
                         left: 0,
                         right: 0,
-                        marginBottom: '12px',
+                        marginBottom: "12px",
                       }}
                     >
                       <DeviceMobileCard
@@ -850,272 +891,283 @@ function InventoryPage() {
               ref={tableContainerRef}
               className="overflow-x-auto"
               style={{
-                maxHeight: 'calc(100vh - 180px)',
-                overflow: 'auto',
+                maxHeight: "calc(100vh - 180px)",
+                overflow: "auto",
               }}
             >
               <table className="w-full min-w-[1180px]">
-              <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                <tr>
-                  <th
-                    className="w-10 px-[14px] py-[9px] text-left border-b"
-                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                  >
-                    <input
-                      type="checkbox"
-                      aria-label={t("ariaLabels.selectPage")}
-                      checked={allPageSelected}
-                      onChange={(event) => togglePageSelected(event.target.checked)}
-                    />
-                  </th>
-                  {[
-                    t("columns.assetTag", "Asset tag"),
-                    t("columns.serial", "Seriale produttore"),
-                    t("columns.model", "Modello"),
-                    t("columns.category", "Categoria"),
-                    t("columns.deviceType", "Tipo"),
-                    t("columns.os", "OS"),
-                    t("columns.status", "Stato"),
-                    t("columns.warranty", "Garanzia"),
-                    t("columns.client", "Cliente"),
-                    t("columns.user", "Utente"),
-                    t("columns.updated", "Aggiornato"),
-                    t("columns.actions", "Azioni"),
-                  ].map((h) => (
+                <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
+                  <tr>
                     <th
-                      key={h}
-                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      className="w-10 px-[14px] py-[9px] text-left border-b"
                       style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
                     >
-                      {h}
+                      <input
+                        type="checkbox"
+                        aria-label={t("ariaLabels.selectPage")}
+                        checked={allPageSelected}
+                        onChange={(event) => togglePageSelected(event.target.checked)}
+                      />
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {listLoading ? (
-                  <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
-                ) : !data.length ? (
-                  <tr>
-                    <td colSpan={13} className="text-center py-12 text-text3 text-sm">
-                      <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
-                    </td>
+                    {[
+                      t("columns.assetTag", "Asset tag"),
+                      t("columns.serial", "Seriale produttore"),
+                      t("columns.model", "Modello"),
+                      t("columns.category", "Categoria"),
+                      t("columns.deviceType", "Tipo"),
+                      t("columns.os", "OS"),
+                      t("columns.status", "Stato"),
+                      t("columns.warranty", "Garanzia"),
+                      t("columns.client", "Cliente"),
+                      t("columns.user", "Utente"),
+                      t("columns.updated", "Aggiornato"),
+                      t("columns.actions", "Azioni"),
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ) : data.length > 50 ? (
-                  <>
-                    {virtualItems.length > 0 && virtualItems[0].start > 0 && (
-                      <tr style={{ height: virtualItems[0].start, visibility: 'hidden' }}>
-                        <td colSpan={13} />
-                      </tr>
-                    )}
-                    {virtualItems.map((virtualItem) => {
-                      const r = data[virtualItem.index];
-                      return (
-                        <tr
-                          key={r.id}
-                          ref={rowVirtualizer.measureElement}
-                          className="border-b hover:bg-surface2 transition-colors cursor-pointer"
-                          style={{ borderColor: "var(--border)" }}
-                          onClick={() => openDeviceDetail(r.id)}
-                        >
-                          <td
-                            className="px-[14px] py-[10px]"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <input
-                              type="checkbox"
-                              aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
-                              checked={selectedIds.has(r.id)}
-                              onChange={(event) => toggleSelected(r.id, event.target.checked)}
-                            />
-                          </td>
-                          <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                            {r.asset_tag || r.id.slice(0, 8)}
-                          </td>
-                          <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                            {r.serial || "-"}
-                          </td>
-                          <td className="px-[14px] py-[10px] text-[12.5px]">
-                            <div>{r.model}</div>
-                            {r.has_maintenance_due_soon ? (
-                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                                <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
-                                {r.next_maintenance_due_date
-                                  ? fmtDate(r.next_maintenance_due_date)
-                                  : t("maintenance.expiring")}
-                              </div>
-                            ) : null}
-                          </td>
-                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                            {getDeviceCategoryLabel(r.category)}
-                          </td>
-                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                            {r.device_type || "-"}
-                          </td>
-                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                            {r.os || "-"}
-                          </td>
-                          <td
-                            className="px-[14px] py-[10px]"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <DeviceStatusBadge
-                              deviceId={r.id}
-                              status={r.status}
-                              hasActiveAssignment={!!r.has_active_assignment}
-                              saving={statusSavingId === r.id}
-                              onStatusChange={handleStatusChange}
-                            />
-                          </td>
-                          <td className="px-[14px] py-[10px]">
-                            <WarrantyBadge expiryDate={r.warranty_expiry_date} />
-                          </td>
-                          <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
-                          <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                          <td
-                            className="px-[14px] py-[10px] text-[11px] text-text3"
-                            title={r.updated_at}
-                          >
-                            {fmtDate(r.updated_at)}
-                          </td>
-                          <td
-                            className="px-[14px] py-[10px]"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <div className="flex items-center gap-1">
-                              <button
-                                className="pc-btn-icon touch-target"
-                                title={t("actions.createTicket")}
-                                aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
-                                onClick={() => {
-                                  openDeviceDetail(r.id);
-                                  setTimeout(() => openCreate(), 200);
-                                }}
-                              >
-                                <TicketPlus className="size-3.5" />
-                              </button>
-                              <button
-                                className="pc-btn-icon touch-target"
-                                title={t("actions.qr")}
-                                aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
-                                onClick={() => setQrDevice(toQrDevice(r))}
-                              >
-                                <QrCode className="size-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {virtualItems.length > 0 && (() => {
-                      const lastItem = virtualItems[virtualItems.length - 1];
-                      const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
-                      return bottomHeight > 0 ? (
-                        <tr style={{ height: bottomHeight, visibility: 'hidden' }}>
-                          <td colSpan={13} />
-                        </tr>
-                      ) : null;
-                    })()}
-                  </>
-                ) : (
-                  data.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="border-b hover:bg-surface2 transition-colors cursor-pointer"
-                      style={{ borderColor: "var(--border)" }}
-                      onClick={() => openDeviceDetail(r.id)}
-                    >
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
-                          checked={selectedIds.has(r.id)}
-                          onChange={(event) => toggleSelected(r.id, event.target.checked)}
-                        />
-                      </td>
-                      <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                        {r.asset_tag || r.id.slice(0, 8)}
-                      </td>
-                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                        {r.serial || "-"}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12.5px]">
-                        <div>{r.model}</div>
-                        {r.has_maintenance_due_soon ? (
-                          <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                            <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
-                            {r.next_maintenance_due_date
-                              ? fmtDate(r.next_maintenance_due_date)
-                              : t("maintenance.expiring")}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                        {getDeviceCategoryLabel(r.category)}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                        {r.device_type || "-"}
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                        {r.os || "-"}
-                      </td>
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <DeviceStatusBadge
-                          deviceId={r.id}
-                          status={r.status}
-                          hasActiveAssignment={!!r.has_active_assignment}
-                          saving={statusSavingId === r.id}
-                          onStatusChange={handleStatusChange}
-                        />
-                      </td>
-                      <td className="px-[14px] py-[10px]">
-                        <WarrantyBadge expiryDate={r.warranty_expiry_date} />
-                      </td>
-                      <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
-                      <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
-                      <td
-                        className="px-[14px] py-[10px] text-[11px] text-text3"
-                        title={r.updated_at}
-                      >
-                        {fmtDate(r.updated_at)}
-                      </td>
-                      <td
-                        className="px-[14px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <div className="flex items-center gap-1">
-                          <button
-                            className="pc-btn-icon touch-target"
-                            title={t("actions.createTicket")}
-                            aria-label={t("ariaLabels.createTicketFor", { name: r.serial || r.id })}
-                            onClick={() => {
-                              openDeviceDetail(r.id);
-                              setTimeout(() => openCreate(), 200);
-                            }}
-                          >
-                            <TicketPlus className="size-3.5" />
-                          </button>
-                          <button
-                            className="pc-btn-icon touch-target"
-                            title={t("actions.qr")}
-                            aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
-                            onClick={() => setQrDevice(toQrDevice(r))}
-                          >
-                            <QrCode className="size-3.5" />
-                          </button>
-                        </div>
+                </thead>
+                <tbody>
+                  {listLoading ? (
+                    <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
+                  ) : !data.length ? (
+                    <tr>
+                      <td colSpan={13} className="text-center py-12 text-text3 text-sm">
+                        <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : data.length > 50 ? (
+                    <>
+                      {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                        <tr style={{ height: virtualItems[0].start, visibility: "hidden" }}>
+                          <td colSpan={13} />
+                        </tr>
+                      )}
+                      {virtualItems.map((virtualItem) => {
+                        const r = data[virtualItem.index];
+                        return (
+                          <tr
+                            key={r.id}
+                            ref={rowVirtualizer.measureElement}
+                            className="border-b hover:bg-surface2 transition-colors cursor-pointer"
+                            style={{ borderColor: "var(--border)" }}
+                            onClick={() => openDeviceDetail(r.id)}
+                          >
+                            <td
+                              className="px-[14px] py-[10px]"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                aria-label={t("ariaLabels.selectDevice", {
+                                  name: r.serial || r.id,
+                                })}
+                                checked={selectedIds.has(r.id)}
+                                onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                              />
+                            </td>
+                            <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                              {r.asset_tag || r.id.slice(0, 8)}
+                            </td>
+                            <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                              {r.serial || "-"}
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12.5px]">
+                              <div>{r.model}</div>
+                              {r.has_maintenance_due_soon ? (
+                                <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                  <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
+                                  {r.next_maintenance_due_date
+                                    ? fmtDate(r.next_maintenance_due_date)
+                                    : t("maintenance.expiring")}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                              {getDeviceCategoryLabel(r.category)}
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                              {r.device_type || "-"}
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                              {r.os || "-"}
+                            </td>
+                            <td
+                              className="px-[14px] py-[10px]"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <DeviceStatusBadge
+                                deviceId={r.id}
+                                status={r.status}
+                                hasActiveAssignment={!!r.has_active_assignment}
+                                saving={statusSavingId === r.id}
+                                onStatusChange={handleStatusChange}
+                              />
+                            </td>
+                            <td className="px-[14px] py-[10px]">
+                              <WarrantyBadge expiryDate={r.warranty_expiry_date} />
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12px]">
+                              {r.client?.name || "-"}
+                            </td>
+                            <td className="px-[14px] py-[10px] text-[12px]">
+                              {r.assigned_to || "-"}
+                            </td>
+                            <td
+                              className="px-[14px] py-[10px] text-[11px] text-text3"
+                              title={r.updated_at}
+                            >
+                              {fmtDate(r.updated_at)}
+                            </td>
+                            <td
+                              className="px-[14px] py-[10px]"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <div className="flex items-center gap-1">
+                                <button
+                                  className="pc-btn-icon touch-target"
+                                  title={t("actions.createTicket")}
+                                  aria-label={t("ariaLabels.createTicketFor", {
+                                    name: r.serial || r.id,
+                                  })}
+                                  onClick={() => {
+                                    openDeviceDetail(r.id);
+                                    setTimeout(() => openCreate(), 200);
+                                  }}
+                                >
+                                  <TicketPlus className="size-3.5" />
+                                </button>
+                                <button
+                                  className="pc-btn-icon touch-target"
+                                  title={t("actions.qr")}
+                                  aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
+                                  onClick={() => setQrDevice(toQrDevice(r))}
+                                >
+                                  <QrCode className="size-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {virtualItems.length > 0 &&
+                        (() => {
+                          const lastItem = virtualItems[virtualItems.length - 1];
+                          const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
+                          return bottomHeight > 0 ? (
+                            <tr style={{ height: bottomHeight, visibility: "hidden" }}>
+                              <td colSpan={13} />
+                            </tr>
+                          ) : null;
+                        })()}
+                    </>
+                  ) : (
+                    data.map((r) => (
+                      <tr
+                        key={r.id}
+                        className="border-b hover:bg-surface2 transition-colors cursor-pointer"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => openDeviceDetail(r.id)}
+                      >
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            aria-label={t("ariaLabels.selectDevice", { name: r.serial || r.id })}
+                            checked={selectedIds.has(r.id)}
+                            onChange={(event) => toggleSelected(r.id, event.target.checked)}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                          {r.asset_tag || r.id.slice(0, 8)}
+                        </td>
+                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                          {r.serial || "-"}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12.5px]">
+                          <div>{r.model}</div>
+                          {r.has_maintenance_due_soon ? (
+                            <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                              <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
+                              {r.next_maintenance_due_date
+                                ? fmtDate(r.next_maintenance_due_date)
+                                : t("maintenance.expiring")}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {getDeviceCategoryLabel(r.category)}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {r.device_type || "-"}
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                          {r.os || "-"}
+                        </td>
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <DeviceStatusBadge
+                            deviceId={r.id}
+                            status={r.status}
+                            hasActiveAssignment={!!r.has_active_assignment}
+                            saving={statusSavingId === r.id}
+                            onStatusChange={handleStatusChange}
+                          />
+                        </td>
+                        <td className="px-[14px] py-[10px]">
+                          <WarrantyBadge expiryDate={r.warranty_expiry_date} />
+                        </td>
+                        <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
+                        <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
+                        <td
+                          className="px-[14px] py-[10px] text-[11px] text-text3"
+                          title={r.updated_at}
+                        >
+                          {fmtDate(r.updated_at)}
+                        </td>
+                        <td
+                          className="px-[14px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="pc-btn-icon touch-target"
+                              title={t("actions.createTicket")}
+                              aria-label={t("ariaLabels.createTicketFor", {
+                                name: r.serial || r.id,
+                              })}
+                              onClick={() => {
+                                openDeviceDetail(r.id);
+                                setTimeout(() => openCreate(), 200);
+                              }}
+                            >
+                              <TicketPlus className="size-3.5" />
+                            </button>
+                            <button
+                              className="pc-btn-icon touch-target"
+                              title={t("actions.qr")}
+                              aria-label={t("ariaLabels.qrDevice", { name: r.serial || r.id })}
+                              onClick={() => setQrDevice(toQrDevice(r))}
+                            >
+                              <QrCode className="size-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </>
@@ -1127,7 +1179,11 @@ function InventoryPage() {
           )}
           {!listQuery.hasNextPage && loadedCount > 0 && (
             <span className="text-xs text-text3 font-mono">
-              {t("counts.allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+              {t("counts.allLoaded", {
+                count: loadedCount,
+                total,
+                defaultValue: "Tutti {{count}} di {{total}} caricati",
+              })}
             </span>
           )}
         </div>
@@ -1395,7 +1451,10 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
               <div
                 className={`mb-2 text-xs font-semibold ${isToday ? "text-accent" : "text-text3"}`}
               >
-                {new Date(day).toLocaleDateString(i18n.language, { weekday: "short", day: "2-digit" })}
+                {new Date(day).toLocaleDateString(i18n.language, {
+                  weekday: "short",
+                  day: "2-digit",
+                })}
               </div>
               <div className="flex flex-col gap-1.5">
                 {dayItems.map((item) => {
@@ -1412,7 +1471,9 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
                       <div className="font-semibold" style={{ color: meta.color }}>
                         {item.title}
                       </div>
-                       <div className="text-text2">{item.device?.model || t("maintenance.device")}</div>
+                      <div className="text-text2">
+                        {item.device?.model || t("maintenance.device")}
+                      </div>
                       <div className="font-mono text-text3">
                         {item.device?.serial || item.device_id.slice(0, 8)}
                       </div>
@@ -1453,9 +1514,15 @@ function CompareDevicesModal({
     [t("compare.specs.status"), (row) => DEVICE_STATUS_META[row.status]?.label || row.status],
     [t("compare.specs.client"), (row) => row.client?.name || "—"],
     [t("compare.specs.cpu"), (row) => row.cpu_name || "—"],
-    [t("compare.specs.cpuFrequency"), (row) => (row.cpu_frequency_ghz ? `${row.cpu_frequency_ghz} GHz` : "—")],
+    [
+      t("compare.specs.cpuFrequency"),
+      (row) => (row.cpu_frequency_ghz ? `${row.cpu_frequency_ghz} GHz` : "—"),
+    ],
     [t("compare.specs.cores"), (row) => (row.cpu_cores ? String(row.cpu_cores) : "—")],
-    [t("compare.specs.ram"), (row) => (row.ram_gb ? `${row.ram_gb} GB ${row.ram_type || ""}`.trim() : "—")],
+    [
+      t("compare.specs.ram"),
+      (row) => (row.ram_gb ? `${row.ram_gb} GB ${row.ram_type || ""}`.trim() : "—"),
+    ],
     [
       t("compare.specs.storage"),
       (row) =>
@@ -1463,7 +1530,10 @@ function CompareDevicesModal({
           ? `${row.storage_capacity_gb} GB ${row.storage_type || ""}`.trim()
           : "—",
     ],
-    [t("compare.specs.drive"), (row) => (row.storage_drive_count ? String(row.storage_drive_count) : "—")],
+    [
+      t("compare.specs.drive"),
+      (row) => (row.storage_drive_count ? String(row.storage_drive_count) : "—"),
+    ],
     [
       t("compare.specs.os"),
       (row) => [row.os, row.os_version, row.os_architecture].filter(Boolean).join(" · ") || "—",
@@ -1483,7 +1553,10 @@ function CompareDevicesModal({
       t("compare.specs.connectivity"),
       (row) => [row.wifi, row.ethernet, row.bluetooth].filter(Boolean).join(" · ") || "—",
     ],
-    [t("compare.specs.warranty"), (row) => WARRANTY_STATUS_META[getWarrantyStatus(row.warranty_expiry_date)].label],
+    [
+      t("compare.specs.warranty"),
+      (row) => WARRANTY_STATUS_META[getWarrantyStatus(row.warranty_expiry_date)].label,
+    ],
   ];
 
   return (
@@ -1546,7 +1619,9 @@ function WarrantyBadge({ expiryDate }: { expiryDate: string | null }) {
   const meta = WARRANTY_STATUS_META[status];
   const days = daysUntil(expiryDate);
   const title =
-    days === null ? t("warrantyBadge.noExpiry") : t("warrantyBadge.expiresOn", { date: fmtDate(expiryDate!) });
+    days === null
+      ? t("warrantyBadge.noExpiry")
+      : t("warrantyBadge.expiresOn", { date: fmtDate(expiryDate!) });
   const subtitle =
     days === null
       ? null
@@ -1631,7 +1706,10 @@ function DeviceMobileCard({
       {row.has_maintenance_due_soon ? (
         <div className="mt-3 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
           <Wrench className="size-3" />
-          {t("maintenance.dueSoon", "Manutenzione")} {row.next_maintenance_due_date ? fmtDate(row.next_maintenance_due_date) : t("maintenance.expiring", "in scadenza")}
+          {t("maintenance.dueSoon", "Manutenzione")}{" "}
+          {row.next_maintenance_due_date
+            ? fmtDate(row.next_maintenance_due_date)
+            : t("maintenance.expiring", "in scadenza")}
         </div>
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1676,7 +1754,10 @@ function DeviceStatusBadge({
     return (
       <span
         className="pc-badge"
-        title={t("details.readOnlyAssigned", "Assegnazione ticket attiva: per coerenza modifica lo stato dal flusso ticket.")}
+        title={t(
+          "details.readOnlyAssigned",
+          "Assegnazione ticket attiva: per coerenza modifica lo stato dal flusso ticket.",
+        )}
         style={{ color: meta.color, background: `${meta.color}26` }}
       >
         {t("status." + status, meta.label)}
@@ -1711,7 +1792,6 @@ function DeviceStatusBadge({
     </select>
   );
 }
-
 
 function toQrDevice(row: Row): QrDevice {
   return { id: row.id, serial: row.asset_tag || row.serial, model: row.model };

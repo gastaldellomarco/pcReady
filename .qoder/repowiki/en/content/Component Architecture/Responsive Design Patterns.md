@@ -20,7 +20,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Added comprehensive documentation for the new OverflowTable component and its role in mobile-responsive table design
 - Enhanced mobile audit documentation covering touch targets, horizontal overflow issues, and systematic responsive improvements
 - Updated dashboard widget responsive behavior with mobile-first grid adaptations
@@ -28,6 +30,7 @@
 - Expanded mobile primitives documentation including touch targets, safe areas, and overflow utilities
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -41,7 +44,9 @@
 11. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the responsive design patterns and mobile-first approach implemented in the project. It focuses on:
+
 - The use-mobile hook for runtime device detection and dynamic UI adaptation
 - Breakpoints, layout systems, and component-level responsive behavior
 - Mobile navigation patterns, touch-friendly interactions, and gesture support
@@ -51,6 +56,7 @@ This document explains the responsive design patterns and mobile-first approach 
 - Comprehensive mobile audit findings and systematic responsive improvements
 
 ## Project Structure
+
 The responsive system centers around a lightweight device detection hook and UI primitives that adapt to screen size and interaction mode. Recent enhancements include the new OverflowTable component for handling dense content on mobile devices and systematic improvements across dashboard widgets, import dialogs, and maintenance panels.
 
 ```mermaid
@@ -96,6 +102,7 @@ MA --> ST
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [sidebar.tsx:1-745](file://src/components/ui/sidebar.tsx#L1-L745)
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
@@ -108,10 +115,12 @@ MA --> ST
 - [mobile-audit.md:1-98](file://docs/mobile-audit.md#L1-L98)
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [styles.css:410-697](file://src/styles.css#L410-L697)
 
 ## Core Components
+
 - Device detection hook: Provides a boolean flag indicating whether the current viewport qualifies as mobile, enabling conditional rendering and behavior changes.
 - Layout primitives: Sidebar adapts to mobile via a Sheet overlay; Drawer offers a touch-friendly bottom sheet pattern.
 - Dense content handling: OverflowTable provides a focusable horizontal scroll region with touch scrolling for tables with many columns.
@@ -122,6 +131,7 @@ MA --> ST
 - Styles: CSS custom properties and Tailwind utilities define consistent spacing, typography, and dark mode behavior with mobile-specific utilities.
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [sidebar.tsx:1-745](file://src/components/ui/sidebar.tsx#L1-L745)
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
@@ -133,7 +143,9 @@ MA --> ST
 - [styles.css:410-697](file://src/styles.css#L410-L697)
 
 ## Architecture Overview
+
 The responsive architecture follows a mobile-first strategy with recent enhancements for handling dense content and systematic improvements across core application areas:
+
 - A single source of truth for device state (useIsMobile) informs UI decisions
 - Desktop and mobile views are explicitly differentiated in layout components
 - Touch-friendly affordances (larger hit areas, gestures) are applied on mobile
@@ -160,6 +172,7 @@ OverflowTable->>Browser : "Horizontal scroll for dense content"
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [sidebar.tsx:189-211](file://src/components/ui/sidebar.tsx#L189-L211)
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
@@ -168,6 +181,7 @@ OverflowTable->>Browser : "Horizontal scroll for dense content"
 ## Detailed Component Analysis
 
 ### Device Detection Hook: useIsMobile
+
 - Purpose: Detects mobile viewport and updates on resize/matchMedia events
 - Behavior: Returns a boolean suitable for conditional rendering and logic branching
 - Implementation highlights:
@@ -187,12 +201,15 @@ Cleanup --> End(["Return isMobile"])
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:5-19](file://src/hooks/use-mobile.tsx#L5-L19)
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 
 ### OverflowTable: Horizontal Scroll Component
+
 - Purpose: Provides a focusable horizontal scroll region for tables with many columns
 - Key features:
   - Max-width containment with overflow-x-auto
@@ -229,12 +246,15 @@ ContainerDiv --> InnerDiv : "contains table"
 ```
 
 **Diagram sources**
+
 - [overflow-table.tsx:9-24](file://src/components/ui/overflow-table.tsx#L9-L24)
 
 **Section sources**
+
 - [overflow-table.tsx:1-24](file://src/components/ui/overflow-table.tsx#L1-L24)
 
 ### Sidebar: Adaptive Navigation
+
 - Mobile adaptation:
   - Uses a Sheet overlay when isMobile is true
   - Applies a dedicated mobile width constant
@@ -265,13 +285,16 @@ end
 ```
 
 **Diagram sources**
+
 - [sidebar.tsx:69-94](file://src/components/ui/sidebar.tsx#L69-L94)
 - [sidebar.tsx:189-211](file://src/components/ui/sidebar.tsx#L189-L211)
 
 **Section sources**
+
 - [sidebar.tsx:1-745](file://src/components/ui/sidebar.tsx#L1-L745)
 
 ### Drawer: Touch-Friendly Bottom Sheet
+
 - Pattern: Bottom sheet overlay with backdrop scaling
 - Structure: Root, Portal, Overlay, Content, Header/Footer, Title/Description
 - Usage: Ideal for mobile filters, actions, and secondary navigation
@@ -302,12 +325,15 @@ DrawerContent --> DrawerDescription : "contains"
 ```
 
 **Diagram sources**
+
 - [drawer.tsx:6-99](file://src/components/ui/drawer.tsx#L6-L99)
 
 **Section sources**
+
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
 
 ### User Menu: Responsive Dropdown Trigger
+
 - Uses a DropdownMenu with a trigger styled for compact horizontal layout
 - Avatar fallback supports both image and initials
 - Role label and name truncate appropriately on small screens
@@ -323,12 +349,15 @@ Menu-->>User : "Show menu items"
 ```
 
 **Diagram sources**
+
 - [UserMenu.tsx:20-69](file://src/components/layout/UserMenu.tsx#L20-L69)
 
 **Section sources**
+
 - [UserMenu.tsx:1-101](file://src/components/layout/UserMenu.tsx#L1-L101)
 
 ### Notification Bell and Inbox: Adaptive Popover
+
 - NotificationBell:
   - Popover trigger with unread badge
   - Loads notifications and unread counts via server functions
@@ -351,14 +380,17 @@ Inbox-->>User : "Display notifications and actions"
 ```
 
 **Diagram sources**
+
 - [NotificationBell.tsx:19-141](file://src/components/layout/NotificationBell.tsx#L19-L141)
 - [NotificationInbox.tsx:13-107](file://src/components/layout/NotificationInbox.tsx#L13-L107)
 
 **Section sources**
+
 - [NotificationBell.tsx:1-141](file://src/components/layout/NotificationBell.tsx#L1-L141)
 - [NotificationInbox.tsx:1-107](file://src/components/layout/NotificationInbox.tsx#L1-L107)
 
 ### Portal Layout: Minimal Responsive Container
+
 - Header with brand and navigation links
 - Uses responsive spacing and hides subheading on small screens
 - Main content constrained to a max width with padding
@@ -372,12 +404,15 @@ Header --> Nav["Responsive nav links"]
 ```
 
 **Diagram sources**
+
 - [PortalLayout.tsx:5-36](file://src/components/portal/PortalLayout.tsx#L5-L36)
 
 **Section sources**
+
 - [PortalLayout.tsx:1-36](file://src/components/portal/PortalLayout.tsx#L1-L36)
 
 ### Dashboard Widgets: Mobile-First Responsive Design
+
 - Grid adaptations:
   - Statistics cards use responsive grid: 1 column on phones, 2 on tablets, 4 on desktops
   - Widget settings panel uses mobile-friendly drag handles with touch targets
@@ -389,11 +424,13 @@ Header --> Nav["Responsive nav links"]
   - Maintains full table layout on larger screens
 
 **Section sources**
+
 - [DashboardStatWidgets.tsx:328-361](file://src/components/dashboard/DashboardStatWidgets.tsx#L328-L361)
 - [WidgetSettingsPanel.tsx:54-74](file://src/components/dashboard/WidgetSettingsPanel.tsx#L54-L74)
 - [dashboard.tsx:1012-1076](file://src/routes/_app/dashboard.tsx#L1012-L1076)
 
 ### Import Dialogs: Responsive Modal Sizing
+
 - Responsive modal behavior:
   - Modals become full-screen on mobile viewports
   - Step indicators adapt to available space
@@ -403,10 +440,12 @@ Header --> Nav["Responsive nav links"]
   - Responsive file upload area with clear visual feedback
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:98-139](file://src/components/inventory/ImportCsvDialog.tsx#L98-L139)
 - [clients.tsx:1822-1838](file://src/routes/_app/clients.tsx#L1822-L1838)
 
 ### Maintenance Panels: Adaptive Content Presentation
+
 - Mobile adaptation:
   - Switch between card-based and table-based layouts based on viewport
   - Use OverflowTable for horizontal scrolling when needed
@@ -416,15 +455,18 @@ Header --> Nav["Responsive nav links"]
   - Advanced filtering and sorting capabilities
 
 **Section sources**
+
 - [MaintenanceSchedulePanel.tsx:137-151](file://src/components/inventory/MaintenanceSchedulePanel.tsx#L137-L151)
 - [dashboard.tsx:1004-1098](file://src/routes/_app/dashboard.tsx#L1004-L1098)
 
 ## Mobile Audit and Responsive Improvements
 
 ### Comprehensive Mobile Audit Findings
+
 The recent mobile audit identified and addressed critical responsive issues across the application:
 
 **Blocking issues addressed:**
+
 - Desktop header CTAs consuming too much mobile width
 - Main content inheriting desktop padding causing cramped layouts
 - Custom modals not becoming full-screen on 320-390 px viewports
@@ -433,17 +475,21 @@ The recent mobile audit identified and addressed critical responsive issues acro
 - Dashboard stat grid using two columns on the smallest phones
 
 **Medium issues addressed:**
+
 - Touch targets on buttons/icon controls being too small
 - Tabs overflowing with many visible labels
 - Dashboard widget settings drawer having small drag/visibility controls
 - Dense dashboard tables lacking explicit minimum table widths
 
 **Cosmetic issues addressed:**
+
 - Long stat values and labels overflowing cards
 - Mobile card/table containers lacking consistent `min-w-0` and word breaking
 
 ### Systematic Responsive Improvements
+
 **Shared responsive primitives:**
+
 - App shell now uses `min-h-dvh`, `overflow-x-hidden`, mobile padding, and truncating page title
 - Mobile header hides desktop CTAs and exposes single icon CTA for new tickets
 - Navigation links meet 44px touch target requirement
@@ -452,22 +498,26 @@ The recent mobile audit identified and addressed critical responsive issues acro
 - Added `break-anywhere`, safe-area, and touch scroll utilities
 
 **Overlays:**
+
 - Custom modals become full-screen on mobile and constrained on desktop
 - Dialogs are full-screen/scrollable on mobile and centered on desktop
 - Alert dialogs use inset and scrollable behavior on mobile
 - Sheet components have touch-friendly close targets
 
 **Dense content:**
+
 - OverflowTable component provides focusable horizontal scroll regions
 - Tabs implement horizontal scrolling on small screens
 - Dashboard stat cards collapse to one column on phones
 - Inventory uses mobile cards below `md` while keeping full tables for tablet/desktop
 
 **Section sources**
+
 - [mobile-audit.md:17-98](file://docs/mobile-audit.md#L17-L98)
 - [styles.css:410-697](file://src/styles.css#L410-L697)
 
 ## Dependency Analysis
+
 - useIsMobile is consumed by SidebarProvider to decide between Sheet and fixed sidebar
 - OverflowTable is used within dashboard widgets and maintenance panels for dense content
 - Mobile audit utilities influence styling across all components
@@ -501,6 +551,7 @@ MA["Mobile Audit Utils"] --> ST
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [sidebar.tsx:1-745](file://src/components/ui/sidebar.tsx#L1-L745)
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
@@ -511,6 +562,7 @@ MA["Mobile Audit Utils"] --> ST
 - [mobile-audit.md:40-64](file://docs/mobile-audit.md#L40-L64)
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [sidebar.tsx:1-745](file://src/components/ui/sidebar.tsx#L1-L745)
 - [drawer.tsx:1-99](file://src/components/ui/drawer.tsx#L1-L99)
@@ -518,6 +570,7 @@ MA["Mobile Audit Utils"] --> ST
 - [styles.css:410-697](file://src/styles.css#L410-L697)
 
 ## Performance Considerations
+
 - Bundle size optimization
   - Prefer tree-shaking and modular imports for UI components
   - Lazy-load heavy components or routes when appropriate
@@ -537,6 +590,7 @@ MA["Mobile Audit Utils"] --> ST
   - Responsive modals minimize layout shifts during viewport changes
 
 ## Troubleshooting Guide
+
 - Sidebar does not open on mobile
   - Verify useIsMobile returns true for the current viewport
   - Confirm Sheet overlay is rendered and not blocked by z-index
@@ -564,11 +618,13 @@ MA["Mobile Audit Utils"] --> ST
   - Ensure footer buttons maintain touch targets
 
 ## Conclusion
+
 The project adopts a pragmatic mobile-first responsive strategy centered on a simple device detection hook and adaptable UI primitives. Recent enhancements include the new OverflowTable component for handling dense content, systematic improvements across dashboard widgets, import dialogs, and maintenance panels, along with comprehensive mobile audit documentation. Components differentiate mobile and desktop experiences while maintaining a consistent design system through CSS custom properties and Tailwind utilities. The mobile audit process ensures systematic identification and resolution of responsive issues, with accessibility and performance addressed through thoughtful component composition, gesture-friendly interactions, and structured state management.
 
 ## Appendices
 
 ### Responsive Breakpoints and Grid Systems
+
 - Breakpoint strategy
   - Mobile detection uses a fixed 960px threshold; desktop/desktop-like behavior applies when the viewport exceeds this threshold
   - No explicit CSS media queries are present in the analyzed files; responsiveness is driven by component logic and CSS custom properties
@@ -580,12 +636,14 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
   - Mobile audit introduces safe-area utilities for modern mobile devices
 
 **Section sources**
+
 - [use-mobile.tsx:3](file://src/hooks/use-mobile.tsx#L3)
 - [styles.css:410-478](file://src/styles.css#L410-L478)
 - [mobile-audit.md:7](file://docs/mobile-audit.md#L7)
 - [DashboardStatWidgets.tsx:328](file://src/components/dashboard/DashboardStatWidgets.tsx#L328)
 
 ### Mobile Navigation Patterns and Touch Interactions
+
 - Sheet-based mobile navigation
   - Sidebar switches to a Sheet overlay on mobile, with a dedicated width constant
   - Overlay hides close buttons to reduce clutter
@@ -599,6 +657,7 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
   - OverflowTable provides smooth horizontal scrolling for portrait/landscape transitions
 
 **Section sources**
+
 - [sidebar.tsx:189-211](file://src/components/ui/sidebar.tsx#L189-L211)
 - [sidebar.tsx:456-460](file://src/components/ui/sidebar.tsx#L456-L460)
 - [drawer.tsx:32-51](file://src/components/ui/drawer.tsx#L32-L51)
@@ -606,6 +665,7 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
 - [mobile-audit.md:46-49](file://docs/mobile-audit.md#L46-L49)
 
 ### Accessibility and Responsive Design
+
 - Semantic markup and roles
   - Popovers and sheets include accessible headers and descriptions
   - OverflowTable provides ARIA labeling for screen readers
@@ -620,12 +680,14 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
   - Mobile audit validates accessibility compliance across breakpoints
 
 **Section sources**
+
 - [sidebar.tsx:203-206](file://src/components/ui/sidebar.tsx#L203-L206)
 - [overflow-table.tsx:16-19](file://src/components/ui/overflow-table.tsx#L16-L19)
 - [styles.css:91-118](file://src/styles.css#L91-L118)
 - [mobile-audit.md:17-39](file://docs/mobile-audit.md#L17-L39)
 
 ### Cross-Platform Compatibility and Browser Behaviors
+
 - Feature detection
   - MatchMedia is used for responsive logic; ensure fallbacks for older browsers
   - Mobile audit utilities use modern CSS features with appropriate fallbacks
@@ -638,12 +700,14 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
   - Touch scrolling optimized with -webkit-overflow-scrolling: touch
 
 **Section sources**
+
 - [use-mobile.tsx:8-16](file://src/hooks/use-mobile.tsx#L8-L16)
 - [drawer.tsx:1-12](file://src/components/ui/drawer.tsx#L1-L12)
 - [overflow-table.tsx:13](file://src/components/ui/overflow-table.tsx#L13)
 - [mobile-audit.md:49-56](file://docs/mobile-audit.md#L49-L56)
 
 ### Testing Guidelines
+
 - Device emulation
   - Test on representative devices and emulate portrait/landscape changes
   - Use mobile audit target breakpoints: 320, 375, 390, 768, 1024 px
@@ -665,6 +729,7 @@ The project adopts a pragmatic mobile-first responsive strategy centered on a si
   - Validate mobile audit fixes across different browser engines
 
 **Section sources**
+
 - [mobile-audit.md:65-98](file://docs/mobile-audit.md#L65-L98)
 - [overflow-table.tsx:9-24](file://src/components/ui/overflow-table.tsx#L9-L24)
 - [WidgetSettingsPanel.tsx:122-146](file://src/components/dashboard/WidgetSettingsPanel.tsx#L122-L146)

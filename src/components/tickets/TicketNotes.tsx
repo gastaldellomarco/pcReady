@@ -60,7 +60,8 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
 
   async function addNote(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || !canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (!user || !canEdit)
+      return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const text = content.trim();
     if (!text) return toast.error(t("notes.enterNote", "Inserisci una nota"));
     setSubmitting(true);
@@ -104,9 +105,15 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       </div>
 
       <div className="mb-3 flex flex-col gap-2">
-        {notesQuery.isLoading && <div className="text-[12px] text-text3">{t("notes.loadingText", "Caricamento note...")}</div>}
+        {notesQuery.isLoading && (
+          <div className="text-[12px] text-text3">
+            {t("notes.loadingText", "Caricamento note...")}
+          </div>
+        )}
         {!notesQuery.isLoading && (!notesQuery.data || !notesQuery.data.length) && (
-          <div className="text-[12px] text-text3">{t("notes.emptyText", "Nessuna nota inserita")}</div>
+          <div className="text-[12px] text-text3">
+            {t("notes.emptyText", "Nessuna nota inserita")}
+          </div>
         )}
         {notesQuery.data?.map((note: any) => (
           <article
@@ -128,7 +135,9 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${note.is_internal ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
               >
-                {note.is_internal ? t("notes.internal", "Interna") : t("notes.visibleToClient", "Visibile cliente")}
+                {note.is_internal
+                  ? t("notes.internal", "Interna")
+                  : t("notes.visibleToClient", "Visibile cliente")}
               </span>
             </div>
             <p className="whitespace-pre-line text-[12.5px] text-text2">{note.content}</p>
@@ -146,7 +155,10 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               className="pc-input min-h-20 w-full"
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder={t("notes.placeholder", "Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico")}
+              placeholder={t(
+                "notes.placeholder",
+                "Aggiungi aggiornamento interno o nota visibile al cliente... usa @nome per menzionare un tecnico",
+              )}
               aria-label={t("notes.noteLabel", "Testo della nota")}
             />
             {mentionSuggestions.length > 0 && (
@@ -210,7 +222,9 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
               {t("notes.publishVisibleLabel", "Pubblica / visibile al cliente")}
             </label>
             <button type="submit" className="pc-btn pc-btn-primary pc-btn-sm" disabled={submitting}>
-              {submitting ? t("notes.saving", "Salvataggio...") : t("notes.addNote", "Aggiungi nota")}
+              {submitting
+                ? t("notes.saving", "Salvataggio...")
+                : t("notes.addNote", "Aggiungi nota")}
             </button>
           </div>
         </form>

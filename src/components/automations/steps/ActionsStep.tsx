@@ -30,11 +30,12 @@ export default function ActionsStep({ value, onChange, triggerType }: ActionsSte
 
   return (
     <div>
-      <h3 className="text-lg font-semibold">
-        {t("actionsBuilder.title", "Cosa deve succedere?")}
-      </h3>
+      <h3 className="text-lg font-semibold">{t("actionsBuilder.title", "Cosa deve succedere?")}</h3>
       <p className="text-sm text-text3">
-        {t("actionsBuilder.description", "Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti.")}
+        {t(
+          "actionsBuilder.description",
+          "Scegli le azioni da eseguire quando il trigger e i filtri sono soddisfatti.",
+        )}
       </p>
 
       <div className="mt-4">

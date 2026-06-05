@@ -64,12 +64,12 @@
     "loading": "Eliminazione..."
   },
   "deleteGroupDialog": {
-      "title": "Eliminare questo gruppo?",
-      "description": "Il gruppo \"{{label}}\" e tutte le sue sezioni verranno rimossi.",
-      "descriptionGeneric": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.",
-      "confirm": "Elimina gruppo"
-    },
-    "deleteSectionDialog": {
+    "title": "Eliminare questo gruppo?",
+    "description": "Il gruppo \"{{label}}\" e tutte le sue sezioni verranno rimossi.",
+    "descriptionGeneric": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.",
+    "confirm": "Elimina gruppo"
+  },
+  "deleteSectionDialog": {
     "title": "Eliminare questa sezione?",
     "description": "La sezione \"{{label}}\" e tutte le sue voci verranno rimosse dal modello. L'azione non può essere annullata.",
     "descriptionGeneric": "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non può essere annullata.",

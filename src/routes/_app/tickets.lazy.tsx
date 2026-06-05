@@ -45,7 +45,12 @@ import {
 } from "@/lib/pcready";
 import { insertActivity } from "@/lib/queries/activity";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { addTicketStatusHistory, loadClientOptions, useTicketsInfiniteList, fetchAllTicketsList } from "@/lib/queries/tickets";
+import {
+  addTicketStatusHistory,
+  loadClientOptions,
+  useTicketsInfiniteList,
+  fetchAllTicketsList,
+} from "@/lib/queries/tickets";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
 import type { TicketPdfRow } from "@/components/pcready/pdf/TicketListPdf";
 
@@ -133,7 +138,11 @@ async function loadClientOptsWrapper(q: string) {
       description: client.email,
     }));
   } catch (err: unknown) {
-    toast.error(err instanceof Error ? err.message : i18n.t("tickets:toasts.loadClientsError", "Errore caricamento clienti"));
+    toast.error(
+      err instanceof Error
+        ? err.message
+        : i18n.t("tickets:toasts.loadClientsError", "Errore caricamento clienti"),
+    );
     return [];
   }
 }
@@ -206,22 +215,33 @@ function TicketsPage() {
     pageSize: PAGE_SIZE,
   });
 
-  const rows = useMemo(() => listQuery.data?.pages.flatMap((p) => p.data) as Row[] ?? [], [listQuery.data]);
+  const rows = useMemo(
+    () => (listQuery.data?.pages.flatMap((p) => p.data) as Row[]) ?? [],
+    [listQuery.data],
+  );
   const total = useMemo(() => listQuery.data?.pages[0]?.count ?? 0, [listQuery.data]);
-  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+  const {
+    containerRef: tableContainerRef,
+    virtualizer: rowVirtualizer,
+    virtualItems,
+    totalSize: virtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 40,
     overscan: 15,
     threshold: 50,
   });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+  const {
+    containerRef: mobileContainerRef,
+    virtualizer: mobileVirtualizer,
+    virtualItems: mobileVirtualItems,
+    totalSize: mobileVirtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 220,
     overscan: 5,
     threshold: 20,
   });
-
-
 
   // IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -308,8 +328,6 @@ function TicketsPage() {
     });
   }, [visibleIds]);
 
-
-
   const activeFilterRecord: Record<string, any> = {
     status: fs || undefined,
     priority: fp || undefined,
@@ -374,7 +392,8 @@ function TicketsPage() {
   }
 
   function selectCurrentClientVisible() {
-    if (!fc) return toast.error(t("toasts.selectClientFilterFirst", "Seleziona prima un filtro cliente"));
+    if (!fc)
+      return toast.error(t("toasts.selectClientFilterFirst", "Seleziona prima un filtro cliente"));
     setSelectedTicketIds(
       new Set(data.filter((ticket) => ticket.client_id === fc).map((ticket) => ticket.id)),
     );
@@ -383,11 +402,14 @@ function TicketsPage() {
   function selectedCodesPreview() {
     const codes = selectedRows.map((ticket) => ticket.ticket_code);
     const visible = codes.slice(0, 8).join(", ");
-    return codes.length > 8 ? `${visible}, ${t("ticketList.moreOthers", { count: codes.length - 8, defaultValue: "+{{count}} altri" })}` : visible;
+    return codes.length > 8
+      ? `${visible}, ${t("ticketList.moreOthers", { count: codes.length - 8, defaultValue: "+{{count}} altri" })}`
+      : visible;
   }
 
   async function exportSelectedPdf() {
-    if (!selectedRows.length) return toast.error(t("toasts.noTicketsSelected", "Nessun ticket selezionato"));
+    if (!selectedRows.length)
+      return toast.error(t("toasts.noTicketsSelected", "Nessun ticket selezionato"));
     setPdfBusy("download");
     try {
       const settings = session?.access_token
@@ -454,7 +476,13 @@ function TicketsPage() {
       }
 
       await logBulkOperation(actionLabel, patch as Record<string, unknown>, ids);
-      toast.success(t("ticketList.bulkUpdated", { label: actionLabel, count: ids.length, defaultValue: "{{label}}: {{count}} ticket aggiornati" }));
+      toast.success(
+        t("ticketList.bulkUpdated", {
+          label: actionLabel,
+          count: ids.length,
+          defaultValue: "{{label}}: {{count}} ticket aggiornati",
+        }),
+      );
       clearSelection();
       await listQuery.refetch();
     } catch (error) {
@@ -616,7 +644,9 @@ function TicketsPage() {
             borderColor: "var(--border)",
           }}
         >
-          <span className="text-text2">{t("updatesAvailable", "Sono disponibili aggiornamenti alla lista ticket.")}</span>
+          <span className="text-text2">
+            {t("updatesAvailable", "Sono disponibili aggiornamenti alla lista ticket.")}
+          </span>
           <button
             type="button"
             className="pc-btn pc-btn-primary pc-btn-sm shrink-0"
@@ -703,15 +733,19 @@ function TicketsPage() {
             </option>
           ))}
         </select>
-          <span className="ml-auto text-xs text-text3 font-mono">
-            {total
-              ? `${loadedCount} ${t("meta.of", "di")} ${total}`
-              : t("ticketList.zeroResults", "0 risultati")}
-          </span>
+        <span className="ml-auto text-xs text-text3 font-mono">
+          {total
+            ? `${loadedCount} ${t("meta.of", "di")} ${total}`
+            : t("ticketList.zeroResults", "0 risultati")}
+        </span>
         <Link to="/tickets/archive" className="pc-btn pc-btn-ghost pc-btn-sm">
           {t("meta.history", "Storico")}
         </Link>
-        <button onClick={() => setExportModalOpen(true)} disabled={!data.length} className="pc-btn pc-btn-ghost pc-btn-sm">
+        <button
+          onClick={() => setExportModalOpen(true)}
+          disabled={!data.length}
+          className="pc-btn pc-btn-ghost pc-btn-sm"
+        >
           <FileDown className="size-3" />
           {t("exportPdf", "Esporta PDF")}
         </button>
@@ -770,7 +804,10 @@ function TicketsPage() {
               if (value)
                 void applyBulkPatch(
                   { priority: value },
-                  t("toasts.priorityChange", { label: PRIORITY_LABEL[value], defaultValue: "cambio priorità a {{label}}" }),
+                  t("toasts.priorityChange", {
+                    label: PRIORITY_LABEL[value],
+                    defaultValue: "cambio priorità a {{label}}",
+                  }),
                 );
             }}
             aria-label={t("bulk.changePriority", "Cambia priorità bulk")}
@@ -871,7 +908,11 @@ function TicketsPage() {
           </div>
           <details className="relative">
             <summary className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer list-none">
-              <Columns3 className="size-3" /> {t("columnsMenu", { count: visibleTableColumns.length, defaultValue: "Colonne ({{count}})" })}
+              <Columns3 className="size-3" />{" "}
+              {t("columnsMenu", {
+                count: visibleTableColumns.length,
+                defaultValue: "Colonne ({{count}})",
+              })}
             </summary>
             <div
               className="absolute right-0 z-30 mt-2 w-56 rounded-xl border p-2 shadow-lg"
@@ -903,7 +944,10 @@ function TicketsPage() {
 
       {listQuery.isError ? (
         <PageFetchError
-          message={t("ticketList.loadError", "Impossibile caricare i ticket. Controlla la connessione e riprova.")}
+          message={t(
+            "ticketList.loadError",
+            "Impossibile caricare i ticket. Controlla la connessione e riprova.",
+          )}
           onRetry={() => listQuery.refetch()}
         />
       ) : (
@@ -912,22 +956,18 @@ function TicketsPage() {
             ref={mobileContainerRef}
             className="md:hidden"
             style={{
-              maxHeight: data.length > 20 ? 'calc(100vh - 200px)' : undefined,
-              overflow: data.length > 20 ? 'auto' : undefined,
+              maxHeight: data.length > 20 ? "calc(100vh - 200px)" : undefined,
+              overflow: data.length > 20 ? "auto" : undefined,
             }}
           >
             {listLoading ? (
-              <TableSkeletonRows
-                rows={5}
-                columns={1}
-                cellClassName="px-[14px] py-[10px]"
-              />
+              <TableSkeletonRows rows={5} columns={1} cellClassName="px-[14px] py-[10px]" />
             ) : !data.length ? (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
                 {t("noTickets", "Nessun ticket")}
               </div>
             ) : data.length > 20 ? (
-              <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+              <div style={{ position: "relative", height: mobileVirtualTotalSize }}>
                 {mobileVirtualItems.map((virtualItem) => {
                   const ticket = data[virtualItem.index];
                   return (
@@ -935,12 +975,12 @@ function TicketsPage() {
                       key={ticket.id}
                       ref={mobileVirtualizer.measureElement}
                       style={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         transform: `translateY(${virtualItem.start}px)`,
                         left: 0,
                         right: 0,
-                        marginBottom: '12px',
+                        marginBottom: "12px",
                       }}
                     >
                       <TicketMobileCard
@@ -973,176 +1013,186 @@ function TicketsPage() {
             <div
               ref={tableContainerRef}
               className="overflow-x-auto"
-              style={{ maxHeight: 'calc(100vh - 180px)', overflow: 'auto' }}
+              style={{ maxHeight: "calc(100vh - 180px)", overflow: "auto" }}
             >
-            <table
-              className={
-                tableView === "compact"
-                  ? "w-full min-w-[980px] table-fixed"
-                  : "w-full min-w-[1420px] table-fixed"
-              }
-            >
-              <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                <tr>
-                  <th
-                    className="w-10 px-[10px] py-[9px] text-left border-b"
-                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                  >
-                    <input
-                      type="checkbox"
-                      aria-label={t("ticketList.selectAllVisible", "Seleziona tutti i ticket visibili")}
-                      checked={allVisibleSelected}
-                      data-indeterminate={
-                        someVisibleSelected && !allVisibleSelected ? "true" : undefined
-                      }
-                      onChange={toggleAllVisible}
-                    />
-                  </th>
-                  {visibleTableColumns.map((h) => (
-                    <th
-                      key={h.key}
-                      className={`text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b select-none ${h.className}`}
-                      style={{
-                        background: "var(--surface2)",
-                        borderColor: "var(--border)",
-                        cursor: h.sortable ? "pointer" : undefined,
-                      }}
-                      onClick={
-                        h.sortable
-                          ? () => {
-                              const col = h.key as "created_at" | "priority" | "status";
-                              if (sortBy === col) {
-                                setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-                              } else {
-                                setSortBy(col);
-                                setSortDir("desc");
-                              }
-                            }
-                          : undefined
-                      }
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        {h.label}
-                        {h.sortable && sortBy === h.key ? (
-                          sortDir === "desc" ? (
-                            <span className="text-[10px]">&#9660;</span>
-                          ) : (
-                            <span className="text-[10px]">&#9650;</span>
-                          )
-                        ) : h.sortable ? (
-                          <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />
-                        ) : null}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {listLoading ? (
-                  <TableSkeletonRows
-                    rows={12}
-                    columns={colSpan}
-                    cellClassName="px-[14px] py-[10px]"
-                  />
-                ) : !data.length ? (
+              <table
+                className={
+                  tableView === "compact"
+                    ? "w-full min-w-[980px] table-fixed"
+                    : "w-full min-w-[1420px] table-fixed"
+                }
+              >
+                <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                   <tr>
-                    <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
-                      {t("noTickets", "Nessun ticket")}
-                    </td>
+                    <th
+                      className="w-10 px-[10px] py-[9px] text-left border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={t(
+                          "ticketList.selectAllVisible",
+                          "Seleziona tutti i ticket visibili",
+                        )}
+                        checked={allVisibleSelected}
+                        data-indeterminate={
+                          someVisibleSelected && !allVisibleSelected ? "true" : undefined
+                        }
+                        onChange={toggleAllVisible}
+                      />
+                    </th>
+                    {visibleTableColumns.map((h) => (
+                      <th
+                        key={h.key}
+                        className={`text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b select-none ${h.className}`}
+                        style={{
+                          background: "var(--surface2)",
+                          borderColor: "var(--border)",
+                          cursor: h.sortable ? "pointer" : undefined,
+                        }}
+                        onClick={
+                          h.sortable
+                            ? () => {
+                                const col = h.key as "created_at" | "priority" | "status";
+                                if (sortBy === col) {
+                                  setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+                                } else {
+                                  setSortBy(col);
+                                  setSortDir("desc");
+                                }
+                              }
+                            : undefined
+                        }
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {h.label}
+                          {h.sortable && sortBy === h.key ? (
+                            sortDir === "desc" ? (
+                              <span className="text-[10px]">&#9660;</span>
+                            ) : (
+                              <span className="text-[10px]">&#9650;</span>
+                            )
+                          ) : h.sortable ? (
+                            <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />
+                          ) : null}
+                        </span>
+                      </th>
+                    ))}
                   </tr>
-                ) : data.length > 50 ? (
-                  <>
-                    {virtualItems.length > 0 && virtualItems[0].start > 0 && (
-                      <tr style={{ height: virtualItems[0].start, visibility: 'hidden' }}>
-                        <td colSpan={colSpan} />
-                      </tr>
-                    )}
-                    {virtualItems.map((virtualItem) => {
-                      const row = data[virtualItem.index];
-                      return (
-                        <tr
-                          key={row.id}
-                          ref={rowVirtualizer.measureElement}
-                          className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                          style={{
-                            borderColor: "var(--border)",
-                            background: selectedTicketIds.has(row.id)
-                              ? "color-mix(in oklab, var(--accent) 8%, transparent)"
-                              : undefined,
-                          }}
-                          onClick={() => openTicketDetail(row.id)}
-                        >
-                          <td
-                            className="px-[10px] py-[10px]"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <input
-                              type="checkbox"
-                              aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
-                              checked={selectedTicketIds.has(row.id)}
-                              onChange={() => toggleTicketSelection(row.id)}
-                            />
-                          </td>
-                          {visibleTableColumns.map((column) => (
-                            <td
-                              key={column.key}
-                              className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
-                            >
-                              {column.render(row)}
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                    {virtualItems.length > 0 && (() => {
-                      const lastItem = virtualItems[virtualItems.length - 1];
-                      const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
-                      return bottomHeight > 0 ? (
-                        <tr style={{ height: bottomHeight, visibility: 'hidden' }}>
+                </thead>
+                <tbody>
+                  {listLoading ? (
+                    <TableSkeletonRows
+                      rows={12}
+                      columns={colSpan}
+                      cellClassName="px-[14px] py-[10px]"
+                    />
+                  ) : !data.length ? (
+                    <tr>
+                      <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
+                        {t("noTickets", "Nessun ticket")}
+                      </td>
+                    </tr>
+                  ) : data.length > 50 ? (
+                    <>
+                      {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                        <tr style={{ height: virtualItems[0].start, visibility: "hidden" }}>
                           <td colSpan={colSpan} />
                         </tr>
-                      ) : null;
-                    })()}
-                  </>
-                ) : (
-                  data.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: selectedTicketIds.has(row.id)
-                          ? "color-mix(in oklab, var(--accent) 8%, transparent)"
-                          : undefined,
-                      }}
-                      onClick={() => openTicketDetail(row.id)}
-                    >
-                      <td
-                        className="px-[10px] py-[10px]"
-                        onClick={(event) => event.stopPropagation()}
+                      )}
+                      {virtualItems.map((virtualItem) => {
+                        const row = data[virtualItem.index];
+                        return (
+                          <tr
+                            key={row.id}
+                            ref={rowVirtualizer.measureElement}
+                            className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                            style={{
+                              borderColor: "var(--border)",
+                              background: selectedTicketIds.has(row.id)
+                                ? "color-mix(in oklab, var(--accent) 8%, transparent)"
+                                : undefined,
+                            }}
+                            onClick={() => openTicketDetail(row.id)}
+                          >
+                            <td
+                              className="px-[10px] py-[10px]"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                aria-label={t("ticketList.selectTicket", {
+                                  code: row.ticket_code,
+                                  defaultValue: "Seleziona ticket {{code}}",
+                                })}
+                                checked={selectedTicketIds.has(row.id)}
+                                onChange={() => toggleTicketSelection(row.id)}
+                              />
+                            </td>
+                            {visibleTableColumns.map((column) => (
+                              <td
+                                key={column.key}
+                                className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                              >
+                                {column.render(row)}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                      {virtualItems.length > 0 &&
+                        (() => {
+                          const lastItem = virtualItems[virtualItems.length - 1];
+                          const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
+                          return bottomHeight > 0 ? (
+                            <tr style={{ height: bottomHeight, visibility: "hidden" }}>
+                              <td colSpan={colSpan} />
+                            </tr>
+                          ) : null;
+                        })()}
+                    </>
+                  ) : (
+                    data.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: selectedTicketIds.has(row.id)
+                            ? "color-mix(in oklab, var(--accent) 8%, transparent)"
+                            : undefined,
+                        }}
+                        onClick={() => openTicketDetail(row.id)}
                       >
-                        <input
-                          type="checkbox"
-                          aria-label={t("ticketList.selectTicket", { code: row.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
-                          checked={selectedTicketIds.has(row.id)}
-                          onChange={() => toggleTicketSelection(row.id)}
-                        />
-                      </td>
-                      {visibleTableColumns.map((column) => (
                         <td
-                          key={column.key}
-                          className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                          className="px-[10px] py-[10px]"
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          {column.render(row)}
+                          <input
+                            type="checkbox"
+                            aria-label={t("ticketList.selectTicket", {
+                              code: row.ticket_code,
+                              defaultValue: "Seleziona ticket {{code}}",
+                            })}
+                            checked={selectedTicketIds.has(row.id)}
+                            onChange={() => toggleTicketSelection(row.id)}
+                          />
                         </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        {visibleTableColumns.map((column) => (
+                          <td
+                            key={column.key}
+                            className={`px-[14px] py-[10px] align-middle text-[12.5px] ${column.className}`}
+                          >
+                            {column.render(row)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </>
       )}
       <div ref={loadMoreRef} className="flex items-center justify-center py-3">
@@ -1151,7 +1201,11 @@ function TicketsPage() {
         )}
         {!listQuery.hasNextPage && loadedCount > 0 && (
           <span className="text-xs text-text3 font-mono">
-            {t("allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+            {t("allLoaded", {
+              count: loadedCount,
+              total,
+              defaultValue: "Tutti {{count}} di {{total}} caricati",
+            })}
           </span>
         )}
       </div>
@@ -1192,18 +1246,44 @@ function TicketsPage() {
 
 function bulkConfirmTitle(action: BulkConfirmAction | null, count: number) {
   if (!action) return i18n.t("tickets:bulk.confirmTitle", "Conferma operazione bulk");
-  if (action.type === "archive") return i18n.t("tickets:bulk.archiveTitle", { count, defaultValue: "Stai per archiviare {{count}} ticket" });
-  if (action.status === "completed") return i18n.t("tickets:bulk.completeTitle", { count, defaultValue: "Stai per completare {{count}} ticket" });
-  if (action.status === "archived") return i18n.t("tickets:bulk.archiveTitle", { count, defaultValue: "Stai per archiviare {{count}} ticket" });
-  return i18n.t("tickets:bulk.changeStatusTitle", { count, defaultValue: "Stai per cambiare stato a {{count}} ticket" });
+  if (action.type === "archive")
+    return i18n.t("tickets:bulk.archiveTitle", {
+      count,
+      defaultValue: "Stai per archiviare {{count}} ticket",
+    });
+  if (action.status === "completed")
+    return i18n.t("tickets:bulk.completeTitle", {
+      count,
+      defaultValue: "Stai per completare {{count}} ticket",
+    });
+  if (action.status === "archived")
+    return i18n.t("tickets:bulk.archiveTitle", {
+      count,
+      defaultValue: "Stai per archiviare {{count}} ticket",
+    });
+  return i18n.t("tickets:bulk.changeStatusTitle", {
+    count,
+    defaultValue: "Stai per cambiare stato a {{count}} ticket",
+  });
 }
 
 function bulkConfirmDescription(action: BulkConfirmAction | null, count: number) {
-  if (!action) return i18n.t("tickets:bulk.confirmDescription", "Conferma l'operazione sui ticket selezionati.");
+  if (!action)
+    return i18n.t(
+      "tickets:bulk.confirmDescription",
+      "Conferma l'operazione sui ticket selezionati.",
+    );
   if (action.type === "archive") {
-    return i18n.t("tickets:bulk.archiveDescription", { count, defaultValue: "Questa operazione imposta lo stato archived su {{count}} ticket selezionati." });
+    return i18n.t("tickets:bulk.archiveDescription", {
+      count,
+      defaultValue: "Questa operazione imposta lo stato archived su {{count}} ticket selezionati.",
+    });
   }
-  return i18n.t("tickets:bulk.changeStatusDescription", { status: STATUS_META[action.status].label, count, defaultValue: "Questa operazione imposta lo stato {{status}} su {{count}} ticket selezionati." });
+  return i18n.t("tickets:bulk.changeStatusDescription", {
+    status: STATUS_META[action.status].label,
+    count,
+    defaultValue: "Questa operazione imposta lo stato {{status}} su {{count}} ticket selezionati.",
+  });
 }
 
 function SlaBadge({
@@ -1246,7 +1326,10 @@ function SlaBadge({
     <span
       className="inline-flex flex-col gap-0.5 rounded-lg border px-2 py-1 text-[11px] font-medium whitespace-nowrap"
       style={{ background: palette.bg, borderColor: palette.border, color: palette.fg }}
-      title={i18n.t("tickets:ticketList.slaDeadline", { date: fmtDateTime(sla.deadline), defaultValue: "Deadline SLA: {{date}}" })}
+      title={i18n.t("tickets:ticketList.slaDeadline", {
+        date: fmtDateTime(sla.deadline),
+        defaultValue: "Deadline SLA: {{date}}",
+      })}
     >
       <span className="font-semibold">{palette.label}</span>
       <span className="font-mono opacity-80">{formatSlaCountdown(sla.deadline)}</span>
@@ -1301,7 +1384,10 @@ function TimeOpenBadge({
         borderColor: border,
         color: fg,
       }}
-      title={i18n.t("tickets:ticketList.createdTooltip", { date: fmtDateTime(created_at), defaultValue: "Creato: {{date}}" })}
+      title={i18n.t("tickets:ticketList.createdTooltip", {
+        date: fmtDateTime(created_at),
+        defaultValue: "Creato: {{date}}",
+      })}
     >
       {formatOpenDuration(created_at)}
       <span className="opacity-70">({label})</span>
@@ -1331,13 +1417,18 @@ function TicketMobileCard({
       className="pc-card pc-card-body flex flex-col transition-all duration-200"
       style={{
         border: selected ? "1px solid var(--accent)" : "1px solid var(--border)",
-        background: selected ? "color-mix(in oklab, var(--accent) 8%, var(--surface))" : "var(--surface)",
+        background: selected
+          ? "color-mix(in oklab, var(--accent) 8%, var(--surface))"
+          : "var(--surface)",
       }}
     >
       <div className="flex items-start gap-2.5">
         <input
           type="checkbox"
-          aria-label={t("ticketList.selectTicket", { code: ticket.ticket_code, defaultValue: "Seleziona ticket {{code}}" })}
+          aria-label={t("ticketList.selectTicket", {
+            code: ticket.ticket_code,
+            defaultValue: "Seleziona ticket {{code}}",
+          })}
           checked={selected}
           onChange={onToggleSelect}
         />
@@ -1372,8 +1463,14 @@ function TicketMobileCard({
         <StatusBadge status={ticket.status} />
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-text3">
-        <span>{t("columns.created", "Creato")}: {fmtDate(ticket.created_at)}</span>
-        <TimeOpenBadge created_at={ticket.created_at} priority={ticket.priority} slaLimits={slaLimits} />
+        <span>
+          {t("columns.created", "Creato")}: {fmtDate(ticket.created_at)}
+        </span>
+        <TimeOpenBadge
+          created_at={ticket.created_at}
+          priority={ticket.priority}
+          slaLimits={slaLimits}
+        />
         <SlaBadge
           created_at={ticket.created_at}
           priority={ticket.priority}
@@ -1385,4 +1482,3 @@ function TicketMobileCard({
     </article>
   );
 }
-

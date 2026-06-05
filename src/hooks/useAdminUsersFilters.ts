@@ -12,8 +12,7 @@ export function useAdminUsersFilters(rows: AdminUserRow[]) {
     const needle = q.trim().toLowerCase();
     return rows.filter((row) => {
       const matchesText =
-        !needle ||
-        `${row.full_name} ${row.email ?? ""}`.toLowerCase().includes(needle);
+        !needle || `${row.full_name} ${row.email ?? ""}`.toLowerCase().includes(needle);
       const matchesRole = !role || row.role === role;
       return matchesText && matchesRole;
     });

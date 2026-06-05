@@ -190,12 +190,15 @@ export function CreateTicketModal() {
   }, [createOpen, loadSettings, session?.access_token]);
 
   async function submit() {
-    if (!canEdit) return toast.error(t("createTicket.insufficientPermissions", "Permessi insufficienti"));
-    if (!f.client_id || !f.requester) return toast.error(t("createTicket.fillRequired", "Compila i campi obbligatori"));
+    if (!canEdit)
+      return toast.error(t("createTicket.insufficientPermissions", "Permessi insufficienti"));
+    if (!f.client_id || !f.requester)
+      return toast.error(t("createTicket.fillRequired", "Compila i campi obbligatori"));
     if (f.ticket_type === "device" && !f.device_id) {
       return toast.error(t("createTicket.selectDeviceRequired", "Seleziona un dispositivo"));
     }
-    if (!session?.access_token) return toast.error(t("createTicket.invalidSession", "Sessione non valida"));
+    if (!session?.access_token)
+      return toast.error(t("createTicket.invalidSession", "Sessione non valida"));
     setBusy(true);
     try {
       const selectedTemplates = templates.filter((t) => templateIds.includes(t.id));
@@ -209,13 +212,20 @@ export function CreateTicketModal() {
             ? selectedDevice
             : await fetchDeviceById(f.device_id)
           : null;
-      if (!client) return toast.error(t("createTicket.selectClientRequired", "Seleziona un cliente"));
+      if (!client)
+        return toast.error(t("createTicket.selectClientRequired", "Seleziona un cliente"));
       const contact =
         selectedContact?.id === f.requester_contact_id
           ? selectedContact
           : await fetchContactById(f.requester_contact_id);
       const requester = f.free_requester ? f.requester.trim() : contact ? contactName(contact) : "";
-      if (!requester) return toast.error(t("createTicket.selectRequesterRequired", "Seleziona un richiedente o usa il fallback libero"));
+      if (!requester)
+        return toast.error(
+          t(
+            "createTicket.selectRequesterRequired",
+            "Seleziona un richiedente o usa il fallback libero",
+          ),
+        );
       const ticketInsert = {
         client: client.company_name || client.name,
         client_id: client.id,
@@ -279,7 +289,9 @@ export function CreateTicketModal() {
         // Validate technician device limit for device tickets
         if (f.ticket_type === "device") {
           await validateLimit({ data: { assigneeId: f.assignee_id } }).catch((err) => {
-            throw err instanceof Error ? err : new Error(t("createTicket.limitExceeded", "Limite tecnico superato"));
+            throw err instanceof Error
+              ? err
+              : new Error(t("createTicket.limitExceeded", "Limite tecnico superato"));
           });
         }
         const assignee = techs.find((t) => t.id === f.assignee_id);
@@ -301,7 +313,12 @@ export function CreateTicketModal() {
             console.error("Failed to send ticket assigned email:", err);
           },
         );
-        if (assignee) toast.message(t("createTicket.notificationSentTo", "Notifica inviata a {{name}}", { name: assignee.full_name }));
+        if (assignee)
+          toast.message(
+            t("createTicket.notificationSentTo", "Notifica inviata a {{name}}", {
+              name: assignee.full_name,
+            }),
+          );
       }
       toast.success(t("createTicket.created", "{{code}} creato", { code: data.ticket_code }));
       // Reset form state only after successful creation
@@ -315,7 +332,9 @@ export function CreateTicketModal() {
       setTemplatePickerId(def?.id || "");
       closeCreate();
     } catch (e: unknown) {
-      toast.error(formatServerFnErrorForToast(e, t("createTicket.createError", "Errore creazione")));
+      toast.error(
+        formatServerFnErrorForToast(e, t("createTicket.createError", "Errore creazione")),
+      );
     } finally {
       setBusy(false);
     }
@@ -333,7 +352,9 @@ export function CreateTicketModal() {
             {t("createTicket.cancel", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" disabled={busy} onClick={submit}>
-            {busy ? t("createTicket.creating", "Creazione...") : t("createTicket.create", "Crea ticket")}
+            {busy
+              ? t("createTicket.creating", "Creazione...")
+              : t("createTicket.create", "Crea ticket")}
           </button>
         </>
       }
@@ -405,7 +426,11 @@ export function CreateTicketModal() {
             <AsyncAutocomplete
               value={f.device_id}
               selectedOption={selectedDevice ? deviceOption(selectedDevice) : null}
-              placeholder={f.client_id ? t("createTicket.devicePlaceholder", "Cerca dispositivo...") : t("createTicket.devicePlaceholderNoClient", "Seleziona prima un cliente")}
+              placeholder={
+                f.client_id
+                  ? t("createTicket.devicePlaceholder", "Cerca dispositivo...")
+                  : t("createTicket.devicePlaceholderNoClient", "Seleziona prima un cliente")
+              }
               emptyLabel={t("createTicket.deviceEmpty", "Nessun dispositivo")}
               disabled={!f.client_id}
               loadOptions={(query) => loadDeviceAutocompleteOptions(query, f.client_id)}
@@ -422,15 +447,25 @@ export function CreateTicketModal() {
               <input
                 className="pc-input"
                 value={f.requester}
-                aria-label={t("createTicket.freeRequesterPlaceholder", "Nome richiedente non censito")}
+                aria-label={t(
+                  "createTicket.freeRequesterPlaceholder",
+                  "Nome richiedente non censito",
+                )}
                 onChange={(e) => setF({ ...f, requester: e.target.value })}
-                placeholder={t("createTicket.freeRequesterPlaceholder", "Nome richiedente non censito")}
+                placeholder={t(
+                  "createTicket.freeRequesterPlaceholder",
+                  "Nome richiedente non censito",
+                )}
               />
             ) : (
               <AsyncAutocomplete
                 value={f.requester_contact_id}
                 selectedOption={selectedContact ? contactOption(selectedContact) : null}
-                placeholder={f.client_id ? t("createTicket.requesterPlaceholder", "Cerca referente...") : t("createTicket.requesterPlaceholderNoClient", "Seleziona prima un cliente")}
+                placeholder={
+                  f.client_id
+                    ? t("createTicket.requesterPlaceholder", "Cerca referente...")
+                    : t("createTicket.requesterPlaceholderNoClient", "Seleziona prima un cliente")
+                }
                 emptyLabel={t("createTicket.requesterEmpty", "Nessun referente")}
                 disabled={!f.client_id}
                 loadOptions={(query) => loadContactAutocompleteOptions(query, f.client_id)}
@@ -501,17 +536,26 @@ export function CreateTicketModal() {
                 value={f.software}
                 aria-label={t("createTicket.fieldSoftware", "Software richiesti")}
                 onChange={(e) => setF({ ...f, software: e.target.value })}
-                placeholder={t("createTicket.softwarePlaceholder", "Microsoft 365, Adobe CC, VS Code...")}
+                placeholder={t(
+                  "createTicket.softwarePlaceholder",
+                  "Microsoft 365, Adobe CC, VS Code...",
+                )}
               />
             </Field>
             <Field label={t("createTicket.fieldChecklist", "Collega checklist")}>
-              <div className="flex gap-2">                  <select
+              <div className="flex gap-2">
+                {" "}
+                <select
                   className="pc-input"
                   value={templatePickerId}
                   aria-label={t("createTicket.fieldChecklist", "Collega checklist")}
                   onChange={(e) => setTemplatePickerId(e.target.value)}
                 >
-                  {!templates.length && <option value="">{t("createTicket.noTemplate", "— Nessun template disponibile —")}</option>}
+                  {!templates.length && (
+                    <option value="">
+                      {t("createTicket.noTemplate", "— Nessun template disponibile —")}
+                    </option>
+                  )}
                   {templates.map((tpl) => (
                     <option key={tpl.id} value={tpl.id}>
                       {tpl.name}
@@ -550,17 +594,29 @@ export function CreateTicketModal() {
                   );
                 })}
                 {!templateIds.length && (
-                  <span className="text-[11px] text-text3">{t("createTicket.noChecklist", "Nessuna checklist collegata")}</span>
+                  <span className="text-[11px] text-text3">
+                    {t("createTicket.noChecklist", "Nessuna checklist collegata")}
+                  </span>
                 )}
               </div>
             </Field>
           </>
         )}
-        <Field label={f.ticket_type === "device" ? t("createTicket.fieldNotes", "Note") : t("createTicket.fieldProblemDesc", "Descrizione problema")}>
+        <Field
+          label={
+            f.ticket_type === "device"
+              ? t("createTicket.fieldNotes", "Note")
+              : t("createTicket.fieldProblemDesc", "Descrizione problema")
+          }
+        >
           <textarea
             className={`pc-input ${f.ticket_type === "device" ? "min-h-[72px]" : "min-h-[132px]"}`}
             value={f.notes}
-            aria-label={f.ticket_type === "device" ? t("createTicket.fieldNotes", "Note") : t("createTicket.fieldProblemDesc", "Descrizione problema")}
+            aria-label={
+              f.ticket_type === "device"
+                ? t("createTicket.fieldNotes", "Note")
+                : t("createTicket.fieldProblemDesc", "Descrizione problema")
+            }
             onChange={(e) => setF({ ...f, notes: e.target.value })}
           />
         </Field>
@@ -568,7 +624,6 @@ export function CreateTicketModal() {
     </Modal>
   );
 }
-
 
 function contactName(c: ContactOpt) {
   return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");

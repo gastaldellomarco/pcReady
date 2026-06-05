@@ -12,7 +12,11 @@ import { useVirtualList } from "@/hooks/useVirtualList";
 import { openTicketDetail } from "@/lib/detail-navigation";
 import { type TicketStatus, type TicketPriority, type TicketType, fmtDate } from "@/lib/pcready";
 import { LIST_PAGE_SIZE } from "@/lib/queries/list-config";
-import { useArchivedTicketsInfiniteList, useUpdateTicket, addTicketStatusHistory } from "@/lib/queries/tickets";
+import {
+  useArchivedTicketsInfiniteList,
+  useUpdateTicket,
+  addTicketStatusHistory,
+} from "@/lib/queries/tickets";
 
 interface Row {
   id: string;
@@ -43,7 +47,7 @@ export default function TicketsArchivePage() {
   const updateTicket = useUpdateTicket();
 
   const rows = useMemo(
-    () => listQuery.data?.pages.flatMap((p) => p.data) as Row[] ?? [],
+    () => (listQuery.data?.pages.flatMap((p) => p.data) as Row[]) ?? [],
     [listQuery.data],
   );
   const total = listQuery.data?.pages[0]?.count ?? 0;
@@ -51,13 +55,23 @@ export default function TicketsArchivePage() {
   const isFetchingMore = listQuery.isFetchingNextPage;
 
   const colSpan = 11;
-  const { containerRef: tableContainerRef, virtualizer: rowVirtualizer, virtualItems, totalSize: virtualTotalSize } = useVirtualList({
+  const {
+    containerRef: tableContainerRef,
+    virtualizer: rowVirtualizer,
+    virtualItems,
+    totalSize: virtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 40,
     overscan: 15,
     threshold: 50,
   });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+  const {
+    containerRef: mobileContainerRef,
+    virtualizer: mobileVirtualizer,
+    virtualItems: mobileVirtualItems,
+    totalSize: mobileVirtualTotalSize,
+  } = useVirtualList({
     count: rows.length,
     estimateSize: 200,
     overscan: 5,
@@ -101,25 +115,29 @@ export default function TicketsArchivePage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <h2 className="text-lg font-semibold">{t("archiveTitle", "Storico ticket")}</h2>
-        <span className="ml-auto text-xs text-text3 font-mono">{total} {t("results", "risultati")}</span>
+        <span className="ml-auto text-xs text-text3 font-mono">
+          {total} {t("results", "risultati")}
+        </span>
       </div>
 
       <div
         ref={mobileContainerRef}
         className="md:hidden"
         style={{
-          maxHeight: rows.length > 20 ? 'calc(100vh - 200px)' : undefined,
-          overflow: rows.length > 20 ? 'auto' : undefined,
+          maxHeight: rows.length > 20 ? "calc(100vh - 200px)" : undefined,
+          overflow: rows.length > 20 ? "auto" : undefined,
         }}
       >
         {listQuery.isLoading ? (
-          <div className="pc-card pc-card-body text-sm text-text3">{t("loading", "Caricamento...")}</div>
+          <div className="pc-card pc-card-body text-sm text-text3">
+            {t("loading", "Caricamento...")}
+          </div>
         ) : !rows.length ? (
           <div className="pc-card pc-card-body text-center text-sm text-text3">
             {t("noArchivedTickets", "Nessun ticket archiviato")}
           </div>
         ) : rows.length > 20 ? (
-          <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
+          <div style={{ position: "relative", height: mobileVirtualTotalSize }}>
             {mobileVirtualItems.map((virtualItem) => {
               const ticket = rows[virtualItem.index];
               return (
@@ -127,12 +145,12 @@ export default function TicketsArchivePage() {
                   key={ticket.id}
                   ref={mobileVirtualizer.measureElement}
                   style={{
-                    position: 'absolute',
+                    position: "absolute",
                     top: 0,
                     transform: `translateY(${virtualItem.start}px)`,
                     left: 0,
                     right: 0,
-                    marginBottom: '12px',
+                    marginBottom: "12px",
                   }}
                 >
                   <TicketArchiveMobileCard
@@ -162,8 +180,8 @@ export default function TicketsArchivePage() {
           ref={tableContainerRef}
           className="max-w-full overflow-x-auto rounded-md border overscroll-x-contain"
           style={{
-            maxHeight: 'calc(100vh - 180px)',
-            overflow: 'auto',
+            maxHeight: "calc(100vh - 180px)",
+            overflow: "auto",
           }}
           tabIndex={0}
           role="region"
@@ -171,176 +189,183 @@ export default function TicketsArchivePage() {
         >
           <div className="min-w-full">
             <table className="w-full">
-            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-              <tr>
-                {[
-                  t("columns.id", "Codice"),
-                  t("columns.model", "Modello"),
-                  t("columns.serial", "Seriale"),
-                  t("columns.client", "Cliente"),
-                  t("columns.requester", "Richiedente"),
-                  t("columns.priority", "Priorità"),
-                  t("columns.status", "Stato"),
-                  t("columns.type", "Tipo"),
-                  t("columns.assignee", "Assegnatario"),
-                  t("columns.created", "Creato"),
-                  t("actions", "Azioni"),
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                    style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {listQuery.isLoading ? (
+              <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                 <tr>
-                  <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
-                    {t("loading", "Caricamento...")}
-                  </td>
+                  {[
+                    t("columns.id", "Codice"),
+                    t("columns.model", "Modello"),
+                    t("columns.serial", "Seriale"),
+                    t("columns.client", "Cliente"),
+                    t("columns.requester", "Richiedente"),
+                    t("columns.priority", "Priorità"),
+                    t("columns.status", "Stato"),
+                    t("columns.type", "Tipo"),
+                    t("columns.assignee", "Assegnatario"),
+                    t("columns.created", "Creato"),
+                    t("actions", "Azioni"),
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : !rows.length ? (
-                <tr>
-                  <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
-                    {t("noArchivedTickets", "Nessun ticket archiviato")}
-                  </td>
-                </tr>
-              ) : rows.length > 50 ? (
-                <>
-                  {virtualItems.length > 0 && virtualItems[0].start > 0 && (
-                    <tr style={{ height: virtualItems[0].start, visibility: 'hidden' }}>
-                      <td colSpan={colSpan} />
-                    </tr>
-                  )}
-                  {virtualItems.map((virtualItem) => {
-                    const ticket = rows[virtualItem.index];
-                    return (
-                      <tr
-                        key={ticket.id}
-                        ref={rowVirtualizer.measureElement}
-                        className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                        style={{ borderColor: "var(--border)" }}
-                      >
-                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                          {ticket.ticket_code}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">
-                          {ticket.device?.model || t("noAsset", "Nessun asset")}
-                        </td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                          {ticket.device?.serial || "-"}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">
-                          {ticket.client_ref?.name || ticket.client || "-"}
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[12.5px]">{ticket.requester}</td>
-                        <td className="px-[14px] py-[10px]">
-                          <PriorityLabel p={ticket.priority} />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <StatusBadge status={ticket.status} />
-                          </div>
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <TicketTypeBadge type={ticket.ticket_type} />
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />
-                        </td>
-                        <td className="px-[14px] py-[10px] text-[11px] text-text3">
-                          {fmtDate(ticket.created_at)}
-                        </td>
-                        <td className="px-[14px] py-[10px]">
-                          <div className="flex items-center gap-2">
-                            <button
-                              className="pc-btn pc-btn-ghost pc-btn-sm"
-                              onClick={() => openTicketDetail(ticket.id)}
-                            >
-                              <Eye className="size-3" /> {t("details", "Dettagli")}
-                            </button>
-                            <button
-                              className="pc-btn pc-btn-ghost pc-btn-sm"
-                              onClick={() => reopen(ticket.id)}
-                            >
-                              <RotateCw className="size-3" /> {t("reopen", "Riapri")}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {virtualItems.length > 0 && (() => {
-                    const lastItem = virtualItems[virtualItems.length - 1];
-                    const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
-                    return bottomHeight > 0 ? (
-                      <tr style={{ height: bottomHeight, visibility: 'hidden' }}>
-                        <td colSpan={colSpan} />
-                      </tr>
-                    ) : null;
-                  })()}
-                </>
-              ) : (
-                rows.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    className="border-b cursor-pointer transition-colors hover:bg-surface2"
-                    style={{ borderColor: "var(--border)" }}
-                  >
-                    <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                      {ticket.ticket_code}
-                    </td>
-                    <td className="px-[14px] py-[10px] text-[12.5px]">
-                      {ticket.device?.model || t("noAsset", "Nessun asset")}
-                    </td>
-                    <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
-                      {ticket.device?.serial || "-"}
-                    </td>
-                    <td className="px-[14px] py-[10px] text-[12.5px]">
-                      {ticket.client_ref?.name || ticket.client || "-"}
-                    </td>
-                    <td className="px-[14px] py-[10px] text-[12.5px]">{ticket.requester}</td>
-                    <td className="px-[14px] py-[10px]">
-                      <PriorityLabel p={ticket.priority} />
-                    </td>
-                    <td className="px-[14px] py-[10px]">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <StatusBadge status={ticket.status} />
-                      </div>
-                    </td>
-                    <td className="px-[14px] py-[10px]">
-                      <TicketTypeBadge type={ticket.ticket_type} />
-                    </td>
-                    <td className="px-[14px] py-[10px]">
-                      <AssigneeChip initials={ticket.assignee?.initials} name={ticket.assignee?.full_name} />
-                    </td>
-                    <td className="px-[14px] py-[10px] text-[11px] text-text3">
-                      {fmtDate(ticket.created_at)}
-                    </td>
-                    <td className="px-[14px] py-[10px]">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="pc-btn pc-btn-ghost pc-btn-sm"
-                          onClick={() => openTicketDetail(ticket.id)}
-                        >
-                          <Eye className="size-3" /> {t("details", "Dettagli")}
-                        </button>
-                        <button
-                          className="pc-btn pc-btn-ghost pc-btn-sm"
-                          onClick={() => reopen(ticket.id)}
-                        >
-                          <RotateCw className="size-3" /> {t("reopen", "Riapri")}
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {listQuery.isLoading ? (
+                  <tr>
+                    <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
+                      {t("loading", "Caricamento...")}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
+                ) : !rows.length ? (
+                  <tr>
+                    <td colSpan={colSpan} className="text-center py-10 text-text3 text-sm">
+                      {t("noArchivedTickets", "Nessun ticket archiviato")}
+                    </td>
+                  </tr>
+                ) : rows.length > 50 ? (
+                  <>
+                    {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+                      <tr style={{ height: virtualItems[0].start, visibility: "hidden" }}>
+                        <td colSpan={colSpan} />
+                      </tr>
+                    )}
+                    {virtualItems.map((virtualItem) => {
+                      const ticket = rows[virtualItem.index];
+                      return (
+                        <tr
+                          key={ticket.id}
+                          ref={rowVirtualizer.measureElement}
+                          className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                            {ticket.ticket_code}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12.5px]">
+                            {ticket.device?.model || t("noAsset", "Nessun asset")}
+                          </td>
+                          <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                            {ticket.device?.serial || "-"}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12.5px]">
+                            {ticket.client_ref?.name || ticket.client || "-"}
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12.5px]">{ticket.requester}</td>
+                          <td className="px-[14px] py-[10px]">
+                            <PriorityLabel p={ticket.priority} />
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <StatusBadge status={ticket.status} />
+                            </div>
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <TicketTypeBadge type={ticket.ticket_type} />
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <AssigneeChip
+                              initials={ticket.assignee?.initials}
+                              name={ticket.assignee?.full_name}
+                            />
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                            {fmtDate(ticket.created_at)}
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="pc-btn pc-btn-ghost pc-btn-sm"
+                                onClick={() => openTicketDetail(ticket.id)}
+                              >
+                                <Eye className="size-3" /> {t("details", "Dettagli")}
+                              </button>
+                              <button
+                                className="pc-btn pc-btn-ghost pc-btn-sm"
+                                onClick={() => reopen(ticket.id)}
+                              >
+                                <RotateCw className="size-3" /> {t("reopen", "Riapri")}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {virtualItems.length > 0 &&
+                      (() => {
+                        const lastItem = virtualItems[virtualItems.length - 1];
+                        const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
+                        return bottomHeight > 0 ? (
+                          <tr style={{ height: bottomHeight, visibility: "hidden" }}>
+                            <td colSpan={colSpan} />
+                          </tr>
+                        ) : null;
+                      })()}
+                  </>
+                ) : (
+                  rows.map((ticket) => (
+                    <tr
+                      key={ticket.id}
+                      className="border-b cursor-pointer transition-colors hover:bg-surface2"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                        {ticket.ticket_code}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12.5px]">
+                        {ticket.device?.model || t("noAsset", "Nessun asset")}
+                      </td>
+                      <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
+                        {ticket.device?.serial || "-"}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12.5px]">
+                        {ticket.client_ref?.name || ticket.client || "-"}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[12.5px]">{ticket.requester}</td>
+                      <td className="px-[14px] py-[10px]">
+                        <PriorityLabel p={ticket.priority} />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <StatusBadge status={ticket.status} />
+                        </div>
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <TicketTypeBadge type={ticket.ticket_type} />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <AssigneeChip
+                          initials={ticket.assignee?.initials}
+                          name={ticket.assignee?.full_name}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[11px] text-text3">
+                        {fmtDate(ticket.created_at)}
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="pc-btn pc-btn-ghost pc-btn-sm"
+                            onClick={() => openTicketDetail(ticket.id)}
+                          >
+                            <Eye className="size-3" /> {t("details", "Dettagli")}
+                          </button>
+                          <button
+                            className="pc-btn pc-btn-ghost pc-btn-sm"
+                            onClick={() => reopen(ticket.id)}
+                          >
+                            <RotateCw className="size-3" /> {t("reopen", "Riapri")}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
         </div>
@@ -353,7 +378,11 @@ export default function TicketsArchivePage() {
         )}
         {!listQuery.hasNextPage && loadedCount > 0 && (
           <span className="text-xs text-text3 font-mono">
-            {t("allLoaded", { count: loadedCount, total, defaultValue: "Tutti {{count}} di {{total}} caricati" })}
+            {t("allLoaded", {
+              count: loadedCount,
+              total,
+              defaultValue: "Tutti {{count}} di {{total}} caricati",
+            })}
           </span>
         )}
       </div>
@@ -414,18 +443,10 @@ function TicketArchiveMobileCard({
         {t("columns.created", "Creato")}: {fmtDate(ticket.created_at)}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          onClick={onOpen}
-        >
+        <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onOpen}>
           <Eye className="size-3" /> {t("details", "Dettagli")}
         </button>
-        <button
-          type="button"
-          className="pc-btn pc-btn-ghost pc-btn-sm"
-          onClick={onReopen}
-        >
+        <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onReopen}>
           <RotateCw className="size-3" /> {t("reopen", "Riapri")}
         </button>
       </div>

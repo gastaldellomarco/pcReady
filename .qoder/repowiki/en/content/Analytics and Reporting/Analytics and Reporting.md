@@ -18,6 +18,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -30,9 +31,11 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the analytics and reporting system for the dashboard. It covers how key performance indicators, ticket metrics, and technician performance are computed and visualized, how PDF reports are generated, and how data is collected and aggregated. It also documents date range filtering, customizable report parameters, real-time dashboard widgets, and configuration options for report templates and export formats. Guidance is included for both managers reviewing performance and developers implementing analytics features.
 
 ## Project Structure
+
 The analytics and reporting system spans client-side React components, server functions for analytics computation, and database RPC functions and indexes that power aggregations.
 
 ```mermaid
@@ -61,6 +64,7 @@ RPC --> IDX
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:19-158](file://src/hooks/useDashboardData.ts#L19-L158)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
@@ -69,6 +73,7 @@ RPC --> IDX
 - [20260511145300_dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 **Section sources**
+
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [useDashboardData.ts:19-158](file://src/hooks/useDashboardData.ts#L19-L158)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
@@ -77,6 +82,7 @@ RPC --> IDX
 - [20260511145300_dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 ## Core Components
+
 - Dashboard analytics server functions:
   - Monthly ticket counts and average resolution days
   - Technician KPIs (assigned, completed, average resolution days)
@@ -93,6 +99,7 @@ RPC --> IDX
   - Preset ranges and manual selection with ISO date boundaries
 
 **Section sources**
+
 - [dashboard-analytics.ts:20-28](file://src/lib/dashboard-analytics.ts#L20-L28)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
@@ -107,7 +114,9 @@ RPC --> IDX
 - [DateRangePicker.tsx:16-96](file://src/components/dashboard/DateRangePicker.tsx#L16-L96)
 
 ## Architecture Overview
+
 The analytics pipeline is a client-server flow:
+
 - The dashboard route initializes date range and loads analytics via a server function.
 - The server function validates the access token, computes aggregates using Supabase RPC functions and SQL indexes, and returns typed analytics data.
 - Widgets render charts and KPIs from the analytics payload.
@@ -131,6 +140,7 @@ R->>R : Render widgets and export actions
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:76-190](file://src/routes/_app/dashboard.tsx#L76-L190)
 - [useDashboardData.ts:114-123](file://src/hooks/useDashboardData.ts#L114-L123)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
@@ -139,6 +149,7 @@ R->>R : Render widgets and export actions
 ## Detailed Component Analysis
 
 ### Analytics Data Model and Aggregation
+
 - Data model:
   - Monthly metrics: month key, label, opened, closed, average resolution days
   - Technician KPIs: technician identity, full name, assigned, completed, average resolution days
@@ -163,15 +174,18 @@ Summary --> Output(["Return DashboardAnalytics"])
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:44-166](file://src/lib/dashboard-analytics.ts#L44-L166)
 - [20260511145300_dashboard_analytics_rpc_functions.sql:77-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L77-L97)
 
 **Section sources**
+
 - [dashboard-analytics.ts:20-28](file://src/lib/dashboard-analytics.ts#L20-L28)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [20260511145300_dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 ### Real-Time Dashboard Widgets and Data Sources
+
 - Monthly analytics card:
   - Renders bar chart for opened/closed tickets and line chart for average resolution days
   - Provides export actions to CSV and PDF
@@ -228,6 +242,7 @@ TechnicianHeatmapWidget --> dashboard-analytics_ts : "calls"
 ```
 
 **Diagram sources**
+
 - [AnalyticsCard.tsx:22-138](file://src/components/dashboard/AnalyticsCard.tsx#L22-L138)
 - [TechnicianStatsWidget.tsx:13-173](file://src/components/dashboard/TechnicianStatsWidget.tsx#L13-L173)
 - [TechnicianRadarWidget.tsx:21-184](file://src/components/dashboard/TechnicianRadarWidget.tsx#L21-L184)
@@ -235,6 +250,7 @@ TechnicianHeatmapWidget --> dashboard-analytics_ts : "calls"
 - [dashboard-analytics.ts:36-554](file://src/lib/dashboard-analytics.ts#L36-L554)
 
 **Section sources**
+
 - [AnalyticsCard.tsx:22-138](file://src/components/dashboard/AnalyticsCard.tsx#L22-L138)
 - [TechnicianStatsWidget.tsx:13-173](file://src/components/dashboard/TechnicianStatsWidget.tsx#L13-L173)
 - [TechnicianRadarWidget.tsx:21-184](file://src/components/dashboard/TechnicianRadarWidget.tsx#L21-L184)
@@ -242,6 +258,7 @@ TechnicianHeatmapWidget --> dashboard-analytics_ts : "calls"
 - [dashboard-analytics.ts:36-554](file://src/lib/dashboard-analytics.ts#L36-L554)
 
 ### PDF Report Generation
+
 - Report structure:
   - Organization branding and metadata
   - Summary statistics (opened, closed, average resolution)
@@ -266,14 +283,17 @@ E-->>U : Downloaded PDF
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:170-189](file://src/routes/_app/dashboard.tsx#L170-L189)
 - [AnalyticsReportPdf.tsx:18-135](file://src/components/dashboard/AnalyticsReportPdf.tsx#L18-L135)
 
 **Section sources**
+
 - [AnalyticsReportPdf.tsx:18-135](file://src/components/dashboard/AnalyticsReportPdf.tsx#L18-L135)
 - [dashboard.tsx:170-189](file://src/routes/_app/dashboard.tsx#L170-L189)
 
 ### Date Range Filtering and Customizable Parameters
+
 - Date range picker:
   - Preset ranges (7, 30, 90, 180 days)
   - Manual date inputs with min/max constraints
@@ -295,18 +315,21 @@ Load --> Export["Export: CSV or PDF"]
 ```
 
 **Diagram sources**
+
 - [DateRangePicker.tsx:16-96](file://src/components/dashboard/DateRangePicker.tsx#L16-L96)
 - [dashboard-helpers.ts:27-50](file://src/lib/dashboard-helpers.ts#L27-L50)
 - [dashboard-helpers.ts:4-25](file://src/lib/dashboard-helpers.ts#L4-L25)
 - [useDashboardData.ts:26-64](file://src/hooks/useDashboardData.ts#L26-L64)
 
 **Section sources**
+
 - [DateRangePicker.tsx:16-96](file://src/components/dashboard/DateRangePicker.tsx#L16-L96)
 - [dashboard-helpers.ts:27-50](file://src/lib/dashboard-helpers.ts#L27-L50)
 - [dashboard-helpers.ts:4-25](file://src/lib/dashboard-helpers.ts#L4-L25)
 - [useDashboardData.ts:26-64](file://src/hooks/useDashboardData.ts#L26-L64)
 
 ### Technician KPIs and Radar Metrics
+
 - Technician KPIs:
   - Assigned and completed tickets within the selected period
   - Average resolution days when closed_at is available
@@ -327,15 +350,18 @@ Normalize --> Radar["Render radar charts"]
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 
 **Section sources**
+
 - [dashboard-analytics.ts:12-18](file://src/lib/dashboard-analytics.ts#L12-L18)
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 - [TechnicianKpiTable.tsx:13-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L13-L82)
 - [TechnicianRadarWidget.tsx:64-105](file://src/components/dashboard/TechnicianRadarWidget.tsx#L64-L105)
 
 ## Dependency Analysis
+
 - Client-to-server:
   - Route depends on hook for analytics lifecycle
   - Widgets depend on server functions for data
@@ -356,6 +382,7 @@ Helpers["dashboard-helpers.ts"] --> Route
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:76-190](file://src/routes/_app/dashboard.tsx#L76-L190)
 - [useDashboardData.ts:114-123](file://src/hooks/useDashboardData.ts#L114-L123)
 - [dashboard-analytics.ts:36-554](file://src/lib/dashboard-analytics.ts#L36-L554)
@@ -364,6 +391,7 @@ Helpers["dashboard-helpers.ts"] --> Route
 - [dashboard-helpers.ts:4-25](file://src/lib/dashboard-helpers.ts#L4-L25)
 
 **Section sources**
+
 - [dashboard.tsx:76-190](file://src/routes/_app/dashboard.tsx#L76-L190)
 - [useDashboardData.ts:114-123](file://src/hooks/useDashboardData.ts#L114-L123)
 - [dashboard-analytics.ts:36-554](file://src/lib/dashboard-analytics.ts#L36-L554)
@@ -372,6 +400,7 @@ Helpers["dashboard-helpers.ts"] --> Route
 - [dashboard-helpers.ts:4-25](file://src/lib/dashboard-helpers.ts#L4-L25)
 
 ## Performance Considerations
+
 - Database indexing:
   - Indexes on created_at, closed_at, and assignee_id improve query performance for large datasets
 - Aggregation strategy:
@@ -387,6 +416,7 @@ Helpers["dashboard-helpers.ts"] --> Route
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures:
   - Ensure access token is present and valid before invoking analytics server functions
 - Empty or stale data:
@@ -400,11 +430,13 @@ Helpers["dashboard-helpers.ts"] --> Route
   - Validate organization settings are fetched successfully
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-42](file://src/lib/dashboard-analytics.ts#L36-L42)
 - [useDashboardData.ts:101-112](file://src/hooks/useDashboardData.ts#L101-L112)
 - [dashboard.tsx:170-189](file://src/routes/_app/dashboard.tsx#L170-L189)
 
 ## Conclusion
+
 The analytics and reporting system combines efficient database RPC functions, robust client-side widgets, and flexible export formats. By leveraging indexed queries, normalized date ranges, and real-time invalidation, it delivers responsive dashboards and accurate reports suitable for both operational oversight and strategic planning.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -412,6 +444,7 @@ The analytics and reporting system combines efficient database RPC functions, ro
 ## Appendices
 
 ### Configuration Options and Best Practices
+
 - Report templates:
   - Customize PDF sections and charts via the report component props
   - Use organization settings for branding consistency
@@ -422,6 +455,7 @@ The analytics and reporting system combines efficient database RPC functions, ro
   - PDF export includes charts and tables for formal distribution
 
 **Section sources**
+
 - [AnalyticsReportPdf.tsx:18-135](file://src/components/dashboard/AnalyticsReportPdf.tsx#L18-L135)
 - [dashboard-helpers.ts:4-25](file://src/lib/dashboard-helpers.ts#L4-L25)
 - [TechnicianRadarWidget.tsx:57-62](file://src/components/dashboard/TechnicianRadarWidget.tsx#L57-L62)

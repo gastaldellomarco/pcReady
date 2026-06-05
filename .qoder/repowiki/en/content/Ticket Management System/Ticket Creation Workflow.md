@@ -15,13 +15,16 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Updated CreateTicketModal implementation section to reflect centralized form state management
 - Added new section documenting the getInitialCreateTicketFormState function
 - Updated testing infrastructure documentation to reflect centralized approach
 - Enhanced troubleshooting guide with form state management considerations
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -33,10 +36,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the end-to-end ticket creation workflow, focusing on the CreateTicketModal UI and the server-side createTicket function. It covers form fields, validation rules, Supabase authentication and rate limiting, payload transformation, and the PostgreSQL sequence-trigger mechanism that generates unique ticket codes under concurrency. The workflow now features centralized form state management for improved maintainability and testing capabilities.
 
 ## Project Structure
+
 The ticket creation workflow spans UI, server functions, and database layers with centralized form state management:
+
 - UI: CreateTicketModal renders the form and orchestrates submission using centralized state management.
 - State Management: getInitialCreateTicketFormState provides consistent initial form state across the application.
 - Server: createTicket validates inputs, authenticates via Supabase access token, enforces rate limits, and inserts the ticket.
@@ -70,6 +76,7 @@ DB --> |"Sequence + Trigger"| UI
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -79,6 +86,7 @@ DB --> |"Sequence + Trigger"| UI
 - [20260516200000_ticket_code_unique_allocation.sql:1-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L1-L47)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -88,12 +96,14 @@ DB --> |"Sequence + Trigger"| UI
 - [20260516200000_ticket_code_unique_allocation.sql:1-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L1-L47)
 
 ## Core Components
+
 - CreateTicketModal: Renders the form, manages state via centralized form state management, performs client-side validation, and submits to the server function.
 - getInitialCreateTicketFormState: Centralized function providing consistent initial form state for all ticket creation scenarios.
 - createTicket server function: Validates payload, authenticates via access token, enforces rate limits, transforms payload, inserts into tickets, and records status history.
 - Database sequence and trigger: Generates unique ticket_code values to avoid collisions during concurrent inserts.
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -101,6 +111,7 @@ DB --> |"Sequence + Trigger"| UI
 - [20260516200000_ticket_code_unique_allocation.sql:1-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L1-L47)
 
 ## Architecture Overview
+
 The workflow integrates frontend UI with centralized state management, server-side validation and rate limiting, and backend database generation of ticket codes.
 
 ```mermaid
@@ -131,6 +142,7 @@ M-->>U : "Success toast and reset"
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:196-300](file://src/components/pcready/CreateTicketModal.tsx#L196-L300)
 - [createTicketFormState.ts:3-17](file://src/components/pcready/createTicketFormState.ts#L3-L17)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -140,17 +152,20 @@ M-->>U : "Success toast and reset"
 ## Detailed Component Analysis
 
 ### Centralized Form State Management
+
 The workflow now features centralized form state management through the getInitialCreateTicketFormState function, providing consistent initial state across all ticket creation scenarios.
 
 **Key Features:**
+
 - Single source of truth for initial form state
 - Consistent field defaults across different contexts
 - Simplified form reset logic
 - Improved testability and maintainability
 
 **Form State Structure:**
+
 - client_id: "" (empty string)
-- device_id: "" (empty string)  
+- device_id: "" (empty string)
 - requester_contact_id: "" (empty string)
 - requester: "" (empty string)
 - free_requester: false (boolean)
@@ -162,10 +177,13 @@ The workflow now features centralized form state management through the getIniti
 - notes: "" (empty string)
 
 **Section sources**
+
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 
 ### CreateTicketModal Implementation
+
 The modal component manages form state using centralized state management, loads lookup lists, and submits the ticket creation request. Key behaviors:
+
 - Form state initialization:
   - Uses getInitialCreateTicketFormState() for consistent initial state
   - Maintains separate state for selections (selectedClient, selectedContact, selectedDevice)
@@ -211,19 +229,23 @@ HandleErr --> End
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:169-300](file://src/components/pcready/CreateTicketModal.tsx#L169-L300)
 - [CreateTicketModal.tsx:76-136](file://src/components/pcready/CreateTicketModal.tsx#L76-L136)
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:3-17](file://src/components/pcready/createTicketFormState.ts#L3-L17)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [CreateTicketModal.tsx:76-136](file://src/components/pcready/CreateTicketModal.tsx#L76-L136)
 - [CreateTicketModal.tsx:169-300](file://src/components/pcready/CreateTicketModal.tsx#L169-L300)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 
 ### StaffTicketPayloadSchema Validation Rules
+
 The server enforces strict payload validation before insertion:
+
 - Fields and constraints:
   - client: Required non-empty string.
   - client_id: Required UUID.
@@ -272,14 +294,18 @@ CreateTicketInputSchema --> StaffTicketPayloadSchema : "contains"
 ```
 
 **Diagram sources**
+
 - [tickets.ts:8-30](file://src/lib/tickets.ts#L8-L30)
 
 **Section sources**
+
 - [tickets.ts:8-30](file://src/lib/tickets.ts#L8-L30)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 
 ### Server Function: createTicket
+
 Processing logic:
+
 - Authentication:
   - Creates a Supabase client configured with the provided access token.
   - Calls getUser() and throws if unauthorized.
@@ -317,13 +343,17 @@ F-->>C : "{ id, ticket_code }"
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 
 ### Ticket Code Generation with PostgreSQL Sequences and Triggers
+
 The database ensures unique ticket_code values even under concurrent writes:
+
 - Sequence initialization:
   - Creates a sequence starting at 1.
   - Aligns the sequence to the current maximum numeric suffix among existing PCT- codes.
@@ -347,14 +377,17 @@ Skip --> Insert
 ```
 
 **Diagram sources**
+
 - [20260430154500_ticket_code_sequence_trigger.sql:1-42](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql#L1-L42)
 - [20260516200000_ticket_code_unique_allocation.sql:1-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L1-L47)
 
 **Section sources**
+
 - [20260430154500_ticket_code_sequence_trigger.sql:1-42](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql#L1-L42)
 - [20260516200000_ticket_code_unique_allocation.sql:1-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L1-L47)
 
 ### Integration with Supabase Authentication and Database Operations
+
 - Authentication:
   - The server function builds a Supabase client using the access token header and calls getUser() to authenticate.
 - Database operations:
@@ -364,12 +397,14 @@ Skip --> Insert
   - The modal uses typed queries to load clients, contacts, and devices, and to fetch details when needed.
 
 **Section sources**
+
 - [tickets.ts:32-48](file://src/lib/tickets.ts#L32-L48)
 - [tickets.ts:91-107](file://src/lib/tickets.ts#L91-L107)
 - [tickets.ts:1-284](file://src/lib/queries/tickets.ts#L1-L284)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 
 ## Dependency Analysis
+
 - UI depends on:
   - Centralized state management for consistent form initialization.
   - Server function for submission.
@@ -398,6 +433,7 @@ DB --> SEQ["Sequence + Trigger"]
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -406,6 +442,7 @@ DB --> SEQ["Sequence + Trigger"]
 - [20260430154500_ticket_code_sequence_trigger.sql:1-42](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql#L1-L42)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-506](file://src/components/pcready/CreateTicketModal.tsx#L138-L506)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
@@ -414,6 +451,7 @@ DB --> SEQ["Sequence + Trigger"]
 - [20260430154500_ticket_code_sequence_trigger.sql:1-42](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql#L1-L42)
 
 ## Performance Considerations
+
 - Client-side filtering and range limits:
   - Autocomplete queries restrict returned rows to reduce payload size.
 - Centralized state management:
@@ -425,7 +463,9 @@ DB --> SEQ["Sequence + Trigger"]
   - Prevents burst submissions and protects downstream processing.
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Invalid form submission:
   - Missing required fields (client, requester) or device when type is device.
   - Free requester fallback requires a non-empty free requester value.
@@ -446,6 +486,7 @@ Common issues and resolutions:
 **Updated** Enhanced troubleshooting guidance to address centralized form state management issues.
 
 Resolution steps:
+
 - Validate form state and required fields before submission.
 - Confirm session validity and refresh if needed.
 - Inspect server function error messages for schema mismatches.
@@ -454,10 +495,12 @@ Resolution steps:
 - Ensure form reset logic uses the centralized state management function consistently.
 
 **Section sources**
+
 - [CreateTicketModal.tsx:196-300](file://src/components/pcready/CreateTicketModal.tsx#L196-L300)
 - [createTicketFormState.ts:1-18](file://src/components/pcready/createTicketFormState.ts#L1-L18)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [20260516200000_ticket_code_unique_allocation.sql:34-47](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql#L34-L47)
 
 ## Conclusion
+
 The ticket creation workflow combines a robust frontend modal with centralized form state management, strict server-side validation, Supabase authentication, and a resilient database-level code generation strategy. The refactored centralized form state management improves maintainability, consistency, and testability while ensuring correctness, concurrency safety, and a smooth user experience for technicians and administrators.

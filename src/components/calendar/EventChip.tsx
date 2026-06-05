@@ -1,11 +1,11 @@
-import { cn } from '@/lib/utils';
-import { resolveEventColors } from './eventColors';
-import type { CalendarEvent } from '@/lib/queries/calendar';
+import { cn } from "@/lib/utils";
+import { resolveEventColors } from "./eventColors";
+import type { CalendarEvent } from "@/lib/queries/calendar";
 
 interface EventChipProps {
   event: CalendarEvent;
   techColorMap: Record<string, string>;
-  colorMode: 'type' | 'technician' | 'client';
+  colorMode: "type" | "technician" | "client";
   onClick: (event: CalendarEvent) => void;
 }
 
@@ -27,15 +27,15 @@ export function EventChip({ event, techColorMap, colorMode, onClick }: EventChip
     <button
       type="button"
       className={cn(
-        'w-full rounded-sm text-xs px-1.5 py-0.5 cursor-pointer',
-        'flex items-center gap-1 overflow-hidden',
-        'transition-opacity hover:opacity-80 select-none',
+        "w-full rounded-sm text-xs px-1.5 py-0.5 cursor-pointer",
+        "flex items-center gap-1 overflow-hidden",
+        "transition-opacity hover:opacity-80 select-none",
       )}
       style={{
         background: bg,
         color: fg,
         border: `1px solid ${border}`,
-        minHeight: '20px',
+        minHeight: "20px",
       }}
       onClick={(e) => {
         e.stopPropagation();

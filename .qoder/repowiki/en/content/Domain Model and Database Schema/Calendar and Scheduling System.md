@@ -16,6 +16,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
@@ -74,10 +75,12 @@ TM --> CP
 ```
 
 **Diagram sources**
+
 - [calendar.tsx:1-305](file://src/routes/_app/calendar.tsx#L1-L305)
 - [calendar.ts:1-249](file://src/lib/queries/calendar.ts#L1-L249)
 
 The architecture leverages several key technologies:
+
 - **TanStack Router** for file-based routing and navigation
 - **React Query** for state management and caching
 - **Supabase** for database operations and realtime capabilities
@@ -147,11 +150,13 @@ CalendarPage --> DayView
 ```
 
 **Diagram sources**
+
 - [calendar.tsx:51-305](file://src/routes/_app/calendar.tsx#L51-L305)
 - [CalendarToolbar.tsx:66-202](file://src/components/calendar/CalendarToolbar.tsx#L66-L202)
 - [EventModal.tsx:89-553](file://src/components/calendar/EventModal.tsx#L89-L553)
 
 **Section sources**
+
 - [calendar.tsx:51-305](file://src/routes/_app/calendar.tsx#L51-L305)
 
 ### Color Management System
@@ -182,9 +187,11 @@ TechnicianPalette --> ColorScheme
 ```
 
 **Diagram sources**
+
 - [eventColors.ts:4-50](file://src/components/calendar/eventColors.ts#L4-L50)
 
 **Section sources**
+
 - [eventColors.ts:1-50](file://src/components/calendar/eventColors.ts#L1-L50)
 
 ## Calendar Views
@@ -213,6 +220,7 @@ CloseDnD --> WaitEvents
 ```
 
 **Diagram sources**
+
 - [MonthView.tsx:167-286](file://src/components/calendar/MonthView.tsx#L167-L286)
 
 ### Week and Day View Layout
@@ -240,10 +248,12 @@ Event-->>User : Display event with proper styling
 ```
 
 **Diagram sources**
+
 - [WeekView.tsx:78-88](file://src/components/calendar/WeekView.tsx#L78-L88)
 - [DayView.tsx:74-84](file://src/components/calendar/DayView.tsx#L74-L84)
 
 **Section sources**
+
 - [MonthView.tsx:1-286](file://src/components/calendar/MonthView.tsx#L1-L286)
 - [WeekView.tsx:1-239](file://src/components/calendar/WeekView.tsx#L1-L239)
 - [DayView.tsx:1-241](file://src/components/calendar/DayView.tsx#L1-L241)
@@ -272,6 +282,7 @@ Invalid --> Validating : Fix Fields
 ```
 
 **Diagram sources**
+
 - [EventModal.tsx:144-232](file://src/components/calendar/EventModal.tsx#L144-L232)
 
 ### Drag and Drop Functionality
@@ -298,9 +309,11 @@ Query-->>User : Updated Calendar View
 ```
 
 **Diagram sources**
+
 - [calendar.tsx:157-188](file://src/routes/_app/calendar.tsx#L157-L188)
 
 **Section sources**
+
 - [EventModal.tsx:1-553](file://src/components/calendar/EventModal.tsx#L1-L553)
 - [calendar.tsx:113-188](file://src/routes/_app/calendar.tsx#L113-L188)
 
@@ -351,20 +364,22 @@ CALENDAR_EVENTS ||--o| PROFILES : created_by
 ```
 
 **Diagram sources**
+
 - [calendar_events.sql:4-34](file://supabase/migrations/20260525120000_calendar_events.sql#L4-L34)
 
 ### Event Types and Validation
 
 The system supports four distinct event types with strict validation:
 
-| Event Type | Purpose | Color Scheme | Business Rules |
-|------------|---------|--------------|----------------|
-| `intervention` | Field service work | Blue palette | Requires technician assignment |
-| `deadline` | Important milestones | Red palette | High priority, reminder notifications |
-| `appointment` | Meetings and consultations | Light blue palette | Standard scheduling |
-| `availability` | Unavailable time blocks | Green palette | Blocks other bookings |
+| Event Type     | Purpose                    | Color Scheme       | Business Rules                        |
+| -------------- | -------------------------- | ------------------ | ------------------------------------- |
+| `intervention` | Field service work         | Blue palette       | Requires technician assignment        |
+| `deadline`     | Important milestones       | Red palette        | High priority, reminder notifications |
+| `appointment`  | Meetings and consultations | Light blue palette | Standard scheduling                   |
+| `availability` | Unavailable time blocks    | Green palette      | Blocks other bookings                 |
 
 **Section sources**
+
 - [calendar_events.sql:1-98](file://supabase/migrations/20260525120000_calendar_events.sql#L1-L98)
 - [calendar.ts:9-13](file://src/lib/queries/calendar.ts#L9-L13)
 
@@ -389,6 +404,7 @@ DownloadFile --> End([Export Complete])
 ```
 
 **Diagram sources**
+
 - [calendar-ical.ts:74-152](file://src/lib/calendar-ical.ts#L74-L152)
 
 ### Realtime Synchronization
@@ -410,9 +426,11 @@ Note over Client,OtherClients : Automatic synchronization across all connected c
 ```
 
 **Diagram sources**
+
 - [calendar_events.sql:84-98](file://supabase/migrations/20260525120000_calendar_events.sql#L84-L98)
 
 **Section sources**
+
 - [calendar-ical.ts:1-152](file://src/lib/calendar-ical.ts#L1-L152)
 - [calendar_events.sql:35-98](file://supabase/migrations/20260525120000_calendar_events.sql#L35-L98)
 
@@ -446,6 +464,7 @@ Tablet --> Desktop
 ### Accessibility Features
 
 The system implements comprehensive accessibility standards:
+
 - Keyboard navigation support
 - Screen reader compatibility
 - High contrast mode support
@@ -455,6 +474,7 @@ The system implements comprehensive accessibility standards:
 ### Performance Optimizations
 
 Key performance improvements include:
+
 - Virtualized rendering for large datasets
 - Efficient date calculations using date-fns
 - Memoized computations for expensive operations
@@ -462,6 +482,7 @@ Key performance improvements include:
 - Optimized database queries with appropriate indexing
 
 **Section sources**
+
 - [CalendarToolbar.tsx:1-202](file://src/components/calendar/CalendarToolbar.tsx#L1-L202)
 - [MonthView.tsx:1-286](file://src/components/calendar/MonthView.tsx#L1-L286)
 
@@ -498,6 +519,7 @@ EQ --> CS
 ```
 
 **Diagram sources**
+
 - [calendar.ts:199-249](file://src/lib/queries/calendar.ts#L199-L249)
 
 ### Error Handling Strategy
@@ -525,9 +547,11 @@ RetryOperation --> TryOperation
 ```
 
 **Diagram sources**
+
 - [calendar.tsx:197-202](file://src/routes/_app/calendar.tsx#L197-L202)
 
 **Section sources**
+
 - [calendar.ts:1-249](file://src/lib/queries/calendar.ts#L1-L249)
 - [calendar.tsx:197-202](file://src/routes/_app/calendar.tsx#L197-L202)
 
@@ -538,7 +562,7 @@ RetryOperation --> TryOperation
 The calendar system implements several query optimization strategies:
 
 - **Indexed date ranges** for efficient time-based filtering
-- **Selective field loading** using Supabase RLS policies  
+- **Selective field loading** using Supabase RLS policies
 - **Pagination support** for large event datasets
 - **Query caching** with appropriate stale times
 - **Batch operations** for bulk updates
@@ -546,6 +570,7 @@ The calendar system implements several query optimization strategies:
 ### Memory Management
 
 Performance optimizations include:
+
 - **Component memoization** using React.memo and useMemo
 - **Efficient event grouping** algorithms
 - **Virtual scrolling** for large event lists
@@ -555,6 +580,7 @@ Performance optimizations include:
 ### Network Efficiency
 
 Network optimization strategies:
+
 - **Debounced search/filter operations**
 - **Efficient WebSocket usage** for realtime updates
 - **Batched mutations** to reduce API calls
@@ -596,12 +622,14 @@ VIEWER --> DELETE
 ### Row-Level Security
 
 Supabase RLS policies ensure data isolation:
+
 - **Event visibility** based on creator or team membership
 - **Assignment restrictions** preventing unauthorized modifications
 - **Realtime subscription filtering** at the database level
 - **Audit trail** for all calendar operations
 
 **Section sources**
+
 - [calendar_events.sql:37-68](file://supabase/migrations/20260525120000_calendar_events.sql#L37-L68)
 
 ## Conclusion
@@ -609,6 +637,7 @@ Supabase RLS policies ensure data isolation:
 The Calendar and Scheduling System represents a comprehensive solution for team coordination and resource management. Built with modern React patterns and integrated with Supabase's powerful backend capabilities, the system provides:
 
 **Key Strengths:**
+
 - **Seamless real-time collaboration** with automatic synchronization
 - **Flexible event management** supporting multiple event types and complex scheduling scenarios
 - **Responsive design** that works across all device types
@@ -616,6 +645,7 @@ The Calendar and Scheduling System represents a comprehensive solution for team 
 - **Performance optimization** for smooth user experience
 
 **Technical Excellence:**
+
 - **Clean architecture** with clear separation of concerns
 - **Comprehensive testing** coverage for critical components
 - **Accessibility compliance** ensuring inclusive user experience

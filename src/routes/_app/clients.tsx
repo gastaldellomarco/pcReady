@@ -16,7 +16,10 @@ export const Route = createFileRoute("/_app/clients")({
   head: () => ({
     meta: [
       { title: i18n.t("clients:head.title", "Clienti - PCReady") },
-      { name: "description", content: i18n.t("clients:head.description", "Anagrafica clienti e referenti aziendali.") },
+      {
+        name: "description",
+        content: i18n.t("clients:head.description", "Anagrafica clienti e referenti aziendali."),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

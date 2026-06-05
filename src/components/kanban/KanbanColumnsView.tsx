@@ -13,11 +13,7 @@ import {
 } from "@/lib/app-settings";
 import { setTicketContext } from "@/lib/detail-navigation";
 import { KANBAN_STATUSES } from "@/lib/kanban/constants";
-import {
-  STATUS_META,
-  type TicketPriority,
-  type TicketStatus,
-} from "@/lib/pcready";
+import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import type { TechnicianOption } from "@/lib/technicians";
 import type { Card as KanbanCard } from "@/routes/_app/kanban.lazy";
@@ -98,12 +94,14 @@ export function KanbanColumnsView({
   const { t } = useTranslation(["kanban", "tickets"]);
 
   return (
-    <div className={cn(
-      isMobile ? "flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-thin" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4",
-    )}>
-      {isMobile && (
-        <div className="sticky left-0 z-10 flex-shrink-0 w-px" />
+    <div
+      className={cn(
+        isMobile
+          ? "flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-thin"
+          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4",
       )}
+    >
+      {isMobile && <div className="sticky left-0 z-10 flex-shrink-0 w-px" />}
       {KANBAN_STATUSES.map((s) => {
         let items = cards.filter((r) => r.status === s);
         if (s === "completed") {
@@ -128,12 +126,11 @@ export function KanbanColumnsView({
               onClick={() => onToggleCollapseColumn(s)}
               className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-2 py-4 transition-all hover:border-text3"
               style={{ background: columnColors[s] || undefined }}
-              title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + s, STATUS_META[s].label) })}
+              title={t("expandColumn", "Espandi {{column}}", {
+                column: t("tickets:status." + s, STATUS_META[s].label),
+              })}
             >
-              <span
-                className="h-3 w-3 rounded-full"
-                style={{ background: STATUS_META[s].color }}
-              />
+              <span className="h-3 w-3 rounded-full" style={{ background: STATUS_META[s].color }} />
               <span className="writing-mode-vertical text-[10px] font-bold uppercase tracking-wider text-text3 [writing-mode:vertical-rl]">
                 {t("tickets:status." + s, STATUS_META[s].label)}
               </span>
@@ -232,7 +229,9 @@ export function KanbanColumnsView({
               note={columnNotes[s] ?? ""}
               saving={noteSaving === s}
               canEdit={isAdmin}
-              onSave={(text: string) => { void onSaveColumnNote(s, text); }}
+              onSave={(text: string) => {
+                void onSaveColumnNote(s, text);
+              }}
             />
 
             <div
@@ -243,7 +242,9 @@ export function KanbanColumnsView({
                   : isOver
                     ? `color-mix(in oklab, ${STATUS_META[s].color} 10%, transparent)`
                     : columnColors[s] || "transparent",
-                border: "1.5px dashed " + (isBlocked ? "#DC2626" : isOver ? STATUS_META[s].color : "transparent"),
+                border:
+                  "1.5px dashed " +
+                  (isBlocked ? "#DC2626" : isOver ? STATUS_META[s].color : "transparent"),
                 boxShadow: isBlocked ? "0 0 12px rgba(220,38,38,0.25)" : undefined,
               }}
             >
@@ -264,7 +265,12 @@ export function KanbanColumnsView({
                   onMove={(id, status, assigneeId) => void onMove(id, status, assigneeId)}
                   onPriorityChange={(id, priority) => void onPriorityChange(id, priority)}
                   onClick={onCardClick}
-                  onOpenDetail={() => setTicketContext(c.id, cards.map((r) => r.id))}
+                  onOpenDetail={() =>
+                    setTicketContext(
+                      c.id,
+                      cards.map((r) => r.id),
+                    )
+                  }
                   viewers={cardViewers.get(c.id) ?? []}
                   onHover={onSetCurrentCard}
                   statusChangedAt={statusChangedAtMap.get(c.id) ?? null}

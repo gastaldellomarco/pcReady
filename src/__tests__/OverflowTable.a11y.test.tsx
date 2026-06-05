@@ -4,7 +4,14 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import OverflowTable from "@/components/ui/overflow-table";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 describe("DataTable (OverflowTable + shadcn Table) — Accessibilità", () => {
   it("non ha violazioni a11y con dati di esempio", async () => {
@@ -21,13 +28,17 @@ describe("DataTable (OverflowTable + shadcn Table) — Accessibilità", () => {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <th scope="row" className="p-2 align-middle font-medium">TK-001</th>
+              <th scope="row" className="p-2 align-middle font-medium">
+                TK-001
+              </th>
               <TableCell>Mario Rossi</TableCell>
               <TableCell>Aperto</TableCell>
               <TableCell>Tech One</TableCell>
             </TableRow>
             <TableRow>
-              <th scope="row" className="p-2 align-middle font-medium">TK-002</th>
+              <th scope="row" className="p-2 align-middle font-medium">
+                TK-002
+              </th>
               <TableCell>Luigi Bianchi</TableCell>
               <TableCell>In lavorazione</TableCell>
               <TableCell>Tech Two</TableCell>

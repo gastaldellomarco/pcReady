@@ -5,7 +5,9 @@ export async function listPortalDevicesServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data: devices, error } = await supabaseAdmin
     .from("devices" as any)
-    .select("id, model, serial, os, status, assigned_to, updated_at, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes")
+    .select(
+      "id, model, serial, os, status, assigned_to, updated_at, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes",
+    )
     .eq("client_id", session.clientId)
     .order("model", { ascending: true })
     .limit(200);
@@ -14,7 +16,9 @@ export async function listPortalDevicesServer(input: { token: string }) {
   const { data: tickets, error: ticketError } = deviceIds.length
     ? await supabaseAdmin
         .from("tickets" as any)
-        .select("id, ticket_code, device_id, status, created_at, model, updated_at, closed_at, completed_at")
+        .select(
+          "id, ticket_code, device_id, status, created_at, model, updated_at, closed_at, completed_at",
+        )
         .in("device_id", deviceIds)
         .order("created_at", { ascending: false })
         .limit(500)

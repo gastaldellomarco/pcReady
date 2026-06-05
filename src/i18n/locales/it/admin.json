@@ -13,11 +13,11 @@
   },
   "loading": "Verifica permessi...",
   "unauthorized": "Accesso non autorizzato.",
-      "mfaBanner": {
-        "allUsers": "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA",
-        "admins": "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA",
-        "goToSettings": "Vai alle impostazioni"
-      },
+  "mfaBanner": {
+    "allUsers": "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA",
+    "admins": "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA",
+    "goToSettings": "Vai alle impostazioni"
+  },
   "users": {
     "mfa": {
       "active": "Attivo",
@@ -135,9 +135,8 @@
       "exportDescription": "Scarica un archivio ZIP con CSV di ticket, dispositivi e clienti.",
       "exportButton": "Esporta tutti i dati",
       "exportingButton": "Esportazione...",
-      "protectedText": "Dati protetti con backup giornalieri automatici"
-    ,
-    "readOnlyBadge": "Gestito dal provider"
+      "protectedText": "Dati protetti con backup giornalieri automatici",
+      "readOnlyBadge": "Gestito dal provider"
     },
     "appSettings": {
       "title": "Impostazioni Applicazione",

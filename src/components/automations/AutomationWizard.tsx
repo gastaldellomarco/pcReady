@@ -57,11 +57,26 @@ export default function AutomationWizard({
   const { t } = useTranslation("automations");
 
   const STEPS = [
-    { label: t("wizard.steps.template", "Modello"), description: t("wizard.steps.templateDesc", "Scegli un template") },
-    { label: t("wizard.steps.event", "Evento"), description: t("wizard.steps.eventDesc", "Quando si attiva") },
-    { label: t("wizard.steps.filters", "Filtri"), description: t("wizard.steps.filtersDesc", "Condizioni opzionali") },
-    { label: t("wizard.steps.actions", "Azioni"), description: t("wizard.steps.actionsDesc", "Cosa succede") },
-    { label: t("wizard.steps.review", "Riepilogo"), description: t("wizard.steps.reviewDesc", "Verifica e salva") },
+    {
+      label: t("wizard.steps.template", "Modello"),
+      description: t("wizard.steps.templateDesc", "Scegli un template"),
+    },
+    {
+      label: t("wizard.steps.event", "Evento"),
+      description: t("wizard.steps.eventDesc", "Quando si attiva"),
+    },
+    {
+      label: t("wizard.steps.filters", "Filtri"),
+      description: t("wizard.steps.filtersDesc", "Condizioni opzionali"),
+    },
+    {
+      label: t("wizard.steps.actions", "Azioni"),
+      description: t("wizard.steps.actionsDesc", "Cosa succede"),
+    },
+    {
+      label: t("wizard.steps.review", "Riepilogo"),
+      description: t("wizard.steps.reviewDesc", "Verifica e salva"),
+    },
   ];
 
   // Skip template step if editing existing automation
@@ -98,7 +113,7 @@ export default function AutomationWizard({
 
   function handleSelectTemplate(templateId: string | null) {
     setSelectedTemplateId(templateId);
-    
+
     if (templateId) {
       const template = getTemplateById(templateId);
       if (template) {
@@ -111,13 +126,17 @@ export default function AutomationWizard({
         setActions(template.defaultPayload.actions_definition || []);
       }
     }
-    
+
     // Advance to Event step
     setStep(1);
   }
 
   // Schema-based validation for each step
-  function validateCurrent(currentStep: number): { ok: boolean; message?: string; fieldErrors?: Record<string, string> } {
+  function validateCurrent(currentStep: number): {
+    ok: boolean;
+    message?: string;
+    fieldErrors?: Record<string, string>;
+  } {
     // Step 0 (Template) - no validation needed, always can proceed
     if (currentStep === 0) return { ok: true };
 
@@ -148,7 +167,10 @@ export default function AutomationWizard({
     // Step 3 (Actions) - at least one action required with schema validation
     if (currentStep === 3) {
       if (!actions || actions.length === 0) {
-        return { ok: false, message: t("wizard.validation.addAction", "Aggiungi almeno un'azione") };
+        return {
+          ok: false,
+          message: t("wizard.validation.addAction", "Aggiungi almeno un'azione"),
+        };
       }
       // Validate actions with DSL schema (convert from legacy ActionDef)
       const dslActions = actions.map((a, index) => ({
@@ -172,10 +194,14 @@ export default function AutomationWizard({
   }
 
   function generateSummary() {
-    if (!trigger || actions.length === 0) return t("wizard.validation.incompleteRule", "Incomplete rule");
+    if (!trigger || actions.length === 0)
+      return t("wizard.validation.incompleteRule", "Incomplete rule");
     const triggerLabel = trigger.type;
     const actionLabels = actions.map((a) => a.type).join(" e ");
-    return t("wizard.validation.summary", "When \"{{trigger}}\", execute {{actions}}.", { trigger: triggerLabel, actions: actionLabels });
+    return t("wizard.validation.summary", 'When "{{trigger}}", execute {{actions}}.', {
+      trigger: triggerLabel,
+      actions: actionLabels,
+    });
   }
 
   function handleNext() {
@@ -318,11 +344,13 @@ export default function AutomationWizard({
             {/* Display general actions error */}
             {errors.actions && <div className="mt-2 text-sm text-rose-600">{errors.actions}</div>}
             {/* Display field-specific errors */}
-            {Object.entries(errors).filter(([k]) => k.startsWith("actions[")).map(([k, v]) => (
-              <div key={k} className="mt-1 text-xs text-rose-600">
-                {v}
-              </div>
-            ))}
+            {Object.entries(errors)
+              .filter(([k]) => k.startsWith("actions["))
+              .map(([k, v]) => (
+                <div key={k} className="mt-1 text-xs text-rose-600">
+                  {v}
+                </div>
+              ))}
           </div>
         )}
         {step === 4 && (
@@ -385,14 +413,19 @@ export default function AutomationWizard({
         )}
         {step === 4 && (
           <div>
-            <label htmlFor="change-note" className="text-sm font-medium">{t("wizard.changeNote", "Change note")}</label>
+            <label htmlFor="change-note" className="text-sm font-medium">
+              {t("wizard.changeNote", "Change note")}
+            </label>
             <textarea
               id="change-note"
               className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
               rows={2}
               value={changeNote}
               onChange={(event) => setChangeNote(event.target.value)}
-              placeholder={t("wizard.changeNotePlaceholder", "Describe what changed in this version...")}
+              placeholder={t(
+                "wizard.changeNotePlaceholder",
+                "Describe what changed in this version...",
+              )}
             />
           </div>
         )}

@@ -20,6 +20,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -32,7 +33,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the custom hooks system that manages application state and functionality across the codebase. It focuses on:
+
 - Theme management and dark/light mode switching via a dedicated hook and provider
 - Responsive design detection for mobile-specific behavior
 - Real-time data synchronization with Supabase using a reusable hook
@@ -41,6 +44,7 @@ This document explains the custom hooks system that manages application state an
 - Practical usage examples, parameter configuration, return value handling, lifecycle relationships, performance optimizations, and best practices
 
 ## Project Structure
+
 The hooks live under src/hooks and integrate with providers, libraries, and route components. Providers manage global state (e.g., theme), while hooks encapsulate local component state and cross-cutting concerns (e.g., real-time updates, admin operations).
 
 ```mermaid
@@ -87,6 +91,7 @@ DashRoute --> URT
 ```
 
 **Diagram sources**
+
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
@@ -104,6 +109,7 @@ DashRoute --> URT
 - [client.ts](file://src/integrations/supabase/client.ts)
 
 **Section sources**
+
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
@@ -120,6 +126,7 @@ DashRoute --> URT
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 
 ## Core Components
+
 - Theme management
   - ThemeProvider sets up persistent theme state and applies classes to the document.
   - useTheme exposes theme state and a setter to consumers.
@@ -137,6 +144,7 @@ DashRoute --> URT
   - useAutomationRules: orchestrates rule listing, filtering, creation/editing, runs, and versioning.
 
 **Section sources**
+
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [ThemeContext.tsx:1-12](file://src/components/ThemeContext.tsx#L1-L12)
 - [theme.ts:1-77](file://src/lib/theme.ts#L1-L77)
@@ -150,6 +158,7 @@ DashRoute --> URT
 - [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
 
 ## Architecture Overview
+
 The hooks system integrates with providers, Supabase, and route components. Providers manage global state and expose it to hooks. Hooks encapsulate side effects, caching, and subscriptions. Route components consume hooks to render UI and orchestrate user actions.
 
 ```mermaid
@@ -188,6 +197,7 @@ HRT --> SB
 ```
 
 **Diagram sources**
+
 - [admin.tsx:1-50](file://src/routes/_app/admin.tsx#L1-L50)
 - [automations.tsx:1-261](file://src/routes/_app/automations.tsx#L1-L261)
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
@@ -200,7 +210,9 @@ HRT --> SB
 ## Detailed Component Analysis
 
 ### Theme Management Hook and Provider
+
 The theme system consists of:
+
 - ThemeProvider: initializes theme from storage, applies classes to document, listens to system preference changes, and exposes setters.
 - useTheme: a thin wrapper around the theme context to access theme state and setters.
 - theme utilities: resolve effective theme, persist to storage, and apply classes.
@@ -229,26 +241,31 @@ useTheme --> ThemeContext : "consumes"
 ```
 
 **Diagram sources**
+
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [ThemeContext.tsx:1-12](file://src/components/ThemeContext.tsx#L1-L12)
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 
 Key behaviors:
+
 - Persistence: theme saved to localStorage and applied to document element.
 - System mode: follows OS preference when configured.
 - Hydration safety: initializes on mount to prevent mismatches.
 
 Usage pattern:
+
 - Wrap the app with ThemeProvider.
 - Call useTheme in components to read and update theme.
 
 **Section sources**
+
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [ThemeContext.tsx:1-12](file://src/components/ThemeContext.tsx#L1-L12)
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 - [theme.ts:1-77](file://src/lib/theme.ts#L1-L77)
 
 ### Mobile Detection Hook
+
 useIsMobile detects whether the viewport width is below a breakpoint and reacts to media query changes.
 
 ```mermaid
@@ -267,16 +284,20 @@ Hook->>Window : removeListener
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 
 Behavior:
+
 - Uses a fixed breakpoint and cleans up listeners on unmount.
 - Returns a boolean suitable for responsive rendering decisions.
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 
 ### Real-Time Table Hook
+
 useRealtimeTable loads initial data and subscribes to Supabase realtime events for a given table. It supports dependency-driven refresh and cleanup of channels.
 
 ```mermaid
@@ -296,18 +317,22 @@ Hook->>SB : removeChannel()
 ```
 
 **Diagram sources**
+
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 - [client.ts](file://src/integrations/supabase/client.ts)
 
 Behavior:
+
 - Maintains loading state and exposes a refresh function.
 - Uses a randomized suffix to avoid channel collisions.
 - Exposes a dependency list to control refresh triggers.
 
 **Section sources**
+
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 
 ### Admin App Settings Hook
+
 Manages application-wide settings with form validation, server-side persistence, and export capabilities.
 
 ```mermaid
@@ -325,17 +350,21 @@ ToastErr --> Idle
 ```
 
 **Diagram sources**
+
 - [useAdminAppSettings.ts:1-156](file://src/hooks/useAdminAppSettings.ts#L1-L156)
 
 Highlights:
+
 - Uses react-hook-form with zodResolver for validation.
 - Integrates with server functions for load/save/export.
 - Handles loading states, busy states, and error messaging.
 
 **Section sources**
+
 - [useAdminAppSettings.ts:1-156](file://src/hooks/useAdminAppSettings.ts#L1-L156)
 
 ### Admin Users Hook
+
 Provides listing, filtering, inviting, enabling/disabling, and deleting admin users with bulk operations and confirmation dialogs.
 
 ```mermaid
@@ -356,17 +385,21 @@ Reload --> Filter
 ```
 
 **Diagram sources**
+
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 
 Highlights:
+
 - Uses server functions for all mutations.
 - Manages selection, bulk actions, and busy states.
 - Provides controlled filtering and reset of form state.
 
 **Section sources**
+
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 
 ### Admin Audit Hook
+
 Handles paginated audit log retrieval, filtering, and CSV export.
 
 ```mermaid
@@ -386,16 +419,20 @@ Hook-->>Comp : download CSV
 ```
 
 **Diagram sources**
+
 - [useAdminAudit.ts:1-82](file://src/hooks/useAdminAudit.ts#L1-L82)
 
 Highlights:
+
 - Encapsulates pagination and filters.
 - Exposes an export handler that downloads CSV.
 
 **Section sources**
+
 - [useAdminAudit.ts:1-82](file://src/hooks/useAdminAudit.ts#L1-L82)
 
 ### Admin OAuth Clients Hook
+
 Manages OAuth clients: listing, creation, status updates, secret rotation, and lifecycle inspection.
 
 ```mermaid
@@ -411,17 +448,21 @@ Close --> Load
 ```
 
 **Diagram sources**
+
 - [useAdminOAuthClients.ts:1-196](file://src/hooks/useAdminOAuthClients.ts#L1-L196)
 
 Highlights:
+
 - Uses react-hook-form for creation with newline-separated redirect URIs.
 - Integrates clipboard API for quick copying.
 - Supports lifecycle inspection and loading states.
 
 **Section sources**
+
 - [useAdminOAuthClients.ts:1-196](file://src/hooks/useAdminOAuthClients.ts#L1-L196)
 
 ### Automation Rules Hook
+
 Orchestrates rule listing, filtering, creation/editing via builder, runs, and versioning.
 
 ```mermaid
@@ -444,18 +485,23 @@ Hook-->>Comp : logs, stats, UI updates
 ```
 
 **Diagram sources**
+
 - [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
 
 Highlights:
+
 - Uses server functions and mutations for CRUD and runs.
 - Implements guided and advanced builder modes.
 - Manages versioning snapshots and run logs.
 
 **Section sources**
+
 - [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
 
 ### Conceptual Overview
+
 Hook composition patterns observed across the system:
+
 - Provider + hook pattern for global state (theme).
 - Effectful hooks for side effects (mobile detection, real-time).
 - Form + server function hooks for admin operations.
@@ -464,7 +510,9 @@ Hook composition patterns observed across the system:
 [No sources needed since this section doesn't analyze specific files]
 
 ## Dependency Analysis
+
 The hooks depend on:
+
 - Providers for global state (ThemeProvider, ThemeContext)
 - Supabase client for real-time subscriptions
 - Server functions for admin operations
@@ -485,6 +533,7 @@ UAuto --> SB
 ```
 
 **Diagram sources**
+
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [ThemeContext.tsx:1-12](file://src/components/ThemeContext.tsx#L1-L12)
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
@@ -498,6 +547,7 @@ UAuto --> SB
 - [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
 
 **Section sources**
+
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
@@ -511,6 +561,7 @@ UAuto --> SB
 - [client.ts](file://src/integrations/supabase/client.ts)
 
 ## Performance Considerations
+
 - Memoization
   - Prefer useMemo for derived data and expensive computations.
   - Use useCallback for event handlers and callbacks passed to effects.
@@ -531,7 +582,9 @@ UAuto --> SB
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - useTheme throws an error when used outside ThemeProvider
   - Ensure the app is wrapped with ThemeProvider.
   - Verify the provider receives proper defaults and keys.
@@ -549,6 +602,7 @@ Common issues and resolutions:
   - Ensure server functions are reachable and return expected shapes.
 
 **Section sources**
+
 - [use-theme.tsx:1-11](file://src/hooks/use-theme.tsx#L1-L11)
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
@@ -559,7 +613,9 @@ Common issues and resolutions:
 - [useAutomationRules.ts:1-413](file://src/hooks/useAutomationRules.ts#L1-L413)
 
 ## Conclusion
+
 The hooks system provides a cohesive, composable foundation for state, side effects, and integrations:
+
 - ThemeProvider and useTheme unify theme state and persistence.
 - useIsMobile enables responsive UI decisions.
 - useRealtimeTable simplifies real-time synchronization with Supabase.
@@ -571,6 +627,7 @@ The hooks system provides a cohesive, composable foundation for state, side effe
 ## Appendices
 
 ### Hook Usage Examples and Patterns
+
 - Theme
   - Wrap the app with ThemeProvider.
   - In a component, call useTheme and call setTheme to switch modes.
@@ -595,6 +652,7 @@ The hooks system provides a cohesive, composable foundation for state, side effe
   - Initialize without arguments; use builderOpen and saveWizardFlow to manage flows.
 
 **Section sources**
+
 - [admin.tsx:1-50](file://src/routes/_app/admin.tsx#L1-L50)
 - [automations.tsx:1-261](file://src/routes/_app/automations.tsx#L1-L261)
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)

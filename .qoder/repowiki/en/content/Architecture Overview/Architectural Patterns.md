@@ -24,6 +24,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -35,7 +36,9 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the architectural patterns implemented in PCReady. It focuses on:
+
 - Server Functions Pattern using TanStack createServerFn to separate business logic from UI
 - Repository Pattern for typed Supabase query utilities and database access abstraction
 - Component Composition for modular UI and feature-specific components
@@ -46,15 +49,18 @@ This document explains the architectural patterns implemented in PCReady. It foc
 These patterns are grounded in the repository’s codebase and validated by tests and configuration.
 
 **Section sources**
+
 - [README.md:1-159](file://README.md#L1-L159)
 
 ## Project Structure
+
 PCReady follows a file-based routing architecture with a clear separation between UI components, server-side logic, typed Supabase integration, and domain libraries:
+
 - Frontend UI: src/components and src/routes
 - Shared logic and hooks: src/lib and src/hooks
 - Supabase integration: src/integrations/supabase
 - Types: src/types and generated supabase types
-- Tests: src/__tests__
+- Tests: src/**tests**
 
 ```mermaid
 graph TB
@@ -83,6 +89,7 @@ SupabaseAdmin --> SupabaseTypes
 ```
 
 **Diagram sources**
+
 - [vite.config.ts:1-7](file://vite.config.ts#L1-L7)
 - [wrangler.jsonc:1-7](file://wrangler.jsonc#L1-L7)
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
@@ -91,11 +98,13 @@ SupabaseAdmin --> SupabaseTypes
 - [src/types/database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 **Section sources**
+
 - [vite.config.ts:1-7](file://vite.config.ts#L1-L7)
 - [wrangler.jsonc:1-7](file://wrangler.jsonc#L1-L7)
 - [README.md:125-134](file://README.md#L125-L134)
 
 ## Core Components
+
 - Supabase Clients: client.ts (client-side) and client.server.ts (server-side with service role)
 - Server Functions: TanStack createServerFn wrappers around business logic
 - Real-time Hook: useRealtimeTable for reactive UI updates
@@ -103,6 +112,7 @@ SupabaseAdmin --> SupabaseTypes
 - Typed Database Access: generated types and helper libraries
 
 **Section sources**
+
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [src/hooks/useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
@@ -110,7 +120,9 @@ SupabaseAdmin --> SupabaseTypes
 - [src/integrations/supabase/types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
 
 ## Architecture Overview
+
 The system separates concerns across three layers:
+
 - Presentation Layer: UI components and routes
 - Application Layer: Server functions and custom hooks
 - Data Layer: Supabase clients and typed database access
@@ -137,6 +149,7 @@ SupabaseAdmin --> DB
 ```
 
 **Diagram sources**
+
 - [src/lib/tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
 - [src/lib/ticket-completion.ts:1-15](file://src/lib/ticket-completion.ts#L1-L15)
 - [src/lib/ticket-completion.server.ts:1-289](file://src/lib/ticket-completion.server.ts#L1-L289)
@@ -146,11 +159,14 @@ SupabaseAdmin --> DB
 ## Detailed Component Analysis
 
 ### Server Functions Pattern (TanStack createServerFn)
+
 The Server Functions Pattern isolates business logic behind server-callable endpoints while keeping UI components free of backend details. Two examples demonstrate this pattern:
+
 - Creating a staff ticket with access-token-based auth and rate limiting
 - Completing a ticket with PDF generation, email dispatch, and admin notifications
 
 Key characteristics:
+
 - Strongly typed input validation with Zod
 - Access-token propagation to Supabase for authenticated queries
 - Server-only operations (e.g., admin tasks) delegated to server functions
@@ -175,6 +191,7 @@ SF-->>UI : "{ id, ticket_code }"
 ```
 
 **Diagram sources**
+
 - [src/lib/tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 
@@ -199,22 +216,27 @@ SF-->>UI : "Result"
 ```
 
 **Diagram sources**
+
 - [src/lib/ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [src/lib/ticket-completion.server.ts:49-181](file://src/lib/ticket-completion.server.ts#L49-L181)
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 
 Practical examples from the codebase:
+
 - Server function wrapper for creating tickets: [src/lib/tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - Server function wrapper for completing tickets: [src/lib/ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - Server-side implementation of completion workflow: [src/lib/ticket-completion.server.ts:49-181](file://src/lib/ticket-completion.server.ts#L49-L181)
 
 **Section sources**
+
 - [src/lib/tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
 - [src/lib/ticket-completion.ts:1-15](file://src/lib/ticket-completion.ts#L1-L15)
 - [src/lib/ticket-completion.server.ts:1-289](file://src/lib/ticket-completion.server.ts#L1-L289)
 
 ### Repository Pattern (Typed Supabase Query Utilities)
+
 The codebase abstracts database access through typed Supabase clients and helper libraries:
+
 - Supabase client.ts provides a client-side client configured for browser/SSR
 - Supabase client.server.ts provides a server-side client with service role for privileged operations
 - Generated types.ts and types/database.types.ts ensure compile-time safety for database operations
@@ -243,33 +265,39 @@ SupabaseAdminClientTS --> DatabaseTypesTS : "typed access"
 ```
 
 **Diagram sources**
+
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [src/integrations/supabase/types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
 - [src/types/database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 Practical examples from the codebase:
-- Mocked insert test validating repository-style mutation: [src/__tests__/queries.mutations.test.ts:30-38](file://src/__tests__/queries.mutations.test.ts#L30-L38)
-- Mocked select test validating repository-style read: [src/__tests__/routes/tickets.test.ts:20-34](file://src/__tests__/routes/tickets.test.ts#L20-L34)
+
+- Mocked insert test validating repository-style mutation: [src/**tests**/queries.mutations.test.ts:30-38](file://src/__tests__/queries.mutations.test.ts#L30-L38)
+- Mocked select test validating repository-style read: [src/**tests**/routes/tickets.test.ts:20-34](file://src/__tests__/routes/tickets.test.ts#L20-L34)
 
 **Section sources**
+
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [src/integrations/supabase/types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
 - [src/types/database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
-- [src/__tests__/queries.mutations.test.ts:1-38](file://src/__tests__/queries.mutations.test.ts#L1-L38)
-- [src/__tests__/routes/tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
+- [src/**tests**/queries.mutations.test.ts:1-38](file://src/__tests__/queries.mutations.test.ts#L1-L38)
+- [src/**tests**/routes/tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 ### Component Composition Pattern
+
 PCReady builds modular UI using composition:
+
 - Feature-specific components encapsulate domain logic (e.g., Modals, Wizards)
 - Layout and page-state components handle cross-cutting concerns
 - Routes compose lists, forms, and modals into cohesive pages
 
 Examples:
+
 - Modal component with title, footer, and portal rendering: [src/components/pcready/Modal.tsx:35-78](file://src/components/pcready/Modal.tsx#L35-L78)
-- Responsive table composition in clients route: [src/routes/_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
-- Form field composition in scripts route: [src/routes/_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
+- Responsive table composition in clients route: [src/routes/\_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
+- Form field composition in scripts route: [src/routes/\_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
 
 ```mermaid
 flowchart TD
@@ -284,16 +312,19 @@ Render --> End(["Interactive UI"])
 ```
 
 **Diagram sources**
+
 - [src/components/pcready/Modal.tsx:35-78](file://src/components/pcready/Modal.tsx#L35-L78)
-- [src/routes/_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
-- [src/routes/_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
+- [src/routes/\_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
+- [src/routes/\_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
 
 **Section sources**
+
 - [src/components/pcready/Modal.tsx:35-78](file://src/components/pcready/Modal.tsx#L35-L78)
-- [src/routes/_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
-- [src/routes/_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
+- [src/routes/\_app/clients.tsx:1393-1444](file://src/routes/_app/clients.tsx#L1393-L1444)
+- [src/routes/\_app/scripts.tsx:634-670](file://src/routes/_app/scripts.tsx#L634-L670)
 
 ### State Management with React Hooks and Custom Hooks
+
 - Authentication state is centralized in auth-context with provider and hook
 - Real-time state synchronization is handled by useRealtimeTable for reactive UI updates
 - UI state is managed via component-local hooks and controlled props
@@ -313,6 +344,7 @@ Hook-->>UI : "Auth state + helpers"
 ```
 
 **Diagram sources**
+
 - [src/lib/auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 
 ```mermaid
@@ -324,18 +356,23 @@ OnChange --> Cleanup["Cleanup channel on unmount"]
 ```
 
 **Diagram sources**
+
 - [src/hooks/useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
 
 Practical examples from the codebase:
+
 - Auth provider and hook: [src/lib/auth-context.tsx:43-173](file://src/lib/auth-context.tsx#L43-L173)
 - Real-time table hook: [src/hooks/useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
 
 **Section sources**
+
 - [src/lib/auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [src/hooks/useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 
 ### Observer Pattern via Supabase Real-time Subscriptions
+
 Supabase real-time channels keep UI synchronized with database changes. The useRealtimeTable hook:
+
 - Executes an initial query
 - Subscribes to postgres_changes events for a given table
 - Refreshes data on any change and cleans up on unmount
@@ -353,29 +390,35 @@ UI-->>Hook : "Unsubscribe on unmount"
 ```
 
 **Diagram sources**
+
 - [src/hooks/useRealtimeTable.ts:33-46](file://src/hooks/useRealtimeTable.ts#L33-L46)
 
 **Section sources**
+
 - [src/hooks/useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 
 ### Separation of Concerns
+
 - Frontend components focus on rendering and user interactions
 - Server functions encapsulate business logic and side effects
 - Database operations are abstracted via typed Supabase clients and server-side admin client
 - Authentication and authorization are enforced via middleware and RPC checks
 
 Evidence from the codebase:
+
 - Admin authorization enforcement via RPC: [src/lib/admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - Auth middleware for server requests: [src/integrations/supabase/auth-middleware.ts:7-36](file://src/integrations/supabase/auth-middleware.ts#L7-L36)
 - Client and server Supabase clients: [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41), [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 
 **Section sources**
+
 - [src/lib/admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [src/integrations/supabase/auth-middleware.ts:1-36](file://src/integrations/supabase/auth-middleware.ts#L1-L36)
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 
 ## Dependency Analysis
+
 The following diagram highlights key dependencies across layers and modules:
 
 ```mermaid
@@ -393,6 +436,7 @@ DBTypes["database.types.ts"] --> Types
 ```
 
 **Diagram sources**
+
 - [src/lib/auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [src/hooks/useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 - [src/lib/tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
@@ -404,6 +448,7 @@ DBTypes["database.types.ts"] --> Types
 - [src/types/database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 **Section sources**
+
 - [src/lib/auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [src/hooks/useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 - [src/lib/tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
@@ -415,6 +460,7 @@ DBTypes["database.types.ts"] --> Types
 - [src/types/database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 ## Performance Considerations
+
 - Server-side pagination and filtering reduce memory usage and improve responsiveness for large datasets
 - Real-time subscriptions update only affected tables, minimizing unnecessary re-renders
 - Server functions centralize heavy operations (PDF generation, email dispatch) on the server to keep the client responsive
@@ -423,7 +469,9 @@ DBTypes["database.types.ts"] --> Types
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 Common issues and where to look:
+
 - Missing Supabase credentials on server: the server clients throw explicit errors when environment variables are missing
   - [src/integrations/supabase/client.server.ts:12-20](file://src/integrations/supabase/client.server.ts#L12-L20)
   - [src/integrations/supabase/client.ts:12-20](file://src/integrations/supabase/client.ts#L12-L20)
@@ -436,6 +484,7 @@ Common issues and where to look:
   - [src/lib/auth-context.tsx:114-146](file://src/lib/auth-context.tsx#L114-L146)
 
 **Section sources**
+
 - [src/integrations/supabase/client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [src/integrations/supabase/client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [src/lib/tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
@@ -444,7 +493,9 @@ Common issues and where to look:
 - [src/lib/auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 
 ## Conclusion
+
 PCReady’s architecture cleanly separates presentation, application, and data layers:
+
 - Server Functions isolate business logic and enforce auth/security
 - Repository Pattern with typed Supabase clients ensures reliable database access
 - Component Composition yields modular, reusable UI

@@ -78,8 +78,8 @@ function PortalLoginPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight">Verifica in due passaggi</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Abbiamo inviato un codice di 6 cifre a <strong>{email}</strong>.
-            Inseriscilo qui sotto per completare l'accesso.
+            Abbiamo inviato un codice di 6 cifre a <strong>{email}</strong>. Inseriscilo qui sotto
+            per completare l'accesso.
           </p>
         </div>
         <form onSubmit={submit2FACode} className="space-y-4 rounded-lg border bg-card p-4">
@@ -118,7 +118,8 @@ function PortalLoginPage() {
           Il codice scade dopo 10 minuti. Se non lo ricevi, controlla la cartella spam o{" "}
           <button onClick={goBackToLogin} className="underline hover:text-foreground">
             riprova l'accesso
-          </button>.
+          </button>
+          .
         </p>
       </div>
     );

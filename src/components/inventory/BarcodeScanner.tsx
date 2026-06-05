@@ -80,7 +80,11 @@ export function BarcodeScanner({
         if (controls) controlsRef.current = controls;
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : t("barcodeScanner.cameraError", "Impossibile avviare la fotocamera"));
+        setError(
+          err instanceof Error
+            ? err.message
+            : t("barcodeScanner.cameraError", "Impossibile avviare la fotocamera"),
+        );
       });
 
     return () => {
@@ -106,7 +110,11 @@ export function BarcodeScanner({
     <Modal
       open={open}
       onClose={handleClose}
-      title={mode === "barcode-1d" ? t("barcodeScanner.title1d", "Leggi barcode 1D") : t("barcodeScanner.title", "Scansiona codice inventario")}
+      title={
+        mode === "barcode-1d"
+          ? t("barcodeScanner.title1d", "Leggi barcode 1D")
+          : t("barcodeScanner.title", "Scansiona codice inventario")
+      }
       size="lg"
     >
       <div className="flex flex-col gap-3">
@@ -117,8 +125,8 @@ export function BarcodeScanner({
           >
             <div className="font-semibold">Destinazione: {targetLabel}</div>
             <div className="mt-1 text-xs text-text3">
-              Funzione diversa dal QR code inventario: legge codici lineari 1D per compilare
-              seriali e asset tag.
+              Funzione diversa dal QR code inventario: legge codici lineari 1D per compilare seriali
+              e asset tag.
             </div>
           </div>
         ) : null}
@@ -132,8 +140,7 @@ export function BarcodeScanner({
           <div className="text-sm text-destructive">{error}</div>
         ) : mode === "barcode-1d" ? (
           <div className="text-xs text-text3">
-            Inquadra un barcode 1D. Formati supportati:{" "}
-            {SUPPORTED_1D_BARCODE_FORMATS.join(", ")}.
+            Inquadra un barcode 1D. Formati supportati: {SUPPORTED_1D_BARCODE_FORMATS.join(", ")}.
           </div>
         ) : (
           <div className="text-xs text-text3">

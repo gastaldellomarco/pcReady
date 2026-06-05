@@ -21,7 +21,8 @@ const meta: Meta<typeof DatePickerInput> = {
     },
     onChange: {
       action: "changed",
-      description: "Called with an ISO date string (YYYY-MM-DD) when the user selects a date, or an empty string when cleared",
+      description:
+        "Called with an ISO date string (YYYY-MM-DD) when the user selects a date, or an empty string when cleared",
     },
     disabled: {
       control: "boolean",
@@ -264,7 +265,10 @@ export const LightAndDark: Story = {
         <p style={{ marginBottom: 8, fontSize: 13, color: "var(--text2)" }}>Light</p>
         <DatePickerInput {...args} />
       </div>
-      <div className="dark" style={{ background: "var(--page-surface)", padding: 20, borderRadius: 12 }}>
+      <div
+        className="dark"
+        style={{ background: "var(--page-surface)", padding: 20, borderRadius: 12 }}
+      >
         <p style={{ marginBottom: 8, fontSize: 13, color: "var(--text2)" }}>Dark</p>
         <DatePickerInput {...args} />
       </div>

@@ -35,12 +35,21 @@ function formatFieldName(key: string, t: any) {
 
 function formatValue(value: unknown, t: any) {
   if (value === null || value === undefined) return "—";
-  if (typeof value === "boolean") return value ? t("versionDiff.yes", "Sì") : t("versionDiff.no", "No");
+  if (typeof value === "boolean")
+    return value ? t("versionDiff.yes", "Sì") : t("versionDiff.no", "No");
   if (typeof value === "string" || typeof value === "number") return String(value);
   return JSON.stringify(value, null, 2);
 }
 
-function ValueBlock({ value, tone, t: tFn }: { value: unknown; tone: "old" | "new" | "neutral"; t: any }) {
+function ValueBlock({
+  value,
+  tone,
+  t: tFn,
+}: {
+  value: unknown;
+  tone: "old" | "new" | "neutral";
+  t: any;
+}) {
   const text = formatValue(value, tFn);
   const isLong = text.length > 120 || text.includes("\n");
   const className =
@@ -70,14 +79,18 @@ export function VersionDiffViewer({
   const { t } = useTranslation("checklist");
   const isComparison = !!version2;
   const diff = version2 ? compareVersions(version1, version2) : null;
-  const authorLabel = (id: string | null) => (id ? authorNames[id] || id : t("versionDiff.system", "Sistema"));
+  const authorLabel = (id: string | null) =>
+    id ? authorNames[id] || id : t("versionDiff.system", "Sistema");
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>
-            {isComparison ? t("versionDiff.compareVersions", "Confronto Versioni") : t("versionDiff.versionDetails", "Dettagli Versione")} v{version1.version_number}
+            {isComparison
+              ? t("versionDiff.compareVersions", "Confronto Versioni")
+              : t("versionDiff.versionDetails", "Dettagli Versione")}{" "}
+            v{version1.version_number}
             {version2 && ` vs v${version2.version_number}`}
           </DialogTitle>
         </DialogHeader>
@@ -161,18 +174,26 @@ export function VersionDiffViewer({
                 {/* Changed Fields */}
                 {Object.keys(diff.changed).length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3">{t("versionDiff.changedFields", "Campi Modificati")}</h3>
+                    <h3 className="font-semibold mb-3">
+                      {t("versionDiff.changedFields", "Campi Modificati")}
+                    </h3>
                     <div className="space-y-3">
                       {Object.entries(diff.changed).map(([key, change]) => (
                         <div key={key} className="border rounded-lg p-4">
-                          <div className="font-medium mb-2 capitalize">{formatFieldName(key, t)}</div>
+                          <div className="font-medium mb-2 capitalize">
+                            {formatFieldName(key, t)}
+                          </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <div className="text-sm text-muted-foreground mb-1">{t("versionDiff.previous", "Precedente")}</div>
+                              <div className="text-sm text-muted-foreground mb-1">
+                                {t("versionDiff.previous", "Precedente")}
+                              </div>
                               <ValueBlock value={change.old} tone="old" t={t} />
                             </div>
                             <div>
-                              <div className="text-sm text-muted-foreground mb-1">{t("versionDiff.new", "Nuovo")}</div>
+                              <div className="text-sm text-muted-foreground mb-1">
+                                {t("versionDiff.new", "Nuovo")}
+                              </div>
                               <ValueBlock value={change.new} tone="new" t={t} />
                             </div>
                           </div>
@@ -185,7 +206,9 @@ export function VersionDiffViewer({
                 {/* Added Fields */}
                 {Object.keys(diff.added).length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3 text-green-600">{t("versionDiff.addedFields", "Campi Aggiunti")}</h3>
+                    <h3 className="font-semibold mb-3 text-green-600">
+                      {t("versionDiff.addedFields", "Campi Aggiunti")}
+                    </h3>
                     <div className="space-y-2">
                       {Object.entries(diff.added).map(([key, value]) => (
                         <div
@@ -203,7 +226,9 @@ export function VersionDiffViewer({
                 {/* Removed Fields */}
                 {Object.keys(diff.removed).length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3 text-red-600">{t("versionDiff.removedFields", "Campi Rimossi")}</h3>
+                    <h3 className="font-semibold mb-3 text-red-600">
+                      {t("versionDiff.removedFields", "Campi Rimossi")}
+                    </h3>
                     <div className="space-y-2">
                       {Object.entries(diff.removed).map(([key, value]) => (
                         <div
@@ -221,7 +246,9 @@ export function VersionDiffViewer({
             ) : (
               /* Single Version View */
               <div>
-                <h3 className="font-semibold mb-3">{t("versionDiff.versionData", "Dati Versione")}</h3>
+                <h3 className="font-semibold mb-3">
+                  {t("versionDiff.versionData", "Dati Versione")}
+                </h3>
                 <div className="border rounded-lg p-4">
                   <pre className="whitespace-pre-wrap font-mono text-sm">
                     {JSON.stringify(version1.snapshot, null, 2)}

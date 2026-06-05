@@ -1,4 +1,13 @@
-import { Plus, Mail, Ticket, MessageSquare, PlusCircle, Bell, UserCheck, Monitor } from "lucide-react";
+import {
+  Plus,
+  Mail,
+  Ticket,
+  MessageSquare,
+  PlusCircle,
+  Bell,
+  UserCheck,
+  Monitor,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AUTOMATION_ACTION_TYPES, createDefaultAction } from "@/domain/automation";
@@ -161,7 +170,10 @@ export function AutomationActionsBuilder({
       {actions.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 border border-dashed border-gray-200 rounded-lg">
           <p className="text-text3 text-sm">
-            {t("actionsBuilder.noActions", "Nessuna azione configurata. Aggiungi almeno un'azione.")}
+            {t(
+              "actionsBuilder.noActions",
+              "Nessuna azione configurata. Aggiungi almeno un'azione.",
+            )}
           </p>
         </div>
       ) : (
@@ -188,7 +200,9 @@ export function AutomationActionsBuilder({
               tabIndex={-1}
               className="fixed inset-0 z-40"
               onClick={() => setIsMenuOpen(false)}
-              onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setIsMenuOpen(false); }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" || e.key === "Enter") setIsMenuOpen(false);
+              }}
               aria-label={t("actionsBuilder.closeMenu", "Chiudi menu")}
             />
             <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
@@ -202,12 +216,8 @@ export function AutomationActionsBuilder({
                   >
                     <span className="text-text2">{ICON_MAP[actionType.value]}</span>
                     <div>
-                      <div className="text-sm font-medium text-text">
-                        {actionType.label}
-                      </div>
-                      <div className="text-xs text-text3">
-                        {actionType.description}
-                      </div>
+                      <div className="text-sm font-medium text-text">{actionType.label}</div>
+                      <div className="text-xs text-text3">{actionType.description}</div>
                     </div>
                   </button>
                 ))}

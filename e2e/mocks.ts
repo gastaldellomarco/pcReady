@@ -9,7 +9,8 @@ const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
 export async function mockSupabaseAuth(page: Page) {
   await page.route(`${SUPABASE_URL}/auth/v1/settings`, async (route) => {
     await route.fulfill({
-      status: 200, contentType: "application/json",
+      status: 200,
+      contentType: "application/json",
       body: JSON.stringify({
         data: { disable_signup: false, external: { email: true }, mailer_autoconfirm: true },
       }),
@@ -18,14 +19,21 @@ export async function mockSupabaseAuth(page: Page) {
 
   await page.route(`${SUPABASE_URL}/auth/v1/user`, async (route) => {
     await route.fulfill({
-      status: 200, contentType: "application/json",
+      status: 200,
+      contentType: "application/json",
       body: JSON.stringify({
-        id: MOCK_USER_ID, aud: "authenticated", role: "authenticated",
-        email: "admin@test.it", email_confirmed_at: "2025-01-01T00:00:00Z",
+        id: MOCK_USER_ID,
+        aud: "authenticated",
+        role: "authenticated",
+        email: "admin@test.it",
+        email_confirmed_at: "2025-01-01T00:00:00Z",
         last_sign_in_at: "2025-01-01T00:00:00Z",
-        app_metadata: { provider: "email" }, user_metadata: {},
-        identities: [], created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z", is_anonymous: false,
+        app_metadata: { provider: "email" },
+        user_metadata: {},
+        identities: [],
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+        is_anonymous: false,
       }),
     });
   });
@@ -33,13 +41,21 @@ export async function mockSupabaseAuth(page: Page) {
   await page.route(`${SUPABASE_URL}/auth/v1/token*`, async (route) => {
     if (route.request().method() === "POST") {
       await route.fulfill({
-        status: 200, contentType: "application/json",
+        status: 200,
+        contentType: "application/json",
         body: JSON.stringify({
-          access_token: "mock-access-token", token_type: "bearer",
-          expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600,
+          access_token: "mock-access-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
           refresh_token: "mock-refresh-token",
-          user: { id: MOCK_USER_ID, aud: "authenticated", role: "authenticated",
-            email: "admin@test.it", email_confirmed_at: "2025-01-01T00:00:00Z" },
+          user: {
+            id: MOCK_USER_ID,
+            aud: "authenticated",
+            role: "authenticated",
+            email: "admin@test.it",
+            email_confirmed_at: "2025-01-01T00:00:00Z",
+          },
         }),
       });
     } else {
@@ -65,7 +81,8 @@ export async function mockSupabaseRest(page: Page, overrides?: Record<string, un
         if (url.includes(pattern)) {
           const arr = Array.isArray(data) ? data : [data];
           await route.fulfill({
-            status: 200, contentType: "application/json",
+            status: 200,
+            contentType: "application/json",
             headers: { "content-range": `0-${arr.length - 1}/${arr.length}` },
             body: JSON.stringify({ data: arr, error: null, count: arr.length }),
           });
@@ -76,13 +93,15 @@ export async function mockSupabaseRest(page: Page, overrides?: Record<string, un
 
     if (method === "GET") {
       await route.fulfill({
-        status: 200, contentType: "application/json",
+        status: 200,
+        contentType: "application/json",
         headers: { "content-range": "0-0/0" },
         body: JSON.stringify({ data: [], error: null, count: 0 }),
       });
     } else {
       await route.fulfill({
-        status: 201, contentType: "application/json",
+        status: 201,
+        contentType: "application/json",
         body: JSON.stringify({ data: { id: "00000000-0000-0000-0000-000000000099" }, error: null }),
       });
     }
@@ -94,8 +113,15 @@ export async function mockSupabaseRest(page: Page, overrides?: Record<string, un
  */
 export async function mockServerFunctions(page: Page) {
   await page.route("**/_server*", async (route) => {
-    if (route.request().method() !== "POST") { await route.continue(); return; }
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: null }) });
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: null }),
+    });
   });
 }
 
@@ -104,7 +130,9 @@ export async function mockServerFunctions(page: Page) {
  */
 export async function mockRealtimeWebSocket(page: Page) {
   await page.routeWebSocket(`${SUPABASE_URL}/realtime/v1/**`, (ws) => {
-    ws.onMessage((_msg) => { void _msg; });
+    ws.onMessage((_msg) => {
+      void _msg;
+    });
   });
 }
 
@@ -129,13 +157,18 @@ export async function seedMockSession(page: Page) {
       expires_at: expiresAt,
       refresh_token: "mock-refresh-token",
       user: {
-        id: MOCK_USER_ID, aud: "authenticated", role: "authenticated",
-        email: "admin@test.it", email_confirmed_at: "2025-01-01T00:00:00Z",
+        id: MOCK_USER_ID,
+        aud: "authenticated",
+        role: "authenticated",
+        email: "admin@test.it",
+        email_confirmed_at: "2025-01-01T00:00:00Z",
         last_sign_in_at: "2025-01-01T00:00:00Z",
         app_metadata: { provider: "email", full_name: "Admin User" },
         user_metadata: { full_name: "Admin User" },
-        identities: [], created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z", is_anonymous: false,
+        identities: [],
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+        is_anonymous: false,
       },
     },
     expiresAt,

@@ -23,7 +23,13 @@ test.describe("Auth Flow E2E", () => {
           { id: "00000000-0000-0000-0000-000000000001", full_name: "Admin User", initials: "AU" },
         ],
         "/user_profiles?": [
-          { id: "00000000-0000-0000-0000-000000000001", display_name: "Admin User", avatar_url: null, password_set: true, language: "it" },
+          {
+            id: "00000000-0000-0000-0000-000000000001",
+            display_name: "Admin User",
+            avatar_url: null,
+            password_set: true,
+            language: "it",
+          },
         ],
       },
     });

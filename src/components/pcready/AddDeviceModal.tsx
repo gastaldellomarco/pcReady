@@ -28,7 +28,6 @@ import { DeviceSchema, type DeviceFormInput, type DeviceInput } from "@/lib/sche
 import { Modal } from "./Modal";
 import type { TablesInsert } from "@/integrations/supabase/types";
 
-
 function normalizeOptions(values: unknown): string[] {
   return Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [];
 }
@@ -159,8 +158,14 @@ export function AddDeviceModal() {
     form.setFocus(target);
     toast.info(
       barcodeTarget === "asset_tag"
-        ? t("addDevice.toasts.assetTagReady", "Campo asset tag pronto per scanner barcode USB/Bluetooth")
-        : t("addDevice.toasts.serialReady", "Campo seriale pronto per scanner barcode USB/Bluetooth"),
+        ? t(
+            "addDevice.toasts.assetTagReady",
+            "Campo asset tag pronto per scanner barcode USB/Bluetooth",
+          )
+        : t(
+            "addDevice.toasts.serialReady",
+            "Campo seriale pronto per scanner barcode USB/Bluetooth",
+          ),
     );
   }
 
@@ -176,16 +181,24 @@ export function AddDeviceModal() {
     form.setFocus(barcodeTarget);
     setBarcodeTarget(null);
     toast.success(
-      barcodeTarget === "asset_tag" ? t("addDevice.toasts.assetTagBarcode", "Asset tag compilato da barcode") : t("addDevice.toasts.serialBarcode", "Seriale compilato da barcode"),
+      barcodeTarget === "asset_tag"
+        ? t("addDevice.toasts.assetTagBarcode", "Asset tag compilato da barcode")
+        : t("addDevice.toasts.serialBarcode", "Seriale compilato da barcode"),
     );
   }
 
   const submit = form.handleSubmit(async (values) => {
-    if (!canEdit) return toast.error(t("addDevice.toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (!canEdit)
+      return toast.error(t("addDevice.toasts.insufficientPermissions", "Permessi insufficienti"));
     setBusy(true);
     try {
       if (!(clients && clients.length) && !addDeviceClient) {
-        toast.error(t("addDevice.toasts.noClientAvailable", "Nessun cliente disponibile — crea o seleziona un cliente prima di aggiungere dispositivi"));
+        toast.error(
+          t(
+            "addDevice.toasts.noClientAvailable",
+            "Nessun cliente disponibile — crea o seleziona un cliente prima di aggiungere dispositivi",
+          ),
+        );
         return;
       }
       const client = clients.find((c) => c.id === values.client_id) || addDeviceClient;
@@ -228,7 +241,10 @@ export function AddDeviceModal() {
       const data = await createDeviceMut.mutateAsync(deviceInsert as any);
       await insertActivity({
         type: "user",
-        message: t("addDevice.activityAdded", { tag: data.asset_tag || data.serial || values.model, defaultValue: "Dispositivo {{tag}} aggiunto all'inventario" }),
+        message: t("addDevice.activityAdded", {
+          tag: data.asset_tag || data.serial || values.model,
+          defaultValue: "Dispositivo {{tag}} aggiunto all'inventario",
+        }),
         actor_id: user!.id,
       });
       toast.success(t("addDevice.toasts.addedToInventory", "Dispositivo aggiunto all'inventario"));
@@ -248,7 +264,10 @@ export function AddDeviceModal() {
       });
       closeAddDevice();
     } catch (e: unknown) {
-      const msg = errorMessage(e, t("addDevice.toasts.createError", "Errore creazione dispositivo"));
+      const msg = errorMessage(
+        e,
+        t("addDevice.toasts.createError", "Errore creazione dispositivo"),
+      );
       // show more visible error for debugging
       toast.error(msg);
       console.error("AddDevice error:", e);
@@ -272,15 +291,22 @@ export function AddDeviceModal() {
             {
               message: (v as any)?.message ?? null,
               type: (v as any)?.type ?? null,
-              ref: (v as any)?.ref ? ((v as any).ref.name || String((v as any).ref)) : null,
+              ref: (v as any)?.ref ? (v as any).ref.name || String((v as any).ref) : null,
             },
           ]),
         );
         console.error("AddDevice validation failed keys:", Object.keys(form.formState.errors));
-        console.error("AddDevice validation failed (errors):\n" + JSON.stringify(errorsMap, null, 2));
+        console.error(
+          "AddDevice validation failed (errors):\n" + JSON.stringify(errorsMap, null, 2),
+        );
         console.error("AddDevice values:\n" + JSON.stringify(form.getValues(), null, 2));
       } catch (e) {
-        console.error("AddDevice validation failed (unable to serialize)", e, form.formState.errors, form.getValues());
+        console.error(
+          "AddDevice validation failed (unable to serialize)",
+          e,
+          form.formState.errors,
+          form.getValues(),
+        );
       }
 
       const entries = Object.entries(form.formState.errors);
@@ -288,10 +314,20 @@ export function AddDeviceModal() {
       if (first) {
         const [field, err] = first as [string, any];
         if (field) form.setFocus(field as any);
-        const message = err?.message || t("addDevice.toasts.validationRequired", "Compila i campi obbligatori prima di procedere");
+        const message =
+          err?.message ||
+          t(
+            "addDevice.toasts.validationRequired",
+            "Compila i campi obbligatori prima di procedere",
+          );
         toast.error(message);
       } else {
-        toast.error(t("addDevice.toasts.validationRequired", "Compila i campi obbligatori prima di procedere"));
+        toast.error(
+          t(
+            "addDevice.toasts.validationRequired",
+            "Compila i campi obbligatori prima di procedere",
+          ),
+        );
       }
       return;
     }
@@ -311,7 +347,9 @@ export function AddDeviceModal() {
             {t("addDevice.cancel", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" disabled={busy} onClick={onAddClick}>
-            {busy ? t("addDevice.adding", "Creazione...") : t("addDevice.addDevice", "Aggiungi dispositivo")}
+            {busy
+              ? t("addDevice.adding", "Creazione...")
+              : t("addDevice.addDevice", "Aggiungi dispositivo")}
           </button>
         </>
       }
@@ -324,9 +362,14 @@ export function AddDeviceModal() {
           <div className="flex items-start gap-2">
             <Barcode className="mt-0.5 size-4 shrink-0 text-accent" />
             <div>
-              <div className="font-semibold text-text">{t("addDevice.barcodeTitle", "Barcode 1D per inserimento rapido")}</div>
+              <div className="font-semibold text-text">
+                {t("addDevice.barcodeTitle", "Barcode 1D per inserimento rapido")}
+              </div>
               <div className="text-text3">
-                {t("addDevice.barcodeDescription", "Funzione diversa dal QR code inventario: usa scanner USB/Bluetooth o camera per compilare asset tag interno e seriale produttore.")}
+                {t(
+                  "addDevice.barcodeDescription",
+                  "Funzione diversa dal QR code inventario: usa scanner USB/Bluetooth o camera per compilare asset tag interno e seriale produttore.",
+                )}
               </div>
             </div>
           </div>
@@ -448,12 +491,19 @@ export function AddDeviceModal() {
                 className="flex min-h-10 items-center rounded-md border px-3 text-sm font-semibold"
                 style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
-                {t("addDevice.clientLocked", { name: addDeviceClient.name, defaultValue: "Cliente: {{name}}" })}
+                {t("addDevice.clientLocked", {
+                  name: addDeviceClient.name,
+                  defaultValue: "Cliente: {{name}}",
+                })}
                 <input type="hidden" {...form.register("client_id")} />
               </div>
             ) : (
               <select className="pc-input" {...form.register("client_id")}>
-                {!(clients ?? []).length && <option value="">{t("addDevice.noClientAvailable", "Nessun cliente disponibile")}</option>}
+                {!(clients ?? []).length && (
+                  <option value="">
+                    {t("addDevice.noClientAvailable", "Nessun cliente disponibile")}
+                  </option>
+                )}
                 {(Array.isArray(clients) ? clients : []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.company_name || c.name}
@@ -510,21 +560,31 @@ export function AddDeviceModal() {
         onClose={() => setBarcodeTarget(null)}
         onDetected={applyBarcodeValue}
         mode="barcode-1d"
-        targetLabel={barcodeTarget === "asset_tag" ? t("addDevice.fieldAssetTag", "asset tag interno") : t("addDevice.fieldSerial", "seriale produttore")}
+        targetLabel={
+          barcodeTarget === "asset_tag"
+            ? t("addDevice.fieldAssetTag", "asset tag interno")
+            : t("addDevice.fieldSerial", "seriale produttore")
+        }
       />
       {/* Temporary debug panel: shows validation errors and current values for easier troubleshooting */}
       {Object.keys(form.formState.errors).length > 0 && (
         <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">
           <div className="font-semibold mb-2">Debug: form errors & values</div>
-          <pre className="whitespace-pre-wrap max-h-48 overflow-auto">{JSON.stringify({
-            errors: Object.fromEntries(
-              Object.entries(form.formState.errors).map(([k, v]) => [
-                k,
-                { message: (v as any)?.message ?? null, type: (v as any)?.type ?? null },
-              ]),
-            ),
-            values: form.getValues(),
-          }, null, 2)}</pre>
+          <pre className="whitespace-pre-wrap max-h-48 overflow-auto">
+            {JSON.stringify(
+              {
+                errors: Object.fromEntries(
+                  Object.entries(form.formState.errors).map(([k, v]) => [
+                    k,
+                    { message: (v as any)?.message ?? null, type: (v as any)?.type ?? null },
+                  ]),
+                ),
+                values: form.getValues(),
+              },
+              null,
+              2,
+            )}
+          </pre>
         </div>
       )}
     </Modal>
@@ -597,10 +657,7 @@ function DynamicDeviceFields({
             name="license_expiry"
             control={form.control}
             render={({ field }) => (
-              <DatePickerInput
-                value={field.value ?? ""}
-                onChange={field.onChange}
-              />
+              <DatePickerInput value={field.value ?? ""} onChange={field.onChange} />
             )}
           />
         </Field>
@@ -628,7 +685,7 @@ function DynamicDeviceFields({
         <Field label={t("addDevice.fieldCpu", "CPU")}>
           <input className="pc-input" {...form.register("cpu_name")} />
         </Field>
-      <Field label={t("addDevice.fieldRamGb", "RAM GB")}>
+        <Field label={t("addDevice.fieldRamGb", "RAM GB")}>
           <input className="pc-input" type="number" min="0" {...form.register("ram_gb")} />
         </Field>
         <Field label={t("addDevice.fieldStorageGb", "Storage GB")}>
@@ -676,4 +733,3 @@ function DynamicDeviceFields({
     </div>
   );
 }
-

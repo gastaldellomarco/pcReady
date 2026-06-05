@@ -7,8 +7,7 @@ import { axe } from "vitest-axe";
 // ── Mock react-i18next ──────────────────────────────────────────────────
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) =>
-      typeof fallback === "string" ? fallback : key,
+    t: (key: string, fallback?: string) => (typeof fallback === "string" ? fallback : key),
   }),
 }));
 

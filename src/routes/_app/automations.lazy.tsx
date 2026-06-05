@@ -10,12 +10,7 @@ import { RunConfirmDialog } from "@/components/automations/RunConfirmDialog";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { Button } from "@/components/ui/button";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { TRIGGER_TYPE_OPTIONS } from "@/hooks/useAutomationRules";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
@@ -174,7 +169,11 @@ function AutomationsPage() {
             type="button"
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="rounded-md border border-border px-1.5 py-1.5 text-xs bg-background hover:bg-surface3"
-            title={sortOrder === "asc" ? t("sort.ascending", "Ascendente") : t("sort.descending", "Discendente")}
+            title={
+              sortOrder === "asc"
+                ? t("sort.ascending", "Ascendente")
+                : t("sort.descending", "Discendente")
+            }
           >
             {sortOrder === "asc" ? "\u2191" : "\u2193"}
           </button>
@@ -227,7 +226,8 @@ function AutomationsPage() {
         )}
         {!loadingRules && filteredRules.length === 0 && (
           <div className="py-8 text-center text-sm text-text3">
-            {t("empty.noRules", "Nessuna regola trovata.")}{searchQuery ? ' ' + t("empty.trySearch", "Prova a modificare la ricerca.") : ''}
+            {t("empty.noRules", "Nessuna regola trovata.")}
+            {searchQuery ? " " + t("empty.trySearch", "Prova a modificare la ricerca.") : ""}
           </div>
         )}
         {!loadingRules &&
@@ -276,13 +276,17 @@ function AutomationsPage() {
         <DialogContent className="max-w-3xl max-h-[95dvh] overflow-hidden flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
             <DialogTitle>
-              {editingRule ? t("dialog.editTitle", "Modifica automazione") : t("dialog.newTitle", "Nuova automazione")}
+              {editingRule
+                ? t("dialog.editTitle", "Modifica automazione")
+                : t("dialog.newTitle", "Nuova automazione")}
             </DialogTitle>
           </DialogHeader>
           <div className="px-6 pt-3 pb-0 flex gap-2 items-center shrink-0 border-b border-border">
             <label
               className={`cursor-pointer px-3 py-2 text-sm rounded-t border-b-2 transition-colors ${
-                guidedMode ? "border-accent text-accent font-medium" : "border-transparent text-text3 hover:text-foreground"
+                guidedMode
+                  ? "border-accent text-accent font-medium"
+                  : "border-transparent text-text3 hover:text-foreground"
               }`}
             >
               <input
@@ -296,7 +300,9 @@ function AutomationsPage() {
             </label>
             <label
               className={`cursor-pointer px-3 py-2 text-sm rounded-t border-b-2 transition-colors ${
-                !guidedMode ? "border-accent text-accent font-medium" : "border-transparent text-text3 hover:text-foreground"
+                !guidedMode
+                  ? "border-accent text-accent font-medium"
+                  : "border-transparent text-text3 hover:text-foreground"
               }`}
             >
               <input
@@ -311,47 +317,39 @@ function AutomationsPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0">
-          {guidedMode ? (
-            <div className="p-6 pb-2">
-              <AutomationWizard
-                initial={
-                  editingRule
-                    ? ({
-                        ...editingRule,
-                        ...(editingRule.flow_definition?.meta?.wizard ?? {}),
-                      } as WizardFlowPayload & { version?: number })
-                    : undefined
-                }
-                onSave={saveWizardFlow}
+            {guidedMode ? (
+              <div className="p-6 pb-2">
+                <AutomationWizard
+                  initial={
+                    editingRule
+                      ? ({
+                          ...editingRule,
+                          ...(editingRule.flow_definition?.meta?.wizard ?? {}),
+                        } as WizardFlowPayload & { version?: number })
+                      : undefined
+                  }
+                  onSave={saveWizardFlow}
+                  onCancel={() => setBuilderOpen(false)}
+                  onTest={editingRule ? () => void runRule(editingRule, true) : undefined}
+                />
+              </div>
+            ) : AutomationBuilderComp ? (
+              <AutomationBuilderComp
+                initialFlow={editingRule ? { id: editingRule.id } : undefined}
+                onSave={() => {
+                  setBuilderOpen(false);
+                  void listQuery.refetch();
+                }}
                 onCancel={() => setBuilderOpen(false)}
-                onTest={
-                  editingRule
-                    ? () => void runRule(editingRule, true)
-                    : undefined
-                }
               />
-            </div>
-          ) : AutomationBuilderComp ? (
-            <AutomationBuilderComp
-              initialFlow={editingRule ? { id: editingRule.id } : undefined}
-              onSave={() => {
-                setBuilderOpen(false);
-                void listQuery.refetch();
-              }}
-              onCancel={() => setBuilderOpen(false)}
-            />
-          ) : (
-            <div className="p-6">{t("editor.loading", "Caricamento editor...")}</div>
-          )}
+            ) : (
+              <div className="p-6">{t("editor.loading", "Caricamento editor...")}</div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
-      <DryRunDialog
-        open={dryRunDialogOpen}
-        rule={dryRunRule}
-        onOpenChange={setDryRunDialogOpen}
-      />
+      <DryRunDialog open={dryRunDialogOpen} rule={dryRunRule} onOpenChange={setDryRunDialogOpen} />
 
       {/* Delete Confirmation */}
       <DestructiveConfirmDialog
@@ -359,7 +357,11 @@ function AutomationsPage() {
         title={t("delete.title", "Elimina automazione")}
         description={
           confirmDeleteRule
-            ? t("delete.description", 'Sei sicuro di voler eliminare definitivamente "{{name}}"? Questa azione non può essere annullata.', { name: confirmDeleteRule.name })
+            ? t(
+                "delete.description",
+                'Sei sicuro di voler eliminare definitivamente "{{name}}"? Questa azione non può essere annullata.',
+                { name: confirmDeleteRule.name },
+              )
             : ""
         }
         confirmLabel={t("delete.confirm", "Elimina")}
@@ -373,7 +375,11 @@ function AutomationsPage() {
         title={t("archive.title", "Archivia automazione")}
         description={
           confirmArchiveRule
-            ? t("archive.description", 'Archiviare "{{name}}"? L\'automazione verrà disattivata e nascosta dall\'elenco principale. Puoi sempre ripristinarla dalle versioni.', { name: confirmArchiveRule.name })
+            ? t(
+                "archive.description",
+                "Archiviare \"{{name}}\"? L'automazione verrà disattivata e nascosta dall'elenco principale. Puoi sempre ripristinarla dalle versioni.",
+                { name: confirmArchiveRule.name },
+              )
             : ""
         }
         confirmLabel={t("archive.confirm", "Archivia")}

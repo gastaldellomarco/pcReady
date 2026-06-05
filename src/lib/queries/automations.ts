@@ -175,7 +175,8 @@ export function useDuplicateAutomation() {
 export function useArchiveAutomation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, fd }: { id: string; fd: AutomationFlowDefinition }) => archiveAutomation(id, fd),
+    mutationFn: ({ id, fd }: { id: string; fd: AutomationFlowDefinition }) =>
+      archiveAutomation(id, fd),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["automation_flows"] }),
   });
 }

@@ -10,11 +10,7 @@ interface OperatorSelectorProps {
 /**
  *
  */
-export function OperatorSelector({
-  fieldValue,
-  value,
-  onChange,
-}: OperatorSelectorProps) {
+export function OperatorSelector({ fieldValue, value, onChange }: OperatorSelectorProps) {
   const { t } = useTranslation("automations");
 
   const operators = getOperatorsForField(fieldValue);
@@ -26,9 +22,7 @@ export function OperatorSelector({
       disabled={operators.length === 0}
       className="w-full rounded-md border border-border px-2 py-1.5 text-sm bg-background disabled:opacity-50"
     >
-      <option value="">
-        {t("conditionsBuilder.operator.placeholder", "Operatore")}
-      </option>
+      <option value="">{t("conditionsBuilder.operator.placeholder", "Operatore")}</option>
       {operators.map((op) => (
         <option key={op.value} value={op.value}>
           {t(`conditionsBuilder.operator.${op.value}`, op.label)}

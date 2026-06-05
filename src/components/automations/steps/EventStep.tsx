@@ -27,10 +27,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
     {
       value: "ticket_created" as const,
       label: t("eventStep.options.ticket_created", "Nuovo ticket"),
-      example: t(
-        "eventStep.examples.ticket_created",
-        "Quando viene creato un nuovo ticket"
-      ),
+      example: t("eventStep.examples.ticket_created", "Quando viene creato un nuovo ticket"),
       icon: Ticket,
       color: "text-blue-600",
       bgColor: "bg-blue-50 border-blue-200",
@@ -40,7 +37,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       label: t("eventStep.options.ticket_updated", "Ticket aggiornato"),
       example: t(
         "eventStep.examples.ticket_updated",
-        "Quando un ticket esistente viene modificato"
+        "Quando un ticket esistente viene modificato",
       ),
       icon: Ticket,
       color: "text-indigo-600",
@@ -51,7 +48,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       label: t("eventStep.options.checklist_completed", "Checklist completata"),
       example: t(
         "eventStep.examples.checklist_completed",
-        "Quando una checklist di preparazione viene completata"
+        "Quando una checklist di preparazione viene completata",
       ),
       icon: ClipboardCheck,
       color: "text-cyan-600",
@@ -62,7 +59,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       label: t("eventStep.options.sla_warning", "SLA in scadenza"),
       example: t(
         "eventStep.examples.sla_warning",
-        "Quando un ticket si avvicina alla scadenza SLA"
+        "Quando un ticket si avvicina alla scadenza SLA",
       ),
       icon: AlertTriangle,
       color: "text-amber-600",
@@ -71,10 +68,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
     {
       value: "sla_breached" as const,
       label: t("eventStep.options.sla_breached", "SLA violato"),
-      example: t(
-        "eventStep.examples.sla_breached",
-        "Quando un ticket supera la scadenza SLA"
-      ),
+      example: t("eventStep.examples.sla_breached", "Quando un ticket supera la scadenza SLA"),
       icon: Siren,
       color: "text-red-600",
       bgColor: "bg-red-50 border-red-200",
@@ -84,7 +78,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       label: t("eventStep.options.warranty_expiring_soon", "Garanzia in scadenza"),
       example: t(
         "eventStep.examples.warranty_expiring_soon",
-        "Quando la garanzia di un dispositivo sta per scadere"
+        "Quando la garanzia di un dispositivo sta per scadere",
       ),
       icon: ShieldAlert,
       color: "text-orange-600",
@@ -95,7 +89,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       label: t("eventStep.options.warranty_expired", "Garanzia scaduta"),
       example: t(
         "eventStep.examples.warranty_expired",
-        "Quando un dispositivo ha superato la data di garanzia"
+        "Quando un dispositivo ha superato la data di garanzia",
       ),
       icon: ShieldX,
       color: "text-red-700",
@@ -104,10 +98,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
     {
       value: "scheduled" as const,
       label: t("eventStep.options.scheduled", "Schedulato"),
-      example: t(
-        "eventStep.examples.scheduled",
-        "Esecuzione automatica con orario predefinito"
-      ),
+      example: t("eventStep.examples.scheduled", "Esecuzione automatica con orario predefinito"),
       icon: Clock,
       color: "text-purple-600",
       bgColor: "bg-purple-50 border-purple-200",
@@ -115,10 +106,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
     {
       value: "manual" as const,
       label: t("eventStep.options.manual", "Manuale"),
-      example: t(
-        "eventStep.examples.manual",
-        "Solo su azione manuale dell'utente"
-      ),
+      example: t("eventStep.examples.manual", "Solo su azione manuale dell'utente"),
       icon: MousePointerClick,
       color: "text-slate-600",
       bgColor: "bg-slate-50 border-slate-200",
@@ -133,7 +121,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
       <p className="text-sm text-text3">
         {t(
           "eventStep.description",
-          "Scegli l'evento che attiva questa regola. Esempio: quando arriva un nuovo ticket urgente."
+          "Scegli l'evento che attiva questa regola. Esempio: quando arriva un nuovo ticket urgente.",
         )}
       </p>
 
@@ -155,34 +143,27 @@ export default function EventStep({ value, onChange }: EventStepProps) {
                 "flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all",
                 isSelected
                   ? `${opt.bgColor} ${opt.color} border-current shadow-sm`
-                  : "border-border bg-background hover:border-accent/40 hover:bg-accent/5"
+                  : "border-border bg-background hover:border-accent/40 hover:bg-accent/5",
               )}
             >
               <div
                 className={cn(
                   "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                  isSelected ? `${opt.bgColor}` : "bg-surface2"
+                  isSelected ? `${opt.bgColor}` : "bg-surface2",
                 )}
               >
-                <Icon
-                  className={cn(
-                    "size-5",
-                    isSelected ? opt.color : "text-text3"
-                  )}
-                />
+                <Icon className={cn("size-5", isSelected ? opt.color : "text-text3")} />
               </div>
               <div className="min-w-0">
                 <div
                   className={cn(
                     "text-sm font-semibold",
-                    isSelected ? opt.color : "text-foreground"
+                    isSelected ? opt.color : "text-foreground",
                   )}
                 >
                   {opt.label}
                 </div>
-                <div className="mt-0.5 text-xs text-text3 leading-relaxed">
-                  {opt.example}
-                </div>
+                <div className="mt-0.5 text-xs text-text3 leading-relaxed">{opt.example}</div>
               </div>
             </button>
           );
@@ -216,7 +197,7 @@ export default function EventStep({ value, onChange }: EventStepProps) {
           <p className="mt-1 text-xs text-text3">
             {t(
               "eventStep.warrantyDaysHelp",
-              "Esempio: 30 invia l'alert quando la garanzia scade entro 30 giorni."
+              "Esempio: 30 invia l'alert quando la garanzia scade entro 30 giorni.",
             )}
           </p>
         </div>
@@ -241,15 +222,12 @@ export default function EventStep({ value, onChange }: EventStepProps) {
                 },
               })
             }
-            placeholder={t(
-              "eventStep.cronPlaceholder",
-              "es. 0 8 * * * (ogni giorno alle 8:00)"
-            )}
+            placeholder={t("eventStep.cronPlaceholder", "es. 0 8 * * * (ogni giorno alle 8:00)")}
           />
           <p className="mt-1 text-xs text-text3">
             {t(
               "eventStep.cronHelp",
-              "Formato standard cron a 5 campi: minuto ora giorno mese giorno-settimana"
+              "Formato standard cron a 5 campi: minuto ora giorno mese giorno-settimana",
             )}
           </p>
         </div>

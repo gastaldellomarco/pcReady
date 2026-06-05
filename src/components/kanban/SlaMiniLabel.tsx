@@ -9,13 +9,7 @@ import { cn } from "@/lib/utils";
  * @description Shows a countdown or status label for cards that are overdue or
  * approaching their SLA deadline. Cards with OK SLA status render nothing.
  */
-export function SlaMiniLabel({
-  card,
-  compactView,
-}: {
-  card: SlaCardLike;
-  compactView?: boolean;
-}) {
+export function SlaMiniLabel({ card, compactView }: { card: SlaCardLike; compactView?: boolean }) {
   const { t } = useTranslation(["tickets"]);
   const indicator = slaIndicator(card);
   const deadline = card.due_date || card.sla_deadline;

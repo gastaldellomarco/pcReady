@@ -135,9 +135,8 @@
       "exportDescription": "Download a ZIP archive with CSV of tickets, devices and clients.",
       "exportButton": "Export all data",
       "exportingButton": "Exporting...",
-      "protectedText": "Data protected with automatic daily backups"
-    ,
-    "readOnlyBadge": "Managed by provider"
+      "protectedText": "Data protected with automatic daily backups",
+      "readOnlyBadge": "Managed by provider"
     },
     "appSettings": {
       "title": "Application Settings",

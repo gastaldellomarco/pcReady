@@ -49,7 +49,9 @@ export function WipConfigDialog({
       tabIndex={-1}
       className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
     >
       <div
         className="w-full max-w-2xl rounded-xl border bg-surface p-5 shadow-lg"
@@ -117,7 +119,10 @@ export function WipConfigDialog({
                     className="pc-input flex-1"
                     value={colorDraft[status] || ""}
                     onChange={(event) =>
-                      onColorDraftChange((current) => ({ ...current, [status]: event.target.value }))
+                      onColorDraftChange((current) => ({
+                        ...current,
+                        [status]: event.target.value,
+                      }))
                     }
                     placeholder="#1B4FD818"
                   />

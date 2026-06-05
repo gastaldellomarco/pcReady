@@ -134,9 +134,7 @@ export function RunConfirmDialog({
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <div>
-                <p className="text-sm font-medium text-amber-700">
-                  Side-effect esterni
-                </p>
+                <p className="text-sm font-medium text-amber-700">Side-effect esterni</p>
                 <ul className="mt-1 list-inside list-disc text-xs text-amber-600">
                   {sideEffects.map((effect, i) => (
                     <li key={i}>{effect}</li>

@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  listBundlePayments,
-  type BundlePayment,
-  type ClientBundleAssignment,
-} from "@/lib/bundles";
+import { listBundlePayments, type BundlePayment, type ClientBundleAssignment } from "@/lib/bundles";
 import { errorMessage } from "@/lib/errors";
 import type { UseMutationResult } from "@tanstack/react-query";
 
@@ -72,18 +68,12 @@ export function useBillingManager(options: UseBillingManagerOptions) {
 
   async function savePayment() {
     if (!canManage) {
-      toast.error(
-        t("errors.insufficientPermissions", "Permessi insufficienti"),
-      );
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
-    const assignment = assignmentById.get(
-      paymentDraft.client_bundle_assignment_id,
-    );
+    const assignment = assignmentById.get(paymentDraft.client_bundle_assignment_id);
     if (!assignment) {
-      toast.error(
-        t("errors.invalidAssignment", "Seleziona un'assegnazione valida"),
-      );
+      toast.error(t("errors.invalidAssignment", "Seleziona un'assegnazione valida"));
       return;
     }
     try {
@@ -101,43 +91,24 @@ export function useBillingManager(options: UseBillingManagerOptions) {
       });
       setPaymentDraft(emptyPaymentDraft);
       await refreshPayments();
-      toast.success(
-        t("success.paymentRegistered", "Pagamento registrato"),
-      );
+      toast.success(t("success.paymentRegistered", "Pagamento registrato"));
     } catch (error) {
-      toast.error(
-        errorMessage(
-          error,
-          t("errors.savePayment", "Errore salvataggio pagamento"),
-        ),
-      );
+      toast.error(errorMessage(error, t("errors.savePayment", "Errore salvataggio pagamento")));
     }
   }
 
   async function deletePayment(id: string) {
     if (!canManage) {
-      toast.error(
-        t("errors.insufficientPermissions", "Permessi insufficienti"),
-      );
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
-    if (
-      !window.confirm(
-        t("billing.confirmDelete", "Eliminare questo pagamento?"),
-      )
-    )
-      return;
+    if (!window.confirm(t("billing.confirmDelete", "Eliminare questo pagamento?"))) return;
     try {
       await mutations.remove.mutateAsync(id);
       await refreshPayments();
       toast.success(t("billing.deleted", "Pagamento eliminato"));
     } catch (error) {
-      toast.error(
-        errorMessage(
-          error,
-          t("billing.deleteError", "Errore eliminazione pagamento"),
-        ),
-      );
+      toast.error(errorMessage(error, t("billing.deleteError", "Errore eliminazione pagamento")));
     }
   }
 

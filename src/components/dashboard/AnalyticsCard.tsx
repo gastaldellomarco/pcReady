@@ -138,9 +138,16 @@ export function AnalyticsCard({
               </ChartContainer>
 
               <div>
-                <div className="text-xs font-semibold mb-2">{t("analytics.avgResolution", "Tempo medio di risoluzione")}</div>
+                <div className="text-xs font-semibold mb-2">
+                  {t("analytics.avgResolution", "Tempo medio di risoluzione")}
+                </div>
                 <ChartContainer
-                  config={{ avg_days: { label: t("analytics.avgTime", "Tempo medio"), color: pcReadyColors.warning } }}
+                  config={{
+                    avg_days: {
+                      label: t("analytics.avgTime", "Tempo medio"),
+                      color: pcReadyColors.warning,
+                    },
+                  }}
                   className="h-[190px] w-full"
                 >
                   <LineChart data={monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
@@ -174,10 +181,16 @@ export function AnalyticsCard({
       <div className="pc-card">
         <div className="pc-card-hd">
           <div>
-            <span className="pc-card-title">{t("analytics.technicianPerformance", "Performance tecnici")}</span>
-            <div className="text-[11px] text-text3">{t("analytics.technicianSubtitle", "Assegnati, completati e tempi medi")}</div>
+            <span className="pc-card-title">
+              {t("analytics.technicianPerformance", "Performance tecnici")}
+            </span>
+            <div className="text-[11px] text-text3">
+              {t("analytics.technicianSubtitle", "Assegnati, completati e tempi medi")}
+            </div>
           </div>
-          <span className="text-[11px] text-text3 font-mono">{t("analytics.technicianCount", "{{count}} tecnici", { count: technicians.length })}</span>
+          <span className="text-[11px] text-text3 font-mono">
+            {t("analytics.technicianCount", "{{count}} tecnici", { count: technicians.length })}
+          </span>
         </div>
         {loading ? (
           <div className="pc-card-body">

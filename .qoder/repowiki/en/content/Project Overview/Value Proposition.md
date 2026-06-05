@@ -18,6 +18,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -29,10 +30,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 PCReady delivers measurable business value by streamlining IT service operations through integrated ticketing, device management, and automation workflows. It reduces manual overhead, standardizes PC preparation procedures, improves ticket tracking and completion rates, enhances device inventory management, and automates repetitive tasks. These capabilities translate into quantifiable efficiency gains, fewer errors, and a superior user experience, supported by dashboard analytics and PDF-based reporting.
 
 ## Project Structure
+
 At a high level, PCReady organizes functionality around three pillars:
+
 - Ticketing and workflow orchestration for PC preparation and support
 - Device lifecycle management with import, status tracking, and reporting
 - Automation engine enabling repeatable, auditable, and monitored workflows
@@ -67,6 +71,7 @@ AutomationRunsLib --> Supabase
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [device-status.ts:15-56](file://src/lib/device-status.ts#L15-L56)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
@@ -74,9 +79,11 @@ AutomationRunsLib --> Supabase
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 
 **Section sources**
+
 - [README.md:17-49](file://README.md#L17-L49)
 
 ## Core Components
+
 - Integrated ticketing with standardized statuses and types, plus checklist-driven workflows for PC preparation.
 - Device lifecycle management with structured status tracking and CSV-based import.
 - Automation engine with a wizard-driven builder, dry-run capability, and run logs for observability.
@@ -86,6 +93,7 @@ AutomationRunsLib --> Supabase
 These components collectively reduce manual effort, enforce consistency, and provide real-time insights.
 
 **Section sources**
+
 - [pcready.ts:1-241](file://src/lib/pcready.ts#L1-L241)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
@@ -95,7 +103,9 @@ These components collectively reduce manual effort, enforce consistency, and pro
 - [InventoryPdf.tsx:26-85](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L85)
 
 ## Architecture Overview
+
 PCReady’s value comes from tightly integrated workflows:
+
 - Ticket creation triggers standardized preparation steps and optional device assignment.
 - Device inventory is managed independently but linked to tickets, with automated status transitions.
 - Automations execute actions (e.g., device status updates) and produce auditable run logs.
@@ -117,15 +127,18 @@ UI-->>Tech : "Ticket created with standardized status"
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [pcready.ts:1-79](file://src/lib/pcready.ts#L1-L79)
 
 **Section sources**
+
 - [README.md:32-49](file://README.md#L32-L49)
 
 ## Detailed Component Analysis
 
 ### Integrated Ticketing and Standardized Workflows
+
 - Purpose: Accelerate PC preparation with predefined templates and structured statuses.
 - Business benefits:
   - Reduced manual overhead by standardizing steps and eliminating ad-hoc decisions.
@@ -148,13 +161,16 @@ Ready --> End(["Technician begins checklist"])
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 
 **Section sources**
+
 - [README.md:32-49](file://README.md#L32-L49)
 - [pcready.ts:1-79](file://src/lib/pcready.ts#L1-L79)
 
 ### Device Lifecycle Management and Automated Status Transitions
+
 - Purpose: Centralize device inventory and automate status changes with notifications.
 - Business benefits:
   - Reduced administrative burden by automating status updates.
@@ -185,12 +201,15 @@ Lib-->>Runner : "{id, status, model, serial}"
 ```
 
 **Diagram sources**
+
 - [device-status.ts:15-56](file://src/lib/device-status.ts#L15-L56)
 
 **Section sources**
+
 - [device-status.ts:15-56](file://src/lib/device-status.ts#L15-L56)
 
 ### Automation Engine: Builder, Dry Run, and Observability
+
 - Purpose: Enable repeatable, auditable workflows across tickets and devices.
 - Business benefits:
   - Reduced manual repetition and human error.
@@ -221,15 +240,18 @@ Runs-->>Admin : "run log and stats"
 ```
 
 **Diagram sources**
+
 - [AutomationWizard.tsx:13-87](file://src/components/automations/AutomationWizard.tsx#L13-L87)
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 
 **Section sources**
+
 - [AutomationWizard.tsx:13-87](file://src/components/automations/AutomationWizard.tsx#L13-L87)
 - [AutomationRuleCard.tsx:52-90](file://src/components/automations/AutomationRuleCard.tsx#L52-L90)
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 
 ### Inventory Import and Reporting
+
 - Purpose: Accelerate onboarding of devices with CSV import and robust validation.
 - Business benefits:
   - Dramatically faster bulk ingestion compared to manual entry.
@@ -253,14 +275,17 @@ Import --> Report["Report results and errors"]
 ```
 
 **Diagram sources**
+
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
 
 **Section sources**
+
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
 
 ### Dashboard Analytics and Reporting
+
 - Purpose: Provide actionable insights into ticket trends, technician performance, and weekly activity.
 - Business benefits:
   - Data-driven decisions on resource allocation and process improvements.
@@ -289,14 +314,17 @@ Dash-->>User : "Tickets by month, technician KPIs, summary"
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [DashboardStatWidgets.tsx:18-131](file://src/components/dashboard/DashboardStatWidgets.tsx#L18-L131)
 - [TechnicianKpiTable.tsx:13-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L13-L82)
 
 ### PDF Export for Transparency and Audits
+
 - Purpose: Produce branded, printable reports for tickets and inventory.
 - Business benefits:
   - Rapid sharing of filtered views for stakeholders.
@@ -314,15 +342,19 @@ Stats --> Output["Download report"]
 ```
 
 **Diagram sources**
+
 - [TicketListPdf.tsx:27-97](file://src/components/pcready/pdf/TicketListPdf.tsx#L27-L97)
 - [InventoryPdf.tsx:26-85](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L85)
 
 **Section sources**
+
 - [TicketListPdf.tsx:27-97](file://src/components/pcready/pdf/TicketListPdf.tsx#L27-L97)
 - [InventoryPdf.tsx:26-85](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L85)
 
 ## Dependency Analysis
+
 PCReady’s value chain depends on cohesive interactions among libraries, UI components, and Supabase:
+
 - Tickets library depends on Supabase for inserts and status history.
 - Device status library enforces automation runner checks and emits notifications.
 - Inventory import library coordinates client/device lookups and batch writes.
@@ -343,6 +375,7 @@ UI_Inventory["Inventory UI"] --> InventoryImportLib
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [device-status.ts:15-56](file://src/lib/device-status.ts#L15-L56)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
@@ -350,6 +383,7 @@ UI_Inventory["Inventory UI"] --> InventoryImportLib
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [device-status.ts:15-56](file://src/lib/device-status.ts#L15-L56)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
@@ -357,6 +391,7 @@ UI_Inventory["Inventory UI"] --> InventoryImportLib
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 
 ## Performance Considerations
+
 - Server-side ticket code generation avoids race conditions and reduces client-side complexity.
 - Pagination and server-side filtering minimize memory usage for large datasets.
 - Batched device imports and chunked lookups improve throughput during inventory onboarding.
@@ -366,6 +401,7 @@ UI_Inventory["Inventory UI"] --> InventoryImportLib
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures: Ensure access tokens are present and valid when invoking server functions for tickets, device status updates, and automation runs.
 - Rate limiting: Ticket creation is rate-limited; retries should be spaced appropriately.
 - Import errors: Review CSV validation messages and fix duplicates or missing client mappings before retrying.
@@ -373,10 +409,12 @@ UI_Inventory["Inventory UI"] --> InventoryImportLib
 - Dashboard anomalies: Verify date ranges and confirm RPC availability; re-run queries if stale data is suspected.
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [inventory-import.ts:86-126](file://src/lib/inventory-import.ts#L86-L126)
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 
 ## Conclusion
+
 PCReady transforms IT service operations by integrating ticketing, device management, and automation into a cohesive platform. Its standardized workflows, robust analytics, and automated runbooks deliver measurable efficiency gains, reduced errors, and improved user experiences. Organizations gain better visibility, faster turnaround times, and stronger governance—backed by real-time dashboards and audit-ready exports—to scale PC preparation and support operations reliably and consistently.

@@ -16,6 +16,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.3.0] - 2026-06-03
 
 ### Added
+
 - Refactor activity logging and improve auth profile fetching
 - Enhance costs page with date presets and localStorage persistence
 - Implement 2FA login flow in portal
@@ -36,6 +37,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Implement virtual list for inventory and tickets pages
 
 ### Changed
+
 - Refactor activity logging and improve auth profile fetching
 - Enhance costs page with date presets and localStorage persistence
 - Reorganize imports and update icon sizes across portal routes
@@ -65,6 +67,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Implement virtual list for inventory and tickets pages
 
 ### Fixed
+
 - Enhance costs page with date presets and localStorage persistence
 
 ## [1.2.0] - 2026-05-26
@@ -237,6 +240,5 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
 [1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
 [1.2.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...v1.2.0
-
 [Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.3.0...HEAD
 [1.3.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...v1.3.0

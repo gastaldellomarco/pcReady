@@ -248,7 +248,6 @@ type HardwareDraft = {
   server_role: string;
 };
 
-
 /**
  *
  */
@@ -321,7 +320,9 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (devRes.error) {
-        toast.error(devRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
+        toast.error(
+          devRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"),
+        );
         setLoading(false);
         return;
       }
@@ -352,7 +353,9 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (assignRes.error) {
-        toast.error(assignRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
+        toast.error(
+          assignRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"),
+        );
         setAssignments([]);
       } else {
         setAssignments((assignRes.data ?? []) as AssignmentRow[]);
@@ -380,7 +383,10 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (ticketsRes.error) {
-        toast.error(ticketsRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
+        toast.error(
+          ticketsRes.error.message ||
+            t("device.toasts.loadError", "Errore caricamento dispositivo"),
+        );
         setTickets([]);
       } else {
         setTickets((ticketsRes.data ?? []) as TicketRow[]);
@@ -396,7 +402,9 @@ export function DeviceDetailModal() {
 
       if (cancelled) return;
       if (histRes.error) {
-        toast.error(histRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"));
+        toast.error(
+          histRes.error.message || t("device.toasts.loadError", "Errore caricamento dispositivo"),
+        );
         setHistoryEntries([]);
       } else {
         setHistoryEntries((histRes.data ?? []) as HistoryRow[]);
@@ -513,10 +521,16 @@ export function DeviceDetailModal() {
     warrantyDays === null
       ? t("device.warranty.notSet", "Scadenza non impostata")
       : warrantyDays < 0
-        ? t("device.warranty.expiredDays", { count: Math.abs(warrantyDays), defaultValue: "Scaduta da {{count}} giorni" })
+        ? t("device.warranty.expiredDays", {
+            count: Math.abs(warrantyDays),
+            defaultValue: "Scaduta da {{count}} giorni",
+          })
         : warrantyDays === 0
           ? t("device.warranty.expiresToday", "Scade oggi")
-          : t("device.warranty.expiresInDays", { count: warrantyDays, defaultValue: "Scade tra {{count}} giorni" });
+          : t("device.warranty.expiresInDays", {
+              count: warrantyDays,
+              defaultValue: "Scade tra {{count}} giorni",
+            });
   const openTickets = tickets.filter((ticket) => !isClosedTicket(ticket));
   const closedTickets = tickets.filter((ticket) => isClosedTicket(ticket));
   const maintenanceTickets = tickets.filter((ticket) =>
@@ -553,7 +567,11 @@ export function DeviceDetailModal() {
       setD({ ...d, status: next });
       toast.success(t("device.toasts.statusUpdated", "Stato dispositivo aggiornato"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.statusUpdateError", "Aggiornamento stato non riuscito"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.statusUpdateError", "Aggiornamento stato non riuscito"),
+      );
     } finally {
       setStatusSaving(false);
       setConfirmStatusOpen(false);
@@ -574,7 +592,11 @@ export function DeviceDetailModal() {
       setEditingNotes(false);
       toast.success(t("device.toasts.notesUpdated", "Note tecniche aggiornate"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.notesSaveError", "Errore salvataggio note"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.notesSaveError", "Errore salvataggio note"),
+      );
     } finally {
       setSavingNotes(false);
     }
@@ -594,7 +616,11 @@ export function DeviceDetailModal() {
       setEditingIdentity(false);
       toast.success(t("device.toasts.identityUpdated", "Codici dispositivo aggiornati"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.identitySaveError", "Errore salvataggio codici"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.identitySaveError", "Errore salvataggio codici"),
+      );
     } finally {
       setSavingIdentity(false);
     }
@@ -616,7 +642,10 @@ export function DeviceDetailModal() {
     }, 50);
     toast.info(
       target === "asset_tag"
-        ? t("device.barcode.assetTagReady", "Asset tag field ready for USB/Bluetooth barcode scanner")
+        ? t(
+            "device.barcode.assetTagReady",
+            "Asset tag field ready for USB/Bluetooth barcode scanner",
+          )
         : t("device.barcode.serialReady", "Serial field ready for USB/Bluetooth barcode scanner"),
     );
   }
@@ -654,7 +683,11 @@ export function DeviceDetailModal() {
       setEditingWarranty(false);
       toast.success(t("device.toasts.warrantyUpdated", "Garanzia aggiornata"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.warrantySaveError", "Errore salvataggio garanzia"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.warrantySaveError", "Errore salvataggio garanzia"),
+      );
     } finally {
       setSavingWarranty(false);
     }
@@ -675,10 +708,17 @@ export function DeviceDetailModal() {
   async function saveRepairCost(ticket: TicketRow) {
     if (!canEdit) return;
     const current = ticket.repair_cost == null ? "" : String(ticket.repair_cost);
-    const raw = window.prompt(t("device.repairCostPrompt", { code: ticket.ticket_code, defaultValue: "Costo riparazione per {{code}}" }), current);
+    const raw = window.prompt(
+      t("device.repairCostPrompt", {
+        code: ticket.ticket_code,
+        defaultValue: "Costo riparazione per {{code}}",
+      }),
+      current,
+    );
     if (raw === null) return;
     const value = raw.trim() ? Number(raw.replace(",", ".")) : null;
-    if (value !== null && !Number.isFinite(value)) return toast.error(t("device.toasts.invalidCost", "Costo non valido"));
+    if (value !== null && !Number.isFinite(value))
+      return toast.error(t("device.toasts.invalidCost", "Costo non valido"));
     try {
       const { error } = await supabase
         .from("tickets")
@@ -690,7 +730,11 @@ export function DeviceDetailModal() {
       );
       toast.success(t("device.toasts.repairCostUpdated", "Costo riparazione aggiornato"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.repairCostError", "Errore salvataggio costo"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.repairCostError", "Errore salvataggio costo"),
+      );
     }
   }
 
@@ -705,7 +749,11 @@ export function DeviceDetailModal() {
       setEditingHardware(false);
       toast.success(t("device.toasts.hardwareUpdated", "Specifiche hardware aggiornate"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("device.toasts.hardwareSaveError", "Errore salvataggio hardware"));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("device.toasts.hardwareSaveError", "Errore salvataggio hardware"),
+      );
     } finally {
       setSavingHardware(false);
     }
@@ -739,7 +787,9 @@ export function DeviceDetailModal() {
     return (
       <Modal open={true} onClose={close} size="lg" title={t("device.title", "Scheda asset")}>
         <div className="py-10 text-center text-[13px] text-text3">
-          {loading ? t("device.loading.loading", "Loading history…") : t("device.loading.notFound", "Device not found.")}
+          {loading
+            ? t("device.loading.loading", "Loading history…")
+            : t("device.loading.notFound", "Device not found.")}
         </div>
         <div className="flex justify-end">
           <button className="pc-btn pc-btn-ghost" type="button" onClick={close}>
@@ -771,7 +821,8 @@ export function DeviceDetailModal() {
               {d.model}
             </div>
             <div className="font-mono text-[11px] text-text3">
-              {t("device.assetLabel", "Asset")} · {d.asset_tag || d.id} · {t("device.serialLabel", "S/N produttore")} {d.serial || "—"}
+              {t("device.assetLabel", "Asset")} · {d.asset_tag || d.id} ·{" "}
+              {t("device.serialLabel", "S/N produttore")} {d.serial || "—"}
             </div>
           </div>
           <DeviceStatusPill status={d.status} large />
@@ -791,7 +842,9 @@ export function DeviceDetailModal() {
             onClick={() =>
               navigator.clipboard
                 ?.writeText(`${window.location.origin}/inventory?device=${d.id}`)
-                .then(() => toast.success(t("device.toasts.linkCopied", "Link dispositivo copiato")))
+                .then(() =>
+                  toast.success(t("device.toasts.linkCopied", "Link dispositivo copiato")),
+                )
             }
           >
             <QrCode className="size-3" /> {t("device.generateQR", "Genera QR")}
@@ -815,7 +868,13 @@ export function DeviceDetailModal() {
             ["info", t("device.tabs.info", "Informazioni")],
             ["hardware", t("device.tabs.hardware", "Hardware")],
             ["maintenance", t("device.tabs.maintenance", "Manutenzione")],
-            ["tickets", t("device.tabs.tickets", { count: tickets.length, defaultValue: "Ticket ({{count}})" })],
+            [
+              "tickets",
+              t("device.tabs.tickets", {
+                count: tickets.length,
+                defaultValue: "Ticket ({{count}})",
+              }),
+            ],
             ["history", t("device.tabs.history", "Storico")],
           ] as [DeviceDetailTab, string][]
         ).map(([tab, label]) => (
@@ -838,23 +897,22 @@ export function DeviceDetailModal() {
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="min-w-0">
-            <div className="pc-label">{t("device.info.deviceStatus", "Stato dispositivo")}</div>
+              <div className="pc-label">{t("device.info.deviceStatus", "Stato dispositivo")}</div>
               {canEdit ? (
                 <Select
                   value={d.status as DeviceInventoryStatus}
                   onValueChange={onDeviceStatusSelect}
                   disabled={statusSaving}
                 >
-                  <SelectTrigger aria-label={t("device.info.deviceStatus", "Stato dispositivo")} className="mt-1 h-9 text-[13px]">
+                  <SelectTrigger
+                    aria-label={t("device.info.deviceStatus", "Stato dispositivo")}
+                    className="mt-1 h-9 text-[13px]"
+                  >
                     <SelectValue placeholder={t("device.statusPlaceholder", "Stato")} />
                   </SelectTrigger>
                   <SelectContent>
                     {deviceStatusOptions.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        disabled={option.legacy}
-                      >
+                      <SelectItem key={option.value} value={option.value} disabled={option.legacy}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -865,7 +923,9 @@ export function DeviceDetailModal() {
               )}
             </div>
             <div>
-              <div className="pc-label">{t("device.info.lastUpdate", "Ultimo aggiornamento scheda")}</div>
+              <div className="pc-label">
+                {t("device.info.lastUpdate", "Ultimo aggiornamento scheda")}
+              </div>
               <div className="text-[13px]">{fmtDateTime(d.updated_at)}</div>
             </div>
             <div>
@@ -873,7 +933,9 @@ export function DeviceDetailModal() {
               <div className="text-[13px]">{d.client?.name || "—"}</div>
             </div>
             <div>
-              <div className="pc-label">{t("device.info.assetUser", "Utente asset (anagrafica)")}</div>
+              <div className="pc-label">
+                {t("device.info.assetUser", "Utente asset (anagrafica)")}
+              </div>
               <div className="text-[13px]">{d.assigned_to || "—"}</div>
             </div>
             <div>
@@ -889,7 +951,10 @@ export function DeviceDetailModal() {
                   <div>
                     <div className="pc-label">{t("device.codes", "Codici dispositivo")}</div>
                     <div className="text-[12px] text-text3">
-                      {t("device.codesHint", "Barcode 1D separato dal QR inventario: seriale produttore e asset tag interno restano campi distinti.")}
+                      {t(
+                        "device.codesHint",
+                        "Barcode 1D separato dal QR inventario: seriale produttore e asset tag interno restano campi distinti.",
+                      )}
                     </div>
                   </div>
                   {canEdit && !editingIdentity ? (
@@ -920,9 +985,7 @@ export function DeviceDetailModal() {
                       label={t("device.serial", "Seriale produttore")}
                       value={identityDraft.serial}
                       placeholder={t("device.serialPlaceholder", "Seriale da etichetta")}
-                      onChange={(value) =>
-                        setIdentityDraft((prev) => ({ ...prev, serial: value }))
-                      }
+                      onChange={(value) => setIdentityDraft((prev) => ({ ...prev, serial: value }))}
                       onHardwareFocus={() => focusIdentityField("serial")}
                       onCameraScan={() => setBarcodeTarget("serial")}
                     />
@@ -934,7 +997,9 @@ export function DeviceDetailModal() {
                         onClick={() => void saveIdentity()}
                       >
                         <Save className="size-3" />
-                        {savingIdentity ? t("device.saving", "Salvataggio...") : t("device.saveCodes", "Salva codici")}
+                        {savingIdentity
+                          ? t("device.saving", "Salvataggio...")
+                          : t("device.saveCodes", "Salva codici")}
                       </button>
                       <button
                         type="button"
@@ -1042,13 +1107,13 @@ export function DeviceDetailModal() {
                   <DatePickerInput
                     className="mt-1 w-full"
                     value={warrantyDraft.purchase_date}
-                    onChange={(v) =>
-                      setWarrantyDraft((prev) => ({ ...prev, purchase_date: v }))
-                    }
+                    onChange={(v) => setWarrantyDraft((prev) => ({ ...prev, purchase_date: v }))}
                   />
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">{t("device.warrantyExpiry", "Scadenza garanzia")}</span>
+                  <span className="pc-label">
+                    {t("device.warrantyExpiry", "Scadenza garanzia")}
+                  </span>
                   <DatePickerInput
                     className="mt-1 w-full"
                     value={warrantyDraft.warranty_expiry_date}
@@ -1077,25 +1142,35 @@ export function DeviceDetailModal() {
                   </select>
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">{t("device.warrantyProvider", "Fornitore / URL")}</span>
+                  <span className="pc-label">
+                    {t("device.warrantyProvider", "Fornitore / URL")}
+                  </span>
                   <input
                     className="pc-input mt-1 w-full"
                     value={warrantyDraft.warranty_provider}
                     onChange={(e) =>
                       setWarrantyDraft((v) => ({ ...v, warranty_provider: e.target.value }))
                     }
-                    placeholder={t("device.warrantyProviderPlaceholder", "Dell, HP, rivenditore o https://...")}
+                    placeholder={t(
+                      "device.warrantyProviderPlaceholder",
+                      "Dell, HP, rivenditore o https://...",
+                    )}
                   />
                 </label>
                 <label className="text-xs md:col-span-2">
-                  <span className="pc-label">{t("device.warrantyNotes", "Note garanzia / contratto")}</span>
+                  <span className="pc-label">
+                    {t("device.warrantyNotes", "Note garanzia / contratto")}
+                  </span>
                   <textarea
                     className="pc-input mt-1 min-h-[70px] w-full"
                     value={warrantyDraft.warranty_notes}
                     onChange={(e) =>
                       setWarrantyDraft((v) => ({ ...v, warranty_notes: e.target.value }))
                     }
-                    placeholder={t("device.warrantyNotesPlaceholder", "Numero contratto, condizioni, riferimenti...")}
+                    placeholder={t(
+                      "device.warrantyNotesPlaceholder",
+                      "Numero contratto, condizioni, riferimenti...",
+                    )}
                   />
                 </label>
                 <div className="flex gap-2 md:col-span-2">
@@ -1105,7 +1180,9 @@ export function DeviceDetailModal() {
                     onClick={saveWarranty}
                   >
                     <Save className="size-3" />{" "}
-                    {savingWarranty ? t("device.saving", "Salvataggio...") : t("device.saveWarranty", "Salva garanzia")}
+                    {savingWarranty
+                      ? t("device.saving", "Salvataggio...")
+                      : t("device.saveWarranty", "Salva garanzia")}
                   </button>
                   <button
                     className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -1191,7 +1268,11 @@ export function DeviceDetailModal() {
                 <div className="text-text3">{t("device.tco.repairs", "Riparazioni")}</div>
                 <div className="font-mono font-semibold">{formatCurrency(repairCosts)}</div>
                 <div className="text-[11px] text-text3">
-                  {t("device.tco.maintenanceTickets", { count: maintenanceTickets.length, cost: formatCurrency(repairCosts), defaultValue: "{{count}} ticket manutenzione con {{cost}} registrati" })}
+                  {t("device.tco.maintenanceTickets", {
+                    count: maintenanceTickets.length,
+                    cost: formatCurrency(repairCosts),
+                    defaultValue: "{{count}} ticket manutenzione con {{cost}} registrati",
+                  })}
                 </div>
               </div>
               <div>
@@ -1206,7 +1287,9 @@ export function DeviceDetailModal() {
             style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
           >
             <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="pc-label">{t("device.checklist.associated", "Checklist associate")}</div>
+              <div className="pc-label">
+                {t("device.checklist.associated", "Checklist associate")}
+              </div>
               <div className="text-xs text-text3 font-mono">{checklistSummaries.length}</div>
             </div>
             <div className="flex flex-col gap-2">
@@ -1237,7 +1320,8 @@ export function DeviceDetailModal() {
                     />
                   </div>
                   <div className="mt-1 text-[11px] text-text3">
-                    Ticket {checklist.ticketCode} · {t("device.checklist.lastRun", "ultima esecuzione")}{" "}
+                    Ticket {checklist.ticketCode} ·{" "}
+                    {t("device.checklist.lastRun", "ultima esecuzione")}{" "}
                     {fmtDateTime(checklist.updatedAt)}
                   </div>
                 </button>
@@ -1263,7 +1347,10 @@ export function DeviceDetailModal() {
                       className="pc-input w-full min-h-[80px] text-[12.5px]"
                       value={notesDraft}
                       onChange={(e) => setNotesDraft(e.target.value)}
-                      placeholder={t("device.notes.placeholder", "Inserisci note tecniche sul dispositivo...")}
+                      placeholder={t(
+                        "device.notes.placeholder",
+                        "Inserisci note tecniche sul dispositivo...",
+                      )}
                     />
                     <div className="flex gap-2">
                       <button
@@ -1272,7 +1359,9 @@ export function DeviceDetailModal() {
                         onClick={saveNotes}
                       >
                         <Save className="size-3" />
-                        {savingNotes ? t("device.saving", "Salvataggio...") : t("device.save", "Salva")}
+                        {savingNotes
+                          ? t("device.saving", "Salvataggio...")
+                          : t("device.save", "Salva")}
                       </button>
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -1297,7 +1386,8 @@ export function DeviceDetailModal() {
                   >
                     {d.notes || (
                       <span className="text-text3 italic">
-                        {t("device.notes.empty", "Nessuna nota tecnica")}{canEdit ? t("device.notes.clickToAdd", " — clicca per aggiungere") : ""}
+                        {t("device.notes.empty", "Nessuna nota tecnica")}
+                        {canEdit ? t("device.notes.clickToAdd", " — clicca per aggiungere") : ""}
                       </span>
                     )}
                   </button>
@@ -1344,9 +1434,14 @@ export function DeviceDetailModal() {
           className="mb-4 p-3 rounded-lg"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
         >
-          <div className="pc-label">{t("device.history.title", "Cronologia operativa (unica timeline)")}</div>
+          <div className="pc-label">
+            {t("device.history.title", "Cronologia operativa (unica timeline)")}
+          </div>
           <p className="text-[11px] text-text3 mt-1 mb-3">
-            {t("device.history.description", "Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività dai ticket collegati provengono dal log attività; manutenzioni come ticket di tipo \"Manutenzione\" o stato dispositivo in manutenzione.")}
+            {t(
+              "device.history.description",
+              'Assegnazioni ticket/device ricostruite dalla tabella storica; cambi di stato e attività dai ticket collegati provengono dal log attività; manutenzioni come ticket di tipo "Manutenzione" o stato dispositivo in manutenzione.',
+            )}
           </p>
           <div className="relative max-h-[min(420px,50vh)] overflow-y-auto pl-1">
             <div
@@ -1411,7 +1506,15 @@ export function DeviceDetailModal() {
           <div className="flex items-center justify-between gap-2">
             <div className="pc-label">{t("device.tickets.title", "Ticket collegati")}</div>
             <div className="text-xs text-text3 font-mono">
-              {t("device.tickets.openCount", { count: openTickets.length, defaultValue: "{{count}} ticket aperti" })} · {t("device.tickets.closedCount", { count: closedTickets.length, defaultValue: "{{count}} ticket chiusi" })}
+              {t("device.tickets.openCount", {
+                count: openTickets.length,
+                defaultValue: "{{count}} ticket aperti",
+              })}{" "}
+              ·{" "}
+              {t("device.tickets.closedCount", {
+                count: closedTickets.length,
+                defaultValue: "{{count}} ticket chiusi",
+              })}
             </div>
           </div>
           <OverflowTable className="mt-3">
@@ -1492,7 +1595,10 @@ export function DeviceDetailModal() {
                   {!tickets.length && (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-text3">
-                        {t("device.tickets.noTickets", "Nessun ticket collegato a questo dispositivo.")}
+                        {t(
+                          "device.tickets.noTickets",
+                          "Nessun ticket collegato a questo dispositivo.",
+                        )}
                       </td>
                     </tr>
                   )}
@@ -1512,9 +1618,15 @@ export function DeviceDetailModal() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("device.confirmStatus.title", "Conferma cambio stato")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("device.confirmStatus.title", "Conferma cambio stato")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("device.confirmStatus.description", { status: pendingStatus ? DEVICE_STATUS_LABEL[pendingStatus] : "—", defaultValue: "Impostare lo stato su {{status}} può impattare disponibilità e assegnazioni. Continuare?" })}
+              {t("device.confirmStatus.description", {
+                status: pendingStatus ? DEVICE_STATUS_LABEL[pendingStatus] : "—",
+                defaultValue:
+                  "Impostare lo stato su {{status}} può impattare disponibilità e assegnazioni. Continuare?",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1544,7 +1656,11 @@ export function DeviceDetailModal() {
         onClose={() => setBarcodeTarget(null)}
         onDetected={applyBarcodeValue}
         mode="barcode-1d"
-        targetLabel={barcodeTarget === "asset_tag" ? t("device.assetTag", "asset tag interno") : t("device.serial", "seriale produttore")}
+        targetLabel={
+          barcodeTarget === "asset_tag"
+            ? t("device.assetTag", "asset tag interno")
+            : t("device.serial", "seriale produttore")
+        }
       />
 
       <div className="flex justify-between">
@@ -1599,7 +1715,9 @@ function AssetMetadataPanel({ device }: { device: DeviceRow }) {
       className="mb-4 rounded-lg border p-3"
       style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
     >
-      <div className="mb-2 text-sm font-semibold">{t("device.metadata.title", "Metadati asset")}</div>
+      <div className="mb-2 text-sm font-semibold">
+        {t("device.metadata.title", "Metadati asset")}
+      </div>
       <div className="grid gap-2 md:grid-cols-2">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-3 text-[12.5px]">
@@ -1746,7 +1864,12 @@ function HardwareTab({
             <Cpu className="size-5" />
           </div>
           <div className="flex-1">
-            <div className="text-sm font-semibold">{t("device.hardware.systemHealth", { label: systemHealth.label, defaultValue: "Stato sistema: {{label}}" })}</div>
+            <div className="text-sm font-semibold">
+              {t("device.hardware.systemHealth", {
+                label: systemHealth.label,
+                defaultValue: "Stato sistema: {{label}}",
+              })}
+            </div>
             <div className="text-xs text-text3">{systemHealth.description}</div>
           </div>
           {canEdit && !editing ? (
@@ -1842,7 +1965,11 @@ function HardwareTab({
               value={draft.screen_type}
               onChange={(v) => update("screen_type", v)}
             />
-            <HardwareInput label={t("device.hardware.wifi", "Wi‑Fi")} value={draft.wifi} onChange={(v) => update("wifi", v)} />
+            <HardwareInput
+              label={t("device.hardware.wifi", "Wi‑Fi")}
+              value={draft.wifi}
+              onChange={(v) => update("wifi", v)}
+            />
             <HardwareInput
               label="Ethernet"
               value={draft.ethernet}
@@ -1923,7 +2050,10 @@ function HardwareTab({
           </div>
           <div className="mt-3 flex gap-2">
             <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={saving} onClick={onSave}>
-              <Save className="size-3" /> {saving ? t("device.saving", "Salvataggio...") : t("device.saveHardware", "Salva hardware")}
+              <Save className="size-3" />{" "}
+              {saving
+                ? t("device.saving", "Salvataggio...")
+                : t("device.saveHardware", "Salva hardware")}
             </button>
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onCancel}>
               {t("device.cancel", "Annulla")}
@@ -1939,17 +2069,29 @@ function HardwareTab({
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Rete"
-                  rows={[["IP", device.ip_address], ["MAC", device.mac_address], ["Firmware", device.firmware_version]]}
+                  rows={[
+                    ["IP", device.ip_address],
+                    ["MAC", device.mac_address],
+                    ["Firmware", device.firmware_version],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Monitor className="size-4" />}
                   title="Stampa"
-                  rows={[["Tecnologia", device.print_technology], ["Toner", device.toner_model], ["Contatore", device.page_count]]}
+                  rows={[
+                    ["Tecnologia", device.print_technology],
+                    ["Toner", device.toner_model],
+                    ["Contatore", device.page_count],
+                  ]}
                 />
                 <HardwareSection
                   icon={<HardDrive className="size-4" />}
                   title="Altro"
-                  rows={[["VLAN", device.vlan_config], ["Scadenza licenza", device.license_expiry], ["PoE", device.poe_supported ? "Sì" : "—"]]}
+                  rows={[
+                    ["VLAN", device.vlan_config],
+                    ["Scadenza licenza", device.license_expiry],
+                    ["PoE", device.poe_supported ? "Sì" : "—"],
+                  ]}
                 />
               </div>
             );
@@ -1960,17 +2102,28 @@ function HardwareTab({
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Management"
-                  rows={[["IP", device.ip_address], ["MAC", device.mac_address], ["Firmware", device.firmware_version]]}
+                  rows={[
+                    ["IP", device.ip_address],
+                    ["MAC", device.mac_address],
+                    ["Firmware", device.firmware_version],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Porte"
-                  rows={[["Numero porte", device.port_count], ["VLAN", device.vlan_config], ["PoE", device.poe_supported ? "Sì" : "—"]]}
+                  rows={[
+                    ["Numero porte", device.port_count],
+                    ["VLAN", device.vlan_config],
+                    ["PoE", device.poe_supported ? "Sì" : "—"],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Monitor className="size-4" />}
                   title="Licenza"
-                  rows={[["Scadenza licenza", device.license_expiry], ["Note firmware", device.firmware_version]]}
+                  rows={[
+                    ["Scadenza licenza", device.license_expiry],
+                    ["Note firmware", device.firmware_version],
+                  ]}
                 />
               </div>
             );
@@ -1981,27 +2134,49 @@ function HardwareTab({
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Rete"
-                  rows={[["IP", device.ip_address], ["MAC", device.mac_address]]}
+                  rows={[
+                    ["IP", device.ip_address],
+                    ["MAC", device.mac_address],
+                  ]}
                 />
                 <HardwareSection
                   icon={<HardDrive className="size-4" />}
                   title="Rack & ruolo"
-                  rows={[["Rack", device.rack_position], ["Ruolo", device.server_role]]}
+                  rows={[
+                    ["Rack", device.rack_position],
+                    ["Ruolo", device.server_role],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Cpu className="size-4" />}
                   title="CPU"
-                  rows={[["Nome", device.cpu_name], ["Frequenza", device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null], ["Core", device.cpu_cores]]}
+                  rows={[
+                    ["Nome", device.cpu_name],
+                    [
+                      "Frequenza",
+                      device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null,
+                    ],
+                    ["Core", device.cpu_cores],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Cpu className="size-4" />}
                   title="RAM"
-                  rows={[["Totale", device.ram_gb ? `${device.ram_gb} GB` : null], ["Tipo", device.ram_type]]}
+                  rows={[
+                    ["Totale", device.ram_gb ? `${device.ram_gb} GB` : null],
+                    ["Tipo", device.ram_type],
+                  ]}
                 />
                 <HardwareSection
                   icon={<HardDrive className="size-4" />}
                   title="Storage"
-                  rows={[["Tipo", device.storage_type], ["Capacità", device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null]]}
+                  rows={[
+                    ["Tipo", device.storage_type],
+                    [
+                      "Capacità",
+                      device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null,
+                    ],
+                  ]}
                 />
               </div>
             );
@@ -2012,17 +2187,29 @@ function HardwareTab({
                 <HardwareSection
                   icon={<Monitor className="size-4" />}
                   title="Sistema operativo"
-                  rows={[["OS", device.os], ["Versione", device.os_version]]}
+                  rows={[
+                    ["OS", device.os],
+                    ["Versione", device.os_version],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Monitor className="size-4" />}
                   title="Schermo"
-                  rows={[["Risoluzione", device.screen_resolution], ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}"` : null]]}
+                  rows={[
+                    ["Risoluzione", device.screen_resolution],
+                    [
+                      "Dimensione",
+                      device.screen_size_inches ? `${device.screen_size_inches}"` : null,
+                    ],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Connettività"
-                  rows={[["Wi‑Fi", device.wifi], ["Bluetooth", device.bluetooth]]}
+                  rows={[
+                    ["Wi‑Fi", device.wifi],
+                    ["Bluetooth", device.bluetooth],
+                  ]}
                 />
               </div>
             );
@@ -2033,12 +2220,20 @@ function HardwareTab({
                 <HardwareSection
                   icon={<Monitor className="size-4" />}
                   title="Specifiche"
-                  rows={[["Modello", device.model], ["IP", device.ip_address], ["MAC", device.mac_address]]}
+                  rows={[
+                    ["Modello", device.model],
+                    ["IP", device.ip_address],
+                    ["MAC", device.mac_address],
+                  ]}
                 />
                 <HardwareSection
                   icon={<Network className="size-4" />}
                   title="Connettività"
-                  rows={[["Ethernet", device.ethernet], ["Wi‑Fi", device.wifi], ["Bluetooth", device.bluetooth]]}
+                  rows={[
+                    ["Ethernet", device.ethernet],
+                    ["Wi‑Fi", device.wifi],
+                    ["Bluetooth", device.bluetooth],
+                  ]}
                 />
               </div>
             );
@@ -2050,32 +2245,63 @@ function HardwareTab({
               <HardwareSection
                 icon={<Cpu className="size-4" />}
                 title="CPU"
-                rows={[["Nome", device.cpu_name], ["Frequenza", device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null], ["Core", device.cpu_cores]]}
+                rows={[
+                  ["Nome", device.cpu_name],
+                  [
+                    "Frequenza",
+                    device.cpu_frequency_ghz ? `${device.cpu_frequency_ghz} GHz` : null,
+                  ],
+                  ["Core", device.cpu_cores],
+                ]}
               />
               <HardwareSection
                 icon={<Cpu className="size-4" />}
                 title="RAM"
-                rows={[["Totale", device.ram_gb ? `${device.ram_gb} GB` : null], ["Tipo", device.ram_type]]}
+                rows={[
+                  ["Totale", device.ram_gb ? `${device.ram_gb} GB` : null],
+                  ["Tipo", device.ram_type],
+                ]}
               />
               <HardwareSection
                 icon={<HardDrive className="size-4" />}
                 title="Storage"
-                rows={[["Tipo", device.storage_type], ["Capacità", device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null]]}
+                rows={[
+                  ["Tipo", device.storage_type],
+                  [
+                    "Capacità",
+                    device.storage_capacity_gb ? `${device.storage_capacity_gb} GB` : null,
+                  ],
+                ]}
               />
               <HardwareSection
                 icon={<Monitor className="size-4" />}
                 title="Sistema operativo"
-                rows={[["Nome", device.os], ["Versione", device.os_version], ["Architettura", device.os_architecture]]}
+                rows={[
+                  ["Nome", device.os],
+                  ["Versione", device.os_version],
+                  ["Architettura", device.os_architecture],
+                ]}
               />
               <HardwareSection
                 icon={<Monitor className="size-4" />}
                 title="Schermo"
-                rows={[["Risoluzione", device.screen_resolution], ["Dimensione", device.screen_size_inches ? `${device.screen_size_inches}"` : null], ["Tipo", device.screen_type]]}
+                rows={[
+                  ["Risoluzione", device.screen_resolution],
+                  [
+                    "Dimensione",
+                    device.screen_size_inches ? `${device.screen_size_inches}"` : null,
+                  ],
+                  ["Tipo", device.screen_type],
+                ]}
               />
               <HardwareSection
                 icon={<Network className="size-4" />}
                 title="Connettività"
-                rows={[["Wi‑Fi", device.wifi], ["Ethernet", device.ethernet], ["Bluetooth", device.bluetooth]]}
+                rows={[
+                  ["Wi‑Fi", device.wifi],
+                  ["Ethernet", device.ethernet],
+                  ["Bluetooth", device.bluetooth],
+                ]}
               />
             </div>
           );

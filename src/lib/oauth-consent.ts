@@ -248,15 +248,17 @@ export const grantConsent = createServerFn({ method: "POST" })
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const nowIso = new Date().toISOString();
 
-    const { error: insertError } = await supabaseAdmin.from("oauth_authorization_codes" as any).insert({
-      code: authCode,
-      user_id: userId,
-      client_id: data.clientId,
-      scopes_granted: data.scopes,
-      redirect_uri: data.redirectUri,
-      state: data.state,
-      expires_at: expiresAt,
-    } as any);
+    const { error: insertError } = await supabaseAdmin
+      .from("oauth_authorization_codes" as any)
+      .insert({
+        code: authCode,
+        user_id: userId,
+        client_id: data.clientId,
+        scopes_granted: data.scopes,
+        redirect_uri: data.redirectUri,
+        state: data.state,
+        expires_at: expiresAt,
+      } as any);
 
     if (insertError) {
       throw new Response("Failed to generate authorization code", { status: 500 });
@@ -442,7 +444,8 @@ export const rotateOAuthClientSecret = createServerFn({ method: "POST" })
       .select("name, status")
       .single();
 
-    if (error || !updated) throw new Response("Client non trovato o aggiornamento fallito", { status: 400 });
+    if (error || !updated)
+      throw new Response("Client non trovato o aggiornamento fallito", { status: 400 });
     if ((updated as any).status !== "active") {
       throw new Response("Ruota il secret solo per client attivi (riattiva prima se necessario).", {
         status: 400,
@@ -486,7 +489,9 @@ export const getOAuthClientLifecycle = createServerFn({ method: "POST" })
         .select("id, full_name")
         .in("id", userIds);
       if (!pErr && profiles) {
-        nameById = new Map((profiles as any[]).map((p) => [p.id as string, p.full_name as string | null]));
+        nameById = new Map(
+          (profiles as any[]).map((p) => [p.id as string, p.full_name as string | null]),
+        );
       }
     }
 
@@ -505,7 +510,8 @@ export const getOAuthClientLifecycle = createServerFn({ method: "POST" })
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (codeErr) throw new Response("Impossibile caricare i codici di autorizzazione", { status: 500 });
+    if (codeErr)
+      throw new Response("Impossibile caricare i codici di autorizzazione", { status: 500 });
 
     const authorizationEvents: OAuthAuthorizationEventRow[] = (codes ?? []).map((row: any) => ({
       createdAt: row.created_at,

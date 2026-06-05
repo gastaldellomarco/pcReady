@@ -12,10 +12,7 @@ type Props = React.PropsWithChildren<{
 export default function OverflowTable({ children, className, tableClassName }: Props) {
   return (
     <div
-      className={cn(
-        "max-w-full overflow-x-auto rounded-md border overscroll-x-contain",
-        className,
-      )}
+      className={cn("max-w-full overflow-x-auto rounded-md border overscroll-x-contain", className)}
       tabIndex={0}
       role="region"
       aria-label="Tabella con scorrimento orizzontale"

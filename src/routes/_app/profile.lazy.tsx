@@ -220,7 +220,11 @@ function ProfilePage() {
           webhook_url: data.webhook_url || "",
         });
       })
-      .catch((error) => setLoadError(errorMessage(error, t("toast.loadProfileFailed", "Impossibile caricare il profilo"))))
+      .catch((error) =>
+        setLoadError(
+          errorMessage(error, t("toast.loadProfileFailed", "Impossibile caricare il profilo")),
+        ),
+      )
       .finally(() => setLoading(false));
   }, [session?.access_token, loadProfile, profileReloadToken]);
 
@@ -231,7 +235,12 @@ function ProfilePage() {
     loadTechnicianOverview({ data: { accessToken: session.access_token } })
       .then(setTechnicianOverview)
       .catch((error) =>
-        setTechnicianOverviewError(errorMessage(error, t("toast.loadHistoryFailed", "Impossibile caricare lo storico tecnico"))),
+        setTechnicianOverviewError(
+          errorMessage(
+            error,
+            t("toast.loadHistoryFailed", "Impossibile caricare lo storico tecnico"),
+          ),
+        ),
       )
       .finally(() => setTechnicianOverviewLoading(false));
   }, [loadTechnicianOverview, session?.access_token, tab, technicianOverview]);
@@ -337,7 +346,9 @@ function ProfilePage() {
       setMfaFactors((data?.totp ?? []) as any[]);
       setBackupStatus(status);
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.load2faFailed", "Impossibile caricare lo stato 2FA")));
+      toast.error(
+        errorMessage(error, t("toast.load2faFailed", "Impossibile caricare lo stato 2FA")),
+      );
     } finally {
       setMfaLoading(false);
     }
@@ -370,7 +381,9 @@ function ProfilePage() {
       setEnrollment({ factorId, qrCode, secret, challengeId: challengeData.id });
       setSetupOpen(true);
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.setup2faFailed", "Avvio configurazione 2FA non riuscito")));
+      toast.error(
+        errorMessage(error, t("toast.setup2faFailed", "Avvio configurazione 2FA non riuscito")),
+      );
     } finally {
       setMfaLoading(false);
     }
@@ -415,7 +428,12 @@ function ProfilePage() {
       setDisableCode("");
       setDisableDialogOpen(true);
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.prepareDisable2faFailed", "Impossibile preparare la disattivazione 2FA")));
+      toast.error(
+        errorMessage(
+          error,
+          t("toast.prepareDisable2faFailed", "Impossibile preparare la disattivazione 2FA"),
+        ),
+      );
     } finally {
       setMfaLoading(false);
     }
@@ -460,7 +478,9 @@ function ProfilePage() {
       await refreshMfaStatus();
       toast.success(t("toast.disabled2fa", "2FA disattivato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.disable2faFailed", "Disattivazione 2FA non riuscita")));
+      toast.error(
+        errorMessage(error, t("toast.disable2faFailed", "Disattivazione 2FA non riuscita")),
+      );
     } finally {
       setMfaLoading(false);
     }
@@ -476,7 +496,12 @@ function ProfilePage() {
       await refreshMfaStatus();
       toast.success(t("toast.codesGenerated", "Nuovi codici generati"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.codesRegenerationFailed", "Rigenerazione codici non riuscita")));
+      toast.error(
+        errorMessage(
+          error,
+          t("toast.codesRegenerationFailed", "Rigenerazione codici non riuscita"),
+        ),
+      );
     } finally {
       setMfaLoading(false);
     }
@@ -500,7 +525,9 @@ function ProfilePage() {
       setPassword({ next: "", confirm: "" });
       toast.success(t("toast.passwordUpdated", "Password aggiornata"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.passwordChangeFailed", "Cambio password non riuscito")));
+      toast.error(
+        errorMessage(error, t("toast.passwordChangeFailed", "Cambio password non riuscito")),
+      );
     } finally {
       setSaving(null);
     }
@@ -518,7 +545,12 @@ function ProfilePage() {
       });
       toast.success(t("toast.notificationPreferencesSaved", "Preferenze notifiche salvate"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.notificationSaveFailed", "Salvataggio notifiche non riuscito")));
+      toast.error(
+        errorMessage(
+          error,
+          t("toast.notificationSaveFailed", "Salvataggio notifiche non riuscito"),
+        ),
+      );
     } finally {
       setSaving(null);
     }
@@ -569,7 +601,9 @@ function ProfilePage() {
                 <UserRound className="size-5" />
                 {t("personal.cardTitle", "Dati personali")}
               </CardTitle>
-              <CardDescription>{t("personal.cardDescription", "Gestisci identità, contatti e localizzazione.")}</CardDescription>
+              <CardDescription>
+                {t("personal.cardDescription", "Gestisci identità, contatti e localizzazione.")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="flex flex-wrap items-center gap-4">
@@ -592,7 +626,9 @@ function ProfilePage() {
                 <div>
                   <Label htmlFor="avatar" className="pc-btn pc-btn-ghost pc-btn-sm cursor-pointer">
                     <Camera className="h-3.5 w-3.5" />
-                    {saving === "avatar" ? t("personal.uploadingAvatar", "Upload...") : t("personal.uploadAvatar", "Carica avatar")}
+                    {saving === "avatar"
+                      ? t("personal.uploadingAvatar", "Upload...")
+                      : t("personal.uploadAvatar", "Carica avatar")}
                   </Label>
                   <input
                     id="avatar"
@@ -665,7 +701,9 @@ function ProfilePage() {
 
               <Button onClick={submitPersonal} disabled={saving === "personal"}>
                 <Save className="mr-2 size-4" />
-                {saving === "personal" ? t("personal.saving", "Salvataggio...") : t("personal.save", "Salva")}
+                {saving === "personal"
+                  ? t("personal.saving", "Salvataggio...")
+                  : t("personal.save", "Salva")}
               </Button>
             </CardContent>
           </Card>
@@ -673,7 +711,9 @@ function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("personal.recentActivity", "Attività recenti")}</CardTitle>
-              <CardDescription>{t("personal.recentActivityDesc", "Ultime azioni registrate a tuo nome.")}</CardDescription>
+              <CardDescription>
+                {t("personal.recentActivityDesc", "Ultime azioni registrate a tuo nome.")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -686,7 +726,9 @@ function ProfilePage() {
                   </div>
                 ))}
                 {!(profile.recent_activity ?? []).length && (
-                  <div className="text-sm text-muted-foreground">{t("personal.noRecentActivity", "Nessuna attività recente.")}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t("personal.noRecentActivity", "Nessuna attività recente.")}
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -742,7 +784,9 @@ function ProfilePage() {
                   disabled={saving === "security" || password.next.length < 8 || !password.confirm}
                 >
                   <KeyRound className="mr-2 size-4" />
-                  {saving === "security" ? t("security.saving", "Salvataggio...") : t("security.updatePassword", "Aggiorna password")}
+                  {saving === "security"
+                    ? t("security.saving", "Salvataggio...")
+                    : t("security.updatePassword", "Aggiorna password")}
                 </Button>
               </CardContent>
             </Card>
@@ -758,7 +802,10 @@ function ProfilePage() {
                   {t("security.twoFactorAuth", "Autenticazione a due fattori")}
                 </CardTitle>
                 <CardDescription>
-                  {t("security.twoFactorAuthDesc", "Aggiungi un secondo livello di sicurezza al tuo account.")}
+                  {t(
+                    "security.twoFactorAuthDesc",
+                    "Aggiungi un secondo livello di sicurezza al tuo account.",
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -768,7 +815,8 @@ function ProfilePage() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            <ShieldCheck className="size-4 text-emerald-600" /> {t("security.twoFactorActive", "2FA attivo")}
+                            <ShieldCheck className="size-4 text-emerald-600" />{" "}
+                            {t("security.twoFactorActive", "2FA attivo")}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {t("security.lastUsed", "Ultimo utilizzo: ")}
@@ -783,7 +831,9 @@ function ProfilePage() {
                     <div className="rounded-lg border p-4 space-y-3">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-medium">{t("security.backupCodes", "Codici di backup")}</p>
+                          <p className="text-sm font-medium">
+                            {t("security.backupCodes", "Codici di backup")}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {backupStatus ? `${backupStatus.remaining}/${backupStatus.total}` : "-"}{" "}
                             {t("security.codesRemaining", "codici rimanenti")}
@@ -791,7 +841,8 @@ function ProfilePage() {
                         </div>
                         {backupStatus && backupStatus.remaining < 3 ? (
                           <Badge variant="destructive" className="gap-1">
-                            <AlertTriangle className="size-3" /> {t("security.fewCodes", "Pochi codici")}
+                            <AlertTriangle className="size-3" />{" "}
+                            {t("security.fewCodes", "Pochi codici")}
                           </Badge>
                         ) : null}
                       </div>
@@ -809,14 +860,18 @@ function ProfilePage() {
                           onClick={regenerateCodes}
                           disabled={mfaLoading}
                         >
-                          <RefreshCw className="mr-2 h-3.5 w-3.5" /> {t("security.regenerate", "Rigenera")}
+                          <RefreshCw className="mr-2 h-3.5 w-3.5" />{" "}
+                          {t("security.regenerate", "Rigenera")}
                         </Button>
                       </div>
                       {showBackupCodes && backupCodes.length > 0 ? (
                         <BackupCodesPanel codes={backupCodes} onCopy={copyBackupCodes} />
                       ) : showBackupCodes ? (
                         <p className="text-xs text-muted-foreground">
-                          {t("security.codesNotRecoverable", "Per motivi di sicurezza i codici esistenti non sono recuperabili. Rigenerali per visualizzarne di nuovi.")}
+                          {t(
+                            "security.codesNotRecoverable",
+                            "Per motivi di sicurezza i codici esistenti non sono recuperabili. Rigenerali per visualizzarne di nuovi.",
+                          )}
                         </p>
                       ) : null}
                     </div>
@@ -831,10 +886,14 @@ function ProfilePage() {
                 ) : (
                   <div className="rounded-lg border p-4 space-y-3">
                     <div className="font-medium flex items-center gap-2">
-                      <Shield className="size-4" /> {t("security.twoFactorInactive", "2FA non attivo")}
+                      <Shield className="size-4" />{" "}
+                      {t("security.twoFactorInactive", "2FA non attivo")}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {t("security.twoFactorInactiveDesc", "Proteggi l'accesso con Google Authenticator, Authy, 1Password o app compatibili TOTP.")}
+                      {t(
+                        "security.twoFactorInactiveDesc",
+                        "Proteggi l'accesso con Google Authenticator, Authy, 1Password o app compatibili TOTP.",
+                      )}
                     </p>
                     <Button onClick={startMfaSetup} disabled={mfaLoading}>
                       {t("security.enable2fa", "Attiva 2FA")}
@@ -848,24 +907,35 @@ function ProfilePage() {
           <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
             <DialogContent className="max-w-xl">
               <DialogHeader>
-                <DialogTitle>{t("security.setupDialogTitle", "Attiva autenticazione a due fattori")}</DialogTitle>
-                <DialogDescription>{t("security.setupDialogStep", "Step {{step}} di 4", { step: setupStep })}</DialogDescription>
+                <DialogTitle>
+                  {t("security.setupDialogTitle", "Attiva autenticazione a due fattori")}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("security.setupDialogStep", "Step {{step}} di 4", { step: setupStep })}
+                </DialogDescription>
               </DialogHeader>
               {setupStep === 1 && enrollment ? (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    {t("security.qrScanInstructions", "Scansiona il QR code con Google Authenticator, Authy, 1Password o app compatibile.")}
+                    {t(
+                      "security.qrScanInstructions",
+                      "Scansiona il QR code con Google Authenticator, Authy, 1Password o app compatibile.",
+                    )}
                   </p>
                   <QrCodeBox qrCode={enrollment.qrCode} />
                   <div className="rounded-md bg-muted p-3 text-xs break-all">
-                    {t("security.manualSecret", "Secret manuale: ")}<span className="font-mono">{enrollment.secret}</span>
+                    {t("security.manualSecret", "Secret manuale: ")}
+                    <span className="font-mono">{enrollment.secret}</span>
                   </div>
                 </div>
               ) : null}
               {setupStep === 2 ? (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    {t("security.codeInstructions", "Inserisci il codice a 6 cifre generato dall'app per completare la verifica.")}
+                    {t(
+                      "security.codeInstructions",
+                      "Inserisci il codice a 6 cifre generato dall'app per completare la verifica.",
+                    )}
                   </p>
                   <Input
                     inputMode="numeric"
@@ -882,7 +952,10 @@ function ProfilePage() {
               {setupStep === 3 ? (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    {t("security.saveBackupCodes", "Salva questi 8 codici di backup in un posto sicuro. Ogni codice è monouso e non potrà essere mostrato di nuovo.")}
+                    {t(
+                      "security.saveBackupCodes",
+                      "Salva questi 8 codici di backup in un posto sicuro. Ogni codice è monouso e non potrà essere mostrato di nuovo.",
+                    )}
                   </p>
                   <BackupCodesPanel codes={backupCodes} onCopy={copyBackupCodes} />
                 </div>
@@ -890,15 +963,22 @@ function ProfilePage() {
               {setupStep === 4 ? (
                 <div className="rounded-lg border p-4 space-y-2 text-center">
                   <ShieldCheck className="mx-auto size-10 text-emerald-600" />
-                  <p className="font-medium">{t("security.twoFactorActivated", "2FA attivato correttamente")}</p>
+                  <p className="font-medium">
+                    {t("security.twoFactorActivated", "2FA attivato correttamente")}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    {t("security.twoFactorActivatedDesc", "Dal prossimo login ti verrà richiesto un codice temporaneo.")}
+                    {t(
+                      "security.twoFactorActivatedDesc",
+                      "Dal prossimo login ti verrà richiesto un codice temporaneo.",
+                    )}
                   </p>
                 </div>
               ) : null}
               <DialogFooter>
                 {setupStep === 1 ? (
-                  <Button onClick={() => setSetupStep(2)}>{t("security.qrScanned", "Ho scansionato il QR code")}</Button>
+                  <Button onClick={() => setSetupStep(2)}>
+                    {t("security.qrScanned", "Ho scansionato il QR code")}
+                  </Button>
                 ) : null}
                 {setupStep === 2 ? (
                   <Button onClick={verifyMfaSetup} disabled={mfaLoading || mfaCode.length !== 6}>
@@ -906,9 +986,15 @@ function ProfilePage() {
                   </Button>
                 ) : null}
                 {setupStep === 3 ? (
-                  <Button onClick={() => setSetupStep(4)}>{t("security.savedCodes", "Ho salvato i codici")}</Button>
+                  <Button onClick={() => setSetupStep(4)}>
+                    {t("security.savedCodes", "Ho salvato i codici")}
+                  </Button>
                 ) : null}
-                {setupStep === 4 ? <Button onClick={() => setSetupOpen(false)}>{t("security.finish", "Fine")}</Button> : null}
+                {setupStep === 4 ? (
+                  <Button onClick={() => setSetupOpen(false)}>
+                    {t("security.finish", "Fine")}
+                  </Button>
+                ) : null}
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -924,9 +1010,14 @@ function ProfilePage() {
           >
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>{t("security.disableDialogTitle", "Disattiva autenticazione a due fattori")}</DialogTitle>
+                <DialogTitle>
+                  {t("security.disableDialogTitle", "Disattiva autenticazione a due fattori")}
+                </DialogTitle>
                 <DialogDescription>
-                  {t("security.disableDialogDesc", "Questa operazione rimuove il secondo fattore dal tuo account. Potrai riattivarlo in seguito.")}
+                  {t(
+                    "security.disableDialogDesc",
+                    "Questa operazione rimuove il secondo fattore dal tuo account. Potrai riattivarlo in seguito.",
+                  )}
                 </DialogDescription>
               </DialogHeader>
 
@@ -935,9 +1026,14 @@ function ProfilePage() {
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 size-4 text-destructive" />
                     <div>
-                      <p className="font-medium">{t("security.confirmTitle", "Conferma richiesta")}</p>
+                      <p className="font-medium">
+                        {t("security.confirmTitle", "Conferma richiesta")}
+                      </p>
                       <p className="text-muted-foreground">
-                        {t("security.disableWarning", "Disattivando il 2FA, l'accesso tornerà a dipendere solo dalla password e dai codici sessione.")}
+                        {t(
+                          "security.disableWarning",
+                          "Disattivando il 2FA, l'accesso tornerà a dipendere solo dalla password e dai codici sessione.",
+                        )}
                       </p>
                     </div>
                   </div>
@@ -945,7 +1041,9 @@ function ProfilePage() {
 
                 {disableRequiresCode ? (
                   <div className="space-y-2">
-                    <Label htmlFor="disable-mfa-code">{t("security.authenticatorCode", "Codice authenticator")}</Label>
+                    <Label htmlFor="disable-mfa-code">
+                      {t("security.authenticatorCode", "Codice authenticator")}
+                    </Label>
                     <Input
                       id="disable-mfa-code"
                       inputMode="numeric"
@@ -966,12 +1064,18 @@ function ProfilePage() {
                       disabled={mfaLoading}
                     />
                     <p className="text-xs text-muted-foreground">
-                      {t("security.aal2Required", "Supabase richiede una sessione AAL2 per rimuovere un fattore verificato: inserisci il codice TOTP per confermare.")}
+                      {t(
+                        "security.aal2Required",
+                        "Supabase richiede una sessione AAL2 per rimuovere un fattore verificato: inserisci il codice TOTP per confermare.",
+                      )}
                     </p>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {t("security.aal2AlreadyVerified", "La sessione corrente è già verificata come AAL2, quindi non serve inserire un altro codice.")}
+                    {t(
+                      "security.aal2AlreadyVerified",
+                      "La sessione corrente è già verificata come AAL2, quindi non serve inserire un altro codice.",
+                    )}
                   </p>
                 )}
               </div>
@@ -991,7 +1095,9 @@ function ProfilePage() {
                   onClick={confirmDisableMfa}
                   disabled={mfaLoading || (disableRequiresCode && disableCode.length !== 6)}
                 >
-                  {mfaLoading ? t("security.disabling", "Disattivazione...") : t("security.disable2fa", "Disattiva 2FA")}
+                  {mfaLoading
+                    ? t("security.disabling", "Disattivazione...")
+                    : t("security.disable2fa", "Disattiva 2FA")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1004,12 +1110,17 @@ function ProfilePage() {
               <CardHeader>
                 <CardTitle>{t("notifications.cardTitle", "Preferenze notifiche")}</CardTitle>
                 <CardDescription>
-                  {t("notifications.cardDescription", "Scegli per quali eventi ricevere notifiche e attraverso quali canali.")}
+                  {t(
+                    "notifications.cardDescription",
+                    "Scegli per quali eventi ricevere notifiche e attraverso quali canali.",
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div>
-                  <h4 className="text-sm font-medium mb-3">{t("notifications.events", "Eventi")}</h4>
+                  <h4 className="text-sm font-medium mb-3">
+                    {t("notifications.events", "Eventi")}
+                  </h4>
                   <div className="rounded-md border">
                     <div
                       className="grid grid-cols-[1fr_80px_80px] gap-4 px-3 py-2 border-b text-xs font-medium text-text3 uppercase tracking-wider"
@@ -1057,7 +1168,9 @@ function ProfilePage() {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-2">{t("notifications.digestFrequency", "Frequenza digest")}</h4>
+                  <h4 className="text-sm font-medium mb-2">
+                    {t("notifications.digestFrequency", "Frequenza digest")}
+                  </h4>
                   <Select
                     value={notifications.notification_digest}
                     onValueChange={(value) =>
@@ -1071,20 +1184,33 @@ function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="immediate">{t("notifications.immediate", "Immediata")}</SelectItem>
-                      <SelectItem value="15min">{t("notifications.every15min", "Ogni 15 minuti")}</SelectItem>
-                      <SelectItem value="hourly">{t("notifications.everyHour", "Ogni ora")}</SelectItem>
-                      <SelectItem value="daily">{t("notifications.daily", "Giornaliera")}</SelectItem>
+                      <SelectItem value="immediate">
+                        {t("notifications.immediate", "Immediata")}
+                      </SelectItem>
+                      <SelectItem value="15min">
+                        {t("notifications.every15min", "Ogni 15 minuti")}
+                      </SelectItem>
+                      <SelectItem value="hourly">
+                        {t("notifications.everyHour", "Ogni ora")}
+                      </SelectItem>
+                      <SelectItem value="daily">
+                        {t("notifications.daily", "Giornaliera")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-text3 mt-1.5">
-                    {t("notifications.digestHelp", "Raggruppa le notifiche e inviale secondo la frequenza scelta.")}
+                    {t(
+                      "notifications.digestHelp",
+                      "Raggruppa le notifiche e inviale secondo la frequenza scelta.",
+                    )}
                   </p>
                 </div>
 
                 <Button onClick={submitNotifications} disabled={saving === "notifications"}>
                   <Save className="mr-2 size-4" />
-                  {saving === "notifications" ? t("notifications.saving", "Salvataggio...") : t("notifications.savePreferences", "Salva preferenze")}
+                  {saving === "notifications"
+                    ? t("notifications.saving", "Salvataggio...")
+                    : t("notifications.savePreferences", "Salva preferenze")}
                 </Button>
               </CardContent>
             </Card>
@@ -1092,13 +1218,19 @@ function ProfilePage() {
             <div className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">{t("notifications.notificationChannels", "Canali di notifica")}</CardTitle>
+                  <CardTitle className="text-sm">
+                    {t("notifications.notificationChannels", "Canali di notifica")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-xs text-text3 uppercase tracking-wider">{t("notifications.emailLabel", "Email")}</Label>
+                    <Label className="text-xs text-text3 uppercase tracking-wider">
+                      {t("notifications.emailLabel", "Email")}
+                    </Label>
                     <p className="text-sm mt-0.5">{profile.email}</p>
-                    <p className="text-xs text-text3">{t("notifications.alreadyConfigured", "Già configurata nel profilo.")}</p>
+                    <p className="text-xs text-text3">
+                      {t("notifications.alreadyConfigured", "Già configurata nel profilo.")}
+                    </p>
                   </div>
                   <div>
                     <Label
@@ -1116,11 +1248,17 @@ function ProfilePage() {
                           webhook_url: event.target.value,
                         }))
                       }
-                      placeholder={t("notifications.webhookPlaceholder", "https://hooks.example.com/notify")}
+                      placeholder={t(
+                        "notifications.webhookPlaceholder",
+                        "https://hooks.example.com/notify",
+                      )}
                       className="mt-1"
                     />
                     <p className="text-xs text-text3 mt-1">
-                      {t("notifications.webhookHelp", "Opzionale. Le notifiche verranno inviate anche via webhook.")}
+                      {t(
+                        "notifications.webhookHelp",
+                        "Opzionale. Le notifiche verranno inviate anche via webhook.",
+                      )}
                     </p>
                   </div>
                   <div>
@@ -1128,7 +1266,10 @@ function ProfilePage() {
                       {t("notifications.pushNotifications", "Notifiche push (browser)")}
                     </Label>
                     <p className="text-sm mt-0.5 text-text2">
-                      {t("notifications.pushHelp", "Supportate dal browser tramite notifiche in-app.")}
+                      {t(
+                        "notifications.pushHelp",
+                        "Supportate dal browser tramite notifiche in-app.",
+                      )}
                     </p>
                   </div>
                 </CardContent>
@@ -1136,13 +1277,17 @@ function ProfilePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">{t("notifications.lastSent", "Ultimo invio")}</CardTitle>
+                  <CardTitle className="text-sm">
+                    {t("notifications.lastSent", "Ultimo invio")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {profile.last_notification_sent_at ? (
                     <p className="text-sm">{fmtDateTime(profile.last_notification_sent_at)}</p>
                   ) : (
-                    <p className="text-sm text-text3">{t("notifications.noNotificationsSent", "Nessuna notifica inviata.")}</p>
+                    <p className="text-sm text-text3">
+                      {t("notifications.noNotificationsSent", "Nessuna notifica inviata.")}
+                    </p>
                   )}
                   <p className="text-xs text-text3 mt-1">
                     {t("notifications.lastSentHelp", "Data e ora dell'ultima notifica inviata.")}
@@ -1181,7 +1326,10 @@ function TechnicianOverviewSection({
     return (
       <Card>
         <CardContent className="p-6 text-sm text-muted-foreground">
-          {t("activity.placeholder", "Apri questa scheda per caricare statistiche personali, interventi e riconoscimenti.")}
+          {t(
+            "activity.placeholder",
+            "Apri questa scheda per caricare statistiche personali, interventi e riconoscimenti.",
+          )}
         </CardContent>
       </Card>
     );
@@ -1214,13 +1362,24 @@ function TechnicianOverviewSection({
               <BarChart3 className="size-5" />
               {t("activity.monthlyActivity", "Attività mensile")}
             </CardTitle>
-            <CardDescription>{t("activity.monthlyActivityDesc", "Ticket chiusi e ore registrate negli ultimi 6 mesi.")}</CardDescription>
+            <CardDescription>
+              {t(
+                "activity.monthlyActivityDesc",
+                "Ticket chiusi e ore registrate negli ultimi 6 mesi.",
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
               config={{
-                closedTickets: { label: t("activity.chartClosedTickets", "Ticket chiusi"), color: "hsl(var(--chart-1))" },
-                workedHours: { label: t("activity.chartHours", "Ore"), color: "hsl(var(--chart-2))" },
+                closedTickets: {
+                  label: t("activity.chartClosedTickets", "Ticket chiusi"),
+                  color: "hsl(var(--chart-1))",
+                },
+                workedHours: {
+                  label: t("activity.chartHours", "Ore"),
+                  color: "hsl(var(--chart-2))",
+                },
               }}
               className="h-[260px]"
             >
@@ -1242,7 +1401,9 @@ function TechnicianOverviewSection({
               <Award className="size-5" />
               {t("activity.performanceBadges", "Badge performance")}
             </CardTitle>
-            <CardDescription>{t("activity.performanceBadgesDesc", "Riconoscimenti calcolati sulle tue attività.")}</CardDescription>
+            <CardDescription>
+              {t("activity.performanceBadgesDesc", "Riconoscimenti calcolati sulle tue attività.")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.badges.map((badge) => (
@@ -1250,7 +1411,9 @@ function TechnicianOverviewSection({
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium">{badge.label}</div>
                   <Badge variant={badge.achieved ? "default" : "outline"}>
-                    {badge.achieved ? t("activity.badgeUnlocked", "Sbloccato") : t("activity.badgeInProgress", "In corso")}
+                    {badge.achieved
+                      ? t("activity.badgeUnlocked", "Sbloccato")
+                      : t("activity.badgeInProgress", "In corso")}
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
@@ -1264,7 +1427,9 @@ function TechnicianOverviewSection({
         <Card>
           <CardHeader>
             <CardTitle>{t("activity.closedTicketsCard", "Ticket risolti e chiusi")}</CardTitle>
-            <CardDescription>{t("activity.closedTicketsCardDesc", "Ultimi ticket assegnati a te in stato chiuso.")}</CardDescription>
+            <CardDescription>
+              {t("activity.closedTicketsCardDesc", "Ultimi ticket assegnati a te in stato chiuso.")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.closedTickets.length ? (
@@ -1280,12 +1445,15 @@ function TechnicianOverviewSection({
                     <Badge variant="secondary">{ticket.status}</Badge>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">
-                    {t("activity.closed", "Chiuso: ")}{ticket.closed_at ? fmtDateTime(ticket.closed_at) : "-"}
+                    {t("activity.closed", "Chiuso: ")}
+                    {ticket.closed_at ? fmtDateTime(ticket.closed_at) : "-"}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">{t("activity.noClosedTickets", "Nessun ticket chiuso assegnato.")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("activity.noClosedTickets", "Nessun ticket chiuso assegnato.")}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -1294,7 +1462,10 @@ function TechnicianOverviewSection({
           <CardHeader>
             <CardTitle>{t("activity.recentInterventions", "Interventi recenti")}</CardTitle>
             <CardDescription>
-              {t("activity.recentInterventionsDesc", "Data, cliente e durata delle ultime attività tracciate.")}
+              {t(
+                "activity.recentInterventionsDesc",
+                "Data, cliente e durata delle ultime attività tracciate.",
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -1311,7 +1482,8 @@ function TechnicianOverviewSection({
                       </div>
                     </div>
                     <Badge variant="outline">
-                      {Math.round((intervention.duration_minutes / 60) * 10) / 10}{t("activity.hoursSuffix", "h")}
+                      {Math.round((intervention.duration_minutes / 60) * 10) / 10}
+                      {t("activity.hoursSuffix", "h")}
                     </Badge>
                   </div>
                   {intervention.description ? (
@@ -1320,7 +1492,9 @@ function TechnicianOverviewSection({
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">{t("activity.noInterventions", "Nessun intervento tracciato.")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("activity.noInterventions", "Nessun intervento tracciato.")}
+              </p>
             )}
           </CardContent>
         </Card>

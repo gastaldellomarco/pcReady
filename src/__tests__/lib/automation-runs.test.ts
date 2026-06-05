@@ -25,7 +25,11 @@ const mockState = vi.hoisted(() => ({
     duration_ms: 4,
     trigger_payload: {} as Record<string, unknown> | null,
     actions_executed: [
-      { action: "validate_flow", status: "skipped", result: { reason: "Nessuna action configurata" } },
+      {
+        action: "validate_flow",
+        status: "skipped",
+        result: { reason: "Nessuna action configurata" },
+      },
     ],
     error_message: null as string | null,
     is_dry_run: false,
@@ -81,7 +85,11 @@ describe("automation-runs.server", () => {
       duration_ms: 4,
       trigger_payload: {},
       actions_executed: [
-        { action: "validate_flow", status: "skipped", result: { reason: "Nessuna action configurata" } },
+        {
+          action: "validate_flow",
+          status: "skipped",
+          result: { reason: "Nessuna action configurata" },
+        },
       ],
       error_message: null,
       is_dry_run: false,
@@ -96,7 +104,12 @@ describe("automation-runs.server", () => {
   it("computeHealth detects failing when last three are errors", async () => {
     const { computeHealth } = await import("@/lib/automation-runs.server");
     expect(
-      computeHealth([{ status: "error" }, { status: "error" }, { status: "error" }, { status: "success" }]),
+      computeHealth([
+        { status: "error" },
+        { status: "error" },
+        { status: "error" },
+        { status: "success" },
+      ]),
     ).toBe("failing");
   });
 

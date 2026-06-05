@@ -187,9 +187,7 @@ export function TicketCard({
             <select
               className="pc-input h-7 min-w-0 px-2 py-0 text-[10px] leading-none"
               value={status}
-              onChange={(event) =>
-                onMove(card.id, event.target.value as TicketStatus, assigneeId)
-              }
+              onChange={(event) => onMove(card.id, event.target.value as TicketStatus, assigneeId)}
               title={t("moveTo", "Sposta a")}
             >
               {statuses.map((s) => (

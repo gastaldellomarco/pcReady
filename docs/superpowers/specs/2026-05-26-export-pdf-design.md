@@ -28,12 +28,12 @@ interface ExportPdfProps<TData, TPdfRow> {
   onOpenChange: (open: boolean) => void;
 
   // ── Identità ──
-  entityLabel: string;              // "ticket", "dispositivi", "costi"
+  entityLabel: string; // "ticket", "dispositivi", "costi"
 
   // ── Rendering PDF (entity-specific) ──
   renderPdf: (rows: TPdfRow[], orgName?: string) => ReactElement<DocumentProps>;
   mapRow: (row: TData) => TPdfRow;
-  fileName: string;                 // "pcready-ticket", "pcready-inventory"
+  fileName: string; // "pcready-ticket", "pcready-inventory"
 
   // ── Data fetching ──
   fetchAll: (filters: Record<string, any>) => Promise<{ data: TData[]; count: number }>;
@@ -50,6 +50,7 @@ interface ExportPdfProps<TData, TPdfRow> {
 ```
 
 **Decisioni chiave:**
+
 - `open`/`onOpenChange` — il parent controlla visibilità (button → open, close → `onOpenChange(false)`)
 - `renderPdf` + `mapRow` — logica PDF entity-specific resta nel parent, passata come callback
 - `fetchAll` — nuova funzione di fetch senza paginazione fornita dal parent
@@ -81,14 +82,14 @@ interface ExportPdfProps<TData, TPdfRow> {
 
 ### Stati del componente
 
-| Stato | Comportamento |
-|---|---|
-| **Default** | Radio button con conteggi. Bottone "Esporta PDF" attivo |
-| **Warning (>500)** | Banner inline appare quando "Tutti" selezionato e count > 500. Bottone diventa "Conferma ed esporta" |
-| **Loading** | Bottone mostra spinner + "Esportazione in corso...". Tutti gli input disabilitati |
-| **Success** | Modale si chiude, parent mostra toast ("PDF esportato") via `onSuccess` |
-| **Error** | Messaggio errore inline nel modale, bottone "Riprova". Chiama `onError` |
-| **Empty (0 risultati)** | Radio "Tutti" disabilitato con label "Nessun risultato" |
+| Stato                   | Comportamento                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Default**             | Radio button con conteggi. Bottone "Esporta PDF" attivo                                              |
+| **Warning (>500)**      | Banner inline appare quando "Tutti" selezionato e count > 500. Bottone diventa "Conferma ed esporta" |
+| **Loading**             | Bottone mostra spinner + "Esportazione in corso...". Tutti gli input disabilitati                    |
+| **Success**             | Modale si chiude, parent mostra toast ("PDF esportato") via `onSuccess`                              |
+| **Error**               | Messaggio errore inline nel modale, bottone "Riprova". Chiama `onError`                              |
+| **Empty (0 risultati)** | Radio "Tutti" disabilitato con label "Nessun risultato"                                              |
 
 ## Data Flow
 
@@ -137,17 +138,18 @@ export async function fetchAllTicketsList(params: TicketsListParams) {
 
 ## Error Handling
 
-| Scenario | Comportamento |
-|---|---|
-| `fetchAll` reject | Errore inline "Impossibile recuperare i dati. Riprova." con bottone retry |
-| `renderPdf` throw | Catch in try/catch, toast error via `onError` callback |
-| Supabase timeout / network | Stato errore generico, bottone retry |
-| 0 total results | Radio "tutti" disabilitato, label "Nessun risultato" |
+| Scenario                     | Comportamento                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `fetchAll` reject            | Errore inline "Impossibile recuperare i dati. Riprova." con bottone retry                |
+| `renderPdf` throw            | Catch in try/catch, toast error via `onError` callback                                   |
+| Supabase timeout / network   | Stato errore generico, bottone retry                                                     |
+| 0 total results              | Radio "tutti" disabilitato, label "Nessun risultato"                                     |
 | Count > 500 + utente annulla | Collassa warning, mantieni "tutti" selezionato, utente può switchare a "pagina corrente" |
 
 ## Testing
 
 ### Unit test (`src/__tests__/ExportPdf.test.tsx`)
+
 - Renderizza con entrambe le opzioni radio e conteggi corretti
 - Mostra warning quando count > 500 e "tutti" selezionato
 - Nasconde warning quando si switcha a "pagina corrente"
@@ -157,6 +159,7 @@ export async function fetchAllTicketsList(params: TicketsListParams) {
 - Mostra errore inline quando `fetchAll` fallisce
 
 ### E2E test (`e2e/pdf-export.spec.ts`)
+
 - Apri modale ExportPdf dalla pagina ticket
 - Seleziona "Tutti i risultati" e verifica conteggio
 - Esporta e verifica download
@@ -164,12 +167,12 @@ export async function fetchAllTicketsList(params: TicketsListParams) {
 
 ## File da creare/modificare
 
-| File | Azione |
-|---|---|
-| `src/components/ExportPdf.tsx` | **NUOVO** — componente modale riutilizzabile |
-| `src/lib/queries/tickets.ts` | **MODIFICA** — aggiungi `fetchAllTicketsList()` |
+| File                               | Azione                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `src/components/ExportPdf.tsx`     | **NUOVO** — componente modale riutilizzabile                               |
+| `src/lib/queries/tickets.ts`       | **MODIFICA** — aggiungi `fetchAllTicketsList()`                            |
 | `src/routes/_app/tickets.lazy.tsx` | **MODIFICA** — sostituisci `exportPdf()` inline con integrazione ExportPdf |
-| `src/lib/queries/list-config.ts` | **MODIFICA** — aggiungi costante `EXPORT_WARNING_THRESHOLD = 500` |
+| `src/lib/queries/list-config.ts`   | **MODIFICA** — aggiungi costante `EXPORT_WARNING_THRESHOLD = 500`          |
 
 ## i18n
 

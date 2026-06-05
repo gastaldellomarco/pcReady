@@ -41,7 +41,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Added comprehensive attachment handling system with upload, preview, download, and deletion capabilities
 - Implemented ticket relations management for dependencies, duplicates, and parent-child relationships
 - Integrated time tracking with automatic timers, manual entries, and duration calculations
@@ -50,6 +52,7 @@
 - Added new database tables and policies for attachments, relations, and time entries
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -63,10 +66,13 @@
 11. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the enhanced ticket management system with comprehensive end-to-end lifecycle management: creation via CreateTicketModal, status progression, assignment and priority controls, checklist templates, code generation, real-time updates, and the newly added attachment handling, relations management, time tracking, and enhanced checklist processing. The system now supports file attachments, ticket dependencies, automated time tracking, and structured checklist instances with response tracking.
 
 ## Project Structure
+
 The ticket system spans frontend components, server-side functions, and backend schema/migrations. Key areas include:
+
 - Frontend UI: CreateTicketModal, TicketDetailModal, NewTicketForm, StatusBadge, PriorityLabel, TicketAttachments, TicketRelations, TicketTimeTracking
 - Backend logic: createTicket server function, ticket completion workflow, portal ticket creation, attachment management, relation handling, and time tracking
 - Database: tickets table, enums, sequences, triggers, history tables, and new attachment, relation, and time tracking tables
@@ -129,6 +135,7 @@ TT --> TTE
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
@@ -154,6 +161,7 @@ TT --> TTE
 - [20260522120000_ticket_checklist_instances.sql](file://supabase/migrations/20260522120000_ticket_checklist_instances.sql)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
@@ -173,6 +181,7 @@ TT --> TTE
 - [20260515150000_realtime_ticket_device_assignments.sql](file://supabase/migrations/20260515150000_realtime_ticket_device_assignments.sql)
 
 ## Core Components
+
 - CreateTicketModal: Guides technicians through requester, priority, assignee, OS/software, checklist templates, and submission. Now includes attachment selection and relation setup.
 - TicketDetailModal: Displays ticket details, supports status advancement, and triggers completion workflow upon moving to completed. Enhanced with attachments, relations, and time tracking views.
 - NewTicketForm (Portal): Allows portal users to create tickets with category and urgency; delegates to portal-tickets server function.
@@ -181,6 +190,7 @@ TT --> TTE
 - Database schema: tickets table with enums for status and priority, sequences/triggers for code generation, history tables, and new attachment, relation, and time tracking tables.
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
@@ -193,7 +203,9 @@ TT --> TTE
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:158-179](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L158-L179)
 
 ## Architecture Overview
+
 The system follows a layered architecture with enhanced capabilities:
+
 - UI layer: Modals and forms collect inputs, manage attachments, track relations, and log time.
 - Application layer: Server functions orchestrate data validation, persistence, notifications, and enhanced completion workflows.
 - Data layer: Supabase schema defines entities, enums, constraints, triggers for code generation, and new tables for attachments, relations, and time tracking.
@@ -216,6 +228,7 @@ RT-->>UI : "Live update for new ticket with attachments, relations, time trackin
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:196-231](file://src/components/pcready/CreateTicketModal.tsx#L196-L231)
 - [tickets.ts](file://src/lib/tickets.ts)
 - [20260430154500_ticket_code_sequence_trigger.sql](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql)
@@ -224,7 +237,9 @@ RT-->>UI : "Live update for new ticket with attachments, relations, time trackin
 ## Detailed Component Analysis
 
 ### Ticket Creation Workflow (CreateTicketModal)
+
 Key behaviors:
+
 - Field validation: Ensures client, requester, and device selection when applicable.
 - Template-driven checklist: Loads selected template structure or defaults.
 - Client/device/contact resolution: Fetches and caches selections to avoid redundant network calls.
@@ -254,17 +269,21 @@ CTM-->>Tech : "Toast success"
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:196-231](file://src/components/pcready/CreateTicketModal.tsx#L196-L231)
 - [tickets.ts](file://src/lib/tickets.ts)
 - [notifications.ts](file://src/lib/notifications.ts)
 - [email-events.ts](file://src/lib/email-events.ts)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [tickets.ts](file://src/lib/tickets.ts)
 
 ### Ticket Status Management
+
 Status lifecycle:
+
 - Enumerated statuses include pending, in-progress, testing, ready, completed, archived.
 - Status transitions are enforced by UI actions and validated against current state metadata.
 - Completion triggers a dedicated workflow that finalizes checks and sends notifications.
@@ -281,12 +300,14 @@ Pending --> Archived : "Archive (optional)"
 ```
 
 **Diagram sources**
+
 - [20260511190000_ticket_completed_status.sql](file://supabase/migrations/20260511190000_ticket_completed_status.sql)
 - [20260511193000_add_archived_status.sql](file://supabase/migrations/20260511193000_add_archived_status.sql)
 - [TicketDetailModal.tsx:233-237](file://src/components/pcready/TicketDetailModal.tsx#L233-L237)
 - [ticket-completion.ts](file://src/lib/ticket-completion.ts)
 
 **Section sources**
+
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [20260511180000_ticket_status_history.sql](file://supabase/migrations/20260511180000_ticket_status_history.sql)
 - [20260511190000_ticket_completed_status.sql](file://supabase/migrations/20260511190000_ticket_completed_status.sql)
@@ -294,6 +315,7 @@ Pending --> Archived : "Archive (optional)"
 - [20260511195000_add_completed_at_column.sql](file://supabase/migrations/20260511195000_add_completed_at_column.sql)
 
 ### Assignment and Priority Management
+
 - Assignee: Selected via UI and stored as a foreign key to profiles; nullable to allow unassigned states.
 - Priority: Enumerated values with labels; used for filtering and sorting.
 - Type: ticket_type column supports device/support/maintenance/other categorization.
@@ -323,14 +345,17 @@ Tickets --> Profiles : "assignee_id (FK)"
 ```
 
 **Diagram sources**
+
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:158-179](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L158-L179)
 - [20260509134200_add_ticket_type.sql:1-19](file://supabase/migrations/20260509134200_add_ticket_type.sql#L1-L19)
 
 **Section sources**
+
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:158-179](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L158-L179)
 - [20260509134200_add_ticket_type.sql:1-19](file://supabase/migrations/20260509134200_add_ticket_type.sql#L1-L19)
 
 ### Enhanced Checklist System Implementation
+
 - Structure: checklist is a JSONB field storing template-defined items.
 - Templates: Configurable via UI; default structure applied when none selected.
 - Instance-based tracking: New ticket_checklist_instances table stores per-ticket checklist snapshots with response tracking.
@@ -348,16 +373,19 @@ CompleteChecklist --> UpdateStatus["Update ticket status to completed"]
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:205-206](file://src/components/pcready/CreateTicketModal.tsx#L205-L206)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:171-171](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L171-L171)
 - [20260522120000_ticket_checklist_instances.sql:1-103](file://supabase/migrations/20260522120000_ticket_checklist_instances.sql#L1-L103)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:171-171](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L171-L171)
 - [20260522120000_ticket_checklist_instances.sql:1-103](file://supabase/migrations/20260522120000_ticket_checklist_instances.sql#L1-L103)
 
 ### Ticket Code Generation (PostgreSQL Sequences and Triggers)
+
 - Unique allocation: A sequence and trigger ensure each inserted ticket gets a unique ticket_code, preventing concurrency collisions.
 - Uniqueness constraint: ticket_code is unique at the database level.
 
@@ -371,16 +399,19 @@ DB-->>App : "Row inserted with unique ticket_code"
 ```
 
 **Diagram sources**
+
 - [20260430154500_ticket_code_sequence_trigger.sql](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql)
 - [20260516200000_ticket_code_unique_allocation.sql](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:159-159](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L159-L159)
 
 **Section sources**
+
 - [20260430154500_ticket_code_sequence_trigger.sql](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql)
 - [20260516200000_ticket_code_unique_allocation.sql](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:159-159](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L159-L159)
 
 ### Portal Ticket Creation (NewTicketForm)
+
 - Purpose: Allow portal users to open tickets with category and urgency.
 - Flow: Submits to portal-tickets server function and redirects to the new ticket page.
 
@@ -396,14 +427,17 @@ Form-->>Portal : "Redirect to /portal/tickets/{ticketId}"
 ```
 
 **Diagram sources**
+
 - [NewTicketForm.tsx:16-27](file://src/components/portal/NewTicketForm.tsx#L16-L27)
 - [portal-tickets.ts](file://src/lib/portal-tickets.ts)
 
 **Section sources**
+
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
 - [portal-tickets.ts](file://src/lib/portal-tickets.ts)
 
 ### Relationships with Devices, Clients, and Contacts
+
 - Foreign keys: tickets.client_id references clients; tickets.assignee_id references profiles; device associations maintained separately but linked via device_id.
 - Contact fallback: requester can be a free-form string when not selecting a contact.
 - Website URL: client website stored for portal context.
@@ -448,20 +482,24 @@ PROFILES ||--o{ TICKETS : "assignee"
 ```
 
 **Diagram sources**
+
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:158-179](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L158-L179)
 - [20260514170000_add_client_website_url.sql](file://supabase/migrations/20260514170000_add_client_website_url.sql)
 
 **Section sources**
+
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:158-179](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L158-L179)
 - [20260514170000_add_client_website_url.sql](file://supabase/migrations/20260514170000_add_client_website_url.sql)
 
 ### Configuration Options
+
 - Templates: Selectable checklist templates loaded in CreateTicketModal; default structure applied when none chosen.
 - Status transitions: Controlled by UI metadata and enforced by the completion workflow.
 - Priority levels: Enumerated with labels; used for filtering and display.
 - WIP limits: App settings support work-in-progress limits for technicians.
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [20260515120000_add_wip_limits_app_setting.sql](file://supabase/migrations/20260515120000_add_wip_limits_app_setting.sql)
 - [app-settings.ts](file://src/lib/app-settings.ts)
@@ -469,6 +507,7 @@ PROFILES ||--o{ TICKETS : "assignee"
 ## Enhanced Features
 
 ### Attachment Handling System
+
 The system now includes comprehensive file attachment management:
 
 - Storage integration: Uses Supabase Storage with ticket-documents bucket for secure file handling.
@@ -491,16 +530,19 @@ Manage --> Delete["Delete Attachment"]
 ```
 
 **Diagram sources**
+
 - [TicketAttachments.tsx:80-120](file://src/components/tickets/TicketAttachments.tsx#L80-L120)
 - [ticketAttachments.ts:29-118](file://src/lib/queries/ticketAttachments.ts#L29-L118)
 - [20260516120000_ticket_detail_attachments.sql:6-18](file://supabase/migrations/20260516120000_ticket_detail_attachments.sql#L6-L18)
 
 **Section sources**
+
 - [TicketAttachments.tsx:1-276](file://src/components/tickets/TicketAttachments.tsx#L1-L276)
 - [ticketAttachments.ts:1-160](file://src/lib/queries/ticketAttachments.ts#L1-L160)
 - [20260516120000_ticket_detail_attachments.sql:1-34](file://supabase/migrations/20260516120000_ticket_detail_attachments.sql#L1-L34)
 
 ### Ticket Relations Management
+
 Supports complex ticket dependency relationships:
 
 - Relation types: blocked_by (dependency), duplicate_of (duplicate detection), child_of (hierarchical relationships).
@@ -521,16 +563,19 @@ Removed --> [*]
 ```
 
 **Diagram sources**
+
 - [TicketRelations.tsx:51-71](file://src/components/tickets/TicketRelations.tsx#L51-L71)
 - [ticketRelations.ts:1-200](file://src/lib/queries/ticketRelations.ts#L1-L200)
 - [20260516130000_ticket_relations_time_tracking.sql:3-13](file://supabase/migrations/20260516130000_ticket_relations_time_tracking.sql#L3-L13)
 
 **Section sources**
+
 - [TicketRelations.tsx:1-154](file://src/components/tickets/TicketRelations.tsx#L1-L154)
 - [ticketRelations.ts:1-200](file://src/lib/queries/ticketRelations.ts#L1-L200)
 - [20260516130000_ticket_relations_time_tracking.sql:1-100](file://supabase/migrations/20260516130000_ticket_relations_time_tracking.sql#L1-L100)
 
 ### Time Tracking System
+
 Comprehensive work time logging and tracking:
 
 - Automatic timers: One active timer per technician per ticket with auto-stop/start logic.
@@ -553,16 +598,19 @@ Timer->>Tech : "Show total minutes"
 ```
 
 **Diagram sources**
+
 - [TicketTimeTracking.tsx:47-66](file://src/components/tickets/TicketTimeTracking.tsx#L47-L66)
 - [ticketTimeEntries.ts:1-200](file://src/lib/queries/ticketTimeEntries.ts#L1-L200)
 - [20260516130000_ticket_relations_time_tracking.sql:44-55](file://supabase/migrations/20260516130000_ticket_relations_time_tracking.sql#L44-L55)
 
 **Section sources**
+
 - [TicketTimeTracking.tsx:1-231](file://src/components/tickets/TicketTimeTracking.tsx#L1-L231)
 - [ticketTimeEntries.ts:1-200](file://src/lib/queries/ticketTimeEntries.ts#L1-L200)
 - [20260516130000_ticket_relations_time_tracking.sql:1-100](file://supabase/migrations/20260516130000_ticket_relations_time_tracking.sql#L1-L100)
 
 ### Enhanced Completion Workflow
+
 The completion workflow now includes comprehensive data collection:
 
 - Status history: Tracks all status transitions with timestamps.
@@ -584,14 +632,17 @@ GeneratePDF --> Notify["Send Completion Notifications"]
 ```
 
 **Diagram sources**
+
 - [ticket-completion.server.ts:136-198](file://src/lib/ticket-completion.server.ts#L136-L198)
 - [ticket-completion.server.ts:1167-1214](file://src/lib/ticket-completion.server.ts#L1167-L1214)
 
 **Section sources**
+
 - [ticket-completion.server.ts:136-198](file://src/lib/ticket-completion.server.ts#L136-L198)
 - [ticket-completion.server.ts:1167-1214](file://src/lib/ticket-completion.server.ts#L1167-L1214)
 
 ## Dependency Analysis
+
 - UI depends on server functions for creation, completion, notifications, emails, attachments, relations, and time tracking.
 - Server functions depend on Supabase schema and policies for data integrity.
 - Realtime subscriptions enable live updates for tickets, device assignments, attachments, and time entries.
@@ -617,6 +668,7 @@ TT --> RT
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
@@ -632,6 +684,7 @@ TT --> RT
 - [20260515150000_realtime_ticket_device_assignments.sql](file://supabase/migrations/20260515150000_realtime_ticket_device_assignments.sql)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-342](file://src/components/pcready/CreateTicketModal.tsx#L138-L342)
 - [TicketDetailModal.tsx:189-399](file://src/components/pcready/TicketDetailModal.tsx#L189-L399)
 - [NewTicketForm.tsx:1-28](file://src/components/portal/NewTicketForm.tsx#L1-L28)
@@ -647,6 +700,7 @@ TT --> RT
 - [20260515150000_realtime_ticket_device_assignments.sql](file://supabase/migrations/20260515150000_realtime_ticket_device_assignments.sql)
 
 ## Performance Considerations
+
 - Large ticket volumes: Use paginated lists and filters (by status, priority, assignee) to reduce payload sizes.
 - Real-time updates: Leverage Supabase realtime to minimize polling and keep UI synchronized for tickets, attachments, relations, and time entries.
 - Concurrency: Database-level uniqueness on ticket_code prevents collisions during concurrent inserts.
@@ -656,7 +710,9 @@ TT --> RT
 - Query optimization: Use selective loading for attachments, relations, and time entries to avoid heavy payloads.
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Concurrent ticket creation: Ticket code generation uses a sequence and trigger with a unique constraint; if duplicates occur, investigate trigger logic and constraints.
 - Status transition conflicts: Ensure the current state matches expected transitions; the completion workflow validates state changes.
 - Checklist validation: Verify template structure and checklist JSONB format; ensure completion workflow respects item completion.
@@ -667,6 +723,7 @@ Common issues and resolutions:
 - Session validity: Ensure a valid access token exists before submitting.
 
 **Section sources**
+
 - [20260430154500_ticket_code_sequence_trigger.sql](file://supabase/migrations/20260430154500_ticket_code_sequence_trigger.sql)
 - [20260516200000_ticket_code_unique_allocation.sql](file://supabase/migrations/20260516200000_ticket_code_unique_allocation.sql)
 - [TicketDetailModal.tsx:189-198](file://src/components/pcready/TicketDetailModal.tsx#L189-L198)
@@ -676,11 +733,13 @@ Common issues and resolutions:
 - [TicketTimeTracking.tsx:47-66](file://src/components/tickets/TicketTimeTracking.tsx#L47-L66)
 
 ## Conclusion
+
 The enhanced ticket management system combines robust frontend components with server-side orchestration and database-level guarantees. It now supports comprehensive file attachments, complex ticket relationships, automated time tracking, structured checklist instances, and enhanced completion workflows. The system maintains strong concurrency protection for ticket codes while adding powerful collaboration and tracking capabilities. Administrators can configure templates, priorities, WIP limits, and attachment policies, while technicians benefit from streamlined creation, status management, and comprehensive work tracking workflows.
 
 ## Appendices
 
 ### Appendix A: Example References
+
 - Ticket creation submission flow: [CreateTicketModal.tsx:196-231](file://src/components/pcready/CreateTicketModal.tsx#L196-L231)
 - Status advancement and completion: [TicketDetailModal.tsx:233-237](file://src/components/pcready/TicketDetailModal.tsx#L233-L237)
 - Portal ticket creation: [NewTicketForm.tsx:16-27](file://src/components/portal/NewTicketForm.tsx#L16-L27)

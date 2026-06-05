@@ -84,12 +84,16 @@ export default function TechnicianHeatmapWidget() {
           <Button size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
             {">"}
           </Button>
-          <div className="text-sm text-text3">{technicians.length} {t("heatmap.technicians", "tecnici")}</div>
+          <div className="text-sm text-text3">
+            {technicians.length} {t("heatmap.technicians", "tecnici")}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="h-36 flex items-center justify-center text-text3">{t("heatmap.loading", "Caricamento...")}</div>
+          <div className="h-36 flex items-center justify-center text-text3">
+            {t("heatmap.loading", "Caricamento...")}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">

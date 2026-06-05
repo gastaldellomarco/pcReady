@@ -24,7 +24,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Enhanced AddDeviceModal with dynamic field generation based on device categories
 - Added comprehensive barcode scanning capabilities with separate 1D barcode mode
 - Integrated BarcodeScanner component for both QR inventory scanning and 1D barcode reading
@@ -34,6 +36,7 @@
 - Implemented device category-based dynamic form fields for different device types
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -53,7 +56,9 @@
 17. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the enhanced device inventory tracking system, focusing on:
+
 - Inventory listing with filtering by status, operating system, search terms, pagination, assignment status, and device categories
 - The AddDeviceModal component with dynamic field generation based on device categories
 - Enhanced DeviceDetailModal with barcode field editing and hardware configuration tabs
@@ -67,7 +72,9 @@ This document explains the enhanced device inventory tracking system, focusing o
 - Performance considerations and pagination strategies for large inventories
 
 ## Project Structure
+
 The inventory feature spans UI components, route handlers, data access utilities, and shared libraries:
+
 - Route handler renders the inventory page with enhanced filtering, pagination, status updates, and bulk operations
 - Queries module encapsulates Supabase data access with category filtering and caching
 - UI components capture device inputs, scan barcodes, import CSV, provide detailed device views, and manage dynamic fields
@@ -120,6 +127,7 @@ EXPORT_UTIL --> EXPORT
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:24-37](file://src/routes/_app/inventory.tsx#L24-L37)
 - [AddDeviceModal.tsx:27-76](file://src/components/pcready/AddDeviceModal.tsx#L27-L76)
 - [DeviceDetailModal.tsx:120-137](file://src/components/pcready/DeviceDetailModal.tsx#L120-L137)
@@ -138,6 +146,7 @@ EXPORT_UTIL --> EXPORT
 - [device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 **Section sources**
+
 - [inventory.tsx:24-37](file://src/routes/_app/inventory.tsx#L24-L37)
 - [inventory.ts:22-70](file://src/lib/queries/inventory.ts#L22-L70)
 - [AddDeviceModal.tsx:27-76](file://src/components/pcready/AddDeviceModal.tsx#L27-L76)
@@ -156,6 +165,7 @@ EXPORT_UTIL --> EXPORT
 - [device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 ## Core Components
+
 - Enhanced Inventory route page: renders filters including device categories and types, table, pagination, status badges, actions, and bulk operation controls
 - AddDeviceModal with dynamic field generation: captures device details with category-specific fields, validates via schema, and creates devices
 - Enhanced DeviceDetailModal: provides comprehensive device information, barcode field editing, hardware configuration tabs, and activity timeline
@@ -166,6 +176,7 @@ EXPORT_UTIL --> EXPORT
 - PDF export: generates professional inventory reports with comprehensive device details
 
 **Section sources**
+
 - [inventory.tsx:63-120](file://src/routes/_app/inventory.tsx#L63-L120)
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 - [DeviceDetailModal.tsx:120-137](file://src/components/pcready/DeviceDetailModal.tsx#L120-L137)
@@ -174,6 +185,7 @@ EXPORT_UTIL --> EXPORT
 - [export-data.ts:1-62](file://src/lib/export-data.ts#L1-L62)
 
 ## Architecture Overview
+
 The system uses React Query for caching and background synchronization, Supabase for data persistence, and Zod for input validation. The inventory route composes filters including device categories and types into a query key consumed by useInventoryList. Enhanced bulk operations leverage direct Supabase mutations for improved performance. The barcode scanning system provides dual-mode functionality for QR inventory codes and 1D barcodes. DeviceDetailModal provides comprehensive device insights with barcode editing capabilities and hardware configuration tabs.
 
 ```mermaid
@@ -197,6 +209,7 @@ R-->>U : Export complete or updated inventory
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:316-345](file://src/routes/_app/inventory.tsx#L316-L345)
 - [DeviceDetailModal.tsx:155-305](file://src/components/pcready/DeviceDetailModal.tsx#L155-L305)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
@@ -204,6 +217,7 @@ R-->>U : Export complete or updated inventory
 - [inventory.ts:56-70](file://src/lib/queries/inventory.ts#L56-L70)
 
 **Section sources**
+
 - [inventory.tsx:316-345](file://src/routes/_app/inventory.tsx#L316-L345)
 - [DeviceDetailModal.tsx:155-305](file://src/components/pcready/DeviceDetailModal.tsx#L155-L305)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
@@ -214,6 +228,7 @@ R-->>U : Export complete or updated inventory
 ## Detailed Component Analysis
 
 ### Enhanced Inventory Listing and Filtering
+
 - Filters supported:
   - Status: available, assigned, maintenance, retired
   - Operating system: configurable via OS options
@@ -263,13 +278,16 @@ PostProcess --> End(["Return rows + count"])
 ```
 
 **Diagram sources**
+
 - [inventory.ts:58-154](file://src/lib/queries/inventory.ts#L58-L154)
 
 **Section sources**
+
 - [inventory.tsx:82-94](file://src/routes/_app/inventory.tsx#L82-L94)
 - [inventory.ts:58-154](file://src/lib/queries/inventory.ts#L58-L154)
 
 ### Enhanced AddDeviceModal: Dynamic Field Generation
+
 - Purpose: capture device details with category-specific fields including brand, model, serial, client, end user, OS, and notes
 - Dynamic fields: category-based field generation for different device types (printing, network, server_infra, endpoint)
 - Validation: Zod schema enforces required fields and types
@@ -301,18 +319,21 @@ M-->>U : Close and reset form
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 - [device-taxonomy.ts:21-48](file://src/lib/device-taxonomy.ts#L21-L48)
 - [devices.ts:4-12](file://src/lib/schemas/devices.ts#L4-L12)
 - [inventory.ts:102-108](file://src/lib/queries/inventory.ts#L102-L108)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 - [device-taxonomy.ts:21-48](file://src/lib/device-taxonomy.ts#L21-L48)
 - [devices.ts:4-12](file://src/lib/schemas/devices.ts#L4-L12)
 - [inventory.ts:102-108](file://src/lib/queries/inventory.ts#L102-L108)
 
 ### Enhanced Device Creation: createDevice and createDevicesBulk
+
 - Single device: insert payload into devices, return created row
 - Bulk devices: insert array of payloads, return count and ids
 - Both mutations invalidate the inventory query cache to reflect changes
@@ -336,14 +357,17 @@ Q-->>C : {inserted, data}
 ```
 
 **Diagram sources**
+
 - [inventory.ts:82-100](file://src/lib/queries/inventory.ts#L82-L100)
 - [inventory.ts:110-116](file://src/lib/queries/inventory.ts#L110-L116)
 
 **Section sources**
+
 - [inventory.ts:82-100](file://src/lib/queries/inventory.ts#L82-L100)
 - [inventory.ts:110-116](file://src/lib/queries/inventory.ts#L110-L116)
 
 ### Enhanced fetchDevicesList: Parameter Handling, Query Building, and Result Processing
+
 - Parameters: status, os, category, deviceType, q, page, pageSize, withoutTicket, updatedBefore, updatedAfter, client_id, warrantyStatus, maintenanceDueSoon
 - Query construction: base select with ordering, optional filters, range-based pagination
 - Category filtering: supports device category and specific device type filtering
@@ -352,20 +376,24 @@ Q-->>C : {inserted, data}
 - Result: typed rows plus total count
 
 **Section sources**
+
 - [inventory.ts:6-22](file://src/lib/queries/inventory.ts#L6-L22)
 - [inventory.ts:58-154](file://src/lib/queries/inventory.ts#L58-L154)
 
 ### Enhanced useInventoryList: Reactive Data Fetching and Caching
+
 - Query key includes status, os, category, deviceType, q, page, pageSize, and withoutTicket flag
 - Placeholder data preserves previous data while fetching
 - Integrates with React Query defaults (retry, staleTime, refetchOnWindowFocus)
 - Supports category-based filtering and device type combinations
 
 **Section sources**
+
 - [inventory.ts:156-188](file://src/lib/queries/inventory.ts#L156-L188)
 - [queryClient.ts:4-13](file://src/lib/queries/queryClient.ts#L4-L13)
 
 ### Enhanced Device Status Management and Lifecycle Tracking
+
 - Status values: available, assigned, maintenance, retired
 - UI badge allows changing status with safeguards (e.g., prevents changing status of assigned devices with active tickets)
 - Server-side update function validates access token, checks existence, and triggers notifications for specific transitions
@@ -385,13 +413,16 @@ INV->>QC : Invalidate ["inventory"]
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:242-275](file://src/routes/_app/inventory.tsx#L242-L275)
 
 **Section sources**
+
 - [device-status.ts:15-55](file://src/lib/device-status.ts#L15-L55)
 - [inventory.tsx:242-275](file://src/routes/_app/inventory.tsx#L242-L275)
 
 ### Enhanced Bulk Import Workflow (CSV)
+
 - Steps: upload CSV -> parse -> load context (clients/devices) -> validate -> preview -> confirm -> import
 - Validation rules: serial/model/client required, valid status, unique serial in file, client lookup
 - Import engine: inserts new devices, updates existing ones, tracks progress and errors
@@ -418,10 +449,12 @@ Result --> End(["Close dialog"])
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 - [inventory-import.ts:128-180](file://src/lib/inventory-import.ts#L128-L180)
@@ -429,7 +462,9 @@ Result --> End(["Close dialog"])
 ## Enhanced Barcode Scanning System
 
 ### BarcodeScanner Component Architecture
+
 The BarcodeScanner component provides dual-mode barcode scanning functionality:
+
 - QR inventory mode: scans QR codes containing device identifiers or URLs
 - 1D barcode mode: dedicated scanning for linear barcodes (Code 128, Code 39, Code 93, Codabar, ITF, EAN-13, EAN-8, UPC-A, UPC-E)
 - Hardware keyboard-wedge compatibility: supports USB/Bluetooth scanners in keyboard-wedge mode
@@ -456,28 +491,35 @@ CloseScanner --> End(["Component Unmount"])
 ```
 
 **Diagram sources**
+
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
 - [BarcodeScanner.tsx:171-185](file://src/components/inventory/BarcodeScanner.tsx#L171-L185)
 
 **Section sources**
+
 - [BarcodeScanner.tsx:1-186](file://src/components/inventory/BarcodeScanner.tsx#L1-L186)
 - [barcode-inventory.md:1-36](file://docs/barcode-inventory.md#L1-L36)
 
 ### Barcode Integration in Inventory Flow
+
 The barcode scanning system integrates seamlessly with the inventory workflow:
+
 - QR code scanning for device lookup and detail viewing
 - 1D barcode scanning for quick asset tag and serial entry
 - Automatic device creation when scanned device is not found
 - Hardware scanner compatibility with keyboard-wedge mode
 
 **Section sources**
+
 - [inventory.tsx:316-345](file://src/routes/_app/inventory.tsx#L316-L345)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
 
 ## Dynamic Device Field Generation
 
 ### Device Taxonomy and Categories
+
 The system implements a comprehensive device taxonomy with category-based field generation:
+
 - Categories: endpoint, printing, network, server_infra, mobile, peripheral
 - Category-specific fields: specialized input fields for different device types
 - Type-based filtering: device types vary by category (e.g., Desktop, Laptop for endpoint)
@@ -501,38 +543,48 @@ end
 ```
 
 **Diagram sources**
+
 - [device-taxonomy.ts:1-57](file://src/lib/device-taxonomy.ts#L1-L57)
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 
 **Section sources**
+
 - [device-taxonomy.ts:1-57](file://src/lib/device-taxonomy.ts#L1-L57)
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 
 ### DynamicDeviceFields Component
+
 The DynamicDeviceFields component generates category-specific form fields:
+
 - Printing category: IP address, print technology, toner model, page counter
 - Network category: IP management, MAC address, firmware version, port count, VLAN, license expiry, PoE support
 - Server_infra category: IP, rack position, CPU specifications, RAM, storage capacity, server role
 - Default endpoint category: core hardware specifications (CPU, RAM, storage, storage type)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 
 ## Advanced Import/Export Functionality
 
 ### Enhanced Import System
+
 The import system provides comprehensive CSV import capabilities:
+
 - Multi-device import with validation and error handling
 - Support for device creation and updates
 - Client and device lookup integration
 - Progress tracking and error reporting
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 
 ### Full Data Export System
+
 The system now supports comprehensive data export:
+
 - Admin-only export functionality via useAdminAppSettings hook
 - ExportAllData server function exports tickets, devices, and clients
 - ZIP archive generation with multiple CSV files
@@ -555,17 +607,21 @@ DL-->>A : Download complete
 ```
 
 **Diagram sources**
+
 - [useAdminAppSettings.ts:177-208](file://src/hooks/useAdminAppSettings.ts#L177-L208)
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 
 **Section sources**
+
 - [useAdminAppSettings.ts:177-208](file://src/hooks/useAdminAppSettings.ts#L177-L208)
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 
 ## Enhanced DeviceDetailModal Features
 
 ### Barcode Field Editing
+
 The DeviceDetailModal now includes comprehensive barcode field editing capabilities:
+
 - Editable asset_tag and serial fields with barcode scanning integration
 - Hardware focus buttons for quick scanner hardware integration
 - Camera scanning buttons for 1D barcode reading
@@ -593,15 +649,19 @@ DM->>DM : Update local state and exit edit mode
 ```
 
 **Diagram sources**
+
 - [DeviceDetailModal.tsx:1618-1675](file://src/components/pcready/DeviceDetailModal.tsx#L1618-L1675)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:1618-1675](file://src/components/pcready/DeviceDetailModal.tsx#L1618-L1675)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)
 
 ### Hardware Configuration Tabs
+
 Enhanced hardware configuration capabilities:
+
 - CPU specifications: frequency, cores, manufacturer
 - Memory configuration: RAM type, frequency, drive count
 - Storage details: type, capacity, drive configuration
@@ -609,10 +669,13 @@ Enhanced hardware configuration capabilities:
 - System health monitoring and status indicators
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:1711-1817](file://src/components/pcready/DeviceDetailModal.tsx#L1711-L1817)
 
 ### Comprehensive Device Information
+
 The enhanced modal provides:
+
 - Complete device metadata (ID, asset_tag, serial, model, OS, status)
 - Client and assigned user information
 - Creation and update timestamps with actor attribution
@@ -621,11 +684,14 @@ The enhanced modal provides:
 - Category-specific metadata display
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:419-466](file://src/components/pcready/DeviceDetailModal.tsx#L419-L466)
 - [DeviceDetailModal.tsx:468-482](file://src/components/pcready/DeviceDetailModal.tsx#L468-L482)
 
 ### Activity Timeline Integration
+
 DeviceDetailModal consolidates multiple data sources:
+
 - Device registration events
 - Status change snapshots
 - Ticket-device assignment history
@@ -633,13 +699,16 @@ DeviceDetailModal consolidates multiple data sources:
 - Maintenance and note events
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:155-305](file://src/components/pcready/DeviceDetailModal.tsx#L155-L305)
 - [DeviceDetailModal.tsx:322-332](file://src/components/pcready/DeviceDetailModal.tsx#L322-L332)
 
 ## Bulk Operations Implementation
 
 ### Bulk Status Changes
+
 The inventory route now supports mass status updates:
+
 - Multi-device selection via checkboxes
 - Bulk status change dialog with validation
 - Sequential update operations with success/failure tracking
@@ -662,40 +731,50 @@ Cancel --> End
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:296-319](file://src/routes/_app/inventory.tsx#L296-L319)
 
 **Section sources**
+
 - [inventory.tsx:296-319](file://src/routes/_app/inventory.tsx#L296-L319)
 - [inventory.tsx:477-484](file://src/routes/_app/inventory.tsx#L477-L484)
 - [inventory.tsx:680-710](file://src/routes/_app/inventory.tsx#L680-L710)
 
 ### Bulk Client Assignments
+
 Parallel bulk assignment functionality:
+
 - Client name input validation
 - Mass assignment to multiple devices
 - Error handling and partial success reporting
 - Seamless integration with existing bulk operations
 
 **Section sources**
+
 - [inventory.tsx:321-345](file://src/routes/_app/inventory.tsx#L321-L345)
 - [inventory.tsx:494-500](file://src/routes/_app/inventory.tsx#L494-L500)
 - [inventory.tsx:712-740](file://src/routes/_app/inventory.tsx#L712-L740)
 
 ### Bulk Selection Controls
+
 Enhanced selection interface:
+
 - Individual device selection
 - Page-wide selection capability
 - Bulk operation toolbar with export functionality
 - Real-time selection count display
 
 **Section sources**
+
 - [inventory.tsx:460-509](file://src/routes/_app/inventory.tsx#L460-L509)
 - [inventory.tsx:525-574](file://src/routes/_app/inventory.tsx#L525-L574)
 
 ## Device Activity Logging System
 
 ### Database Schema Enhancement
+
 The migration introduces comprehensive device activity tracking:
+
 - device_id column in activity_log table
 - Foreign key relationship to devices table
 - Optimized indexes for efficient device-specific queries
@@ -723,23 +802,29 @@ CREATE POLICY "authenticated users can insert device activity"
 ```
 
 **Section sources**
+
 - [device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 ### Frontend Integration
+
 DeviceDetailModal leverages the enhanced activity logging:
+
 - Device-level activity retrieval alongside ticket-related logs
 - Unified timeline combining device and ticket activities
 - Deduplicated timeline entries for clean presentation
 - Operator attribution with profile name resolution
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:247-268](file://src/components/pcready/DeviceDetailModal.tsx#L247-L268)
 - [DeviceDetailModal.tsx:833-843](file://src/components/pcready/DeviceDetailModal.tsx#L833-L843)
 
 ## PDF Export Functionality
 
 ### Export Implementation
+
 The inventory system now supports selective PDF export:
+
 - Selected device filtering for export scope
 - Professional PDF generation with branding
 - Comprehensive statistics and device details
@@ -762,17 +847,21 @@ DL-->>U : PDF download complete
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:346-365](file://src/routes/_app/inventory.tsx#L346-L365)
 - [InventoryPdf.tsx:26-85](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L85)
 - [export.tsx:5-17](file://src/components/pcready/pdf/export.tsx#L5-L17)
 
 **Section sources**
+
 - [inventory.tsx:346-365](file://src/routes/_app/inventory.tsx#L346-L365)
 - [InventoryPdf.tsx:26-85](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L85)
 - [export.tsx:5-17](file://src/components/pcready/pdf/export.tsx#L5-L17)
 
 ### PDF Generation Features
+
 Professional PDF output includes:
+
 - Organization branding and metadata
 - Device statistics and summary charts
 - Detailed device tables with status badges
@@ -780,11 +869,13 @@ Professional PDF output includes:
 - Proper formatting and layout optimization
 
 **Section sources**
+
 - [InventoryPdf.tsx:19-24](file://src/components/pcready/pdf/InventoryPdf.tsx#L19-L24)
 - [InventoryPdf.tsx:43-62](file://src/components/pcready/pdf/InventoryPdf.tsx#L43-L62)
 - [InventoryPdf.tsx:71-81](file://src/components/pcready/pdf/InventoryPdf.tsx#L71-L81)
 
 ## Dependency Analysis
+
 - UI depends on:
   - Inventory queries for listing and mutations with category filtering
   - Zod schema for validation
@@ -828,6 +919,7 @@ EXP["export.tsx"] --> PDF
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:86-94](file://src/routes/_app/inventory.tsx#L86-L94)
 - [AddDeviceModal.tsx:76-118](file://src/components/pcready/AddDeviceModal.tsx#L76-L118)
 - [DeviceDetailModal.tsx:120-137](file://src/components/pcready/DeviceDetailModal.tsx#L120-L137)
@@ -846,6 +938,7 @@ EXP["export.tsx"] --> PDF
 - [device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 **Section sources**
+
 - [inventory.tsx:86-94](file://src/routes/_app/inventory.tsx#L86-L94)
 - [AddDeviceModal.tsx:76-118](file://src/components/pcready/AddDeviceModal.tsx#L76-L118)
 - [DeviceDetailModal.tsx:120-137](file://src/components/pcready/DeviceDetailModal.tsx#L120-L137)
@@ -864,6 +957,7 @@ EXP["export.tsx"] --> PDF
 - [device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 ## Performance Considerations
+
 - Pagination: fixed page size with exact count; compute page count from total
 - Query caching: React Query default staleTime reduces redundant requests
 - Assignment flag precomputation: avoids N+1 queries by loading active assignment IDs once per list
@@ -877,6 +971,7 @@ EXP["export.tsx"] --> PDF
 - DeviceDetailModal: memoized computations and efficient timeline building prevent re-renders
 
 Recommendations:
+
 - Keep PAGE_SIZE tuned to UI readability and network latency
 - Use placeholderData to avoid flicker during refetch
 - Prefer server-side filtering (status, OS, ILIKE, category, device_type) to limit payload sizes
@@ -887,6 +982,7 @@ Recommendations:
 - Cache device taxonomy data to avoid repeated calculations
 
 **Section sources**
+
 - [inventory.tsx:61-125](file://src/routes/_app/inventory.tsx#L61-L125)
 - [inventory.ts:58-154](file://src/lib/queries/inventory.ts#L58-L154)
 - [queryClient.ts:4-13](file://src/lib/queries/queryClient.ts#L4-L13)
@@ -896,7 +992,9 @@ Recommendations:
 - [device_activity_log.sql:8-10](file://supabase/migrations/20260515100000_device_activity_log.sql#L8-L10)
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Validation errors in AddDeviceModal: ensure required fields are filled and formatted correctly, check category-specific field requirements
 - No clients available: verify client options loading and that at least one client exists
 - Status change blocked: cannot modify status of assigned devices with active tickets
@@ -912,6 +1010,7 @@ Common issues and resolutions:
 - Full data export failures: check admin permissions and rate limiting restrictions
 
 **Section sources**
+
 - [AddDeviceModal.tsx:17-19](file://src/components/pcready/AddDeviceModal.tsx#L17-L19)
 - [AddDeviceModal.tsx:82-84](file://src/components/pcready/AddDeviceModal.tsx#L82-L84)
 - [BarcodeScanner.tsx:171-185](file://src/components/inventory/BarcodeScanner.tsx#L171-L185)
@@ -921,6 +1020,7 @@ Common issues and resolutions:
 - [export-data.ts:19-20](file://src/lib/export-data.ts#L19-L20)
 
 ## Conclusion
+
 The enhanced inventory system combines robust UI components, reactive data fetching, and efficient data access patterns with new capabilities for comprehensive device management. The addition of dynamic field generation based on device categories, advanced barcode scanning capabilities, and comprehensive import/export functionality significantly improves operational efficiency and auditability. The system maintains clear separation of concerns between UI, queries, and server functions while supporting scalable bulk import and export operations. The dual-mode barcode scanning system provides flexibility for both QR inventory codes and 1D barcodes, while the category-based field generation ensures appropriate data capture for different device types.
 
 ## Appendices
@@ -961,6 +1061,7 @@ The enhanced inventory system combines robust UI components, reactive data fetch
   - Hardware configuration changes tracked in activity log
 
 **Section sources**
+
 - [inventory.tsx:87-94](file://src/routes/_app/inventory.tsx#L87-L94)
 - [AddDeviceModal.tsx:531-675](file://src/components/pcready/AddDeviceModal.tsx#L531-L675)
 - [BarcodeScanner.tsx:25-93](file://src/components/inventory/BarcodeScanner.tsx#L25-L93)

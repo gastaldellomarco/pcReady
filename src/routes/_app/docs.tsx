@@ -6,7 +6,10 @@ export const Route = createFileRoute("/_app/docs")({
   head: () => ({
     meta: [
       { title: i18n.t("docs.pageTitle", "API Docs - PCReady") },
-      { name: "description", content: i18n.t("docs.pageDescription", "Documentazione OpenAPI e console Swagger UI.") },
+      {
+        name: "description",
+        content: i18n.t("docs.pageDescription", "Documentazione OpenAPI e console Swagger UI."),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

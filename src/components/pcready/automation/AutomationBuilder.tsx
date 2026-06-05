@@ -301,8 +301,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               type="button"
               className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
-                !loading &&
-                addNode("action", "Aspetta", { amount: 1, unit: "hours" }, "delay")
+                !loading && addNode("action", "Aspetta", { amount: 1, unit: "hours" }, "delay")
               }
               disabled={loading}
             >
@@ -546,9 +545,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
             <div className="pt-4 flex gap-2">
               {validationErrors.length > 0 && (
                 <div className="mb-3 w-full space-y-1">
-                  <p className="text-xs font-semibold text-red-600">
-                    Errori di validazione:
-                  </p>
+                  <p className="text-xs font-semibold text-red-600">Errori di validazione:</p>
                   <ul className="list-disc list-inside space-y-0.5">
                     {validationErrors.map((err, i) => (
                       <li key={i} className="text-xs text-red-500">

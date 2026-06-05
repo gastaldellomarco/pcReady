@@ -94,7 +94,9 @@ export function VersionHistoryDrawer({
 
   function handleRestore(version: Version) {
     if (profile?.role !== "admin") {
-      toast.error(t("versionHistory.adminOnly", "Solo gli amministratori possono ripristinare versioni"));
+      toast.error(
+        t("versionHistory.adminOnly", "Solo gli amministratori possono ripristinare versioni"),
+      );
       return;
     }
     setRestoringVersion(version);
@@ -139,7 +141,9 @@ export function VersionHistoryDrawer({
 
             <div className="space-y-3 max-h-[70vh] overflow-y-auto">
               {loading ? (
-                <div className="text-center py-8">{t("versionHistory.loading", "Caricamento...")}</div>
+                <div className="text-center py-8">
+                  {t("versionHistory.loading", "Caricamento...")}
+                </div>
               ) : versions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   {t("versionHistory.noVersions", "Nessuna versione trovata")}
@@ -169,7 +173,9 @@ export function VersionHistoryDrawer({
                         checked={selectedVersions.some((v) => v.id === version.id)}
                         onChange={() => toggleVersionSelection(version)}
                         className="rounded"
-                        aria-label={t("versionHistory.selectVersion", "Seleziona versione {{n}}", { n: version.version_number })}
+                        aria-label={t("versionHistory.selectVersion", "Seleziona versione {{n}}", {
+                          n: version.version_number,
+                        })}
                       />
                     </div>
 

@@ -149,13 +149,23 @@ function ContactsPage() {
       return map;
     }, new Map<string, { client: GlobalContactRow["client"]; rows: GlobalContactRow[] }>()),
   ).sort((a, b) => clientGroupName(a[1].client).localeCompare(clientGroupName(b[1].client)));
-  const { containerRef: sectionContainerRef, virtualizer: sectionVirtualizer, virtualItems: virtualSections, totalSize: sectionTotalSize } = useVirtualList({
+  const {
+    containerRef: sectionContainerRef,
+    virtualizer: sectionVirtualizer,
+    virtualItems: virtualSections,
+    totalSize: sectionTotalSize,
+  } = useVirtualList({
     count: groupedContacts.length,
     estimateSize: 300,
     overscan: 3,
     threshold: 20,
   });
-  const { containerRef: mobileContainerRef, virtualizer: mobileVirtualizer, virtualItems: mobileVirtualItems, totalSize: mobileVirtualTotalSize } = useVirtualList({
+  const {
+    containerRef: mobileContainerRef,
+    virtualizer: mobileVirtualizer,
+    virtualItems: mobileVirtualItems,
+    totalSize: mobileVirtualTotalSize,
+  } = useVirtualList({
     count: filteredContacts.length,
     estimateSize: 240,
     overscan: 5,
@@ -176,8 +186,10 @@ function ContactsPage() {
 
   async function saveEdit() {
     if (!editing || !canEdit) return toast.error(t("toast.noPermission", "Permessi insufficienti"));
-    if (!form.full_name.trim()) return toast.error(t("toast.nameRequired", "Nome referente obbligatorio"));
-    if (form.email.trim() && !isValidEmail(form.email)) return toast.error(t("toast.invalidEmail", "Email non valida"));
+    if (!form.full_name.trim())
+      return toast.error(t("toast.nameRequired", "Nome referente obbligatorio"));
+    if (form.email.trim() && !isValidEmail(form.email))
+      return toast.error(t("toast.invalidEmail", "Email non valida"));
     setBusy(true);
     try {
       if (form.is_primary) {
@@ -212,7 +224,8 @@ function ContactsPage() {
   }
 
   async function deleteContact(contact: GlobalContactRow) {
-    if (!canDelete) return toast.error(t("toast.deleteNoPermission", "Solo admin può eliminare referenti"));
+    if (!canDelete)
+      return toast.error(t("toast.deleteNoPermission", "Solo admin può eliminare referenti"));
     const { error } = await supabase.from("client_contacts").delete().eq("id", contact.id);
     if (error) return toast.error(error.message);
     await qc.invalidateQueries({ queryKey: ["clients"] });
@@ -220,8 +233,10 @@ function ContactsPage() {
   }
 
   async function generateContactPortalLink(contact: GlobalContactRow) {
-    if (!session?.access_token) return toast.error(t("toast.invalidSession", "Sessione non valida"));
-    if (!canManagePortalAccess) return toast.error(t("toast.noPermission", "Permessi insufficienti"));
+    if (!session?.access_token)
+      return toast.error(t("toast.invalidSession", "Sessione non valida"));
+    if (!canManagePortalAccess)
+      return toast.error(t("toast.noPermission", "Permessi insufficienti"));
     setBusy(true);
     setCopiedPortalLink(false);
     try {
@@ -232,7 +247,9 @@ function ContactsPage() {
       await qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success(t("toast.portalLinkGenerated", "Link portale generato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toast.portalLinkError", "Errore generazione link portale")));
+      toast.error(
+        errorMessage(error, t("toast.portalLinkError", "Errore generazione link portale")),
+      );
     } finally {
       setBusy(false);
     }
@@ -334,109 +351,185 @@ function ContactsPage() {
       </div>
 
       <div className="hidden md:block">
-        <div ref={sectionContainerRef} className="space-y-4 p-4" style={{ maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>
-        {groupedContacts.length > 20 ? (
-          <div style={{ height: sectionTotalSize, position: 'relative' }}>
-            {virtualSections.map((virtualSection) => {
-              const [, group] = groupedContacts[virtualSection.index];
-              return (
-                <div
-                  key={virtualSection.key}
-                  ref={sectionVirtualizer.measureElement}
-                  data-index={virtualSection.index}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    transform: `translateY(${virtualSection.start}px)`,
-                    left: 0,
-                    right: 0,
-                    paddingBottom: '16px',
-                  }}
-                >
-                  <section className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
-                    <div
-                      className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
-                      style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
-                    >
-                      <button
-                        className="inline-flex min-w-0 items-center gap-2 text-left"
-                        onClick={() =>
-                          group.client &&
-                          void navigate({
-                            to: "/clients",
-                            search: { clientId: group.client.id, tab: "contacts" },
-                          })
-                        }
+        <div
+          ref={sectionContainerRef}
+          className="space-y-4 p-4"
+          style={{ maxHeight: "calc(100vh - 200px)", overflow: "auto" }}
+        >
+          {groupedContacts.length > 20 ? (
+            <div style={{ height: sectionTotalSize, position: "relative" }}>
+              {virtualSections.map((virtualSection) => {
+                const [, group] = groupedContacts[virtualSection.index];
+                return (
+                  <div
+                    key={virtualSection.key}
+                    ref={sectionVirtualizer.measureElement}
+                    data-index={virtualSection.index}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      transform: `translateY(${virtualSection.start}px)`,
+                      left: 0,
+                      right: 0,
+                      paddingBottom: "16px",
+                    }}
+                  >
+                    <section className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
+                      <div
+                        className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+                        style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
                       >
-                        <Building2 className="size-4 shrink-0 text-text3" />
-                        <span className="truncate text-sm font-bold text-text">
-                          {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
-                        </span>
-                      </button>
-                      <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
-                        {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
-                      </span>
-                    </div>
-                    <div className="grid gap-3 p-3 xl:grid-cols-2">
-                      {group.rows.map((contact) => (
-                        <GlobalContactCard
-                          key={contact.id}
-                          contact={contact}
-                          busy={busy}
-                          canDelete={canDelete}
-                          canEdit={canEdit}
-                          canManagePortalAccess={canManagePortalAccess}
-                          onOpenClient={() =>
+                        <button
+                          className="inline-flex min-w-0 items-center gap-2 text-left"
+                          onClick={() =>
+                            group.client &&
                             void navigate({
                               to: "/clients",
-                              search: { clientId: contact.client_id, tab: "contacts" },
+                              search: { clientId: group.client.id, tab: "contacts" },
                             })
                           }
-                          onEdit={() => openEdit(contact)}
-                          onGeneratePortalLink={() => generateContactPortalLink(contact)}
-                          onDelete={() => setDeleteTarget(contact)}
-                        />
-                      ))}
-                    </div>
-                  </section>
+                        >
+                          <Building2 className="size-4 shrink-0 text-text3" />
+                          <span className="truncate text-sm font-bold text-text">
+                            {group.client
+                              ? clientName(group.client)
+                              : t("contact.noClient", "Cliente non associato")}
+                          </span>
+                        </button>
+                        <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
+                          {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
+                        </span>
+                      </div>
+                      <div className="grid gap-3 p-3 xl:grid-cols-2">
+                        {group.rows.map((contact) => (
+                          <GlobalContactCard
+                            key={contact.id}
+                            contact={contact}
+                            busy={busy}
+                            canDelete={canDelete}
+                            canEdit={canEdit}
+                            canManagePortalAccess={canManagePortalAccess}
+                            onOpenClient={() =>
+                              void navigate({
+                                to: "/clients",
+                                search: { clientId: contact.client_id, tab: "contacts" },
+                              })
+                            }
+                            onEdit={() => openEdit(contact)}
+                            onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                            onDelete={() => setDeleteTarget(contact)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            groupedContacts.map(([clientId, group]) => (
+              <section
+                key={clientId}
+                className="rounded-xl border"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+                  style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+                >
+                  <button
+                    className="inline-flex min-w-0 items-center gap-2 text-left"
+                    onClick={() =>
+                      group.client &&
+                      void navigate({
+                        to: "/clients",
+                        search: { clientId: group.client.id, tab: "contacts" },
+                      })
+                    }
+                  >
+                    <Building2 className="size-4 shrink-0 text-text3" />
+                    <span className="truncate text-sm font-bold text-text">
+                      {group.client
+                        ? clientName(group.client)
+                        : t("contact.noClient", "Cliente non associato")}
+                    </span>
+                  </button>
+                  <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
+                    {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          groupedContacts.map(([clientId, group]) => (
-            <section
-              key={clientId}
-              className="rounded-xl border"
+                <div className="grid gap-3 p-3 xl:grid-cols-2">
+                  {group.rows.map((contact) => (
+                    <GlobalContactCard
+                      key={contact.id}
+                      contact={contact}
+                      busy={busy}
+                      canDelete={canDelete}
+                      canEdit={canEdit}
+                      canManagePortalAccess={canManagePortalAccess}
+                      onOpenClient={() =>
+                        void navigate({
+                          to: "/clients",
+                          search: { clientId: contact.client_id, tab: "contacts" },
+                        })
+                      }
+                      onEdit={() => openEdit(contact)}
+                      onGeneratePortalLink={() => generateContactPortalLink(contact)}
+                      onDelete={() => setDeleteTarget(contact)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+          {!filteredContacts.length && !listQuery.isLoading && groupedContacts.length === 0 && (
+            <div
+              className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
               style={{ borderColor: "var(--border)" }}
             >
-              <div
-                className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
-                style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
-              >
-                <button
-                  className="inline-flex min-w-0 items-center gap-2 text-left"
-                  onClick={() =>
-                    group.client &&
-                    void navigate({
-                      to: "/clients",
-                      search: { clientId: group.client.id, tab: "contacts" },
-                    })
-                  }
+              {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
+            </div>
+          )}
+          {listQuery.isLoading && (
+            <div className="py-8 text-center text-sm text-text3">
+              {t("loading", "Caricamento referenti...")}
+            </div>
+          )}
+          {listQuery.isFetchingNextPage && (
+            <div className="py-4 text-center text-sm text-text3">
+              {t("loadingMore", "Caricamento altri referenti...")}
+            </div>
+          )}
+          <div ref={desktopSentinelRef} className="h-px" />
+        </div>
+      </div>
+
+      <div
+        ref={mobileContainerRef}
+        className="md:hidden"
+        style={{
+          maxHeight: filteredContacts.length > 20 ? "calc(100vh - 200px)" : undefined,
+          overflow: filteredContacts.length > 20 ? "auto" : undefined,
+        }}
+      >
+        {filteredContacts.length > 20 ? (
+          <div style={{ position: "relative", height: mobileVirtualTotalSize }}>
+            {mobileVirtualItems.map((virtualItem) => {
+              const contact = filteredContacts[virtualItem.index];
+              return (
+                <div
+                  key={contact.id}
+                  ref={mobileVirtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${virtualItem.start}px)`,
+                    left: 0,
+                    right: 0,
+                    marginBottom: "12px",
+                  }}
                 >
-                  <Building2 className="size-4 shrink-0 text-text3" />
-                  <span className="truncate text-sm font-bold text-text">
-                    {group.client ? clientName(group.client) : t("contact.noClient", "Cliente non associato")}
-                  </span>
-                </button>
-                <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text3">
-                  {t("contact.count", "{{count}} referenti", { count: group.rows.length })}
-                </span>
-              </div>
-              <div className="grid gap-3 p-3 xl:grid-cols-2">
-                {group.rows.map((contact) => (
                   <GlobalContactCard
-                    key={contact.id}
                     contact={contact}
                     busy={busy}
                     canDelete={canDelete}
@@ -452,70 +545,6 @@ function ContactsPage() {
                     onGeneratePortalLink={() => generateContactPortalLink(contact)}
                     onDelete={() => setDeleteTarget(contact)}
                   />
-                ))}
-              </div>
-            </section>
-          ))
-        )}
-        {!filteredContacts.length && !listQuery.isLoading && groupedContacts.length === 0 && (
-          <div
-            className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
-            style={{ borderColor: "var(--border)" }}
-          >
-            {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
-          </div>
-        )}
-          {listQuery.isLoading && (
-          <div className="py-8 text-center text-sm text-text3">
-            {t("loading", "Caricamento referenti...")}
-          </div>
-        )}
-        {listQuery.isFetchingNextPage && (
-          <div className="py-4 text-center text-sm text-text3">
-            {t("loadingMore", "Caricamento altri referenti...")}
-          </div>
-        )}
-        <div ref={desktopSentinelRef} className="h-px" />
-      </div>
-      </div>
-
-      <div ref={mobileContainerRef} className="md:hidden" style={{
-        maxHeight: filteredContacts.length > 20 ? 'calc(100vh - 200px)' : undefined,
-        overflow: filteredContacts.length > 20 ? 'auto' : undefined,
-      }}>
-        {filteredContacts.length > 20 ? (
-          <div style={{ position: 'relative', height: mobileVirtualTotalSize }}>
-            {mobileVirtualItems.map((virtualItem) => {
-              const contact = filteredContacts[virtualItem.index];
-              return (
-                <div
-                  key={contact.id}
-                  ref={mobileVirtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    transform: `translateY(${virtualItem.start}px)`,
-                    left: 0,
-                    right: 0,
-                    marginBottom: '12px',
-                  }}
-                >
-                  <GlobalContactCard
-                    contact={contact}
-                    busy={busy}
-                    canDelete={canDelete}
-                    canEdit={canEdit}
-                    canManagePortalAccess={canManagePortalAccess}
-                    onOpenClient={() =>
-                      void navigate({
-                        to: '/clients',
-                        search: { clientId: contact.client_id, tab: 'contacts' },
-                      })
-                    }
-                    onEdit={() => openEdit(contact)}
-                    onGeneratePortalLink={() => generateContactPortalLink(contact)}
-                    onDelete={() => setDeleteTarget(contact)}
-                  />
                 </div>
               );
             })}
@@ -524,9 +553,9 @@ function ContactsPage() {
           <div className="p-4">
             <div
               className="rounded-xl border border-dashed py-12 text-center text-sm text-text3"
-              style={{ borderColor: 'var(--border)' }}
+              style={{ borderColor: "var(--border)" }}
             >
-              {t('emptyState.noResults', 'Nessun referente trovato con i filtri correnti.')}
+              {t("emptyState.noResults", "Nessun referente trovato con i filtri correnti.")}
             </div>
           </div>
         ) : (
@@ -541,8 +570,8 @@ function ContactsPage() {
                 canManagePortalAccess={canManagePortalAccess}
                 onOpenClient={() =>
                   void navigate({
-                    to: '/clients',
-                    search: { clientId: contact.client_id, tab: 'contacts' },
+                    to: "/clients",
+                    search: { clientId: contact.client_id, tab: "contacts" },
                   })
                 }
                 onEdit={() => openEdit(contact)}
@@ -554,12 +583,12 @@ function ContactsPage() {
         )}
         {listQuery.isLoading && (
           <div className="p-4 text-center text-sm text-text3">
-            {t('loading', 'Caricamento referenti...')}
+            {t("loading", "Caricamento referenti...")}
           </div>
         )}
         {listQuery.isFetchingNextPage && (
           <div className="p-4 text-center text-sm text-text3">
-            {t('loadingMore', 'Caricamento altri referenti...')}
+            {t("loadingMore", "Caricamento altri referenti...")}
           </div>
         )}
         <div ref={mobileSentinelRef} className="h-px" />
@@ -585,11 +614,20 @@ function ContactsPage() {
         title={t("deleteDialog.title", "Eliminare questo referente?")}
         description={
           deleteTarget
-            ? t("deleteDialog.descriptionWithName", 'Il referente "{{name}}" verrà rimosso da {{client}}. L\'azione non può essere annullata.', {
-                name: contactLabel(deleteTarget),
-                client: deleteTarget.client ? clientName(deleteTarget.client) : t("deleteDialog.thisClient", "questo cliente"),
-              })
-            : t("deleteDialog.description", "Il referente verrà rimosso dal cliente. L'azione non può essere annullata.")
+            ? t(
+                "deleteDialog.descriptionWithName",
+                'Il referente "{{name}}" verrà rimosso da {{client}}. L\'azione non può essere annullata.',
+                {
+                  name: contactLabel(deleteTarget),
+                  client: deleteTarget.client
+                    ? clientName(deleteTarget.client)
+                    : t("deleteDialog.thisClient", "questo cliente"),
+                },
+              )
+            : t(
+                "deleteDialog.description",
+                "Il referente verrà rimosso dal cliente. L'azione non può essere annullata.",
+              )
         }
         confirmLabel={t("deleteDialog.confirmLabel", "Elimina referente")}
         loadingLabel={t("deleteDialog.loadingLabel", "Eliminazione...")}
@@ -653,16 +691,23 @@ function GlobalContactCard({
           <button
             className="mt-1 inline-flex max-w-full items-center gap-1 text-left text-[12px] font-semibold text-text2 hover:text-accent"
             onClick={onOpenClient}
-            title={contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
+            title={
+              contact.client
+                ? clientName(contact.client)
+                : t("contact.noClient", "Cliente non associato")
+            }
           >
             <Building2 className="size-3 shrink-0" />
             <span className="truncate">
-              {contact.client ? clientName(contact.client) : t("contact.noClient", "Cliente non associato")}
+              {contact.client
+                ? clientName(contact.client)
+                : t("contact.noClient", "Cliente non associato")}
             </span>
           </button>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-text3">
             <span className="inline-flex items-center gap-1">
-              <Briefcase className="size-3" /> {contact.job_title || t("contact.noRole", "Ruolo non indicato")}
+              <Briefcase className="size-3" />{" "}
+              {contact.job_title || t("contact.noRole", "Ruolo non indicato")}
             </span>
             {contact.department && (
               <span className="inline-flex items-center gap-1">
@@ -888,8 +933,6 @@ function PortalLinkModal({
   );
 }
 
-
-
 function PortalBadge({ active }: { active: boolean }) {
   const { t } = useTranslation("contacts");
   return (
@@ -952,4 +995,3 @@ function clean(value: string) {
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
-

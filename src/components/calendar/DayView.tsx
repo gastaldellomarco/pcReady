@@ -6,16 +6,16 @@ import {
   getMinutes,
   differenceInMinutes,
   parseISO,
-} from 'date-fns';
-import { it } from 'date-fns/locale';
-import { useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+} from "date-fns";
+import { it } from "date-fns/locale";
+import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { pcReadyColors } from '@/lib/design-system';
-import { cn } from '@/lib/utils';
-import { EVENT_TYPE_COLORS, resolveEventColors } from './eventColors';
-import type { CalendarDraftRange } from './types';
-import type { CalendarEvent } from '@/lib/queries/calendar';
+import { pcReadyColors } from "@/lib/design-system";
+import { cn } from "@/lib/utils";
+import { EVENT_TYPE_COLORS, resolveEventColors } from "./eventColors";
+import type { CalendarDraftRange } from "./types";
+import type { CalendarEvent } from "@/lib/queries/calendar";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -32,7 +32,7 @@ interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   techColorMap: Record<string, string>;
-  colorMode: 'type' | 'technician' | 'client';
+  colorMode: "type" | "technician" | "client";
   onSlotClick: (date: Date, hour: number) => void;
   onSlotRangeSelect?: (range: CalendarDraftRange) => void;
   onEventClick: (event: CalendarEvent) => void;
@@ -101,7 +101,10 @@ export function DayView({
     }
   }
 
-  const previewTop = dragStartHour == null || dragEndHour == null ? null : Math.min(dragStartHour, dragEndHour) * HOUR_HEIGHT;
+  const previewTop =
+    dragStartHour == null || dragEndHour == null
+      ? null
+      : Math.min(dragStartHour, dragEndHour) * HOUR_HEIGHT;
   const previewHeight =
     dragStartHour == null || dragEndHour == null
       ? null
@@ -111,7 +114,7 @@ export function DayView({
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Day header ──────────────────────────────────────────── */}
       <div
-        className={cn('flex flex-shrink-0 items-center px-4 py-3 border-b', today && '')}
+        className={cn("flex flex-shrink-0 items-center px-4 py-3 border-b", today && "")}
         style={{
           borderColor: pcReadyColors.border,
           background: today ? pcReadyColors.primaryLight : pcReadyColors.surface,
@@ -119,16 +122,16 @@ export function DayView({
       >
         <div>
           <p className="text-xs font-medium" style={{ color: pcReadyColors.textSecondary }}>
-            {format(currentDate, 'EEEE', { locale: it })}
+            {format(currentDate, "EEEE", { locale: it })}
           </p>
           <p
             className="text-2xl font-bold leading-none"
             style={{ color: today ? pcReadyColors.primary : pcReadyColors.textPrimary }}
           >
-            {format(currentDate, 'd')}
+            {format(currentDate, "d")}
           </p>
           <p className="text-xs mt-0.5" style={{ color: pcReadyColors.textSecondary }}>
-            {format(currentDate, 'MMMM yyyy', { locale: it })}
+            {format(currentDate, "MMMM yyyy", { locale: it })}
           </p>
         </div>
 
@@ -154,7 +157,7 @@ export function DayView({
                   color: pcReadyColors.textMuted,
                 }}
               >
-                {hour.toString().padStart(2, '0')}:00
+                {hour.toString().padStart(2, "0")}:00
               </div>
             ))}
           </div>
@@ -237,8 +240,8 @@ export function DayView({
                       className="inline-block text-xs px-1 rounded mt-0.5"
                       style={{
                         background: colors.border,
-                        color: '#fff',
-                        fontSize: '10px',
+                        color: "#fff",
+                        fontSize: "10px",
                       }}
                     >
                       {typeLabel}
@@ -254,7 +257,7 @@ export function DayView({
                   {height > 90 && (
                     <p className="text-xs mt-0.5 opacity-70">
                       {durationMin >= 60
-                        ? `${Math.floor(durationMin / 60)}h ${durationMin % 60 > 0 ? `${durationMin % 60}min` : ''}`
+                        ? `${Math.floor(durationMin / 60)}h ${durationMin % 60 > 0 ? `${durationMin % 60}min` : ""}`
                         : `${durationMin} min`}
                     </p>
                   )}

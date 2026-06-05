@@ -53,8 +53,8 @@ const mockCreateMut = vi.hoisted(() => ({
 }));
 
 const mockUpdateMut = vi.hoisted(() => ({
-  mutateAsync: vi
-    .fn<
+  mutateAsync:
+    vi.fn<
       (arg: { id: string; payload: Partial<AutomationFlow> }) => Promise<Partial<AutomationFlow>>
     >(),
 }));
@@ -75,9 +75,7 @@ const mockCreateVersion = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise
 const mockRandomUuid = vi.hoisted(() => vi.fn(() => "uuid-mock-1"));
 
 const mockGetUser = vi.hoisted(() =>
-  vi.fn(() =>
-    Promise.resolve({ data: { user: { id: mockUserId } }, error: null }),
-  ),
+  vi.fn(() => Promise.resolve({ data: { user: { id: mockUserId } }, error: null })),
 );
 
 // ── Module mocks ────────────────────────────────────────────────────────
@@ -116,9 +114,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn(() =>
-            Promise.resolve({ data: {}, error: null }),
-          ),
+          single: vi.fn(() => Promise.resolve({ data: {}, error: null })),
         })),
       })),
     })),
@@ -148,10 +144,9 @@ vi.mock("@/lib/random-uuid", () => ({
 }));
 
 vi.mock("@/lib/automations/flow-validation", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/automations/flow-validation")>(
-      "@/lib/automations/flow-validation",
-    );
+  const actual = await vi.importActual<typeof import("@/lib/automations/flow-validation")>(
+    "@/lib/automations/flow-validation",
+  );
   return actual;
 });
 
@@ -228,9 +223,7 @@ describe("useAutomationRules.saveWizardFlow", () => {
       const { result } = renderHook(() => useAutomationRules());
 
       await act(async () => {
-        await result.current.saveWizardFlow(
-          validPayload({ actions_definition: [] }),
-        );
+        await result.current.saveWizardFlow(validPayload({ actions_definition: [] }));
       });
 
       expect(mockToast.error).toHaveBeenCalledWith(
@@ -325,9 +318,7 @@ describe("useAutomationRules.saveWizardFlow", () => {
     });
 
     it("shows error toast when createMut fails", async () => {
-      mockCreateMut.mutateAsync.mockRejectedValue(
-        new Error("Database error"),
-      );
+      mockCreateMut.mutateAsync.mockRejectedValue(new Error("Database error"));
 
       const { result } = renderHook(() => useAutomationRules());
 
@@ -428,9 +419,7 @@ describe("useAutomationRules.saveWizardFlow", () => {
     });
 
     it("shows error toast when updateMut fails", async () => {
-      mockUpdateMut.mutateAsync.mockRejectedValue(
-        new Error("Update failed"),
-      );
+      mockUpdateMut.mutateAsync.mockRejectedValue(new Error("Update failed"));
 
       const { result } = renderHook(() => useAutomationRules());
 
@@ -458,7 +447,12 @@ describe("useAutomationRules.saveWizardFlow", () => {
 
       const payload = mockCreateMut.mutateAsync.mock.calls[0]![0] as Partial<AutomationFlow>;
       const fd = payload.flow_definition as {
-        nodes: Array<{ id: string; type: string; data: { label: string }; position: { x: number; y: number } }>;
+        nodes: Array<{
+          id: string;
+          type: string;
+          data: { label: string };
+          position: { x: number; y: number };
+        }>;
         edges: Array<{ id: string; source: string; target: string }>;
         meta: { wizard: WizardFlowPayload };
       };

@@ -53,7 +53,9 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
             tabIndex={-1}
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
-            onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setIsOpen(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Enter") setIsOpen(false);
+            }}
           />
           <div className="absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
             <div className="p-3 border-b border-gray-100">

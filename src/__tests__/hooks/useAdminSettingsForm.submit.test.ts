@@ -22,7 +22,10 @@ vi.mock("react-hook-form", () => ({
     trigger: vi.fn(),
     watch: vi.fn(),
     formState: { errors: {}, isValid: true },
-    handleSubmit: vi.fn((fn) => (e: { preventDefault: () => void }) => { e.preventDefault(); fn({}); }),
+    handleSubmit: vi.fn((fn) => (e: { preventDefault: () => void }) => {
+      e.preventDefault();
+      fn({});
+    }),
   }),
   useFormContext: vi.fn(),
 }));
@@ -92,9 +95,7 @@ describe("useAdminSettingsForm submitSettings", () => {
       }),
     );
 
-    const promise = result.current.submitSettings(
-      result.current.settingsForm.getValues(),
-    );
+    const promise = result.current.submitSettings(result.current.settingsForm.getValues());
     await promise;
 
     expect(saveSettings).not.toHaveBeenCalled();
@@ -115,9 +116,7 @@ describe("useAdminSettingsForm submitSettings", () => {
       }),
     );
 
-    const promise = result.current.submitSettings(
-      result.current.settingsForm.getValues(),
-    );
+    const promise = result.current.submitSettings(result.current.settingsForm.getValues());
     await promise;
 
     expect(saveSettings).toHaveBeenCalledTimes(1);
@@ -144,9 +143,7 @@ describe("useAdminSettingsForm submitSettings", () => {
       }),
     );
 
-    const promise = result.current.submitSettings(
-      result.current.settingsForm.getValues(),
-    );
+    const promise = result.current.submitSettings(result.current.settingsForm.getValues());
     await promise;
 
     expect(toastMock.error).toHaveBeenCalledWith("Save error");
@@ -167,9 +164,7 @@ describe("useAdminSettingsForm submitSettings", () => {
       }),
     );
 
-    const promise = result.current.submitSettings(
-      result.current.settingsForm.getValues(),
-    );
+    const promise = result.current.submitSettings(result.current.settingsForm.getValues());
     await promise;
 
     expect(toastMock.error).toHaveBeenCalledWith("Salvataggio non riuscito");

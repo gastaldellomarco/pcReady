@@ -9,7 +9,10 @@ export const Route = createFileRoute("/_app/profile")({
   head: () => ({
     meta: [
       { title: i18n.t("profile:meta.title", "Profilo - PCReady") },
-      { name: "description", content: i18n.t("profile:meta.description", "Profilo utente e preferenze personali.") },
+      {
+        name: "description",
+        content: i18n.t("profile:meta.description", "Profilo utente e preferenze personali."),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

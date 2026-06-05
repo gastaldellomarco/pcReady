@@ -73,15 +73,19 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       setStep(2);
       if (!preview.length) toast.error(t("importCsv.csvEmpty", "CSV vuoto o senza righe valide"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("importCsv.csvReadError", "Errore lettura CSV"));
+      toast.error(
+        error instanceof Error ? error.message : t("importCsv.csvReadError", "Errore lettura CSV"),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function confirmImport() {
-    if (!canEdit) return toast.error(t("importCsv.insufficientPermissions", "Permessi insufficienti"));
-    if (!stats.valid) return toast.error(t("importCsv.noValidRows", "Nessuna riga valida da importare"));
+    if (!canEdit)
+      return toast.error(t("importCsv.insufficientPermissions", "Permessi insufficienti"));
+    if (!stats.valid)
+      return toast.error(t("importCsv.noValidRows", "Nessuna riga valida da importare"));
 
     setBusy(true);
     setProgress(0);
@@ -94,7 +98,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       onImported();
       toast.success(t("importCsv.importSuccess", "Import CSV completato"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("importCsv.importError", "Errore import CSV"));
+      toast.error(
+        error instanceof Error ? error.message : t("importCsv.importError", "Errore import CSV"),
+      );
     } finally {
       setBusy(false);
     }
@@ -108,9 +114,9 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
       size="lg"
       footer={
         <>
-            <button className="pc-btn pc-btn-ghost" onClick={resetAndClose} disabled={busy}>
-              {t("importCsv.closeBtn", "Chiudi")}
-            </button>
+          <button className="pc-btn pc-btn-ghost" onClick={resetAndClose} disabled={busy}>
+            {t("importCsv.closeBtn", "Chiudi")}
+          </button>
           {step === 2 && (
             <button
               className="pc-btn pc-btn-primary"
@@ -151,12 +157,17 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
             >
               <FileUp className="h-8 w-8 text-text3" />
               <div>
-                <div className="text-sm font-semibold">{t("importCsv.uploadLabel", "Carica file .csv")}</div>
+                <div className="text-sm font-semibold">
+                  {t("importCsv.uploadLabel", "Carica file .csv")}
+                </div>
                 <div className="text-xs text-text3">
                   {busy
                     ? t("importCsv.uploadBusy", "Lettura in corso...")
                     : fileName ||
-                      t("importCsv.uploadHint", "asset_tag, serial, brand, model, category, device_type, os, status, client_name, notes, purchase_date")}
+                      t(
+                        "importCsv.uploadHint",
+                        "asset_tag, serial, brand, model, category, device_type, os, status, client_name, notes, purchase_date",
+                      )}
                 </div>
               </div>
               <input
@@ -168,7 +179,8 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
-              <Download className="size-3" /> {t("importCsv.downloadTemplate", "Scarica template CSV")}
+              <Download className="size-3" />{" "}
+              {t("importCsv.downloadTemplate", "Scarica template CSV")}
             </button>
           </div>
         )}
@@ -251,12 +263,23 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
             </div>
             {result ? (
               <div className="grid grid-cols-3 gap-2">
-                <SummaryBox label={t("importCsv.resultInserted", "Inseriti")} value={result.inserted} />
-                <SummaryBox label={t("importCsv.resultUpdated", "Aggiornati")} value={result.updated} />
-                <SummaryBox label={t("importCsv.resultErrors", "Errori")} value={result.errors.length} />
+                <SummaryBox
+                  label={t("importCsv.resultInserted", "Inseriti")}
+                  value={result.inserted}
+                />
+                <SummaryBox
+                  label={t("importCsv.resultUpdated", "Aggiornati")}
+                  value={result.updated}
+                />
+                <SummaryBox
+                  label={t("importCsv.resultErrors", "Errori")}
+                  value={result.errors.length}
+                />
               </div>
             ) : (
-              <div className="text-sm text-text2">{t("importCsv.importing", "Import in corso...")}</div>
+              <div className="text-sm text-text2">
+                {t("importCsv.importing", "Import in corso...")}
+              </div>
             )}
             {result?.errors.length ? (
               <div
@@ -265,13 +288,18 @@ export function ImportCsvDialog({ open, onClose, onImported }: Props) {
               >
                 {result.errors.map((error) => (
                   <div key={`${error.rowNumber}-${error.serial}`}>
-                    {t("importCsv.rowError", "Riga {{row}} ({{serial}}): {{error}}", { row: error.rowNumber, serial: error.serial || "-", error: error.error })}
+                    {t("importCsv.rowError", "Riga {{row}} ({{serial}}): {{error}}", {
+                      row: error.rowNumber,
+                      serial: error.serial || "-",
+                      error: error.error,
+                    })}
                   </div>
                 ))}
               </div>
             ) : result ? (
               <div className="flex items-center gap-2 text-sm text-text2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" /> {t("importCsv.importCompleted", "Import completato")}
+                <CheckCircle2 className="h-4 w-4 text-green-600" />{" "}
+                {t("importCsv.importCompleted", "Import completato")}
               </div>
             ) : null}
           </div>

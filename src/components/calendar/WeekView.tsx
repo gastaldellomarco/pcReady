@@ -74,7 +74,9 @@ export function WeekView({
   onEventClick,
 }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [drag, setDrag] = useState<{ dayKey: string; startHour: number; endHour: number } | null>(null);
+  const [drag, setDrag] = useState<{ dayKey: string; startHour: number; endHour: number } | null>(
+    null,
+  );
 
   const days = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });

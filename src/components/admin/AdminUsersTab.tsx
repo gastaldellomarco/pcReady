@@ -29,10 +29,21 @@ import { useAuth, type AppRole } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { fmtDateTime } from "@/lib/pcready";
 
-function MfaStatusBadge({ enabled, required, role }: { enabled: boolean; required: boolean; role?: string }) {
+function MfaStatusBadge({
+  enabled,
+  required,
+  role,
+}: {
+  enabled: boolean;
+  required: boolean;
+  role?: string;
+}) {
   const { t } = useTranslation("admin");
   if (enabled) return <Badge className="bg-emerald-600">{t("users.mfa.active", "Attivo")}</Badge>;
-  if (required) return <Badge className="bg-amber-500 text-white">{t("users.mfa.required", "Richiesto")}</Badge>;
+  if (required)
+    return (
+      <Badge className="bg-amber-500 text-white">{t("users.mfa.required", "Richiesto")}</Badge>
+    );
   // emphasize admins without 2FA
   if (role === "admin")
     return (
@@ -100,7 +111,12 @@ export function AdminUsersTab() {
   const watchedFullName = inviteForm.watch("fullName");
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const clientEmailInvalid = watchedEmail && !EMAIL_RE.test(watchedEmail);
-  const isInviteButtonEnabled = !inviteBusy && !!watchedFullName && !!watchedEmail && EMAIL_RE.test(watchedEmail) && inviteForm.formState.isValid;
+  const isInviteButtonEnabled =
+    !inviteBusy &&
+    !!watchedFullName &&
+    !!watchedEmail &&
+    EMAIL_RE.test(watchedEmail) &&
+    inviteForm.formState.isValid;
 
   const { settings } = useAdminAppSettings({ accessToken, isAdmin });
   const isMobile = useIsMobile();
@@ -217,7 +233,9 @@ export function AdminUsersTab() {
               {String(inviteForm.formState.errors.email?.message)}
             </p>
           ) : clientEmailInvalid ? (
-            <p className="text-sm text-destructive mt-1">{t("users.invite.invalidEmail", "Inserisci un'email valida")}</p>
+            <p className="text-sm text-destructive mt-1">
+              {t("users.invite.invalidEmail", "Inserisci un'email valida")}
+            </p>
           ) : null}
         </div>
         <div className="flex-1 min-w-[180px]">
@@ -235,7 +253,11 @@ export function AdminUsersTab() {
         </div>
         <div className="min-w-[160px]">
           <label className="pc-label">{t("users.invite.roleLabel", "Ruolo")}</label>
-          <select className="pc-input" {...inviteForm.register("role")} aria-label={t("users.invite.roleLabel", "Ruolo")}>
+          <select
+            className="pc-input"
+            {...inviteForm.register("role")}
+            aria-label={t("users.invite.roleLabel", "Ruolo")}
+          >
             {ADMIN_ROLES.map((item) => (
               <option key={item} value={item}>
                 {adminRoleLabel(item)}
@@ -243,12 +265,11 @@ export function AdminUsersTab() {
             ))}
           </select>
         </div>
-        <button
-          className="pc-btn pc-btn-primary"
-          disabled={!isInviteButtonEnabled}
-          type="submit"
-        >
-          <MailPlus className="size-3.5" /> {inviteBusy ? t("users.invite.submitting", "Invio...") : t("users.invite.submit", "Invita")}
+        <button className="pc-btn pc-btn-primary" disabled={!isInviteButtonEnabled} type="submit">
+          <MailPlus className="size-3.5" />{" "}
+          {inviteBusy
+            ? t("users.invite.submitting", "Invio...")
+            : t("users.invite.submit", "Invita")}
         </button>
       </form>
 
@@ -285,14 +306,20 @@ export function AdminUsersTab() {
 
       <div className="pc-card overflow-hidden">
         {/* MFA policy banner: show when policy requires MFA and there are users missing it */}
-        {settings && (
+        {settings &&
           (() => {
             const totalWithout = (rows ?? []).filter((r) => !r.mfa_enabled).length;
-            const adminsWithout = (rows ?? []).filter((r) => r.role === "admin" && !r.mfa_enabled).length;
+            const adminsWithout = (rows ?? []).filter(
+              (r) => r.role === "admin" && !r.mfa_enabled,
+            ).length;
             if (settings.mfa_require_all_users && totalWithout > 0) {
               return (
                 <div className="px-4 py-3 border-b bg-amber-50 border-amber-200 text-amber-900">
-                  {t("users.mfaBanner.allUsers", "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA", { count: totalWithout })} {" "}
+                  {t(
+                    "users.mfaBanner.allUsers",
+                    "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA",
+                    { count: totalWithout },
+                  )}{" "}
                   <a href="/admin" className="underline">
                     {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
                   </a>
@@ -302,7 +329,11 @@ export function AdminUsersTab() {
             if (settings.mfa_require_admin_users && adminsWithout > 0) {
               return (
                 <div className="px-4 py-3 border-b bg-red-50 border-red-200 text-red-900">
-                  {t("users.mfaBanner.admins", "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA", { count: adminsWithout })} {" "}
+                  {t(
+                    "users.mfaBanner.admins",
+                    "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA",
+                    { count: adminsWithout },
+                  )}{" "}
                   <a href="/admin" className="underline">
                     {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
                   </a>
@@ -310,16 +341,19 @@ export function AdminUsersTab() {
               );
             }
             return null;
-          })()
-        )}
+          })()}
         {selectedIds.size > 0 && (
           <div className="px-4 py-3 border-b bg-surface2 border-border flex items-center gap-3">
-            <div className="text-sm text-text3">{t("users.bulk.selected", "{{count}} selezionati", { count: selectedIds.size })}</div>
+            <div className="text-sm text-text3">
+              {t("users.bulk.selected", "{{count}} selezionati", { count: selectedIds.size })}
+            </div>
             <div className="flex items-center gap-2">
               <select
                 className="pc-input max-w-[160px]"
                 value={bulkRole}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBulkRole(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setBulkRole(e.target.value as any)
+                }
                 aria-label={t("users.bulk.roleLabel", "Ruolo in blocco")}
               >
                 {ADMIN_ROLES.map((r) => (
@@ -348,11 +382,18 @@ export function AdminUsersTab() {
                       ),
                     );
                     const ok = results.filter((r) => r.status === "fulfilled").length;
-                    toast.success(t("users.bulk.usersUpdated", "{{count}} utenti aggiornati", { count: ok }));
+                    toast.success(
+                      t("users.bulk.usersUpdated", "{{count}} utenti aggiornati", { count: ok }),
+                    );
                     await load();
                     setSelectedIds(new Set());
                   } catch (err) {
-                    toast.error(getAdminErrorMessage(err, t("users.bulk.bulkFailed", "Operazione bulk fallita")));
+                    toast.error(
+                      getAdminErrorMessage(
+                        err,
+                        t("users.bulk.bulkFailed", "Operazione bulk fallita"),
+                      ),
+                    );
                   } finally {
                     setBulkBusy(false);
                   }
@@ -392,11 +433,18 @@ export function AdminUsersTab() {
                       ),
                     );
                     const ok = results.filter((r) => r.status === "fulfilled").length;
-                    toast.success(t("users.bulk.invitesResent", "{{count}} inviti reinviati", { count: ok }));
+                    toast.success(
+                      t("users.bulk.invitesResent", "{{count}} inviti reinviati", { count: ok }),
+                    );
                     await load();
                     setSelectedIds(new Set());
                   } catch (err) {
-                    toast.error(getAdminErrorMessage(err, t("users.bulk.resendBulkFailed", "Re-invio bulk fallito")));
+                    toast.error(
+                      getAdminErrorMessage(
+                        err,
+                        t("users.bulk.resendBulkFailed", "Re-invio bulk fallito"),
+                      ),
+                    );
                   } finally {
                     setBulkBusy(false);
                   }
@@ -409,7 +457,10 @@ export function AdminUsersTab() {
                   // export CSV for selected
                   const ids = new Set(selectedIds);
                   const selectedRows = rows.filter((r) => ids.has(r.id));
-                  if (selectedRows.length === 0) return toast.error(t("users.bulk.noUsersSelected", "Nessun utente selezionato"));
+                  if (selectedRows.length === 0)
+                    return toast.error(
+                      t("users.bulk.noUsersSelected", "Nessun utente selezionato"),
+                    );
                   const headers = [
                     "id",
                     "email",
@@ -444,139 +495,156 @@ export function AdminUsersTab() {
         )}
         <OverflowTable>
           {!isMobile ? (
-          <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th
-                className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                aria-label={t("users.table.selectAll", "Seleziona tutti")}
-              >
-                <Checkbox
-                  checked={filtered.length > 0 && selectedIds.size === filtered.length}
-                  onCheckedChange={(val) => {
-                    if (val) setSelectedIds(new Set(filtered.map((r) => r.id)));
-                    else setSelectedIds(new Set());
-                  }}
-                />
-              </th>
-              {[t("users.table.colName", "Nome"), t("users.table.colEmail", "Email"), t("users.table.colRole", "Ruolo"), t("users.table.colCreated", "Creato il"), t("users.table.colAccess", "Accesso"), t("users.table.col2fa", "2FA"), t("users.table.colStatus", "Stato"), t("users.table.colActions", "Azioni")].map(
-                (header) => (
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
                   <th
-                    key={header}
-                    className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                    className="px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
                     style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    aria-label={t("users.table.selectAll", "Seleziona tutti")}
                   >
-                    {header}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {loadingRows ? (
-              <TableSkeletonRows rows={10} columns={9} cellClassName="px-[14px] py-[10px]" />
-            ) : (
-              filtered.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b hover:bg-surface2 transition-colors"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <td className="px-[14px] py-[10px]">
                     <Checkbox
-                      checked={selectedIds.has(row.id)}
+                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
                       onCheckedChange={(val) => {
-                        const next = new Set(selectedIds);
-                        if (val) next.add(row.id);
-                        else next.delete(row.id);
-                        setSelectedIds(next);
+                        if (val) setSelectedIds(new Set(filtered.map((r) => r.id)));
+                        else setSelectedIds(new Set());
                       }}
                     />
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="size-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                        style={{
-                          background: "var(--accent2)",
-                          color: "var(--accent)",
-                          fontFamily: "var(--font-head)",
-                        }}
-                      >
-                        {row.initials}
-                      </span>
-                      <span className="font-semibold text-[13px]">{row.full_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
-                    {row.email || "-"}
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <AdminUserRoleEditor
-                      role={row.role}
-                      disabled={busyId === row.id}
-                      onChange={(nextRole) => saveRole(row, nextRole)}
-                    />
-                  </td>
-                  <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
-                    {fmtDateTime(row.created_at)}
-                  </td>
-                  <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
-                    {row.last_sign_in_at ? (
-                      fmtDateTime(row.last_sign_in_at)
-                    ) : (
-                      <span className="italic">{t("users.row.neverAccessed", "Mai acceduto")}</span>
-                    )}
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <MfaStatusBadge enabled={row.mfa_enabled} required={row.mfa_required} role={row.role} />
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <AdminUserStatusBadge
-                      status={row.status}
-                      invitedAt={row.invited_at}
-                      busy={busyId === row.id}
-                      onResend={() => resendInviteFor(row)}
-                    />
-                  </td>
-                  <td className="px-[14px] py-[10px]">
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="pc-btn-icon touch-target"
-                        title={row.status === "disabled" ? t("users.tooltip.enableUser", "Riabilita utente") : t("users.tooltip.disableUser", "Disabilita utente")}
-                        disabled={busyId === row.id || row.id === user?.id}
-                        onClick={() => toggleDisabled(row)}
-                      >
-                        {row.status === "disabled" ? (
-                          <UserCheck className="size-3.5" />
-                        ) : (
-                          <UserX className="size-3.5" />
-                        )}
-                      </button>
-                      <button
-                        className="pc-btn-icon touch-target"
-                        title={t("users.tooltip.removeUser", "Rimuovi utente")}
-                        disabled={busyId === row.id || row.id === user?.id}
-                        onClick={() => remove(row)}
-                        style={{ color: "var(--danger, #DC2626)" }}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  </td>
+                  </th>
+                  {[
+                    t("users.table.colName", "Nome"),
+                    t("users.table.colEmail", "Email"),
+                    t("users.table.colRole", "Ruolo"),
+                    t("users.table.colCreated", "Creato il"),
+                    t("users.table.colAccess", "Accesso"),
+                    t("users.table.col2fa", "2FA"),
+                    t("users.table.colStatus", "Stato"),
+                    t("users.table.colActions", "Azioni"),
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                      style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))
-            )}
-            {!loadingRows && !(filtered ?? []).length && (
-              <tr>
-                <td colSpan={9} className="text-center py-10 text-text3 text-sm">
-                  {t("users.empty.noUsers", "Nessun utente trovato")}
-                </td>
-              </tr>
-            )}
-          </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loadingRows ? (
+                  <TableSkeletonRows rows={10} columns={9} cellClassName="px-[14px] py-[10px]" />
+                ) : (
+                  filtered.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b hover:bg-surface2 transition-colors"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      <td className="px-[14px] py-[10px]">
+                        <Checkbox
+                          checked={selectedIds.has(row.id)}
+                          onCheckedChange={(val) => {
+                            const next = new Set(selectedIds);
+                            if (val) next.add(row.id);
+                            else next.delete(row.id);
+                            setSelectedIds(next);
+                          }}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="size-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                            style={{
+                              background: "var(--accent2)",
+                              color: "var(--accent)",
+                              fontFamily: "var(--font-head)",
+                            }}
+                          >
+                            {row.initials}
+                          </span>
+                          <span className="font-semibold text-[13px]">{row.full_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                        {row.email || "-"}
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <AdminUserRoleEditor
+                          role={row.role}
+                          disabled={busyId === row.id}
+                          onChange={(nextRole) => saveRole(row, nextRole)}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
+                        {fmtDateTime(row.created_at)}
+                      </td>
+                      <td className="px-[14px] py-[10px] text-[11.5px] text-text3 font-mono">
+                        {row.last_sign_in_at ? (
+                          fmtDateTime(row.last_sign_in_at)
+                        ) : (
+                          <span className="italic">
+                            {t("users.row.neverAccessed", "Mai acceduto")}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <MfaStatusBadge
+                          enabled={row.mfa_enabled}
+                          required={row.mfa_required}
+                          role={row.role}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <AdminUserStatusBadge
+                          status={row.status}
+                          invitedAt={row.invited_at}
+                          busy={busyId === row.id}
+                          onResend={() => resendInviteFor(row)}
+                        />
+                      </td>
+                      <td className="px-[14px] py-[10px]">
+                        <div className="flex items-center gap-1">
+                          <button
+                            className="pc-btn-icon touch-target"
+                            title={
+                              row.status === "disabled"
+                                ? t("users.tooltip.enableUser", "Riabilita utente")
+                                : t("users.tooltip.disableUser", "Disabilita utente")
+                            }
+                            disabled={busyId === row.id || row.id === user?.id}
+                            onClick={() => toggleDisabled(row)}
+                          >
+                            {row.status === "disabled" ? (
+                              <UserCheck className="size-3.5" />
+                            ) : (
+                              <UserX className="size-3.5" />
+                            )}
+                          </button>
+                          <button
+                            className="pc-btn-icon touch-target"
+                            title={t("users.tooltip.removeUser", "Rimuovi utente")}
+                            disabled={busyId === row.id || row.id === user?.id}
+                            onClick={() => remove(row)}
+                            style={{ color: "var(--danger, #DC2626)" }}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {!loadingRows && !(filtered ?? []).length && (
+                  <tr>
+                    <td colSpan={9} className="text-center py-10 text-text3 text-sm">
+                      {t("users.empty.noUsers", "Nessun utente trovato")}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           ) : (
             <MobileCardView
               data={filtered ?? []}
@@ -600,11 +668,16 @@ export function AdminUsersTab() {
               {/* render translation which contains HTML (<strong>{{email}}</strong>) */}
               <div
                 dangerouslySetInnerHTML={{
-                  __html: t("users.delete.description", { email: deleteTarget?.email ?? "", interpolation: { escapeValue: false } }),
+                  __html: t("users.delete.description", {
+                    email: deleteTarget?.email ?? "",
+                    interpolation: { escapeValue: false },
+                  }),
                 }}
               />
               <div className="mt-2">
-                <div className="font-semibold">{deleteTarget?.full_name || deleteTarget?.email}</div>
+                <div className="font-semibold">
+                  {deleteTarget?.full_name || deleteTarget?.email}
+                </div>
                 <div className="font-mono text-sm text-text3">{deleteTarget?.email}</div>
               </div>
             </AlertDialogDescription>
@@ -617,7 +690,12 @@ export function AdminUsersTab() {
                 if (!deleteTarget) return;
                 // protect against accidental self-delete
                 if (deleteTarget.id === user?.id) {
-                  toast.error(t("users.delete.cannotSelf", "Non è possibile eliminare l'utente amministratore attualmente loggato"));
+                  toast.error(
+                    t(
+                      "users.delete.cannotSelf",
+                      "Non è possibile eliminare l'utente amministratore attualmente loggato",
+                    ),
+                  );
                   setDeleteTarget(null);
                   return;
                 }
@@ -642,13 +720,19 @@ export function AdminUsersTab() {
         <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkAction === "disable" ? t("users.bulkDialog.disableTitle", "Disabilita utenti") : t("users.bulkDialog.enableTitle", "Riabilita utenti")}
+              {bulkAction === "disable"
+                ? t("users.bulkDialog.disableTitle", "Disabilita utenti")
+                : t("users.bulkDialog.enableTitle", "Riabilita utenti")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("users.bulkDialog.description", "Sei sicuro di voler {{action}} {{count}} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.", {
-                action: bulkAction === "disable" ? "disabilitare" : "riabilitare",
-                count: selectedIds.size,
-              })}
+              {t(
+                "users.bulkDialog.description",
+                "Sei sicuro di voler {{action}} {{count}} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.",
+                {
+                  action: bulkAction === "disable" ? "disabilitare" : "riabilitare",
+                  count: selectedIds.size,
+                },
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -677,7 +761,12 @@ export function AdminUsersTab() {
                   await load();
                   setSelectedIds(new Set());
                 } catch (err) {
-                  toast.error(getAdminErrorMessage(err, t("users.bulk.bulkFailed", "Operazione bulk fallita")));
+                  toast.error(
+                    getAdminErrorMessage(
+                      err,
+                      t("users.bulk.bulkFailed", "Operazione bulk fallita"),
+                    ),
+                  );
                 } finally {
                   setBulkBusy(false);
                   setBulkAction(null);

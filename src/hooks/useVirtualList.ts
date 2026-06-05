@@ -65,7 +65,7 @@ export function useVirtualList<T extends HTMLElement = HTMLDivElement>({
   enabled: enabledProp,
 }: UseVirtualListOptions): UseVirtualListReturn<T> {
   const containerRef = useRef<T>(null);
-  const shouldEnable = enabledProp ?? (count > threshold);
+  const shouldEnable = enabledProp ?? count > threshold;
 
   const virtualizer = useVirtualizer({
     count,

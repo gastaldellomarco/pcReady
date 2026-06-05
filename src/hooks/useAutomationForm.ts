@@ -1,8 +1,5 @@
 import { useState, useCallback } from "react";
-import {
-  validateFlowInput,
-  formatValidationErrors,
-} from "@/domain/automation.schema";
+import { validateFlowInput, formatValidationErrors } from "@/domain/automation.schema";
 import type { AutomationFlowInput } from "@/domain/automation";
 
 interface UseAutomationFormResult {
@@ -12,12 +9,12 @@ interface UseAutomationFormResult {
   validate: () => boolean;
   updateField: <K extends keyof AutomationFlowInput>(
     field: K,
-    value: AutomationFlowInput[K]
+    value: AutomationFlowInput[K],
   ) => void;
   updateNestedField: <K extends keyof AutomationFlowInput, NK extends string>(
     field: K,
     nestedField: NK,
-    value: unknown
+    value: unknown,
   ) => void;
   setErrors: (errors: Record<string, string>) => void;
   clearErrors: () => void;
@@ -28,7 +25,7 @@ interface UseAutomationFormResult {
  *
  */
 export function useAutomationForm(
-  initialData: Partial<AutomationFlowInput> = {}
+  initialData: Partial<AutomationFlowInput> = {},
 ): UseAutomationFormResult {
   const [data, setData] = useState<AutomationFlowInput>({
     name: initialData.name || "",
@@ -53,52 +50,55 @@ export function useAutomationForm(
     return result.valid;
   }, [data]);
 
-  const updateField = useCallback(<K extends keyof AutomationFlowInput>(
-    field: K,
-    value: AutomationFlowInput[K]
-  ) => {
-    setData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user updates it
-    setErrorsState((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      // Also clear nested errors
-      Object.keys(newErrors).forEach((key) => {
-        if (key.startsWith(`${field}.`) || key.startsWith(`${field}[`)) {
-          delete newErrors[key];
-        }
+  const updateField = useCallback(
+    <K extends keyof AutomationFlowInput>(field: K, value: AutomationFlowInput[K]) => {
+      setData((prev) => ({ ...prev, [field]: value }));
+      // Clear error for this field when user updates it
+      setErrorsState((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        // Also clear nested errors
+        Object.keys(newErrors).forEach((key) => {
+          if (key.startsWith(`${field}.`) || key.startsWith(`${field}[`)) {
+            delete newErrors[key];
+          }
+        });
+        return newErrors;
       });
-      return newErrors;
-    });
-  }, []);
+    },
+    [],
+  );
 
-  const updateNestedField = useCallback(<K extends keyof AutomationFlowInput, NK extends string>(
-    field: K,
-    nestedField: NK,
-    value: unknown
-  ) => {
-    setData((prev) => {
-      const currentField = prev[field];
-      if (typeof currentField === "object" && currentField !== null) {
-        return {
-          ...prev,
-          [field]: {
-            ...currentField,
-            [nestedField]: value,
-          },
-        };
-      }
-      return prev;
-    });
+  const updateNestedField = useCallback(
+    <K extends keyof AutomationFlowInput, NK extends string>(
+      field: K,
+      nestedField: NK,
+      value: unknown,
+    ) => {
+      setData((prev) => {
+        const currentField = prev[field];
+        if (typeof currentField === "object" && currentField !== null) {
+          return {
+            ...prev,
+            [field]: {
+              ...currentField,
+              [nestedField]: value,
+            },
+          };
+        }
+        return prev;
+      });
 
-    // Clear error for this nested path
-    const fullPath = `${String(field)}.${nestedField}`;
-    setErrorsState((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[fullPath];
-      return newErrors;
-    });
-  }, []);
+      // Clear error for this nested path
+      const fullPath = `${String(field)}.${nestedField}`;
+      setErrorsState((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fullPath];
+        return newErrors;
+      });
+    },
+    [],
+  );
 
   const setErrors = useCallback((newErrors: Record<string, string>) => {
     setErrorsState(newErrors);
@@ -108,9 +108,12 @@ export function useAutomationForm(
     setErrorsState({});
   }, []);
 
-  const getFieldError = useCallback((path: string): string | undefined => {
-    return errors[path];
-  }, [errors]);
+  const getFieldError = useCallback(
+    (path: string): string | undefined => {
+      return errors[path];
+    },
+    [errors],
+  );
 
   return {
     data,

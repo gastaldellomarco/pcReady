@@ -89,7 +89,10 @@ export function CreateNotificationBlock({
             value={action.config.user_id || ""}
             onChange={(v) => updateConfig({ user_id: v || undefined })}
             variables={availableVariables}
-            placeholder={t("actionsBuilder.blocks.create_notification.userPlaceholder", "ID utente")}
+            placeholder={t(
+              "actionsBuilder.blocks.create_notification.userPlaceholder",
+              "ID utente",
+            )}
           />
 
           <div>
@@ -115,7 +118,10 @@ export function CreateNotificationBlock({
           value={action.config.title}
           onChange={(v) => updateConfig({ title: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.create_notification.titlePlaceholder", "Titolo notifica")}
+          placeholder={t(
+            "actionsBuilder.blocks.create_notification.titlePlaceholder",
+            "Titolo notifica",
+          )}
         />
 
         <VariableTextField
@@ -123,7 +129,10 @@ export function CreateNotificationBlock({
           value={action.config.body}
           onChange={(v) => updateConfig({ body: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.create_notification.bodyPlaceholder", "Contenuto del messaggio...")}
+          placeholder={t(
+            "actionsBuilder.blocks.create_notification.bodyPlaceholder",
+            "Contenuto del messaggio...",
+          )}
           multiline
           rows={3}
         />

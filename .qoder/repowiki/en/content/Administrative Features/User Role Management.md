@@ -17,6 +17,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -29,10 +30,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the user role management system, covering the three roles (admin, tech, viewer), their permissions and capabilities, role assignment and modification workflows, user invitation and onboarding, status management (active, disabled, invited), and server-side authorization. It also documents anti-rollback protections against removing the last admin, bulk operations, permission troubleshooting, security considerations, and audit trail integration for role changes.
 
 ## Project Structure
+
 The role management system spans server-side functions, client-side UI hooks, and Supabase RLS policies. Key areas:
+
 - Server-side authorization and role operations
 - Client-side forms and UI editors for roles and statuses
 - Supabase functions and policies governing access
@@ -62,6 +66,7 @@ Audit --> RLS
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [AdminUserRoleEditor.tsx:1-70](file://src/components/admin/AdminUserRoleEditor.tsx#L1-L70)
@@ -72,6 +77,7 @@ Audit --> RLS
 - [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:30-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L30-L38)
 
 **Section sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [AdminUserRoleEditor.tsx:1-70](file://src/components/admin/AdminUserRoleEditor.tsx#L1-L70)
@@ -82,6 +88,7 @@ Audit --> RLS
 - [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:30-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L30-L38)
 
 ## Core Components
+
 - Role types and constants
   - Roles: admin, tech, viewer
   - Validation and labels for roles
@@ -98,6 +105,7 @@ Audit --> RLS
   - Hook orchestrating client-server interactions
 
 **Section sources**
+
 - [admin-constants.ts:3-23](file://src/lib/admin/admin-constants.ts#L3-L23)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [admin-users.ts:53-86](file://src/lib/admin-users.ts#L53-L86)
@@ -111,6 +119,7 @@ Audit --> RLS
 - [useAdminUsers.ts:19-212](file://src/hooks/useAdminUsers.ts#L19-L212)
 
 ## Architecture Overview
+
 The system enforces admin-only access for sensitive operations and computes user status from Supabase auth and profile data. Role assignments are stored in a dedicated table protected by RLS policies.
 
 ```mermaid
@@ -136,6 +145,7 @@ H-->>C : "Render list"
 ```
 
 **Diagram sources**
+
 - [useAdminUsers.ts:51-62](file://src/hooks/useAdminUsers.ts#L51-L62)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
@@ -144,6 +154,7 @@ H-->>C : "Render list"
 ## Detailed Component Analysis
 
 ### Roles and Permissions
+
 - Role types
   - admin: full administrative control
   - tech: technician access (e.g., automation logs visibility)
@@ -153,11 +164,13 @@ H-->>C : "Render list"
   - UI components render role badges and selection
 
 **Section sources**
+
 - [admin-constants.ts:3-23](file://src/lib/admin/admin-constants.ts#L3-L23)
 - [AdminUserRoleEditor.tsx:18-27](file://src/components/admin/AdminUserRoleEditor.tsx#L18-L27)
 - [AdminUserRoleEditor.tsx:59-65](file://src/components/admin/AdminUserRoleEditor.tsx#L59-L65)
 
 ### Authorization and requireAdmin Middleware
+
 - Validates access token and confirms admin role via RPC
 - Returns the admin user identifier for downstream checks
 
@@ -173,12 +186,15 @@ HasRole --> |Yes| ReturnId["Return admin user id"]
 ```
 
 **Diagram sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 **Section sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 ### User Listing and Status Computation
+
 - Lists users via Supabase admin client
 - Joins profiles and user_roles to compute role and status
 - Status logic:
@@ -200,13 +216,16 @@ F-->>H : "AdminUserRow[] with status"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 
 **Section sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [AdminUserStatusBadge.tsx:25-62](file://src/components/admin/AdminUserStatusBadge.tsx#L25-L62)
 
 ### Role Assignment and Modification
+
 - Update role
   - Validates role input
   - Anti-rollback: prevents removal of the last admin
@@ -237,18 +256,21 @@ H-->>UI : "refresh list"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 - [AdminUserRoleEditor.tsx:48-66](file://src/components/admin/AdminUserRoleEditor.tsx#L48-L66)
 - [useAdminUsers.ts:77-97](file://src/hooks/useAdminUsers.ts#L77-L97)
 
 **Section sources**
+
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 - [AdminUserRoleEditor.tsx:48-66](file://src/components/admin/AdminUserRoleEditor.tsx#L48-L66)
 - [useAdminUsers.ts:77-97](file://src/hooks/useAdminUsers.ts#L77-L97)
 
 ### User Invitation Workflow
+
 - Validates role and email
 - Invites user via Supabase auth admin
 - Upserts profile and user_profiles
@@ -273,50 +295,61 @@ H-->>UI : "toast + refresh"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [useAdminUsers.ts:153-174](file://src/hooks/useAdminUsers.ts#L153-L174)
 - [AdminUsersTab.tsx:352-379](file://src/components/admin/AdminUsersTab.tsx#L352-L379)
 
 **Section sources**
+
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [useAdminUsers.ts:153-174](file://src/hooks/useAdminUsers.ts#L153-L174)
 - [AdminUsersTab.tsx:352-379](file://src/components/admin/AdminUsersTab.tsx#L352-L379)
 
 ### Resending Invitations
+
 - Confirms user exists and is in invited state
 - Re-sends invitation with redirect URL
 
 **Section sources**
+
 - [admin-users.ts:227-248](file://src/lib/admin-users.ts#L227-L248)
 - [useAdminUsers.ts:114-132](file://src/hooks/useAdminUsers.ts#L114-L132)
 
 ### User Status Management (Active, Disabled, Invited)
+
 - Status computation and badge rendering
 - Disable/enable toggles via setAdminUserDisabled
 - Anti-rollback: prevents self-disable and removal of last admin when downgrading
 
 **Section sources**
+
 - [admin-users.ts:250-264](file://src/lib/admin-users.ts#L250-L264)
 - [AdminUserStatusBadge.tsx:14-63](file://src/components/admin/AdminUserStatusBadge.tsx#L14-L63)
 - [AdminUsersTab.tsx:352-379](file://src/components/admin/AdminUsersTab.tsx#L352-L379)
 
 ### Anti-Rollback Mechanism
+
 - Prevents removal of the last admin during role updates or disables
 - Enforced by asserting admin count before modifications
 
 **Section sources**
+
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 ### Bulk Operations
+
 - Filtering and selection handled in hook
 - Bulk actions supported for disable/enable and role changes
 - UI exposes bulk confirm flow
 
 **Section sources**
+
 - [useAdminUsers.ts:68-75](file://src/hooks/useAdminUsers.ts#L68-L75)
 - [useAdminUsers.ts:19-212](file://src/hooks/useAdminUsers.ts#L19-L212)
 
 ### Permission Enforcement and RLS
+
 - has_role RPC determines admin capability
 - RLS policies on user_roles:
   - Users can read their own roles
@@ -325,21 +358,25 @@ H-->>UI : "toast + refresh"
 - Additional RLS allows tech access to automation run logs
 
 **Section sources**
+
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:82-124](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L82-L124)
 - [20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql:30-38](file://supabase/migrations/20260429202148_94cb6d44-ee0c-44f3-a6fb-d5a0e028031e.sql#L30-L38)
 - [20260507133000_automation_run_logs.sql:22-34](file://supabase/migrations/20260507133000_automation_run_logs.sql#L22-L34)
 
 ### Audit Trails for Role Changes
+
 - Audit log retrieval and export support filtering and pagination
 - Audit actions include user-invited and user-disabled
 - Admin-only access enforced via requireAdmin
 
 **Section sources**
+
 - [audit-log.ts:23-107](file://src/lib/audit-log.ts#L23-L107)
 - [audit-log.ts:109-182](file://src/lib/audit-log.ts#L109-L182)
 - [audit-log-actions.ts:1-28](file://src/lib/audit-log-actions.ts#L1-L28)
 
 ## Dependency Analysis
+
 - Client-to-server
   - useAdminUsers orchestrates server functions
   - AdminUserRoleEditor and AdminUserStatusBadge drive user interactions
@@ -360,18 +397,21 @@ DB --> Policy["RLS Policies<br/>user_roles<br/>activity_log"]
 ```
 
 **Diagram sources**
+
 - [useAdminUsers.ts:19-212](file://src/hooks/useAdminUsers.ts#L19-L212)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:82-124](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L82-L124)
 
 **Section sources**
+
 - [useAdminUsers.ts:19-212](file://src/hooks/useAdminUsers.ts#L19-L212)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:82-124](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L82-L124)
 
 ## Performance Considerations
+
 - Batched reads: listAdminUsers performs concurrent reads for users, profiles, and roles
 - Minimal writes: role updates delete and insert roles in a single transactional block
 - Rate limiting: invites are rate-limited to prevent abuse
@@ -380,6 +420,7 @@ DB --> Policy["RLS Policies<br/>user_roles<br/>activity_log"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Access denied (403)
   - Ensure the caller has admin role via requireAdmin
 - Invalid token (401)
@@ -396,6 +437,7 @@ DB --> Policy["RLS Policies<br/>user_roles<br/>activity_log"]
   - Check email confirmation and ban duration fields
 
 **Section sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [admin-users.ts:141](file://src/lib/admin-users.ts#L141)
 - [admin-users.ts:84-86](file://src/lib/admin-users.ts#L84-L86)
@@ -404,6 +446,7 @@ DB --> Policy["RLS Policies<br/>user_roles<br/>activity_log"]
 - [admin-users.ts:238-239](file://src/lib/admin-users.ts#L238-L239)
 
 ## Conclusion
+
 The role management system combines strong server-side authorization, robust anti-rollback protections, and clear UI workflows for inviting, editing, and managing users. Supabase RLS and RPC functions enforce role-based access, while audit logging provides visibility into administrative actions.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -411,6 +454,7 @@ The role management system combines strong server-side authorization, robust ant
 ## Appendices
 
 ### Role Types and Capabilities
+
 - admin
   - Full access to administrative features
   - Can manage roles and users
@@ -421,25 +465,30 @@ The role management system combines strong server-side authorization, robust ant
   - Read-only access
 
 **Section sources**
+
 - [admin-constants.ts:3-23](file://src/lib/admin/admin-constants.ts#L3-L23)
 - [20260507133000_automation_run_logs.sql:22-34](file://supabase/migrations/20260507133000_automation_run_logs.sql#L22-L34)
 
 ### User Onboarding Workflow
+
 - Invite user (with role)
 - User receives email and sets password
 - Initial role applied upon acceptance
 - Optional manual role adjustment by admin
 
 **Section sources**
+
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 
 ### Security Considerations
+
 - requireAdmin must be invoked before any privileged operation
 - RLS policies restrict role management to admins
 - Anti-rollback prevents accidental loss of administrative control
 - Audit logs capture key administrative actions for review
 
 **Section sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql:82-124](file://supabase/migrations/20260429202127_cd9e1421-24c9-40f3-9ac6-9e2259cbb2af.sql#L82-L124)
 - [audit-log.ts:23-107](file://src/lib/audit-log.ts#L23-L107)

@@ -12,6 +12,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -24,10 +25,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the automation management server functions and their associated API endpoints. It covers rule lifecycle operations (create, update, delete, duplicate, archive, toggle active), manual execution and dry-run, run logging and statistics, and the underlying automation flow engine. It also explains validation, triggers, conditions, and action processing, along with scheduling, logging, and error handling patterns.
 
 ## Project Structure
+
 The automation system spans OpenAPI definitions, server-side functions, client-side queries, and UI components:
+
 - OpenAPI defines the REST endpoints for automation execution, logs, and statistics.
 - Server functions implement the runtime engine, validation, and persistence.
 - Client queries manage rule CRUD and UI state.
@@ -44,16 +48,19 @@ Queries["Client Queries<br/>useAutomationFlows/*"] --> API
 ```
 
 **Diagram sources**
+
 - [openapi.yaml:575-636](file://public/openapi/openapi.yaml#L575-L636)
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 - [automation-runs.server.ts:38-207](file://src/lib/automation-runs.server.ts#L38-L207)
 
 **Section sources**
+
 - [openapi.yaml:575-636](file://public/openapi/openapi.yaml#L575-L636)
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 - [automation-runs.server.ts:38-207](file://src/lib/automation-runs.server.ts#L38-L207)
 
 ## Core Components
+
 - Execution endpoints
   - Manual run: POST /api/automations/run
   - List run logs: POST /api/automations/run-logs
@@ -65,12 +72,15 @@ Queries["Client Queries<br/>useAutomationFlows/*"] --> API
   - Zod schemas for actions and validation
 
 **Section sources**
+
 - [openapi.yaml:575-636](file://public/openapi/openapi.yaml#L575-L636)
 - [automation-runs.ts:33-63](file://src/lib/automation-runs.ts#L33-L63)
 - [automation.ts:23-72](file://src/types/automation.ts#L23-L72)
 
 ## Architecture Overview
+
 The automation runtime is composed of:
+
 - Server functions that validate requests, enforce permissions, and execute flows.
 - A flow executor that interprets trigger, conditions, and actions.
 - Action handlers for supported operations (e.g., email, notifications, status updates).
@@ -101,6 +111,7 @@ API-->>Client : AutomationRunLog
 ```
 
 **Diagram sources**
+
 - [openapi.yaml:575-595](file://public/openapi/openapi.yaml#L575-L595)
 - [automation-runs.ts:94-108](file://src/lib/automation-runs.ts#L94-L108)
 - [automation-runs.server.ts:94-207](file://src/lib/automation-runs.server.ts#L94-L207)
@@ -108,6 +119,7 @@ API-->>Client : AutomationRunLog
 ## Detailed Component Analysis
 
 ### Execution Endpoints
+
 - POST /api/automations/run
   - Purpose: Manually execute an automation flow immediately.
   - Request: RunAutomationNowRequest (automationId, isDryRun, triggerPayload).
@@ -122,11 +134,13 @@ API-->>Client : AutomationRunLog
   - Response: AutomationRunStatsResponse with stats and KPIs.
 
 **Section sources**
+
 - [openapi.yaml:575-636](file://public/openapi/openapi.yaml#L575-L636)
 - [automation-runs.ts:77-92](file://src/lib/automation-runs.ts#L77-L92)
 - [automation-runs.ts:144-210](file://src/lib/automation-runs.ts#L144-L210)
 
 ### Rule Lifecycle Endpoints (Client Queries)
+
 - Create: insert into automation_flows with name, description, category, active, version, flow_definition.
 - Update: update automation_flows by id.
 - Delete: delete automation_flows by id.
@@ -137,10 +151,12 @@ API-->>Client : AutomationRunLog
 These operations are implemented via client-side mutations and invalidate caches to keep UI state consistent.
 
 **Section sources**
+
 - [automations.ts:37-98](file://src/lib/queries/automations.ts#L37-L98)
 - [automations.ts:111-165](file://src/lib/queries/automations.ts#L111-L165)
 
 ### Automation Flow Validation, Triggers, Conditions, and Actions
+
 - Flow definition storage
   - flow_definition: JSON blob containing nodes, edges, and meta (including wizard and migration info).
   - trigger_definition: optional structured trigger.
@@ -172,17 +188,21 @@ Persist --> End(["Done"])
 ```
 
 **Diagram sources**
+
 - [automation-runs.server.ts:297-341](file://src/lib/automation-runs.server.ts#L297-L341)
 - [automation-runs.server.ts:362-385](file://src/lib/automation-runs.server.ts#L362-L385)
 - [automation-runs.server.ts:406-426](file://src/lib/automation-runs.server.ts#L406-L426)
 
 **Section sources**
+
 - [automation-runs.server.ts:279-295](file://src/lib/automation-runs.server.ts#L279-L295)
 - [automation-runs.server.ts:297-341](file://src/lib/automation-runs.server.ts#L297-L341)
 - [automation-runs.server.ts:406-426](file://src/lib/automation-runs.server.ts#L406-L426)
 
 ### Action Processing and Supported Operations
+
 Supported actions and their configuration schemas:
+
 - Send Email
   - Config: subject, body, optional to, is_html.
   - Resolution: resolves recipient from config.to or trigger payload fields.
@@ -206,6 +226,7 @@ Supported actions and their configuration schemas:
 Validation uses Zod schemas; execution resolves identifiers from trigger payload when not provided directly.
 
 **Section sources**
+
 - [automation-runs.server.ts:522-569](file://src/lib/automation-runs.server.ts#L522-L569)
 - [automation-runs.server.ts:629-674](file://src/lib/automation-runs.server.ts#L629-L674)
 - [automation-runs.server.ts:676-714](file://src/lib/automation-runs.server.ts#L676-L714)
@@ -215,6 +236,7 @@ Validation uses Zod schemas; execution resolves identifiers from trigger payload
 - [automation-runs.server.ts:596-608](file://src/lib/automation-runs.server.ts#L596-L608)
 
 ### Scheduling and Dry Run Functionality
+
 - Scheduling: The runtime supports manual runs and dry runs. Scheduled triggers are modeled as part of the flow definition and evaluated during execution.
 - Dry run: simulateAutomationDryRun validates the flow without performing side effects. It simulates conditions and actions, returning a summary and step-by-step results.
 
@@ -237,6 +259,7 @@ API-->>Client : Dry run result
 ```
 
 **Diagram sources**
+
 - [openapi.yaml:575-595](file://public/openapi/openapi.yaml#L575-L595)
 - [automation-runs.ts:110-118](file://src/lib/automation-runs.ts#L110-L118)
 - [automation-runs.server.ts:227-267](file://src/lib/automation-runs.server.ts#L227-L267)
@@ -244,10 +267,12 @@ API-->>Client : Dry run result
 - [automation-runs.server.ts:428-474](file://src/lib/automation-runs.server.ts#L428-L474)
 
 **Section sources**
+
 - [automation-runs.ts:110-118](file://src/lib/automation-runs.ts#L110-L118)
 - [automation-runs.server.ts:227-267](file://src/lib/automation-runs.server.ts#L227-L267)
 
 ### Execution Logging and Health Computation
+
 - Run logs capture:
   - automation_id, triggered_by, status, duration_ms, trigger_payload, actions_executed, error_message, is_dry_run.
 - Health computation:
@@ -264,15 +289,18 @@ Compare --> |None| Never["never_run"]
 ```
 
 **Diagram sources**
+
 - [automation-runs.ts:46-54](file://src/lib/automation-runs.ts#L46-L54)
 - [automation-runs.ts:269-277](file://src/lib/automation-runs.ts#L269-L277)
 - [automation-runs.server.ts:183-196](file://src/lib/automation-runs.server.ts#L183-L196)
 
 **Section sources**
+
 - [automation-runs.ts:269-277](file://src/lib/automation-runs.ts#L269-L277)
 - [automation-runs.server.ts:183-196](file://src/lib/automation-runs.server.ts#L183-L196)
 
 ### Examples and Payloads
+
 - RunAutomationNowRequest
   - automationId: UUID of the automation flow.
   - isDryRun: boolean flag to enable dry run.
@@ -288,10 +316,12 @@ Compare --> |None| Never["never_run"]
 Note: Example payloads are defined in the OpenAPI schema and can be viewed in the referenced file.
 
 **Section sources**
+
 - [openapi.yaml:942-974](file://public/openapi/openapi.yaml#L942-L974)
 - [automation.ts:23-72](file://src/types/automation.ts#L23-L72)
 
 ## Dependency Analysis
+
 - Server functions depend on:
   - Supabase client for authentication and data access.
   - Zod schemas for request/response validation.
@@ -312,6 +342,7 @@ UI --> CONST["Categories (automation-ui-constants.ts)"]
 ```
 
 **Diagram sources**
+
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 - [automation-runs.server.ts:38-207](file://src/lib/automation-runs.server.ts#L38-L207)
 - [automations.tsx:15-63](file://src/routes/_app/automations.tsx#L15-L63)
@@ -319,6 +350,7 @@ UI --> CONST["Categories (automation-ui-constants.ts)"]
 - [automation-ui-constants.ts:1](file://src/lib/automations/automation-ui-constants.ts#L1)
 
 **Section sources**
+
 - [automation-runs.ts:94-142](file://src/lib/automation-runs.ts#L94-L142)
 - [automation-runs.server.ts:38-207](file://src/lib/automation-runs.server.ts#L38-L207)
 - [automations.tsx:15-63](file://src/routes/_app/automations.tsx#L15-L63)
@@ -326,6 +358,7 @@ UI --> CONST["Categories (automation-ui-constants.ts)"]
 - [automation-ui-constants.ts:1](file://src/lib/automations/automation-ui-constants.ts#L1)
 
 ## Performance Considerations
+
 - Minimize payload size: Keep triggerPayload concise to reduce serialization and DB storage overhead.
 - Batch operations: Use run-stats to monitor health and avoid frequent high-volume runs.
 - Limit log retrieval: The logs endpoint limits returned entries to reduce bandwidth.
@@ -335,6 +368,7 @@ UI --> CONST["Categories (automation-ui-constants.ts)"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures
   - requireAutomationRunnerUser throws unauthorized if token invalid or user lacks roles (admin, tech).
 - Permission denied
@@ -347,11 +381,13 @@ UI --> CONST["Categories (automation-ui-constants.ts)"]
   - Use run-stats to detect failing or degraded automations.
 
 **Section sources**
+
 - [automation-runs.server.ts:78-92](file://src/lib/automation-runs.server.ts#L78-L92)
 - [automation-runs.server.ts:117-169](file://src/lib/automation-runs.server.ts#L117-L169)
 - [automation-runs.ts:269-277](file://src/lib/automation-runs.ts#L269-L277)
 
 ## Conclusion
+
 The automation management system provides robust server functions for manual execution, dry runs, logging, and statistics, backed by a flexible flow engine supporting triggers, conditions, and actions. The OpenAPI specification and client-side queries enable seamless integration and UI-driven management of automation rules.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -359,6 +395,7 @@ The automation management system provides robust server functions for manual exe
 ## Appendices
 
 ### API Definitions and Schemas
+
 - Endpoints
   - POST /api/automations/run
   - POST /api/automations/run-logs
@@ -370,5 +407,6 @@ The automation management system provides robust server functions for manual exe
   - AutomationFlow
 
 **Section sources**
+
 - [openapi.yaml:575-636](file://public/openapi/openapi.yaml#L575-L636)
 - [openapi.yaml:942-974](file://public/openapi/openapi.yaml#L942-L974)

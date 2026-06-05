@@ -9,15 +9,9 @@ vi.mock("lucide-react", () => ({
   StickyNote: (props: Record<string, unknown>) => (
     <span data-testid="sticky-note-icon" {...props} />
   ),
-  Trash2: (props: Record<string, unknown>) => (
-    <span data-testid="trash-icon" {...props} />
-  ),
-  Pencil: (props: Record<string, unknown>) => (
-    <span data-testid="pencil-icon" {...props} />
-  ),
-  Plus: (props: Record<string, unknown>) => (
-    <span data-testid="plus-icon" {...props} />
-  ),
+  Trash2: (props: Record<string, unknown>) => <span data-testid="trash-icon" {...props} />,
+  Pencil: (props: Record<string, unknown>) => <span data-testid="pencil-icon" {...props} />,
+  Plus: (props: Record<string, unknown>) => <span data-testid="plus-icon" {...props} />,
 }));
 
 // ── Mock Popover (Radix) ────────────────────────────────────────────────
@@ -34,12 +28,9 @@ vi.mock("@/components/ui/popover", () => ({
       {children}
     </div>
   ),
-  PopoverTrigger: ({
-    children,
-  }: {
-    asChild?: boolean;
-    children: React.ReactNode;
-  }) => <div data-testid="popover-trigger">{children}</div>,
+  PopoverTrigger: ({ children }: { asChild?: boolean; children: React.ReactNode }) => (
+    <div data-testid="popover-trigger">{children}</div>
+  ),
   PopoverContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="popover-content">{children}</div>
   ),
@@ -85,9 +76,7 @@ vi.mock("@/hooks/useWidgetAnnotations", () => ({
 
 // ── Factory helpers ──────────────────────────────────────────────────────
 
-function createAnnotationRow(
-  overrides: Partial<WidgetAnnotationRow> = {},
-): WidgetAnnotationRow {
+function createAnnotationRow(overrides: Partial<WidgetAnnotationRow> = {}): WidgetAnnotationRow {
   return {
     id: "ann-001",
     user_id: "user-001",
@@ -194,9 +183,7 @@ describe("WidgetAnnotationBadge", () => {
     });
 
     it("shows edit and delete icons for each annotation", () => {
-      (mockAnnotations as WidgetAnnotationRow[]).push(
-        createAnnotationRow(),
-      );
+      (mockAnnotations as WidgetAnnotationRow[]).push(createAnnotationRow());
 
       render(<WidgetAnnotationBadge widgetId="stat-cards" />);
 
@@ -337,9 +324,7 @@ describe("WidgetAnnotationBadge", () => {
       const removeFn = vi.fn();
       mockRemove[0] = removeFn;
       mockCreate[0] = vi.fn();
-      (mockAnnotations as WidgetAnnotationRow[]).push(
-        createAnnotationRow({ id: "ann-to-delete" }),
-      );
+      (mockAnnotations as WidgetAnnotationRow[]).push(createAnnotationRow({ id: "ann-to-delete" }));
 
       render(<WidgetAnnotationBadge widgetId="stat-cards" />);
 

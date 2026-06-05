@@ -213,7 +213,7 @@ export function AdminSettingsTab() {
                   ) : null}
 
                   <SettingSection
-                    icon={              <Globe2 className="size-4" />}
+                    icon={<Globe2 className="size-4" />}
                     title="Generale"
                     description="Impostazioni visibili in tutta l'app: nome organizzazione, timezone e canali di supporto."
                   >
@@ -284,7 +284,7 @@ export function AdminSettingsTab() {
                   </SettingSection>
 
                   <SettingSection
-                    icon={              <SlidersHorizontal className="size-4" />}
+                    icon={<SlidersHorizontal className="size-4" />}
                     title="Operatività"
                     description="Valori usati da ticket, inventario, Kanban e automazioni SLA. Modificarli impatta i flussi operativi del team."
                   >
@@ -530,7 +530,7 @@ export function AdminSettingsTab() {
                   </SettingSection>
 
                   <SettingSection
-                    icon={              <DatabaseBackup className="size-4" />}
+                    icon={<DatabaseBackup className="size-4" />}
                     title="Audit e conservazione"
                     description="Definisce per quanto tempo conservare i log operativi prima dell'archiviazione."
                   >

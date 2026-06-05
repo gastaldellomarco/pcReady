@@ -1,8 +1,4 @@
-import type {
-  AutomationAction,
-  UpdateTicketAction,
-  UpdateDeviceAction,
-} from "@/domain/automation";
+import type { AutomationAction, UpdateTicketAction, UpdateDeviceAction } from "@/domain/automation";
 import type { ActionDef } from "@/types/automation";
 
 /**
@@ -180,9 +176,7 @@ export function toActionDef(action: AutomationAction): ActionDef {
  * Converts an array of AutomationActions to legacy ActionDefs
  */
 export function toActionDefs(actions: AutomationAction[]): ActionDef[] {
-  return actions
-    .sort((a, b) => a.order - b.order)
-    .map(toActionDef);
+  return actions.sort((a, b) => a.order - b.order).map(toActionDef);
 }
 
 /**
@@ -246,7 +240,10 @@ export function validateAction(action: AutomationAction): { valid: boolean; erro
 /**
  * Validates an actions list
  */
-export function validateActionsList(actions: AutomationAction[]): { valid: boolean; errors: string[] } {
+export function validateActionsList(actions: AutomationAction[]): {
+  valid: boolean;
+  errors: string[];
+} {
   if (actions.length === 0) {
     return { valid: false, errors: ["Almeno un'azione richiesta"] };
   }

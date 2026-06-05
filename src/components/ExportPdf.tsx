@@ -1,11 +1,6 @@
 import { AlertTriangle, FileDown, Loader2 } from "lucide-react";
 import { useState, useCallback, type ReactElement } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EXPORT_WARNING_THRESHOLD } from "@/lib/queries/list-config";
 import type { DocumentProps } from "@react-pdf/renderer";
 
@@ -48,10 +43,7 @@ export interface ExportPdfProps<TData, TPdfRow> {
 }
 
 /** Build a human-readable summary of active filters. */
-function buildFilterSummary(
-  filters: Record<string, any>,
-  entityLabel: string,
-): string[] {
+function buildFilterSummary(filters: Record<string, any>, entityLabel: string): string[] {
   const lines: string[] = [];
   if (filters.status) lines.push(`Stato: ${filters.status}`);
   if (filters.priority) lines.push(`Priorità: ${filters.priority}`);
@@ -106,16 +98,14 @@ export function ExportPdf<TData, TPdfRow>({
           : (await fetchAll(activeFilters)).data.map(mapRow);
 
       const { downloadPdf } = await import("@/components/pcready/pdf/export");
-      const org =
-        (globalThis as any).__APP_SETTINGS__?.organization_name || undefined;
+      const org = (globalThis as any).__APP_SETTINGS__?.organization_name || undefined;
 
       const pdfElement = await renderPdf(rows, org);
       await downloadPdf(pdfElement, fileName);
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Errore durante l'esportazione";
+      const message = err instanceof Error ? err.message : "Errore durante l'esportazione";
       setError(message);
       onError?.(err instanceof Error ? err : new Error(message));
     } finally {
@@ -154,7 +144,10 @@ export function ExportPdf<TData, TPdfRow>({
         </DialogHeader>
 
         {/* ── Active filters summary ── */}
-        <div className="rounded-lg border px-3 py-2.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+        <div
+          className="rounded-lg border px-3 py-2.5 text-xs"
+          style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+        >
           <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-text3">
             Filtri attivi
           </div>
@@ -169,9 +162,7 @@ export function ExportPdf<TData, TPdfRow>({
         <fieldset className="space-y-2" disabled={busy}>
           <label
             className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors ${
-              exportMode === "page"
-                ? "border-accent bg-accent/5"
-                : "hover:bg-surface2"
+              exportMode === "page" ? "border-accent bg-accent/5" : "hover:bg-surface2"
             }`}
             style={{ borderColor: exportMode === "page" ? "var(--accent)" : "var(--border)" }}
           >
@@ -184,7 +175,9 @@ export function ExportPdf<TData, TPdfRow>({
             />
             <span className="text-sm text-text2">
               Pagina corrente{" "}
-              <span className="font-mono text-xs text-text3">({pageCount} {entityLabel})</span>
+              <span className="font-mono text-xs text-text3">
+                ({pageCount} {entityLabel})
+              </span>
             </span>
           </label>
           <label
@@ -206,14 +199,16 @@ export function ExportPdf<TData, TPdfRow>({
               onChange={() => setExportMode("all")}
             />
             <span className="text-sm text-text2">
-              {isEmpty
-                ? "Nessun risultato"
-                : (
-                  <>
-                    Tutti i risultati filtrati{" "}
-                    <span className="font-mono text-xs text-text3">({allCount} {entityLabel})</span>
-                  </>
-                )}
+              {isEmpty ? (
+                "Nessun risultato"
+              ) : (
+                <>
+                  Tutti i risultati filtrati{" "}
+                  <span className="font-mono text-xs text-text3">
+                    ({allCount} {entityLabel})
+                  </span>
+                </>
+              )}
             </span>
           </label>
         </fieldset>
@@ -230,7 +225,8 @@ export function ExportPdf<TData, TPdfRow>({
           >
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             <span>
-              L'export supera {EXPORT_WARNING_THRESHOLD} record ({allCount} {entityLabel}). Il PDF potrebbe essere grande.
+              L'export supera {EXPORT_WARNING_THRESHOLD} record ({allCount} {entityLabel}). Il PDF
+              potrebbe essere grande.
             </span>
           </div>
         )}

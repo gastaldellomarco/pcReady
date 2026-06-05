@@ -1,9 +1,12 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 
-const BUNDLE_SELECT = "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_by, created_at";
-const BUNDLE_ASSIGNMENT_SELECT = "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
-const BUNDLE_USAGE_SUMMARY_SELECT = "client_bundle_assignment_id, client_id, bundle_id, used_hours, onsite_visits, extra_hours, extra_amount, remaining_hours, remaining_onsite_visits, usage_percent";
+const BUNDLE_SELECT =
+  "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_by, created_at";
+const BUNDLE_ASSIGNMENT_SELECT =
+  "id, client_id, bundle_id, status, start_date, end_date, auto_renew, renewal_mode, custom_fee, custom_included_hours, custom_extra_hourly_rate, custom_sla_response_hours, custom_sla_resolution_hours, custom_included_onsite_visits, notes, created_at, updated_at, created_by";
+const BUNDLE_USAGE_SUMMARY_SELECT =
+  "client_bundle_assignment_id, client_id, bundle_id, used_hours, onsite_visits, extra_hours, extra_amount, remaining_hours, remaining_onsite_visits, usage_percent";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { getPortalSession } from "@/lib/portal-auth.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
@@ -35,7 +38,9 @@ export async function getPortalDashboardServer(input: { token: string }) {
 
   const { data: tickets, error } = await supabaseAdmin
     .from("tickets" as any)
-    .select("id, ticket_code, model, notes, status, created_at, updated_at, ticket_type, closed_at, completed_at")
+    .select(
+      "id, ticket_code, model, notes, status, created_at, updated_at, ticket_type, closed_at, completed_at",
+    )
     .eq("client_id", session.clientId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -45,9 +50,7 @@ export async function getPortalDashboardServer(input: { token: string }) {
 
   const { data: bundleAssignments, error: bundleAssignmentsError } = await supabaseAdmin
     .from("client_bundle_assignments" as any)
-    .select(
-      `${BUNDLE_ASSIGNMENT_SELECT}, bundle:assistance_bundles(${BUNDLE_SELECT})`,
-    )
+    .select(`${BUNDLE_ASSIGNMENT_SELECT}, bundle:assistance_bundles(${BUNDLE_SELECT})`)
     .eq("client_id", session.clientId)
     .eq("status", "active")
     .lte("start_date", new Date().toISOString().slice(0, 10))
@@ -59,7 +62,7 @@ export async function getPortalDashboardServer(input: { token: string }) {
   const { data: usageSummaries, error: usageSummariesError } = assignmentIds.length
     ? await supabaseAdmin
         .from("bundle_assignment_usage_summary" as any)
-    .select(BUNDLE_USAGE_SUMMARY_SELECT)
+        .select(BUNDLE_USAGE_SUMMARY_SELECT)
         .in("client_bundle_assignment_id", assignmentIds)
     : { data: [], error: null };
   if (usageSummariesError) throw usageSummariesError;
@@ -112,7 +115,9 @@ export async function getPortalDashboardServer(input: { token: string }) {
       .eq("key", "portal_service_statuses")
       .maybeSingle();
     if (!serviceError && (serviceStatuses as any)?.value) {
-      services = Array.isArray((serviceStatuses as any).value) ? (serviceStatuses as any).value : [];
+      services = Array.isArray((serviceStatuses as any).value)
+        ? (serviceStatuses as any).value
+        : [];
     }
   } catch (err) {
     console.error("[portal-dashboard] serviceStatuses query failed:", err);
@@ -231,7 +236,9 @@ export async function listPortalTicketsServer(input: {
   if (term)
     query = query.or(`ticket_code.ilike.%${term}%,model.ilike.%${term}%,notes.ilike.%${term}%`);
 
-  query = query.order(input.sortBy || "created_at", { ascending: input.sortDir === "asc" }).limit(200);
+  query = query
+    .order(input.sortBy || "created_at", { ascending: input.sortDir === "asc" })
+    .limit(200);
   const { data: tickets, error } = await query;
   if (error) throw error;
   return {

@@ -7,7 +7,7 @@ import type { TicketStatus } from "@/lib/pcready";
  * Red: duration >= warning
  */
 export interface CycleThresholds {
-  good: number;   // green
+  good: number; // green
   warning: number; // amber/red threshold
 }
 
@@ -19,17 +19,17 @@ export type CycleColor = "ok" | "warning" | "overdue";
  * Customisable via app settings in the future.
  */
 const DEFAULT_CYCLE_THRESHOLDS: Record<TicketStatus, CycleThresholds> = {
-  pending:      { good: 1, warning: 4 },
+  pending: { good: 1, warning: 4 },
   "in-progress": { good: 4, warning: 24 },
-  testing:      { good: 4, warning: 24 },
-  ready:        { good: 8, warning: 48 },
-  completed:    { good: Infinity, warning: Infinity },
-  archived:     { good: Infinity, warning: Infinity },
+  testing: { good: 4, warning: 24 },
+  ready: { good: 8, warning: 48 },
+  completed: { good: Infinity, warning: Infinity },
+  archived: { good: Infinity, warning: Infinity },
 };
 
 /** Lead time thresholds (hours since creation). */
 const LEAD_THRESHOLDS: CycleThresholds = {
-  good: 24,    // < 1 day
+  good: 24, // < 1 day
   warning: 72, // < 3 days
 };
 
@@ -58,17 +58,14 @@ export function computeCycleTime(
   const leadMs = createdMs != null ? now - createdMs : null;
 
   const cycle = cycleMs != null ? msToLabel(cycleMs, "cycle") : null;
-  const lead  = leadMs  != null ? msToLabel(leadMs, "lead") : null;
+  const lead = leadMs != null ? msToLabel(leadMs, "lead") : null;
 
   const cycleColor: CycleColor | null =
     currentStatus && cycleMs != null && currentStatus in DEFAULT_CYCLE_THRESHOLDS
       ? classify(cycleMs, DEFAULT_CYCLE_THRESHOLDS[currentStatus])
       : null;
 
-  const leadColor: CycleColor | null =
-    leadMs != null
-      ? classify(leadMs, LEAD_THRESHOLDS)
-      : null;
+  const leadColor: CycleColor | null = leadMs != null ? classify(leadMs, LEAD_THRESHOLDS) : null;
 
   return { cycle, lead, cycleColor, leadColor, cycleMs, leadMs };
 }
@@ -78,13 +75,13 @@ export function computeCycleTime(
 /* ------------------------------------------------------------------ */
 
 export const CYCLE_COLORS: Record<CycleColor, string> = {
-  ok:      "#16A34A", // green
+  ok: "#16A34A", // green
   warning: "#CA8A04", // amber
   overdue: "#DC2626", // red
 };
 
 export const CYCLE_BG_COLORS: Record<CycleColor, string> = {
-  ok:      "#DCFCE7",
+  ok: "#DCFCE7",
   warning: "#FEF9C3",
   overdue: "#FEE2E2",
 };

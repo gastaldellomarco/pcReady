@@ -16,6 +16,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -27,7 +28,9 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains PCReady’s authentication and authorization system built on Supabase Auth. It covers:
+
 - Authentication flows: email/password login, OAuth provider callbacks, session lifecycle, and password reset
 - Role-based access control (RBAC) with admin, tech, and viewer roles
 - OAuth 2.0 consent flow for external applications
@@ -40,6 +43,7 @@ This document explains PCReady’s authentication and authorization system built
 - Troubleshooting and production best practices
 
 ## Project Structure
+
 The authentication system spans frontend UI routes, React context, Supabase client integrations, server-side middleware, and Supabase database policies.
 
 ```mermaid
@@ -66,6 +70,7 @@ SBJS --> DB
 ```
 
 **Diagram sources**
+
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
 - [auth.set-password.tsx:1-189](file://src/routes/auth.set-password.tsx#L1-L189)
@@ -76,6 +81,7 @@ SBJS --> DB
 - [20260503120001_oauth_tables.sql:1-66](file://supabase/migrations/20260503120001_oauth_tables.sql#L1-L66)
 
 **Section sources**
+
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
 - [auth.set-password.tsx:1-189](file://src/routes/auth.set-password.tsx#L1-L189)
@@ -86,6 +92,7 @@ SBJS --> DB
 - [20260503120001_oauth_tables.sql:1-66](file://supabase/migrations/20260503120001_oauth_tables.sql#L1-L66)
 
 ## Core Components
+
 - Supabase Auth integration via React context for session, user, and profile state
 - Email/password login route with rate limiting and navigation logic
 - OAuth callback handler for external provider redirects and password reset flows
@@ -96,6 +103,7 @@ SBJS --> DB
 - Admin utilities for OAuth client lifecycle and auditing
 
 **Section sources**
+
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
@@ -106,7 +114,9 @@ SBJS --> DB
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 
 ## Architecture Overview
+
 The system integrates Supabase Auth on the frontend and backend:
+
 - Frontend: React context tracks session and user profile; routes implement login, callback, and password set flows
 - Backend: Server functions validate OAuth requests, manage consent, and enforce admin-only operations
 - Middleware: Validates Bearer tokens for protected server routes
@@ -137,6 +147,7 @@ Server-->>Browser : Redirect to app with code
 ```
 
 **Diagram sources**
+
 - [auth.tsx:70-84](file://src/routes/auth.tsx#L70-L84)
 - [auth.callback.tsx:37-72](file://src/routes/auth.callback.tsx#L37-L72)
 - [auth.set-password.tsx:66-105](file://src/routes/auth.set-password.tsx#L66-L105)
@@ -147,6 +158,7 @@ Server-->>Browser : Redirect to app with code
 ## Detailed Component Analysis
 
 ### Authentication Flows: Email/Password, OAuth Callbacks, and Password Reset
+
 - Email/Password Login
   - The login route validates rate limits, calls Supabase sign-in, and navigates to dashboard or password set depending on user state
   - Minimum password length is enforced on the client
@@ -169,16 +181,19 @@ TypeCheck --> |No| DashOrAuth["Navigate to dashboard or /auth"]
 ```
 
 **Diagram sources**
+
 - [auth.tsx:70-84](file://src/routes/auth.tsx#L70-L84)
 - [auth.callback.tsx:37-72](file://src/routes/auth.callback.tsx#L37-L72)
 - [auth.set-password.tsx:61-105](file://src/routes/auth.set-password.tsx#L61-L105)
 
 **Section sources**
+
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
 - [auth.set-password.tsx:1-189](file://src/routes/auth.set-password.tsx#L1-L189)
 
 ### Role-Based Access Control (RBAC)
+
 - Roles
   - admin, tech, viewer are represented in the UI context and enforced in RLS policies
 - Profile loading
@@ -219,14 +234,17 @@ AuthProfile --> AppRole : "has role"
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:13-35](file://src/lib/auth-context.tsx#L13-L35)
 - [auth-context.tsx:148-165](file://src/lib/auth-context.tsx#L148-L165)
 
 **Section sources**
+
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 
 ### OAuth 2.0 Consent Flow
+
 - Request Validation
   - Validates client_id, redirect_uri, and requested scopes against allowed scopes
 - Consent Grant
@@ -255,16 +273,19 @@ ConsentUI-->>App : 302 Redirect with code
 ```
 
 **Diagram sources**
+
 - [oauth.consent.tsx:56-96](file://src/routes/_app/oauth.consent.tsx#L56-L96)
 - [oauth-consent.ts:141-194](file://src/lib/oauth-consent.ts#L141-L194)
 - [oauth-consent.ts:197-254](file://src/lib/oauth-consent.ts#L197-L254)
 
 **Section sources**
+
 - [oauth.consent.tsx:1-220](file://src/routes/_app/oauth.consent.tsx#L1-L220)
 - [oauth-consent.ts:1-520](file://src/lib/oauth-consent.ts#L1-L520)
 - [20260503120001_oauth_tables.sql:1-66](file://supabase/migrations/20260503120001_oauth_tables.sql#L1-L66)
 
 ### Row Level Security (RLS) Policies
+
 - Profiles
   - Admins can read and update profiles based on role checks
 - OAuth Tables
@@ -314,14 +335,17 @@ OAUTH_AUTHORIZATION_CODES }o--|| auth_users : "user_id"
 ```
 
 **Diagram sources**
+
 - [20260503120001_oauth_tables.sql:4-43](file://supabase/migrations/20260503120001_oauth_tables.sql#L4-L43)
 
 **Section sources**
+
 - [20260430143000_admin_user_management_rls.sql:1-13](file://supabase/migrations/20260430143000_admin_user_management_rls.sql#L1-L13)
 - [20260504170000_add_rls_policies_automation_flows.sql:1-30](file://supabase/migrations/20260504170000_add_rls_policies_automation_flows.sql#L1-L30)
 - [20260503120001_oauth_tables.sql:1-66](file://supabase/migrations/20260503120001_oauth_tables.sql#L1-L66)
 
 ### Authentication Middleware for Protected Routes
+
 - Validates presence of SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY
 - Extracts Authorization header, ensures Bearer token format
 - Creates a Supabase client configured for server-side token introspection
@@ -346,12 +370,15 @@ ValidClaims --> |Yes| Next["Call next(context) with supabase, userId, claims"]
 ```
 
 **Diagram sources**
+
 - [auth-middleware.ts:7-72](file://src/integrations/supabase/auth-middleware.ts#L7-L72)
 
 **Section sources**
+
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 
 ### Session Management, Password Reset, and Invitations
+
 - Session lifecycle
   - Auth context subscribes to Supabase auth state changes, loads profile, and exposes refresh/sign-out
 - Password reset
@@ -360,11 +387,13 @@ ValidClaims --> |Yes| Next["Call next(context) with supabase, userId, claims"]
   - OAuth callback detects invite type and redirects to set-password; set-password route enforces minimum length and updates user metadata and profile
 
 **Section sources**
+
 - [auth-context.tsx:114-146](file://src/lib/auth-context.tsx#L114-L146)
 - [auth.callback.tsx:59-64](file://src/routes/auth.callback.tsx#L59-L64)
 - [auth.set-password.tsx:66-105](file://src/routes/auth.set-password.tsx#L66-L105)
 
 ### Security Considerations
+
 - JWT handling
   - Middleware validates Bearer tokens and extracts claims; client sessions are managed by Supabase SDK
 - CSRF protection
@@ -377,11 +406,13 @@ ValidClaims --> |Yes| Next["Call next(context) with supabase, userId, claims"]
   - Server functions validate access tokens and roles via RPC before performing sensitive actions
 
 **Section sources**
+
 - [auth-middleware.ts:43-54](file://src/integrations/supabase/auth-middleware.ts#L43-L54)
 - [oauth-consent.ts:218-224](file://src/lib/oauth-consent.ts#L218-L224)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 
 ### User Registration, Password Strength, and Verification Workflows
+
 - Registration
   - Accounts are created by administrators; users receive an invitation link
 - Password strength
@@ -390,10 +421,12 @@ ValidClaims --> |Yes| Next["Call next(context) with supabase, userId, claims"]
   - After setting a password, users are redirected to the dashboard
 
 **Section sources**
+
 - [auth.set-password.tsx:76-79](file://src/routes/auth.set-password.tsx#L76-L79)
 - [auth.set-password.tsx:97-105](file://src/routes/auth.set-password.tsx#L97-L105)
 
 ### Common Authentication Scenarios
+
 - Password recovery
   - Detected by OAuth callback; user is redirected to set-password flow
 - Multi-factor authentication (MFA)
@@ -402,9 +435,11 @@ ValidClaims --> |Yes| Next["Call next(context) with supabase, userId, claims"]
   - Supabase handles session refresh; middleware relies on valid tokens; ensure client-side error handling for 401 responses
 
 **Section sources**
+
 - [auth.callback.tsx:61-63](file://src/routes/auth.callback.tsx#L61-L63)
 
 ## Dependency Analysis
+
 - Frontend depends on Supabase JS SDK for authentication and on server functions for OAuth consent
 - Server functions depend on Supabase Admin client and Postgres tables
 - Middleware depends on Supabase client and environment variables
@@ -423,6 +458,7 @@ Ctx["auth-context.tsx"] --> SupabaseSDK
 ```
 
 **Diagram sources**
+
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
 - [auth.set-password.tsx:1-189](file://src/routes/auth.set-password.tsx#L1-L189)
@@ -432,6 +468,7 @@ Ctx["auth-context.tsx"] --> SupabaseSDK
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 
 **Section sources**
+
 - [auth.tsx:1-168](file://src/routes/auth.tsx#L1-L168)
 - [auth.callback.tsx:1-84](file://src/routes/auth.callback.tsx#L1-L84)
 - [auth.set-password.tsx:1-189](file://src/routes/auth.set-password.tsx#L1-L189)
@@ -441,12 +478,14 @@ Ctx["auth-context.tsx"] --> SupabaseSDK
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 
 ## Performance Considerations
+
 - Minimize concurrent profile loads by debouncing and canceling stale requests
 - Use server functions for OAuth operations to avoid exposing secrets on the client
 - Keep authorization codes short-lived to reduce storage and improve security
 - Prefer batched reads for profile data to reduce round trips
 
 ## Troubleshooting Guide
+
 - Missing Supabase environment variables in middleware
   - Ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set; middleware throws 500 if missing
 - Invalid or missing Authorization header
@@ -463,6 +502,7 @@ Ctx["auth-context.tsx"] --> SupabaseSDK
   - Auth context catches session errors and clears state; verify network connectivity and Supabase availability
 
 **Section sources**
+
 - [auth-middleware.ts:12-20](file://src/integrations/supabase/auth-middleware.ts#L12-L20)
 - [auth-middleware.ts:28-41](file://src/integrations/supabase/auth-middleware.ts#L28-L41)
 - [auth-middleware.ts:56-63](file://src/integrations/supabase/auth-middleware.ts#L56-L63)
@@ -471,7 +511,9 @@ Ctx["auth-context.tsx"] --> SupabaseSDK
 - [admin-users.server.ts:3-14](file://src/lib/admin-users.server.ts#L3-L14)
 
 ## Conclusion
+
 PCReady’s authentication and authorization system leverages Supabase Auth for robust identity management, complemented by a React context for session state, server functions for OAuth consent, and RLS policies for data isolation. The design emphasizes:
+
 - Clear separation of concerns between frontend, server, and database
 - Strong RBAC enforcement and admin-only controls
 - Secure OAuth consent flow with strict validation and short-lived codes

@@ -7,8 +7,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 // ── Mock di react-i18next ──────────────────────────────────────────────
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) =>
-      typeof fallback === "string" ? fallback : key,
+    t: (key: string, fallback?: string) => (typeof fallback === "string" ? fallback : key),
   }),
 }));
 
@@ -37,7 +36,8 @@ vi.mock("@tanstack/react-start", () => ({
     if (fn === serverFnMocks.createNotification) return serverFnMocks.createNotification;
     if (fn === serverFnMocks.sendTicketAssignedEmail) return serverFnMocks.sendTicketAssignedEmail;
     if (fn === serverFnMocks.getPublicAppSettings) return serverFnMocks.getPublicAppSettings;
-    if (fn === serverFnMocks.validateTechnicianDeviceLimit) return serverFnMocks.validateTechnicianDeviceLimit;
+    if (fn === serverFnMocks.validateTechnicianDeviceLimit)
+      return serverFnMocks.validateTechnicianDeviceLimit;
     return vi.fn();
   }),
 }));
@@ -198,8 +198,7 @@ vi.mock("@/lib/server-fn-rate-limit-message", () => ({
 }));
 
 vi.mock("@/lib/pcready", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/pcready")>("@/lib/pcready");
+  const actual = await vi.importActual<typeof import("@/lib/pcready")>("@/lib/pcready");
   return {
     ...actual,
   };
@@ -227,9 +226,7 @@ async function renderModal() {
     order: vi.fn().mockReturnThis(),
     then: vi.fn((cb: (arg: unknown) => void) =>
       cb({
-        data: [
-          { id: "tpl-1", name: "Default", structure: {}, is_default: true },
-        ],
+        data: [{ id: "tpl-1", name: "Default", structure: {}, is_default: true }],
         error: null,
       }),
     ),
@@ -314,8 +311,8 @@ describe("CreateTicketModal", () => {
     // Simula un cliente selezionato (tramite autocomplete)
     // Dobbiamo triggerare il loadOptions e onChange dell'autocomplete cliente
     const clientInputs = screen.getAllByTestId("autocomplete-input");
-    const clientInput = clientInputs.find(
-      (el) => el.getAttribute("placeholder")?.includes("Cerca cliente"),
+    const clientInput = clientInputs.find((el) =>
+      el.getAttribute("placeholder")?.includes("Cerca cliente"),
     );
     expect(clientInput).toBeTruthy();
 
@@ -339,8 +336,8 @@ describe("CreateTicketModal", () => {
     // Verifica che il tipo ticket sia "device" (default) e che il campo device sia presente
     const selects = document.querySelectorAll("select.pc-input");
     // Il select del tipo ticket
-    const ticketTypeSelect = Array.from(selects).find(
-      (sel) => sel.querySelector('option[value="device"]'),
+    const ticketTypeSelect = Array.from(selects).find((sel) =>
+      sel.querySelector('option[value="device"]'),
     );
     expect(ticketTypeSelect).toBeTruthy();
 
@@ -390,9 +387,9 @@ describe("CreateTicketModal", () => {
     }
 
     // Usa l'autocomplete per selezionare il cliente (triggera loadOptions)
-    const clientInput = screen.getAllByTestId("autocomplete-input").find(
-      (el) => el.getAttribute("placeholder")?.includes("Cerca cliente"),
-    );
+    const clientInput = screen
+      .getAllByTestId("autocomplete-input")
+      .find((el) => el.getAttribute("placeholder")?.includes("Cerca cliente"));
     if (clientInput) {
       await userEvent.type(clientInput, "Test");
     }
@@ -405,10 +402,12 @@ describe("CreateTicketModal", () => {
 
     // Compila il richiedente libero
     const freeRequesterInput = Array.from(
-      document.querySelectorAll('input:not([type="checkbox"]):not([data-testid="autocomplete-input"])'),
-    ).find(
-      (inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente"),
-    ) as HTMLInputElement | undefined;
+      document.querySelectorAll(
+        'input:not([type="checkbox"]):not([data-testid="autocomplete-input"])',
+      ),
+    ).find((inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente")) as
+      | HTMLInputElement
+      | undefined;
     if (freeRequesterInput) {
       await userEvent.type(freeRequesterInput, "Richiedente Test");
     }
@@ -441,9 +440,9 @@ describe("CreateTicketModal", () => {
     }
 
     // Seleziona cliente via autocomplete
-    const clientInput = screen.getAllByTestId("autocomplete-input").find(
-      (el) => el.getAttribute("placeholder")?.includes("Cerca cliente"),
-    );
+    const clientInput = screen
+      .getAllByTestId("autocomplete-input")
+      .find((el) => el.getAttribute("placeholder")?.includes("Cerca cliente"));
     if (clientInput) {
       await userEvent.type(clientInput, "Test");
     }
@@ -454,10 +453,12 @@ describe("CreateTicketModal", () => {
       await userEvent.click(freeCheckbox);
     }
     const freeRequesterInput = Array.from(
-      document.querySelectorAll('input:not([type="checkbox"]):not([data-testid="autocomplete-input"])'),
-    ).find(
-      (inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente"),
-    ) as HTMLInputElement | undefined;
+      document.querySelectorAll(
+        'input:not([type="checkbox"]):not([data-testid="autocomplete-input"])',
+      ),
+    ).find((inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente")) as
+      | HTMLInputElement
+      | undefined;
     if (freeRequesterInput) {
       await userEvent.type(freeRequesterInput, "Richiedente Test");
     }
@@ -475,10 +476,12 @@ describe("CreateTicketModal", () => {
 
     // Il richiedente libero dovrebbe ancora contenere il valore inserito
     const requesterAfter = Array.from(
-      document.querySelectorAll('input:not([type="checkbox"]):not([data-testid="autocomplete-input"])'),
-    ).find(
-      (inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente"),
-    ) as HTMLInputElement | undefined;
+      document.querySelectorAll(
+        'input:not([type="checkbox"]):not([data-testid="autocomplete-input"])',
+      ),
+    ).find((inp) => (inp as HTMLInputElement).placeholder?.includes("richiedente")) as
+      | HTMLInputElement
+      | undefined;
     expect(requesterAfter).toBeTruthy();
     expect(requesterAfter!.value).toBe("Richiedente Test");
   });
@@ -514,9 +517,7 @@ describe("CreateTicketModal", () => {
     // Trova il select del ticket type
     const selects = document.querySelectorAll("select.pc-input");
     const ticketTypeSelect = Array.from(selects).find((sel) =>
-      Array.from(sel.querySelectorAll("option")).some(
-        (opt) => opt.value === "support",
-      ),
+      Array.from(sel.querySelectorAll("option")).some((opt) => opt.value === "support"),
     ) as HTMLSelectElement | undefined;
     expect(ticketTypeSelect).toBeTruthy();
 

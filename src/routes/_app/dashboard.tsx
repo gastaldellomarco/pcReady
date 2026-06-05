@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_app/dashboard")({
       { title: i18n.t("dashboard:meta.title", "Dashboard - PCReady") },
       {
         name: "description",
-        content: i18n.t("dashboard:meta.description", "Panoramica ticket, pipeline e attivita recente in PCReady."),
+        content: i18n.t(
+          "dashboard:meta.description",
+          "Panoramica ticket, pipeline e attivita recente in PCReady.",
+        ),
       },
     ],
   }),

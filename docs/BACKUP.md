@@ -15,13 +15,13 @@ PCReady utilizza Supabase come provider database gestito. I backup del database 
 
 ## Frequenza e retention
 
-| Voce | Valore |
-| --- | --- |
-| Frequenza backup | Giornaliera, automatica |
-| Retention piano Free | 7 giorni |
-| Retention piano Pro | 30 giorni |
-| Recovery Point Objective (RPO) | < 24 ore |
-| Recovery Time Objective (RTO) | < 4 ore, subordinato ai tempi operativi di restore del provider e del supporto |
+| Voce                           | Valore                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| Frequenza backup               | Giornaliera, automatica                                                        |
+| Retention piano Free           | 7 giorni                                                                       |
+| Retention piano Pro            | 30 giorni                                                                      |
+| Recovery Point Objective (RPO) | < 24 ore                                                                       |
+| Recovery Time Objective (RTO)  | < 4 ore, subordinato ai tempi operativi di restore del provider e del supporto |
 
 L'ultimo backup disponibile deve essere verificato dalla dashboard Supabase del progetto o tramite Supabase Management API, se abilitata per l'ambiente.
 

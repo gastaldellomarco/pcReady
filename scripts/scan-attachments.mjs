@@ -26,7 +26,9 @@ async function main() {
   const flagged = [];
   for (const obj of objects) {
     try {
-      const { data: fileRes, error: dlErr } = await supabase.storage.from(bucket).download(obj.name);
+      const { data: fileRes, error: dlErr } = await supabase.storage
+        .from(bucket)
+        .download(obj.name);
       if (dlErr) {
         console.warn("Could not download", obj.name, dlErr.message || dlErr);
         continue;

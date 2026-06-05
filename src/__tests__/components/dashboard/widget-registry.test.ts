@@ -13,16 +13,12 @@ const ALL_WIDGET_IDS: ReadonlySet<WidgetId> = new Set(DASHBOARD_WIDGETS.map((w) 
 
 /** Returns the set of visible widget IDs from a layout. */
 function visibleIds(layout: DashboardLayout): Set<WidgetId> {
-  return new Set(
-    layout.widgets.filter((w) => w.visible).map((w) => w.id),
-  );
+  return new Set(layout.widgets.filter((w) => w.visible).map((w) => w.id));
 }
 
 /** Returns the set of hidden widget IDs from a layout. */
 function hiddenIds(layout: DashboardLayout): Set<WidgetId> {
-  return new Set(
-    layout.widgets.filter((w) => !w.visible).map((w) => w.id),
-  );
+  return new Set(layout.widgets.filter((w) => !w.visible).map((w) => w.id));
 }
 
 // ── Role expectations ────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import i18n from "@/i18n";
-import { pcReadyColors } from '@/lib/design-system';
-import type { CalendarColorMode, CalendarEvent, CalendarEventType } from '@/lib/queries/calendar';
+import { pcReadyColors } from "@/lib/design-system";
+import type { CalendarColorMode, CalendarEvent, CalendarEventType } from "@/lib/queries/calendar";
 
 export const EVENT_TYPE_COLORS: Record<
   CalendarEventType,
@@ -33,16 +33,16 @@ export const EVENT_TYPE_COLORS: Record<
 };
 
 export const TECHNICIAN_PALETTE = [
-  '#2563EB',
-  '#16A34A',
-  '#D97706',
-  '#DC2626',
-  '#7C3AED',
-  '#0D9488',
-  '#EA580C',
-  '#0891B2',
-  '#65A30D',
-  '#E11D48',
+  "#2563EB",
+  "#16A34A",
+  "#D97706",
+  "#DC2626",
+  "#7C3AED",
+  "#0D9488",
+  "#EA580C",
+  "#0891B2",
+  "#65A30D",
+  "#E11D48",
 ];
 
 /**

@@ -7,7 +7,6 @@ import { Ctx, type AuthProfile } from "./auth-context";
 import { getMyAuthProfile } from "./get-my-auth-profile";
 import type { Session, User } from "@supabase/supabase-js";
 
-
 /**
  *
  */
@@ -22,27 +21,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getProfile = useServerFn(getMyAuthProfile);
 
-  const loadProfile = useCallback(async (accessToken?: string | null) => {
-    const requestId = ++profileRequestId.current;
-    setProfileLoading(true);
-    setAuthError(null);
+  const loadProfile = useCallback(
+    async (accessToken?: string | null) => {
+      const requestId = ++profileRequestId.current;
+      setProfileLoading(true);
+      setAuthError(null);
 
-    try {
-      // Single server round-trip: profiles + user_profiles + role all in parallel via supabaseAdmin
-      const result = await getProfile({ data: { accessToken: accessToken ?? "" } });
+      try {
+        // Single server round-trip: profiles + user_profiles + role all in parallel via supabaseAdmin
+        const result = await getProfile({ data: { accessToken: accessToken ?? "" } });
 
-      if (requestId !== profileRequestId.current) return;
+        if (requestId !== profileRequestId.current) return;
 
-      void i18n.changeLanguage(result.language);
-      setProfile(result);
-    } catch (err: unknown) {
-      if (requestId !== profileRequestId.current) return;
-      setProfile(null);
-      setAuthError(errorMessage(err, "Impossibile caricare il profilo utente"));
-    } finally {
-      if (requestId === profileRequestId.current) setProfileLoading(false);
-    }
-  }, [getProfile]);
+        void i18n.changeLanguage(result.language);
+        setProfile(result);
+      } catch (err: unknown) {
+        if (requestId !== profileRequestId.current) return;
+        setProfile(null);
+        setAuthError(errorMessage(err, "Impossibile caricare il profilo utente"));
+      } finally {
+        if (requestId === profileRequestId.current) setProfileLoading(false);
+      }
+    },
+    [getProfile],
+  );
 
   const applySession = useCallback(
     async (s: Session | null) => {
@@ -111,7 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: profile?.role === "admin",
     refreshProfile: async () => {
       if (!user) return;
-      const { data: { session: current } } = await supabase.auth.getSession();
+      const {
+        data: { session: current },
+      } = await supabase.auth.getSession();
       await loadProfile(current?.access_token);
     },
     signOut: async () => {

@@ -17,8 +17,10 @@ interface WidgetAnnotationBadgeProps {
  */
 export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) {
   const { session } = useAuth();
-  const { annotations, isLoading, create, update, remove, isPending } =
-    useWidgetAnnotations(session?.access_token, widgetId);
+  const { annotations, isLoading, create, update, remove, isPending } = useWidgetAnnotations(
+    session?.access_token,
+    widgetId,
+  );
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [noteDate, setNoteDate] = useState("");
@@ -102,17 +104,16 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-0">
         <div className="flex flex-col max-h-[360px]">
-          <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "var(--border)" }}>
+          <div
+            className="flex items-center justify-between px-3 py-2 border-b"
+            style={{ borderColor: "var(--border)" }}
+          >
             <span className="text-[13px] font-semibold">Note</span>
-            {count > 0 && (
-              <span className="text-[11px] text-text3 font-mono">{count}</span>
-            )}
+            {count > 0 && <span className="text-[11px] text-text3 font-mono">{count}</span>}
           </div>
 
           <div className="overflow-y-auto flex-1 px-3 py-2 space-y-2">
-            {isLoading && (
-              <div className="text-[12px] text-text3 py-2">Caricamento...</div>
-            )}
+            {isLoading && <div className="text-[12px] text-text3 py-2">Caricamento...</div>}
 
             {!isLoading &&
               annotations.map((a) => (
@@ -147,19 +148,14 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
                         >
                           Salva
                         </button>
-                        <button
-                          className="text-[11px] text-text3"
-                          onClick={cancelEdit}
-                        >
+                        <button className="text-[11px] text-text3" onClick={cancelEdit}>
                           Annulla
                         </button>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <p className="text-[12.5px] leading-snug text-text1 line-clamp-2">
-                        {a.text}
-                      </p>
+                      <p className="text-[12.5px] leading-snug text-text1 line-clamp-2">{a.text}</p>
                       <div className="flex items-center justify-between mt-1">
                         <div className="flex items-center gap-1.5">
                           {a.note_date && (
@@ -204,10 +200,7 @@ export function WidgetAnnotationBadge({ widgetId }: WidgetAnnotationBadgeProps) 
             )}
           </div>
 
-          <div
-            className="border-t px-3 py-2 space-y-1.5"
-            style={{ borderColor: "var(--border)" }}
-          >
+          <div className="border-t px-3 py-2 space-y-1.5" style={{ borderColor: "var(--border)" }}>
             <textarea
               className="w-full text-[12px] rounded border px-2 py-1 resize-none"
               style={{ borderColor: "var(--border)", background: "var(--surface1)" }}

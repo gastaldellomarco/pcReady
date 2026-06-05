@@ -14,6 +14,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -26,7 +27,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the PCReady API surface, covering:
+
 - Supabase-backed REST endpoints exposed via PostgREST
 - TanStack Server Functions used for server-side logic and OAuth flows
 - OAuth 2.0 authorization and token exchange endpoints
@@ -36,7 +39,9 @@ This document describes the PCReady API surface, covering:
 The API targets administrators, developers integrating external applications, and internal tooling.
 
 ## Project Structure
+
 High-level API-related components:
+
 - Supabase integration: server-side admin client and typed database access
 - TanStack Server Functions: OAuth consent, admin operations, and server-side helpers
 - OpenAPI: machine-readable spec and Swagger UI integration
@@ -64,17 +69,20 @@ ADMIN --> PG
 ```
 
 **Diagram sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [oauth-consent.ts:1-520](file://src/lib/oauth-consent.ts#L1-L520)
 - [rate-limit.ts:1-104](file://src/lib/rate-limit.ts#L1-L104)
 - [openapi.yaml:1-1146](file://public/openapi/openapi.yaml#L1-L1146)
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [wrangler.jsonc:1-7](file://wrangler.jsonc#L1-L7)
 - [database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 ## Core Components
+
 - Supabase REST API: Public PostgREST endpoints for tickets, devices, clients, notifications, checklist templates, versions, app settings, email templates, activity log, and OAuth client lifecycle.
 - TanStack Server Functions: Server-side functions for OAuth validation/grant/deny, admin OAuth client management, automation run triggers, and admin user operations.
 - OAuth 2.0: Authorization endpoint, consent page, and token exchange endpoint.
@@ -82,12 +90,15 @@ ADMIN --> PG
 - Rate Limiting: In-process sliding window with optional Redis backend.
 
 **Section sources**
+
 - [openapi.yaml:44-708](file://public/openapi/openapi.yaml#L44-L708)
 - [oauth-consent.ts:140-254](file://src/lib/oauth-consent.ts#L140-L254)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 ## Architecture Overview
+
 The API combines:
+
 - Public PostgREST endpoints for data operations (tickets, devices, clients, etc.) protected by RLS policies
 - TanStack Server Functions for privileged operations (OAuth admin, automation run, admin user ops) using a service-role client
 - OAuth flows handled by server functions with user consent rendered in the UI
@@ -114,6 +125,7 @@ UI-->>Client : 302 redirect with authorization code
 ```
 
 **Diagram sources**
+
 - [openapi.yaml:487-574](file://public/openapi/openapi.yaml#L487-L574)
 - [oauth-consent.ts:140-254](file://src/lib/oauth-consent.ts#L140-L254)
 - [oauth.consent.tsx:35-114](file://src/routes/_app/oauth.consent.tsx#L35-L114)
@@ -121,26 +133,32 @@ UI-->>Client : 302 redirect with authorization code
 ## Detailed Component Analysis
 
 ### Supabase REST API Endpoints
+
 Public endpoints backed by PostgREST. Authentication uses:
+
 - Supabase Bearer JWT in Authorization header
 - Supabase anonymous API key via apikey header for specific flows
 
 Common query parameters:
+
 - select: projection filter
 - order: sort expression
 - limit: row limit
 - Prefer: return representation
 
 Responses:
+
 - 200 OK with array or object
 - 201 Created on insert
 - 200 OK on update
 - 204 No Content on delete
 
 Security:
+
 - RLS policies govern access by roles (admin, tech, viewer)
 
 Key endpoints:
+
 - GET/POST/PATCH/DELETE /tickets
 - GET/POST/PATCH /devices
 - GET/POST/PATCH /clients
@@ -163,10 +181,12 @@ Key endpoints:
 - POST /api/admin/users/delete
 
 Authentication headers:
+
 - Authorization: Bearer <JWT>
 - apikey: <anon-key> (where applicable)
 
 Error responses:
+
 - 400 Bad Request for invalid parameters
 - 401 Unauthorized for missing/expired/invalid JWT
 - 403 Forbidden for insufficient permissions
@@ -174,9 +194,11 @@ Error responses:
 - 500 Internal Server Error for server failures
 
 **Section sources**
+
 - [openapi.yaml:44-708](file://public/openapi/openapi.yaml#L44-L708)
 
 ### TanStack Server Functions (OAuth and Admin)
+
 Server functions provide privileged operations and user-facing flows.
 
 - validateOAuthRequest
@@ -216,9 +238,11 @@ BuildRedirect --> End(["Return redirectUrl"])
 ```
 
 **Diagram sources**
+
 - [oauth-consent.ts:197-254](file://src/lib/oauth-consent.ts#L197-L254)
 
 **Section sources**
+
 - [oauth-consent.ts:140-254](file://src/lib/oauth-consent.ts#L140-L254)
 - [oauth-consent.ts:265-437](file://src/lib/oauth-consent.ts#L265-L437)
 - [oauth-consent.ts:443-520](file://src/lib/oauth-consent.ts#L443-L520)
@@ -226,6 +250,7 @@ BuildRedirect --> End(["Return redirectUrl"])
 - [oauth.consent.tsx:35-114](file://src/routes/_app/oauth.consent.tsx#L35-L114)
 
 ### OAuth 2.0 Endpoints
+
 - Authorization endpoint
   - Method: GET
   - Path: /oauth/authorize
@@ -257,14 +282,17 @@ Server-->>Client : 200 OAuthTokenResponse
 ```
 
 **Diagram sources**
+
 - [openapi.yaml:547-574](file://public/openapi/openapi.yaml#L547-L574)
 - [oauth-consent.ts:218-239](file://src/lib/oauth-consent.ts#L218-L239)
 
 **Section sources**
+
 - [openapi.yaml:487-574](file://public/openapi/openapi.yaml#L487-L574)
 - [oauth-consent.ts:196-254](file://src/lib/oauth-consent.ts#L196-L254)
 
 ### Automation and Admin Server Functions
+
 - POST /api/automations/run
   - Body: RunAutomationNowRequest (automationId, isDryRun, triggerPayload)
   - Response: AutomationRunLog
@@ -283,10 +311,12 @@ Server-->>Client : 200 OAuthTokenResponse
   - POST /api/admin/users/delete
 
 **Section sources**
+
 - [openapi.yaml:575-708](file://public/openapi/openapi.yaml#L575-L708)
 - [oauth-consent.ts:294-400](file://src/lib/oauth-consent.ts#L294-L400)
 
 ### OpenAPI Specification and Swagger UI Integration
+
 - OpenAPI 3.0.3 specification defines:
   - Servers: Supabase REST and PCReady Server Functions
   - Security: bearerAuth (JWT) and supabaseAnonKey (apikey)
@@ -295,14 +325,17 @@ Server-->>Client : 200 OAuthTokenResponse
   - Schemas: Typed request/response models for all resources
 
 Swagger UI integration:
+
 - The spec is served under public/openapi/openapi.yaml
 - Configure your deployment to serve this file and mount Swagger UI to render it
 
 **Section sources**
+
 - [openapi.yaml:1-43](file://public/openapi/openapi.yaml#L1-L43)
 - [openapi.yaml:44-1146](file://public/openapi/openapi.yaml#L44-L1146)
 
 ## Dependency Analysis
+
 - Server-side Supabase client
   - Uses service role key to bypass RLS for privileged operations
   - Environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -316,7 +349,7 @@ Swagger UI integration:
 - Rate limiting
   - In-memory sliding window with optional Redis backend via Upstash
   - Dedicated presets for various operations
-  - 429 responses include Retry-After and X-RateLimit-* headers
+  - 429 responses include Retry-After and X-RateLimit-\* headers
 
 ```mermaid
 graph LR
@@ -327,16 +360,19 @@ SC --> DB["Supabase"]
 ```
 
 **Diagram sources**
+
 - [client.server.ts:8-41](file://src/integrations/supabase/client.server.ts#L8-L41)
 - [oauth-consent.ts:294-343](file://src/lib/oauth-consent.ts#L294-L343)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [oauth-consent.ts:1-520](file://src/lib/oauth-consent.ts#L1-L520)
 - [rate-limit.ts:1-104](file://src/lib/rate-limit.ts#L1-L104)
 
 ## Performance Considerations
+
 - Prefer selective projections (select) and appropriate ordering (order) to reduce payload sizes
 - Use limit to cap result sets for paginated lists
 - Apply filters (e.g., status, client_id) to minimize scans
@@ -346,7 +382,9 @@ SC --> DB["Supabase"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - 401 Unauthorized
   - Ensure Authorization: Bearer <JWT> is present and valid
   - Verify the JWT belongs to an active user with proper roles
@@ -368,10 +406,12 @@ Common issues and resolutions:
   - Check server logs and environment variables for Supabase configuration
 
 **Section sources**
+
 - [oauth-consent.ts:140-194](file://src/lib/oauth-consent.ts#L140-L194)
 - [rate-limit.ts:74-104](file://src/lib/rate-limit.ts#L74-L104)
 
 ## Conclusion
+
 PCReady exposes a cohesive API combining Supabase-backed REST endpoints and TanStack Server Functions for privileged operations. The OAuth 2.0 stack provides secure, auditable consent flows with granular scopes. The OpenAPI specification and Swagger UI enable discoverability and testing. Follow the security, rate limiting, and performance recommendations to build reliable integrations.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -379,6 +419,7 @@ PCReady exposes a cohesive API combining Supabase-backed REST endpoints and TanS
 ## Appendices
 
 ### Authentication Methods
+
 - Supabase Bearer JWT
   - Header: Authorization: Bearer <JWT>
   - Used for user-authenticated PostgREST operations and server functions requiring user context
@@ -391,18 +432,22 @@ PCReady exposes a cohesive API combining Supabase-backed REST endpoints and TanS
   - Used for token endpoint requests and protected server functions
 
 **Section sources**
+
 - [openapi.yaml:18-21](file://public/openapi/openapi.yaml#L18-L21)
 - [client.server.ts:8-29](file://src/integrations/supabase/client.server.ts#L8-L29)
 
 ### Rate Limiting
+
 - Preset configurations for various operations
 - In-memory sliding window with optional Redis backend
-- 429 responses include Retry-After and X-RateLimit-* headers
+- 429 responses include Retry-After and X-RateLimit-\* headers
 
 **Section sources**
+
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 ### Security Considerations
+
 - Use service role client only for server-side privileged operations
 - Enforce admin checks for OAuth client lifecycle operations
 - Audit sensitive actions (client created/enabled/disabled/revoked, secret rotated)
@@ -410,19 +455,23 @@ PCReady exposes a cohesive API combining Supabase-backed REST endpoints and TanS
 - Short expiration for authorization codes
 
 **Section sources**
+
 - [client.server.ts:33-41](file://src/integrations/supabase/client.server.ts#L33-L41)
 - [oauth-consent.ts:37-48](file://src/lib/oauth-consent.ts#L37-L48)
 - [audit-log-actions.ts:14-18](file://src/lib/audit-log-actions.ts#L14-L18)
 
 ### API Versioning
+
 - The OpenAPI spec declares version 1.0.0
 - Maintain backward compatibility for existing endpoints
 - Introduce new endpoints under new paths or versions as needed
 
 **Section sources**
+
 - [openapi.yaml:2-4](file://public/openapi/openapi.yaml#L2-L4)
 
 ### Client Implementation Guidelines
+
 - Use Authorization: Bearer for user operations
 - Use apikey header where specified by the spec
 - Implement robust error handling for 400/401/403/429/500 responses
@@ -430,34 +479,41 @@ PCReady exposes a cohesive API combining Supabase-backed REST endpoints and TanS
 - For OAuth, validate redirect_uri and scopes before calling consent endpoints
 
 **Section sources**
+
 - [openapi.yaml:487-574](file://public/openapi/openapi.yaml#L487-L574)
 - [rate-limit.ts:74-104](file://src/lib/rate-limit.ts#L74-L104)
 
 ### Error Handling Strategies
+
 - Validate inputs early using server function validators
 - Throw explicit responses with appropriate status codes
 - Log audit events for admin actions
 - Return structured error bodies with retry hints when rate-limited
 
 **Section sources**
+
 - [oauth-consent.ts:140-194](file://src/lib/oauth-consent.ts#L140-L194)
 - [audit-log-actions.ts:14-18](file://src/lib/audit-log-actions.ts#L14-L18)
 
 ### Migration and Backwards Compatibility
+
 - Keep existing endpoint signatures unchanged
 - Add new fields as optional in request/response schemas
 - Deprecate fields with clear notices and future removal plans
 - Maintain OpenAPI versioning and document breaking changes
 
 **Section sources**
+
 - [openapi.yaml:852-853](file://public/openapi/openapi.yaml#L852-L853)
 
 ### Debugging and Monitoring
+
 - Enable server logs for OAuth flows and admin operations
 - Monitor audit logs for OAuth client lifecycle and admin actions
 - Use Swagger UI to test endpoints and inspect schemas
 - Track rate limiting metrics and adjust presets as needed
 
 **Section sources**
+
 - [audit-log-actions.ts:14-18](file://src/lib/audit-log-actions.ts#L14-L18)
 - [openapi.yaml:1-43](file://public/openapi/openapi.yaml#L1-L43)

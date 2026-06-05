@@ -69,7 +69,11 @@ function SortableWidgetItem({
           widget.visible ? "text-accent" : "text-text3"
         }`}
         onClick={() => onToggleVisibility(widget.id)}
-        aria-label={widget.visible ? t("widgets.hideWidget", "Nascondi widget") : t("widgets.showWidget", "Mostra widget")}
+        aria-label={
+          widget.visible
+            ? t("widgets.hideWidget", "Nascondi widget")
+            : t("widgets.showWidget", "Mostra widget")
+        }
         title={widget.visible ? t("widgets.hide", "Nascondi") : t("widgets.show", "Mostra")}
       >
         {widget.visible ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
@@ -106,13 +110,24 @@ export function WidgetSettingsPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div role="button" tabIndex={-1} className="absolute inset-0 bg-black/30" onClick={onClose} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }} aria-label={t("widgets.closePanel", "Chiudi pannello")} />
+      <div
+        role="button"
+        tabIndex={-1}
+        className="absolute inset-0 bg-black/30"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+        }}
+        aria-label={t("widgets.closePanel", "Chiudi pannello")}
+      />
       <div
         className="relative h-full w-full max-w-sm overflow-y-auto border-l border-border bg-white shadow-xl dark:bg-surface"
         style={{ background: "var(--surface)" }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">{t("widgets.widgetPanelTitle", "Gestione widget")}</h3>
+          <h3 className="text-sm font-semibold">
+            {t("widgets.widgetPanelTitle", "Gestione widget")}
+          </h3>
           <button
             className="pc-btn pc-btn-ghost pc-btn-sm p-1"
             onClick={onClose}
@@ -123,7 +138,10 @@ export function WidgetSettingsPanel({
         </div>
         <div className="p-4">
           <p className="text-[11px] text-text3 mb-3">
-            {t("widgets.widgetPanelDesc", "Trascina per riordinare. Usa l'icona occhio per mostrare/nascondere widget.")}
+            {t(
+              "widgets.widgetPanelDesc",
+              "Trascina per riordinare. Usa l'icona occhio per mostrare/nascondere widget.",
+            )}
           </p>
           <DndContext
             sensors={sensors}

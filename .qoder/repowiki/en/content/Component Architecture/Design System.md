@@ -21,6 +21,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Design System Architecture](#design-system-architecture)
 3. [Color System](#color-system)
@@ -79,6 +80,7 @@ ThemeUtils --> Runtime
 ```
 
 **Diagram sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [tailwind.config.ts:1-58](file://tailwind.config.ts#L1-L58)
@@ -86,6 +88,7 @@ ThemeUtils --> Runtime
 The architecture ensures that design decisions are centralized while maintaining flexibility for component-specific customization through variants and composition patterns.
 
 **Section sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 - [ThemeProvider.tsx:1-74](file://src/components/ThemeProvider.tsx#L1-L74)
 - [tailwind.config.ts:1-58](file://tailwind.config.ts#L1-L58)
@@ -128,20 +131,26 @@ ColorSystem --> ChartColors
 ```
 
 **Diagram sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 
 ### Primary Palette
+
 The primary palette consists of blue-based colors that convey trust, professionalism, and actionability. The palette includes standard colors, hover states, and light variants for proper contrast and accessibility.
 
 ### Semantic Colors
+
 Semantic colors represent specific meanings within the application context:
+
 - Success: Green tones for positive actions and completions
 - Warning: Amber/orange tones for caution and pending states
 - Danger: Red tones for destructive actions and errors
 - Info: Teal/blue tones for informational messages
 
 ### Status Tokens
+
 Status tokens provide pre-defined color combinations for common UI states:
+
 - Pending: Warning color with warning light background
 - In Progress: Primary color with primary light background
 - Completed: Success color with success light background
@@ -150,6 +159,7 @@ Status tokens provide pre-defined color combinations for common UI states:
 - Info: Info color with info light background
 
 **Section sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 
 ## Typography System
@@ -184,11 +194,13 @@ TypographyScale --> FontStacks
 ```
 
 **Diagram sources**
+
 - [tailwind.config.ts:40-52](file://tailwind.config.ts#L40-L52)
 
 The typography scale provides precise control over text sizing and spacing, with optimized line heights for readability at each size level. The font stacks ensure fallback compatibility across different environments.
 
 **Section sources**
+
 - [tailwind.config.ts:40-52](file://tailwind.config.ts#L40-L52)
 
 ## Component Library
@@ -240,19 +252,23 @@ UITable --> TableVariants
 ```
 
 **Diagram sources**
+
 - [button.tsx:8-23](file://src/components/ui/button.tsx#L8-L23)
 - [card.tsx:5-55](file://src/components/ui/card.tsx#L5-L55)
 - [dialog.tsx:9-104](file://src/components/ui/dialog.tsx#L9-L104)
 - [table.tsx:5-94](file://src/components/ui/table.tsx#L5-L94)
 
 ### Component Composition Pattern
+
 Components follow a consistent pattern using composition and variant systems:
+
 - Base components handle structural rendering
 - Variants define visual states and behaviors
 - Utility classes manage responsive and accessibility features
 - Slot components enable flexible child composition
 
 **Section sources**
+
 - [button.tsx:8-23](file://src/components/ui/button.tsx#L8-L23)
 - [card.tsx:5-55](file://src/components/ui/card.tsx#L5-L55)
 - [dialog.tsx:9-104](file://src/components/ui/dialog.tsx#L9-L104)
@@ -279,22 +295,28 @@ Note over Document,Components : Real-time theme switching
 ```
 
 **Diagram sources**
+
 - [ThemeProvider.tsx:17-73](file://src/components/ThemeProvider.tsx#L17-L73)
 - [theme.ts:35-47](file://src/lib/theme.ts#L35-L47)
 
 ### Theme Modes
+
 The system supports three distinct theme modes:
+
 - Light: Traditional light interface with dark text
 - Dark: Dark interface with light text and reduced brightness
 - System: Automatic mode based on OS/system preferences
 
 ### Theme Resolution
+
 Theme resolution follows a priority system:
+
 1. Explicit user preference (stored in localStorage)
 2. System preference (OS/browser setting)
 3. Fallback to light mode
 
 **Section sources**
+
 - [ThemeProvider.tsx:17-73](file://src/components/ThemeProvider.tsx#L17-L73)
 - [ThemeContext.tsx:4-11](file://src/components/ThemeContext.tsx#L4-L11)
 - [theme.ts:16-21](file://src/lib/theme.ts#L16-L21)
@@ -353,21 +375,26 @@ VariantSystem --> ToggleVariants
 ```
 
 **Diagram sources**
+
 - [button-variants.ts:3-28](file://src/components/ui/button-variants.ts#L3-L28)
 - [badge-variants.ts:3-20](file://src/components/ui/badge-variants.ts#L3-L20)
 - [toggle-variants.ts:3-23](file://src/components/ui/toggle-variants.ts#L3-L23)
 
 ### Variance Function (cva)
+
 The `cva` function from class-variance-authority enables declarative variant definitions with:
+
 - Base classes applied to all variants
 - Conditional classes based on variant props
 - Default variant configuration
 - Type-safe variant definitions
 
 ### Responsive Variants
+
 Variants automatically adapt to different screen sizes and interaction states, ensuring consistent behavior across devices and contexts.
 
 **Section sources**
+
 - [button-variants.ts:3-28](file://src/components/ui/button-variants.ts#L3-L28)
 - [badge-variants.ts:3-20](file://src/components/ui/badge-variants.ts#L3-L20)
 - [toggle-variants.ts:3-23](file://src/components/ui/toggle-variants.ts#L3-L23)
@@ -394,10 +421,13 @@ ErrorDisplay --> VisualFeedback["Visual Feedback"]
 ```
 
 **Diagram sources**
+
 - [form.tsx:16-162](file://src/components/ui/form.tsx#L16-L162)
 
 ### Form Field Architecture
+
 The form system follows a hierarchical structure:
+
 - FormProvider: Manages form state and context
 - FormField: Wraps individual form controls with field context
 - FormItem: Provides container and ID management
@@ -407,13 +437,16 @@ The form system follows a hierarchical structure:
 - FormMessage: Displays validation errors
 
 ### Accessibility Features
+
 The form system includes comprehensive accessibility features:
+
 - Dynamic ARIA attributes based on validation state
 - Proper labeling and association
 - Keyboard navigation support
 - Screen reader friendly error messaging
 
 **Section sources**
+
 - [form.tsx:16-162](file://src/components/ui/form.tsx#L16-L162)
 
 ## Design Tokens
@@ -467,10 +500,13 @@ DesignTokens --> SpacingTokens
 ```
 
 **Diagram sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 
 ### Token Categories
+
 Design tokens are organized into logical categories:
+
 - **Colors**: Semantic and functional color assignments
 - **Typography**: Font families, sizes, and line heights
 - **Spacing**: Consistent spacing scale for layouts
@@ -479,18 +515,22 @@ Design tokens are organized into logical categories:
 - **Transitions**: Animation and transition timing
 
 ### Token Resolution
+
 Tokens provide a layer of abstraction that enables:
+
 - Consistent design across components
 - Easy theme switching and customization
 - Type-safe token usage
 - Automatic CSS variable generation
 
 **Section sources**
+
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)
 
 ## Implementation Guidelines
 
 ### Component Development
+
 When creating new components, follow these guidelines:
 
 1. **Use Variants**: Leverage the variant system for consistent styling
@@ -500,6 +540,7 @@ When creating new components, follow these guidelines:
 5. **Maintain Responsiveness**: Test components across different screen sizes
 
 ### Theme Integration
+
 Integrate themes properly by:
 
 1. **Using ThemeProvider**: Wrap applications with ThemeProvider
@@ -508,6 +549,7 @@ Integrate themes properly by:
 4. **Handling System Changes**: Respond to system theme changes
 
 ### Form Implementation
+
 When implementing forms:
 
 1. **Use Form System**: Leverage the provided form components
@@ -518,24 +560,28 @@ When implementing forms:
 ## Best Practices
 
 ### Design Consistency
+
 - Use the established color palette consistently
 - Follow the typography hierarchy
 - Maintain consistent spacing and alignment
 - Apply shadows and borders according to guidelines
 
 ### Performance Optimization
+
 - Use CSS variables for dynamic theming
 - Minimize unnecessary re-renders
 - Optimize component composition
 - Leverage React.memo for static components
 
 ### Accessibility Standards
+
 - Ensure sufficient color contrast
 - Provide keyboard navigation
 - Include proper ARIA attributes
 - Support screen reader functionality
 
 ### Cross-Browser Compatibility
+
 - Test components across major browsers
 - Use vendor prefixes when necessary
 - Validate CSS property support
@@ -546,24 +592,28 @@ When implementing forms:
 ### Common Issues
 
 **Theme Not Applying**
+
 - Verify ThemeProvider is wrapping the application
 - Check localStorage permissions
 - Ensure CSS variables are properly defined
 - Confirm system preference detection works
 
 **Component Styling Issues**
+
 - Verify variant prop usage
 - Check for conflicting CSS classes
 - Ensure proper import order
 - Validate Tailwind configuration
 
 **Form Validation Problems**
+
 - Check React Hook Form integration
 - Verify field registration
 - Ensure proper error handling
 - Test validation schemas
 
 **Accessibility Concerns**
+
 - Use browser developer tools to inspect ARIA attributes
 - Test with screen readers
 - Validate keyboard navigation
@@ -578,6 +628,7 @@ When implementing forms:
 5. **Review Console Errors**: Look for runtime errors in component rendering
 
 **Section sources**
+
 - [ThemeProvider.tsx:42-63](file://src/components/ThemeProvider.tsx#L42-L63)
 - [form.tsx:40-65](file://src/components/ui/form.tsx#L40-L65)
 - [design-system.ts:1-52](file://src/lib/design-system.ts#L1-L52)

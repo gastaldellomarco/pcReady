@@ -262,7 +262,8 @@ export async function fetchClientTagAssignments(clientIds: string[]) {
     .in("client_id", ids);
   if (error) throw error;
   for (const row of data ?? []) {
-    if (row.client_id && row.tag) result[row.client_id] = [...(result[row.client_id] ?? []), row.tag];
+    if (row.client_id && row.tag)
+      result[row.client_id] = [...(result[row.client_id] ?? []), row.tag];
   }
   return result;
 }
@@ -296,7 +297,12 @@ export async function createClientTag(name: string, color?: string | null) {
   return data as ClientTag;
 }
 
-export async function toggleClientTag(clientId: string, tagId: string, assigned: boolean, userId?: string | null) {
+export async function toggleClientTag(
+  clientId: string,
+  tagId: string,
+  assigned: boolean,
+  userId?: string | null,
+) {
   if (assigned) {
     const { error } = await (supabase as any)
       .from("client_tag_assignments")
@@ -317,7 +323,9 @@ export async function fetchClientNotes(clientId: string) {
   if (!clientId) return [];
   const { data, error } = await (supabase as any)
     .from("client_notes")
-    .select("id, client_id, content, author_id, created_at, updated_at, author:profiles!client_notes_author_id_fkey(full_name, initials)")
+    .select(
+      "id, client_id, content, author_id, created_at, updated_at, author:profiles!client_notes_author_id_fkey(full_name, initials)",
+    )
     .eq("client_id", clientId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
@@ -336,7 +344,9 @@ export async function fetchClientNoteRevisions(noteId: string | null) {
   if (!noteId) return [];
   const { data, error } = await (supabase as any)
     .from("client_note_revisions")
-    .select("id, note_id, previous_content, new_content, changed_at, author:profiles!client_note_revisions_author_id_fkey(full_name, initials)")
+    .select(
+      "id, note_id, previous_content, new_content, changed_at, author:profiles!client_note_revisions_author_id_fkey(full_name, initials)",
+    )
     .eq("note_id", noteId)
     .order("changed_at", { ascending: false });
   if (error) throw error;
@@ -351,7 +361,11 @@ export function useClientNoteRevisions(noteId: string | null) {
   });
 }
 
-export async function createClientNote(clientId: string, content: string, authorId?: string | null) {
+export async function createClientNote(
+  clientId: string,
+  content: string,
+  authorId?: string | null,
+) {
   const { error } = await (supabase as any)
     .from("client_notes")
     .insert({ client_id: clientId, content: content.trim(), author_id: authorId ?? null });
@@ -410,7 +424,10 @@ export async function fetchClientOverview(clientId: string) {
   return {
     openTickets: tickets.filter((ticket) => OPEN_TICKET_STATUSES.includes(ticket.status)).length,
     avgResolutionHours,
-    totalBilled: ((paymentsRes.data ?? []) as any[]).reduce((sum, row) => sum + Number(row.amount || 0), 0),
+    totalBilled: ((paymentsRes.data ?? []) as any[]).reduce(
+      (sum, row) => sum + Number(row.amount || 0),
+      0,
+    ),
     activeBundle,
     contractDaysLeft: activeBundle?.days_until_expiry ?? null,
   } satisfies ClientOverview;
@@ -447,7 +464,9 @@ export async function fetchClientActivity(clientId: string) {
       .limit(30),
     (supabase as any)
       .from("portal_sessions")
-      .select("id, created_at, expires_at, contact:client_contacts!portal_sessions_contact_id_fkey(full_name)")
+      .select(
+        "id, created_at, expires_at, contact:client_contacts!portal_sessions_contact_id_fkey(full_name)",
+      )
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
       .limit(30),
@@ -481,16 +500,40 @@ export async function fetchClientActivity(clientId: string) {
     }
   }
   for (const note of (notesRes.data ?? []) as any[]) {
-    items.push({ id: `note-${note.id}`, type: "note", title: "Nota interna aggiornata", description: note.content, created_at: note.updated_at });
+    items.push({
+      id: `note-${note.id}`,
+      type: "note",
+      title: "Nota interna aggiornata",
+      description: note.content,
+      created_at: note.updated_at,
+    });
   }
   for (const doc of (documentsRes.data ?? []) as any[]) {
-    items.push({ id: `document-${doc.id}`, type: "document", title: `Documento caricato: ${doc.file_name}`, description: doc.document_type, created_at: doc.uploaded_at });
+    items.push({
+      id: `document-${doc.id}`,
+      type: "document",
+      title: `Documento caricato: ${doc.file_name}`,
+      description: doc.document_type,
+      created_at: doc.uploaded_at,
+    });
   }
   for (const portal of (portalRes.data ?? []) as any[]) {
-    items.push({ id: `portal-${portal.id}`, type: "portal_access", title: "Accesso portale generato", description: portal.contact?.full_name ?? null, created_at: portal.created_at });
+    items.push({
+      id: `portal-${portal.id}`,
+      type: "portal_access",
+      title: "Accesso portale generato",
+      description: portal.contact?.full_name ?? null,
+      created_at: portal.created_at,
+    });
   }
   for (const bundle of (bundleRes.data ?? []) as any[]) {
-    items.push({ id: `bundle-${bundle.id}`, type: "bundle", title: `Contratto ${bundle.bundle?.name ?? ""}`, description: bundle.status, created_at: bundle.created_at });
+    items.push({
+      id: `bundle-${bundle.id}`,
+      type: "bundle",
+      title: `Contratto ${bundle.bundle?.name ?? ""}`,
+      description: bundle.status,
+      created_at: bundle.created_at,
+    });
   }
   return items.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 80);
 }
@@ -507,7 +550,9 @@ export async function fetchClientDocuments(clientId: string) {
   if (!clientId) return [];
   const { data, error } = await (supabase as any)
     .from("client_documents")
-    .select("id, client_id, file_name, storage_bucket, storage_path, file_size, mime_type, document_type, description, uploaded_at, uploader:profiles!client_documents_uploaded_by_fkey(full_name, initials)")
+    .select(
+      "id, client_id, file_name, storage_bucket, storage_path, file_size, mime_type, document_type, description, uploaded_at, uploader:profiles!client_documents_uploaded_by_fkey(full_name, initials)",
+    )
     .eq("client_id", clientId)
     .order("uploaded_at", { ascending: false });
   if (error) throw error;
@@ -558,7 +603,9 @@ export async function getClientDocumentSignedUrl(document: ClientDocument) {
 }
 
 export async function deleteClientDocument(document: ClientDocument) {
-  const remove = await supabase.storage.from(document.storage_bucket).remove([document.storage_path]);
+  const remove = await supabase.storage
+    .from(document.storage_bucket)
+    .remove([document.storage_path]);
   if (remove.error) throw remove.error;
   const { error } = await (supabase as any).from("client_documents").delete().eq("id", document.id);
   if (error) throw error;
@@ -702,15 +749,18 @@ export function useGlobalContacts(params?: GlobalContactsParams) {
 export type GlobalContactsListParams = GlobalContactsParams & { page?: number; pageSize?: number };
 
 export async function fetchGlobalContactsPage(params?: GlobalContactsListParams) {
-  return fetchGlobalContacts({ ...params, page: params?.page ?? 0, pageSize: params?.pageSize ?? LIST_PAGE_SIZE });
+  return fetchGlobalContacts({
+    ...params,
+    page: params?.page ?? 0,
+    pageSize: params?.pageSize ?? LIST_PAGE_SIZE,
+  });
 }
 
 export function useGlobalContactsInfiniteList(params?: Omit<GlobalContactsListParams, "page">) {
   const pageSize = params?.pageSize ?? LIST_PAGE_SIZE;
   return useInfiniteQuery({
     queryKey: ["clients", "contacts", "global", "infinite", params?.q || "", pageSize],
-    queryFn: ({ pageParam }) =>
-      fetchGlobalContacts({ ...params, page: pageParam, pageSize }),
+    queryFn: ({ pageParam }) => fetchGlobalContacts({ ...params, page: pageParam, pageSize }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < pageSize) return undefined;

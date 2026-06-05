@@ -28,7 +28,10 @@ export const Route = createRootRoute({
           "Gestione completa della preparazione e configurazione dei PC aziendali: ticket, checklist, automazioni e inventario.",
         ),
       },
-      { property: "og:title", content: i18n.t("common:root.title", "PCReady - Gestione preparazione PC") },
+      {
+        property: "og:title",
+        content: i18n.t("common:root.title", "PCReady - Gestione preparazione PC"),
+      },
       {
         property: "og:description",
         content: i18n.t(

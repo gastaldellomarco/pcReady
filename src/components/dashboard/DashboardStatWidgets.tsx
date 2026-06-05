@@ -110,7 +110,9 @@ export function DashboardDonut({
         >
           {total}
         </div>
-        <div className="text-[10px] text-text3 uppercase tracking-wider">{t("stats.ticket", "Ticket")}</div>
+        <div className="text-[10px] text-text3 uppercase tracking-wider">
+          {t("stats.ticket", "Ticket")}
+        </div>
       </div>
     </div>
   );

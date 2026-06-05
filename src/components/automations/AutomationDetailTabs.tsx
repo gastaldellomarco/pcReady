@@ -84,15 +84,14 @@ export function AutomationDetailTabs({
           </div>
           <p className="mt-1 text-sm text-blue-700">
             {triggerDef?.type
-              ? TRIGGER_TYPE_LABELS[triggerDef.type] ?? triggerDef.type
+              ? (TRIGGER_TYPE_LABELS[triggerDef.type] ?? triggerDef.type)
               : "Non configurato"}
           </p>
-          {triggerDef?.config &&
-            Object.keys(triggerDef.config).length > 0 && (
-              <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
-                {JSON.stringify(triggerDef.config, null, 2)}
-              </pre>
-            )}
+          {triggerDef?.config && Object.keys(triggerDef.config).length > 0 && (
+            <pre className="mt-1 max-h-20 overflow-auto rounded bg-blue-100/50 p-1.5 text-[11px] font-mono text-blue-800">
+              {JSON.stringify(triggerDef.config, null, 2)}
+            </pre>
+          )}
         </div>
 
         {/* Conditions */}
@@ -130,15 +129,12 @@ export function AutomationDetailTabs({
               <ul className="mt-1.5 space-y-1.5">
                 {actionsDef.map((a, i) => (
                   <li key={a.id ?? i} className="text-sm text-emerald-700">
-                    <span className="font-medium">
-                      {actionLabels[a.type ?? ""] ?? a.type}
-                    </span>
-                    {a.config &&
-                      Object.keys(a.config).length > 0 && (
-                        <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-emerald-100/50 p-1.5 text-[11px] font-mono text-emerald-800">
-                          {JSON.stringify(a.config, null, 2)}
-                        </pre>
-                      )}
+                    <span className="font-medium">{actionLabels[a.type ?? ""] ?? a.type}</span>
+                    {a.config && Object.keys(a.config).length > 0 && (
+                      <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-emerald-100/50 p-1.5 text-[11px] font-mono text-emerald-800">
+                        {JSON.stringify(a.config, null, 2)}
+                      </pre>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -212,9 +208,7 @@ export function AutomationDetailTabs({
                   {log.is_dry_run ? "dry-run" : log.status}
                 </Badge>
                 {log.duration_ms != null && (
-                  <span className="ml-auto font-mono text-text3">
-                    {log.duration_ms} ms
-                  </span>
+                  <span className="ml-auto font-mono text-text3">{log.duration_ms} ms</span>
                 )}
               </div>
             ))}
@@ -229,9 +223,7 @@ export function AutomationDetailTabs({
             )}
           </div>
         ) : (
-          <div className="py-4 text-center text-sm text-text3">
-            Nessuna esecuzione registrata
-          </div>
+          <div className="py-4 text-center text-sm text-text3">Nessuna esecuzione registrata</div>
         )}
       </TabsContent>
 
@@ -242,33 +234,25 @@ export function AutomationDetailTabs({
             <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">
               Successi
             </div>
-            <div className="mt-1 text-xl font-bold text-emerald-600">
-              {stats?.success ?? 0}
-            </div>
+            <div className="mt-1 text-xl font-bold text-emerald-600">{stats?.success ?? 0}</div>
           </div>
           <div className="rounded-lg border border-border bg-background/60 p-3 text-center">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">
               Errori
             </div>
-            <div className="mt-1 text-xl font-bold text-red-600">
-              {stats?.error ?? 0}
-            </div>
+            <div className="mt-1 text-xl font-bold text-red-600">{stats?.error ?? 0}</div>
           </div>
           <div className="rounded-lg border border-border bg-background/60 p-3 text-center">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">
               Dry-run
             </div>
-            <div className="mt-1 text-xl font-bold text-blue-600">
-              {stats?.dry_run ?? 0}
-            </div>
+            <div className="mt-1 text-xl font-bold text-blue-600">{stats?.dry_run ?? 0}</div>
           </div>
           <div className="rounded-lg border border-border bg-background/60 p-3 text-center">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">
               Saltate
             </div>
-            <div className="mt-1 text-xl font-bold text-slate-600">
-              {stats?.skipped ?? 0}
-            </div>
+            <div className="mt-1 text-xl font-bold text-slate-600">{stats?.skipped ?? 0}</div>
           </div>
         </div>
 
@@ -298,16 +282,14 @@ export function AutomationDetailTabs({
               <>
                 <XCircle className="size-5 text-red-600" />
                 <span className="text-sm font-medium text-red-700">
-              In errore — la regola non funziona correttamente
+                  In errore — la regola non funziona correttamente
                 </span>
               </>
             )}
             {(!stats || stats.health === "never_run") && (
               <>
                 <MinusCircle className="size-5 text-slate-400" />
-                <span className="text-sm font-medium text-slate-600">
-                  Mai eseguita
-                </span>
+                <span className="text-sm font-medium text-slate-600">Mai eseguita</span>
               </>
             )}
           </div>

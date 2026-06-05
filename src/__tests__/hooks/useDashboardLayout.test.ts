@@ -65,20 +65,14 @@ function expectAllWidgetsVisible(layout: DashboardLayout) {
   expect(visible).toHaveLength(DASHBOARD_WIDGETS.length);
 }
 
-function expectWidgetsById(
-  layout: DashboardLayout,
-  widgetIds: string[],
-): void {
+function expectWidgetsById(layout: DashboardLayout, widgetIds: string[]): void {
   const visibleIds = layout.widgets.filter((w) => w.visible).map((w) => w.id);
   for (const id of widgetIds) {
     expect(visibleIds).toContain(id);
   }
 }
 
-function expectWidgetsHidden(
-  layout: DashboardLayout,
-  widgetIds: string[],
-): void {
+function expectWidgetsHidden(layout: DashboardLayout, widgetIds: string[]): void {
   const hiddenIds = layout.widgets.filter((w) => !w.visible).map((w) => w.id);
   for (const id of widgetIds) {
     expect(hiddenIds).toContain(id);
@@ -100,7 +94,9 @@ describe("useDashboardLayout", () => {
   describe("default state", () => {
     it("starts with null layout and loading true", () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -175,10 +171,7 @@ describe("useDashboardLayout", () => {
       // Viewer has 6 visible widgets
       const visible = result.current.layout!.widgets.filter((w) => w.visible);
       expect(visible).toHaveLength(6);
-      expectWidgetsById(result.current.layout!, [
-        "stat-cards",
-        "trend-chart",
-      ]);
+      expectWidgetsById(result.current.layout!, ["stat-cards", "trend-chart"]);
     });
 
     it("falls back to viewer when session is null", async () => {
@@ -234,9 +227,7 @@ describe("useDashboardLayout", () => {
 
   describe("error handling", () => {
     it("falls back to role default when loadLayout rejects", async () => {
-      serverFnMocks.getMyDashboardLayout.mockRejectedValue(
-        new Error("Network error"),
-      );
+      serverFnMocks.getMyDashboardLayout.mockRejectedValue(new Error("Network error"));
 
       setMockAuth({ profile: { role: "tech" } });
       const { result } = renderHook(() => useDashboardLayout());
@@ -251,9 +242,7 @@ describe("useDashboardLayout", () => {
     });
 
     it("falls back to admin default when loadLayout rejects for admin", async () => {
-      serverFnMocks.getMyDashboardLayout.mockRejectedValue(
-        new Error("Network error"),
-      );
+      serverFnMocks.getMyDashboardLayout.mockRejectedValue(new Error("Network error"));
 
       setMockAuth({ profile: { role: "admin" } });
       const { result } = renderHook(() => useDashboardLayout());
@@ -312,9 +301,7 @@ describe("useDashboardLayout", () => {
       expect(visibleWidgets.length).toBe(6);
       // Should be sorted by order
       for (let i = 1; i < visibleWidgets.length; i++) {
-        expect(visibleWidgets[i].order).toBeGreaterThanOrEqual(
-          visibleWidgets[i - 1].order,
-        );
+        expect(visibleWidgets[i].order).toBeGreaterThanOrEqual(visibleWidgets[i - 1].order);
       }
     });
 
@@ -331,15 +318,15 @@ describe("useDashboardLayout", () => {
       expect(allWidgets).toHaveLength(DASHBOARD_WIDGETS.length);
       // Should be sorted by order
       for (let i = 1; i < allWidgets.length; i++) {
-        expect(allWidgets[i].order).toBeGreaterThanOrEqual(
-          allWidgets[i - 1].order,
-        );
+        expect(allWidgets[i].order).toBeGreaterThanOrEqual(allWidgets[i - 1].order);
       }
     });
 
     it("allWidgets returns fallback when layout is null (initial state)", () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -352,7 +339,9 @@ describe("useDashboardLayout", () => {
 
     it("visibleWidgets returns empty array when layout is null (initial state)", () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -380,8 +369,8 @@ describe("useDashboardLayout", () => {
         result.current.reorder(15, 0);
       });
 
-      const newOrder = result.current.layout!.widgets
-        .filter((w) => w.visible)
+      const newOrder = result.current
+        .layout!.widgets.filter((w) => w.visible)
         .sort((a, b) => a.order - b.order)
         .map((w) => w.id);
 
@@ -394,7 +383,9 @@ describe("useDashboardLayout", () => {
 
     it("does nothing when layout is null", async () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -419,19 +410,15 @@ describe("useDashboardLayout", () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(
-        result.current.layout!.widgets.find((w) => w.id === "stat-cards")!
-          .visible,
-      ).toBe(true);
+      expect(result.current.layout!.widgets.find((w) => w.id === "stat-cards")!.visible).toBe(true);
 
       await act(async () => {
         result.current.toggleVisibility("stat-cards");
       });
 
-      expect(
-        result.current.layout!.widgets.find((w) => w.id === "stat-cards")!
-          .visible,
-      ).toBe(false);
+      expect(result.current.layout!.widgets.find((w) => w.id === "stat-cards")!.visible).toBe(
+        false,
+      );
 
       // Should have persisted
       expect(serverFnMocks.updateMyDashboardLayout).toHaveBeenCalled();
@@ -448,8 +435,7 @@ describe("useDashboardLayout", () => {
 
       // For viewer, kanban-wip-limits starts hidden
       expect(
-        result.current.layout!.widgets.find((w) => w.id === "kanban-wip-limits")!
-          .visible,
+        result.current.layout!.widgets.find((w) => w.id === "kanban-wip-limits")!.visible,
       ).toBe(false);
 
       await act(async () => {
@@ -457,14 +443,15 @@ describe("useDashboardLayout", () => {
       });
 
       expect(
-        result.current.layout!.widgets.find((w) => w.id === "kanban-wip-limits")!
-          .visible,
+        result.current.layout!.widgets.find((w) => w.id === "kanban-wip-limits")!.visible,
       ).toBe(true);
     });
 
     it("does nothing when layout is null", async () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -482,7 +469,9 @@ describe("useDashboardLayout", () => {
   describe("editMode", () => {
     it("starts as false", () => {
       serverFnMocks.getMyDashboardLayout.mockReturnValue(
-        new Promise(() => { /* never resolves */ }),
+        new Promise(() => {
+          /* never resolves */
+        }),
       );
 
       const { result } = renderHook(() => useDashboardLayout());
@@ -511,9 +500,7 @@ describe("useDashboardLayout", () => {
 
   describe("persist error", () => {
     it("shows error toast when saveLayout fails", async () => {
-      serverFnMocks.updateMyDashboardLayout.mockRejectedValue(
-        new Error("Save failed"),
-      );
+      serverFnMocks.updateMyDashboardLayout.mockRejectedValue(new Error("Save failed"));
 
       setMockAuth({ profile: { role: "admin" } });
       const { result } = renderHook(() => useDashboardLayout());
@@ -529,9 +516,7 @@ describe("useDashboardLayout", () => {
       // Wait for the rejected promise to trigger the toast
       await new Promise((r) => setTimeout(r, 50));
 
-      expect(toastMock.error).toHaveBeenCalledWith(
-        "Errore nel salvare la disposizione dei widget",
-      );
+      expect(toastMock.error).toHaveBeenCalledWith("Errore nel salvare la disposizione dei widget");
     });
 
     it("does not attempt to save when session is null", async () => {

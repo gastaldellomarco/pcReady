@@ -95,7 +95,10 @@ export function UpdateTicketBlock({
           value={action.config.ticket_id || ""}
           onChange={(v) => updateConfig({ ticket_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.optionalPlaceholder", "Lascia vuoto per usare il ticket dal trigger")}
+          placeholder={t(
+            "actionsBuilder.optionalPlaceholder",
+            "Lascia vuoto per usare il ticket dal trigger",
+          )}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -105,12 +108,14 @@ export function UpdateTicketBlock({
             </label>
             <select
               value={action.config.status || ""}
-              onChange={(e) => updateConfig({ status: e.target.value as UpdateTicketAction["config"]["status"] || undefined })}
+              onChange={(e) =>
+                updateConfig({
+                  status: (e.target.value as UpdateTicketAction["config"]["status"]) || undefined,
+                })
+              }
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             >
-              <option value="">
-                {t("actionsBuilder.keepCurrent", "Mantieni attuale")}
-              </option>
+              <option value="">{t("actionsBuilder.keepCurrent", "Mantieni attuale")}</option>
               {TICKET_STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -125,12 +130,15 @@ export function UpdateTicketBlock({
             </label>
             <select
               value={action.config.priority || ""}
-              onChange={(e) => updateConfig({ priority: e.target.value as UpdateTicketAction["config"]["priority"] || undefined })}
+              onChange={(e) =>
+                updateConfig({
+                  priority:
+                    (e.target.value as UpdateTicketAction["config"]["priority"]) || undefined,
+                })
+              }
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             >
-              <option value="">
-                {t("actionsBuilder.keepCurrent", "Mantieni attuale")}
-              </option>
+              <option value="">{t("actionsBuilder.keepCurrent", "Mantieni attuale")}</option>
               {PRIORITIES.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
@@ -145,7 +153,10 @@ export function UpdateTicketBlock({
           value={action.config.assignee_id || ""}
           onChange={(v) => updateConfig({ assignee_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.update_ticket.assigneePlaceholder", "UUID assegnatario")}
+          placeholder={t(
+            "actionsBuilder.blocks.update_ticket.assigneePlaceholder",
+            "UUID assegnatario",
+          )}
         />
       </div>
     </div>

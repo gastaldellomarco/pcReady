@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildDenyConsentRedirect,
-  invalidOAuthScopesAgainstAllowed,
-} from "@/lib/oauth-consent";
+import { buildDenyConsentRedirect, invalidOAuthScopesAgainstAllowed } from "@/lib/oauth-consent";
 import type { OAuthScope } from "@/lib/oauth-scopes";
 
 describe("oauth-consent helpers", () => {

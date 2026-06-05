@@ -38,7 +38,9 @@ export function QrCodeDialog({ device, onClose }: Props) {
         if (active) setDataUrl(url);
       })
       .catch((error) =>
-        toast.error(error instanceof Error ? error.message : t("qrCode.qrError", "Errore generazione QR")),
+        toast.error(
+          error instanceof Error ? error.message : t("qrCode.qrError", "Errore generazione QR"),
+        ),
       );
 
     return () => {
@@ -59,7 +61,10 @@ export function QrCodeDialog({ device, onClose }: Props) {
   function printLabel() {
     if (!dataUrl || !device) return;
     const win = window.open("", "_blank", "width=520,height=420");
-    if (!win) return toast.error(t("qrCode.popupBlocked", "Popup bloccato: consenti l'apertura per stampare l'etichetta"));
+    if (!win)
+      return toast.error(
+        t("qrCode.popupBlocked", "Popup bloccato: consenti l'apertura per stampare l'etichetta"),
+      );
 
     win.document.write(labelHtml([{ device, dataUrl }]));
     win.document.close();

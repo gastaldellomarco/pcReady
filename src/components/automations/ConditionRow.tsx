@@ -61,9 +61,7 @@ export function ConditionRow({
     if (needsArray && !hadArray) {
       newValue = condition.value ? [String(condition.value)] : [];
     } else if (!needsArray && hadArray) {
-      newValue = Array.isArray(condition.value)
-        ? condition.value[0] || ""
-        : "";
+      newValue = Array.isArray(condition.value) ? condition.value[0] || "" : "";
     } else {
       newValue = condition.value;
     }
@@ -94,10 +92,7 @@ export function ConditionRow({
             <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-text3">
               {t("conditionsBuilder.field.placeholder", "Campo")}
             </label>
-            <FieldSelector
-              value={condition.field}
-              onChange={handleFieldChange}
-            />
+            <FieldSelector value={condition.field} onChange={handleFieldChange} />
           </div>
 
           {/* Operator selector */}
@@ -121,9 +116,7 @@ export function ConditionRow({
               field={fieldDef}
               operator={condition.operator}
               value={condition.value}
-              onChange={(newValue) =>
-                onChange({ ...condition, value: newValue })
-              }
+              onChange={(newValue) => onChange({ ...condition, value: newValue })}
             />
           </div>
 

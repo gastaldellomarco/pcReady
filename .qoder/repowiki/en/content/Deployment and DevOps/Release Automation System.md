@@ -23,13 +23,16 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Added comprehensive documentation for the new post-deploy healthcheck system
 - Updated deployment pipeline to include mandatory healthcheck validation
 - Enhanced Lighthouse CI workflow with integrated healthcheck requirements
 - Documented healthcheck script capabilities including DNS resolution and warmup functionality
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Release Components](#core-release-components)
@@ -94,12 +97,14 @@ HealthcheckScript --> Healthcheck
 ```
 
 **Diagram sources**
+
 - [release.yml:1-132](file://.github/workflows/release.yml#L1-L132)
 - [ci.yml:1-44](file://.github/workflows/ci.yml#L1-L44)
 - [deploy.yml:1-61](file://.github/workflows/deploy.yml#L1-L61)
 - [lighthouse.yml:1-39](file://.github/workflows/lighthouse.yml#L1-L39)
 
 The architecture consists of four primary stages:
+
 - **Development Stage**: Code commits and feature branches
 - **Quality Assurance Stage**: Automated testing and validation
 - **Release Stage**: Version management and artifact creation
@@ -129,9 +134,11 @@ Auto --> CreateRelease
 ```
 
 **Diagram sources**
+
 - [release.yml:3-17](file://.github/workflows/release.yml#L3-L17)
 
 **Section sources**
+
 - [release.yml:1-132](file://.github/workflows/release.yml#L1-L132)
 - [ci.yml:1-44](file://.github/workflows/ci.yml#L1-L44)
 - [test.yml:1-55](file://.github/workflows/test.yml#L1-L55)
@@ -175,10 +182,12 @@ ReleaseWorkflow --> Bun : uses
 ```
 
 **Diagram sources**
+
 - [package.json:11-32](file://package.json#L11-L32)
 - [release.yml:33-51](file://.github/workflows/release.yml#L33-L51)
 
 **Section sources**
+
 - [package.json:1-125](file://package.json#L1-125)
 
 ## Version Management
@@ -206,6 +215,7 @@ Repo-->>GH : Confirm successful push
 ```
 
 **Diagram sources**
+
 - [bump.sh:10-22](file://scripts/bump.sh#L10-L22)
 - [release.yml:58-95](file://.github/workflows/release.yml#L58-L95)
 
@@ -213,13 +223,14 @@ Repo-->>GH : Confirm successful push
 
 The system supports three distinct version bump types:
 
-| Bump Type | Purpose | When to Use |
-|-----------|---------|-------------|
-| **Patch** | Bug fixes and small improvements | Security patches, hotfixes, minor feature additions |
-| **Minor** | New features and backward-compatible changes | Feature releases, significant improvements |
-| **Major** | Breaking changes and major architectural updates | Major version releases, API changes |
+| Bump Type | Purpose                                          | When to Use                                         |
+| --------- | ------------------------------------------------ | --------------------------------------------------- |
+| **Patch** | Bug fixes and small improvements                 | Security patches, hotfixes, minor feature additions |
+| **Minor** | New features and backward-compatible changes     | Feature releases, significant improvements          |
+| **Major** | Breaking changes and major architectural updates | Major version releases, API changes                 |
 
 **Section sources**
+
 - [bump.sh:4-13](file://scripts/bump.sh#L4-L13)
 - [release.yml:6-13](file://.github/workflows/release.yml#L6-L13)
 
@@ -248,26 +259,28 @@ WriteFile --> End([Complete])
 ```
 
 **Diagram sources**
+
 - [update-changelog.sh:35-137](file://scripts/update-changelog.sh#L35-L137)
 
 ### Commit Message Parsing
 
 The system uses sophisticated commit message parsing to categorize changes automatically:
 
-| Prefix Pattern | Category | Description |
-|----------------|----------|-------------|
-| `feat:` | Added | New features and functionality |
-| `fix:` | Fixed | Bug fixes and corrections |
-| `docs:` | Changed | Documentation updates |
-| `refactor:` | Changed | Code restructuring |
-| `perf:` | Changed | Performance improvements |
-| `test:` | Changed | Test additions and improvements |
-| `build:` | Changed | Build system changes |
-| `ci:` | Changed | Continuous integration changes |
-| `style:` | Changed | Code style and formatting |
-| `chore:` | Changed | Routine tasks and maintenance |
+| Prefix Pattern | Category | Description                     |
+| -------------- | -------- | ------------------------------- |
+| `feat:`        | Added    | New features and functionality  |
+| `fix:`         | Fixed    | Bug fixes and corrections       |
+| `docs:`        | Changed  | Documentation updates           |
+| `refactor:`    | Changed  | Code restructuring              |
+| `perf:`        | Changed  | Performance improvements        |
+| `test:`        | Changed  | Test additions and improvements |
+| `build:`       | Changed  | Build system changes            |
+| `ci:`          | Changed  | Continuous integration changes  |
+| `style:`       | Changed  | Code style and formatting       |
+| `chore:`       | Changed  | Routine tasks and maintenance   |
 
 **Section sources**
+
 - [update-changelog.sh:35-78](file://scripts/update-changelog.sh#L35-L78)
 - [CHANGELOG.md:1-120](file://CHANGELOG.md#L1-L120)
 
@@ -294,6 +307,7 @@ CreateGitHubRelease --> [*]
 ```
 
 **Diagram sources**
+
 - [release.yml:3-17](file://.github/workflows/release.yml#L3-L17)
 
 ### Release Artifact Creation
@@ -306,6 +320,7 @@ The system creates comprehensive release artifacts including:
 4. **Dependency Lock Files**: Ensuring reproducible builds
 
 **Section sources**
+
 - [release.yml:19-132](file://.github/workflows/release.yml#L19-L132)
 
 ## Deployment Pipeline
@@ -332,6 +347,7 @@ CI-->>Monitor : Notify Completion
 ```
 
 **Diagram sources**
+
 - [deploy.yml:39-61](file://.github/workflows/deploy.yml#L39-L61)
 - [wrangler.jsonc:1-8](file://wrangler.jsonc#L1-L8)
 
@@ -339,14 +355,15 @@ CI-->>Monitor : Notify Completion
 
 The deployment system uses Wrangler for Cloudflare Workers configuration:
 
-| Configuration | Value | Purpose |
-|---------------|-------|---------|
-| **Name** | `pcready` | Application identifier |
-| **Compatibility Date** | `2025-09-24` | Node.js compatibility |
-| **Main Entry** | `@tanstack/react-start/server-entry` | Server-side rendering entry |
-| **Compatibility Flags** | `nodejs_compat` | Enhanced Node.js support |
+| Configuration           | Value                                | Purpose                     |
+| ----------------------- | ------------------------------------ | --------------------------- |
+| **Name**                | `pcready`                            | Application identifier      |
+| **Compatibility Date**  | `2025-09-24`                         | Node.js compatibility       |
+| **Main Entry**          | `@tanstack/react-start/server-entry` | Server-side rendering entry |
+| **Compatibility Flags** | `nodejs_compat`                      | Enhanced Node.js support    |
 
 **Section sources**
+
 - [deploy.yml:1-61](file://.github/workflows/deploy.yml#L1-L61)
 - [wrangler.jsonc:1-8](file://wrangler.jsonc#L1-L8)
 
@@ -382,6 +399,7 @@ AllChecks --> |No| Block[Block Release]
 ```
 
 **Diagram sources**
+
 - [ci.yml:38-44](file://.github/workflows/ci.yml#L38-L44)
 - [test.yml:37-55](file://.github/workflows/test.yml#L37-L55)
 
@@ -389,13 +407,14 @@ AllChecks --> |No| Block[Block Release]
 
 The testing system maintains consistent environments across different workflow types:
 
-| Workflow | Node.js Version | Package Manager | Test Coverage |
-|----------|----------------|-----------------|---------------|
-| **CI** | 22.x | Bun 1.3.13 | Full suite |
-| **Tests** | 20.x | Bun 1.3.13 | Unit tests only |
-| **Release** | 22.x | Bun 1.3.13 | Build verification |
+| Workflow    | Node.js Version | Package Manager | Test Coverage      |
+| ----------- | --------------- | --------------- | ------------------ |
+| **CI**      | 22.x            | Bun 1.3.13      | Full suite         |
+| **Tests**   | 20.x            | Bun 1.3.13      | Unit tests only    |
+| **Release** | 22.x            | Bun 1.3.13      | Build verification |
 
 **Section sources**
+
 - [ci.yml:22-44](file://.github/workflows/ci.yml#L22-L44)
 - [test.yml:21-55](file://.github/workflows/test.yml#L21-L55)
 
@@ -428,6 +447,7 @@ end
 ```
 
 **Diagram sources**
+
 - [lighthouse.yml:18-26](file://.github/workflows/lighthouse.yml#L18-L26)
 - [healthcheck.sh:47-87](file://scripts/ci/healthcheck.sh#L47-L87)
 
@@ -436,28 +456,32 @@ end
 The healthcheck system provides comprehensive validation with the following features:
 
 #### DNS Resolution
+
 - Extracts hostname from URL using regex pattern matching
 - Supports both Python3 and getent fallback for DNS resolution
 - Logs successful DNS-to-IP resolution mapping
 
 #### HTTP Status Verification
+
 - Performs HEAD requests with redirect following
 - Captures final URL, HTTP status, redirect count, and response time
 - Validates HTTP status codes in 2xx and 3xx ranges as acceptable
 - Implements configurable retry logic with exponential backoff
 
 #### Warmup Requests
+
 - Optional warmup functionality for cache warming
 - Performs GET requests to warm application caches
 - Non-fatal failures for warmup requests don't block deployment
 
 #### Configuration Parameters
-| Parameter | Default | Purpose |
-|-----------|---------|---------|
-| **URL** | Required | Target application URL |
-| **Attempts** | 5 | Maximum retry attempts |
-| **Wait Time** | 15 seconds | Delay between retries |
-| **Warmup** | false | Enable cache warming |
+
+| Parameter     | Default    | Purpose                |
+| ------------- | ---------- | ---------------------- |
+| **URL**       | Required   | Target application URL |
+| **Attempts**  | 5          | Maximum retry attempts |
+| **Wait Time** | 15 seconds | Delay between retries  |
+| **Warmup**    | false      | Enable cache warming   |
 
 ### Lighthouse Performance Monitoring
 
@@ -477,17 +501,19 @@ Block --> Complete
 ```
 
 **Diagram sources**
+
 - [lighthouse.yml:18-39](file://.github/workflows/lighthouse.yml#L18-L39)
 
 The Lighthouse system uses configurable budget phases:
 
-| Phase | Purpose | Performance Targets |
-|-------|---------|-------------------|
-| **Phase 1** | Development baseline | Higher thresholds for early development |
-| **Phase 2** | Feature completion | Moderate thresholds for feature-complete apps |
-| **Phase 3** | Production ready | Strict thresholds for production deployment |
+| Phase       | Purpose              | Performance Targets                           |
+| ----------- | -------------------- | --------------------------------------------- |
+| **Phase 1** | Development baseline | Higher thresholds for early development       |
+| **Phase 2** | Feature completion   | Moderate thresholds for feature-complete apps |
+| **Phase 3** | Production ready     | Strict thresholds for production deployment   |
 
 **Section sources**
+
 - [lighthouse.yml:1-39](file://.github/workflows/lighthouse.yml#L1-L39)
 - [healthcheck.sh:1-91](file://scripts/ci/healthcheck.sh#L1-L91)
 - [lighthouse-budget.json:1-23](file://lighthouse-budget.json#L1-L23)
@@ -525,6 +551,7 @@ DirectReset --> ApplyMigrations
 ```
 
 **Diagram sources**
+
 - [supabase-backup.mjs:41-61](file://scripts/supabase-backup.mjs#L41-L61)
 - [supabase-reset.mjs:48-69](file://scripts/supabase-reset.mjs#L48-L69)
 
@@ -561,9 +588,11 @@ AllChecks --> |No| Fail
 ```
 
 **Diagram sources**
+
 - [validate-migrations.mjs:10-57](file://scripts/validate-migrations.mjs#L10-L57)
 
 **Section sources**
+
 - [supabase-backup.mjs:1-62](file://scripts/supabase-backup.mjs#L1-L62)
 - [supabase-reset.mjs:1-69](file://scripts/supabase-reset.mjs#L1-L69)
 - [validate-migrations.mjs:1-57](file://scripts/validate-migrations.mjs#L1-L57)
@@ -574,11 +603,11 @@ AllChecks --> |No| Fail
 
 The system implements intelligent caching to optimize build performance:
 
-| Cache Type | Location | Purpose | Benefits |
-|------------|----------|---------|----------|
-| **Bun Dependencies** | `~/.bun/install/cache` | Package installation cache | Reduced build times |
-| **Node Modules** | Project root | Build artifacts | Faster incremental builds |
-| **GitHub Actions** | Actions cache | Workflow dependencies | Consistent environments |
+| Cache Type           | Location               | Purpose                    | Benefits                  |
+| -------------------- | ---------------------- | -------------------------- | ------------------------- |
+| **Bun Dependencies** | `~/.bun/install/cache` | Package installation cache | Reduced build times       |
+| **Node Modules**     | Project root           | Build artifacts            | Faster incremental builds |
+| **GitHub Actions**   | Actions cache          | Workflow dependencies      | Consistent environments   |
 
 ### Resource Optimization
 
@@ -593,13 +622,13 @@ The deployment pipeline optimizes resource usage through:
 
 ### Common Release Issues
 
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| **Version Bump Failed** | NPM version command fails | Check commit permissions, verify semantic versioning |
-| **Changelog Generation Error** | Missing changelog sections | Verify commit message format, check git history |
-| **Release Creation Fails** | GitHub release creation blocked | Validate GitHub tokens, check release permissions |
-| **Deployment Timeout** | Cloudflare deployment fails | Check network connectivity, verify credentials |
-| **Healthcheck Failure** | Post-deployment validation fails | Review application logs, check database connectivity, verify DNS resolution |
+| Issue                          | Symptoms                         | Solution                                                                    |
+| ------------------------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| **Version Bump Failed**        | NPM version command fails        | Check commit permissions, verify semantic versioning                        |
+| **Changelog Generation Error** | Missing changelog sections       | Verify commit message format, check git history                             |
+| **Release Creation Fails**     | GitHub release creation blocked  | Validate GitHub tokens, check release permissions                           |
+| **Deployment Timeout**         | Cloudflare deployment fails      | Check network connectivity, verify credentials                              |
+| **Healthcheck Failure**        | Post-deployment validation fails | Review application logs, check database connectivity, verify DNS resolution |
 
 ### Debugging Commands
 
@@ -627,17 +656,18 @@ bun run cloudflare:build
 
 Critical environment variables for troubleshooting:
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `GITHUB_TOKEN` | GitHub API access | Yes |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare access | Yes |
-| `SUPABASE_URL` | Database connection | Yes |
-| `SUPABASE_DB_URL` | Database credentials | Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Database admin access | Yes |
-| `LHCI_URL` | Application URL for healthcheck | Yes |
-| `LHCI_BUDGET_STAGE` | Lighthouse budget phase | No |
+| Variable                    | Purpose                         | Required |
+| --------------------------- | ------------------------------- | -------- |
+| `GITHUB_TOKEN`              | GitHub API access               | Yes      |
+| `CLOUDFLARE_API_TOKEN`      | Cloudflare access               | Yes      |
+| `SUPABASE_URL`              | Database connection             | Yes      |
+| `SUPABASE_DB_URL`           | Database credentials            | Yes      |
+| `SUPABASE_SERVICE_ROLE_KEY` | Database admin access           | Yes      |
+| `LHCI_URL`                  | Application URL for healthcheck | Yes      |
+| `LHCI_BUDGET_STAGE`         | Lighthouse budget phase         | No       |
 
 **Section sources**
+
 - [release.yml:23-31](file://.github/workflows/release.yml#L23-L31)
 - [deploy.yml:42-54](file://.github/workflows/deploy.yml#L42-L54)
 - [lighthouse.yml:11-14](file://.github/workflows/lighthouse.yml#L11-L14)

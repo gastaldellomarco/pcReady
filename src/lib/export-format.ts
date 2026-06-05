@@ -39,7 +39,8 @@ export function rowsToCsv(rows: CsvCell[][]) {
  *
  */
 export function csvCell(value: CsvCell) {
-  const text = value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+  const text =
+    value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

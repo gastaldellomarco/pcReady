@@ -206,9 +206,7 @@ describe("buildFlowDefinition", () => {
   });
 
   it("stores the payload summary in meta.summary", () => {
-    const result = buildFlowDefinition(
-      makePayload({ summary: "Custom summary text" }),
-    );
+    const result = buildFlowDefinition(makePayload({ summary: "Custom summary text" }));
 
     expect(result.meta!.summary).toBe("Custom summary text");
   });
@@ -216,17 +214,13 @@ describe("buildFlowDefinition", () => {
   it("sets meta.migrated_at to an ISO timestamp", () => {
     const result = buildFlowDefinition(makePayload());
 
-    expect(result.meta!.migrated_at).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
-    );
+    expect(result.meta!.migrated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/);
   });
 
   // ── Edge cases ───────────────────────────────────────────────────
 
   it("returns empty nodes/edges when actions_definition is empty", () => {
-    const result = buildFlowDefinition(
-      makePayload({ actions_definition: [] }),
-    );
+    const result = buildFlowDefinition(makePayload({ actions_definition: [] }));
     const nodes = nodesOf(result);
 
     expect(nodes).toHaveLength(1);
@@ -235,9 +229,7 @@ describe("buildFlowDefinition", () => {
   });
 
   it("returns empty nodes/edges when actions_definition is undefined", () => {
-    const result = buildFlowDefinition(
-      makePayload({ actions_definition: undefined }),
-    );
+    const result = buildFlowDefinition(makePayload({ actions_definition: undefined }));
 
     expect(nodesOf(result)).toHaveLength(1);
     expect(edgesOf(result)).toHaveLength(0);

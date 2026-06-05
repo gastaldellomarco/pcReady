@@ -15,6 +15,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -27,10 +28,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the performance metrics and KPI calculation subsystem that powers the dashboard. It covers how raw ticket data is transformed into meaningful KPIs such as average resolution days, first response times, reopen rates, and completion percentages. It also documents the normalization techniques used for comparative analysis, the data aggregation logic, and how metrics feed into visualizations. The goal is to make the system understandable for managers interpreting performance data while providing developers with precise implementation details and optimization strategies.
 
 ## Project Structure
+
 The KPI pipeline spans frontend server functions, backend stored procedures, and UI components:
+
 - Frontend server functions orchestrate data fetching and computation.
 - Backend stored procedures provide efficient aggregations and indexes.
 - UI widgets render metrics and normalized scores.
@@ -74,6 +78,7 @@ FA --> TRW
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 - [TechnicianKpiTable.tsx:1-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L1-L82)
@@ -84,6 +89,7 @@ FA --> TRW
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 - [TechnicianKpiTable.tsx:1-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L1-L82)
@@ -94,6 +100,7 @@ FA --> TRW
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 
 ## Core Components
+
 - TechnicianKpi interface: Defines per-technician metrics used across widgets.
 - DashboardAnalytics: Aggregated monthly and summary metrics for the dashboard.
 - Server functions:
@@ -106,6 +113,7 @@ FA --> TRW
   - dashboard-helpers.ts: CSV export, date utilities, and daily counts helper.
 
 **Section sources**
+
 - [dashboard-analytics.ts:4-28](file://src/lib/dashboard-analytics.ts#L4-L28)
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
@@ -115,7 +123,9 @@ FA --> TRW
 - [dashboard-helpers.ts:1-72](file://src/lib/dashboard-helpers.ts#L1-L72)
 
 ## Architecture Overview
+
 The system follows a layered approach:
+
 - UI triggers server functions with date ranges and access tokens.
 - Server functions validate auth, call Supabase RPCs and queries, and assemble metrics.
 - Stored procedures aggregate counts and averages efficiently.
@@ -139,12 +149,14 @@ FN-->>UI : "DashboardAnalytics"
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:77-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L77-L97)
 
 ## Detailed Component Analysis
 
 ### TechnicianKpi Interface and Data Model
+
 The TechnicianKpi interface captures per-technician performance for quick rendering in tables and widgets.
 
 ```mermaid
@@ -159,12 +171,15 @@ class TechnicianKpi {
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:12-18](file://src/lib/dashboard-analytics.ts#L12-L18)
 
 **Section sources**
+
 - [dashboard-analytics.ts:12-18](file://src/lib/dashboard-analytics.ts#L12-L18)
 
 ### Monthly Ticket Aggregation and Average Resolution Days
+
 The getDashboardAnalytics function aggregates tickets by month and computes average resolution days. It treats archived tickets as closed when appropriate and falls back to created month if needed.
 
 ```mermaid
@@ -190,12 +205,15 @@ Summary --> End(["Return DashboardAnalytics"])
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 
 ### Technician Productivity Metrics and Completion Rates
+
 The getTechnicianStats function builds per-technician rows including assigned, completed, pending, average resolution in days and milliseconds, and a boolean flag for activity. It ensures all assignable users appear, even with zero metrics.
 
 ```mermaid
@@ -218,19 +236,23 @@ FN-->>UI : "Array of technician rows"
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
 
 **Section sources**
+
 - [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
 
 ### First Response Times and Reopen Rates
+
 The getTechnicianRadarMetrics function computes:
+
 - Completion percentage: completed / assigned
 - Average resolution days: only when closed_at is present
 - First response milliseconds: difference between first note and ticket creation
 - Reopen count: transitions to pending/open after closed/archived within the selected window
 - Reliability percentage: (completed - reopens) / completed
-It then normalizes metrics to 0–100 scale, inverting “speed” and “reactivity” so lower values are better.
+  It then normalizes metrics to 0–100 scale, inverting “speed” and “reactivity” so lower values are better.
 
 ```mermaid
 flowchart TD
@@ -253,13 +275,17 @@ M --> N["Return normalized rows"]
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 
 **Section sources**
+
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 
 ### Normalization Techniques: Min-Max Scaling and Percentiles
+
 Normalization is applied to enable fair comparisons:
+
 - Volume score: simple min-max scaling against team max assigned.
 - Speed and Reactivity: inverted min-max scaling so lower values are better.
 - Completion and Reliability: already percentages, clamped to 0–100.
@@ -275,12 +301,15 @@ N2 --> OUT
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:507-551](file://src/lib/dashboard-analytics.ts#L507-L551)
 
 **Section sources**
+
 - [dashboard-analytics.ts:507-551](file://src/lib/dashboard-analytics.ts#L507-L551)
 
 ### Data Aggregation from Raw Tickets to Calculated Metrics
+
 - Raw data sources:
   - tickets: created_at, closed_at, status, assignee_id
   - ticket_status_history: to_status/from_status/changing timestamps
@@ -292,10 +321,12 @@ N2 --> OUT
   - Technician KPIs: assigned and completed within date range; average resolution days filtered to closed tickets
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 ### Visualization Integration
+
 - TechnicianKpiTable: renders per-technician assigned/completed and average days with progress bars and workload badges.
 - TechnicianStatsWidget: displays per-technician cards with completion percentage and formatted average resolution duration.
 - TechnicianRadarWidget: shows normalized metrics (volume, speed, completion, reactivity, reliability) in radar charts, with optional “show all”.
@@ -310,6 +341,7 @@ AF --> TSW
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 - [TechnicianKpiTable.tsx:1-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L1-L82)
 - [TechnicianStatsWidget.tsx:1-173](file://src/components/dashboard/TechnicianStatsWidget.tsx#L1-L173)
@@ -317,17 +349,20 @@ AF --> TSW
 - [analytics-format.ts:1-6](file://src/components/dashboard/analytics-format.ts#L1-L6)
 
 **Section sources**
+
 - [TechnicianKpiTable.tsx:1-82](file://src/components/dashboard/TechnicianKpiTable.tsx#L1-L82)
 - [TechnicianStatsWidget.tsx:1-173](file://src/components/dashboard/TechnicianStatsWidget.tsx#L1-L173)
 - [TechnicianRadarWidget.tsx:1-184](file://src/components/dashboard/TechnicianRadarWidget.tsx#L1-L184)
 - [analytics-format.ts:1-6](file://src/components/dashboard/analytics-format.ts#L1-L6)
 
 ### Relationship Between Raw Data, Metrics, and Dashboards
+
 - Raw data: tickets, ticket_status_history, ticket_notes, profiles, user_roles.
 - Computed metrics: monthly opened/closed/avg_days, per-technician assigned/completed/avg_days, completion%, first response ms, reopen counts, reliability%, normalized scores.
 - Dashboard outputs: tables, weekly activity heatmaps, radar charts, CSV/PDF exports.
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard-analytics.ts:168-251](file://src/lib/dashboard-analytics.ts#L168-L251)
 - [dashboard-analytics.ts:253-331](file://src/lib/dashboard-analytics.ts#L253-L331)
@@ -335,6 +370,7 @@ AF --> TSW
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 
 ## Dependency Analysis
+
 - Frontend server functions depend on Supabase client and Zod for input validation.
 - Stored procedures depend on tickets, ticket_status_history, and profiles with supporting indexes.
 - UI components depend on server functions and formatting utilities.
@@ -351,14 +387,17 @@ UI["UI Widgets"] --> FA
 ```
 
 **Diagram sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 ## Performance Considerations
+
 - Database indexes:
   - Indexes on created_at, closed_at (where not null), and assignee_id + created_at improve query performance for time-range filtering and joins.
 - Stored procedures:
@@ -374,6 +413,7 @@ UI["UI Widgets"] --> FA
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures:
   - If the access token is invalid or missing, server functions throw unauthorized responses. Verify session state and token validity.
 - Missing closed_at on archived tickets:
@@ -386,11 +426,13 @@ UI["UI Widgets"] --> FA
   - CSV/PDF exports rely on properly formatted periods and presence of analytics data. Validate date ranges and access token.
 
 **Section sources**
+
 - [dashboard-analytics.ts:36-166](file://src/lib/dashboard-analytics.ts#L36-L166)
 - [dashboard-analytics.ts:507-551](file://src/lib/dashboard-analytics.ts#L507-L551)
 - [dashboard-helpers.ts:1-72](file://src/lib/dashboard-helpers.ts#L1-L72)
 
 ## Conclusion
+
 The performance metrics and KPI calculation system combines efficient backend aggregations with robust frontend computations to deliver actionable insights. By normalizing metrics and handling edge cases like archived tickets and null values, it supports fair comparisons and reliable dashboards. Developers can extend the system by adding new KPIs in the server functions and mapping them to UI components, while maintaining strong data accuracy and performance.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -398,6 +440,7 @@ The performance metrics and KPI calculation system combines efficient backend ag
 ## Appendices
 
 ### KPI Definitions and Algorithms
+
 - Average resolution days (monthly):
   - Sum of (closed_at - created_at) in days divided by number of closed tickets within the month.
 - First response time (radar):
@@ -412,10 +455,12 @@ The performance metrics and KPI calculation system combines efficient backend ag
   - Min-max scaling with inversion for speed/reactivity; clamping to 0–100.
 
 **Section sources**
+
 - [dashboard-analytics.ts:333-554](file://src/lib/dashboard-analytics.ts#L333-L554)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)
 
 ### Data Accuracy and Statistical Significance
+
 - Use closed_at when available; otherwise, archived timestamps or created month as fallback.
 - Filter to finite numeric values before computing averages.
 - For small sample sizes, consider confidence intervals or minimum observation thresholds to assess statistical significance.
@@ -423,11 +468,13 @@ The performance metrics and KPI calculation system combines efficient backend ag
 [No sources needed since this section provides general guidance]
 
 ### Ticket Completion Workflow Impact on Metrics
+
 - Completing a ticket updates closed_at and can influence:
   - Monthly closed counts and average resolution days.
   - Technician KPIs for the completion period.
 - PDF generation and notifications occur post-completion and do not alter KPIs directly.
 
 **Section sources**
+
 - [ticket-completion.server.ts:49-181](file://src/lib/ticket-completion.server.ts#L49-L181)
 - [dashboard_analytics_rpc_functions.sql:31-97](file://supabase/migrations/20260511145300_dashboard_analytics_rpc_functions.sql#L31-L97)

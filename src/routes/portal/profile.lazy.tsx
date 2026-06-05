@@ -149,7 +149,9 @@ function PortalProfilePage() {
     i18n.changeLanguage(newLang);
     try {
       await updateLanguage({ data: { token, language: newLang } });
-    } catch { /* non-blocking */ }
+    } catch {
+      /* non-blocking */
+    }
     toast.success(newLang === "it" ? "Lingua cambiata in Italiano" : "Language changed to English");
   }
 
@@ -253,10 +255,14 @@ function PortalProfilePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-5" onValueChange={(value) => {
-        if (value === "access" && !accessSessions) loadAccess();
-        if (value === "contacts" && !clientContacts) loadClientContacts();
-      }}>
+      <Tabs
+        defaultValue="profile"
+        className="space-y-5"
+        onValueChange={(value) => {
+          if (value === "access" && !accessSessions) loadAccess();
+          if (value === "contacts" && !clientContacts) loadClientContacts();
+        }}
+      >
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
           <TabsTrigger value="profile">Profilo</TabsTrigger>
           <TabsTrigger value="requests">Richieste</TabsTrigger>
@@ -368,7 +374,11 @@ function PortalProfilePage() {
                 checked={notifyPrefs.bundle_expiring}
                 onChange={(v) => setNotifyPrefs((p) => ({ ...p, bundle_expiring: v }))}
               />
-              <Button variant="outline" onClick={saveNotificationPreferences} disabled={notifySaving}>
+              <Button
+                variant="outline"
+                onClick={saveNotificationPreferences}
+                disabled={notifySaving}
+              >
                 {notifySaving ? "Salvataggio..." : "Salva preferenze"}
               </Button>
             </CardContent>
@@ -507,7 +517,8 @@ function PortalProfilePage() {
                 <Mail className="size-5" /> Referenti aziendali
               </CardTitle>
               <CardDescription>
-                Tutti i contatti della tua azienda con accesso al portale. Ogni referente accede con le proprie credenziali e vede gli stessi dati aziendali.
+                Tutti i contatti della tua azienda con accesso al portale. Ogni referente accede con
+                le proprie credenziali e vede gli stessi dati aziendali.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -522,11 +533,20 @@ function PortalProfilePage() {
               ) : (
                 <div className="space-y-2">
                   {clientContacts.map((contact) => (
-                    <div key={contact.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div
+                      key={contact.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                           {contact.fullName
-                            ? contact.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((p: string) => p[0]).join("").toUpperCase()
+                            ? contact.fullName
+                                .split(/\s+/)
+                                .filter(Boolean)
+                                .slice(0, 2)
+                                .map((p: string) => p[0])
+                                .join("")
+                                .toUpperCase()
                             : "?"}
                         </div>
                         <div>
@@ -536,7 +556,9 @@ function PortalProfilePage() {
                               {contact.isSelf ? " (tu)" : ""}
                             </p>
                             {contact.isPrimary && (
-                              <Badge variant="default" className="text-[10px]">Referente</Badge>
+                              <Badge variant="default" className="text-[10px]">
+                                Referente
+                              </Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">{contact.email}</p>
@@ -574,9 +596,14 @@ function PortalProfilePage() {
               ) : (
                 <div className="space-y-2">
                   {accessSessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div
+                      key={session.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`rounded-full p-1.5 ${session.isActive ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                        <div
+                          className={`rounded-full p-1.5 ${session.isActive ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
+                        >
                           {session.isActive ? (
                             <CheckCircle2 className="size-4" />
                           ) : session.isRevoked ? (
@@ -590,8 +617,15 @@ function PortalProfilePage() {
                             {new Date(session.createdAt).toLocaleString("it-IT")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Ultimo utilizzo: {session.lastUsedAt ? new Date(session.lastUsedAt).toLocaleString("it-IT") : "—"}
-                            {session.isRevoked ? " · Revocata" : session.isActive ? " · Attiva" : " · Scaduta"}
+                            Ultimo utilizzo:{" "}
+                            {session.lastUsedAt
+                              ? new Date(session.lastUsedAt).toLocaleString("it-IT")
+                              : "—"}
+                            {session.isRevoked
+                              ? " · Revocata"
+                              : session.isActive
+                                ? " · Attiva"
+                                : " · Scaduta"}
                           </p>
                         </div>
                       </div>
@@ -643,11 +677,16 @@ function PortalProfilePage() {
 
               {twoFAPending && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                  <p className="text-sm">Abbiamo inviato un codice di 6 cifre alla tua email. Inseriscilo qui sotto per attivare la 2FA.</p>
+                  <p className="text-sm">
+                    Abbiamo inviato un codice di 6 cifre alla tua email. Inseriscilo qui sotto per
+                    attivare la 2FA.
+                  </p>
                   <div className="flex gap-2">
                     <Input
                       value={twoFACode}
-                      onChange={(e) => setTwoFACode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                      onChange={(e) =>
+                        setTwoFACode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))
+                      }
                       placeholder="000000"
                       maxLength={6}
                       className="w-32 text-center font-mono text-lg tracking-widest"

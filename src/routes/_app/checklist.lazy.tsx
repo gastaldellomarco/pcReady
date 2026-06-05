@@ -35,11 +35,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  ListSkeleton,
-  PageEmptyState,
-  PageFetchError,
-} from "@/components/page-states";
+import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
@@ -219,20 +215,26 @@ function ChecklistPage() {
   }
 
   // ── Tag filter ──
-  const allTags = Array.from(
-    new Set(templates.flatMap((tmpl) => tmpl.tags || [])),
-  ).sort((a, b) => a.localeCompare(b));
+  const allTags = Array.from(new Set(templates.flatMap((tmpl) => tmpl.tags || []))).sort((a, b) =>
+    a.localeCompare(b),
+  );
   const filteredTemplates = tagFilter
     ? templates.filter((tmpl) => (tmpl.tags || []).includes(tagFilter))
     : templates;
-  const completionStats = (statsQuery.data ?? {}) as Record<string, { total: number; completed: number }>;
+  const completionStats = (statsQuery.data ?? {}) as Record<
+    string,
+    { total: number; completed: number }
+  >;
 
   const current = templates.find((t) => t.id === active);
 
   if (listQuery.isError) {
     return (
       <PageFetchError
-        message={errorMessage(listQuery.error, t("toasts.loadChecklists", "Impossibile caricare le checklist"))}
+        message={errorMessage(
+          listQuery.error,
+          t("toasts.loadChecklists", "Impossibile caricare le checklist"),
+        )}
         onRetry={() => void listQuery.refetch()}
       />
     );
@@ -256,9 +258,7 @@ function ChecklistPage() {
               <button
                 onClick={() => setTagFilter(null)}
                 className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                  !tagFilter
-                    ? "text-white"
-                    : "text-text3 hover:text-text"
+                  !tagFilter ? "text-white" : "text-text3 hover:text-text"
                 }`}
                 style={{ background: !tagFilter ? "var(--accent)" : "var(--surface2)" }}
               >
@@ -269,9 +269,7 @@ function ChecklistPage() {
                   key={tag}
                   onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
                   className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                    tagFilter === tag
-                      ? "text-white"
-                      : "text-text3 hover:text-text"
+                    tagFilter === tag ? "text-white" : "text-text3 hover:text-text"
                   }`}
                   style={{ background: tagFilter === tag ? "var(--accent)" : "var(--surface2)" }}
                 >
@@ -285,7 +283,10 @@ function ChecklistPage() {
             <PageEmptyState
               className="border-0 shadow-none bg-transparent p-4"
               title={t("emptyTitle", "Nessun modello checklist")}
-              description={t("emptyDescription", "Creane uno con il pulsante Nuovo in alto per iniziare.")}
+              description={t(
+                "emptyDescription",
+                "Creane uno con il pulsante Nuovo in alto per iniziare.",
+              )}
             />
           )}
           {!loading && !filteredTemplates.length && tagFilter && (
@@ -324,35 +325,46 @@ function ChecklistPage() {
                 <div className="text-[10px] text-text3 font-mono mt-1">
                   {Object.values(tmpl.structure || {}).reduce((a, group) => {
                     const sections = (group as any).sections || {};
-                    return a + Object.values(sections).reduce((b: number, sec: any) => b + ((sec as any).items?.length || 0), 0);
+                    return (
+                      a +
+                      Object.values(sections).reduce(
+                        (b: number, sec: any) => b + ((sec as any).items?.length || 0),
+                        0,
+                      )
+                    );
                   }, 0)}{" "}
                   {t("itemsCount", "voci")}
                 </div>
                 {/* Completion progress bar */}
-                {completionStats[tmpl.id] && completionStats[tmpl.id].total > 0 && (() => {
-                  const stat = completionStats[tmpl.id];
-                  const pct = Math.round((stat.completed / stat.total) * 100);
-                  return (
-                  <div className="mt-1.5">
-                    <div className="w-full h-[4px] rounded-full overflow-hidden" style={{ background: "var(--border2)" }}>
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          background: "var(--success)",
-                        }}
-                      />
-                    </div>
-                    <div className="text-[10px] font-mono text-text3 mt-0.5">
-                      {t("completionStats", {
-                        completed: stat.completed,
-                        total: stat.total,
-                        pct,
-                      })}
-                    </div>
-                  </div>
-                  );
-                })()}
+                {completionStats[tmpl.id] &&
+                  completionStats[tmpl.id].total > 0 &&
+                  (() => {
+                    const stat = completionStats[tmpl.id];
+                    const pct = Math.round((stat.completed / stat.total) * 100);
+                    return (
+                      <div className="mt-1.5">
+                        <div
+                          className="w-full h-[4px] rounded-full overflow-hidden"
+                          style={{ background: "var(--border2)" }}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${pct}%`,
+                              background: "var(--success)",
+                            }}
+                          />
+                        </div>
+                        <div className="text-[10px] font-mono text-text3 mt-0.5">
+                          {t("completionStats", {
+                            completed: stat.completed,
+                            total: stat.total,
+                            pct,
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
               </button>
             );
           })}
@@ -374,7 +386,9 @@ function ChecklistPage() {
         />
       ) : (
         <div className="pc-card flex items-center justify-center min-h-[400px]">
-          <div className="text-text3 text-sm">{t("selectPrompt", "Seleziona o crea un modello")}</div>
+          <div className="text-text3 text-sm">
+            {t("selectPrompt", "Seleziona o crea un modello")}
+          </div>
         </div>
       )}
       <VersionHistoryDrawer
@@ -389,8 +403,14 @@ function ChecklistPage() {
         title={t("deleteDialog.title", "Eliminare questo modello?")}
         description={
           deleteTemplateTarget
-            ? t("deleteDialog.description", { name: deleteTemplateTarget.name, defaultValue: "Il modello verra' rimosso." })
-            : t("deleteDialog.descriptionGeneric", "Il modello e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata.")
+            ? t("deleteDialog.description", {
+                name: deleteTemplateTarget.name,
+                defaultValue: "Il modello verra' rimosso.",
+              })
+            : t(
+                "deleteDialog.descriptionGeneric",
+                "Il modello e tutta la sua struttura verranno rimossi. L'azione non puo' essere annullata.",
+              )
         }
         confirmLabel={t("deleteDialog.confirm", "Elimina modello")}
         loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
@@ -431,7 +451,7 @@ function TemplateEditor({
   const groups = struct || {};
   const groupKeys = Object.keys(groups);
   const [activeGroup, setActiveGroup] = useState<string>(groupKeys[0] || "");
-  const activeGroupSections = activeGroup ? (groups[activeGroup]?.sections || {}) : {};
+  const activeGroupSections = activeGroup ? groups[activeGroup]?.sections || {} : {};
   const sectionKeys = Object.keys(activeGroupSections);
   const [activeSection, setActiveSection] = useState<string>(sectionKeys[0] || "");
   const [editingTab, setEditingTab] = useState<string | null>(null);
@@ -458,10 +478,14 @@ function TemplateEditor({
     setPreviewMode(false);
   }, [template.description, template.id, template.name, template.structure]);
 
-  const section = activeGroup && activeSection ? groups[activeGroup]?.sections?.[activeSection] : null;
+  const section =
+    activeGroup && activeSection ? groups[activeGroup]?.sections?.[activeSection] : null;
   const activeSectionData = section;
 
-  function persist(s: ChecklistStructure, changeNote = t("changeNotes.structureUpdated", "Struttura checklist aggiornata")) {
+  function persist(
+    s: ChecklistStructure,
+    changeNote = t("changeNotes.structureUpdated", "Struttura checklist aggiornata"),
+  ) {
     setStruct(s);
     onUpdate({ structure: s }, changeNote);
   }
@@ -498,7 +522,10 @@ function TemplateEditor({
       ...struct,
       [activeGroup]: {
         ...struct[activeGroup],
-        sections: { ...struct[activeGroup].sections, [key]: { label: t("newSection", "Nuova sezione"), items: [] } },
+        sections: {
+          ...struct[activeGroup].sections,
+          [key]: { label: t("newSection", "Nuova sezione"), items: [] },
+        },
       },
     };
     persist(next, t("changeNotes.sectionAdded", "Sezione checklist aggiunta"));
@@ -508,7 +535,10 @@ function TemplateEditor({
     if (!activeGroup) return;
     const g = struct[activeGroup];
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [key]: { ...g.sections[key], label } } } },
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [key]: { ...g.sections[key], label } } },
+      },
       t("changeNotes.sectionRenamed", "Sezione checklist rinominata"),
     );
   }
@@ -538,8 +568,16 @@ function TemplateEditor({
     const sec = g.sections[key];
     if (!sec) return;
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [key]: { ...sec, assigned_to: assignedTo || null } } } },
-      assignedTo ? t("changeNotes.sectionAssigned", "Tecnico assegnato alla sezione") : t("changeNotes.sectionUnassigned", "Assegnazione sezione rimossa"),
+      {
+        ...struct,
+        [activeGroup]: {
+          ...g,
+          sections: { ...g.sections, [key]: { ...sec, assigned_to: assignedTo || null } },
+        },
+      },
+      assignedTo
+        ? t("changeNotes.sectionAssigned", "Tecnico assegnato alla sezione")
+        : t("changeNotes.sectionUnassigned", "Assegnazione sezione rimossa"),
     );
   }
 
@@ -551,7 +589,10 @@ function TemplateEditor({
     const sec = g.sections[activeSection];
     const items = [...(sec?.items || []), { id, text: t("newItem", "Nuova voce") }];
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } },
+      },
       t("changeNotes.itemAdded", "Voce checklist aggiunta"),
     );
   }
@@ -561,7 +602,10 @@ function TemplateEditor({
     const sec = g.sections[activeSection];
     const items = sec.items.map((i) => (i.id === id ? { ...i, text } : i));
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } },
+      },
       t("changeNotes.itemUpdated", "Voce checklist aggiornata"),
     );
   }
@@ -571,7 +615,10 @@ function TemplateEditor({
     const sec = g.sections[activeSection];
     const items = sec.items.map((i) => (i.id === id ? { ...i, type } : i));
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } },
+      },
       t("changeNotes.itemTypeChanged", "Tipo voce modificato"),
     );
   }
@@ -581,8 +628,13 @@ function TemplateEditor({
     const sec = g.sections[activeSection];
     const items = sec.items.map((i) => (i.id === id ? { ...i, required } : i));
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
-      required ? t("changeNotes.itemRequired", "Voce impostata come obbligatoria") : t("changeNotes.itemOptional", "Voce impostata come opzionale"),
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } },
+      },
+      required
+        ? t("changeNotes.itemRequired", "Voce impostata come obbligatoria")
+        : t("changeNotes.itemOptional", "Voce impostata come opzionale"),
     );
   }
   function removeItem(id: string) {
@@ -591,7 +643,10 @@ function TemplateEditor({
     const sec = g.sections[activeSection];
     const items = sec.items.filter((i) => i.id !== id);
     persist(
-      { ...struct, [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } } },
+      {
+        ...struct,
+        [activeGroup]: { ...g, sections: { ...g.sections, [activeSection]: { ...sec, items } } },
+      },
       t("changeNotes.itemRemoved", "Voce checklist rimossa"),
     );
   }
@@ -630,7 +685,16 @@ function TemplateEditor({
       const reordered = arrayMove(items, oldIdx, newIdx);
       const g = struct[srcGroup];
       persist(
-        { ...struct, [srcGroup]: { ...g, sections: { ...g.sections, [srcSection]: { ...g.sections[srcSection], items: reordered } } } },
+        {
+          ...struct,
+          [srcGroup]: {
+            ...g,
+            sections: {
+              ...g.sections,
+              [srcSection]: { ...g.sections[srcSection], items: reordered },
+            },
+          },
+        },
         t("changeNotes.itemReordered", "Voce checklist riordinata"),
       );
     } else {
@@ -649,15 +713,29 @@ function TemplateEditor({
       else tgtItems.push(moved);
 
       const updated = { ...struct };
-      updated[srcGroup] = { ...srcG, sections: { ...srcG.sections, [srcSection]: { ...srcG.sections[srcSection], items: srcItems } } };
-      updated[tgtGroup] = { ...tgtG, sections: { ...tgtG.sections, [tgtSection]: { ...tgtG.sections[tgtSection], items: tgtItems } } };
+      updated[srcGroup] = {
+        ...srcG,
+        sections: {
+          ...srcG.sections,
+          [srcSection]: { ...srcG.sections[srcSection], items: srcItems },
+        },
+      };
+      updated[tgtGroup] = {
+        ...tgtG,
+        sections: {
+          ...tgtG.sections,
+          [tgtSection]: { ...tgtG.sections[tgtSection], items: tgtItems },
+        },
+      };
       persist(updated, t("changeNotes.itemMovedSection", "Voce spostata tra sezioni"));
     }
   }
 
   const itemIds =
     activeGroup && activeSection && groups[activeGroup]?.sections?.[activeSection]
-      ? groups[activeGroup].sections[activeSection].items.map((it) => `${activeGroup}:${activeSection}:${it.id}`)
+      ? groups[activeGroup].sections[activeSection].items.map(
+          (it) => `${activeGroup}:${activeSection}:${it.id}`,
+        )
       : [];
 
   return (
@@ -672,12 +750,19 @@ function TemplateEditor({
               value={name}
               disabled={!canEdit}
               onChange={(e) => setName(e.target.value)}
-              onBlur={() => name !== template.name && onUpdate({ name }, t("changeNotes.nameUpdated", "Nome checklist aggiornato"))}
+              onBlur={() =>
+                name !== template.name &&
+                onUpdate({ name }, t("changeNotes.nameUpdated", "Nome checklist aggiornato"))
+              }
             />
             {template.is_default && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold flex-shrink-0"
-                style={{ background: "var(--warn-bg, #fef9e7)", color: "var(--warn)", border: "1px solid var(--warn-border, #f59e0b40)" }}
+                style={{
+                  background: "var(--warn-bg, #fef9e7)",
+                  color: "var(--warn)",
+                  border: "1px solid var(--warn-border, #f59e0b40)",
+                }}
               >
                 <Star className="size-3 fill-current" /> {t("default", "Predefinito")}
               </span>
@@ -690,7 +775,11 @@ function TemplateEditor({
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={() => setPreviewMode((p) => !p)}
-                title={previewMode ? t("editToggle", "Torna a modifica") : t("previewToggle", "Anteprima")}
+                title={
+                  previewMode
+                    ? t("editToggle", "Torna a modifica")
+                    : t("previewToggle", "Anteprima")
+                }
               >
                 {previewMode ? (
                   <>
@@ -742,14 +831,19 @@ function TemplateEditor({
             onChange={(e) => setDesc(e.target.value)}
             onBlur={() =>
               desc !== (template.description || "") &&
-              onUpdate({ description: desc }, t("changeNotes.descriptionUpdated", "Descrizione checklist aggiornata"))
+              onUpdate(
+                { description: desc },
+                t("changeNotes.descriptionUpdated", "Descrizione checklist aggiornata"),
+              )
             }
           />
           {/* Tags input */}
           <TagInput
             tags={template.tags || []}
             canEdit={canEdit}
-            onChange={(newTags) => onUpdate({ tags: newTags }, t("changeNotes.tagsUpdated", "Tag checklist aggiornati"))}
+            onChange={(newTags) =>
+              onUpdate({ tags: newTags }, t("changeNotes.tagsUpdated", "Tag checklist aggiornati"))
+            }
           />
         </div>
 
@@ -803,10 +897,19 @@ function TemplateEditor({
                               }
                             }}
                           />
-                          <button className="pc-btn-icon touch-target" onClick={() => { renameGroup(gk, groupLabel); setEditingGroupKey(null); }}>
+                          <button
+                            className="pc-btn-icon touch-target"
+                            onClick={() => {
+                              renameGroup(gk, groupLabel);
+                              setEditingGroupKey(null);
+                            }}
+                          >
                             <Check className="size-3" />
                           </button>
-                          <button className="pc-btn-icon touch-target" onClick={() => setEditingGroupKey(null)}>
+                          <button
+                            className="pc-btn-icon touch-target"
+                            onClick={() => setEditingGroupKey(null)}
+                          >
                             <X className="size-3" />
                           </button>
                         </div>
@@ -822,9 +925,7 @@ function TemplateEditor({
                           {group.label}
                         </span>
                       )}
-                      <span className="font-mono text-[10px] opacity-60">
-                        {secKeys.length} sez
-                      </span>
+                      <span className="font-mono text-[10px] opacity-60">{secKeys.length} sez</span>
                     </button>
                     {canEdit && !previewMode && groupKeys.length > 1 && (
                       <button
@@ -860,10 +961,19 @@ function TemplateEditor({
                                       }
                                     }}
                                   />
-                                  <button className="pc-btn-icon touch-target" onClick={() => { renameSection(sk, tabLabel); setEditingTab(null); }}>
+                                  <button
+                                    className="pc-btn-icon touch-target"
+                                    onClick={() => {
+                                      renameSection(sk, tabLabel);
+                                      setEditingTab(null);
+                                    }}
+                                  >
                                     <Check className="size-3" />
                                   </button>
-                                  <button className="pc-btn-icon touch-target" onClick={() => setEditingTab(null)}>
+                                  <button
+                                    className="pc-btn-icon touch-target"
+                                    onClick={() => setEditingTab(null)}
+                                  >
                                     <X className="size-3" />
                                   </button>
                                 </div>
@@ -950,7 +1060,9 @@ function TemplateEditor({
                 className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border p-2"
                 style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
               >
-                <span className="text-[12px] font-semibold">{t("assignTech", "Assegna sezione a tecnico")}</span>
+                <span className="text-[12px] font-semibold">
+                  {t("assignTech", "Assegna sezione a tecnico")}
+                </span>
                 {canEdit && !previewMode ? (
                   <select
                     aria-label={t("assignTech", "Assegna sezione a tecnico")}
@@ -958,7 +1070,9 @@ function TemplateEditor({
                     value={(activeSectionData as any)?.assigned_to ?? ""}
                     onChange={(event) => updateSectionAssignee(activeSection, event.target.value)}
                   >
-                    <option value="">{t("noSpecificTechShort", "\u2014 Nessun tecnico specifico \u2014")}</option>
+                    <option value="">
+                      {t("noSpecificTechShort", "\u2014 Nessun tecnico specifico \u2014")}
+                    </option>
                     {technicians.map((tech) => (
                       <option key={tech.id} value={tech.id}>
                         {tech.full_name}
@@ -1009,7 +1123,9 @@ function TemplateEditor({
                           const grp = parts[0];
                           const sec = parts[1];
                           const itId = parts[2];
-                          const found = groups[grp]?.sections?.[sec]?.items?.find((i: ChecklistItemDef) => i.id === itId);
+                          const found = groups[grp]?.sections?.[sec]?.items?.find(
+                            (i: ChecklistItemDef) => i.id === itId,
+                          );
                           return (found as ChecklistItemDef)?.text || t("item", "Voce");
                         })()}
                       </span>
@@ -1043,8 +1159,14 @@ function TemplateEditor({
         title={t("deleteSectionDialog.title", "Eliminare questa sezione?")}
         description={
           deleteSectionKey && activeGroup && groups[activeGroup]?.sections?.[deleteSectionKey]
-            ? t("deleteSectionDialog.description", { label: groups[activeGroup].sections[deleteSectionKey].label, defaultValue: "La sezione verra' rimossa." })
-            : t("deleteSectionDialog.descriptionGeneric", "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.")
+            ? t("deleteSectionDialog.description", {
+                label: groups[activeGroup].sections[deleteSectionKey].label,
+                defaultValue: "La sezione verra' rimossa.",
+              })
+            : t(
+                "deleteSectionDialog.descriptionGeneric",
+                "La sezione e tutte le sue voci verranno rimosse dal modello. L'azione non puo' essere annullata.",
+              )
         }
         confirmLabel={t("deleteSectionDialog.confirm", "Elimina sezione")}
         loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
@@ -1058,8 +1180,14 @@ function TemplateEditor({
         title={t("deleteGroupDialog.title", "Eliminare questo gruppo?")}
         description={
           deleteGroupKey && groups[deleteGroupKey]
-            ? t("deleteGroupDialog.description", { label: groups[deleteGroupKey].label, defaultValue: "Il gruppo verra' rimosso con tutte le sue sezioni." })
-            : t("deleteGroupDialog.descriptionGeneric", "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.")
+            ? t("deleteGroupDialog.description", {
+                label: groups[deleteGroupKey].label,
+                defaultValue: "Il gruppo verra' rimosso con tutte le sue sezioni.",
+              })
+            : t(
+                "deleteGroupDialog.descriptionGeneric",
+                "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.",
+              )
         }
         confirmLabel={t("deleteGroupDialog.confirm", "Elimina gruppo")}
         loadingLabel={t("deleteDialog.loading", "Eliminazione...")}
@@ -1168,7 +1296,10 @@ function SortableChecklistItem({
 
       {/* Required badge (preview) */}
       {!inEdit && item.required && (
-        <span className="text-[10px] text-red-500 font-bold flex-shrink-0" title={t("requiredLabel", "Obbligatoria")}>
+        <span
+          className="text-[10px] text-red-500 font-bold flex-shrink-0"
+          title={t("requiredLabel", "Obbligatoria")}
+        >
           *
         </span>
       )}
@@ -1178,7 +1309,11 @@ function SortableChecklistItem({
         <button
           className={`pc-btn-icon touch-target ${item.required ? "text-red-500" : "opacity-30"}`}
           onClick={() => onRequiredChange(item.id, !item.required)}
-          title={item.required ? t("requiredLabel", "Obbligatoria") : t("notRequired", "Non obbligatoria")}
+          title={
+            item.required
+              ? t("requiredLabel", "Obbligatoria")
+              : t("notRequired", "Non obbligatoria")
+          }
         >
           <Asterisk className="size-3" />
         </button>

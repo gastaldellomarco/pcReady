@@ -144,7 +144,9 @@ export default function TechnicianRadarWidget({
       </CardHeader>
       <CardContent className="h-[320px]">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-text3">{t("radar.loading", "Caricamento...")}</div>
+          <div className="h-full flex items-center justify-center text-text3">
+            {t("radar.loading", "Caricamento...")}
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {showAll ? (

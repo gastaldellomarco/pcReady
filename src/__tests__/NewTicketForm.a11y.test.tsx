@@ -42,7 +42,12 @@ import { NewTicketForm } from "@/components/portal/NewTicketForm";
 
 describe("NewTicketForm — Accessibilità", () => {
   it("non ha violazioni a11y nello stato iniziale", async () => {
-    const { container } = render(<NewTicketForm token="test-token" categories={["Assistenza tecnica", "Hardware", "Software"]} />);
+    const { container } = render(
+      <NewTicketForm
+        token="test-token"
+        categories={["Assistenza tecnica", "Hardware", "Software"]}
+      />,
+    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

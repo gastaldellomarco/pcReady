@@ -7,11 +7,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 
 interface BundleMutations {
   create: UseMutationResult<unknown, Error, Partial<AssistanceBundle>>;
-  update: UseMutationResult<
-    unknown,
-    Error,
-    { id: string; data: Partial<AssistanceBundle> }
-  >;
+  update: UseMutationResult<unknown, Error, { id: string; data: Partial<AssistanceBundle> }>;
 }
 
 interface UseBundleManagerOptions {
@@ -62,20 +58,13 @@ export function useBundleManager(options: UseBundleManagerOptions) {
       resetForms();
       toast.success(t("success.bundleSaved", "Bundle salvato"));
     } catch (error) {
-      toast.error(
-        errorMessage(
-          error,
-          t("errors.saveBundle", "Errore salvataggio bundle"),
-        ),
-      );
+      toast.error(errorMessage(error, t("errors.saveBundle", "Errore salvataggio bundle")));
     }
   }
 
   async function toggle(bundle: AssistanceBundle) {
     if (!isAdmin) {
-      toast.error(
-        t("errors.adminOnlyEdit", "Solo gli admin possono modificare i bundle"),
-      );
+      toast.error(t("errors.adminOnlyEdit", "Solo gli admin possono modificare i bundle"));
       return;
     }
     try {
@@ -89,12 +78,7 @@ export function useBundleManager(options: UseBundleManagerOptions) {
           : t("success.bundleReactivated", "Bundle riattivato"),
       );
     } catch (error) {
-      toast.error(
-        errorMessage(
-          error,
-          t("errors.updateBundle", "Errore aggiornamento bundle"),
-        ),
-      );
+      toast.error(errorMessage(error, t("errors.updateBundle", "Errore aggiornamento bundle")));
     }
   }
 

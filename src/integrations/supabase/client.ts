@@ -91,17 +91,15 @@ function createSupabaseClient() {
   // Public channel subscription for realtime connection status monitoring.
   // Replaces the private stateChangeCallbacks (undocumented internal API).
   // SUBSCRIBED = connected, CLOSED/CHANNEL_ERROR/TIMED_OUT = disconnected.
-  client
-    .channel("_connection_monitor")
-    .subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        console.log("[realtime] Connesso");
-        handleRealtimeConnected();
-      } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        console.warn("[realtime] Disconnesso", status);
-        handleRealtimeDisconnected();
-      }
-    });
+  client.channel("_connection_monitor").subscribe((status) => {
+    if (status === "SUBSCRIBED") {
+      console.log("[realtime] Connesso");
+      handleRealtimeConnected();
+    } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+      console.warn("[realtime] Disconnesso", status);
+      handleRealtimeDisconnected();
+    }
+  });
 
   client.realtime.onHeartbeat((status) => {
     if (status === "ok") {

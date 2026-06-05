@@ -21,8 +21,18 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "ticket.description", label: "Descrizione", type: "string", category: "ticket" },
     { name: "ticket.status", label: "Stato", type: "string", category: "ticket" },
     { name: "ticket.priority", label: "Priorità", type: "string", category: "ticket" },
-    { name: "ticket.requester_email", label: "Email Richiedente", type: "email", category: "ticket" },
-    { name: "ticket.requester_name", label: "Nome Richiedente", type: "string", category: "ticket" },
+    {
+      name: "ticket.requester_email",
+      label: "Email Richiedente",
+      type: "email",
+      category: "ticket",
+    },
+    {
+      name: "ticket.requester_name",
+      label: "Nome Richiedente",
+      type: "string",
+      category: "ticket",
+    },
     { name: "customer.id", label: "ID Cliente", type: "string", category: "customer" },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "customer.email", label: "Email Cliente", type: "email", category: "customer" },
@@ -38,7 +48,12 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "ticket.title", label: "Titolo", type: "string", category: "ticket" },
     { name: "ticket.status", label: "Stato", type: "string", category: "ticket" },
     { name: "ticket.priority", label: "Priorità", type: "string", category: "ticket" },
-    { name: "ticket.requester_email", label: "Email Richiedente", type: "email", category: "ticket" },
+    {
+      name: "ticket.requester_email",
+      label: "Email Richiedente",
+      type: "email",
+      category: "ticket",
+    },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "assignee.name", label: "Nome Assegnatario", type: "string", category: "assignee" },
     { name: "ticket.updated_at", label: "Data Aggiornamento", type: "date", category: "ticket" },
@@ -49,7 +64,12 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "ticket.id", label: "ID Ticket", type: "string", category: "ticket" },
     { name: "ticket.title", label: "Titolo", type: "string", category: "ticket" },
     { name: "checklist.name", label: "Nome Checklist", type: "string", category: "checklist" },
-    { name: "checklist.completed_at", label: "Data Completamento", type: "date", category: "checklist" },
+    {
+      name: "checklist.completed_at",
+      label: "Data Completamento",
+      type: "date",
+      category: "checklist",
+    },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "ticket.url", label: "URL Ticket", type: "string", category: "ticket" },
   ],
@@ -57,7 +77,12 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "ticket.id", label: "ID Ticket", type: "string", category: "ticket" },
     { name: "ticket.title", label: "Titolo", type: "string", category: "ticket" },
     { name: "ticket.sla_deadline", label: "Scadenza SLA", type: "date", category: "ticket" },
-    { name: "ticket.sla_remaining_hours", label: "Ore Rimanenti SLA", type: "number", category: "ticket" },
+    {
+      name: "ticket.sla_remaining_hours",
+      label: "Ore Rimanenti SLA",
+      type: "number",
+      category: "ticket",
+    },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "assignee.name", label: "Nome Assegnatario", type: "string", category: "assignee" },
     { name: "ticket.url", label: "URL Ticket", type: "string", category: "ticket" },
@@ -66,7 +91,12 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "ticket.id", label: "ID Ticket", type: "string", category: "ticket" },
     { name: "ticket.title", label: "Titolo", type: "string", category: "ticket" },
     { name: "ticket.sla_deadline", label: "Scadenza SLA", type: "date", category: "ticket" },
-    { name: "ticket.sla_overdue_hours", label: "Ore di Ritardo SLA", type: "number", category: "ticket" },
+    {
+      name: "ticket.sla_overdue_hours",
+      label: "Ore di Ritardo SLA",
+      type: "number",
+      category: "ticket",
+    },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "assignee.name", label: "Nome Assegnatario", type: "string", category: "assignee" },
     { name: "ticket.url", label: "URL Ticket", type: "string", category: "ticket" },
@@ -75,8 +105,18 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "device.id", label: "ID Dispositivo", type: "string", category: "device" },
     { name: "device.name", label: "Nome Dispositivo", type: "string", category: "device" },
     { name: "device.serial", label: "Numero Seriale", type: "string", category: "device" },
-    { name: "device.warranty_expiry", label: "Scadenza Garanzia", type: "date", category: "device" },
-    { name: "device.warranty_days_remaining", label: "Giorni Rimanenti Garanzia", type: "number", category: "device" },
+    {
+      name: "device.warranty_expiry",
+      label: "Scadenza Garanzia",
+      type: "date",
+      category: "device",
+    },
+    {
+      name: "device.warranty_days_remaining",
+      label: "Giorni Rimanenti Garanzia",
+      type: "number",
+      category: "device",
+    },
     { name: "customer.id", label: "ID Cliente", type: "string", category: "customer" },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
     { name: "customer.email", label: "Email Cliente", type: "email", category: "customer" },
@@ -85,14 +125,29 @@ export const VARIABLES_BY_TRIGGER: Record<string, AutomationVariable[]> = {
     { name: "device.id", label: "ID Dispositivo", type: "string", category: "device" },
     { name: "device.name", label: "Nome Dispositivo", type: "string", category: "device" },
     { name: "device.serial", label: "Numero Seriale", type: "string", category: "device" },
-    { name: "device.warranty_expiry", label: "Scadenza Garanzia", type: "date", category: "device" },
-    { name: "device.warranty_days_overdue", label: "Giorni di Ritardo Garanzia", type: "number", category: "device" },
+    {
+      name: "device.warranty_expiry",
+      label: "Scadenza Garanzia",
+      type: "date",
+      category: "device",
+    },
+    {
+      name: "device.warranty_days_overdue",
+      label: "Giorni di Ritardo Garanzia",
+      type: "number",
+      category: "device",
+    },
     { name: "customer.id", label: "ID Cliente", type: "string", category: "customer" },
     { name: "customer.name", label: "Nome Cliente", type: "string", category: "customer" },
   ],
   scheduled: [
     { name: "automation.run_date", label: "Data Esecuzione", type: "date", category: "automation" },
-    { name: "automation.run_time", label: "Ora Esecuzione", type: "string", category: "automation" },
+    {
+      name: "automation.run_time",
+      label: "Ora Esecuzione",
+      type: "string",
+      category: "automation",
+    },
   ],
   manual: [
     { name: "user.id", label: "ID Utente che ha avviato", type: "string", category: "user" },
@@ -125,16 +180,19 @@ export function getVariablesForTrigger(triggerType: string): AutomationVariable[
  *
  */
 export function groupVariablesByCategory(
-  variables: AutomationVariable[]
+  variables: AutomationVariable[],
 ): Record<string, AutomationVariable[]> {
-  return variables.reduce((groups, variable) => {
-    const category = VARIABLE_CATEGORIES[variable.category];
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(variable);
-    return groups;
-  }, {} as Record<string, AutomationVariable[]>);
+  return variables.reduce(
+    (groups, variable) => {
+      const category = VARIABLE_CATEGORIES[variable.category];
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(variable);
+      return groups;
+    },
+    {} as Record<string, AutomationVariable[]>,
+  );
 }
 
 // Insert variable placeholder into text at cursor position
@@ -144,7 +202,7 @@ export function groupVariablesByCategory(
 export function insertVariable(
   text: string,
   variableName: string,
-  cursorPosition: number
+  cursorPosition: number,
 ): { newText: string; newCursorPosition: number } {
   const placeholder = `{{${variableName}}}`;
   const before = text.slice(0, cursorPosition);
@@ -160,12 +218,10 @@ export function insertVariable(
  */
 export function searchVariables(
   variables: AutomationVariable[],
-  query: string
+  query: string,
 ): AutomationVariable[] {
   const lowerQuery = query.toLowerCase();
   return variables.filter(
-    (v) =>
-      v.name.toLowerCase().includes(lowerQuery) ||
-      v.label.toLowerCase().includes(lowerQuery)
+    (v) => v.name.toLowerCase().includes(lowerQuery) || v.label.toLowerCase().includes(lowerQuery),
   );
 }

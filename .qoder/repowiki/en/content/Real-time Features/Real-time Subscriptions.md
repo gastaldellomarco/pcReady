@@ -13,6 +13,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -25,10 +26,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the real-time subscription system built on Supabase’s Postgres change notifications. It focuses on the useRealtimeTable hook pattern that provides live synchronization of data for tickets, devices, and inventory-related entities. The guide covers subscription lifecycle management, connection handling, automatic reconnection strategies, configuration options, integration with React components, optimistic update patterns, and performance considerations. It also includes troubleshooting guidance for common real-time connectivity issues.
 
 ## Project Structure
+
 The real-time system is composed of:
+
 - A reusable React hook that manages a Supabase Realtime channel per table
 - Supabase client initialization with environment-driven configuration
 - Database migrations enabling rich replication payloads and publication of target tables
@@ -56,6 +60,7 @@ AdminClient -. "server-side ops" .- Postgres
 ```
 
 **Diagram sources**
+
 - [useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
 - [client.ts:5-40](file://src/integrations/supabase/client.ts#L5-L40)
 - [client.server.ts:8-41](file://src/integrations/supabase/client.server.ts#L8-L41)
@@ -63,6 +68,7 @@ AdminClient -. "server-side ops" .- Postgres
 - [20260515120000_realtime_ticket_device_assignments.sql:1-21](file://supabase/migrations/20260515120000_realtime_ticket_device_assignments.sql#L1-L21)
 
 **Section sources**
+
 - [useRealtimeTable.ts:1-50](file://src/hooks/useRealtimeTable.ts#L1-L50)
 - [client.ts:1-41](file://src/integrations/supabase/client.ts#L1-L41)
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
@@ -70,6 +76,7 @@ AdminClient -. "server-side ops" .- Postgres
 - [20260515120000_realtime_ticket_device_assignments.sql:1-21](file://supabase/migrations/20260515120000_realtime_ticket_device_assignments.sql#L1-L21)
 
 ## Core Components
+
 - useRealtimeTable<T>: A React hook that:
   - Fetches initial data via a caller-provided async query
   - Subscribes to Supabase Realtime channel events for a given table
@@ -82,11 +89,13 @@ AdminClient -. "server-side ops" .- Postgres
   - Configure replica identity and publication for tables to support rich change payloads and visibility in Supabase Realtime
 
 Key behaviors:
+
 - Channel naming includes a random suffix to avoid collisions
-- Subscriptions listen for all events (“*”) on the specified table under the “public” schema
+- Subscriptions listen for all events (“\*”) on the specified table under the “public” schema
 - On any change, the hook triggers a reload of the dataset via the provided query
 
 **Section sources**
+
 - [useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
 - [client.ts:5-40](file://src/integrations/supabase/client.ts#L5-L40)
 - [client.server.ts:8-41](file://src/integrations/supabase/client.server.ts#L8-L41)
@@ -95,6 +104,7 @@ Key behaviors:
 - [20260515120000_realtime_ticket_device_assignments.sql:2](file://supabase/migrations/20260515120000_realtime_ticket_device_assignments.sql#L2)
 
 ## Architecture Overview
+
 The real-time pipeline connects React components to Postgres via Supabase Realtime. The diagram below maps the actual code paths and data flow.
 
 ```mermaid
@@ -118,6 +128,7 @@ Hook->>SB : "removeChannel(channel)"
 ```
 
 **Diagram sources**
+
 - [useRealtimeTable.ts:33-46](file://src/hooks/useRealtimeTable.ts#L33-L46)
 - [useRealtimeTable.ts:20-29](file://src/hooks/useRealtimeTable.ts#L20-L29)
 - [client.ts:35-40](file://src/integrations/supabase/client.ts#L35-L40)
@@ -125,12 +136,13 @@ Hook->>SB : "removeChannel(channel)"
 ## Detailed Component Analysis
 
 ### useRealtimeTable Hook Pattern
+
 - Purpose: Provide live, reactive data for any table by combining an initial query with Supabase Realtime event listening
 - Lifecycle:
   - Mount: runs initial load, creates a channel, subscribes to “postgres_changes”
   - Unmount: removes the channel to prevent leaks
 - Event handling:
-  - Listens for all events (“*”) on the specified table in schema “public”
+  - Listens for all events (“\*”) on the specified table in schema “public”
   - Triggers a refresh by re-executing the provided query
 - Dependencies:
   - Accepts a dependency list so callers can control when the subscription reloads
@@ -154,13 +166,16 @@ RemoveChannel --> End(["Exit"])
 ```
 
 **Diagram sources**
+
 - [useRealtimeTable.ts:33-46](file://src/hooks/useRealtimeTable.ts#L33-L46)
 - [useRealtimeTable.ts:20-29](file://src/hooks/useRealtimeTable.ts#L20-L29)
 
 **Section sources**
+
 - [useRealtimeTable.ts:10-49](file://src/hooks/useRealtimeTable.ts#L10-L49)
 
 ### Supabase Client Configuration
+
 - Client-side:
   - Reads Vite-compatible environment variables for Supabase URL and publishable key
   - Initializes a singleton proxy client with local token persistence and auto-refresh
@@ -186,14 +201,17 @@ SupabaseClient <.. AdminSupabaseClient : "different env & auth"
 ```
 
 **Diagram sources**
+
 - [client.ts:5-29](file://src/integrations/supabase/client.ts#L5-L29)
 - [client.server.ts:8-29](file://src/integrations/supabase/client.server.ts#L8-L29)
 
 **Section sources**
+
 - [client.ts:5-40](file://src/integrations/supabase/client.ts#L5-L40)
 - [client.server.ts:8-41](file://src/integrations/supabase/client.server.ts#L8-L41)
 
 ### Database Realtime Setup
+
 - Replica identity:
   - Ensures full row images are available for change events, especially important under RLS policies
 - Publication:
@@ -216,15 +234,18 @@ PubCheck --> AddTA["Add ticket_device_assignments"]
 ```
 
 **Diagram sources**
+
 - [20260514182000_realtime_replica_identity_core_tables.sql:4-7](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L4-L7)
 - [20260514182000_realtime_replica_identity_core_tables.sql:13-29](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L13-L29)
 - [20260515120000_realtime_ticket_device_assignments.sql:4-19](file://supabase/migrations/20260515120000_realtime_ticket_device_assignments.sql#L4-L19)
 
 **Section sources**
+
 - [20260514182000_realtime_replica_identity_core_tables.sql:1-31](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L1-L31)
 - [20260515120000_realtime_ticket_device_assignments.sql:1-21](file://supabase/migrations/20260515120000_realtime_ticket_device_assignments.sql#L1-L21)
 
 ### Example Usage: Kanban Live Tickets
+
 - The Kanban route imports useRealtimeTable and subscribes to a table to keep the board synchronized
 - Typical usage involves passing a query function that resolves to the current list of items and a dependency list to control refresh behavior
 
@@ -240,16 +261,19 @@ Hook-->>Kanban : "live data updates"
 ```
 
 **Diagram sources**
+
 - [kanban.tsx:4](file://src/routes/_app/kanban.tsx#L4)
 - [kanban.tsx:87](file://src/routes/_app/kanban.tsx#L87)
 - [useRealtimeTable.ts:36-41](file://src/hooks/useRealtimeTable.ts#L36-L41)
 
 **Section sources**
+
 - [kanban.tsx:4](file://src/routes/_app/kanban.tsx#L4)
 - [kanban.tsx:87](file://src/routes/_app/kanban.tsx#L87)
 - [useRealtimeTable.ts:33-46](file://src/hooks/useRealtimeTable.ts#L33-L46)
 
 ### Optimistic Updates and Local State Synchronization
+
 - Current implementation:
   - The hook performs a full reload on each event, replacing local state with fresh data from the provided query
 - Recommended pattern for optimistic updates:
@@ -264,28 +288,33 @@ Hook-->>Kanban : "live data updates"
 Note: The current hook does not implement optimistic writes; it refreshes data after each event. Adopt the recommended pattern above to minimize perceived latency and improve user experience.
 
 **Section sources**
+
 - [useRealtimeTable.ts:20-29](file://src/hooks/useRealtimeTable.ts#L20-L29)
 - [useRealtimeTable.ts:38-40](file://src/hooks/useRealtimeTable.ts#L38-L40)
 
 ### Subscription Configuration Options
+
 - Table filtering:
   - The hook listens to a single table; filtering should be handled inside the provided query function
 - Column selection:
   - Columns are determined by the query function; only requested columns are present in the returned dataset
 - Event types:
-  - The current implementation listens for “*” (all events)
+  - The current implementation listens for “\*” (all events)
   - To restrict to INSERT/UPDATE/DELETE, modify the event filter accordingly
 
 Example adjustments:
+
 - Change event filter to specific types if needed
 - Narrow the query to include only required columns
 - Use a dependency list to control when reloads occur
 
 **Section sources**
+
 - [useRealtimeTable.ts:38](file://src/hooks/useRealtimeTable.ts#L38)
 - [useRealtimeTable.ts:20-29](file://src/hooks/useRealtimeTable.ts#L20-L29)
 
 ## Dependency Analysis
+
 - Hook-to-Supabase:
   - The hook depends on the client module for channel creation and event delivery
 - Supabase-to-Database:
@@ -302,16 +331,19 @@ Comp["Route Component"] --> Hook
 ```
 
 **Diagram sources**
+
 - [useRealtimeTable.ts:3](file://src/hooks/useRealtimeTable.ts#L3)
 - [client.ts:35-40](file://src/integrations/supabase/client.ts#L35-L40)
 - [20260514182000_realtime_replica_identity_core_tables.sql:13-29](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L13-L29)
 
 **Section sources**
+
 - [useRealtimeTable.ts:3](file://src/hooks/useRealtimeTable.ts#L3)
 - [client.ts:35-40](file://src/integrations/supabase/client.ts#L35-L40)
 - [20260514182000_realtime_replica_identity_core_tables.sql:13-29](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L13-L29)
 
 ## Performance Considerations
+
 - Subscription limits:
   - Each hook instance creates a channel; avoid creating many subscriptions for the same table unnecessarily
 - Bandwidth optimization:
@@ -326,7 +358,9 @@ Comp["Route Component"] --> Hook
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Missing environment variables:
   - Symptom: Client initialization throws an error
   - Resolution: Ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set
@@ -345,6 +379,7 @@ Common issues and resolutions:
   - Validate query correctness and dependency lists
 
 **Section sources**
+
 - [client.ts:12-20](file://src/integrations/supabase/client.ts#L12-L20)
 - [client.server.ts:12-20](file://src/integrations/supabase/client.server.ts#L12-L20)
 - [20260514182000_realtime_replica_identity_core_tables.sql:4-7](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L4-L7)
@@ -352,6 +387,7 @@ Common issues and resolutions:
 - [useRealtimeTable.ts:31-46](file://src/hooks/useRealtimeTable.ts#L31-L46)
 
 ## Conclusion
+
 The useRealtimeTable hook provides a straightforward, composable way to keep React components synchronized with Postgres changes. By leveraging Supabase Realtime and carefully configured database publications, teams can deliver responsive, real-time experiences. For production-grade reliability, pair the hook with careful query design, dependency management, and optional optimistic update strategies. Monitor environment configuration and database replication settings to ensure smooth operation.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -359,6 +395,7 @@ The useRealtimeTable hook provides a straightforward, composable way to keep Rea
 ## Appendices
 
 ### Practical Examples and Best Practices
+
 - Subscribing to tickets:
   - Pass the tickets table name and a query function returning filtered rows
   - Use a dependency list to refresh only when filters change
@@ -370,6 +407,7 @@ The useRealtimeTable hook provides a straightforward, composable way to keep Rea
   - Use the admin client for privileged tasks that bypass RLS
 
 **Section sources**
+
 - [kanban.tsx:4](file://src/routes/_app/kanban.tsx#L4)
 - [kanban.tsx:87](file://src/routes/_app/kanban.tsx#L87)
 - [client.server.ts:8-29](file://src/integrations/supabase/client.server.ts#L8-L29)

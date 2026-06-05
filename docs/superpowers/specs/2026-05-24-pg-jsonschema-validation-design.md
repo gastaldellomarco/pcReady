@@ -3,18 +3,22 @@
 ## 1. Panoramica
 
 ### Obiettivo
+
 Abilitare l'estensione `pg_jsonschema` di Supabase per validare i campi JSONB delle automazioni a livello database, prevenendo corruzione dati da script, bug o richieste dirette.
 
 ### Scope
+
 - Abilitare estensione `pg_jsonschema` nel database Supabase
 - Aggiungere check constraints su `automation_flows` per validare JSON Schema
 - Validare `trigger_definition` e `actions_definition`
 
 ### Non-Scope
+
 - Cambiamenti alla logica runtime (frontend/backend)
 - Validazione di tutti i campi (fase 1: trigger type e action type)
 
 ### Acceptance Criteria
+
 - [ ] Estensione `pg_jsonschema` abilitata nel progetto
 - [ ] Check constraint su `trigger_definition` che valida `type`
 - [ ] Check constraint su `actions_definition` che valida `type` per ogni azione
@@ -33,6 +37,7 @@ L'estensione fornisce la funzione `jsonb_matches_schema(schema jsonb, data jsonb
 ### 2.2 JSON Schemas
 
 #### Trigger Schema
+
 ```json
 {
   "type": "object",
@@ -50,6 +55,7 @@ L'estensione fornisce la funzione `jsonb_matches_schema(schema jsonb, data jsonb
 ```
 
 #### Action Schema (per singola azione)
+
 ```json
 {
   "type": "object",
@@ -57,7 +63,15 @@ L'estensione fornisce la funzione `jsonb_matches_schema(schema jsonb, data jsonb
   "properties": {
     "type": {
       "type": "string",
-      "enum": ["send_email", "update_ticket", "add_comment", "create_ticket", "create_notification", "assign_ticket", "update_device"]
+      "enum": [
+        "send_email",
+        "update_ticket",
+        "add_comment",
+        "create_ticket",
+        "create_notification",
+        "assign_ticket",
+        "update_device"
+      ]
     },
     "id": { "type": "string" },
     "order": { "type": "number" },
@@ -69,6 +83,7 @@ L'estensione fornisce la funzione `jsonb_matches_schema(schema jsonb, data jsonb
 ```
 
 #### Actions Array Schema
+
 ```json
 {
   "type": "array",
@@ -83,7 +98,15 @@ L'estensione fornisce la funzione `jsonb_matches_schema(schema jsonb, data jsonb
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["send_email", "update_ticket", "add_comment", "create_ticket", "create_notification", "assign_ticket", "update_device"]
+          "enum": [
+            "send_email",
+            "update_ticket",
+            "add_comment",
+            "create_ticket",
+            "create_notification",
+            "assign_ticket",
+            "update_device"
+          ]
         },
         "id": { "type": "string" },
         "order": { "type": "number" },
@@ -172,7 +195,7 @@ CHECK (
           "type": "string",
           "enum": [
             "ticket_created",
-            "ticket_updated", 
+            "ticket_updated",
             "sla_warning",
             "sla_due",
             "warranty_expiring_soon",
@@ -221,10 +244,10 @@ CHECK (
 );
 
 -- Add helpful comment explaining constraints
-COMMENT ON CONSTRAINT chk_trigger_definition_type ON automation_flows IS 
+COMMENT ON CONSTRAINT chk_trigger_definition_type ON automation_flows IS
   'Validates that trigger_definition.type is one of the allowed DSL trigger types';
 
-COMMENT ON CONSTRAINT chk_actions_definition_types ON automation_flows IS 
+COMMENT ON CONSTRAINT chk_actions_definition_types ON automation_flows IS
   'Validates that all actions in actions_definition have valid DSL action types';
 ```
 
@@ -233,6 +256,7 @@ COMMENT ON CONSTRAINT chk_actions_definition_types ON automation_flows IS
 ## 4. Verifica Constraints
 
 ### 4.1 Test Valid
+
 ```sql
 -- Should succeed
 INSERT INTO automation_flows (name, trigger_definition, actions_definition)
@@ -244,6 +268,7 @@ VALUES (
 ```
 
 ### 4.2 Test Invalid Trigger
+
 ```sql
 -- Should fail with check constraint violation
 INSERT INTO automation_flows (name, trigger_definition, actions_definition)
@@ -256,6 +281,7 @@ VALUES (
 ```
 
 ### 4.3 Test Invalid Action
+
 ```sql
 -- Should fail with check constraint violation
 INSERT INTO automation_flows (name, trigger_definition, actions_definition)
@@ -282,14 +308,15 @@ Quando il backend riceve un errore di constraint dal database, dovrebbe:
 ```typescript
 // Esempio di mapping errori
 const CONSTRAINT_ERROR_MESSAGES: Record<string, string> = {
-  'chk_trigger_definition_type': 'Tipo trigger non valido. Usa uno dei tipi DSL supportati.',
-  'chk_actions_definition_types': 'Tipo azione non valido. Controlla le azioni configurate.',
+  chk_trigger_definition_type: "Tipo trigger non valido. Usa uno dei tipi DSL supportati.",
+  chk_actions_definition_types: "Tipo azione non valido. Controlla le azioni configurate.",
 };
 
 function handleDatabaseError(error: PostgrestError): string {
-  if (error.code === '23514') { // check_violation
+  if (error.code === "23514") {
+    // check_violation
     const constraint = error.message.match(/constraint "([^"]+)"/)?.[1];
-    return CONSTRAINT_ERROR_MESSAGES[constraint] || 'Dati non validi per il campo JSON.';
+    return CONSTRAINT_ERROR_MESSAGES[constraint] || "Dati non validi per il campo JSON.";
   }
   return error.message;
 }
@@ -306,8 +333,8 @@ L'errore dovrebbe essere mostrato all'utente nel contesto appropriato:
 
 ## 6. File da Creare
 
-| File | Scopo |
-|------|-------|
+| File                                                                   | Scopo                                   |
+| ---------------------------------------------------------------------- | --------------------------------------- |
 | `supabase/migrations/20260524230000_add_pg_jsonschema_constraints.sql` | Migrazione con estensione e constraints |
 
 ---
@@ -315,11 +342,13 @@ L'errore dovrebbe essere mostrato all'utente nel contesto appropriato:
 ## 7. Deployment Steps
 
 1. **Abilitare estensione** (via dashboard o SQL):
+
    ```sql
    CREATE EXTENSION IF NOT EXISTS pg_jsonschema;
    ```
 
 2. **Applicare migrazione**:
+
    ```bash
    supabase db push
    ```
@@ -335,21 +364,24 @@ L'errore dovrebbe essere mostrato all'utente nel contesto appropriato:
 ## 8. Note Implementative
 
 ### 8.1 Backward Compatibility
+
 - I constraints accettano `NULL` (per record esistenti senza dati)
 - I tipi legacy (es. `sla_warning`) sono inclusi nell'enum per compatibilità
 - La migrazione usa `IF NOT EXISTS` per essere idempotente
 
 ### 8.2 Performance
+
 - `jsonb_matches_schema` ha overhead minimo per validazione semplice
 - I constraints sono check constraints (validati solo su INSERT/UPDATE)
 - Considerare l'aggiunta di indici GIN se necessario per query JSON
 
 ### 8.3 Estensione Futura
+
 - Aggiungere validazione più profonda del config (es. `cron` formato)
 - Validare `conditions_definition` con schema conditions
 - Aggiungere trigger per validazione automatica su update
 
 ---
 
-*Design creato: 2026-05-24*  
-*Stato: In attesa approvazione*
+_Design creato: 2026-05-24_  
+_Stato: In attesa approvazione_

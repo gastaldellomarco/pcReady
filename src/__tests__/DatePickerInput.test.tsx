@@ -6,30 +6,18 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 // ── Mock lucide-react icons ─────────────────────────────────────────────
 vi.mock("lucide-react", () => ({
-  CalendarIcon: (props: Record<string, unknown>) => (
-    <span data-testid="calendar-icon" {...props} />
-  ),
-  X: (props: Record<string, unknown>) => (
-    <span data-testid="x-icon" {...props} />
-  ),
+  CalendarIcon: (props: Record<string, unknown>) => <span data-testid="calendar-icon" {...props} />,
+  X: (props: Record<string, unknown>) => <span data-testid="x-icon" {...props} />,
 }));
 
 // ── Mock Popover (Radix) ────────────────────────────────────────────────
 vi.mock("@/components/ui/popover", () => ({
-  Popover: ({
-    open,
-    children,
-  }: {
-    open: boolean;
-    children: React.ReactNode;
-  }) => (
+  Popover: ({ open, children }: { open: boolean; children: React.ReactNode }) => (
     <div data-testid="popover" data-open={open}>
       {children}
     </div>
   ),
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+  PopoverTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PopoverContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="popover-content">{children}</div>
   ),
@@ -75,8 +63,7 @@ vi.mock("@/components/ui/calendar", () => ({
 
 // ── Mock cn utility ─────────────────────────────────────────────────────
 vi.mock("@/lib/utils", () => ({
-  cn: (...args: (string | boolean | undefined | null)[]) =>
-    args.filter(Boolean).join(" "),
+  cn: (...args: (string | boolean | undefined | null)[]) => args.filter(Boolean).join(" "),
 }));
 
 // ── Mock date-fns (use real functions but verify calls) ─────────────────
@@ -93,33 +80,20 @@ describe("DatePickerInput", () => {
   // ── Rendering ─────────────────────────────────────────────────────────
 
   it("renders with placeholder when no value is provided", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} placeholder="dd/mm/yyyy" />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} placeholder="dd/mm/yyyy" />);
 
     expect(screen.getByText("dd/mm/yyyy")).toBeTruthy();
   });
 
   it("renders formatted date when value is provided", () => {
-    render(
-      <DatePickerInput
-        value="2026-05-27"
-        onChange={vi.fn()}
-      />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={vi.fn()} />);
 
     // Italian format: dd/MM/yyyy → 27/05/2026
     expect(screen.getByText("27/05/2026")).toBeTruthy();
   });
 
   it("renders custom placeholder text", () => {
-    render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        placeholder="Seleziona data"
-      />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} placeholder="Seleziona data" />);
 
     expect(screen.getByText("Seleziona data")).toBeTruthy();
   });
@@ -127,18 +101,14 @@ describe("DatePickerInput", () => {
   // ── Empty / edge-case values ──────────────────────────────────────────
 
   it("handles empty string value gracefully (shows placeholder)", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} />);
 
     expect(screen.getByText("dd/mm/yyyy")).toBeTruthy();
     expect(screen.queryByTestId("x-icon")).toBeNull();
   });
 
   it("handles invalid date string gracefully by displaying it as-is", () => {
-    render(
-      <DatePickerInput value="not-a-date" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="not-a-date" onChange={vi.fn()} />);
 
     // fmtDate catches parseISO errors and returns the raw value
     expect(screen.getByText("not-a-date")).toBeTruthy();
@@ -147,18 +117,14 @@ describe("DatePickerInput", () => {
   // ── Clear button ──────────────────────────────────────────────────────
 
   it("shows X clear button when value is present", () => {
-    render(
-      <DatePickerInput value="2026-05-27" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={vi.fn()} />);
 
     expect(screen.getByTestId("x-icon")).toBeTruthy();
   });
 
   it("calls onChange with empty string when clear button is clicked", async () => {
     const onChange = vi.fn();
-    render(
-      <DatePickerInput value="2026-05-27" onChange={onChange} />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={onChange} />);
 
     const clearBtn = screen.getByRole("button", { name: "Cancella data" });
     await userEvent.click(clearBtn);
@@ -169,9 +135,7 @@ describe("DatePickerInput", () => {
 
   it("clear button click does not propagate (stops popover from opening)", async () => {
     const onChange = vi.fn();
-    render(
-      <DatePickerInput value="2026-05-27" onChange={onChange} />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={onChange} />);
 
     const clearBtn = screen.getByRole("button", { name: "Cancella data" });
 
@@ -185,30 +149,20 @@ describe("DatePickerInput", () => {
   });
 
   it("hides clear button when disabled even with a value", () => {
-    render(
-      <DatePickerInput
-        value="2026-05-27"
-        onChange={vi.fn()}
-        disabled
-      />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={vi.fn()} disabled />);
 
     expect(screen.queryByTestId("x-icon")).toBeNull();
   });
 
   it("hides clear button when value is empty", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} />);
 
     expect(screen.queryByTestId("x-icon")).toBeNull();
   });
 
   it("clear button is keyboard-accessible via Enter and Space", () => {
     const onChange = vi.fn();
-    render(
-      <DatePickerInput value="2026-05-27" onChange={onChange} />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={onChange} />);
 
     const clearBtn = screen.getByRole("button", { name: "Cancella data" });
 
@@ -231,22 +185,14 @@ describe("DatePickerInput", () => {
   // ── Disabled state ────────────────────────────────────────────────────
 
   it("disables the trigger button when disabled prop is true", () => {
-    render(
-      <DatePickerInput
-        value="2026-05-27"
-        onChange={vi.fn()}
-        disabled
-      />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={vi.fn()} disabled />);
 
     const button = screen.getByRole("button", { name: /27\/05\/2026/i });
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("has no aria-required when required is not set", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     expect(button.getAttribute("aria-required")).toBeNull();
@@ -255,9 +201,7 @@ describe("DatePickerInput", () => {
   // ── Required prop ─────────────────────────────────────────────────────
 
   it("sets aria-required on button when required is true", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} required />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} required />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     expect(button.getAttribute("aria-required")).toBe("true");
@@ -267,9 +211,7 @@ describe("DatePickerInput", () => {
 
   it("opens popover and calls onChange when a date is selected", async () => {
     const onChange = vi.fn();
-    render(
-      <DatePickerInput value="" onChange={onChange} />,
-    );
+    render(<DatePickerInput value="" onChange={onChange} />);
 
     // Click the trigger button to open popover (it's always visible in our mock)
     const trigger = screen.getByRole("button", { name: "dd/mm/yyyy" });
@@ -284,9 +226,7 @@ describe("DatePickerInput", () => {
 
   it("calls onChange with correct ISO format after date selection", async () => {
     const onChange = vi.fn();
-    render(
-      <DatePickerInput value="" onChange={onChange} />,
-    );
+    render(<DatePickerInput value="" onChange={onChange} />);
 
     const trigger = screen.getByRole("button", { name: "dd/mm/yyyy" });
     await userEvent.click(trigger);
@@ -299,13 +239,7 @@ describe("DatePickerInput", () => {
   // ── minDate / maxDate ─────────────────────────────────────────────────
 
   it("respects minDate: dates before minDate are disabled", async () => {
-    render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        minDate="2026-01-01"
-      />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} minDate="2026-01-01" />);
 
     // Click trigger to render calendar
     const trigger = screen.getByRole("button", { name: "dd/mm/yyyy" });
@@ -318,12 +252,7 @@ describe("DatePickerInput", () => {
 
   it("allows dates within minDate/maxDate range", async () => {
     render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        minDate="2026-05-01"
-        maxDate="2026-06-01"
-      />,
+      <DatePickerInput value="" onChange={vi.fn()} minDate="2026-05-01" maxDate="2026-06-01" />,
     );
 
     const trigger = screen.getByRole("button", { name: "dd/mm/yyyy" });
@@ -341,39 +270,21 @@ describe("DatePickerInput", () => {
   // ── HTML attributes passthrough ───────────────────────────────────────
 
   it("passes id attribute to the trigger button", () => {
-    render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        id="my-date-input"
-      />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} id="my-date-input" />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     expect(button.id).toBe("my-date-input");
   });
 
   it("passes title attribute to the trigger button", () => {
-    render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        title="Data inizio"
-      />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} title="Data inizio" />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     expect(button.title).toBe("Data inizio");
   });
 
   it("passes className to the trigger button", () => {
-    render(
-      <DatePickerInput
-        value=""
-        onChange={vi.fn()}
-        className="custom-class"
-      />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} className="custom-class" />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     expect(button.className).toContain("custom-class");
@@ -383,9 +294,7 @@ describe("DatePickerInput", () => {
 
   it("calls onBlur when the trigger button loses focus", async () => {
     const onBlur = vi.fn();
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} onBlur={onBlur} />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} onBlur={onBlur} />);
 
     const button = screen.getByRole("button", { name: "dd/mm/yyyy" });
     button.focus();
@@ -397,17 +306,13 @@ describe("DatePickerInput", () => {
   // ── CalendarIcon always visible ───────────────────────────────────────
 
   it("always renders the calendar icon", () => {
-    render(
-      <DatePickerInput value="" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="" onChange={vi.fn()} />);
 
     expect(screen.getByTestId("calendar-icon")).toBeTruthy();
   });
 
   it("renders calendar icon even when a value is set", () => {
-    render(
-      <DatePickerInput value="2026-05-27" onChange={vi.fn()} />,
-    );
+    render(<DatePickerInput value="2026-05-27" onChange={vi.fn()} />);
 
     expect(screen.getByTestId("calendar-icon")).toBeTruthy();
   });

@@ -142,9 +142,7 @@ describe("useAdminUsersFilters", () => {
     });
 
     it("does not match 'null' string when email is null", () => {
-      const rows = [
-        createUser({ id: "1", full_name: "Tizio", email: null }),
-      ];
+      const rows = [createUser({ id: "1", full_name: "Tizio", email: null })];
       const { result } = renderHook(() => useAdminUsersFilters(rows));
 
       act(() => result.current.setQ("null"));
@@ -169,10 +167,7 @@ describe("useAdminUsersFilters", () => {
     });
 
     it("clearing role filter shows all", () => {
-      const rows = [
-        createUser({ id: "1", role: "admin" }),
-        createUser({ id: "2", role: "tech" }),
-      ];
+      const rows = [createUser({ id: "1", role: "admin" }), createUser({ id: "2", role: "tech" })];
       const { result } = renderHook(() => useAdminUsersFilters(rows));
 
       act(() => result.current.setRole("admin"));
@@ -257,10 +252,9 @@ describe("useAdminUsersFilters", () => {
         createUser({ id: "2", full_name: "Luigi" }),
       ];
 
-      const { result, rerender } = renderHook(
-        ({ rows }) => useAdminUsersFilters(rows),
-        { initialProps: { rows: rows1 } },
-      );
+      const { result, rerender } = renderHook(({ rows }) => useAdminUsersFilters(rows), {
+        initialProps: { rows: rows1 },
+      });
 
       expect(result.current.filtered).toHaveLength(1);
 
@@ -270,15 +264,11 @@ describe("useAdminUsersFilters", () => {
 
     it("applies active filter to new rows", () => {
       const rows1 = [createUser({ id: "1", role: "admin" })];
-      const rows2 = [
-        createUser({ id: "1", role: "admin" }),
-        createUser({ id: "2", role: "tech" }),
-      ];
+      const rows2 = [createUser({ id: "1", role: "admin" }), createUser({ id: "2", role: "tech" })];
 
-      const { result, rerender } = renderHook(
-        ({ rows }) => useAdminUsersFilters(rows),
-        { initialProps: { rows: rows1 } },
-      );
+      const { result, rerender } = renderHook(({ rows }) => useAdminUsersFilters(rows), {
+        initialProps: { rows: rows1 },
+      });
 
       act(() => result.current.setRole("admin"));
       expect(result.current.filtered).toHaveLength(1);

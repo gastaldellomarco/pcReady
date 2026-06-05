@@ -1,11 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Sun,
-  Moon,
-  Monitor,
-  Languages,
-} from "lucide-react";
+import { Sun, Moon, Monitor, Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AppLogo } from "@/components/brand/AppLogo";
@@ -23,9 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { resolveNavigationBadge, roleLabel } from "@/lib/navigation";
 import { updateMyProfile } from "@/lib/user-profile";
 import type { AuthProfile } from "@/lib/auth-context";
-import type {
-  ResolvedNavigationGroup,
-} from "@/lib/navigation";
+import type { ResolvedNavigationGroup } from "@/lib/navigation";
 
 /* ── Sub-components ─────────────────────────────────────────── */
 
@@ -220,9 +213,7 @@ export function Sidebar({
           <NavSection key={group.id} label={group.label}>
             {group.items.map((item) => {
               const itemBadge =
-                item.to === "/admin"
-                  ? adminErrorCount
-                  : resolveNavigationBadge(item, pendingCount);
+                item.to === "/admin" ? adminErrorCount : resolveNavigationBadge(item, pendingCount);
               return (
                 <NavLinkItem
                   key={item.to}

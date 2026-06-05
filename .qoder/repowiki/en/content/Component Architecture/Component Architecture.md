@@ -25,6 +25,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -37,9 +38,11 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the component architecture system built with shadcn/ui primitives and Tailwind CSS. It covers the UI component library, theme provider and hooks, responsive design utilities, route helper components, and navigation patterns. It also documents configuration options for variants, sizes, and styling customization, and provides guidance on performance, theme consistency, responsive behavior, testing, and accessibility.
 
 ## Project Structure
+
 The UI system centers around a small set of composable primitives under src/components/ui, styled via Tailwind and configured through a custom theme system. Hooks encapsulate theme and responsive logic, while ThemeProvider manages persistence and system preference detection. Route helpers standardize loading and error states across routes.
 
 ```mermaid
@@ -88,6 +91,7 @@ NOTIF --> FORM
 ```
 
 **Diagram sources**
+
 - [button.tsx:1-50](file://src/components/ui/button.tsx#L1-L50)
 - [input.tsx:1-23](file://src/components/ui/input.tsx#L1-L23)
 - [card.tsx:1-56](file://src/components/ui/card.tsx#L1-L56)
@@ -108,10 +112,12 @@ NOTIF --> FORM
 - [styles.css:1-461](file://src/styles.css#L1-L461)
 
 **Section sources**
+
 - [components.json:1-23](file://components.json#L1-L23)
 - [styles.css:1-461](file://src/styles.css#L1-L461)
 
 ## Core Components
+
 This section documents the primary UI primitives and their configuration options.
 
 - Button
@@ -158,6 +164,7 @@ This section documents the primary UI primitives and their configuration options
 Styling customization leverages Tailwind utilities and a custom cn() merge utility. Variants and sizes are defined via class-variance-authority for Button, while others rely on direct Tailwind classes.
 
 **Section sources**
+
 - [button.tsx:1-50](file://src/components/ui/button.tsx#L1-L50)
 - [input.tsx:1-23](file://src/components/ui/input.tsx#L1-L23)
 - [card.tsx:1-56](file://src/components/ui/card.tsx#L1-L56)
@@ -169,7 +176,9 @@ Styling customization leverages Tailwind utilities and a custom cn() merge utili
 - [utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 
 ## Architecture Overview
+
 The UI architecture follows a layered approach:
+
 - Primitive components built on Radix UI and styled with Tailwind
 - Theme provider managing persisted theme state and system preference
 - Utility hooks for theme and responsive behavior
@@ -192,6 +201,7 @@ Note over Provider,Ctx : Hydration-safe initialization
 ```
 
 **Diagram sources**
+
 - [ThemeProvider.tsx:17-72](file://src/components/ThemeProvider.tsx#L17-L72)
 - [theme.ts:26-47](file://src/lib/theme.ts#L26-L47)
 - [ThemeContext.tsx:4-11](file://src/components/ThemeContext.tsx#L4-L11)
@@ -199,7 +209,9 @@ Note over Provider,Ctx : Hydration-safe initialization
 ## Detailed Component Analysis
 
 ### Theme Provider System
+
 The theme system consists of:
+
 - ThemeProvider: initializes theme from localStorage, applies classes to document, persists changes, and listens to system preference changes when enabled
 - ThemeContext: exposes theme state and setter to consumers
 - use-theme: a typed hook to access theme context
@@ -239,17 +251,20 @@ ThemeContext --> Theme : "exposes"
 ```
 
 **Diagram sources**
+
 - [ThemeProvider.tsx:6-72](file://src/components/ThemeProvider.tsx#L6-L72)
 - [ThemeContext.tsx:4-11](file://src/components/ThemeContext.tsx#L4-L11)
 - [theme.ts:3,16,26,35,44,71](file://src/lib/theme.ts#L3,L16,L26,L35,L44,L71)
 
 Implementation highlights:
+
 - Hydration safety: initializes on mount and applies theme immediately
 - System mode: subscribes to prefers-color-scheme media query when enabled
 - Persistence: stores theme in localStorage keyed by a constant
 - CSS integration: toggles a "dark" class on the root element
 
 **Section sources**
+
 - [ThemeProvider.tsx:17-72](file://src/components/ThemeProvider.tsx#L17-L72)
 - [ThemeContext.tsx:4-11](file://src/components/ThemeContext.tsx#L4-L11)
 - [use-theme.tsx:4-10](file://src/hooks/use-theme.tsx#L4-L10)
@@ -257,6 +272,7 @@ Implementation highlights:
 - [styles.css:5,91-118](file://src/styles.css#L5,L91-L118)
 
 ### Responsive Design Hook
+
 The useIsMobile hook detects mobile viewport using a breakpoint and updates state on resize.
 
 ```mermaid
@@ -270,17 +286,21 @@ Cleanup --> End(["Unmount"])
 ```
 
 **Diagram sources**
+
 - [use-mobile.tsx:5-19](file://src/hooks/use-mobile.tsx#L5-L19)
 
 Usage patterns:
+
 - Conditional rendering of drawers vs. modals
 - Adjusting layout density on smaller screens
 - Switching between desktop and mobile navigation patterns
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 
 ### Route Helper Components
+
 RouteHelpers provide standardized loading and error views for routes.
 
 ```mermaid
@@ -297,16 +317,20 @@ Helpers-->>Route : PageFetchError UI
 ```
 
 **Diagram sources**
+
 - [RouteHelpers.tsx:4-20](file://src/components/RouteHelpers.tsx#L4-L20)
 
 Common usage:
+
 - Wrap data loaders with LoadingSkeleton during fetch
 - Wrap error boundaries with RouteError to present retry actions
 
 **Section sources**
+
 - [RouteHelpers.tsx:1-23](file://src/components/RouteHelpers.tsx#L1-L23)
 
 ### Navigation Patterns and Layout Composition
+
 UserMenu composes DropdownMenu with links to profile and settings, integrating with routing.
 
 ```mermaid
@@ -323,6 +347,7 @@ Router-->>User : Render destination
 ```
 
 **Diagram sources**
+
 - [UserMenu.tsx:20-68](file://src/components/layout/UserMenu.tsx#L20-L68)
 
 NotificationBell integrates UI primitives with real-time updates via Supabase and server functions.
@@ -345,31 +370,37 @@ SF-->>UI : Updated state
 ```
 
 **Diagram sources**
+
 - [NotificationBell.tsx:19-140](file://src/components/layout/NotificationBell.tsx#L19-L140)
 
 **Section sources**
+
 - [UserMenu.tsx:1-101](file://src/components/layout/UserMenu.tsx#L1-L101)
 - [NotificationBell.tsx:1-141](file://src/components/layout/NotificationBell.tsx#L1-L141)
 
 ### Component Composition Patterns and Prop Interfaces
+
 - Composition via asChild: Button supports rendering a Slot to compose with links or other elements
 - Form composition: FormField wraps react-hook-form Controller and exposes useFormField for labels, controls, and messages
 - Tabs composition: TabsList hosts TabsTrigger items; TabsContent renders associated content
 - Card composition: Semantic sections for header/title/description/content/footer
 
 Examples from the codebase:
+
 - Button with variant and size: [button.tsx:34-47](file://src/components/ui/button.tsx#L34-L47)
 - Form field with label and control: [form.tsx:86-119](file://src/components/ui/form.tsx#L86-L119)
 - Tabs list and triggers: [tabs.tsx:8-36](file://src/components/ui/tabs.tsx#L8-L36)
 - Card sections: [card.tsx:16-53](file://src/components/ui/card.tsx#L16-L53)
 
 **Section sources**
+
 - [button.tsx:34-47](file://src/components/ui/button.tsx#L34-L47)
 - [form.tsx:86-119](file://src/components/ui/form.tsx#L86-L119)
 - [tabs.tsx:8-36](file://src/components/ui/tabs.tsx#L8-L36)
 - [card.tsx:16-53](file://src/components/ui/card.tsx#L16-L53)
 
 ### Configuration Options: Variants, Sizes, and Styling Customization
+
 - Button variants and sizes are defined via class-variance-authority and applied through cn()
   - References: [button.tsx:7-32](file://src/components/ui/button.tsx#L7-L32), [button.tsx:34-47](file://src/components/ui/button.tsx#L34-L47)
 - Input styling includes responsive text sizing and focus states
@@ -380,11 +411,13 @@ Examples from the codebase:
   - Reference: [styles.css:57-118](file://src/styles.css#L57-L118)
 
 Customization approaches:
+
 - Extend Button variants/sizes by adding entries to buttonVariants
 - Override primitive classes by passing className props
 - Customize theme tokens in styles.css to affect all components
 
 **Section sources**
+
 - [button.tsx:7-32](file://src/components/ui/button.tsx#L7-L32)
 - [input.tsx:5-19](file://src/components/ui/input.tsx#L5-L19)
 - [dropdown-menu.tsx:60-74](file://src/components/ui/dropdown-menu.tsx#L60-L74)
@@ -392,12 +425,15 @@ Customization approaches:
 - [styles.css:57-118](file://src/styles.css#L57-L118)
 
 ## Dependency Analysis
+
 The UI primitives depend on:
+
 - Radix UI primitives for accessibility and composability
 - Tailwind CSS for styling
 - cn() utility for safe class merging
 
 The theme system depends on:
+
 - localStorage for persistence
 - window.matchMedia for system preference detection
 - document.documentElement for applying dark class
@@ -420,6 +456,7 @@ THEMEPROV --> CTX["ThemeContext"]
 ```
 
 **Diagram sources**
+
 - [button.tsx:1-3](file://src/components/ui/button.tsx#L1-L3)
 - [input.tsx:1-3](file://src/components/ui/input.tsx#L1-L3)
 - [card.tsx:1-3](file://src/components/ui/card.tsx#L1-L3)
@@ -432,11 +469,13 @@ THEMEPROV --> CTX["ThemeContext"]
 - [theme.ts:1-11](file://src/lib/theme.ts#L1-L11)
 
 **Section sources**
+
 - [button.tsx:1-3](file://src/components/ui/button.tsx#L1-L3)
 - [form.tsx:1-11](file://src/components/ui/form.tsx#L1-L11)
 - [theme.ts:1-11](file://src/lib/theme.ts#L1-L11)
 
 ## Performance Considerations
+
 - Minimize re-renders by memoizing heavy props passed to UI components
 - Prefer shallow comparisons for theme and responsive state to avoid unnecessary updates
 - Defer heavy computations in dialogs and popovers until opened
@@ -446,7 +485,9 @@ THEMEPROV --> CTX["ThemeContext"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Hydration mismatch with theme: Ensure ThemeProvider initializes on the client and applies theme on mount
   - Reference: [ThemeProvider.tsx:42-47](file://src/components/ThemeProvider.tsx#L42-L47)
 - Dark mode not switching: Verify the "dark" class is toggled on document.documentElement
@@ -459,6 +500,7 @@ Common issues and resolutions:
   - Reference: [form.tsx:40-65](file://src/components/ui/form.tsx#L40-L65)
 
 **Section sources**
+
 - [ThemeProvider.tsx:42-47](file://src/components/ThemeProvider.tsx#L42-L47)
 - [theme.ts:35-39](file://src/lib/theme.ts#L35-L39)
 - [ThemeProvider.tsx:49-63](file://src/components/ThemeProvider.tsx#L49-L63)
@@ -466,6 +508,7 @@ Common issues and resolutions:
 - [form.tsx:40-65](file://src/components/ui/form.tsx#L40-L65)
 
 ## Conclusion
+
 The component architecture combines shadcn/ui primitives with a robust theme provider and responsive utilities. The design emphasizes composability, accessibility, and customization through Tailwind and CSS variables. Following the patterns documented here ensures consistent behavior across light/dark modes, responsive breakpoints, and route-level UX.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -473,6 +516,7 @@ The component architecture combines shadcn/ui primitives with a robust theme pro
 ## Appendices
 
 ### Best Practices for Component Development
+
 - Use composition patterns (asChild, Slot) to preserve semantics
 - Define variants and sizes centrally for consistency
 - Keep component props minimal and typed
@@ -482,6 +526,7 @@ The component architecture combines shadcn/ui primitives with a robust theme pro
 [No sources needed since this section provides general guidance]
 
 ### Testing Strategies
+
 - Unit tests for hooks: mock ThemeProvider and useIsMobile behavior
 - Snapshot tests for theme variants and sizes
 - Accessibility tests: ensure labels, roles, and keyboard navigation
@@ -490,6 +535,7 @@ The component architecture combines shadcn/ui primitives with a robust theme pro
 [No sources needed since this section provides general guidance]
 
 ### Accessibility Compliance
+
 - Use proper labels and aria attributes in forms
 - Ensure focus management in dialogs and dropdowns
 - Provide visible focus indicators and keyboard navigation

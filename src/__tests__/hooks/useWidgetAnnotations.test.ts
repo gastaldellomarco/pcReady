@@ -25,14 +25,10 @@ vi.mock("@/lib/widget-annotations", () => ({
 // ── Mock useServerFn (TanStack Start) ────────────────────────────────────
 vi.mock("@tanstack/react-start", () => ({
   useServerFn: vi.fn((fn: unknown) => {
-    if (fn === serverFnMocks.listWidgetAnnotations)
-      return serverFnMocks.listWidgetAnnotations;
-    if (fn === serverFnMocks.createWidgetAnnotation)
-      return serverFnMocks.createWidgetAnnotation;
-    if (fn === serverFnMocks.updateWidgetAnnotation)
-      return serverFnMocks.updateWidgetAnnotation;
-    if (fn === serverFnMocks.deleteWidgetAnnotation)
-      return serverFnMocks.deleteWidgetAnnotation;
+    if (fn === serverFnMocks.listWidgetAnnotations) return serverFnMocks.listWidgetAnnotations;
+    if (fn === serverFnMocks.createWidgetAnnotation) return serverFnMocks.createWidgetAnnotation;
+    if (fn === serverFnMocks.updateWidgetAnnotation) return serverFnMocks.updateWidgetAnnotation;
+    if (fn === serverFnMocks.deleteWidgetAnnotation) return serverFnMocks.deleteWidgetAnnotation;
     return vi.fn();
   }),
 }));
@@ -49,9 +45,7 @@ vi.mock("sonner", () => ({
 
 // ── Factory helpers ──────────────────────────────────────────────────────
 
-function createAnnotationRow(
-  overrides: Partial<WidgetAnnotationRow> = {},
-): WidgetAnnotationRow {
+function createAnnotationRow(overrides: Partial<WidgetAnnotationRow> = {}): WidgetAnnotationRow {
   return {
     id: "ann-001",
     user_id: "user-001",
@@ -89,10 +83,9 @@ describe("useWidgetAnnotations", () => {
 
   describe("default state (no accessToken)", () => {
     it("returns empty annotations when not authenticated", () => {
-      const { result } = renderHook(() =>
-        useWidgetAnnotations(undefined),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations(undefined), {
+        wrapper: createWrapper(),
+      });
 
       expect(result.current.annotations).toEqual([]);
       expect(result.current.isLoading).toBe(false);
@@ -116,10 +109,9 @@ describe("useWidgetAnnotations", () => {
       ];
       serverFnMocks.listWidgetAnnotations.mockResolvedValue(mockRows);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       expect(result.current.isLoading).toBe(true);
 
@@ -139,10 +131,9 @@ describe("useWidgetAnnotations", () => {
       const mockRows = [createAnnotationRow()];
       serverFnMocks.listWidgetAnnotations.mockResolvedValue(mockRows);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123", "stat-cards"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123", "stat-cards"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -156,14 +147,11 @@ describe("useWidgetAnnotations", () => {
     });
 
     it("returns empty array on fetch error", async () => {
-      serverFnMocks.listWidgetAnnotations.mockRejectedValue(
-        new Error("Fetch failed"),
-      );
+      serverFnMocks.listWidgetAnnotations.mockRejectedValue(new Error("Fetch failed"));
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -184,10 +172,9 @@ describe("useWidgetAnnotations", () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([]);
       serverFnMocks.createWidgetAnnotation.mockResolvedValue(mockRow);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123", "stat-cards"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123", "stat-cards"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -219,14 +206,11 @@ describe("useWidgetAnnotations", () => {
 
     it("shows error toast on create failure", async () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([]);
-      serverFnMocks.createWidgetAnnotation.mockRejectedValue(
-        new Error("Save failed"),
-      );
+      serverFnMocks.createWidgetAnnotation.mockRejectedValue(new Error("Save failed"));
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -252,10 +236,9 @@ describe("useWidgetAnnotations", () => {
     it("does not invoke mutation when accessToken is undefined", async () => {
       serverFnMocks.createWidgetAnnotation.mockResolvedValue({} as never);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations(undefined),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations(undefined), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         result.current.create({
@@ -283,10 +266,9 @@ describe("useWidgetAnnotations", () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([mockRow]);
       serverFnMocks.updateWidgetAnnotation.mockResolvedValue(mockRow);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -314,14 +296,11 @@ describe("useWidgetAnnotations", () => {
 
     it("shows error toast on update failure", async () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([]);
-      serverFnMocks.updateWidgetAnnotation.mockRejectedValue(
-        new Error("Update failed"),
-      );
+      serverFnMocks.updateWidgetAnnotation.mockRejectedValue(new Error("Update failed"));
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -352,10 +331,9 @@ describe("useWidgetAnnotations", () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([]);
       serverFnMocks.deleteWidgetAnnotation.mockResolvedValue({ success: true });
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -379,14 +357,11 @@ describe("useWidgetAnnotations", () => {
 
     it("shows error toast on delete failure", async () => {
       serverFnMocks.listWidgetAnnotations.mockResolvedValue([]);
-      serverFnMocks.deleteWidgetAnnotation.mockRejectedValue(
-        new Error("Delete failed"),
-      );
+      serverFnMocks.deleteWidgetAnnotation.mockRejectedValue(new Error("Delete failed"));
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations("token-123"),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations("token-123"), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         await vi.waitFor(() => {
@@ -409,10 +384,9 @@ describe("useWidgetAnnotations", () => {
     it("does not invoke mutation when accessToken is undefined", async () => {
       serverFnMocks.deleteWidgetAnnotation.mockResolvedValue({ success: true } as never);
 
-      const { result } = renderHook(() =>
-        useWidgetAnnotations(undefined),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations(undefined), {
+        wrapper: createWrapper(),
+      });
 
       await act(async () => {
         result.current.remove("ann-001");
@@ -431,10 +405,9 @@ describe("useWidgetAnnotations", () => {
 
   describe("isPending", () => {
     it("is false when no mutations are running", () => {
-      const { result } = renderHook(() =>
-        useWidgetAnnotations(undefined),
-        { wrapper: createWrapper() },
-      );
+      const { result } = renderHook(() => useWidgetAnnotations(undefined), {
+        wrapper: createWrapper(),
+      });
 
       expect(result.current.isPending).toBe(false);
     });

@@ -17,7 +17,8 @@ export default defineConfig({
       SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy-key-for-e2e-tests",
       SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy-service-role-key",
       VITE_SUPABASE_URL: "http://localhost:54321",
-      VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy-key-for-e2e-tests",
+      VITE_SUPABASE_PUBLISHABLE_KEY:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy-key-for-e2e-tests",
     },
   },
 });

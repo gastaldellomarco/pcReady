@@ -21,7 +21,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Enhanced device status management with comprehensive logging to activity_log table
 - Improved device-client association handling with better client lookup and validation
 - Expanded device import/export capabilities with enhanced CSV processing and validation
@@ -29,6 +31,7 @@
 - Strengthened device status change notifications for maintenance/retired states
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -44,9 +47,11 @@
 13. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the device management system with a focus on inventory tracking, device lifecycle, client associations, and the relationship to tickets. The system has been enhanced with comprehensive device status management, improved device-client association handling, and expanded import/export capabilities. It covers how devices are added, queried, exported to PDF, imported via CSV, and viewed in detail, including status transitions and historical tracking with enhanced logging.
 
 ## Project Structure
+
 The device management system spans UI components, server functions, database migrations, and PDF/label generation utilities. Key areas include enhanced status management with activity logging, improved client-device associations, and expanded CSV processing capabilities.
 
 ```mermaid
@@ -90,6 +95,7 @@ L --> O
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:1-218](file://src/components/pcready/AddDeviceModal.tsx#L1-L218)
 - [DeviceDetailModal.tsx:1-802](file://src/components/pcready/DeviceDetailModal.tsx#L1-L802)
 - [inventory.tsx:1-580](file://src/routes/_app/inventory.tsx#L1-L580)
@@ -107,6 +113,7 @@ L --> O
 - [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:1-218](file://src/components/pcready/AddDeviceModal.tsx#L1-L218)
 - [DeviceDetailModal.tsx:1-802](file://src/components/pcready/DeviceDetailModal.tsx#L1-L802)
 - [inventory.tsx:1-580](file://src/routes/_app/inventory.tsx#L1-L580)
@@ -124,6 +131,7 @@ L --> O
 - [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 
 ## Core Components
+
 - AddDeviceModal: Collects model, serial, client association, end-user, OS, and notes; validates with Zod; persists via Supabase; logs activity with enhanced client validation.
 - DeviceDetailModal: Loads device, assignments, tickets, history, and activity with comprehensive logging; renders timeline; supports status updates with confirmation for maintenance/retired.
 - Inventory listing: Filters by status/OS/text; supports scanning, QR, labels, CSV import, and PDF export with enhanced filtering options.
@@ -133,6 +141,7 @@ L --> O
 - Client/device/ticket relations: Migrations define devices, clients, and ticket-device assignment/history tables with enhanced device activity tracking.
 
 **Section sources**
+
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
 - [DeviceDetailModal.tsx:118-335](file://src/components/pcready/DeviceDetailModal.tsx#L118-L335)
 - [inventory.tsx:63-275](file://src/routes/_app/inventory.tsx#L63-L275)
@@ -144,6 +153,7 @@ L --> O
 - [20260504183000_create_ticket_device_assignment_history.sql:4-22](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L4-L22)
 
 ## Architecture Overview
+
 The system integrates UI components with server functions and Supabase. Device creation and updates flow through typed forms and Zod validation, persisted via Supabase queries. Enhanced status changes are now logged to the activity_log table with device-level tracking. Ticket-device relationships are tracked via assignment tables and a persistent history table with comprehensive audit capabilities.
 
 ```mermaid
@@ -163,11 +173,13 @@ UI-->>U : "Success toast + reset"
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:78-118](file://src/components/pcready/AddDeviceModal.tsx#L78-L118)
 - [devices.ts:5-12](file://lib/schemas/devices.ts#L5-L12)
 - [inventory.ts:82-89](file://src/lib/queries/inventory.ts#L82-L89)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
 - [devices.ts:5-12](file://lib/schemas/devices.ts#L5-L12)
 - [inventory.ts:82-89](file://src/lib/queries/inventory.ts#L82-L89)
@@ -175,6 +187,7 @@ UI-->>U : "Success toast + reset"
 ## Detailed Component Analysis
 
 ### AddDeviceModal: Data Collection and Persistence
+
 - Fields collected: brand, model, serial, client_id, end_user, os, notes.
 - Validation: Zod schema ensures required fields and enum-like OS selection.
 - Client options: loaded dynamically via tickets query helper with enhanced client validation.
@@ -198,18 +211,21 @@ Reset --> End
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
 - [devices.ts:5-12](file://lib/schemas/devices.ts#L5-L12)
 - [tickets.ts:5-13](file://src/lib/queries/tickets.ts#L5-L13)
 - [inventory.ts:82-89](file://src/lib/queries/inventory.ts#L82-L89)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
 - [devices.ts:5-12](file://lib/schemas/devices.ts#L5-L12)
 - [tickets.ts:5-13](file://src/lib/queries/tickets.ts#L5-L13)
 - [inventory.ts:82-89](file://src/lib/queries/inventory.ts#L82-L89)
 
 ### DeviceDetailModal: Lifecycle Tracking and Timeline
+
 - Loads device, assignments, tickets, history, and activity with comprehensive logging including device-level activity.
 - Builds a unified timeline combining:
   - Device creation snapshot
@@ -238,16 +254,19 @@ DM->>DM : "Commit status via server function with logging"
 ```
 
 **Diagram sources**
+
 - [DeviceDetailModal.tsx:149-285](file://src/components/pcready/DeviceDetailModal.tsx#L149-L285)
 - [DeviceDetailModal.tsx:315-346](file://src/components/pcready/DeviceDetailModal.tsx#L315-L346)
 - [tickets.ts:114-136](file://src/lib/queries/tickets.ts#L114-L136)
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:118-335](file://src/components/pcready/DeviceDetailModal.tsx#L118-L335)
 - [DeviceDetailModal.tsx:601-727](file://src/components/pcready/DeviceDetailModal.tsx#L601-L727)
 - [tickets.ts:114-136](file://src/lib/queries/tickets.ts#L114-L136)
 
 ### Inventory Listing: Queries, Filters, and Export
+
 - Fetches devices with counts, supports pagination, and marks active assignments.
 - Filters: status, OS, free-text search across serial/model/user, updated date ranges, and client-specific filtering.
 - Optional filter excludes devices with active assignments.
@@ -269,17 +288,20 @@ Action --> |Change status| Status["Direct DB update (no active assignment)"]
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:86-94](file://src/routes/_app/inventory.tsx#L86-L94)
 - [inventory.tsx:242-275](file://src/routes/_app/inventory.tsx#L242-L275)
 - [inventory.ts:22-54](file://src/lib/queries/inventory.ts#L22-L54)
 - [InventoryPdf.tsx:26-84](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L84)
 
 **Section sources**
+
 - [inventory.tsx:63-275](file://src/routes/_app/inventory.tsx#L63-L275)
 - [inventory.ts:22-54](file://src/lib/queries/inventory.ts#L22-L54)
 - [InventoryPdf.tsx:26-84](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L84)
 
 ### CSV Import/Export Pipeline
+
 - Import:
   - Parse CSV into typed rows with enhanced header normalization.
   - Load clients and existing devices by name/serial with improved lookup algorithms.
@@ -313,15 +335,18 @@ IC-->>U : "Show summary + toast with progress"
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:23-95](file://src/components/inventory/ImportCsvDialog.tsx#L23-L95)
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 
 ## Enhanced Device Status Management
+
 The device status management system has been significantly enhanced with comprehensive logging capabilities:
 
 - **Comprehensive Logging**: All device status changes are now logged to the activity_log table with device_id foreign key support.
@@ -349,14 +374,17 @@ UI-->>U : "Success toast with enhanced logging"
 ```
 
 **Diagram sources**
+
 - [DeviceDetailModal.tsx:315-346](file://src/components/pcready/DeviceDetailModal.tsx#L315-L346)
 - [device-status.ts:15-76](file://src/lib/device-status.ts#L15-L76)
 
 **Section sources**
+
 - [DeviceDetailModal.tsx:315-346](file://src/components/pcready/DeviceDetailModal.tsx#L315-L346)
 - [device-status.ts:15-76](file://src/lib/device-status.ts#L15-L76)
 
 ## Improved Device-Client Association Handling
+
 Device-client association handling has been enhanced with:
 
 - **Enhanced Client Lookup**: Improved client resolution supporting both name and company_name fields.
@@ -382,14 +410,17 @@ Skip --> Complete
 ```
 
 **Diagram sources**
+
 - [inventory-import.ts:72-84](file://src/lib/inventory-import.ts#L72-L84)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 
 **Section sources**
+
 - [inventory-import.ts:72-84](file://src/lib/inventory-import.ts#L72-L84)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 
 ## Expanded Import/Export Capabilities
+
 The import/export system has been significantly expanded:
 
 - **Enhanced CSV Parsing**: Improved CSV parsing with better header normalization and field extraction.
@@ -400,10 +431,12 @@ The import/export system has been significantly expanded:
 - **Bulk Operations**: Optimized bulk insert/update operations with better performance characteristics.
 
 **Section sources**
+
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 
 ## Device Activity Logging
+
 A new comprehensive device activity logging system has been implemented:
 
 - **Device-Level Logging**: New device_id column in activity_log table enables device-specific activity tracking.
@@ -413,10 +446,12 @@ A new comprehensive device activity logging system has been implemented:
 - **Integration**: Seamless integration with existing activity log infrastructure.
 
 **Section sources**
+
 - [20260515100000_device_activity_log.sql:1-27](file://supabase/migrations/20260515100000_device_activity_log.sql#L1-L27)
 - [device-status.ts:53-61](file://src/lib/device-status.ts#L53-L61)
 
 ## Dependency Analysis
+
 - Forms depend on Zod schemas for validation with enhanced client validation.
 - Modals depend on Supabase queries and server functions with comprehensive logging.
 - Inventory page orchestrates multiple data sources with enhanced filtering capabilities.
@@ -439,6 +474,7 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:5-11](file://src/components/pcready/AddDeviceModal.tsx#L5-L11)
 - [devices.ts:1-15](file://lib/schemas/devices.ts#L1-L15)
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
@@ -452,6 +488,7 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - [inventory-labels.ts:1-72](file://src/lib/inventory-labels.ts#L1-L72)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:5-11](file://src/components/pcready/AddDeviceModal.tsx#L5-L11)
 - [devices.ts:1-15](file://lib/schemas/devices.ts#L1-L15)
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
@@ -465,6 +502,7 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - [inventory-labels.ts:1-72](file://src/lib/inventory-labels.ts#L1-L72)
 
 ## Performance Considerations
+
 - Pagination: Inventory lists use range-based pagination to limit rows per page.
 - Filtering: Text search uses ILIKE with OR combinations; ensure indexes exist on frequently filtered columns (serial, model, assigned_to, os, status).
 - Batch operations:
@@ -476,7 +514,9 @@ InventoryLabels["inventory-labels.ts"] --> InventoryPage
 - Enhanced caching: Improved client and device lookup caching reduces database load during imports.
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Duplicate serial numbers:
   - CSV validation detects duplicates and marks rows as skip with enhanced error messages; ensure unique serials per file.
   - Database unique index prevents duplicates at persistence time with proper error handling.
@@ -494,6 +534,7 @@ Common issues and resolutions:
   - Enhanced client lookup now supports company_name field; verify client data includes both name and company_name for best results.
 
 **Section sources**
+
 - [inventory-import.ts:110-125](file://src/lib/inventory-import.ts#L110-L125)
 - [20260430170000_split_assets_clients_tickets.sql:42-44](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L42-L44)
 - [inventory.tsx:242-275](file://src/routes/_app/inventory.tsx#L242-L275)
@@ -502,4 +543,5 @@ Common issues and resolutions:
 - [20260515100000_device_activity_log.sql:8-10](file://supabase/migrations/20260515100000_device_activity_log.sql#L8-L10)
 
 ## Conclusion
+
 The device management system provides a robust foundation for inventory tracking, client-device association, and ticket-device linkage with comprehensive history and enhanced capabilities. The recent enhancements include comprehensive device status management with detailed logging, improved device-client association handling with better validation, and expanded import/export capabilities with enhanced performance. Administrators benefit from server-side status enforcement, notifications, and comprehensive audit trails, while inventory managers can efficiently add, search, export, and import device data with enhanced validation and error reporting. The architecture supports scalability through pagination, batch operations, clear separation of concerns across UI, server functions, and database schemas, along with new device activity logging capabilities.

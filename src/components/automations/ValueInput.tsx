@@ -1,10 +1,7 @@
 import { X, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isMultiValueOperator } from "@/domain/automation";
-import type {
-  ConditionFieldDef,
-  ConditionOperator,
-} from "@/domain/automation";
+import type { ConditionFieldDef, ConditionOperator } from "@/domain/automation";
 
 interface ValueInputProps {
   field: ConditionFieldDef | undefined;
@@ -16,12 +13,7 @@ interface ValueInputProps {
 /**
  *
  */
-export function ValueInput({
-  field,
-  operator,
-  value,
-  onChange,
-}: ValueInputProps) {
+export function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
   const { t } = useTranslation("automations");
 
   // Handle multi-value operators (in)

@@ -130,15 +130,12 @@ export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
   .inputValidator((data: z.input<typeof GlobalLogsAuthedSchema>) => data)
   .handler(async ({ data }) => {
     const input = GlobalLogsAuthedSchema.parse(data);
-    const { requireAutomationRunnerUser, supabaseAdmin } =
-      await import("./automation-runs.server");
+    const { requireAutomationRunnerUser, supabaseAdmin } = await import("./automation-runs.server");
     await requireAutomationRunnerUser(input.accessToken);
 
     let query = supabaseAdmin
       .from("automation_run_logs" as any)
-      .select(
-        `${AUTOMATION_RUN_LOG_SELECT}, automation_flows!inner(name)`,
-      )
+      .select(`${AUTOMATION_RUN_LOG_SELECT}, automation_flows!inner(name)`)
       .order("triggered_at", { ascending: false })
       .limit(200);
 
@@ -157,7 +154,9 @@ export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await query;
     if (error) throw error;
-    return (rows ?? []) as unknown as (AutomationRunLog & { automation_flows?: { name: string } })[];
+    return (rows ?? []) as unknown as (AutomationRunLog & {
+      automation_flows?: { name: string };
+    })[];
   });
 
 export const runAutomationNow = createServerFn({ method: "POST" })

@@ -4,21 +4,21 @@
 
 I token ufficiali sono definiti in `src/styles.css`, esposti a Tailwind tramite `@theme` e replicati in `src/lib/design-system.ts` per componenti TypeScript, SVG, Recharts e PDF.
 
-| Token | Light | Dark | Uso |
-| --- | --- | --- | --- |
-| `--color-primary` | `#2563EB` | `#2563EB` | bottoni primari, link, highlight |
-| `--color-primary-hover` | `#1D4ED8` | `#1D4ED8` | hover primario |
-| `--color-primary-light` | `#DBEAFE` | `#1E3A5F` | badge e selezioni |
-| `--color-success` | `#16A34A` | `#4ADE80` | completato, SLA OK, stato attivo |
-| `--color-warning` | `#D97706` | `#FBBF24` | scadenze e attenzione |
-| `--color-danger` | `#DC2626` | `#F87171` | errori, SLA violato, eliminazione |
-| `--color-info` | `#0D9488` | `#2DD4BF` | informazioni e automazioni |
-| `--color-text-primary` | `#0F172A` | `#F1F5F9` | testo principale |
-| `--color-text-secondary` | `#64748B` | `#94A3B8` | testo secondario |
-| `--color-text-muted` | `#94A3B8` | `#64748B` | hint e disabilitati |
-| `--color-border` | `#E2E8F0` | `#1E293B` | bordi e separatori |
-| `--color-surface` | `#F8FAFC` | `#0F172A` | background pagina |
-| `--color-card` | `#FFFFFF` | `#1E293B` | card, modal, dropdown |
+| Token                    | Light     | Dark      | Uso                               |
+| ------------------------ | --------- | --------- | --------------------------------- |
+| `--color-primary`        | `#2563EB` | `#2563EB` | bottoni primari, link, highlight  |
+| `--color-primary-hover`  | `#1D4ED8` | `#1D4ED8` | hover primario                    |
+| `--color-primary-light`  | `#DBEAFE` | `#1E3A5F` | badge e selezioni                 |
+| `--color-success`        | `#16A34A` | `#4ADE80` | completato, SLA OK, stato attivo  |
+| `--color-warning`        | `#D97706` | `#FBBF24` | scadenze e attenzione             |
+| `--color-danger`         | `#DC2626` | `#F87171` | errori, SLA violato, eliminazione |
+| `--color-info`           | `#0D9488` | `#2DD4BF` | informazioni e automazioni        |
+| `--color-text-primary`   | `#0F172A` | `#F1F5F9` | testo principale                  |
+| `--color-text-secondary` | `#64748B` | `#94A3B8` | testo secondario                  |
+| `--color-text-muted`     | `#94A3B8` | `#64748B` | hint e disabilitati               |
+| `--color-border`         | `#E2E8F0` | `#1E293B` | bordi e separatori                |
+| `--color-surface`        | `#F8FAFC` | `#0F172A` | background pagina                 |
+| `--color-card`           | `#FFFFFF` | `#1E293B` | card, modal, dropdown             |
 
 ## Tipografia
 

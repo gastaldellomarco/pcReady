@@ -16,9 +16,11 @@ export const Route = createFileRoute("/_app/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     // Audit filters
-    auditActionType: typeof search.auditActionType === "string" ? search.auditActionType : undefined,
+    auditActionType:
+      typeof search.auditActionType === "string" ? search.auditActionType : undefined,
     auditUser: typeof search.auditUser === "string" ? search.auditUser : undefined,
-    auditEntityType: typeof search.auditEntityType === "string" ? search.auditEntityType : undefined,
+    auditEntityType:
+      typeof search.auditEntityType === "string" ? search.auditEntityType : undefined,
     auditOutcome: typeof search.auditOutcome === "string" ? search.auditOutcome : undefined,
     auditDateFrom: typeof search.auditDateFrom === "string" ? search.auditDateFrom : undefined,
     auditDateTo: typeof search.auditDateTo === "string" ? search.auditDateTo : undefined,
@@ -29,7 +31,10 @@ export const Route = createFileRoute("/_app/admin")({
   head: () => ({
     meta: [
       { title: i18n.t("admin:meta.title", "Admin Utenti - PCReady") },
-      { name: "description", content: i18n.t("admin:meta.description", "Gestione utenti, ruoli e stato account.") },
+      {
+        name: "description",
+        content: i18n.t("admin:meta.description", "Gestione utenti, ruoli e stato account."),
+      },
     ],
   }),
   component: AdminUsersPage,
@@ -95,5 +100,3 @@ function AdminUsersPage() {
     </Tabs>
   );
 }
-
-

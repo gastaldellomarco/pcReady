@@ -12,9 +12,7 @@ interface WidgetAnnotationsDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const WIDGET_LABELS = new Map(
-  DASHBOARD_WIDGETS.map((w) => [w.id, w.label]),
-);
+const WIDGET_LABELS = new Map(DASHBOARD_WIDGETS.map((w) => [w.id, w.label]));
 
 function widgetLabel(widgetId: string) {
   return WIDGET_LABELS.get(widgetId as WidgetId) ?? widgetId;
@@ -27,8 +25,9 @@ function widgetLabel(widgetId: string) {
  */
 export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotationsDrawerProps) {
   const { session } = useAuth();
-  const { annotations, isLoading, update, remove, isPending } =
-    useWidgetAnnotations(session?.access_token);
+  const { annotations, isLoading, update, remove, isPending } = useWidgetAnnotations(
+    session?.access_token,
+  );
   const [activeTab, setActiveTab] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
@@ -100,18 +99,14 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
 
         <div className="flex flex-col gap-4">
           {isLoading && (
-            <div className="text-sm text-text3 py-8 text-center">
-              Caricamento annotazioni...
-            </div>
+            <div className="text-sm text-text3 py-8 text-center">Caricamento annotazioni...</div>
           )}
 
           {!isLoading && !annotations.length && (
             <div className="text-sm text-text3 py-8 text-center space-y-2">
               <StickyNote className="size-8 mx-auto opacity-30" />
               <p>Nessuna annotazione.</p>
-              <p className="text-xs">
-                Clicca l'icona 📝 su un widget per aggiungerne una.
-              </p>
+              <p className="text-xs">Clicca l'icona 📝 su un widget per aggiungerne una.</p>
             </div>
           )}
 
@@ -192,19 +187,14 @@ export function WidgetAnnotationsDrawer({ open, onOpenChange }: WidgetAnnotation
                               >
                                 Salva
                               </button>
-                              <button
-                                className="text-[12px] text-text3"
-                                onClick={cancelEdit}
-                              >
+                              <button className="text-[12px] text-text3" onClick={cancelEdit}>
                                 Annulla
                               </button>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <p className="text-[13px] leading-relaxed text-text1">
-                              {a.text}
-                            </p>
+                            <p className="text-[13px] leading-relaxed text-text1">{a.text}</p>
                             <div className="flex items-center justify-between mt-1.5">
                               <div className="flex items-center gap-2">
                                 {a.note_date && (

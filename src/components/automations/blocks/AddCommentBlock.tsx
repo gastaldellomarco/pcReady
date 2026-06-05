@@ -81,7 +81,10 @@ export function AddCommentBlock({
           value={action.config.ticket_id || ""}
           onChange={(v) => updateConfig({ ticket_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.optionalPlaceholder", "Lascia vuoto per usare il ticket dal trigger")}
+          placeholder={t(
+            "actionsBuilder.optionalPlaceholder",
+            "Lascia vuoto per usare il ticket dal trigger",
+          )}
         />
 
         <VariableTextField
@@ -89,7 +92,10 @@ export function AddCommentBlock({
           value={action.config.content}
           onChange={(v) => updateConfig({ content: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.add_comment.contentPlaceholder", "Scrivi il commento...")}
+          placeholder={t(
+            "actionsBuilder.blocks.add_comment.contentPlaceholder",
+            "Scrivi il commento...",
+          )}
           multiline
           rows={4}
         />
@@ -102,7 +108,10 @@ export function AddCommentBlock({
             className="rounded border-gray-300 text-primary focus:ring-primary"
           />
           <span className="text-text2">
-            {t("actionsBuilder.blocks.add_comment.isInternal", "Nota interna (non visibile al cliente)")}
+            {t(
+              "actionsBuilder.blocks.add_comment.isInternal",
+              "Nota interna (non visibile al cliente)",
+            )}
           </span>
         </label>
       </div>

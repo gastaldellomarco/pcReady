@@ -37,10 +37,22 @@ export function TicketCard({ ticket }: { ticket: any }) {
         </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <span>{t("card.priority", "Priorità:")} {ticket.priority}</span>
-        {ticket.assignee?.full_name ? <span>{t("card.technician", "Tecnico:")} {ticket.assignee.full_name}</span> : null}
-        <span>{t("card.opened", "Aperto:")} {fmtDateTime(ticket.created_at)}</span>
-        {ticket.closed_at ? <span>{t("card.closed", "Chiuso:")} {fmtDateTime(ticket.closed_at)}</span> : null}
+        <span>
+          {t("card.priority", "Priorità:")} {ticket.priority}
+        </span>
+        {ticket.assignee?.full_name ? (
+          <span>
+            {t("card.technician", "Tecnico:")} {ticket.assignee.full_name}
+          </span>
+        ) : null}
+        <span>
+          {t("card.opened", "Aperto:")} {fmtDateTime(ticket.created_at)}
+        </span>
+        {ticket.closed_at ? (
+          <span>
+            {t("card.closed", "Chiuso:")} {fmtDateTime(ticket.closed_at)}
+          </span>
+        ) : null}
       </div>
     </a>
   );

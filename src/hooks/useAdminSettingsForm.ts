@@ -7,7 +7,9 @@ import { getAdminErrorMessage } from "@/lib/admin/admin-error-message";
 import { AppSettingsSchema } from "@/lib/schemas";
 import type { AppSettings } from "@/lib/app-settings";
 
-type SaveServerFn = (opts: { data: { accessToken: string; settings: AppSettings } }) => Promise<{ success: boolean }>;
+type SaveServerFn = (opts: {
+  data: { accessToken: string; settings: AppSettings };
+}) => Promise<{ success: boolean }>;
 
 /**
  *
@@ -143,7 +145,12 @@ export function useAdminSettingsForm(args: {
         ticket_categories: values.ticket_categories ?? [],
         kanban_column_colors: settings?.kanban_column_colors ?? {},
         kanban_column_notes: settings?.kanban_column_notes ?? {
-          pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+          pending: "",
+          "in-progress": "",
+          testing: "",
+          ready: "",
+          completed: "",
+          archived: "",
         },
         mfa_require_admin_users: !!(values as any).mfa_require_admin_users,
         mfa_require_all_users: !!(values as any).mfa_require_all_users,

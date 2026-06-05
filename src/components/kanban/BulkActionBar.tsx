@@ -1,12 +1,7 @@
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { KANBAN_STATUSES } from "@/lib/kanban/constants";
-import {
-  PRIORITY_LABEL,
-  STATUS_META,
-  type TicketPriority,
-  type TicketStatus,
-} from "@/lib/pcready";
+import { PRIORITY_LABEL, STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import type { TechnicianOption } from "@/lib/technicians";
 
@@ -61,11 +56,7 @@ export function BulkActionBar({
           <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">
             {selectedCount} {t("bulk.selected", "selezionati")}
           </span>
-          <button
-            type="button"
-            className="pc-btn pc-btn-ghost pc-btn-xs"
-            onClick={onDeselect}
-          >
+          <button type="button" className="pc-btn pc-btn-ghost pc-btn-xs" onClick={onDeselect}>
             <X className="size-3" /> {t("bulk.deselect", "Deseleziona")}
           </button>
         </div>
@@ -132,11 +123,7 @@ export function BulkActionBar({
       >
         {t("bulk.archive", "Archivia")}
       </button>
-      <button
-        type="button"
-        className="pc-btn pc-btn-ghost pc-btn-sm"
-        onClick={onDeselect}
-      >
+      <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={onDeselect}>
         X {t("bulk.deselect", "Deseleziona")}
       </button>
       {!isMobile && (

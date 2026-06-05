@@ -1,8 +1,4 @@
-import type {
-  AutomationCondition,
-  ConditionsGroup,
-  ConditionOperator,
-} from "@/domain/automation";
+import type { AutomationCondition, ConditionsGroup, ConditionOperator } from "@/domain/automation";
 import type { ConditionDef } from "@/types/automation";
 
 /**
@@ -45,10 +41,7 @@ export function fromConditionDef(def: ConditionDef): AutomationCondition {
   // Handle special legacy types that don't have explicit fields
   if (LEGACY_TYPE_TO_FIELD[def.type]) {
     const field = LEGACY_TYPE_TO_FIELD[def.type];
-    const value =
-      def.type === "priority_high"
-        ? "high"
-        : def.config?.value || "";
+    const value = def.type === "priority_high" ? "high" : def.config?.value || "";
 
     return {
       id: def.id,
@@ -89,8 +82,7 @@ export function fromConditionDefs(defs: ConditionDef[]): ConditionsGroup {
  */
 export function toConditionDef(cond: AutomationCondition): ConditionDef {
   // Determine the legacy type based on operator
-  const type =
-    OPERATOR_TO_LEGACY_TYPE[cond.operator] || "field_equals";
+  const type = OPERATOR_TO_LEGACY_TYPE[cond.operator] || "field_equals";
 
   // Handle value serialization
   let value: string;
@@ -172,9 +164,10 @@ export function createEmptyConditionsGroup(): ConditionsGroup {
 /**
  * Validates a conditions group
  */
-export function validateConditionsGroup(
-  group: ConditionsGroup
-): { valid: boolean; errors: string[] } {
+export function validateConditionsGroup(group: ConditionsGroup): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   for (const cond of group.conditions) {
@@ -187,11 +180,7 @@ export function validateConditionsGroup(
     if (cond.value === "" || cond.value === undefined || cond.value === null) {
       errors.push(`Condition ${cond.id}: value is required`);
     }
-    if (
-      cond.operator === "in" &&
-      Array.isArray(cond.value) &&
-      cond.value.length === 0
-    ) {
+    if (cond.operator === "in" && Array.isArray(cond.value) && cond.value.length === 0) {
       errors.push(`Condition ${cond.id}: at least one value is required for "in" operator`);
     }
   }

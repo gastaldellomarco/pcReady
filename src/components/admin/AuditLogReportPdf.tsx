@@ -1,11 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  BrandedPage,
-  PdfSection,
-  PdfTable,
-  type PdfColumn,
-} from "@/components/pcready/pdf/shared";
+import { BrandedPage, PdfSection, PdfTable, type PdfColumn } from "@/components/pcready/pdf/shared";
 import { getEntityLabel } from "@/lib/entity-labels";
 import type { ActivityLogEntry } from "@/lib/audit-log";
 
@@ -36,7 +31,11 @@ export function AuditLogReportPdf({
       mono: true,
       value: (row) => {
         const d = new Date(row.created_at);
-        return d.toLocaleDateString("it-IT") + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+        return (
+          d.toLocaleDateString("it-IT") +
+          " " +
+          d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+        );
       },
     },
     {
@@ -96,7 +95,11 @@ export function AuditLogReportPdf({
     return (
       <BrandedPage
         title={t("auditReport.title", "Report Audit Log")}
-        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", { dateLabel, count: totalCount, user: exportUser })}
+        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", {
+          dateLabel,
+          count: totalCount,
+          user: exportUser,
+        })}
         organizationName={organizationName}
       >
         <PdfSection
@@ -112,10 +115,17 @@ export function AuditLogReportPdf({
   const { Document } = pdfModule;
 
   return (
-    <Document author={organizationName || "PCReady"} title={t("auditReport.title", "Report Audit Log")}>
+    <Document
+      author={organizationName || "PCReady"}
+      title={t("auditReport.title", "Report Audit Log")}
+    >
       <BrandedPage
         title={t("auditReport.title", "Report Audit Log")}
-        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", { dateLabel, count: totalCount, user: exportUser })}
+        meta={t("auditReport.exportMeta", "{{dateLabel}} - {{count}} eventi | Export: {{user}}", {
+          dateLabel,
+          count: totalCount,
+          user: exportUser,
+        })}
         organizationName={organizationName}
       >
         <PdfSection

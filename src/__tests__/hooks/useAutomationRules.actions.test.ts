@@ -47,9 +47,10 @@ const mockCreateMut = vi.hoisted(() => ({
 }));
 
 const mockUpdateMut = vi.hoisted(() => ({
-  mutateAsync: vi.fn<
-    (arg: { id: string; payload: Partial<AutomationFlow> }) => Promise<Partial<AutomationFlow>>
-  >(),
+  mutateAsync:
+    vi.fn<
+      (arg: { id: string; payload: Partial<AutomationFlow> }) => Promise<Partial<AutomationFlow>>
+    >(),
 }));
 
 const mockListQuery = vi.hoisted(() => ({
@@ -160,10 +161,9 @@ vi.mock("@/lib/random-uuid", () => ({
 }));
 
 vi.mock("@/lib/automations/flow-validation", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/automations/flow-validation")>(
-      "@/lib/automations/flow-validation",
-    );
+  const actual = await vi.importActual<typeof import("@/lib/automations/flow-validation")>(
+    "@/lib/automations/flow-validation",
+  );
   return actual;
 });
 
@@ -272,7 +272,12 @@ describe("useAutomationRules actions", () => {
   describe("duplicateRule", () => {
     it("calls duplicateMut with correct id and name", async () => {
       const { result } = renderHook(() => useAutomationRules());
-      const rule = createRule({ id: "rule-1", name: "My Automation", description: "desc", category: "Notifica" });
+      const rule = createRule({
+        id: "rule-1",
+        name: "My Automation",
+        description: "desc",
+        category: "Notifica",
+      });
 
       await act(async () => {
         await result.current.duplicateRule(rule);
@@ -289,7 +294,12 @@ describe("useAutomationRules actions", () => {
       mockDuplicateMut.mutateAsync.mockResolvedValue("duped-id-999");
 
       const { result } = renderHook(() => useAutomationRules());
-      const rule = createRule({ id: "rule-1", name: "My Rule", description: "A desc", category: "Cat" });
+      const rule = createRule({
+        id: "rule-1",
+        name: "My Rule",
+        description: "A desc",
+        category: "Cat",
+      });
 
       await act(async () => {
         await result.current.duplicateRule(rule);
@@ -455,7 +465,10 @@ describe("useAutomationRules actions", () => {
       });
 
       expect(mockArchiveMut.mutateAsync).toHaveBeenCalledTimes(1);
-      const callArg = mockArchiveMut.mutateAsync.mock.calls[0]![0] as { id: string; fd: Record<string, unknown> };
+      const callArg = mockArchiveMut.mutateAsync.mock.calls[0]![0] as {
+        id: string;
+        fd: Record<string, unknown>;
+      };
       expect(callArg.id).toBe("arc-1");
       expect((callArg.fd.meta as Record<string, unknown>).archived).toBe(true);
     });
@@ -715,5 +728,4 @@ describe("useAutomationRules actions", () => {
       expect(mockExecuteRun).not.toHaveBeenCalled();
     });
   });
-
 });

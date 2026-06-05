@@ -29,7 +29,11 @@ async function verifyTurnstile(token: string) {
 /**
  *
  */
-export async function staffLoginServer(data: { email: string; password: string; captchaToken?: string }) {
+export async function staffLoginServer(data: {
+  email: string;
+  password: string;
+  captchaToken?: string;
+}) {
   const email = data.email.trim().toLowerCase();
   // Apply server-side rate limiting (hard limit)
   throwIfRateLimited(`email:${email}`, RATE_LIMITER_KEYS.STAFF_PASSWORD_LOGIN);
@@ -59,7 +63,9 @@ export async function staffLoginServer(data: { email: string; password: string; 
     console.error(`[staffLoginServer] auth token request failed: status=${resp.status}`, json);
     // record failed attempt (best-effort)
     try {
-      await supabaseAdmin.from("auth_failed_attempts").insert({ email, success: false, payload: json });
+      await supabaseAdmin
+        .from("auth_failed_attempts")
+        .insert({ email, success: false, payload: json });
     } catch (_e) {
       void _e;
     }

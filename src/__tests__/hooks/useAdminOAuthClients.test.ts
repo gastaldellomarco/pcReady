@@ -320,9 +320,7 @@ describe("useAdminOAuthClients", () => {
       });
 
       expect(clipboardWriteText).toHaveBeenCalledWith("my-client-id-123");
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "Client ID copiato negli appunti",
-      );
+      expect(toastMock.success).toHaveBeenCalledWith("Client ID copiato negli appunti");
     });
 
     it("shows error toast when clipboard fails", async () => {
@@ -435,7 +433,11 @@ describe("useAdminOAuthClients", () => {
   // ── rotateClientSecret ──────────────────────────────────────────────
 
   describe("rotateClientSecret", () => {
-    const existingClient = createClientInfo({ clientId: "abc", name: "My OAuth App", redirectUris: ["https://my.app/cb"] });
+    const existingClient = createClientInfo({
+      clientId: "abc",
+      name: "My OAuth App",
+      redirectUris: ["https://my.app/cb"],
+    });
 
     it("rotates secret and stores result with exampleRedirectUri", async () => {
       serverFnMocks.rotateOAuthClientSecret.mockResolvedValue({
@@ -458,9 +460,7 @@ describe("useAdminOAuthClients", () => {
       expect(serverFnMocks.rotateOAuthClientSecret).toHaveBeenCalledWith({
         data: { accessToken: "token-123", clientId: "abc" },
       });
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "Secret ruotato: copia il nuovo valore ora.",
-      );
+      expect(toastMock.success).toHaveBeenCalledWith("Secret ruotato: copia il nuovo valore ora.");
       expect(result.current.rotatedSecret).toMatchObject({
         clientId: "abc",
         clientSecret: "new-secret-xyz",

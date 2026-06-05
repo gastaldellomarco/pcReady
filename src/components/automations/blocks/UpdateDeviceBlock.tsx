@@ -88,7 +88,10 @@ export function UpdateDeviceBlock({
           value={action.config.device_id || ""}
           onChange={(v) => updateConfig({ device_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.optionalPlaceholder", "Lascia vuoto per usare il dispositivo dal trigger")}
+          placeholder={t(
+            "actionsBuilder.optionalPlaceholder",
+            "Lascia vuoto per usare il dispositivo dal trigger",
+          )}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -98,12 +101,14 @@ export function UpdateDeviceBlock({
             </label>
             <select
               value={action.config.status || ""}
-              onChange={(e) => updateConfig({ status: e.target.value as UpdateDeviceAction["config"]["status"] || undefined })}
+              onChange={(e) =>
+                updateConfig({
+                  status: (e.target.value as UpdateDeviceAction["config"]["status"]) || undefined,
+                })
+              }
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             >
-              <option value="">
-                {t("actionsBuilder.keepCurrent", "Mantieni attuale")}
-              </option>
+              <option value="">{t("actionsBuilder.keepCurrent", "Mantieni attuale")}</option>
               {DEVICE_STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}

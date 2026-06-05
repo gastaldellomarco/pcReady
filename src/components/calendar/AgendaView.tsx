@@ -38,7 +38,10 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
 
   if (!groups.length) {
     return (
-      <div className="flex h-full items-center justify-center text-sm" style={{ color: pcReadyColors.textSecondary }}>
+      <div
+        className="flex h-full items-center justify-center text-sm"
+        style={{ color: pcReadyColors.textSecondary }}
+      >
         {t("agenda.empty", "Nessun evento nel periodo selezionato")}
       </div>
     );
@@ -51,12 +54,23 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
           const date = new Date(`${dayKey}T00:00:00`);
           return (
             <section key={dayKey} className="mb-5">
-              <div className="sticky top-0 z-10 -mx-4 border-b bg-slate-50/95 px-4 py-2 backdrop-blur" style={{ borderColor: pcReadyColors.border }}>
-                <h2 className="text-sm font-semibold capitalize" style={{ color: isToday(date) ? pcReadyColors.primary : pcReadyColors.textPrimary }}>
+              <div
+                className="sticky top-0 z-10 -mx-4 border-b bg-slate-50/95 px-4 py-2 backdrop-blur"
+                style={{ borderColor: pcReadyColors.border }}
+              >
+                <h2
+                  className="text-sm font-semibold capitalize"
+                  style={{
+                    color: isToday(date) ? pcReadyColors.primary : pcReadyColors.textPrimary,
+                  }}
+                >
                   {format(date, "EEEE d MMMM", { locale: it })}
                 </h2>
               </div>
-              <div className="divide-y rounded-md border bg-white" style={{ borderColor: pcReadyColors.border }}>
+              <div
+                className="divide-y rounded-md border bg-white"
+                style={{ borderColor: pcReadyColors.border }}
+              >
                 {dayEvents.map((event) => {
                   const colors = resolveEventColors(event, techColorMap, colorMode);
                   return (
@@ -64,7 +78,8 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
                       key={event.id}
                       onClick={() => onEventClick(event)}
                       onKeyDown={(keyboardEvent) => {
-                        if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") onEventClick(event);
+                        if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ")
+                          onEventClick(event);
                       }}
                       role="button"
                       tabIndex={0}
@@ -81,11 +96,17 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
                             style={{ background: colors.border }}
                             aria-hidden="true"
                           />
-                          <span className="truncate text-sm font-semibold" style={{ color: pcReadyColors.textPrimary }}>
+                          <span
+                            className="truncate text-sm font-semibold"
+                            style={{ color: pcReadyColors.textPrimary }}
+                          >
                             {event.title}
                           </span>
                           {event.is_recurring_instance && (
-                            <Repeat className="h-3.5 w-3.5" style={{ color: pcReadyColors.textMuted }} />
+                            <Repeat
+                              className="h-3.5 w-3.5"
+                              style={{ color: pcReadyColors.textMuted }}
+                            />
                           )}
                           {event.event_type === "availability" && event.availability_status && (
                             <Badge variant="secondary" className="text-[11px]">
@@ -93,7 +114,10 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
                             </Badge>
                           )}
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: pcReadyColors.textSecondary }}>
+                        <div
+                          className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"
+                          style={{ color: pcReadyColors.textSecondary }}
+                        >
                           {event.assignee_name && (
                             <span className="inline-flex items-center gap-1">
                               <UserRound className="h-3.5 w-3.5" />

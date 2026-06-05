@@ -43,9 +43,11 @@ function PortalDashboardPage() {
       .then(setData)
       .catch((err: unknown) => {
         const msg =
-          err instanceof Error ? err.message
-          : typeof err === "object" && err !== null && "message" in err ? String((err as any).message)
-          : t("portal.networkError", "Errore di rete");
+          err instanceof Error
+            ? err.message
+            : typeof err === "object" && err !== null && "message" in err
+              ? String((err as any).message)
+              : t("portal.networkError", "Errore di rete");
         setError(msg);
       })
       .finally(() => setLoading(false));
@@ -79,7 +81,8 @@ function PortalDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold">{data.session.clientName}</h1>
         <p className="text-sm text-muted-foreground">
-          {data.session.branding?.welcomeMessage || t("portal.welcomeDesc", "Panoramica ticket e richieste recenti.")}
+          {data.session.branding?.welcomeMessage ||
+            t("portal.welcomeDesc", "Panoramica ticket e richieste recenti.")}
         </p>
       </div>
 
@@ -89,18 +92,17 @@ function PortalDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label={t("portal.openTickets", "Ticket aperti")} value={data.stats.open} />
         <Stat label={t("portal.inProgress", "In lavorazione")} value={data.stats.inProgress} />
-        <Stat label={t("portal.resolvedThisMonth", "Risolti questo mese")} value={data.stats.resolvedThisMonth} />
+        <Stat
+          label={t("portal.resolvedThisMonth", "Risolti questo mese")}
+          value={data.stats.resolvedThisMonth}
+        />
       </div>
 
       {/* ── Ticket volume chart (6 months) ── */}
-      {data.ticketVolume?.length > 0 && (
-        <TicketVolumeChart data={data.ticketVolume} />
-      )}
+      {data.ticketVolume?.length > 0 && <TicketVolumeChart data={data.ticketVolume} />}
 
       {/* ── Service status / uptime ── */}
-      {data.services?.length > 0 && (
-        <ServiceStatusSection services={data.services} />
-      )}
+      {data.services?.length > 0 && <ServiceStatusSection services={data.services} />}
 
       <PortalBundles bundles={data.activeBundles ?? []} />
       <section className="space-y-3">
@@ -109,7 +111,10 @@ function PortalDashboardPage() {
           <PageEmptyState
             variant="portal"
             title={t("portal.noRecentTickets", "Nessun ticket recente")}
-            description={t("portal.noTicketsToShow", "Non ci sono ticket da mostrare in questo momento.")}
+            description={t(
+              "portal.noTicketsToShow",
+              "Non ci sono ticket da mostrare in questo momento.",
+            )}
           >
             <Button asChild>
               <a href="/portal/tickets/new">{t("portal.openNewTicket", "Apri nuovo ticket")}</a>
@@ -158,19 +163,20 @@ function BundleExpiryBanner({ bundles }: { bundles: any[] }) {
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-500" />
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-            {expiring.length === 1
-              ? "Contratto in scadenza"
-              : "Contratti in scadenza"}
+            {expiring.length === 1 ? "Contratto in scadenza" : "Contratti in scadenza"}
           </h3>
           <ul className="mt-1.5 space-y-1">
             {expiring.map((b) => {
               const bundleName = b.bundle?.name || "Bundle assistenza";
               const endDate = new Date(b.end_date);
-              const daysLeft = Math.max(1, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+              const daysLeft = Math.max(
+                1,
+                Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+              );
               return (
                 <li key={b.id} className="text-sm text-amber-800 dark:text-amber-300">
-                  <strong>{bundleName}</strong> — scade {endDate.toLocaleDateString("it-IT")}{" "}
-                  ({daysLeft} {daysLeft === 1 ? "giorno" : "giorni"} rimanenti)
+                  <strong>{bundleName}</strong> — scade {endDate.toLocaleDateString("it-IT")} (
+                  {daysLeft} {daysLeft === 1 ? "giorno" : "giorni"} rimanenti)
                   {b.auto_renew ? " · Rinnovo automatico" : ""}
                 </li>
               );
@@ -180,7 +186,12 @@ function BundleExpiryBanner({ bundles }: { bundles: any[] }) {
             Per evitare interruzioni del servizio, contatta il supporto per il rinnovo.
           </p>
           <div className="mt-3">
-            <Button size="sm" variant="outline" className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40" asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40"
+              asChild
+            >
               <a href="/portal/tickets/new">Contatta il supporto</a>
             </Button>
           </div>
@@ -192,7 +203,11 @@ function BundleExpiryBanner({ bundles }: { bundles: any[] }) {
 
 // ── Ticket Volume Chart ───────────────────────────────────────────────────
 
-function TicketVolumeChart({ data }: { data: { label: string; opened: number; closed: number }[] }) {
+function TicketVolumeChart({
+  data,
+}: {
+  data: { label: string; opened: number; closed: number }[];
+}) {
   return (
     <section className="space-y-3">
       <div>
@@ -210,7 +225,12 @@ function TicketVolumeChart({ data }: { data: { label: string; opened: number; cl
           <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="4 4" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11 }}
+              allowDecimals={false}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar dataKey="opened" fill="var(--color-opened)" radius={[4, 4, 0, 0]} barSize={24} />
             <Bar dataKey="closed" fill="var(--color-closed)" radius={[4, 4, 0, 0]} barSize={24} />
@@ -259,17 +279,16 @@ function ServiceStatusSection({ services }: { services: ServiceItem[] }) {
     <section className="space-y-3">
       <div>
         <h2 className="font-semibold">Stato dei servizi</h2>
-        <p className="text-sm text-muted-foreground">Monitoraggio in tempo reale dei servizi gestiti.</p>
+        <p className="text-sm text-muted-foreground">
+          Monitoraggio in tempo reale dei servizi gestiti.
+        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {services.map((svc, idx) => {
           const cfg = SERVICE_STATUS_CONFIG[svc.status] || SERVICE_STATUS_CONFIG.operational;
           const Icon = cfg.icon;
           return (
-            <div
-              key={idx}
-              className={`rounded-lg border p-4 ${cfg.border} ${cfg.bg}`}
-            >
+            <div key={idx} className={`rounded-lg border p-4 ${cfg.border} ${cfg.bg}`}>
               <div className="flex items-center gap-2.5">
                 <Icon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
                 <div className="min-w-0">
@@ -305,7 +324,10 @@ function PortalBundles({ bundles }: { bundles: any[] }) {
       <div>
         <h2 className="font-semibold">{t("portal.activeBundles", "Bundle assistenza attivi")}</h2>
         <p className="text-sm text-muted-foreground">
-          {t("portal.bundleDesc", "Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.")}
+          {t(
+            "portal.bundleDesc",
+            "Ore residue, scadenza e stato rinnovo dei pacchetti acquistati.",
+          )}
         </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -318,13 +340,23 @@ function PortalBundles({ bundles }: { bundles: any[] }) {
             <div key={assignment.id} className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold">{bundle.name ?? t("portal.bundleName", "Bundle assistenza")}</h3>
+                  <h3 className="font-semibold">
+                    {bundle.name ?? t("portal.bundleName", "Bundle assistenza")}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    {t("portal.bundleFee", "Canone")} {formatBundleMoney(assignment.custom_fee ?? bundle.fee ?? 0, bundle.currency ?? "EUR")} · {t("portal.slaResponse", "SLA risposta")} {assignment.custom_sla_response_hours ?? bundle.sla_response_hours ?? "-"}h
+                    {t("portal.bundleFee", "Canone")}{" "}
+                    {formatBundleMoney(
+                      assignment.custom_fee ?? bundle.fee ?? 0,
+                      bundle.currency ?? "EUR",
+                    )}{" "}
+                    · {t("portal.slaResponse", "SLA risposta")}{" "}
+                    {assignment.custom_sla_response_hours ?? bundle.sla_response_hours ?? "-"}h
                   </p>
                 </div>
                 <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold">
-                  {assignment.auto_renew ? t("portal.autoRenew", "Rinnovo auto") : t("portal.manualRenew", "Rinnovo manuale")}
+                  {assignment.auto_renew
+                    ? t("portal.autoRenew", "Rinnovo auto")
+                    : t("portal.manualRenew", "Rinnovo manuale")}
                 </span>
               </div>
               <div className="mt-4">
@@ -335,12 +367,18 @@ function PortalBundles({ bundles }: { bundles: any[] }) {
                 />
               </div>
               <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                <PortalBundleMetric label={t("portal.remaining", "Residue")} value={formatBundleHours(remainingHours)} />
+                <PortalBundleMetric
+                  label={t("portal.remaining", "Residue")}
+                  value={formatBundleHours(remainingHours)}
+                />
                 <PortalBundleMetric
                   label={t("portal.extra", "Extra")}
                   value={formatBundleMoney(usage.extra_amount ?? 0, bundle.currency ?? "EUR")}
                 />
-                <PortalBundleMetric label={t("portal.expiry", "Scadenza")} value={assignment.end_date ?? t("portal.none", "Nessuna")} />
+                <PortalBundleMetric
+                  label={t("portal.expiry", "Scadenza")}
+                  value={assignment.end_date ?? t("portal.none", "Nessuna")}
+                />
               </div>
             </div>
           );

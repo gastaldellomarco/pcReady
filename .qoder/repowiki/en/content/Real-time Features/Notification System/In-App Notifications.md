@@ -17,6 +17,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -29,10 +30,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the in-app notification system, covering the data model, server-side APIs, frontend integration, real-time delivery, filtering and pagination, persistence and cleanup, rate limiting, and user preferences. It targets both developers and product stakeholders to understand how notifications are created, delivered, displayed, and managed.
 
 ## Project Structure
+
 The notification system spans three layers:
+
 - Data model and server functions: define types, validation, and CRUD operations
 - Frontend components: render the notification bell, inline preview, and full inbox
 - Database schema and policies: persist notifications, enforce access control, and enable real-time
@@ -65,6 +69,7 @@ RL --> Lib
 ```
 
 **Diagram sources**
+
 - [NotificationBell.tsx:19-141](file://src/components/layout/NotificationBell.tsx#L19-L141)
 - [NotificationInbox.tsx:13-107](file://src/components/layout/NotificationInbox.tsx#L13-L107)
 - [notifications.tsx:30-258](file://src/routes/_app/notifications.tsx#L30-L258)
@@ -76,6 +81,7 @@ RL --> Lib
 - [user_profiles_notification_preferences_fix.sql:1-25](file://supabase/migrations/20260512155000_user_profiles_notification_preferences_fix.sql#L1-L25)
 
 **Section sources**
+
 - [notifications.ts:58-140](file://src/lib/notifications.ts#L58-L140)
 - [notifications.server.ts:10-140](file://src/lib/notifications.server.ts#L10-L140)
 - [NotificationBell.tsx:19-141](file://src/components/layout/NotificationBell.tsx#L19-L141)
@@ -85,6 +91,7 @@ RL --> Lib
 - [user_profiles_notification_preferences_fix.sql:1-25](file://supabase/migrations/20260512155000_user_profiles_notification_preferences_fix.sql#L1-L25)
 
 ## Core Components
+
 - Notification data model
   - Fields: id, user_id, type, title, body, payload, link, read_at, created_at
   - Types: a fixed set of notification categories
@@ -105,6 +112,7 @@ RL --> Lib
   - Automated cleanup of old read notifications
 
 **Section sources**
+
 - [notifications.ts:20-48](file://src/lib/notifications.ts#L20-L48)
 - [notifications.ts:58-140](file://src/lib/notifications.ts#L58-L140)
 - [notifications.server.ts:16-25](file://src/lib/notifications.server.ts#L16-L25)
@@ -113,6 +121,7 @@ RL --> Lib
 - [notifications.sql:55-77](file://supabase/migrations/20260507130000_notifications.sql#L55-L77)
 
 ## Architecture Overview
+
 End-to-end flow from creation to real-time display and management.
 
 ```mermaid
@@ -139,6 +148,7 @@ API-->>Inbox : rows + total
 ```
 
 **Diagram sources**
+
 - [notifications.ts:58-66](file://src/lib/notifications.ts#L58-L66)
 - [notifications.server.ts:10-14](file://src/lib/notifications.server.ts#L10-L14)
 - [notifications.server.ts:27-67](file://src/lib/notifications.server.ts#L27-L67)
@@ -148,6 +158,7 @@ API-->>Inbox : rows + total
 ## Detailed Component Analysis
 
 ### Data Model and Validation
+
 - NotificationRow: shape of persisted records
 - CreateNotificationParams: parameters accepted by creation
 - Zod schemas: enforce constraints on title/body/link/payload and type enumeration
@@ -183,13 +194,16 @@ CreateNotificationParams <.. Schemas : "validated by"
 ```
 
 **Diagram sources**
+
 - [notifications.ts:20-48](file://src/lib/notifications.ts#L20-L48)
 
 **Section sources**
+
 - [notifications.ts:20-48](file://src/lib/notifications.ts#L20-L48)
 - [types.ts:524-559](file://src/integrations/supabase/types.ts#L524-L559)
 
 ### Server Functions: Creation, Listing, and Management
+
 - createNotification
   - Authenticates via access token
   - Enforces rate limit for creation
@@ -218,18 +232,21 @@ Skip --> Done
 ```
 
 **Diagram sources**
+
 - [notifications.ts:58-66](file://src/lib/notifications.ts#L58-L66)
 - [notifications.server.ts:27-67](file://src/lib/notifications.server.ts#L27-L67)
 - [rate-limit-config.ts:14](file://src/lib/rate-limit-config.ts#L14)
 - [rate-limit.ts:92-103](file://src/lib/rate-limit.ts#L92-L103)
 
 **Section sources**
+
 - [notifications.ts:58-140](file://src/lib/notifications.ts#L58-L140)
 - [notifications.server.ts:10-140](file://src/lib/notifications.server.ts#L10-L140)
 - [rate-limit-config.ts:5-31](file://src/lib/rate-limit-config.ts#L5-L31)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 ### Real-Time Delivery and Bell Integration
+
 - Supabase Realtime subscription scoped to user channel
 - On insert, bell updates unread count and previews up to a small window
 - Clicking a notification marks it read and navigates if a link exists
@@ -251,15 +268,18 @@ Bell->>Bell : navigate if link present
 ```
 
 **Diagram sources**
+
 - [NotificationBell.tsx:48-112](file://src/components/layout/NotificationBell.tsx#L48-L112)
 - [notifications.sql:41-53](file://supabase/migrations/20260507130000_notifications.sql#L41-L53)
 
 **Section sources**
+
 - [NotificationBell.tsx:19-141](file://src/components/layout/NotificationBell.tsx#L19-L141)
 - [NotificationInbox.tsx:13-107](file://src/components/layout/NotificationInbox.tsx#L13-L107)
 - [notifications.sql:41-53](file://supabase/migrations/20260507130000_notifications.sql#L41-L53)
 
 ### Notification Inbox Interface
+
 - Filtering
   - View: all vs unread
   - Type: all or specific type
@@ -290,13 +310,16 @@ Open --> Load
 ```
 
 **Diagram sources**
+
 - [notifications.tsx:42-81](file://src/routes/_app/notifications.tsx#L42-L81)
 - [notifications.tsx:128-244](file://src/routes/_app/notifications.tsx#L128-L244)
 
 **Section sources**
+
 - [notifications.tsx:30-258](file://src/routes/_app/notifications.tsx#L30-L258)
 
 ### User Preference Integration
+
 - Per-type preference columns in user_profiles
 - Preference mapping for each notification type
 - If preference is disabled, creation is skipped
@@ -315,16 +338,19 @@ Decision --> |No| Skip["Skip insert"]
 ```
 
 **Diagram sources**
+
 - [notifications.server.ts:16-25](file://src/lib/notifications.server.ts#L16-L25)
 - [notifications.server.ts:31-46](file://src/lib/notifications.server.ts#L31-L46)
 - [user_profiles_notification_preferences_fix.sql:1-25](file://supabase/migrations/20260512155000_user_profiles_notification_preferences_fix.sql#L1-L25)
 
 **Section sources**
+
 - [notifications.server.ts:16-46](file://src/lib/notifications.server.ts#L16-L46)
 - [user_profiles_notification_preferences_fix.sql:1-25](file://supabase/migrations/20260512155000_user_profiles_notification_preferences_fix.sql#L1-L25)
 - [types.ts:1093-1152](file://src/integrations/supabase/types.ts#L1093-L1152)
 
 ## Dependency Analysis
+
 - Frontend depends on server functions for all operations
 - Server functions depend on Supabase client for auth and DB
 - Realtime relies on Supabase publication and per-user channel
@@ -343,6 +369,7 @@ RL --> RLKeys["rate-limit-config.ts"]
 ```
 
 **Diagram sources**
+
 - [NotificationBell.tsx:19-141](file://src/components/layout/NotificationBell.tsx#L19-L141)
 - [NotificationInbox.tsx:13-107](file://src/components/layout/NotificationInbox.tsx#L13-L107)
 - [notifications.tsx:30-258](file://src/routes/_app/notifications.tsx#L30-L258)
@@ -352,12 +379,14 @@ RL --> RLKeys["rate-limit-config.ts"]
 - [rate-limit-config.ts:5-31](file://src/lib/rate-limit-config.ts#L5-L31)
 
 **Section sources**
+
 - [notifications.ts:58-140](file://src/lib/notifications.ts#L58-L140)
 - [notifications.server.ts:10-140](file://src/lib/notifications.server.ts#L10-L140)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 - [rate-limit-config.ts:5-31](file://src/lib/rate-limit-config.ts#L5-L31)
 
 ## Performance Considerations
+
 - Pagination
   - Fixed page size and range queries prevent large scans
   - Total count included for accurate pagination UI
@@ -373,16 +402,18 @@ RL --> RLKeys["rate-limit-config.ts"]
   - Scheduled job deletes old read notifications to bound table growth
 
 **Section sources**
+
 - [notifications.ts:74-93](file://src/lib/notifications.ts#L74-L93)
 - [notifications.sql:24-29](file://supabase/migrations/20260507130000_notifications.sql#L24-L29)
 - [notifications.sql:63-77](file://supabase/migrations/20260507130000_notifications.sql#L63-L77)
 - [rate-limit.ts:30-72](file://src/lib/rate-limit.ts#L30-L72)
 
 ## Troubleshooting Guide
+
 - Authentication failures
   - Access token invalid or missing leads to unauthorized response during user resolution
 - Rate limit exceeded
-  - Creation requests may be rejected with 429; client should honor Retry-After and X-RateLimit-* headers
+  - Creation requests may be rejected with 429; client should honor Retry-After and X-RateLimit-\* headers
 - Preference mismatch
   - If a preference column is missing, a warning is logged and creation proceeds with default enabled
 - Real-time not updating
@@ -393,6 +424,7 @@ RL --> RLKeys["rate-limit-config.ts"]
   - Read notifications older than configured retention are removed by scheduled job
 
 **Section sources**
+
 - [notifications.server.ts:10-14](file://src/lib/notifications.server.ts#L10-L14)
 - [rate-limit.ts:74-103](file://src/lib/rate-limit.ts#L74-L103)
 - [notifications.server.ts:37-46](file://src/lib/notifications.server.ts#L37-L46)
@@ -400,11 +432,13 @@ RL --> RLKeys["rate-limit-config.ts"]
 - [notifications.sql:63-77](file://supabase/migrations/20260507130000_notifications.sql#L63-L77)
 
 ## Conclusion
+
 The in-app notification system combines a strict data model, robust server functions, efficient pagination, real-time updates, and user-controlled preferences. Together, these components deliver a responsive, scalable, and user-friendly notification experience with strong access control and automated maintenance.
 
 ## Appendices
 
 ### API Definitions
+
 - createNotification
   - Method: POST
   - Input: accessToken, notification (userId, type, title, optional body/payload/link)
@@ -432,6 +466,7 @@ The in-app notification system combines a strict data model, robust server funct
   - Response: { success: true }
 
 **Section sources**
+
 - [notifications.ts:58-140](file://src/lib/notifications.ts#L58-L140)
 
 ### Example Workflows
@@ -464,6 +499,7 @@ The in-app notification system combines a strict data model, robust server funct
   - Reference: [NotificationBell.tsx:48-75](file://src/components/layout/NotificationBell.tsx#L48-L75), [notifications.sql:41-53](file://supabase/migrations/20260507130000_notifications.sql#L41-L53)
 
 ### Database Schema Notes
+
 - Table: notifications
   - Columns: id, user_id, type, title, body, payload, link, read_at, created_at
   - Constraints: type enum set, UUID primary key, foreign key to auth.users
@@ -473,16 +509,19 @@ The in-app notification system combines a strict data model, robust server funct
   - Cron job: daily cleanup of read notifications older than retention period
 
 **Section sources**
+
 - [notifications.sql:1-77](file://supabase/migrations/20260507130000_notifications.sql#L1-L77)
 - [types.ts:524-559](file://src/integrations/supabase/types.ts#L524-L559)
 
 ### Tests Highlights
+
 - Authentication guard returns user or throws unauthorized
 - Creation respects per-type preferences and inserts when enabled
 - Admin broadcast creates multiple notifications
 - Read marking updates read_at consistently
 
 **Section sources**
+
 - [notifications.test.ts:101-112](file://src/__tests__/notifications.test.ts#L101-L112)
 - [notifications.test.ts:114-132](file://src/__tests__/notifications.test.ts#L114-L132)
 - [notifications.test.ts:134-150](file://src/__tests__/notifications.test.ts#L134-L150)

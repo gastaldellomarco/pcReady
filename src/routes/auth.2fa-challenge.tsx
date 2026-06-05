@@ -8,4 +8,3 @@ export const Route = createFileRoute("/auth/2fa-challenge")({
     ],
   }),
 });
-

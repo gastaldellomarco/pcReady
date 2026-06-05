@@ -16,7 +16,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Added comprehensive GlobalRunLogsPanel with advanced filtering and CSV export
 - Enhanced health monitoring with real-time KPIs and statistics
 - Improved filtering capabilities with rule, status, and date range filters
@@ -25,6 +27,7 @@
 - Expanded automation run statistics and dashboard metrics
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -36,7 +39,9 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the automation monitoring, logging, and debugging capabilities of the system. It covers:
+
 - The comprehensive automation run log system: success/error tracking, execution timing, and detailed result reporting
 - Advanced filtering capabilities for monitoring automation performance across all rules
 - CSV export functionality for downloading automation execution data
@@ -46,7 +51,9 @@ This document explains the automation monitoring, logging, and debugging capabil
 - Debugging workflows for troubleshooting failed automation executions and performance optimization techniques
 
 ## Project Structure
+
 The automation monitoring stack spans frontend UI components, server functions, and backend runtime logic with comprehensive monitoring capabilities:
+
 - Frontend hooks orchestrate run execution, stats, logs, and global monitoring
 - UI components render run history, status badges, dry-run results, and global monitoring panels
 - Server functions expose secure endpoints for manual runs, dry runs, stats, and global log management
@@ -81,6 +88,7 @@ OpenAPI --> SFuncs
 ```
 
 **Diagram sources**
+
 - [useAutomationRules.ts:65-594](file://src/hooks/useAutomationRules.ts#L65-L594)
 - [RunLogDrawer.tsx:12-138](file://src/components/automations/RunLogDrawer.tsx#L12-L138)
 - [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
@@ -91,6 +99,7 @@ OpenAPI --> SFuncs
 - [openapi.yaml:575-581](file://public/openapi/openapi.yaml#L575-L581)
 
 **Section sources**
+
 - [useAutomationRules.ts:65-594](file://src/hooks/useAutomationRules.ts#L65-L594)
 - [RunLogDrawer.tsx:12-138](file://src/components/automations/RunLogDrawer.tsx#L12-L138)
 - [DryRunDialog.tsx:18-82](file://src/components/automations/DryRunDialog.tsx#L18-L82)
@@ -101,6 +110,7 @@ OpenAPI --> SFuncs
 - [openapi.yaml:575-581](file://public/openapi/openapi.yaml#L575-L581)
 
 ## Core Components
+
 - **Comprehensive Run Log System**:
   - Global run log panel with advanced filtering by rule, status, and date range
   - CSV export functionality for downloading automation execution data
@@ -118,6 +128,7 @@ OpenAPI --> SFuncs
   - Comprehensive filtering controls with rule selection, status filtering, and date range picker
 
 **Section sources**
+
 - [GlobalRunLogsPanel.tsx:31-300](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L300)
 - [automation-runs.ts:46-63](file://src/lib/automation-runs.ts#L46-L63)
 - [automation-runs.ts:183-250](file://src/lib/automation-runs.ts#L183-L250)
@@ -125,6 +136,7 @@ OpenAPI --> SFuncs
 - [RunLogDrawer.tsx:12-138](file://src/components/automations/RunLogDrawer.tsx#L12-L138)
 
 ## Architecture Overview
+
 The system exposes secure endpoints for manual runs and dry runs, backed by a runtime that executes flows and writes logs. Enhanced monitoring capabilities provide centralized log management with advanced filtering and export functionality, while comprehensive health metrics are computed server-side and surfaced to the UI.
 
 ```mermaid
@@ -151,6 +163,7 @@ Hook-->>UI : "Download CSV File"
 ```
 
 **Diagram sources**
+
 - [automations.tsx:251-262](file://src/routes/_app/automations.tsx#L251-L262)
 - [useAutomationRules.ts:407-463](file://src/hooks/useAutomationRules.ts#L407-L463)
 - [automation-runs.ts:101-131](file://src/lib/automation-runs.ts#L101-L131)
@@ -159,6 +172,7 @@ Hook-->>UI : "Download CSV File"
 ## Detailed Component Analysis
 
 ### Comprehensive Global Run Logs Panel
+
 - **Advanced Filtering System**:
   - Rule-based filtering with dropdown selector for automation rules
   - Status filtering with options for success, error, dry-run, and skipped executions
@@ -208,14 +222,17 @@ GlobalRunLogsPanel --> GlobalLogEntry : "displays"
 ```
 
 **Diagram sources**
+
 - [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
 - [GlobalRunLogsPanel.tsx:27-29](file://src/components/automations/GlobalRunLogsPanel.tsx#L27-L29)
 
 **Section sources**
+
 - [GlobalRunLogsPanel.tsx:31-300](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L300)
 - [useAutomationRules.ts:407-463](file://src/hooks/useAutomationRules.ts#L407-L463)
 
 ### Enhanced Health Monitoring and KPIs
+
 - **Real-time Dashboard Metrics**:
   - Active vs inactive automation rules count
   - Daily execution statistics with success/error breakdown
@@ -243,16 +260,19 @@ Render --> Monitor["Monitor system health"]
 ```
 
 **Diagram sources**
+
 - [automation-runs.ts:183-250](file://src/lib/automation-runs.ts#L183-L250)
 - [automation-runs.server.ts:269-277](file://src/lib/automation-runs.server.ts#L269-L277)
 
 **Section sources**
+
 - [automation-runs.ts:183-250](file://src/lib/automation-runs.ts#L183-L250)
 - [automation-runs.server.ts:269-277](file://src/lib/automation-runs.server.ts#L269-L277)
 - [AutomationKpiHeader.tsx:6-49](file://src/components/automations/AutomationKpiHeader.tsx#L6-L49)
 - [AutomationKpiCard.tsx:4-51](file://src/components/automations/AutomationKpiCard.tsx#L4-L51)
 
 ### Enhanced Run Log Data Model and Server Functions
+
 - **Extended Data Model**:
   - Enhanced AutomationRunLog with comprehensive execution tracking
   - Detailed ActionResult with block identity, type, and structured results
@@ -310,15 +330,18 @@ AutomationRunStats --> AutomationRunLog : "analyzes"
 ```
 
 **Diagram sources**
+
 - [automation-runs.ts:33-63](file://src/lib/automation-runs.ts#L33-L63)
 - [automation-runs.ts:46-63](file://src/lib/automation-runs.ts#L46-L63)
 
 **Section sources**
+
 - [automation-runs.ts:33-63](file://src/lib/automation-runs.ts#L33-L63)
 - [automation-runs.ts:183-250](file://src/lib/automation-runs.ts#L183-L250)
 - [automation.ts:47-71](file://src/types/automation.ts#L47-L71)
 
 ### Runtime Execution Pipeline
+
 - **Enhanced Flow Validation and Execution**:
   - Comprehensive flow validation with trigger and node verification
   - Advanced execution graph building with condition/action processing
@@ -360,14 +383,17 @@ AdminNotify --> Done
 ```
 
 **Diagram sources**
+
 - [automation-runs.server.ts:94-207](file://src/lib/automation-runs.server.ts#L94-L207)
 - [automation-runs.server.ts:227-277](file://src/lib/automation-runs.server.ts#L227-L277)
 
 **Section sources**
+
 - [automation-runs.server.ts:94-207](file://src/lib/automation-runs.server.ts#L94-L207)
 - [automation-runs.server.ts:227-277](file://src/lib/automation-runs.server.ts#L227-L277)
 
 ### Enhanced Dry Run Functionality
+
 - **Advanced Simulation Capabilities**:
   - Comprehensive flow simulation without real action execution
   - Detailed step-by-step execution analysis with pass/skip/error outcomes
@@ -395,18 +421,21 @@ Hook-->>UI : "Render filtered results"
 ```
 
 **Diagram sources**
+
 - [GlobalRunLogsPanel.tsx:74-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L74-L103)
 - [useAutomationRules.ts:407-427](file://src/hooks/useAutomationRules.ts#L407-L427)
 - [automation-runs.ts:149-157](file://src/lib/automation-runs.ts#L149-L157)
 - [automation-runs.server.ts:227-267](file://src/lib/automation-runs.server.ts#L227-L267)
 
 **Section sources**
+
 - [GlobalRunLogsPanel.tsx:74-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L74-L103)
 - [useAutomationRules.ts:407-427](file://src/hooks/useAutomationRules.ts#L407-L427)
 - [automation-runs.ts:149-157](file://src/lib/automation-runs.ts#L149-L157)
 - [automation-runs.server.ts:227-267](file://src/lib/automation-runs.server.ts#L227-L267)
 
 ### Enhanced Run Log Interface
+
 - **Global Monitoring Panel**:
   - Centralized log viewing with advanced filtering controls
   - Expandable log entries with detailed execution information
@@ -447,16 +476,19 @@ RunLogDrawer --> RunStatusBadge : "uses"
 ```
 
 **Diagram sources**
+
 - [GlobalRunLogsPanel.tsx:31-103](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L103)
 - [RunLogDrawer.tsx:12-138](file://src/components/automations/RunLogDrawer.tsx#L12-L138)
 - [RunLogDrawer.tsx:103-126](file://src/components/automations/RunLogDrawer.tsx#L103-L126)
 
 **Section sources**
+
 - [GlobalRunLogsPanel.tsx:31-300](file://src/components/automations/GlobalRunLogsPanel.tsx#L31-L300)
 - [RunLogDrawer.tsx:12-138](file://src/components/automations/RunLogDrawer.tsx#L12-L138)
 - [automations.tsx:251-262](file://src/routes/_app/automations.tsx#L251-L262)
 
 ## Dependency Analysis
+
 - **Enhanced Frontend-to-Server Communication**:
   - useAutomationRules orchestrates comprehensive server function calls for runs, dry runs, stats, and global log management
   - GlobalRunLogsPanel depends on advanced filtering and export capabilities
@@ -481,6 +513,7 @@ KPI["AutomationKpiHeader"] --> Hook
 ```
 
 **Diagram sources**
+
 - [automations.tsx:28-353](file://src/routes/_app/automations.tsx#L28-L353)
 - [useAutomationRules.ts:65-594](file://src/hooks/useAutomationRules.ts#L65-L594)
 - [automation-runs.ts:77-250](file://src/lib/automation-runs.ts#L77-L250)
@@ -488,12 +521,14 @@ KPI["AutomationKpiHeader"] --> Hook
 - [automation-runs.server.ts:94-207](file://src/lib/automation-runs.server.ts#L94-L207)
 
 **Section sources**
+
 - [useAutomationRules.ts:65-594](file://src/hooks/useAutomationRules.ts#L65-L594)
 - [automation-runs.ts:77-250](file://src/lib/automation-runs.ts#L77-L250)
 - [automation-runs.server.ts:94-207](file://src/lib/automation-runs.server.ts#L94-L207)
 - [openapi.yaml:575-581](file://public/openapi/openapi.yaml#L575-L581)
 
 ## Performance Considerations
+
 - **Optimized Global Log Queries**:
   - Advanced filtering reduces database load with targeted queries
   - Pagination limits ensure fast loading of large log datasets
@@ -512,6 +547,7 @@ KPI["AutomationKpiHeader"] --> Hook
   - Debounced filter updates for responsive user experience
 
 ## Troubleshooting Guide
+
 - **Enhanced Error Pattern Recognition**:
   - Comprehensive error tracking with detailed error messages and stack traces
   - Automated error categorization and pattern recognition
@@ -532,10 +568,12 @@ KPI["AutomationKpiHeader"] --> Hook
   - Implement automated alerts for critical performance degradation
 
 **Section sources**
+
 - [GlobalRunLogsPanel.tsx:105-110](file://src/components/automations/GlobalRunLogsPanel.tsx#L105-L110)
 - [useAutomationRules.ts:435-463](file://src/hooks/useAutomationRules.ts#L435-L463)
 - [automation-runs.server.ts:117-169](file://src/lib/automation-runs.server.ts#L117-L169)
 - [RunLogDrawer.tsx:34-36](file://src/components/automations/RunLogDrawer.tsx#L34-L36)
 
 ## Conclusion
+
 The enhanced automation monitoring system provides a comprehensive foundation for observing, validating, and optimizing automation flows. The addition of the GlobalRunLogsPanel with advanced filtering capabilities, CSV export functionality, and real-time health indicators significantly improves operational visibility and troubleshooting capabilities. The system now offers centralized log management, detailed execution tracking, automated health monitoring, and powerful analysis tools that enable proactive system maintenance and performance optimization. These enhancements transform the monitoring experience from reactive log viewing to proactive system management with actionable insights and automated alerting.

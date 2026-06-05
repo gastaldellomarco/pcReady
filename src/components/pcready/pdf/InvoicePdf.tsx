@@ -1,5 +1,11 @@
 import { Document, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "@/components/pcready/pdf/shared";
+import {
+  BrandedPage,
+  PdfSection,
+  PdfTable,
+  StatStrip,
+  type PdfColumn,
+} from "@/components/pcready/pdf/shared";
 import { pdfFonts, pdfPalette } from "@/components/pcready/pdf/theme";
 
 type InvoiceItem = {
@@ -70,7 +76,9 @@ const styles = StyleSheet.create({
 });
 
 function formatCurrency(value: unknown) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(Number(value ?? 0));
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(
+    Number(value ?? 0),
+  );
 }
 
 /**
@@ -109,7 +117,13 @@ function BillingPdf({
     { key: "description", label: "Descrizione", width: "46%", value: (row) => row.description },
     { key: "type", label: "Tipo", width: "14%", value: (row) => row.item_type ?? "servizio" },
     { key: "qty", label: "Q.ta", width: "12%", mono: true, value: (row) => String(row.quantity) },
-    { key: "unit", label: "Prezzo", width: "14%", mono: true, value: (row) => formatCurrency(row.unit_price) },
+    {
+      key: "unit",
+      label: "Prezzo",
+      width: "14%",
+      mono: true,
+      value: (row) => formatCurrency(row.unit_price),
+    },
     {
       key: "total",
       label: "Totale",
@@ -150,7 +164,11 @@ function BillingPdf({
             { label: "Imponibile", value: formatCurrency(subtotal), color: pdfPalette.accent },
             { label: `IVA ${taxRate}%`, value: formatCurrency(taxAmount), color: pdfPalette.info },
             { label: "Pagato", value: formatCurrency(paidAmount), color: pdfPalette.warn },
-            { label: "Saldo", value: formatCurrency(Math.max(0, total - paidAmount)), color: pdfPalette.success },
+            {
+              label: "Saldo",
+              value: formatCurrency(Math.max(0, total - paidAmount)),
+              color: pdfPalette.success,
+            },
           ]}
         />
         {notes ? (

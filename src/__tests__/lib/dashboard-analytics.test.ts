@@ -13,8 +13,20 @@ describe("computeTechnicianStats", () => {
     it("marks a technician active when they have tickets assigned this period", () => {
       const rows = computeTechnicianStats(
         [
-          { technician_id: TECH_1, full_name: "Marco Gastaldello", assigned: 3, completed: 1, avg_days: 2.5 },
-          { technician_id: TECH_2, full_name: "Tecnico Demo", assigned: 1, completed: 0, avg_days: null },
+          {
+            technician_id: TECH_1,
+            full_name: "Marco Gastaldello",
+            assigned: 3,
+            completed: 1,
+            avg_days: 2.5,
+          },
+          {
+            technician_id: TECH_2,
+            full_name: "Tecnico Demo",
+            assigned: 1,
+            completed: 0,
+            avg_days: null,
+          },
         ],
         [
           { user_id: TECH_1, role: "admin" },
@@ -93,17 +105,13 @@ describe("computeTechnicianStats", () => {
           { id: TECH_1, full_name: "A", initials: "AA" },
           { id: TECH_2, full_name: "B", initials: "BB" },
         ],
-        [
-          { assignee_id: TECH_2 },
-          { assignee_id: TECH_2 },
-          { assignee_id: TECH_2 },
-        ],
+        [{ assignee_id: TECH_2 }, { assignee_id: TECH_2 }, { assignee_id: TECH_2 }],
       );
 
       const t1 = rows.find((r) => r.id === TECH_1);
       const t2 = rows.find((r) => r.id === TECH_2);
-      expect(t1.active).toBe(true);  // via assigned
-      expect(t2.active).toBe(true);  // via open tickets
+      expect(t1.active).toBe(true); // via assigned
+      expect(t2.active).toBe(true); // via open tickets
     });
   });
 
@@ -217,8 +225,20 @@ describe("computeTechnicianStats", () => {
     it("returns all expected fields", () => {
       const rows = computeTechnicianStats(
         [
-          { technician_id: TECH_1, full_name: "Marco Gastaldello", assigned: 3, completed: 1, avg_days: 2.5 },
-          { technician_id: TECH_2, full_name: "Tecnico Demo", assigned: 1, completed: 0, avg_days: null },
+          {
+            technician_id: TECH_1,
+            full_name: "Marco Gastaldello",
+            assigned: 3,
+            completed: 1,
+            avg_days: 2.5,
+          },
+          {
+            technician_id: TECH_2,
+            full_name: "Tecnico Demo",
+            assigned: 1,
+            completed: 0,
+            avg_days: null,
+          },
         ],
         [
           { user_id: TECH_1, role: "admin" },
@@ -277,8 +297,20 @@ describe("computeTechnicianStats", () => {
     it("generates initials from full_name when profile.initials is missing", () => {
       const rows = computeTechnicianStats(
         [
-          { technician_id: TECH_1, full_name: "Marco Gastaldello", assigned: 1, completed: 0, avg_days: null },
-          { technician_id: TECH_2, full_name: "Tecnico Demo", assigned: 1, completed: 0, avg_days: null },
+          {
+            technician_id: TECH_1,
+            full_name: "Marco Gastaldello",
+            assigned: 1,
+            completed: 0,
+            avg_days: null,
+          },
+          {
+            technician_id: TECH_2,
+            full_name: "Tecnico Demo",
+            assigned: 1,
+            completed: 0,
+            avg_days: null,
+          },
         ],
         [
           { user_id: TECH_1, role: "admin" },
@@ -322,7 +354,15 @@ describe("computeTechnicianStats", () => {
   describe("unassigned KPI rows", () => {
     it("does not crash on KPI rows with null technician_id", () => {
       const rows = computeTechnicianStats(
-        [{ technician_id: null, full_name: "Non assegnato", assigned: 5, completed: 3, avg_days: 2 }],
+        [
+          {
+            technician_id: null,
+            full_name: "Non assegnato",
+            assigned: 5,
+            completed: 3,
+            avg_days: 2,
+          },
+        ],
         [
           { user_id: TECH_1, role: "admin" },
           { user_id: TECH_2, role: "tech" },

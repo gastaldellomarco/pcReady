@@ -232,7 +232,7 @@ export type ChecklistStructure = Record<string, ChecklistGroup>;
 export type ChecklistTabDef = ChecklistSection;
 
 export const DEFAULT_STRUCTURE: ChecklistStructure = {
-  "default_group": {
+  default_group: {
     label: "Generale",
     sections: Object.fromEntries(
       CHECKLIST_TABS.map((t) => [
@@ -246,7 +246,11 @@ export const DEFAULT_STRUCTURE: ChecklistStructure = {
 /**
  *
  */
-export function structureProgress(state: ChecklistState, struct: ChecklistStructure, groupKey: string) {
+export function structureProgress(
+  state: ChecklistState,
+  struct: ChecklistStructure,
+  groupKey: string,
+) {
   const group = struct[groupKey];
   if (!group?.sections) return { done: 0, total: 1, pct: 0 };
   let done = 0,

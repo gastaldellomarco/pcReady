@@ -4,7 +4,11 @@
  * Shows up to 3 avatars; if there are more, a "+N" overflow badge is appended.
  * Returns `null` when the viewers array is empty.
  */
-export function ViewerAvatars({ viewers }: { viewers: { initials: string; full_name: string; user_id?: string }[] }) {
+export function ViewerAvatars({
+  viewers,
+}: {
+  viewers: { initials: string; full_name: string; user_id?: string }[];
+}) {
   if (!viewers.length) return null;
   const max = 3;
   const shown = viewers.slice(0, max);

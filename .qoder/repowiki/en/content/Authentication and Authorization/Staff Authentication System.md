@@ -19,6 +19,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Authentication Flow](#authentication-flow)
@@ -92,6 +93,7 @@ Middleware --> AuditLogging
 ```
 
 **Diagram sources**
+
 - [auth-provider.tsx:12-149](file://src/lib/auth-provider.tsx#L12-L149)
 - [staff-auth.ts:10-15](file://src/lib/staff-auth.ts#L10-L15)
 - [auth.tsx:47-169](file://src/routes/auth.tsx#L47-L169)
@@ -131,11 +133,13 @@ end
 ```
 
 **Diagram sources**
+
 - [auth.tsx:74-109](file://src/routes/auth.tsx#L74-L109)
 - [staff-auth.server.ts:29-77](file://src/lib/server/staff-auth.server.ts#L29-L77)
 - [auth-provider.tsx:23-92](file://src/lib/auth-provider.tsx#L23-L92)
 
 **Section sources**
+
 - [auth.tsx:47-169](file://src/routes/auth.tsx#L47-L169)
 - [staff-auth.ts:10-15](file://src/lib/staff-auth.ts#L10-L15)
 - [staff-auth.server.ts:29-77](file://src/lib/server/staff-auth.server.ts#L29-L77)
@@ -187,12 +191,14 @@ AuthContext --> AuthProfile : manages
 ```
 
 **Diagram sources**
+
 - [auth-provider.tsx:12-149](file://src/lib/auth-provider.tsx#L12-L149)
 - [auth-context.tsx:6-26](file://src/lib/auth-context.tsx#L6-L26)
 
 The provider handles real-time authentication state changes, profile loading, and session management. It ensures thread-safe profile updates and provides reactive authentication state to all components in the application.
 
 **Section sources**
+
 - [auth-provider.tsx:12-149](file://src/lib/auth-provider.tsx#L12-L149)
 - [auth-context.tsx:1-35](file://src/lib/auth-context.tsx#L1-L35)
 
@@ -220,9 +226,11 @@ ReturnError --> End
 ```
 
 **Diagram sources**
+
 - [staff-auth.server.ts:29-77](file://src/lib/server/staff-auth.server.ts#L29-L77)
 
 **Section sources**
+
 - [staff-auth.ts:10-15](file://src/lib/staff-auth.ts#L10-L15)
 - [staff-auth.server.ts:1-87](file://src/lib/server/staff-auth.server.ts#L1-L87)
 
@@ -259,6 +267,7 @@ RoleChecker --> PermissionValidator
 ```
 
 **Diagram sources**
+
 - [auth-middleware.ts:7-73](file://src/integrations/supabase/auth-middleware.ts#L7-L73)
 - [get-my-role.ts:3-16](file://src/lib/get-my-role.ts#L3-L16)
 
@@ -266,13 +275,14 @@ RoleChecker --> PermissionValidator
 
 The authentication system adapts its security posture based on the deployment environment:
 
-| Environment | Security Features | CAPTCHA | Rate Limits | Audit Logging |
-|-------------|-------------------|---------|-------------|---------------|
-| Development | Disabled | Off | Relaxed | Basic |
-| Staging | Optional | Optional | Standard | Enhanced |
-| Production | Required | Required | Strict | Full |
+| Environment | Security Features | CAPTCHA  | Rate Limits | Audit Logging |
+| ----------- | ----------------- | -------- | ----------- | ------------- |
+| Development | Disabled          | Off      | Relaxed     | Basic         |
+| Staging     | Optional          | Optional | Standard    | Enhanced      |
+| Production  | Required          | Required | Strict      | Full          |
 
 **Section sources**
+
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 - [staff-auth.server.ts:14-24](file://src/lib/server/staff-auth.server.ts#L14-L24)
 
@@ -304,6 +314,7 @@ end note
 ```
 
 **Diagram sources**
+
 - [mfa-client.ts:52-72](file://src/lib/mfa-client.ts#L52-L72)
 - [auth.2fa-challenge.tsx:32-217](file://src/routes/auth.2fa-challenge.tsx#L32-L217)
 
@@ -311,14 +322,15 @@ end note
 
 The system supports multiple MFA factors with comprehensive validation:
 
-| Factor Type | Description | Verification Method | Security Level |
-|-------------|-------------|-------------------|----------------|
-| TOTP | Time-based One-Time Password | 6-digit code | High |
-| Backup Codes | Pre-generated codes | 8-character codes | Medium |
-| Biometric | Fingerprint/Touch ID | Hardware-based | Very High |
-| Hardware Token | Physical security key | Push/pulse | Very High |
+| Factor Type    | Description                  | Verification Method | Security Level |
+| -------------- | ---------------------------- | ------------------- | -------------- |
+| TOTP           | Time-based One-Time Password | 6-digit code        | High           |
+| Backup Codes   | Pre-generated codes          | 8-character codes   | Medium         |
+| Biometric      | Fingerprint/Touch ID         | Hardware-based      | Very High      |
+| Hardware Token | Physical security key        | Push/pulse          | Very High      |
 
 **Section sources**
+
 - [mfa.ts:112-137](file://src/lib/mfa.ts#L112-L137)
 - [mfa-client.ts:52-72](file://src/lib/mfa-client.ts#L52-L72)
 - [auth.2fa-challenge.tsx:32-217](file://src/routes/auth.2fa-challenge.tsx#L32-L217)
@@ -350,10 +362,12 @@ AllowRequest --> ContinueProcessing[Continue Processing]
 ```
 
 **Diagram sources**
+
 - [auth-rate-limit.ts:18-24](file://src/lib/auth-rate-limit.ts#L18-L24)
 - [staff-auth.server.ts:30-38](file://src/lib/server/staff-auth.server.ts#L30-L38)
 
 **Section sources**
+
 - [auth-rate-limit.ts:1-25](file://src/lib/auth-rate-limit.ts#L1-L25)
 - [staff-auth.server.ts:14-24](file://src/lib/server/staff-auth.server.ts#L14-L24)
 
@@ -411,10 +425,12 @@ ROLES ||--o{ USER_ROLES : assigned_to
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:6-13](file://src/lib/auth-context.tsx#L6-L13)
 - [auth-provider.tsx:29-65](file://src/lib/auth-provider.tsx#L29-L65)
 
 **Section sources**
+
 - [auth-context.tsx:1-35](file://src/lib/auth-context.tsx#L1-L35)
 - [auth-provider.tsx:23-73](file://src/lib/auth-provider.tsx#L23-L73)
 
@@ -450,10 +466,12 @@ ShowUserFriendlyMessage --> End([Complete])
 ```
 
 **Diagram sources**
+
 - [auth.tsx:104-108](file://src/routes/auth.tsx#L104-L108)
 - [auth-provider.tsx:66-72](file://src/lib/auth-provider.tsx#L66-L72)
 
 **Section sources**
+
 - [auth.tsx:43-45](file://src/routes/auth.tsx#L43-L45)
 - [auth-provider.tsx:8-10](file://src/lib/auth-provider.tsx#L8-L10)
 
@@ -478,6 +496,7 @@ The system implements careful memory management to prevent leaks:
 - Cleanup of timers and intervals
 
 **Section sources**
+
 - [auth-provider.tsx:29-39](file://src/lib/auth-provider.tsx#L29-L39)
 - [auth-provider.tsx:96-98](file://src/lib/auth-provider.tsx#L96-L98)
 
@@ -485,13 +504,13 @@ The system implements careful memory management to prevent leaks:
 
 ### Common Authentication Issues
 
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| Login Blocked | Immediate rate limit error | Wait for cooldown period |
-| CAPTCHA Failure | Repeated CAPTCHA validation errors | Check Cloudflare configuration |
-| MFA Timeout | 2FA challenge expires | Restart authentication flow |
-| Profile Loading | Blank user info on dashboard | Check database connectivity |
-| Session Expiration | Automatic logout | Verify token validity |
+| Issue              | Symptoms                           | Solution                       |
+| ------------------ | ---------------------------------- | ------------------------------ |
+| Login Blocked      | Immediate rate limit error         | Wait for cooldown period       |
+| CAPTCHA Failure    | Repeated CAPTCHA validation errors | Check Cloudflare configuration |
+| MFA Timeout        | 2FA challenge expires              | Restart authentication flow    |
+| Profile Loading    | Blank user info on dashboard       | Check database connectivity    |
+| Session Expiration | Automatic logout                   | Verify token validity          |
 
 ### Debugging Authentication Flows
 
@@ -519,6 +538,7 @@ Key metrics to monitor:
 - **Error Rates**: Breakdown of authentication errors
 
 **Section sources**
+
 - [staff-auth.server.ts:56-66](file://src/lib/server/staff-auth.server.ts#L56-L66)
 - [auth.tsx:81-94](file://src/routes/auth.tsx#L81-L94)
 

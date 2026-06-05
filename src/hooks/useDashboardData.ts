@@ -25,8 +25,7 @@ export function useDashboardData(args: {
   const { accessToken, setPendingCount } = args;
 
   // --- Sub-hooks ---
-  const { dateFrom, setDateFrom, dateTo, setDateTo, range, periodLabel } =
-    useDashboardDateRange();
+  const { dateFrom, setDateFrom, dateTo, setDateTo, range, periodLabel } = useDashboardDateRange();
 
   const { analytics, analyticsLoading } = useDashboardAnalytics({
     accessToken,

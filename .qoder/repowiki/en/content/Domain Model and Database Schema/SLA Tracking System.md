@@ -12,6 +12,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Database Schema](#database-schema)
@@ -70,6 +71,7 @@ EMAIL --> DB
 ```
 
 **Diagram sources**
+
 - [20260516120000_ticket_sla_tracking.sql:1-146](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L1-L146)
 - [pcready.ts:307-333](file://src/lib/pcready.ts#L307-L333)
 - [tickets.tsx:1081-1127](file://src/routes/_app/tickets.tsx#L1081-L1127)
@@ -105,6 +107,7 @@ APP_SETTINGS ||--|| APP_SETTINGS : "sla_limits"
 ```
 
 **Diagram sources**
+
 - [20260516120000_ticket_sla_tracking.sql:3-7](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L3-L7)
 - [20260516120000_ticket_sla_tracking.sql:17-21](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L17-L21)
 
@@ -117,6 +120,7 @@ The database schema includes:
 - **Indexes**: Optimized queries for active tickets and breach detection
 
 **Section sources**
+
 - [20260516120000_ticket_sla_tracking.sql:3-15](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L3-L15)
 
 ## Core SLA Components
@@ -153,6 +157,7 @@ SlaComputation --> SlaPriorityConfig : "calculates"
 ```
 
 **Diagram sources**
+
 - [pcready.ts:13-37](file://src/lib/pcready.ts#L13-L37)
 - [app-settings.ts:27-46](file://src/lib/app-settings.ts#L27-L46)
 
@@ -178,9 +183,11 @@ DB-->>Client : Operation complete
 ```
 
 **Diagram sources**
+
 - [20260516120000_ticket_sla_tracking.sql:61-104](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L61-L104)
 
 **Section sources**
+
 - [20260516120000_ticket_sla_tracking.sql:23-97](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L23-L97)
 
 ## Frontend Implementation
@@ -217,15 +224,18 @@ TimeOpenBadge --> SlaStatus : "formats"
 ```
 
 **Diagram sources**
+
 - [tickets.tsx:1081-1127](file://src/routes/_app/tickets.tsx#L1081-L1127)
 - [pcready.ts:307-333](file://src/lib/pcready.ts#L307-L333)
 
 The SLA badge component provides three visual states:
+
 - **Green (OK)**: SLA within acceptable limits
 - **Yellow (Warning)**: SLA approaching deadline (20% of total SLA time remaining)
 - **Red (Overdue)**: SLA violation detected
 
 **Section sources**
+
 - [tickets.tsx:1081-1187](file://src/routes/_app/tickets.tsx#L1081-L1187)
 - [pcready.ts:307-364](file://src/lib/pcready.ts#L307-L364)
 
@@ -236,18 +246,20 @@ The SLA badge component provides three visual states:
 Administrators can configure SLA parameters through an intuitive settings interface:
 
 | Priority Level | Response Hours | Resolution Hours |
-|----------------|----------------|------------------|
-| High | 1 hour | 4 hours |
-| Medium | 4 hours | 24 hours |
-| Low | 24 hours | 72 hours |
+| -------------- | -------------- | ---------------- |
+| High           | 1 hour         | 4 hours          |
+| Medium         | 4 hours        | 24 hours         |
+| Low            | 24 hours       | 72 hours         |
 
 The configuration panel allows administrators to:
+
 - Set response time targets for first response
 - Configure resolution time targets for ticket completion
 - Override default SLA values per priority level
 - Apply changes immediately to new tickets
 
 **Section sources**
+
 - [AdminSettingsTab.tsx:390-430](file://src/components/admin/AdminSettingsTab.tsx#L390-L430)
 - [app-settings.ts:302-328](file://src/lib/app-settings.ts#L302-L328)
 
@@ -279,6 +291,7 @@ MarkOK --> End
 ```
 
 **Diagram sources**
+
 - [pcready.ts:307-333](file://src/lib/pcready.ts#L307-L333)
 
 ### Database-Level Calculations
@@ -290,6 +303,7 @@ The PostgreSQL functions handle critical SLA calculations:
 3. **refresh_ticket_sla_breaches()**: Batch job for updating breach status
 
 **Section sources**
+
 - [20260516120000_ticket_sla_tracking.sql:23-125](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L23-L125)
 
 ## Integration Points
@@ -326,6 +340,7 @@ CRON --> NOTIFICATIONS
 ```
 
 **Diagram sources**
+
 - [CriticalEventsWidget.tsx:69-95](file://src/components/dashboard/CriticalEventsWidget.tsx#L69-L95)
 - [TicketTimeTracking.tsx:1-231](file://src/components/tickets/TicketTimeTracking.tsx#L1-L231)
 
@@ -338,6 +353,7 @@ SLA status is prominently featured in dashboard widgets:
 - **SLA Compliance Metrics**: Provides organization-wide SLA performance indicators
 
 **Section sources**
+
 - [CriticalEventsWidget.tsx:69-95](file://src/components/dashboard/CriticalEventsWidget.tsx#L69-L95)
 
 ## Performance Considerations
@@ -363,16 +379,19 @@ The SLA system includes several performance optimizations:
 ### Common Issues
 
 **SLA Not Updating**
+
 - Verify database trigger is active
 - Check application settings configuration
 - Ensure proper indexing exists
 
 **Incorrect SLA Calculations**
+
 - Validate SLA configuration values
 - Check timezone settings
 - Review ticket creation timestamps
 
 **Performance Issues**
+
 - Monitor database query performance
 - Check index utilization
 - Review scheduled job execution
@@ -393,6 +412,7 @@ SELECT get_sla_resolution_hours('high'::ticket_priority);
 ```
 
 **Section sources**
+
 - [20260516120000_ticket_sla_tracking.sql:106-125](file://supabase/migrations/20260516120000_ticket_sla_tracking.sql#L106-L125)
 
 ## Conclusion
@@ -400,6 +420,7 @@ SELECT get_sla_resolution_hours('high'::ticket_priority);
 The SLA Tracking System provides a robust, configurable solution for monitoring and managing service level agreements within the ticketing platform. Its multi-layered architecture ensures reliable SLA enforcement while maintaining excellent performance and user experience.
 
 Key benefits include:
+
 - **Automated SLA Management**: Reduces manual oversight requirements
 - **Flexible Configuration**: Supports various SLA policies across different ticket types
 - **Real-Time Visibility**: Provides immediate feedback on SLA compliance

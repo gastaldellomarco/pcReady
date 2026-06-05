@@ -20,6 +20,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -31,11 +32,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document provides comprehensive documentation for the Client Portal Enhancements implemented in the PCReady system. The client portal enables external clients to interact with the support ticketing system, manage their devices, access documents, and track service requests without requiring backend administrative privileges. The portal integrates seamlessly with the existing ticketing infrastructure while maintaining strict session-based access control and customizable branding per client.
 
 The portal architecture follows a secure, token-based authentication model with server-side validation, rate limiting, and comprehensive audit logging. It leverages Supabase for data persistence, real-time updates, and storage capabilities, while providing a responsive React-based frontend with TanStack Router for navigation and state management.
 
 ## Project Structure
+
 The client portal is organized within a modular structure that separates concerns between routing, presentation components, business logic, and server-side implementations:
 
 ```mermaid
@@ -75,18 +78,21 @@ StatusTimeline --> PortalTicketsServer
 ```
 
 **Diagram sources**
+
 - [portal.tsx:1-10](file://src/routes/portal.tsx#L1-L10)
 - [PortalLayout.tsx:1-62](file://src/components/portal/PortalLayout.tsx#L1-L62)
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
 
 **Section sources**
+
 - [portal.tsx:1-10](file://src/routes/portal.tsx#L1-L10)
 - [PortalLayout.tsx:1-62](file://src/components/portal/PortalLayout.tsx#L1-L62)
 
 ## Core Components
 
 ### Authentication System
+
 The portal implements a robust authentication mechanism using cryptographically secure tokens with configurable expiration periods and comprehensive validation:
 
 ```mermaid
@@ -112,11 +118,13 @@ AuthLib-->>Client : Branding and session info
 ```
 
 **Diagram sources**
+
 - [portal-auth.ts:40-59](file://src/lib/portal-auth.ts#L40-L59)
 - [portal-auth.server.ts:100-133](file://src/lib/portal-auth.server.ts#L100-L133)
 - [portal-auth.server.ts:291-328](file://src/lib/portal-auth.server.ts#L291-L328)
 
 ### Ticket Management System
+
 The ticket management system provides comprehensive functionality for creating, tracking, and managing support requests with advanced filtering and status tracking:
 
 ```mermaid
@@ -137,10 +145,12 @@ ValidateDevice --> ContinueProcess
 ```
 
 **Diagram sources**
+
 - [portal-tickets.ts:236-320](file://src/lib/portal-tickets.ts#L236-L320)
 - [portal-tickets.server.ts:246-320](file://src/lib/portal-tickets.server.ts#L246-L320)
 
 **Section sources**
+
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-auth.server.ts:1-337](file://src/lib/portal-auth.server.ts#L1-L337)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
@@ -149,6 +159,7 @@ ValidateDevice --> ContinueProcess
 ## Architecture Overview
 
 ### System Architecture
+
 The client portal follows a layered architecture pattern with clear separation between presentation, business logic, and data access layers:
 
 ```mermaid
@@ -189,11 +200,13 @@ StorageServer --> Storage
 ```
 
 **Diagram sources**
+
 - [PortalLayout.tsx:1-62](file://src/components/portal/PortalLayout.tsx#L1-L62)
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
 
 ### Data Flow Architecture
+
 The portal implements a secure data flow with comprehensive validation and sanitization at every layer:
 
 ```mermaid
@@ -219,6 +232,7 @@ Component-->>Client : Rendered UI
 ```
 
 **Diagram sources**
+
 - [index.tsx:1-76](file://src/routes/portal/index.tsx#L1-L76)
 - [tickets/index.tsx:1-123](file://src/routes/portal/tickets/index.tsx#L1-L123)
 - [portal-tickets.ts:46-51](file://src/lib/portal-tickets.ts#L46-L51)
@@ -226,6 +240,7 @@ Component-->>Client : Rendered UI
 ## Detailed Component Analysis
 
 ### Portal Layout Component
+
 The PortalLayout component serves as the central navigation hub for all portal activities, implementing dynamic branding and session validation:
 
 ```mermaid
@@ -258,10 +273,12 @@ PortalLayout --> PortalSessionContext : "validates"
 ```
 
 **Diagram sources**
+
 - [PortalLayout.tsx:8-61](file://src/components/portal/PortalLayout.tsx#L8-L61)
 - [portal-auth.server.ts:8-27](file://src/lib/portal-auth.server.ts#L8-L27)
 
 ### Authentication Flow Implementation
+
 The authentication system implements multiple login methods with comprehensive security measures:
 
 ```mermaid
@@ -287,17 +304,20 @@ LoadBrand --> RenderPortal["Render Portal UI"]
 ```
 
 **Diagram sources**
+
 - [index.tsx:16-75](file://src/routes/portal/index.tsx#L16-L75)
 - [portal-auth.ts:40-59](file://src/lib/portal-auth.ts#L40-L59)
 - [portal-auth.server.ts:100-156](file://src/lib/portal-auth.server.ts#L100-L156)
 
 **Section sources**
+
 - [PortalLayout.tsx:1-62](file://src/components/portal/PortalLayout.tsx#L1-L62)
 - [index.tsx:1-76](file://src/routes/portal/index.tsx#L1-L76)
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-auth.server.ts:1-337](file://src/lib/portal-auth.server.ts#L1-L337)
 
 ### Ticket Creation and Management
+
 The ticket creation system provides comprehensive functionality with device association and attachment handling:
 
 ```mermaid
@@ -324,11 +344,13 @@ Form-->>User : Redirect to ticket detail
 ```
 
 **Diagram sources**
+
 - [NewTicketForm.tsx:63-86](file://src/components/portal/NewTicketForm.tsx#L63-L86)
 - [portal-tickets.ts:60-66](file://src/lib/portal-tickets.ts#L60-L66)
 - [portal-tickets.server.ts:236-320](file://src/lib/portal-tickets.server.ts#L236-L320)
 
 ### Document Management System
+
 The document management system provides secure access to ticket-related documents with comprehensive filtering and metadata:
 
 ```mermaid
@@ -363,16 +385,19 @@ DocumentSearch --> PortalDocument : "filters"
 ```
 
 **Diagram sources**
+
 - [documents/index.tsx:19-32](file://src/routes/portal/documents/index.tsx#L19-L32)
 - [documents/index.tsx:162-209](file://src/routes/portal/documents/index.tsx#L162-L209)
 
 **Section sources**
+
 - [NewTicketForm.tsx:1-188](file://src/components/portal/NewTicketForm.tsx#L1-L188)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
 - [portal-tickets.server.ts:1-662](file://src/lib/portal-tickets.server.ts#L1-L662)
 - [documents/index.tsx:1-231](file://src/routes/portal/documents/index.tsx#L1-L231)
 
 ### Status Tracking and Timeline Visualization
+
 The status tracking system provides comprehensive visibility into ticket lifecycle with detailed historical tracking:
 
 ```mermaid
@@ -397,16 +422,19 @@ Completed --> CompletedMeta
 ```
 
 **Diagram sources**
+
 - [StatusTimeline.tsx:44-46](file://src/components/portal/StatusTimeline.tsx#L44-L46)
 - [portal-tickets.server.ts:14-20](file://src/lib/portal-tickets.server.ts#L14-L20)
 
 **Section sources**
+
 - [StatusTimeline.tsx:1-171](file://src/components/portal/StatusTimeline.tsx#L1-L171)
 - [portal-tickets.server.ts:1-662](file://src/lib/portal-tickets.server.ts#L1-L662)
 
 ## Dependency Analysis
 
 ### Component Dependencies
+
 The portal components exhibit clear dependency relationships with well-defined interfaces:
 
 ```mermaid
@@ -447,11 +475,13 @@ StatusTimeline --> TicketsServer
 ```
 
 **Diagram sources**
+
 - [portal.tsx:1-10](file://src/routes/portal.tsx#L1-L10)
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
 
 ### Data Flow Dependencies
+
 The system maintains clean data flow patterns with proper separation of concerns:
 
 ```mermaid
@@ -472,28 +502,34 @@ Component-->>Route : Render UI
 ```
 
 **Diagram sources**
+
 - [tickets/index.tsx:16-43](file://src/routes/portal/tickets/index.tsx#L16-L43)
 - [portal-tickets.ts:46-51](file://src/lib/portal-tickets.ts#L46-L51)
 
 **Section sources**
+
 - [portal.tsx:1-10](file://src/routes/portal.tsx#L1-L10)
 - [portal-auth.ts:1-88](file://src/lib/portal-auth.ts#L1-L88)
 - [portal-tickets.ts:1-112](file://src/lib/portal-tickets.ts#L1-L112)
 
 ## Performance Considerations
+
 The client portal implementation incorporates several performance optimization strategies:
 
 ### Caching Strategies
+
 - **Session Validation**: Client-side caching of branding and session data reduces redundant server calls
 - **Component Memoization**: React.memo usage for expensive components like document lists
 - **Query Optimization**: Efficient database queries with proper indexing on frequently accessed fields
 
 ### Network Optimization
+
 - **Lazy Loading**: Route-based lazy loading prevents unnecessary bundle downloads
 - **Image Optimization**: Dynamic image loading with appropriate sizing and compression
 - **Rate Limiting**: Built-in rate limiting prevents abuse and ensures fair resource distribution
 
 ### Scalability Features
+
 - **Database Indexing**: Strategic indexing on portal_sessions, client_contacts, and tickets tables
 - **Pagination**: Implemented pagination for large datasets in tickets and documents
 - **Connection Pooling**: Efficient database connection management through Supabase
@@ -501,6 +537,7 @@ The client portal implementation incorporates several performance optimization s
 ## Troubleshooting Guide
 
 ### Common Authentication Issues
+
 **Problem**: Users cannot access the portal after login
 **Solution**: Check token validity and session expiration in the portal_sessions table
 
@@ -508,6 +545,7 @@ The client portal implementation incorporates several performance optimization s
 **Solution**: Verify email delivery configuration and check for rate limiting violations
 
 ### Ticket Creation Problems
+
 **Problem**: Tickets not appearing in the portal
 **Solution**: Verify client_id associations and status filtering logic
 
@@ -515,18 +553,22 @@ The client portal implementation incorporates several performance optimization s
 **Solution**: Check file size limits (5MB max) and supported MIME types
 
 ### Document Access Issues
+
 **Problem**: Documents not loading or showing expired links
 **Solution**: Verify signed URL generation and storage bucket permissions
 
 **Section sources**
+
 - [portal-auth.server.ts:291-328](file://src/lib/portal-auth.server.ts#L291-L328)
 - [portal-tickets.server.ts:199-234](file://src/lib/portal-tickets.server.ts#L199-L234)
 - [portal-tickets.server.ts:384-404](file://src/lib/portal-tickets.server.ts#L384-L404)
 
 ## Conclusion
+
 The Client Portal Enhancements represent a comprehensive solution for enabling external clients to interact with the PCReady support system. The implementation demonstrates strong architectural principles with clear separation of concerns, robust security measures, and comprehensive functionality.
 
 Key achievements include:
+
 - Secure token-based authentication with customizable client branding
 - Comprehensive ticket management with device association and attachment support
 - Advanced document management with searchable archives

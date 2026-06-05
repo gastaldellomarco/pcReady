@@ -118,7 +118,16 @@ type ContactForm = {
   notes: string;
 };
 
-type ClientTab = "overview" | "info" | "notes" | "contacts" | "tickets" | "devices" | "activity" | "documents" | "settings";
+type ClientTab =
+  | "overview"
+  | "info"
+  | "notes"
+  | "contacts"
+  | "tickets"
+  | "devices"
+  | "activity"
+  | "documents"
+  | "settings";
 type ClientListFilter = "all" | "openTickets" | "portalActive";
 type DestructiveAction =
   | { type: "client"; client: ClientRow }
@@ -255,18 +264,13 @@ function ClientsPage() {
   const updateContactMut = useUpdateContact();
   const deleteContactMut = useDeleteContact();
   const clients = useMemo(() => {
-    const fromPages = (listQuery.data?.pages ?? []).flatMap(
-      (p) => (p.data ?? []) as ClientRow[],
-    );
+    const fromPages = (listQuery.data?.pages ?? []).flatMap((p) => (p.data ?? []) as ClientRow[]);
     if (!extraClients.length) return fromPages;
     const pageIds = new Set(fromPages.map((c) => c.id));
     const uniqueExtras = extraClients.filter((c) => !pageIds.has(c.id));
     return [...uniqueExtras, ...fromPages];
   }, [listQuery.data, extraClients]);
-  const total = useMemo(
-    () => listQuery.data?.pages[0]?.count ?? 0,
-    [listQuery.data],
-  );
+  const total = useMemo(() => listQuery.data?.pages[0]?.count ?? 0, [listQuery.data]);
   const hasNextPage = listQuery.hasNextPage;
   const isFetchingNextPage = listQuery.isFetchingNextPage;
   const clientIds = useMemo(() => clients.map((client) => client.id), [clients]);
@@ -378,10 +382,16 @@ function ClientsPage() {
   const portalAccess = (portalAccessQuery.data ?? {}) as Record<string, boolean>;
   const tickets = ((ticketsQuery.data ?? []) as TicketRow[]).slice().sort(compareTickets);
   const devices = (devicesQuery.data ?? []) as DeviceRow[];
-  const tagAssignments = (tagAssignmentsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientTag[]>;
+  const tagAssignments = (tagAssignmentsQuery.data ?? {}) as Record<
+    string,
+    import("@/lib/queries/clients").ClientTag[]
+  >;
   const allTags = (tagsQuery.data ?? []) as import("@/lib/queries/clients").ClientTag[];
-  const selectedOverview = overviewQuery.data as import("@/lib/queries/clients").ClientOverview | null | undefined;
-  const selectedTags = selectedId ? tagAssignments[selectedId] ?? [] : [];
+  const selectedOverview = overviewQuery.data as
+    | import("@/lib/queries/clients").ClientOverview
+    | null
+    | undefined;
+  const selectedTags = selectedId ? (tagAssignments[selectedId] ?? []) : [];
   const displayedClients = clients.filter((client) => {
     const clientStats = stats[client.id] ?? {
       openTickets: 0,
@@ -389,7 +399,8 @@ function ClientsPage() {
       contacts: 0,
       portalActive: false,
     };
-    const tagMatch = tagFilter === "all" || (tagAssignments[client.id] ?? []).some((tag) => tag.id === tagFilter);
+    const tagMatch =
+      tagFilter === "all" || (tagAssignments[client.id] ?? []).some((tag) => tag.id === tagFilter);
     if (!tagMatch) return false;
     if (listFilter === "openTickets") return clientStats.openTickets > 0;
     if (listFilter === "portalActive")
@@ -399,7 +410,12 @@ function ClientsPage() {
   const listLoading = listQuery.isLoading;
   const allPageSelected =
     displayedClients.length > 0 && displayedClients.every((c) => selectedIds.has(c.id));
-  const { containerRef: cardContainerRef, virtualizer: cardVirtualizer, virtualItems: virtualCards, totalSize: cardTotalSize } = useVirtualList({
+  const {
+    containerRef: cardContainerRef,
+    virtualizer: cardVirtualizer,
+    virtualItems: virtualCards,
+    totalSize: cardTotalSize,
+  } = useVirtualList({
     count: displayedClients.length,
     estimateSize: 130,
     overscan: 5,
@@ -515,7 +531,8 @@ function ClientsPage() {
   }
 
   function openNewContactModal() {
-    if (!selectedId) return toast.error(t("errors.selectClientFirst", "Seleziona prima un cliente"));
+    if (!selectedId)
+      return toast.error(t("errors.selectClientFirst", "Seleziona prima un cliente"));
     setEditingContactId(null);
     contactForm.reset(emptyContact as ContactInput);
     setContactModalOpen(true);
@@ -580,14 +597,19 @@ function ClientsPage() {
   });
 
   async function deleteContact(contact: ContactRow) {
-    if (!canDelete) return toast.error(t("errors.adminOnlyDeleteContacts", "Solo admin puo' eliminare referenti"));
+    if (!canDelete)
+      return toast.error(
+        t("errors.adminOnlyDeleteContacts", "Solo admin puo' eliminare referenti"),
+      );
     await deleteContactMut.mutateAsync({ id: contact.id, clientId: contact.client_id });
     toast.success(t("toasts.contactDeleted", "Referente eliminato"));
   }
 
   async function generateContactPortalLink(contact: ContactRow) {
-    if (!session?.access_token) return toast.error(t("errors.sessionInvalid", "Sessione non valida"));
-    if (!canManagePortalAccess) return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
+    if (!session?.access_token)
+      return toast.error(t("errors.sessionInvalid", "Sessione non valida"));
+    if (!canManagePortalAccess)
+      return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
     setPortalBusyContactId(contact.id);
     setCopiedPortalLink(false);
     try {
@@ -598,7 +620,9 @@ function ClientsPage() {
       void qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success(t("toasts.portalLinkGenerated", "Link portale generato"));
     } catch (error) {
-      toast.error(errorMessage(error, t("toasts.portalLinkError", "Errore generazione link portale")));
+      toast.error(
+        errorMessage(error, t("toasts.portalLinkError", "Errore generazione link portale")),
+      );
     } finally {
       setPortalBusyContactId(null);
     }
@@ -616,8 +640,10 @@ function ClientsPage() {
   }
 
   async function revokeContactPortalAccess(contact: ContactRow) {
-    if (!session?.access_token) return toast.error(t("errors.sessionInvalid", "Sessione non valida"));
-    if (!canManagePortalAccess) return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
+    if (!session?.access_token)
+      return toast.error(t("errors.sessionInvalid", "Sessione non valida"));
+    if (!canManagePortalAccess)
+      return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
     setPortalRevokingContactId(contact.id);
     try {
       const result = await revokePortalLink({
@@ -626,11 +652,16 @@ function ClientsPage() {
       void qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success(
         result.revokedCount
-          ? t("toasts.clientsDeleted", { defaultValue: "{{count}} link portale revocati", count: result.revokedCount })
+          ? t("toasts.clientsDeleted", {
+              defaultValue: "{{count}} link portale revocati",
+              count: result.revokedCount,
+            })
           : t("errors.noActiveLinks", "Nessun link attivo da revocare"),
       );
     } catch (error) {
-      toast.error(errorMessage(error, t("toasts.portalLinkRevokeError", "Errore revoca accesso portale")));
+      toast.error(
+        errorMessage(error, t("toasts.portalLinkRevokeError", "Errore revoca accesso portale")),
+      );
     } finally {
       setPortalRevokingContactId(null);
     }
@@ -652,7 +683,12 @@ function ClientsPage() {
         return;
       }
       await bulkDeleteMut.mutateAsync(destructiveAction.ids);
-      toast.success(t("toasts.clientsDeleted", { defaultValue: "{{count}} clienti eliminati", count: destructiveAction.ids.length }));
+      toast.success(
+        t("toasts.clientsDeleted", {
+          defaultValue: "{{count}} clienti eliminati",
+          count: destructiveAction.ids.length,
+        }),
+      );
       if (selectedId && destructiveAction.ids.includes(selectedId)) setSelectedId(null);
       setSelectedIds(new Set());
     } else if (destructiveAction.type === "contact") {
@@ -664,7 +700,7 @@ function ClientsPage() {
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <div className="pc-card overflow-hidden">
+      <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div className="pc-card-title">{t("list.title", "Clienti")}</div>
           <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={startNewClient}>
@@ -678,7 +714,10 @@ function ClientsPage() {
               className="pc-input"
               value={q}
               onChange={(event) => setQ(event.target.value)}
-              placeholder={t("filters.searchExtended", "Cerca per nome, P.IVA, codice fiscale o email...")}
+              placeholder={t(
+                "filters.searchExtended",
+                "Cerca per nome, P.IVA, codice fiscale o email...",
+              )}
             />
           </div>
           <div className="grid grid-cols-3 gap-1">
@@ -739,7 +778,12 @@ function ClientsPage() {
               className="flex items-center justify-between rounded-md px-3 py-2"
               style={{ background: "var(--surface2)" }}
             >
-              <span className="text-xs text-text2">{t("list.selectedCount", { defaultValue: "{{count}} selezionati", count: selectedIds.size })}</span>
+              <span className="text-xs text-text2">
+                {t("list.selectedCount", {
+                  defaultValue: "{{count}} selezionati",
+                  count: selectedIds.size,
+                })}
+              </span>
               <button
                 className="pc-btn pc-btn-ghost pc-btn-xs"
                 disabled={!canDelete}
@@ -752,16 +796,22 @@ function ClientsPage() {
             </div>
           )}
         </div>
-        <div ref={cardContainerRef} className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3">
+        <div
+          ref={cardContainerRef}
+          className="max-h-[calc(100vh-285px)] space-y-2 overflow-y-auto p-3"
+        >
           {listQuery.isError ? (
             <PageFetchError
-              message={t("list.error", "Impossibile caricare i clienti. Controlla la connessione e riprova.")}
+              message={t(
+                "list.error",
+                "Impossibile caricare i clienti. Controlla la connessione e riprova.",
+              )}
               onRetry={() => listQuery.refetch()}
             />
           ) : listLoading ? (
             <ListSkeleton rows={8} variant="app" className="gap-2" />
           ) : displayedClients.length > 50 ? (
-            <div style={{ height: cardTotalSize, position: 'relative' }}>
+            <div style={{ height: cardTotalSize, position: "relative" }}>
               {virtualCards.map((virtualCard) => {
                 const client = displayedClients[virtualCard.index];
                 const clientStats = stats[client.id] ?? {
@@ -777,7 +827,7 @@ function ClientsPage() {
                     ref={cardVirtualizer.measureElement}
                     data-index={virtualCard.index}
                     style={{
-                      position: 'absolute',
+                      position: "absolute",
                       top: 0,
                       transform: `translateY(${virtualCard.start}px)`,
                       left: 0,
@@ -802,7 +852,10 @@ function ClientsPage() {
                       <div className="flex items-start gap-2">
                         <input
                           type="checkbox"
-                          aria-label={t("list.selectClient", { defaultValue: "Seleziona {{name}}", name })}
+                          aria-label={t("list.selectClient", {
+                            defaultValue: "Seleziona {{name}}",
+                            name,
+                          })}
                           checked={selectedIds.has(client.id)}
                           onClick={(event) => event.stopPropagation()}
                           onChange={(event) => toggleSelected(client.id, event.target.checked)}
@@ -811,7 +864,10 @@ function ClientsPage() {
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-[13px] font-bold">{name}</div>
                           <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
-                            {client.vat_number || client.email || client.phone || t("list.incompleteProfile", "Anagrafica da completare")}
+                            {client.vat_number ||
+                              client.email ||
+                              client.phone ||
+                              t("list.incompleteProfile", "Anagrafica da completare")}
                           </div>
                         </div>
                       </div>
@@ -819,17 +875,26 @@ function ClientsPage() {
                         <SmallMetric
                           tone={clientStats.openTickets > 0 ? "danger" : "muted"}
                           icon={<Ticket className="size-3" />}
-                          label={t("list.ticketCount", { defaultValue: "{{count}} ticket", count: clientStats.openTickets })}
+                          label={t("list.ticketCount", {
+                            defaultValue: "{{count}} ticket",
+                            count: clientStats.openTickets,
+                          })}
                         />
                         <SmallMetric
                           tone="muted"
                           icon={<HardDrive className="size-3" />}
-                          label={t("list.deviceCount", { defaultValue: "{{count}} dispositivi", count: clientStats.devices })}
+                          label={t("list.deviceCount", {
+                            defaultValue: "{{count}} dispositivi",
+                            count: clientStats.devices,
+                          })}
                         />
                         <SmallMetric
                           tone="muted"
                           icon={<Users className="size-3" />}
-                          label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
+                          label={t("list.contactCount", {
+                            defaultValue: "{{count}} referenti",
+                            count: clientStats.contacts,
+                          })}
                         />
                       </div>
                       <ClientTagBadges tags={tagAssignments[client.id] ?? []} compact />
@@ -868,7 +933,10 @@ function ClientsPage() {
                     <div className="flex items-start gap-2">
                       <input
                         type="checkbox"
-                        aria-label={t("list.selectClient", { defaultValue: "Seleziona {{name}}", name })}
+                        aria-label={t("list.selectClient", {
+                          defaultValue: "Seleziona {{name}}",
+                          name,
+                        })}
                         checked={selectedIds.has(client.id)}
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event) => toggleSelected(client.id, event.target.checked)}
@@ -877,7 +945,10 @@ function ClientsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[13px] font-bold">{name}</div>
                         <div className="mt-0.5 truncate font-mono text-[11px] text-text3">
-                          {client.vat_number || client.email || client.phone || t("list.incompleteProfile", "Anagrafica da completare")}
+                          {client.vat_number ||
+                            client.email ||
+                            client.phone ||
+                            t("list.incompleteProfile", "Anagrafica da completare")}
                         </div>
                       </div>
                     </div>
@@ -885,17 +956,26 @@ function ClientsPage() {
                       <SmallMetric
                         tone={clientStats.openTickets > 0 ? "danger" : "muted"}
                         icon={<Ticket className="size-3" />}
-                        label={t("list.ticketCount", { defaultValue: "{{count}} ticket", count: clientStats.openTickets })}
+                        label={t("list.ticketCount", {
+                          defaultValue: "{{count}} ticket",
+                          count: clientStats.openTickets,
+                        })}
                       />
                       <SmallMetric
                         tone="muted"
                         icon={<HardDrive className="size-3" />}
-                        label={t("list.deviceCount", { defaultValue: "{{count}} dispositivi", count: clientStats.devices })}
+                        label={t("list.deviceCount", {
+                          defaultValue: "{{count}} dispositivi",
+                          count: clientStats.devices,
+                        })}
                       />
                       <SmallMetric
                         tone="muted"
                         icon={<Users className="size-3" />}
-                        label={t("list.contactCount", { defaultValue: "{{count}} referenti", count: clientStats.contacts })}
+                        label={t("list.contactCount", {
+                          defaultValue: "{{count}} referenti",
+                          count: clientStats.contacts,
+                        })}
                       />
                     </div>
                     <ClientTagBadges tags={tagAssignments[client.id] ?? []} compact />
@@ -903,7 +983,9 @@ function ClientsPage() {
                 );
               })}
               {!displayedClients.length && (
-                <div className="py-8 text-center text-sm text-text3">{t("list.empty", "Nessun cliente trovato")}</div>
+                <div className="py-8 text-center text-sm text-text3">
+                  {t("list.empty", "Nessun cliente trovato")}
+                </div>
               )}
             </>
           )}
@@ -916,9 +998,7 @@ function ClientsPage() {
             {displayedClients.length}/{total}
           </span>
           {isFetchingNextPage && (
-            <span className="text-xs text-text3">
-              {t("list.loadingMore", "Caricamento...")}
-            </span>
+            <span className="text-xs text-text3">{t("list.loadingMore", "Caricamento...")}</span>
           )}
           <div ref={sentinelRef} className="h-px w-full" />
         </div>
@@ -1079,7 +1159,9 @@ function ClientsPage() {
                     className="md:col-span-2 mt-2 rounded-lg border p-3"
                     style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
                   >
-                    <div className="mb-3 text-sm font-semibold">{t("form.portalBranding", "Branding portale cliente")}</div>
+                    <div className="mb-3 text-sm font-semibold">
+                      {t("form.portalBranding", "Branding portale cliente")}
+                    </div>
                     <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
                       <Field label={t("form.portalName", "Nome portale")}>
                         <input
@@ -1105,13 +1187,19 @@ function ClientsPage() {
                       <Field label={t("form.portalWelcomeMessage", "Messaggio di benvenuto")}>
                         <input
                           className="pc-input"
-                          placeholder={t("form.portalWelcomePlaceholder", "Benvenuto nel portale assistenza")}
+                          placeholder={t(
+                            "form.portalWelcomePlaceholder",
+                            "Benvenuto nel portale assistenza",
+                          )}
                           {...clientForm.register("portal_welcome_message")}
                         />
                       </Field>
                     </div>
                     <p className="mt-2 text-xs text-text3">
-                      {t("form.portalInfo", "Puoi caricare il logo nel bucket pubblico client-portal-branding e incollare qui l'URL pubblico.")}
+                      {t(
+                        "form.portalInfo",
+                        "Puoi caricare il logo nel bucket pubblico client-portal-branding e incollare qui l'URL pubblico.",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1130,7 +1218,12 @@ function ClientsPage() {
             {activeTab === "contacts" && (
               <div className="pc-card-body">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm text-text3">{t("contacts.count", { defaultValue: "{{count}} referenti registrati", count: contacts.length })}</div>
+                  <div className="text-sm text-text3">
+                    {t("contacts.count", {
+                      defaultValue: "{{count}} referenti registrati",
+                      count: contacts.length,
+                    })}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -1213,7 +1306,12 @@ function ClientsPage() {
             {activeTab === "tickets" && (
               <div className="pc-card-body">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm text-text3">{t("tickets.count", { defaultValue: "{{count}} ticket collegati", count: tickets.length })}</div>
+                  <div className="text-sm text-text3">
+                    {t("tickets.count", {
+                      defaultValue: "{{count}} ticket collegati",
+                      count: tickets.length,
+                    })}
+                  </div>
                   <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openCreate}>
                     <Plus className="size-3" /> {t("tickets.newTicket", "Nuovo ticket")}
                   </button>
@@ -1268,7 +1366,8 @@ function ClientsPage() {
                       className="pc-btn pc-btn-primary pc-btn-sm"
                       onClick={openAddDeviceForSelectedClient}
                     >
-                      <Plus className="size-3" /> {t("devices.addFirstDevice", "Aggiungi primo dispositivo")}
+                      <Plus className="size-3" />{" "}
+                      {t("devices.addFirstDevice", "Aggiungi primo dispositivo")}
                     </button>
                   }
                   headers={[
@@ -1324,7 +1423,10 @@ function ClientsPage() {
               <div>
                 <div className="pc-card-title">{t("form.newClientTitle", "Nuovo cliente")}</div>
                 <p className="mt-1 text-sm text-text3">
-                  {t("form.newClientDescription", "Compila l'anagrafica per creare una nuova scheda cliente.")}
+                  {t(
+                    "form.newClientDescription",
+                    "Compila l'anagrafica per creare una nuova scheda cliente.",
+                  )}
                 </p>
               </div>
               <button
@@ -1379,7 +1481,11 @@ function ClientsPage() {
 
       <ContactModal
         open={contactModalOpen}
-        title={editingContactId ? t("contacts.modalTitleEdit", "Modifica referente") : t("contacts.modalTitleNew", "Nuovo referente")}
+        title={
+          editingContactId
+            ? t("contacts.modalTitleEdit", "Modifica referente")
+            : t("contacts.modalTitleNew", "Nuovo referente")
+        }
         canEdit={canEdit}
         busy={busy}
         form={contactForm}
@@ -1428,7 +1534,10 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
   if (!action) {
     return {
       title: i18n.t("destructiveDialog.defaultTitle", "Confermare l'azione?"),
-      description: i18n.t("destructiveDialog.defaultDescription", "Questa azione e' distruttiva e non puo' essere annullata."),
+      description: i18n.t(
+        "destructiveDialog.defaultDescription",
+        "Questa azione e' distruttiva e non puo' essere annullata.",
+      ),
       confirmLabel: i18n.t("destructiveDialog.defaultConfirm", "Conferma"),
     };
   }
@@ -1437,7 +1546,11 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
     const name = action.client.company_name || action.client.name;
     return {
       title: i18n.t("destructiveDialog.deleteClientTitle", "Eliminare questo cliente?"),
-      description: i18n.t("destructiveDialog.deleteClientDescription", { defaultValue: "Il cliente \"{{name}}\" verra' rimosso insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.", name }),
+      description: i18n.t("destructiveDialog.deleteClientDescription", {
+        defaultValue:
+          "Il cliente \"{{name}}\" verra' rimosso insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.",
+        name,
+      }),
       confirmLabel: i18n.t("destructiveDialog.deleteClientConfirm", "Elimina cliente"),
     };
   }
@@ -1445,7 +1558,11 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
   if (action.type === "bulkClients") {
     return {
       title: i18n.t("destructiveDialog.deleteClientsTitle", "Eliminare i clienti selezionati?"),
-      description: i18n.t("destructiveDialog.deleteClientsDescription", { defaultValue: "{{count}} clienti verranno rimossi insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.", count: action.ids.length }),
+      description: i18n.t("destructiveDialog.deleteClientsDescription", {
+        defaultValue:
+          "{{count}} clienti verranno rimossi insieme ai dati collegati gestiti dalle policy database. L'azione non puo' essere annullata.",
+        count: action.ids.length,
+      }),
       confirmLabel: i18n.t("destructiveDialog.deleteClientsConfirm", "Elimina clienti"),
     };
   }
@@ -1454,7 +1571,11 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
     const name = contactLabel(action.contact);
     return {
       title: i18n.t("destructiveDialog.deleteContactTitle", "Eliminare questo referente?"),
-      description: i18n.t("destructiveDialog.deleteContactDescription", { defaultValue: "Il referente \"{{name}}\" verra' rimosso dal cliente. L'azione non puo' essere annullata.", name }),
+      description: i18n.t("destructiveDialog.deleteContactDescription", {
+        defaultValue:
+          "Il referente \"{{name}}\" verra' rimosso dal cliente. L'azione non puo' essere annullata.",
+        name,
+      }),
       confirmLabel: i18n.t("destructiveDialog.deleteContactConfirm", "Elimina referente"),
     };
   }
@@ -1462,7 +1583,11 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
   const name = contactLabel(action.contact);
   return {
     title: i18n.t("destructiveDialog.revokePortalTitle", "Revocare l'accesso portale?"),
-    description: i18n.t("destructiveDialog.revokePortalDescription", { defaultValue: "Tutti i link portale attivi per \"{{name}}\" verranno revocati. Il referente non potra' piu' usarli per accedere.", name }),
+    description: i18n.t("destructiveDialog.revokePortalDescription", {
+      defaultValue:
+        "Tutti i link portale attivi per \"{{name}}\" verranno revocati. Il referente non potra' piu' usarli per accedere.",
+      name,
+    }),
     confirmLabel: i18n.t("destructiveDialog.revokePortalConfirm", "Revoca accesso"),
   };
 }
@@ -1496,7 +1621,8 @@ function ContactModal({
             {t("form.cancel", "Annulla")}
           </button>
           <button className="pc-btn pc-btn-primary" disabled={busy || !canEdit} onClick={onSave}>
-            <Save className="size-3" /> {busy ? t("contacts.saving", "Salvataggio...") : t("contacts.save", "Salva referente")}
+            <Save className="size-3" />{" "}
+            {busy ? t("contacts.saving", "Salvataggio...") : t("contacts.save", "Salva referente")}
           </button>
         </>
       }
@@ -1600,13 +1726,19 @@ function PortalLinkModal({
             className="rounded-md border px-3 py-2 text-[12.5px] text-text2"
             style={{ borderColor: "var(--border)" }}
           >
-            {t("portal.expiresOn", { defaultValue: "Scade il {{date}}", date: formatPortalExpiry(portalLink.expiresAt) })}
+            {t("portal.expiresOn", {
+              defaultValue: "Scade il {{date}}",
+              date: formatPortalExpiry(portalLink.expiresAt),
+            })}
           </div>
           <div
             className="rounded-md border px-3 py-2 text-[12.5px]"
             style={{ borderColor: "var(--warn)", background: "rgba(239, 152, 39, .08)" }}
           >
-            {t("portal.warning", "Condividi questo link direttamente con il cliente. Chiunque lo riceva potra' accedere al portale come questo referente fino alla scadenza o alla revoca.")}
+            {t(
+              "portal.warning",
+              "Condividi questo link direttamente con il cliente. Chiunque lo riceva potra' accedere al portale come questo referente fino alla scadenza o alla revoca.",
+            )}
           </div>
         </div>
       )}
@@ -1636,15 +1768,23 @@ function ClientOverviewPanel({
   return (
     <div className="pc-card-body space-y-4">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <button type="button" className="rounded-md border p-3 text-left" style={{ borderColor: "var(--border)" }} onClick={onOpenTickets}>
+        <button
+          type="button"
+          className="rounded-md border p-3 text-left"
+          style={{ borderColor: "var(--border)" }}
+          onClick={onOpenTickets}
+        >
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
             <Ticket className="h-3.5 w-3.5" /> {t("overview.openTickets", "Ticket aperti")}
           </div>
-          <div className="mt-2 font-mono text-2xl font-bold">{loading ? "..." : overview?.openTickets ?? 0}</div>
+          <div className="mt-2 font-mono text-2xl font-bold">
+            {loading ? "..." : (overview?.openTickets ?? 0)}
+          </div>
         </button>
         <div className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
-            <Clock className="h-3.5 w-3.5" /> {t("overview.avgResolution", "Tempo medio risoluzione")}
+            <Clock className="h-3.5 w-3.5" />{" "}
+            {t("overview.avgResolution", "Tempo medio risoluzione")}
           </div>
           <div className="mt-2 font-mono text-2xl font-bold">
             {loading ? "..." : formatHours(overview?.avgResolutionHours)}
@@ -1654,46 +1794,92 @@ function ClientOverviewPanel({
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
             <FileText className="h-3.5 w-3.5" /> {t("overview.totalBilled", "Fatturato")}
           </div>
-          <div className="mt-2 font-mono text-2xl font-bold">{loading ? "..." : formatMoney(overview?.totalBilled ?? 0)}</div>
+          <div className="mt-2 font-mono text-2xl font-bold">
+            {loading ? "..." : formatMoney(overview?.totalBilled ?? 0)}
+          </div>
         </div>
-        <button type="button" className="rounded-md border p-3 text-left" style={{ borderColor: "var(--border)" }} onClick={onOpenSettings}>
+        <button
+          type="button"
+          className="rounded-md border p-3 text-left"
+          style={{ borderColor: "var(--border)" }}
+          onClick={onOpenSettings}
+        >
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-text3">
             <Bell className="h-3.5 w-3.5" /> {t("overview.contractExpiry", "Scadenza contratto")}
           </div>
           <div className="mt-2 font-mono text-2xl font-bold">
-            {loading ? "..." : overview?.contractDaysLeft == null ? "-" : `${overview.contractDaysLeft}g`}
+            {loading
+              ? "..."
+              : overview?.contractDaysLeft == null
+                ? "-"
+                : `${overview.contractDaysLeft}g`}
           </div>
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="rounded-md border p-4" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+        <div
+          className="rounded-md border p-4"
+          style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+        >
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
-              <div className="text-sm font-bold">{t("overview.bundleTitle", "Bundle assistenza attivo")}</div>
-              <div className="text-xs text-text3">{t("overview.bundleSubtitle", "SLA effettivi e scadenza contratto")}</div>
+              <div className="text-sm font-bold">
+                {t("overview.bundleTitle", "Bundle assistenza attivo")}
+              </div>
+              <div className="text-xs text-text3">
+                {t("overview.bundleSubtitle", "SLA effettivi e scadenza contratto")}
+              </div>
             </div>
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" onClick={onOpenSettings}>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              type="button"
+              onClick={onOpenSettings}
+            >
               <Pencil className="size-3" /> {t("overview.configure", "Configura")}
             </button>
           </div>
           {bundle ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                <div className="text-[10px] uppercase text-text3">{t("overview.bundleName", "Nome")}</div>
-                <div className="truncate text-sm font-semibold">{bundle.bundle_name ?? bundle.name ?? "-"}</div>
+              <div
+                className="rounded-md border px-3 py-2"
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                <div className="text-[10px] uppercase text-text3">
+                  {t("overview.bundleName", "Nome")}
+                </div>
+                <div className="truncate text-sm font-semibold">
+                  {bundle.bundle_name ?? bundle.name ?? "-"}
+                </div>
               </div>
-              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                <div className="text-[10px] uppercase text-text3">{t("overview.responseSla", "Risposta")}</div>
-                <div className="font-mono text-sm font-semibold">{formatHours(bundle.effective_sla_response_hours)}</div>
+              <div
+                className="rounded-md border px-3 py-2"
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                <div className="text-[10px] uppercase text-text3">
+                  {t("overview.responseSla", "Risposta")}
+                </div>
+                <div className="font-mono text-sm font-semibold">
+                  {formatHours(bundle.effective_sla_response_hours)}
+                </div>
               </div>
-              <div className="rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                <div className="text-[10px] uppercase text-text3">{t("overview.resolutionSla", "Risoluzione")}</div>
-                <div className="font-mono text-sm font-semibold">{formatHours(bundle.effective_sla_resolution_hours)}</div>
+              <div
+                className="rounded-md border px-3 py-2"
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                <div className="text-[10px] uppercase text-text3">
+                  {t("overview.resolutionSla", "Risoluzione")}
+                </div>
+                <div className="font-mono text-sm font-semibold">
+                  {formatHours(bundle.effective_sla_resolution_hours)}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="rounded-md border border-dashed px-3 py-5 text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="rounded-md border border-dashed px-3 py-5 text-sm text-text3"
+              style={{ borderColor: "var(--border)" }}
+            >
               {t("overview.noBundle", "Nessun bundle attivo collegato a questo cliente.")}
             </div>
           )}
@@ -1704,7 +1890,11 @@ function ClientOverviewPanel({
             <SummaryBox label={t("overview.contacts", "Referenti")} value={contactsCount} />
             <SummaryBox label={t("overview.devices", "Device")} value={devicesCount} />
           </div>
-          <button className="pc-btn pc-btn-primary pc-btn-sm mt-3 w-full" type="button" onClick={onOpenDocuments}>
+          <button
+            className="pc-btn pc-btn-primary pc-btn-sm mt-3 w-full"
+            type="button"
+            onClick={onOpenDocuments}
+          >
             <Upload className="size-3" /> {t("overview.uploadDocument", "Carica documento")}
           </button>
         </div>
@@ -1800,7 +1990,10 @@ function ClientNotesPanel({
 
   return (
     <div className="pc-card-body space-y-4">
-      <div className="rounded-md border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+      <div
+        className="rounded-md border p-3"
+        style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+      >
         <Field label={t("notes.editorLabel", "Nota interna")}>
           <textarea
             className="pc-input min-h-[110px]"
@@ -1812,12 +2005,25 @@ function ClientNotesPanel({
         </Field>
         <div className="mt-3 flex justify-end gap-2">
           {editingId && (
-            <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" onClick={() => { setEditingId(null); setContent(""); }}>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setContent("");
+              }}
+            >
               {t("form.cancel", "Annulla")}
             </button>
           )}
-          <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !content.trim()} onClick={() => void saveNote()}>
-            <Save className="size-3" /> {editingId ? t("notes.update", "Aggiorna nota") : t("notes.add", "Aggiungi nota")}
+          <button
+            className="pc-btn pc-btn-primary pc-btn-sm"
+            type="button"
+            disabled={!canEdit || busy || !content.trim()}
+            onClick={() => void saveNote()}
+          >
+            <Save className="size-3" />{" "}
+            {editingId ? t("notes.update", "Aggiorna nota") : t("notes.add", "Aggiungi nota")}
           </button>
         </div>
       </div>
@@ -1826,19 +2032,41 @@ function ClientNotesPanel({
           <ListSkeleton rows={3} variant="app" />
         ) : notes.length ? (
           notes.map((note) => (
-            <div key={note.id} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+            <div
+              key={note.id}
+              className="rounded-md border p-3"
+              style={{ borderColor: "var(--border)" }}
+            >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="text-xs text-text3">
-                  {note.author?.full_name || t("notes.unknownAuthor", "Autore non disponibile")} - {fmtDate(note.updated_at)}
+                  {note.author?.full_name || t("notes.unknownAuthor", "Autore non disponibile")} -{" "}
+                  {fmtDate(note.updated_at)}
                 </div>
                 <div className="flex gap-1">
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => setHistoryNoteId(note.id)}>
+                  <button
+                    className="pc-btn pc-btn-ghost pc-btn-xs"
+                    type="button"
+                    onClick={() => setHistoryNoteId(note.id)}
+                  >
                     <History className="size-3" /> {t("notes.history", "Storico")}
                   </button>
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canEdit} onClick={() => { setEditingId(note.id); setContent(note.content); }}>
+                  <button
+                    className="pc-btn pc-btn-ghost pc-btn-xs"
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => {
+                      setEditingId(note.id);
+                      setContent(note.content);
+                    }}
+                  >
                     <Pencil className="size-3" /> {t("form.edit", "Modifica")}
                   </button>
-                  <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete} onClick={() => void removeNote(note.id)}>
+                  <button
+                    className="pc-btn pc-btn-ghost pc-btn-xs"
+                    type="button"
+                    disabled={!canDelete}
+                    onClick={() => void removeNote(note.id)}
+                  >
                     <Trash2 className="size-3" />
                   </button>
                 </div>
@@ -1847,25 +2075,45 @@ function ClientNotesPanel({
             </div>
           ))
         ) : (
-          <div className="rounded-md border border-dashed p-8 text-center text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+          <div
+            className="rounded-md border border-dashed p-8 text-center text-sm text-text3"
+            style={{ borderColor: "var(--border)" }}
+          >
             {t("notes.empty", "Nessuna nota interna per questo cliente.")}
           </div>
         )}
       </div>
-      <Modal open={!!historyNoteId} onClose={() => setHistoryNoteId(null)} title={t("notes.historyTitle", "Storico modifiche")}>
+      <Modal
+        open={!!historyNoteId}
+        onClose={() => setHistoryNoteId(null)}
+        title={t("notes.historyTitle", "Storico modifiche")}
+      >
         <div className="space-y-2">
           {revisionsQuery.isLoading ? (
             <ListSkeleton rows={3} variant="app" />
-          ) : ((revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[]).length ? (
-            ((revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[]).map((revision) => (
-              <div key={revision.id} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
-                <div className="text-xs text-text3">{revision.author?.full_name || "-"} - {fmtDate(revision.changed_at)}</div>
+          ) : ((revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[])
+              .length ? (
+            (
+              (revisionsQuery.data ?? []) as import("@/lib/queries/clients").ClientNoteRevision[]
+            ).map((revision) => (
+              <div
+                key={revision.id}
+                className="rounded-md border p-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="text-xs text-text3">
+                  {revision.author?.full_name || "-"} - {fmtDate(revision.changed_at)}
+                </div>
                 <div className="mt-2 text-xs text-text3">{t("notes.previous", "Prima")}</div>
-                <p className="whitespace-pre-wrap text-sm text-text2">{revision.previous_content}</p>
+                <p className="whitespace-pre-wrap text-sm text-text2">
+                  {revision.previous_content}
+                </p>
               </div>
             ))
           ) : (
-            <div className="text-sm text-text3">{t("notes.noRevisions", "Nessuna modifica registrata.")}</div>
+            <div className="text-sm text-text3">
+              {t("notes.noRevisions", "Nessuna modifica registrata.")}
+            </div>
           )}
         </div>
       </Modal>
@@ -1884,7 +2132,11 @@ function ClientActivityTimeline({ clientId }: { clientId: string }) {
       ) : items.length ? (
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="flex gap-3 rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
+            <div
+              key={item.id}
+              className="flex gap-3 rounded-md border p-3"
+              style={{ borderColor: "var(--border)" }}
+            >
               <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-surface2 text-text3">
                 <History className="size-4" />
               </div>
@@ -1893,13 +2145,18 @@ function ClientActivityTimeline({ clientId }: { clientId: string }) {
                   <div className="text-sm font-semibold">{item.title}</div>
                   <div className="font-mono text-xs text-text3">{fmtDate(item.created_at)}</div>
                 </div>
-                {item.description && <p className="mt-1 line-clamp-2 text-xs text-text3">{item.description}</p>}
+                {item.description && (
+                  <p className="mt-1 line-clamp-2 text-xs text-text3">{item.description}</p>
+                )}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-md border border-dashed p-8 text-center text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+        <div
+          className="rounded-md border border-dashed p-8 text-center text-sm text-text3"
+          style={{ borderColor: "var(--border)" }}
+        >
           {t("activity.empty", "Nessuna attivita' disponibile.")}
         </div>
       )}
@@ -1921,7 +2178,8 @@ function ClientDocumentsPanel({
   const { t } = useTranslation("clients");
   const qc = useQueryClient();
   const documentsQuery = (queries as any).useClientDocuments(clientId);
-  const [documentType, setDocumentType] = useState<import("@/lib/queries/clients").ClientDocument["document_type"]>("contract");
+  const [documentType, setDocumentType] =
+    useState<import("@/lib/queries/clients").ClientDocument["document_type"]>("contract");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const documents = (documentsQuery.data ?? []) as import("@/lib/queries/clients").ClientDocument[];
@@ -1930,7 +2188,13 @@ function ClientDocumentsPanel({
     if (!file || !canEdit) return;
     setBusy(true);
     try {
-      await (queries as any).uploadClientDocument({ clientId, file, documentType, description, userId });
+      await (queries as any).uploadClientDocument({
+        clientId,
+        file,
+        documentType,
+        description,
+        userId,
+      });
       setDescription("");
       void qc.invalidateQueries({ queryKey: ["clients", clientId, "documents"] });
       void qc.invalidateQueries({ queryKey: ["clients", clientId, "activity"] });
@@ -1967,17 +2231,39 @@ function ClientDocumentsPanel({
 
   return (
     <div className="pc-card-body space-y-4">
-      <div className="grid grid-cols-1 gap-3 rounded-md border p-3 md:grid-cols-[180px_minmax(0,1fr)_auto]" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
-        <select className="pc-input" value={documentType} disabled={!canEdit || busy} onChange={(event) => setDocumentType(event.target.value as any)} aria-label={t("documents.typeLabel", "Tipo documento")}>
+      <div
+        className="grid grid-cols-1 gap-3 rounded-md border p-3 md:grid-cols-[180px_minmax(0,1fr)_auto]"
+        style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+      >
+        <select
+          className="pc-input"
+          value={documentType}
+          disabled={!canEdit || busy}
+          onChange={(event) => setDocumentType(event.target.value as any)}
+          aria-label={t("documents.typeLabel", "Tipo documento")}
+        >
           <option value="contract">{t("documents.typeContract", "Contratto")}</option>
           <option value="nda">{t("documents.typeNda", "NDA")}</option>
           <option value="technical">{t("documents.typeTechnical", "Tecnico")}</option>
           <option value="other">{t("documents.typeOther", "Altro")}</option>
         </select>
-        <input className="pc-input" value={description} disabled={!canEdit || busy} placeholder={t("documents.description", "Descrizione documento")} onChange={(event) => setDescription(event.target.value)} aria-label={t("documents.descriptionLabel", "Descrizione documento")} />
+        <input
+          className="pc-input"
+          value={description}
+          disabled={!canEdit || busy}
+          placeholder={t("documents.description", "Descrizione documento")}
+          onChange={(event) => setDescription(event.target.value)}
+          aria-label={t("documents.descriptionLabel", "Descrizione documento")}
+        />
         <label className="pc-btn pc-btn-primary pc-btn-sm justify-center">
-          <Upload className="size-3" /> {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
-          <input type="file" className="hidden" disabled={!canEdit || busy} onChange={(event) => void upload(event.target.files?.[0] ?? null)} />
+          <Upload className="size-3" />{" "}
+          {busy ? t("documents.uploading", "Upload...") : t("documents.upload", "Carica")}
+          <input
+            type="file"
+            className="hidden"
+            disabled={!canEdit || busy}
+            onChange={(event) => void upload(event.target.files?.[0] ?? null)}
+          />
         </label>
       </div>
       <ResponsiveTable
@@ -1990,15 +2276,30 @@ function ClientDocumentsPanel({
           t("documents.headers.actions", "Azioni"),
         ]}
         rows={documents.map((document) => [
-          <button className="font-semibold text-accent" type="button" onClick={() => void openDocument(document)}>{document.file_name}</button>,
+          <button
+            className="font-semibold text-accent"
+            type="button"
+            onClick={() => void openDocument(document)}
+          >
+            {document.file_name}
+          </button>,
           documentTypeLabel(document.document_type),
           formatFileSize(document.file_size),
           fmtDate(document.uploaded_at),
           <div className="flex gap-1">
-            <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" onClick={() => void openDocument(document)}>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-xs"
+              type="button"
+              onClick={() => void openDocument(document)}
+            >
               <Download className="size-3" />
             </button>
-            <button className="pc-btn pc-btn-ghost pc-btn-xs" type="button" disabled={!canDelete || busy} onClick={() => void removeDocument(document)}>
+            <button
+              className="pc-btn pc-btn-ghost pc-btn-xs"
+              type="button"
+              disabled={!canDelete || busy}
+              onClick={() => void removeDocument(document)}
+            >
               <Trash2 className="size-3" />
             </button>
           </div>,
@@ -2025,7 +2326,10 @@ function ClientSettingsPanel({
   const assignmentsQuery = (queries as any).useClientTagAssignments([clientId]);
   const alertsQuery = (queries as any).useClientContractAlerts(clientId);
   const allTags = (tagsQuery.data ?? []) as import("@/lib/queries/clients").ClientTag[];
-  const assigned = (((assignmentsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientTag[]>)[clientId] ?? []);
+  const assigned =
+    ((assignmentsQuery.data ?? {}) as Record<string, import("@/lib/queries/clients").ClientTag[]>)[
+      clientId
+    ] ?? [];
   const assignedIds = new Set(assigned.map((tag) => tag.id));
   const bundle = overview?.activeBundle;
   const alert = ((alertsQuery.data ?? []) as any[])[0];
@@ -2038,8 +2342,16 @@ function ClientSettingsPanel({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setResponseHours(bundle?.effective_sla_response_hours != null ? String(bundle.effective_sla_response_hours) : "");
-    setResolutionHours(bundle?.effective_sla_resolution_hours != null ? String(bundle.effective_sla_resolution_hours) : "");
+    setResponseHours(
+      bundle?.effective_sla_response_hours != null
+        ? String(bundle.effective_sla_response_hours)
+        : "",
+    );
+    setResolutionHours(
+      bundle?.effective_sla_resolution_hours != null
+        ? String(bundle.effective_sla_resolution_hours)
+        : "",
+    );
   }, [bundle?.id, bundle?.effective_sla_response_hours, bundle?.effective_sla_resolution_hours]);
 
   useEffect(() => {
@@ -2135,7 +2447,9 @@ function ClientSettingsPanel({
               type="button"
               className="rounded-full border px-3 py-1 text-xs font-bold"
               style={{
-                borderColor: assignedIds.has(tag.id) ? tag.color || "var(--accent)" : "var(--border)",
+                borderColor: assignedIds.has(tag.id)
+                  ? tag.color || "var(--accent)"
+                  : "var(--border)",
                 background: assignedIds.has(tag.id) ? "var(--accent2)" : "var(--surface2)",
                 color: assignedIds.has(tag.id) ? tag.color || "var(--accent)" : "var(--text3)",
               }}
@@ -2147,8 +2461,19 @@ function ClientSettingsPanel({
           ))}
         </div>
         <div className="mt-3 flex gap-2">
-          <input className="pc-input" value={newTag} disabled={!canEdit || busy} placeholder={t("tags.newPlaceholder", "Nuovo tag, es. VIP")} onChange={(event) => setNewTag(event.target.value)} />
-          <button className="pc-btn pc-btn-primary pc-btn-sm" type="button" disabled={!canEdit || busy || !newTag.trim()} onClick={() => void addTag()}>
+          <input
+            className="pc-input"
+            value={newTag}
+            disabled={!canEdit || busy}
+            placeholder={t("tags.newPlaceholder", "Nuovo tag, es. VIP")}
+            onChange={(event) => setNewTag(event.target.value)}
+          />
+          <button
+            className="pc-btn pc-btn-primary pc-btn-sm"
+            type="button"
+            disabled={!canEdit || busy || !newTag.trim()}
+            onClick={() => void addTag()}
+          >
             <Plus className="size-3" /> {t("tags.add", "Aggiungi")}
           </button>
         </div>
@@ -2162,17 +2487,40 @@ function ClientSettingsPanel({
           {bundle ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Field label={t("sla.responseHours", "Risposta entro ore")}>
-                <input className="pc-input" type="number" min={0} step={0.5} value={responseHours} disabled={!canEdit || busy} onChange={(event) => setResponseHours(event.target.value)} />
+                <input
+                  className="pc-input"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={responseHours}
+                  disabled={!canEdit || busy}
+                  onChange={(event) => setResponseHours(event.target.value)}
+                />
               </Field>
               <Field label={t("sla.resolutionHours", "Risoluzione entro ore")}>
-                <input className="pc-input" type="number" min={0} step={0.5} value={resolutionHours} disabled={!canEdit || busy} onChange={(event) => setResolutionHours(event.target.value)} />
+                <input
+                  className="pc-input"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={resolutionHours}
+                  disabled={!canEdit || busy}
+                  onChange={(event) => setResolutionHours(event.target.value)}
+                />
               </Field>
-              <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveSla()}>
+              <button
+                className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2"
+                type="button"
+                disabled={!canEdit || busy}
+                onClick={() => void saveSla()}
+              >
                 <Save className="size-3" /> {t("sla.save", "Salva override SLA")}
               </button>
             </div>
           ) : (
-            <div className="text-sm text-text3">{t("sla.noBundle", "Serve un bundle attivo per configurare uno SLA cliente.")}</div>
+            <div className="text-sm text-text3">
+              {t("sla.noBundle", "Serve un bundle attivo per configurare uno SLA cliente.")}
+            </div>
           )}
         </div>
 
@@ -2182,19 +2530,42 @@ function ClientSettingsPanel({
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Field label={t("alerts.daysBefore", "Giorni prima")}>
-              <input className="pc-input" type="number" min={1} value={daysBefore} disabled={!canEdit || busy} onChange={(event) => setDaysBefore(Number(event.target.value || 30))} />
+              <input
+                className="pc-input"
+                type="number"
+                min={1}
+                value={daysBefore}
+                disabled={!canEdit || busy}
+                onChange={(event) => setDaysBefore(Number(event.target.value || 30))}
+              />
             </Field>
             <Field label={t("alerts.channel", "Canale")}>
-              <select className="pc-input" value={channel} disabled={!canEdit || busy} onChange={(event) => setChannel(event.target.value as any)} aria-label={t("alerts.channelLabel", "Canale notifica")}>
+              <select
+                className="pc-input"
+                value={channel}
+                disabled={!canEdit || busy}
+                onChange={(event) => setChannel(event.target.value as any)}
+                aria-label={t("alerts.channelLabel", "Canale notifica")}
+              >
                 <option value="in_app">{t("alerts.inApp", "In-app")}</option>
                 <option value="email">{t("alerts.email", "Email")}</option>
               </select>
             </Field>
             <label className="flex items-center gap-2 text-sm text-text2 md:col-span-2">
-              <input type="checkbox" checked={enabled} disabled={!canEdit || busy} onChange={(event) => setEnabled(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={enabled}
+                disabled={!canEdit || busy}
+                onChange={(event) => setEnabled(event.target.checked)}
+              />
               {t("alerts.enabled", "Alert attivo")}
             </label>
-            <button className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2" type="button" disabled={!canEdit || busy} onClick={() => void saveAlert()}>
+            <button
+              className="pc-btn pc-btn-primary pc-btn-sm md:col-span-2"
+              type="button"
+              disabled={!canEdit || busy}
+              onClick={() => void saveAlert()}
+            >
               <Save className="size-3" /> {t("alerts.save", "Salva alert")}
             </button>
           </div>
@@ -2323,12 +2694,36 @@ function PortalBadge({ active }: { active: boolean }) {
 function StatusPill({ value }: { value: string }) {
   const { t } = useTranslation("clients");
   const map: Record<string, { label: string; color: string; bg: string }> = {
-    pending: { label: t("statusPill.pending", "In attesa"), color: "#92400e", bg: "rgba(245, 158, 11, .14)" },
-    "in-progress": { label: t("statusPill.inProgress", "In corso"), color: "#1d4ed8", bg: "rgba(37, 99, 235, .12)" },
-    testing: { label: t("statusPill.testing", "Test"), color: "#7c3aed", bg: "rgba(124, 58, 237, .12)" },
-    ready: { label: t("statusPill.ready", "Pronto"), color: "#15803d", bg: "rgba(22, 163, 74, .12)" },
-    completed: { label: t("statusPill.completed", "Completato"), color: "#166534", bg: "rgba(22, 101, 52, .12)" },
-    archived: { label: t("statusPill.archived", "Archiviato"), color: "var(--text3)", bg: "var(--surface2)" },
+    pending: {
+      label: t("statusPill.pending", "In attesa"),
+      color: "#92400e",
+      bg: "rgba(245, 158, 11, .14)",
+    },
+    "in-progress": {
+      label: t("statusPill.inProgress", "In corso"),
+      color: "#1d4ed8",
+      bg: "rgba(37, 99, 235, .12)",
+    },
+    testing: {
+      label: t("statusPill.testing", "Test"),
+      color: "#7c3aed",
+      bg: "rgba(124, 58, 237, .12)",
+    },
+    ready: {
+      label: t("statusPill.ready", "Pronto"),
+      color: "#15803d",
+      bg: "rgba(22, 163, 74, .12)",
+    },
+    completed: {
+      label: t("statusPill.completed", "Completato"),
+      color: "#166534",
+      bg: "rgba(22, 101, 52, .12)",
+    },
+    archived: {
+      label: t("statusPill.archived", "Archiviato"),
+      color: "var(--text3)",
+      bg: "var(--surface2)",
+    },
   };
   const meta = map[value] ?? { label: value, color: "var(--text3)", bg: "var(--surface2)" };
   return (
@@ -2344,7 +2739,13 @@ function StatusPill({ value }: { value: string }) {
 function PriorityPill({ value }: { value: string }) {
   const { t } = useTranslation("clients");
   const label =
-    value === "high" ? t("priority.high", "Alta") : value === "med" ? t("priority.medium", "Media") : value === "low" ? t("priority.low", "Bassa") : value;
+    value === "high"
+      ? t("priority.high", "Alta")
+      : value === "med"
+        ? t("priority.medium", "Media")
+        : value === "low"
+          ? t("priority.low", "Bassa")
+          : value;
   return (
     <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10.5px] font-bold text-text3">
       {label}
@@ -2357,7 +2758,11 @@ function DeviceStatusPill({ status }: { status: DeviceRow["status"] }) {
   const map = {
     available: [t("deviceStatus.available", "Disponibile"), "#15803d", "rgba(22, 163, 74, .12)"],
     assigned: [t("deviceStatus.assigned", "Assegnato"), "#1d4ed8", "rgba(37, 99, 235, .12)"],
-    maintenance: [t("deviceStatus.maintenance", "Manutenzione"), "#92400e", "rgba(245, 158, 11, .14)"],
+    maintenance: [
+      t("deviceStatus.maintenance", "Manutenzione"),
+      "#92400e",
+      "rgba(245, 158, 11, .14)",
+    ],
     retired: [t("deviceStatus.retired", "Dismesso"), "var(--text3)", "var(--surface2)"],
   } as const;
   const [label, color, bg] = map[status] ?? map.available;
@@ -2380,22 +2785,34 @@ function DeviceSummary({ devices }: { devices: DeviceRow[] }) {
       <SmallMetric
         tone="muted"
         icon={<HardDrive className="h-3 w-3" />}
-        label={t("deviceSummary.available", { defaultValue: "Disponibili: {{count}}", count: count("available") })}
+        label={t("deviceSummary.available", {
+          defaultValue: "Disponibili: {{count}}",
+          count: count("available"),
+        })}
       />
       <SmallMetric
         tone="muted"
         icon={<HardDrive className="h-3 w-3" />}
-        label={t("deviceSummary.assigned", { defaultValue: "Assegnati: {{count}}", count: count("assigned") })}
+        label={t("deviceSummary.assigned", {
+          defaultValue: "Assegnati: {{count}}",
+          count: count("assigned"),
+        })}
       />
       <SmallMetric
         tone="muted"
         icon={<HardDrive className="h-3 w-3" />}
-        label={t("deviceSummary.maintenance", { defaultValue: "Manutenzione: {{count}}", count: count("maintenance") })}
+        label={t("deviceSummary.maintenance", {
+          defaultValue: "Manutenzione: {{count}}",
+          count: count("maintenance"),
+        })}
       />
       <SmallMetric
         tone="muted"
         icon={<HardDrive className="h-3 w-3" />}
-        label={t("deviceSummary.retired", { defaultValue: "Dismessi: {{count}}", count: count("retired") })}
+        label={t("deviceSummary.retired", {
+          defaultValue: "Dismessi: {{count}}",
+          count: count("retired"),
+        })}
       />
     </div>
   );
@@ -2577,7 +2994,8 @@ function ImportContactsCsvDialog({
       const preview = buildContactImportPreview(parsed, existingContacts, duplicateMode);
       setRows(preview);
       setStep(2);
-      if (!preview.length) toast.error(t("importContacts.validation.emptyCsv", "CSV vuoto o senza righe valide"));
+      if (!preview.length)
+        toast.error(t("importContacts.validation.emptyCsv", "CSV vuoto o senza righe valide"));
     } catch (error) {
       toast.error(errorMessage(error, t("toasts.readCsvError", "Errore lettura CSV")));
     } finally {
@@ -2606,7 +3024,10 @@ function ImportContactsCsvDialog({
   async function confirmImport() {
     if (!canEdit) return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
     if (!clientId) return toast.error(t("errors.selectClientFirst", "Seleziona prima un cliente"));
-    if (!stats.valid) return toast.error(t("importContacts.validation.noValidRows", "Nessuna riga valida da importare"));
+    if (!stats.valid)
+      return toast.error(
+        t("importContacts.validation.noValidRows", "Nessuna riga valida da importare"),
+      );
     setBusy(true);
     setStep(3);
     try {
@@ -2653,12 +3074,17 @@ function ImportContactsCsvDialog({
             >
               <FileUp className="h-8 w-8 text-text3" />
               <div>
-                <div className="text-sm font-semibold">{t("importContacts.uploadLabel", "Carica file .csv")}</div>
+                <div className="text-sm font-semibold">
+                  {t("importContacts.uploadLabel", "Carica file .csv")}
+                </div>
                 <div className="text-xs text-text3">
                   {busy
                     ? t("importContacts.reading", "Lettura in corso...")
                     : fileName ||
-                      t("importContacts.csvHint", "nome,cognome,email,telefono,ruolo_aziendale,reparto,referente_principale")}
+                      t(
+                        "importContacts.csvHint",
+                        "nome,cognome,email,telefono,ruolo_aziendale,reparto,referente_principale",
+                      )}
                 </div>
               </div>
               <input
@@ -2670,7 +3096,8 @@ function ImportContactsCsvDialog({
               />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
-              <Download className="w-3 h-3" /> {t("importContacts.downloadTemplate", "Scarica template CSV")}
+              <Download className="w-3 h-3" />{" "}
+              {t("importContacts.downloadTemplate", "Scarica template CSV")}
             </button>
           </div>
         )}
@@ -2679,20 +3106,41 @@ function ImportContactsCsvDialog({
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="grid grid-cols-5 gap-2 text-xs">
-                <SummaryBox label={t("importContacts.resultSummary.insert", "Insert")} value={stats.inserts} />
-                <SummaryBox label={t("importContacts.resultSummary.update", "Update")} value={stats.updates} />
-                <SummaryBox label={t("importContacts.resultSummary.skipped", "Saltati")} value={stats.skipped} />
-                <SummaryBox label={t("importContacts.resultSummary.errors", "Errori")} value={stats.errors} />
-                <SummaryBox label={t("importContacts.resultSummary.rows", "Righe")} value={rows.length} />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.insert", "Insert")}
+                  value={stats.inserts}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.update", "Update")}
+                  value={stats.updates}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.skipped", "Saltati")}
+                  value={stats.skipped}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.errors", "Errori")}
+                  value={stats.errors}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.rows", "Righe")}
+                  value={rows.length}
+                />
               </div>
               <select
                 className="pc-input w-auto text-xs"
                 value={duplicateMode}
                 onChange={(event) => applyDuplicateMode(event.target.value as ContactDuplicateMode)}
               >
-                <option value="ask">{t("importContacts.duplicateMode.ask", "Duplicati: chiedi")}</option>
-                <option value="skip">{t("importContacts.duplicateMode.skip", "Duplicati: salta")}</option>
-                <option value="overwrite">{t("importContacts.duplicateMode.overwrite", "Duplicati: sovrascrivi")}</option>
+                <option value="ask">
+                  {t("importContacts.duplicateMode.ask", "Duplicati: chiedi")}
+                </option>
+                <option value="skip">
+                  {t("importContacts.duplicateMode.skip", "Duplicati: salta")}
+                </option>
+                <option value="overwrite">
+                  {t("importContacts.duplicateMode.overwrite", "Duplicati: sovrascrivi")}
+                </option>
               </select>
             </div>
             <div
@@ -2711,16 +3159,11 @@ function ImportContactsCsvDialog({
                         t("importContacts.previewHeaders.department", "Reparto"),
                         t("importContacts.previewHeaders.action", "Azione"),
                         t("importContacts.previewHeaders.validation", "Validazione"),
-                      ].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="px-3 py-2 text-left font-bold uppercase text-text3"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
+                      ].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -2753,8 +3196,12 @@ function ImportContactsCsvDialog({
                                 )
                               }
                             >
-                              <option value="skip">{t("importContacts.actions.skip", "Salta")}</option>
-                              <option value="update">{t("importContacts.actions.overwrite", "Sovrascrivi")}</option>
+                              <option value="skip">
+                                {t("importContacts.actions.skip", "Salta")}
+                              </option>
+                              <option value="update">
+                                {t("importContacts.actions.overwrite", "Sovrascrivi")}
+                              </option>
                             </select>
                           ) : (
                             row.action
@@ -2767,7 +3214,10 @@ function ImportContactsCsvDialog({
                               : "px-3 py-2 text-text3"
                           }
                         >
-                          {row.errors.join(", ") || (row.existingId ? t("importContacts.validation.emailExists", "Email gia' presente") : t("importContacts.validation.ok", "OK"))}
+                          {row.errors.join(", ") ||
+                            (row.existingId
+                              ? t("importContacts.validation.emailExists", "Email gia' presente")
+                              : t("importContacts.validation.ok", "OK"))}
                         </td>
                       </tr>
                     ))}
@@ -2782,13 +3232,27 @@ function ImportContactsCsvDialog({
           <div className="flex flex-col gap-4">
             {result ? (
               <div className="grid grid-cols-4 gap-2">
-                <SummaryBox label={t("importContacts.resultSummary.inserts", "Inseriti")} value={result.inserted} />
-                <SummaryBox label={t("importContacts.resultSummary.updates", "Aggiornati")} value={result.updated} />
-                <SummaryBox label={t("importContacts.resultSummary.skipped", "Saltati")} value={result.skipped} />
-                <SummaryBox label={t("importContacts.resultSummary.errors", "Errori")} value={result.errors.length} />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.inserts", "Inseriti")}
+                  value={result.inserted}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.updates", "Aggiornati")}
+                  value={result.updated}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.skipped", "Saltati")}
+                  value={result.skipped}
+                />
+                <SummaryBox
+                  label={t("importContacts.resultSummary.errors", "Errori")}
+                  value={result.errors.length}
+                />
               </div>
             ) : (
-              <div className="text-sm text-text2">{t("importContacts.importing", "Import in corso...")}</div>
+              <div className="text-sm text-text2">
+                {t("importContacts.importing", "Import in corso...")}
+              </div>
             )}
             {result?.errors.length ? (
               <div
@@ -2797,13 +3261,19 @@ function ImportContactsCsvDialog({
               >
                 {result.errors.map((error) => (
                   <div key={`${error.rowNumber}-${error.name}`}>
-                    {t("importContacts.resultRow", { defaultValue: "Riga {{rowNumber}} ({{name}}): {{error}}", rowNumber: error.rowNumber, name: error.name || "-", error: error.error })}
+                    {t("importContacts.resultRow", {
+                      defaultValue: "Riga {{rowNumber}} ({{name}}): {{error}}",
+                      rowNumber: error.rowNumber,
+                      name: error.name || "-",
+                      error: error.error,
+                    })}
                   </div>
                 ))}
               </div>
             ) : result ? (
               <div className="flex items-center gap-2 text-sm text-text2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" /> {t("importContacts.importCompleted", "Import completato")}
+                <CheckCircle2 className="h-4 w-4 text-green-600" />{" "}
+                {t("importContacts.importCompleted", "Import completato")}
               </div>
             ) : null}
           </div>
@@ -2859,7 +3329,8 @@ function ImportClientsCsvDialog({
     const existing = await loadClientImportKeys();
     const preview = buildClientImportPreview(sourceRecords, existing, nextMapping);
     setRows(preview);
-    if (!preview.length) toast.error(t("importClients.validation.emptyCsv", "CSV vuoto o senza righe valide"));
+    if (!preview.length)
+      toast.error(t("importClients.validation.emptyCsv", "CSV vuoto o senza righe valide"));
   }
 
   async function handleFile(file: File | null) {
@@ -2903,7 +3374,10 @@ function ImportClientsCsvDialog({
 
   async function confirmImport() {
     if (!canEdit) return toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
-    if (!stats.valid) return toast.error(t("importClients.validation.noValidRows", "Nessuna riga valida da importare"));
+    if (!stats.valid)
+      return toast.error(
+        t("importClients.validation.noValidRows", "Nessuna riga valida da importare"),
+      );
     setBusy(true);
     setStep(3);
     try {
@@ -2969,9 +3443,13 @@ function ImportClientsCsvDialog({
             >
               <FileUp className="h-8 w-8 text-text3" />
               <div>
-                <div className="text-sm font-semibold">{t("importClients.uploadLabel", "Carica file .csv")}</div>
+                <div className="text-sm font-semibold">
+                  {t("importClients.uploadLabel", "Carica file .csv")}
+                </div>
                 <div className="text-xs text-text3">
-                  {busy ? t("importClients.reading", "Lettura in corso...") : fileName || t("importClients.csvHint", "nome, azienda, p.iva, email")}
+                  {busy
+                    ? t("importClients.reading", "Lettura in corso...")
+                    : fileName || t("importClients.csvHint", "nome, azienda, p.iva, email")}
                 </div>
               </div>
               <input
@@ -2983,15 +3461,21 @@ function ImportClientsCsvDialog({
               />
             </label>
             <button className="pc-btn pc-btn-ghost self-start" onClick={downloadTemplate}>
-              <Download className="w-3 h-3" /> {t("importClients.downloadTemplate", "Scarica template CSV")}
+              <Download className="w-3 h-3" />{" "}
+              {t("importClients.downloadTemplate", "Scarica template CSV")}
             </button>
           </div>
         )}
 
         {step === 2 && (
           <div className="flex flex-col gap-3">
-            <div className="rounded-md border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
-              <div className="mb-3 text-sm font-semibold">{t("importClients.mappingTitle", "Mapping colonne")}</div>
+            <div
+              className="rounded-md border p-3"
+              style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+            >
+              <div className="mb-3 text-sm font-semibold">
+                {t("importClients.mappingTitle", "Mapping colonne")}
+              </div>
               <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
                 {CLIENT_IMPORT_FIELDS.map((field) => (
                   <Field key={field} label={clientImportFieldLabel(field)}>
@@ -2999,7 +3483,12 @@ function ImportClientsCsvDialog({
                       className="pc-input h-9 text-xs"
                       value={mapping[field] ?? ""}
                       disabled={busy}
-                      onChange={(event) => setMapping((current) => ({ ...current, [field]: event.target.value || undefined }))}
+                      onChange={(event) =>
+                        setMapping((current) => ({
+                          ...current,
+                          [field]: event.target.value || undefined,
+                        }))
+                      }
                     >
                       <option value="">{t("importClients.mappingNone", "Non importare")}</option>
                       {headers.map((header) => (
@@ -3012,16 +3501,34 @@ function ImportClientsCsvDialog({
                 ))}
               </div>
               <div className="mt-3 flex justify-end">
-                <button className="pc-btn pc-btn-ghost pc-btn-sm" type="button" disabled={busy} onClick={() => void rebuildPreview(mapping)}>
-                  <CheckCircle2 className="h-3 w-3" /> {t("importClients.applyMapping", "Applica mapping")}
+                <button
+                  className="pc-btn pc-btn-ghost pc-btn-sm"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void rebuildPreview(mapping)}
+                >
+                  <CheckCircle2 className="h-3 w-3" />{" "}
+                  {t("importClients.applyMapping", "Applica mapping")}
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2 text-xs">
-              <SummaryBox label={t("importClients.resultSummary.insert", "Insert")} value={stats.inserts} />
-              <SummaryBox label={t("importClients.resultSummary.update", "Update")} value={stats.updates} />
-              <SummaryBox label={t("importClients.resultSummary.errors", "Errori")} value={stats.errors} />
-              <SummaryBox label={t("importClients.resultSummary.rows", "Righe")} value={rows.length} />
+              <SummaryBox
+                label={t("importClients.resultSummary.insert", "Insert")}
+                value={stats.inserts}
+              />
+              <SummaryBox
+                label={t("importClients.resultSummary.update", "Update")}
+                value={stats.updates}
+              />
+              <SummaryBox
+                label={t("importClients.resultSummary.errors", "Errori")}
+                value={stats.errors}
+              />
+              <SummaryBox
+                label={t("importClients.resultSummary.rows", "Righe")}
+                value={rows.length}
+              />
             </div>
             <div
               className="max-h-[360px] overflow-auto rounded-md border"
@@ -3039,16 +3546,11 @@ function ImportClientsCsvDialog({
                         t("importClients.previewHeaders.email", "Email"),
                         t("importClients.previewHeaders.action", "Azione"),
                         t("importClients.previewHeaders.validation", "Validazione"),
-                      ].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="px-3 py-2 text-left font-bold uppercase text-text3"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
+                      ].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left font-bold uppercase text-text3">
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -3086,12 +3588,23 @@ function ImportClientsCsvDialog({
           <div className="flex flex-col gap-4">
             {result ? (
               <div className="grid grid-cols-3 gap-2">
-                <SummaryBox label={t("importClients.resultSummary.inserts", "Inseriti")} value={result.inserted} />
-                <SummaryBox label={t("importClients.resultSummary.updates", "Aggiornati")} value={result.updated} />
-                <SummaryBox label={t("importClients.resultSummary.errors", "Errori")} value={result.errors.length} />
+                <SummaryBox
+                  label={t("importClients.resultSummary.inserts", "Inseriti")}
+                  value={result.inserted}
+                />
+                <SummaryBox
+                  label={t("importClients.resultSummary.updates", "Aggiornati")}
+                  value={result.updated}
+                />
+                <SummaryBox
+                  label={t("importClients.resultSummary.errors", "Errori")}
+                  value={result.errors.length}
+                />
               </div>
             ) : (
-              <div className="text-sm text-text2">{t("importClients.importing", "Import in corso...")}</div>
+              <div className="text-sm text-text2">
+                {t("importClients.importing", "Import in corso...")}
+              </div>
             )}
             {result?.errors.length ? (
               <div
@@ -3100,13 +3613,19 @@ function ImportClientsCsvDialog({
               >
                 {result.errors.map((error) => (
                   <div key={`${error.rowNumber}-${error.name}`}>
-                    {t("importClients.resultRow", { defaultValue: "Riga {{rowNumber}} ({{name}}): {{error}}", rowNumber: error.rowNumber, name: error.name || "-", error: error.error })}
+                    {t("importClients.resultRow", {
+                      defaultValue: "Riga {{rowNumber}} ({{name}}): {{error}}",
+                      rowNumber: error.rowNumber,
+                      name: error.name || "-",
+                      error: error.error,
+                    })}
                   </div>
                 ))}
               </div>
             ) : result ? (
               <div className="flex items-center gap-2 text-sm text-text2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" /> {t("importClients.importCompleted", "Import completato")}
+                <CheckCircle2 className="h-4 w-4 text-green-600" />{" "}
+                {t("importClients.importCompleted", "Import completato")}
               </div>
             ) : null}
           </div>
@@ -3198,18 +3717,34 @@ function buildClientImportPreview(
   const seenKeys = new Set<string>();
 
   return records.map((record) => {
-    const name = getClientImportValue(record.values, mapping, "name", ["nome", "name", "ragione_sociale"]);
+    const name = getClientImportValue(record.values, mapping, "name", [
+      "nome",
+      "name",
+      "ragione_sociale",
+    ]);
     const companyName =
-      getClientImportValue(record.values, mapping, "company_name", ["azienda", "company", "company_name", "ragione_sociale"]) ||
-      name;
-    const vatNumber = getClientImportValue(record.values, mapping, "vat_number", ["p_iva", "piva", "partita_iva", "vat_number"]);
+      getClientImportValue(record.values, mapping, "company_name", [
+        "azienda",
+        "company",
+        "company_name",
+        "ragione_sociale",
+      ]) || name;
+    const vatNumber = getClientImportValue(record.values, mapping, "vat_number", [
+      "p_iva",
+      "piva",
+      "partita_iva",
+      "vat_number",
+    ]);
     const email = getClientImportValue(record.values, mapping, "email", ["email", "mail"]);
     const row: ClientImportRow = {
       rowNumber: record.rowNumber,
       name,
       company_name: companyName,
       vat_number: vatNumber,
-      fiscal_code: getClientImportValue(record.values, mapping, "fiscal_code", ["codice_fiscale", "fiscal_code"]),
+      fiscal_code: getClientImportValue(record.values, mapping, "fiscal_code", [
+        "codice_fiscale",
+        "fiscal_code",
+      ]),
       email,
       phone: getClientImportValue(record.values, mapping, "phone", ["telefono", "phone", "tel"]),
       address: getClientImportValue(record.values, mapping, "address", ["indirizzo", "address"]),
@@ -3219,11 +3754,15 @@ function buildClientImportPreview(
       errors: [],
     };
 
-    if (!row.name.trim()) row.errors.push(i18n.t("clients:importClients.validation.nameRequired", "Nome obbligatorio"));
+    if (!row.name.trim())
+      row.errors.push(i18n.t("clients:importClients.validation.nameRequired", "Nome obbligatorio"));
     const vatKey = normalizeKey(row.vat_number);
     const emailKey = normalizeKey(row.email);
     const dedupeKey = vatKey ? `vat:${vatKey}` : emailKey ? `email:${emailKey}` : "";
-    if (dedupeKey && seenKeys.has(dedupeKey)) row.errors.push(i18n.t("clients:importClients.validation.duplicateInCsv", "Duplicato nel CSV"));
+    if (dedupeKey && seenKeys.has(dedupeKey))
+      row.errors.push(
+        i18n.t("clients:importClients.validation.duplicateInCsv", "Duplicato nel CSV"),
+      );
     if (dedupeKey) seenKeys.add(dedupeKey);
 
     row.existingId =
@@ -3395,10 +3934,20 @@ function buildContactImportPreview(
       errors: [],
     };
 
-    if (!row.full_name.trim()) row.errors.push(i18n.t("clients:importContacts.validation.nameRequired", "Nome obbligatorio"));
-    if (!row.email.trim()) row.errors.push(i18n.t("clients:importContacts.validation.emailRequired", "Email obbligatoria"));
-    else if (!isValidEmail(row.email)) row.errors.push(i18n.t("clients:importContacts.validation.emailInvalid", "Email non valida"));
-    if (emailKey && seenEmails.has(emailKey)) row.errors.push(i18n.t("clients:importContacts.validation.duplicateInCsv", "Duplicato nel CSV"));
+    if (!row.full_name.trim())
+      row.errors.push(
+        i18n.t("clients:importContacts.validation.nameRequired", "Nome obbligatorio"),
+      );
+    if (!row.email.trim())
+      row.errors.push(
+        i18n.t("clients:importContacts.validation.emailRequired", "Email obbligatoria"),
+      );
+    else if (!isValidEmail(row.email))
+      row.errors.push(i18n.t("clients:importContacts.validation.emailInvalid", "Email non valida"));
+    if (emailKey && seenEmails.has(emailKey))
+      row.errors.push(
+        i18n.t("clients:importContacts.validation.duplicateInCsv", "Duplicato nel CSV"),
+      );
     if (emailKey) seenEmails.add(emailKey);
     if (row.errors.length) row.action = "skip";
     return row;
@@ -3442,9 +3991,7 @@ async function importContactsFromPreview(clientId: string, rows: ContactImportRo
         if (error) throw error;
         result.updated += 1;
       } else {
-        const { error } = await supabase
-          .from("client_contacts")
-          .insert(payload);
+        const { error } = await supabase.from("client_contacts").insert(payload);
         if (error) throw error;
         result.inserted += 1;
       }
@@ -3478,7 +4025,10 @@ function normalizeKey(value: string | null | undefined): string {
 }
 
 function normalizeCsvHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s.-]+/g, "_");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s.-]+/g, "_");
 }
 
 function pickCsvValue(values: Record<string, string>, keys: string[]): string {
@@ -3501,7 +4051,10 @@ function isValidEmail(email: string): boolean {
 }
 
 function parseCsv(text: string): CsvRecord[] {
-  const lines = text.split("\n").map((line) => line.trim()).filter((line) => line);
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line);
   if (!lines.length) return [];
 
   const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());

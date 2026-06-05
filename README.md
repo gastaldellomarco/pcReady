@@ -191,13 +191,13 @@ La procedura completa è documentata in [`docs/BACKUP.md`](docs/BACKUP.md).
 
 ### Convenzioni
 
-| Directory | Cosa contiene | Cosa NON deve contenere |
-|---|---|---|
-| `src/lib/` | Business logic, utility, schemi, query | Componenti React, route, script standalone |
-| `src/components/` | Componenti React UI e di dominio | Logica di business, route |
-| `src/routes/` | File route TanStack Router | Componenti non-route, logica di business |
-| `src/hooks/` | React hooks custom | Componenti, utility pure |
-| `scripts/` | Script Node.js standalone (tooling) | Logica importata dall'app |
+| Directory         | Cosa contiene                          | Cosa NON deve contenere                    |
+| ----------------- | -------------------------------------- | ------------------------------------------ |
+| `src/lib/`        | Business logic, utility, schemi, query | Componenti React, route, script standalone |
+| `src/components/` | Componenti React UI e di dominio       | Logica di business, route                  |
+| `src/routes/`     | File route TanStack Router             | Componenti non-route, logica di business   |
+| `src/hooks/`      | React hooks custom                     | Componenti, utility pure                   |
+| `scripts/`        | Script Node.js standalone (tooling)    | Logica importata dall'app                  |
 
 - Gli import interni usano sempre l'alias `@/` che punta a `src/`.
 - L'alias `@root/` punta alla root del progetto (es. `@root/package.json`).

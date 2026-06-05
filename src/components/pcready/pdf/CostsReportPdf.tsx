@@ -1,5 +1,11 @@
 import { Document } from "@react-pdf/renderer";
-import { BrandedPage, PdfSection, PdfTable, type PdfColumn, StatStrip } from "@/components/pcready/pdf/shared";
+import {
+  BrandedPage,
+  PdfSection,
+  PdfTable,
+  type PdfColumn,
+  StatStrip,
+} from "@/components/pcready/pdf/shared";
 import { pdfPalette } from "@/components/pcready/pdf/theme";
 
 type TicketCostRow = {

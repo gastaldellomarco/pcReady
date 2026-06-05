@@ -6,7 +6,13 @@ export const Route = createFileRoute("/_app/kanban")({
   head: () => ({
     meta: [
       { title: i18n.t("kanban:meta.title", "Kanban — PCReady") },
-      { name: "description", content: i18n.t("kanban:meta.description", "Vista Kanban dei ticket per stato di preparazione.") },
+      {
+        name: "description",
+        content: i18n.t(
+          "kanban:meta.description",
+          "Vista Kanban dei ticket per stato di preparazione.",
+        ),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

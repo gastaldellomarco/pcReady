@@ -1,8 +1,5 @@
 import { useTranslation } from "react-i18next";
-import {
-  fromConditionDefs,
-  toConditionDefs,
-} from "@/lib/automations/condition-adapter";
+import { fromConditionDefs, toConditionDefs } from "@/lib/automations/condition-adapter";
 import { AutomationConditionsBuilder } from "../AutomationConditionsBuilder";
 import type { ConditionsGroup } from "@/domain/automation";
 import type { ConditionDef } from "@/types/automation";
@@ -16,11 +13,7 @@ interface FiltersStepProps {
 /**
  *
  */
-export default function FiltersStep({
-  value,
-  onChange,
-  triggerName,
-}: FiltersStepProps) {
+export default function FiltersStep({ value, onChange, triggerName }: FiltersStepProps) {
   const { t } = useTranslation("automations");
 
   // Converte da ConditionDef legacy a ConditionsGroup
@@ -32,13 +25,11 @@ export default function FiltersStep({
 
   return (
     <div>
-      <h3 className="text-lg font-semibold">
-        {t("filtersStep.title", "Sotto quali condizioni?")}
-      </h3>
+      <h3 className="text-lg font-semibold">{t("filtersStep.title", "Sotto quali condizioni?")}</h3>
       <p className="text-sm text-text3">
         {t(
           "filtersStep.description",
-          "Opzionale — filtra solo i casi che corrispondono ai criteri. Esempio: solo ticket con priorità alta."
+          "Opzionale — filtra solo i casi che corrispondono ai criteri. Esempio: solo ticket con priorità alta.",
         )}
       </p>
 

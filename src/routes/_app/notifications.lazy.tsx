@@ -67,7 +67,11 @@ function NotificationsPage() {
       setRows(result.rows);
       setTotal(result.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t("errors.loadFailed", "Impossibile caricare notifiche"));
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : t("errors.loadFailed", "Impossibile caricare notifiche"),
+      );
     } finally {
       setLoading(false);
     }
@@ -92,7 +96,11 @@ function NotificationsPage() {
       if (notification.link) navigate({ to: notification.link });
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("toast.operationFailed", "Operazione non riuscita"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("toast.operationFailed", "Operazione non riuscita"),
+      );
     }
   }
 
@@ -103,7 +111,11 @@ function NotificationsPage() {
       await load();
       toast.success(t("toast.markedRead", "Notifiche segnate come lette"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("toast.operationFailed", "Operazione non riuscita"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("toast.operationFailed", "Operazione non riuscita"),
+      );
     }
   }
 
@@ -114,7 +126,11 @@ function NotificationsPage() {
       await load();
       toast.success(t("toast.deletedRead", "Notifiche lette eliminate"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("toast.deleteFailed", "Eliminazione non riuscita"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("toast.deleteFailed", "Eliminazione non riuscita"),
+      );
     }
   }
 
@@ -122,11 +138,14 @@ function NotificationsPage() {
 
   const typeLabel = (type: NotificationType) => {
     if (type === "ticket_assigned") return t("types.ticket_assigned", "Ticket assegnato");
-    if (type === "ticket_status_changed") return t("types.ticket_status_changed", "Cambio stato ticket");
+    if (type === "ticket_status_changed")
+      return t("types.ticket_status_changed", "Cambio stato ticket");
     if (type === "ticket_comment") return t("types.ticket_comment", "Commento ticket");
     if (type === "automation_failed") return t("types.automation_failed", "Automazione fallita");
-    if (type === "device_status_changed") return t("types.device_status_changed", "Cambio stato dispositivo");
-    if (type === "checklist_completed") return t("types.checklist_completed", "Checklist completata");
+    if (type === "device_status_changed")
+      return t("types.device_status_changed", "Cambio stato dispositivo");
+    if (type === "checklist_completed")
+      return t("types.checklist_completed", "Checklist completata");
     if (type === "user_invited") return t("types.user_invited", "Utente invitato");
     return t("types.mention", "Menzione");
   };
@@ -217,7 +236,10 @@ function NotificationsPage() {
               <PageEmptyState
                 className="border-0 shadow-none bg-transparent"
                 title={t("empty.title", "Nessuna notifica")}
-                description={t("empty.description", "Non ci sono elementi che corrispondono ai filtri selezionati.")}
+                description={t(
+                  "empty.description",
+                  "Non ci sono elementi che corrispondono ai filtri selezionati.",
+                )}
               />
             </div>
           )}

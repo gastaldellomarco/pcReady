@@ -18,7 +18,9 @@ vi.mock("@/components/ui/dialog", () => {
       <div data-testid="dialog-header">{children}</div>
     ),
     DialogTitle: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-      <h2 data-testid="dialog-title" className={className}>{children}</h2>
+      <h2 data-testid="dialog-title" className={className}>
+        {children}
+      </h2>
     ),
   };
 });
@@ -43,8 +45,7 @@ vi.mock("@/components/pcready/pdf/export", () => ({
 // ── Mock react-i18next ──────────────────────────────────────────────────
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) =>
-      typeof fallback === "string" ? fallback : key,
+    t: (key: string, fallback?: string) => (typeof fallback === "string" ? fallback : key),
   }),
 }));
 
@@ -154,9 +155,7 @@ describe("ExportPdf", () => {
     renderExportPdf({ totalFilteredCount: 1200 });
 
     // No warning initially (default mode is "page")
-    expect(
-      screen.queryByText(/L'export supera/),
-    ).toBeNull();
+    expect(screen.queryByText(/L'export supera/)).toBeNull();
 
     // Switch to "all" mode
     const allRadio = screen.getByLabelText(/Tutti i risultati filtrati/i);
@@ -179,9 +178,7 @@ describe("ExportPdf", () => {
     await userEvent.click(allRadio);
 
     // No warning
-    expect(
-      screen.queryByText(/L'export supera/),
-    ).toBeNull();
+    expect(screen.queryByText(/L'export supera/)).toBeNull();
 
     // Normal button label
     expect(screen.getByText("Esporta PDF")).toBeTruthy();
@@ -435,7 +432,10 @@ describe("ExportPdf", () => {
   it("mostra il conteggio corretto con l'etichetta entità", () => {
     renderExportPdf({
       entityLabel: "dispositivo",
-      currentPageRows: [{ id: 1, name: "A" }, { id: 2, name: "B" }],
+      currentPageRows: [
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+      ],
       totalFilteredCount: 15,
     });
 

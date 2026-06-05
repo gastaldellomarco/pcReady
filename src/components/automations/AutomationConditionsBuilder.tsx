@@ -3,11 +3,7 @@ import { useTranslation } from "react-i18next";
 import { createDefaultCondition } from "@/domain/automation";
 import { cn } from "@/lib/utils";
 import { ConditionRow } from "./ConditionRow";
-import type {
-  ConditionsGroup,
-  AutomationCondition,
-  ConditionLogic,
-} from "@/domain/automation";
+import type { ConditionsGroup, AutomationCondition, ConditionLogic } from "@/domain/automation";
 
 interface AutomationConditionsBuilderProps {
   value?: ConditionsGroup;
@@ -45,10 +41,7 @@ export function AutomationConditionsBuilder({
     });
   };
 
-  const handleUpdateCondition = (
-    index: number,
-    updatedCondition: AutomationCondition
-  ) => {
+  const handleUpdateCondition = (index: number, updatedCondition: AutomationCondition) => {
     const newConditions = [...group.conditions];
     newConditions[index] = updatedCondition;
     onChange({
@@ -84,10 +77,15 @@ export function AutomationConditionsBuilder({
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "AND"
                 ? "border-accent bg-accent/10 text-accent"
-                : "border-border hover:border-accent/50"
+                : "border-border hover:border-accent/50",
             )}
             onClick={() => handleLogicChange("AND")}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleLogicChange("AND"); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleLogicChange("AND");
+              }
+            }}
           >
             <input
               type="radio"
@@ -107,10 +105,15 @@ export function AutomationConditionsBuilder({
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "OR"
                 ? "border-accent bg-accent/10 text-accent"
-                : "border-border hover:border-accent/50"
+                : "border-border hover:border-accent/50",
             )}
             onClick={() => handleLogicChange("OR")}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleLogicChange("OR"); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleLogicChange("OR");
+              }
+            }}
           >
             <input
               type="radio"
@@ -147,9 +150,13 @@ export function AutomationConditionsBuilder({
             {t("conditionsBuilder.emptyState.title", "Nessun filtro configurato")}
           </p>
           <p className="mt-1 text-xs text-text3">
-            {t("conditionsBuilder.emptyState.description", "L'automazione si attiverà per ogni {{trigger}}", {
-              trigger: triggerName || t("conditionsBuilder.emptyState.defaultTrigger", "evento"),
-            })}
+            {t(
+              "conditionsBuilder.emptyState.description",
+              "L'automazione si attiverà per ogni {{trigger}}",
+              {
+                trigger: triggerName || t("conditionsBuilder.emptyState.defaultTrigger", "evento"),
+              },
+            )}
           </p>
           <button
             type="button"

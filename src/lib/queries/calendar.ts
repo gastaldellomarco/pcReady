@@ -186,7 +186,11 @@ function recurrenceStep(event: CalendarEvent, date: Date): Date {
   return addDays(date, interval);
 }
 
-function expandRecurringEvents(events: CalendarEvent[], rangeStart: Date, rangeEnd: Date): CalendarEvent[] {
+function expandRecurringEvents(
+  events: CalendarEvent[],
+  rangeStart: Date,
+  rangeEnd: Date,
+): CalendarEvent[] {
   const exceptions = new Set(
     events
       .filter((event) => event.recurrence_series_id && event.recurrence_exception_date)
@@ -202,7 +206,9 @@ function expandRecurringEvents(events: CalendarEvent[], rangeStart: Date, rangeE
 
     const originalStart = parseISO(event.start_at);
     const durationMs = differenceInMilliseconds(parseISO(event.end_at), originalStart);
-    const until = event.recurrence_until ? new Date(`${event.recurrence_until}T23:59:59`) : rangeEnd;
+    const until = event.recurrence_until
+      ? new Date(`${event.recurrence_until}T23:59:59`)
+      : rangeEnd;
     const maxCount = event.recurrence_count ?? 370;
     let cursor = originalStart;
     let count = 0;
@@ -315,11 +321,18 @@ function withEmptyJoins(row: CalendarEvent): CalendarEvent {
 /**
  *
  */
-export async function createCalendarEvent(data: CreateCalendarEventData, createdBy: string): Promise<CalendarEvent> {
+export async function createCalendarEvent(
+  data: CreateCalendarEventData,
+  createdBy: string,
+): Promise<CalendarEvent> {
   const { eventData, ticketIds, reminders } = splitNestedData(data);
   const { data: row, error } = await (supabase as any)
     .from("calendar_events")
-    .insert({ ...eventData, ticket_id: ticketIds[0] ?? eventData.ticket_id ?? null, created_by: createdBy })
+    .insert({
+      ...eventData,
+      ticket_id: ticketIds[0] ?? eventData.ticket_id ?? null,
+      created_by: createdBy,
+    })
     .select(CALENDAR_EVENT_SELECT)
     .single();
 
@@ -333,7 +346,10 @@ export async function createCalendarEvent(data: CreateCalendarEventData, created
 /**
  *
  */
-export async function updateCalendarEvent(id: string, data: UpdateCalendarEventData): Promise<CalendarEvent> {
+export async function updateCalendarEvent(
+  id: string,
+  data: UpdateCalendarEventData,
+): Promise<CalendarEvent> {
   const { eventData, ticketIds, reminders } = splitNestedData(data);
   const updatePayload =
     "ticket_ids" in data || "ticket_id" in data
@@ -373,7 +389,8 @@ export async function updateRecurringOccurrence(
       event_type: data.event_type ?? event.event_type,
       recurrence_parent_id: sourceId,
       recurrence_series_id: sourceId,
-      recurrence_exception_date: event.occurrence_date ?? format(parseISO(event.start_at), "yyyy-MM-dd"),
+      recurrence_exception_date:
+        event.occurrence_date ?? format(parseISO(event.start_at), "yyyy-MM-dd"),
       recurrence_frequency: null,
       recurrence_interval: null,
       recurrence_until: null,
@@ -481,7 +498,10 @@ export async function fetchCalendarTicketOptions(query: string) {
     .select("id, ticket_code, client, client_id, status")
     .not("status", "eq", "archived")
     .order("created_at", { ascending: false });
-  if (term) request = request.or(`ticket_code.ilike.%${term}%,client.ilike.%${term}%,requester.ilike.%${term}%`);
+  if (term)
+    request = request.or(
+      `ticket_code.ilike.%${term}%,client.ilike.%${term}%,requester.ilike.%${term}%`,
+    );
   const { data, error } = await request.range(0, 30);
   if (error) throw error;
   return (data ?? []) as Array<CalendarTicketLink & { status: string }>;

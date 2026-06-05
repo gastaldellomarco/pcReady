@@ -20,6 +20,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -35,10 +36,13 @@
 13. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document describes the UI components library built with shadcn/ui primitives and Radix UI components. It explains the component architecture, variant systems, composition patterns, styling via Tailwind CSS, accessibility, performance, and extension guidelines. The library emphasizes reusable, accessible, and customizable building blocks for forms, overlays, tables, and composite widgets.
 
 ## Project Structure
+
 The UI components live under src/components/ui and are organized by primitive and composite components. Each component follows a consistent pattern:
+
 - Uses Radix UI primitives for accessibility and interoperability
 - Applies Tailwind CSS utility classes for styling
 - Implements class-variance-authority (CVA) for variant-driven styling
@@ -77,6 +81,7 @@ Al --> |"CVA variants"| Al
 ```
 
 **Diagram sources**
+
 - [button.tsx:1-50](file://src/components/ui/button.tsx#L1-L50)
 - [form.tsx:1-172](file://src/components/ui/form.tsx#L1-L172)
 - [dialog.tsx:1-105](file://src/components/ui/dialog.tsx#L1-L105)
@@ -94,6 +99,7 @@ Al --> |"CVA variants"| Al
 - [alert.tsx:1-50](file://src/components/ui/alert.tsx#L1-L50)
 
 **Section sources**
+
 - [button.tsx:1-50](file://src/components/ui/button.tsx#L1-L50)
 - [dialog.tsx:1-105](file://src/components/ui/dialog.tsx#L1-L105)
 - [table.tsx:1-95](file://src/components/ui/table.tsx#L1-L95)
@@ -111,6 +117,7 @@ Al --> |"CVA variants"| Al
 - [carousel.tsx:1-241](file://src/components/ui/carousel.tsx#L1-L241)
 
 ## Core Components
+
 This section outlines the primary building blocks and their variant systems.
 
 - Button
@@ -136,7 +143,7 @@ This section outlines the primary building blocks and their variant systems.
 - Form
   - Purpose: Integration with react-hook-form using slots and contexts.
   - Components: Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage.
-  - Accessibility: Auto-generates ids and aria-* attributes.
+  - Accessibility: Auto-generates ids and aria-\* attributes.
 
 - Dialog
   - Purpose: Overlay with animated content, portal rendering, and close trigger.
@@ -155,6 +162,7 @@ This section outlines the primary building blocks and their variant systems.
   - Purpose: Presentational containers with CVA variants and semantic roles.
 
 **Section sources**
+
 - [button.tsx:34-49](file://src/components/ui/button.tsx#L34-L49)
 - [input.tsx:5-22](file://src/components/ui/input.tsx#L5-L22)
 - [textarea.tsx:5-21](file://src/components/ui/textarea.tsx#L5-L21)
@@ -170,7 +178,9 @@ This section outlines the primary building blocks and their variant systems.
 - [card.tsx:5-55](file://src/components/ui/card.tsx#L5-L55)
 
 ## Architecture Overview
+
 The library follows a layered architecture:
+
 - Primitives: Low-level components built on Radix UI (e.g., Dialog, Select, Checkbox).
 - Composites: Higher-level widgets composed from primitives (e.g., Dialog, Table, Accordion).
 - Styling: Tailwind classes combined with CVA-generated variants.
@@ -208,6 +218,7 @@ Frm --> |"Slots + Context"| Frm
 ```
 
 **Diagram sources**
+
 - [dialog.tsx:3-104](file://src/components/ui/dialog.tsx#L3-L104)
 - [select.tsx:3-152](file://src/components/ui/select.tsx#L3-L152)
 - [checkbox.tsx:2-26](file://src/components/ui/checkbox.tsx#L2-L26)
@@ -217,6 +228,7 @@ Frm --> |"Slots + Context"| Frm
 ## Detailed Component Analysis
 
 ### Button
+
 - Variant system: CVA defines variant and size combinations with defaults.
 - Composition: asChild allows rendering any element while preserving styling.
 - Accessibility: Inherits button semantics; focus-visible ring applied.
@@ -236,14 +248,17 @@ Button --> buttonVariants : "uses"
 ```
 
 **Diagram sources**
+
 - [button.tsx:7-32](file://src/components/ui/button.tsx#L7-L32)
 - [button.tsx:34-49](file://src/components/ui/button.tsx#L34-L49)
 
 **Section sources**
+
 - [button.tsx:7-32](file://src/components/ui/button.tsx#L7-L32)
 - [button.tsx:34-49](file://src/components/ui/button.tsx#L34-L49)
 
 ### Dialog
+
 - Overlay animation and portal rendering ensure proper stacking and focus.
 - Close button includes screen-reader text and focus ring.
 - Header/Footer provide semantic grouping.
@@ -264,12 +279,15 @@ Content->>Portal : Close
 ```
 
 **Diagram sources**
+
 - [dialog.tsx:9-54](file://src/components/ui/dialog.tsx#L9-L54)
 
 **Section sources**
+
 - [dialog.tsx:9-54](file://src/components/ui/dialog.tsx#L9-L54)
 
 ### Table
+
 - Responsive wrapper ensures horizontal scrolling on small screens.
 - Semantic markup for header/body/footer and row/cell alignment.
 
@@ -288,12 +306,15 @@ Cells --> End(["Done"])
 ```
 
 **Diagram sources**
+
 - [table.tsx:5-94](file://src/components/ui/table.tsx#L5-L94)
 
 **Section sources**
+
 - [table.tsx:5-94](file://src/components/ui/table.tsx#L5-L94)
 
 ### Form
+
 - Contexts manage field ids and aria attributes.
 - Slot pattern composes native inputs with labels and messages.
 - Accessibility: aria-invalid, aria-describedby, and generated ids.
@@ -314,12 +335,15 @@ Field-->>Msg : Render message if error
 ```
 
 **Diagram sources**
+
 - [form.tsx:16-171](file://src/components/ui/form.tsx#L16-L171)
 
 **Section sources**
+
 - [form.tsx:16-171](file://src/components/ui/form.tsx#L16-L171)
 
 ### Select
+
 - Trigger displays current value with icon; Content renders portal with viewport.
 - Items support indicators and disabled states.
 - Scroll buttons enable long lists navigation.
@@ -345,12 +369,15 @@ SelectContent --> SelectItem : "contains"
 ```
 
 **Diagram sources**
+
 - [select.tsx:9-152](file://src/components/ui/select.tsx#L9-L152)
 
 **Section sources**
+
 - [select.tsx:9-152](file://src/components/ui/select.tsx#L9-L152)
 
 ### Calendar
+
 - Integrates react-day-picker with Button variants for navigation.
 - Custom DayButton applies CVA variants and keyboard-focused state.
 - RTL-aware chevrons and cell sizing.
@@ -366,12 +393,15 @@ Render --> End["Calendar rendered"]
 ```
 
 **Diagram sources**
+
 - [calendar.tsx:10-177](file://src/components/ui/calendar.tsx#L10-L177)
 
 **Section sources**
+
 - [calendar.tsx:10-177](file://src/components/ui/calendar.tsx#L10-L177)
 
 ### Carousel
+
 - Uses embla-carousel-react for smooth slides.
 - Keyboard navigation: Arrow keys move slides.
 - Provides previous/next buttons wired to scrollPrev/scrollNext.
@@ -394,12 +424,15 @@ Carousel->>Api : scrollPrev()/scrollNext()
 ```
 
 **Diagram sources**
+
 - [carousel.tsx:41-240](file://src/components/ui/carousel.tsx#L41-L240)
 
 **Section sources**
+
 - [carousel.tsx:41-240](file://src/components/ui/carousel.tsx#L41-L240)
 
 ## Dependency Analysis
+
 - Radix UI primitives power accessibility and state management across Dialog, Select, Checkbox, Accordion, and others.
 - class-variance-authority centralizes variant definitions for Button, Badge, Alert, and derived components.
 - react-hook-form integrates with Form components to provide robust form handling and accessibility attributes.
@@ -419,6 +452,7 @@ Car["Carousel"] --> Btn
 ```
 
 **Diagram sources**
+
 - [button.tsx:2-3](file://src/components/ui/button.tsx#L2-L3)
 - [badge.tsx:2-3](file://src/components/ui/badge.tsx#L2-L3)
 - [alert.tsx:2](file://src/components/ui/alert.tsx#L2)
@@ -430,6 +464,7 @@ Car["Carousel"] --> Btn
 - [carousel.tsx:5-6](file://src/components/ui/carousel.tsx#L5-L6)
 
 **Section sources**
+
 - [button.tsx:2-3](file://src/components/ui/button.tsx#L2-L3)
 - [badge.tsx:2-3](file://src/components/ui/badge.tsx#L2-L3)
 - [alert.tsx:2](file://src/components/ui/alert.tsx#L2)
@@ -441,6 +476,7 @@ Car["Carousel"] --> Btn
 - [carousel.tsx:5-6](file://src/components/ui/carousel.tsx#L5-L6)
 
 ## Performance Considerations
+
 - Prefer composition over deep nesting to reduce re-renders.
 - Use asChild where appropriate to avoid unnecessary wrappers.
 - Memoize heavy computations in composite components (e.g., Carousel) to prevent unnecessary recalculations.
@@ -448,6 +484,7 @@ Car["Carousel"] --> Btn
 - Keep variant sets concise to minimize class generation overhead.
 
 ## Accessibility and UX
+
 - Focus management: Dialog and Select ensure focus trapping and return focus after closing.
 - Keyboard navigation: Carousel supports arrow keys; Select supports keyboard interactions.
 - Screen reader support: Dialog includes sr-only close label; Form auto-generates aria attributes; Alert uses role="alert".
@@ -455,6 +492,7 @@ Car["Carousel"] --> Btn
 - Semantic markup: Table, Card, and Alert use appropriate HTML semantics.
 
 **Section sources**
+
 - [dialog.tsx:47-50](file://src/components/ui/dialog.tsx#L47-L50)
 - [form.tsx:103-117](file://src/components/ui/form.tsx#L103-L117)
 - [alert.tsx:26](file://src/components/ui/alert.tsx#L26)
@@ -462,17 +500,20 @@ Car["Carousel"] --> Btn
 - [select.tsx:15-32](file://src/components/ui/select.tsx#L15-L32)
 
 ## Tailwind CSS and Styling Patterns
+
 - Utility-first classes compose via cn for predictable overrides.
 - CVA generates variant classes; defaults ensure consistent baseline styling.
 - Composite components (Calendar, Carousel) reuse Button’s variant classes to maintain visual consistency.
 - Responsive and motion utilities are applied thoughtfully to balance aesthetics and performance.
 
 **Section sources**
+
 - [button.tsx:8](file://src/components/ui/button.tsx#L8)
 - [calendar.tsx:46-55](file://src/components/ui/calendar.tsx#L46-L55)
 - [carousel.tsx:177-230](file://src/components/ui/carousel.tsx#L177-L230)
 
 ## Extending Components and Variants
+
 - Adding a new variant:
   - Define variant tokens and styles in the component’s CVA definition.
   - Export the variant type and update defaultVariants if needed.
@@ -485,6 +526,7 @@ Car["Carousel"] --> Btn
   - Example reference: [dialog.tsx:9-54](file://src/components/ui/dialog.tsx#L9-L54), [select.tsx:9-152](file://src/components/ui/select.tsx#L9-L152).
 
 **Section sources**
+
 - [button.tsx:7-32](file://src/components/ui/button.tsx#L7-L32)
 - [badge.tsx:6-23](file://src/components/ui/badge.tsx#L6-L23)
 - [alert.tsx:6-20](file://src/components/ui/alert.tsx#L6-L20)
@@ -493,6 +535,7 @@ Car["Carousel"] --> Btn
 - [select.tsx:9-152](file://src/components/ui/select.tsx#L9-L152)
 
 ## Testing and Documentation Guidelines
+
 - Unit tests: Verify variant classes, disabled states, and slot composition.
 - Integration tests: Validate accessibility attributes and keyboard interactions (e.g., Dialog, Select).
 - Snapshot tests: Capture visual regressions for composite components (Calendar, Carousel).
@@ -502,6 +545,7 @@ Car["Carousel"] --> Btn
   - Include accessibility notes and keyboard shortcuts.
 
 ## Troubleshooting Guide
+
 - Dialog not closing or focus not trapped:
   - Ensure Portal and Overlay are present and Close is reachable.
   - Reference: [dialog.tsx:9-54](file://src/components/ui/dialog.tsx#L9-L54).
@@ -519,6 +563,7 @@ Car["Carousel"] --> Btn
   - Reference: [carousel.tsx:52-105](file://src/components/ui/carousel.tsx#L52-L105).
 
 **Section sources**
+
 - [dialog.tsx:9-54](file://src/components/ui/dialog.tsx#L9-L54)
 - [select.tsx:9-152](file://src/components/ui/select.tsx#L9-L152)
 - [form.tsx:16-171](file://src/components/ui/form.tsx#L16-L171)
@@ -526,4 +571,5 @@ Car["Carousel"] --> Btn
 - [carousel.tsx:52-105](file://src/components/ui/carousel.tsx#L52-L105)
 
 ## Conclusion
+
 The UI components library combines Radix UI primitives with Tailwind CSS and CVA to deliver accessible, extensible, and visually consistent components. By following the documented patterns—variants, slots, composition, and accessibility—the library supports rapid development and maintainability across diverse applications.

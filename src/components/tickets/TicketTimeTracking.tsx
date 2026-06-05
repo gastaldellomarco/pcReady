@@ -50,7 +50,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
     : 0;
 
   async function start() {
-    if (!user || !canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (!user || !canEdit)
+      return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     try {
       await startMut.mutateAsync(user.id);
       toast.success(t("timeTracking.startSuccess", "Timer avviato"));
@@ -72,7 +73,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
 
   async function addManual(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || !canEdit) return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
+    if (!user || !canEdit)
+      return toast.error(t("toasts.insufficientPermissions", "Permessi insufficienti"));
     const started = new Date(manualStart).getTime();
     const ended = new Date(manualEnd).getTime();
     if (!Number.isFinite(started) || !Number.isFinite(ended) || ended <= started) {
@@ -111,14 +113,17 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
             <Clock className="size-4 text-text3" /> {t("timeTracking.title", "Tempo lavorato")}
           </h3>
           <p className="text-[11px] text-text3">
-            {t("timeTracking.total", "Totale registrato: {{duration}}", { duration: formatDuration(summary?.totalMinutes ?? 0) })}
+            {t("timeTracking.total", "Totale registrato: {{duration}}", {
+              duration: formatDuration(summary?.totalMinutes ?? 0),
+            })}
           </p>
         </div>
         {canEdit && (
           <div className="flex flex-wrap gap-2">
             {activeEntry ? (
               <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => stop(activeEntry)}>
-                <Square className="size-3" /> {t("timeTracking.stop", "Stop")} {formatDuration(activeMinutes)}
+                <Square className="size-3" /> {t("timeTracking.stop", "Stop")}{" "}
+                {formatDuration(activeMinutes)}
               </button>
             ) : (
               <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={start}>
@@ -129,7 +134,7 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
               className="pc-btn pc-btn-ghost pc-btn-sm"
               onClick={() => setManualOpen((v) => !v)}
             >
-                <Plus className="size-3" /> {t("timeTracking.manual", "Manuale")}
+              <Plus className="size-3" /> {t("timeTracking.manual", "Manuale")}
             </button>
           </div>
         )}
@@ -141,13 +146,18 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
           style={{ borderColor: "var(--accent)", background: "rgba(27,79,216,.06)" }}
         >
           <div className="mb-2 text-[12px] font-semibold">
-            {t("timeTracking.timerActive", "Timer attivo da {{date}}", { date: fmtDateTime(activeEntry.started_at) })}
+            {t("timeTracking.timerActive", "Timer attivo da {{date}}", {
+              date: fmtDateTime(activeEntry.started_at),
+            })}
           </div>
           <input
             className="pc-input w-full"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder={t("timeTracking.descriptionPlaceholder", "Descrizione lavoro (opzionale, salvata allo stop)")}
+            placeholder={t(
+              "timeTracking.descriptionPlaceholder",
+              "Descrizione lavoro (opzionale, salvata allo stop)",
+            )}
             aria-label={t("timeTracking.descriptionLabel", "Descrizione lavoro")}
           />
         </div>
@@ -192,9 +202,15 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
         </form>
       )}
 
-      {summaryQuery.isLoading && <div className="text-[12px] text-text3">{t("timeTracking.loadingText", "Caricamento tempi...")}</div>}
+      {summaryQuery.isLoading && (
+        <div className="text-[12px] text-text3">
+          {t("timeTracking.loadingText", "Caricamento tempi...")}
+        </div>
+      )}
       {!summaryQuery.isLoading && entries.length === 0 && (
-        <div className="text-[12px] text-text3">{t("timeTracking.emptyText", "Nessun tempo registrato")}</div>
+        <div className="text-[12px] text-text3">
+          {t("timeTracking.emptyText", "Nessun tempo registrato")}
+        </div>
       )}
       <div className="space-y-2">
         {entries.map((entry) => (
@@ -215,7 +231,9 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
               </div>
               <div className="text-[11px] text-text3">
                 {fmtDateTime(entry.started_at)} {"->"}{" "}
-                {entry.ended_at ? fmtDateTime(entry.ended_at) : t("timeTracking.inProgress", "in corso")}
+                {entry.ended_at
+                  ? fmtDateTime(entry.ended_at)
+                  : t("timeTracking.inProgress", "in corso")}
               </div>
               {entry.description && (
                 <div className="mt-1 text-[12px] text-text2">{entry.description}</div>

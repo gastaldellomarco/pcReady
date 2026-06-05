@@ -16,8 +16,7 @@ vi.mock("@/lib/oauth-consent", () => ({
 // ── Mock useServerFn (TanStack Start) ───────────────────────────────────
 vi.mock("@tanstack/react-start", () => ({
   useServerFn: vi.fn((fn: unknown) => {
-    if (fn === serverFnMocks.getOAuthClientLifecycle)
-      return serverFnMocks.getOAuthClientLifecycle;
+    if (fn === serverFnMocks.getOAuthClientLifecycle) return serverFnMocks.getOAuthClientLifecycle;
     return vi.fn();
   }),
 }));
@@ -54,9 +53,7 @@ describe("useAdminOAuthLifecycle", () => {
 
   describe("default state", () => {
     it("starts with all state at default values", () => {
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: undefined }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: undefined }));
 
       expect(result.current.lifecycleOpenFor).toBeNull();
       expect(result.current.lifecycleData).toBeNull();
@@ -66,16 +63,31 @@ describe("useAdminOAuthLifecycle", () => {
 
   describe("openLifecycle", () => {
     const payload = createLifecyclePayload({
-      consents: [{ userId: "u1", userName: null, scopesGranted: ["pcready:read"], grantedAt: "2026-01-01", revokedAt: null, expiresAt: null }],
-      adminEvents: [{ id: "ev1", message: "Created", actionType: "create", createdAt: "2026-01-01", actorId: null }],
+      consents: [
+        {
+          userId: "u1",
+          userName: null,
+          scopesGranted: ["pcready:read"],
+          grantedAt: "2026-01-01",
+          revokedAt: null,
+          expiresAt: null,
+        },
+      ],
+      adminEvents: [
+        {
+          id: "ev1",
+          message: "Created",
+          actionType: "create",
+          createdAt: "2026-01-01",
+          actorId: null,
+        },
+      ],
     });
 
     it("fetches lifecycle data for a given client and sets state", async () => {
       serverFnMocks.getOAuthClientLifecycle.mockResolvedValue(payload);
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       await act(async () => {
         await result.current.openLifecycle("client-abc");
@@ -90,9 +102,7 @@ describe("useAdminOAuthLifecycle", () => {
     });
 
     it("does nothing when accessToken is undefined", async () => {
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: undefined }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: undefined }));
 
       await act(async () => {
         await result.current.openLifecycle("client-abc");
@@ -103,16 +113,22 @@ describe("useAdminOAuthLifecycle", () => {
     });
 
     it("clears previous lifecycleData before fetching new data", async () => {
-      const firstPayload = createLifecyclePayload({ adminEvents: [{ id: "old", message: "Old", actionType: null, createdAt: "2026-01-01", actorId: null }] });
-      const secondPayload = createLifecyclePayload({ adminEvents: [{ id: "new", message: "New", actionType: null, createdAt: "2026-01-01", actorId: null }] });
+      const firstPayload = createLifecyclePayload({
+        adminEvents: [
+          { id: "old", message: "Old", actionType: null, createdAt: "2026-01-01", actorId: null },
+        ],
+      });
+      const secondPayload = createLifecyclePayload({
+        adminEvents: [
+          { id: "new", message: "New", actionType: null, createdAt: "2026-01-01", actorId: null },
+        ],
+      });
 
       serverFnMocks.getOAuthClientLifecycle
         .mockResolvedValueOnce(firstPayload)
         .mockResolvedValueOnce(secondPayload);
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       // First call
       await act(async () => {
@@ -132,9 +148,7 @@ describe("useAdminOAuthLifecycle", () => {
         () => new Promise((resolve) => setTimeout(() => resolve(payload), 100)),
       );
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       act(() => {
         result.current.openLifecycle("client-abc");
@@ -150,13 +164,9 @@ describe("useAdminOAuthLifecycle", () => {
     });
 
     it("shows toast error and resets lifecycleOpenFor on failure", async () => {
-      serverFnMocks.getOAuthClientLifecycle.mockRejectedValue(
-        new Error("Network error"),
-      );
+      serverFnMocks.getOAuthClientLifecycle.mockRejectedValue(new Error("Network error"));
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       await act(async () => {
         await result.current.openLifecycle("client-abc");
@@ -170,29 +180,21 @@ describe("useAdminOAuthLifecycle", () => {
     it("handles non-Error rejection with fallback message", async () => {
       serverFnMocks.getOAuthClientLifecycle.mockRejectedValue(null);
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       await act(async () => {
         await result.current.openLifecycle("client-abc");
       });
 
-      expect(toastMock.error).toHaveBeenCalledWith(
-        "Impossibile caricare lo storico",
-      );
+      expect(toastMock.error).toHaveBeenCalledWith("Impossibile caricare lo storico");
     });
   });
 
   describe("closeLifecycle", () => {
     it("resets lifecycleOpenFor and lifecycleData to null", async () => {
-      serverFnMocks.getOAuthClientLifecycle.mockResolvedValue(
-        createLifecyclePayload(),
-      );
+      serverFnMocks.getOAuthClientLifecycle.mockResolvedValue(createLifecyclePayload());
 
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: "token-123" }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: "token-123" }));
 
       await act(async () => {
         await result.current.openLifecycle("client-abc");
@@ -209,9 +211,7 @@ describe("useAdminOAuthLifecycle", () => {
     });
 
     it("does not throw when nothing is open", () => {
-      const { result } = renderHook(() =>
-        useAdminOAuthLifecycle({ accessToken: undefined }),
-      );
+      const { result } = renderHook(() => useAdminOAuthLifecycle({ accessToken: undefined }));
 
       act(() => {
         result.current.closeLifecycle();

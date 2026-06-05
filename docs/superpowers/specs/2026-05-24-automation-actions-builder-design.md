@@ -3,14 +3,17 @@
 ## 1. Panoramica
 
 ### Obiettivo
+
 Introdurre una UI a blocchi per le azioni delle automazioni e un selettore di variabili contestuali per compilare i campi dinamici. Sostituisce `ActionsStep.tsx` esistente.
 
 ### Scope
+
 - Solo frontend: builder per `actions_definition`
 - Nuovi tipi azione: aggiungi commento, crea ticket
 - Variabili filtrate per trigger selezionato
 
 ### Acceptance Criteria
+
 - [ ] Step "Azioni" mostra elenco di blocchi azione
 - [ ] Pulsante "Aggiungi azione" apre menu con 7 tipi: invia email, aggiorna ticket, aggiungi commento, crea ticket, crea notifica, assegna ticket, aggiorna dispositivo
 - [ ] Ogni blocco mostra campi specifici (es. per email: A, Oggetto, Corpo)
@@ -59,7 +62,7 @@ export interface SendEmailAction extends AutomationActionBase {
 export interface UpdateTicketAction extends AutomationActionBase {
   type: "update_ticket";
   config: {
-    ticket_id?: string;  // optional - uses trigger context
+    ticket_id?: string; // optional - uses trigger context
     status?: "pending" | "in-progress" | "testing" | "ready";
     priority?: "low" | "medium" | "high" | "urgent";
     assignee_id?: string;
@@ -72,7 +75,7 @@ export interface AddCommentAction extends AutomationActionBase {
   config: {
     ticket_id?: string;
     content: string;
-    is_internal: boolean;  // true = internal note, false = customer visible
+    is_internal: boolean; // true = internal note, false = customer visible
   };
 }
 
@@ -141,9 +144,9 @@ export interface ActionsList {
 
 ```typescript
 export interface AutomationVariable {
-  name: string;           // {{ticket.id}}
-  label: string;          // "ID Ticket"
-  description?: string;   // "Identificativo univoco del ticket"
+  name: string; // {{ticket.id}}
+  label: string; // "ID Ticket"
+  description?: string; // "Identificativo univoco del ticket"
   type: "string" | "number" | "date" | "email";
 }
 
@@ -438,11 +441,12 @@ export function toActionDefs(actions: AutomationAction[]): ActionDef[] {
 interface AutomationActionsBuilderProps {
   value: AutomationAction[];
   onChange: (actions: AutomationAction[]) => void;
-  triggerType?: string;  // For filtering available variables
+  triggerType?: string; // For filtering available variables
 }
 ```
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Cosa deve succedere?                                   │
@@ -474,6 +478,7 @@ interface AutomationActionsBuilderProps {
 ### 3.2 Blocchi Azione Specifici
 
 **File:** `src/components/automations/blocks/SendEmailBlock.tsx`
+
 ```typescript
 interface SendEmailBlockProps {
   action: SendEmailAction;
@@ -485,6 +490,7 @@ interface SendEmailBlockProps {
 ```
 
 **File:** `src/components/automations/blocks/UpdateTicketBlock.tsx`
+
 ```typescript
 interface UpdateTicketBlockProps {
   action: UpdateTicketAction;
@@ -495,6 +501,7 @@ interface UpdateTicketBlockProps {
 ```
 
 **Altri blocchi:**
+
 - `AddCommentBlock.tsx`
 - `CreateTicketBlock.tsx`
 - `CreateNotificationBlock.tsx`
@@ -509,11 +516,12 @@ interface UpdateTicketBlockProps {
 interface VariablePickerProps {
   variables: AutomationVariable[];
   onSelect: (variable: string) => void;
-  children: React.ReactNode;  // Trigger button
+  children: React.ReactNode; // Trigger button
 }
 ```
 
 **UI:**
+
 - Dropdown/popover con search
 - Raggruppate per entità (Ticket, Device, Customer, Assignee)
 - Preview: `{{ticket.requester_email}}`
@@ -535,6 +543,7 @@ interface VariableTextFieldProps {
 ```
 
 **UI:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Oggetto:                                               │
@@ -547,6 +556,7 @@ interface VariableTextFieldProps {
 ### 3.5 Menu Aggiungi Azione
 
 **Dropdown con icone:**
+
 - 📧 Invia email
 - 🎫 Aggiorna ticket
 - 💬 Aggiungi commento
@@ -747,31 +757,31 @@ function moveActionDown(index: number) {
 
 ### 7.1 Nuovi File
 
-| File | Scopo |
-|------|-------|
-| `src/domain/automation.ts` | Estendere con tipi `AutomationAction` |
-| `src/domain/automation-variables.ts` | Definizione variabili per trigger |
-| `src/lib/automations/action-adapter.ts` | Adattatori da/verso `ActionDef` |
-| `src/components/automations/AutomationActionsBuilder.tsx` | Componente builder principale |
-| `src/components/automations/VariablePicker.tsx` | Selettore variabili |
-| `src/components/automations/VariableTextField.tsx` | Campo testo con picker |
-| `src/components/automations/blocks/SendEmailBlock.tsx` | Blocco invia email |
-| `src/components/automations/blocks/UpdateTicketBlock.tsx` | Blocco aggiorna ticket |
-| `src/components/automations/blocks/AddCommentBlock.tsx` | Blocco aggiungi commento |
-| `src/components/automations/blocks/CreateTicketBlock.tsx` | Blocco crea ticket |
-| `src/components/automations/blocks/CreateNotificationBlock.tsx` | Blocco crea notifica |
-| `src/components/automations/blocks/AssignTicketBlock.tsx` | Blocco assegna ticket |
-| `src/components/automations/blocks/UpdateDeviceBlock.tsx` | Blocco aggiorna dispositivo |
-| `src/components/automations/ActionTypeSelector.tsx` | Menu selezione tipo azione |
+| File                                                            | Scopo                                 |
+| --------------------------------------------------------------- | ------------------------------------- |
+| `src/domain/automation.ts`                                      | Estendere con tipi `AutomationAction` |
+| `src/domain/automation-variables.ts`                            | Definizione variabili per trigger     |
+| `src/lib/automations/action-adapter.ts`                         | Adattatori da/verso `ActionDef`       |
+| `src/components/automations/AutomationActionsBuilder.tsx`       | Componente builder principale         |
+| `src/components/automations/VariablePicker.tsx`                 | Selettore variabili                   |
+| `src/components/automations/VariableTextField.tsx`              | Campo testo con picker                |
+| `src/components/automations/blocks/SendEmailBlock.tsx`          | Blocco invia email                    |
+| `src/components/automations/blocks/UpdateTicketBlock.tsx`       | Blocco aggiorna ticket                |
+| `src/components/automations/blocks/AddCommentBlock.tsx`         | Blocco aggiungi commento              |
+| `src/components/automations/blocks/CreateTicketBlock.tsx`       | Blocco crea ticket                    |
+| `src/components/automations/blocks/CreateNotificationBlock.tsx` | Blocco crea notifica                  |
+| `src/components/automations/blocks/AssignTicketBlock.tsx`       | Blocco assegna ticket                 |
+| `src/components/automations/blocks/UpdateDeviceBlock.tsx`       | Blocco aggiorna dispositivo           |
+| `src/components/automations/ActionTypeSelector.tsx`             | Menu selezione tipo azione            |
 
 ### 7.2 File da Modificare
 
-| File | Modifiche |
-|------|-----------|
-| `src/components/automations/steps/ActionsStep.tsx` | Sostituire con nuova implementazione |
-| `src/components/automations/AutomationWizard.tsx` | Passare `trigger?.type` a `ActionsStep` |
-| `src/i18n/locales/it/automations.json` | Aggiungere chiavi `actionsBuilder.*` |
-| `src/types/automation.ts` | Nessuna modifica (backward compat) |
+| File                                               | Modifiche                               |
+| -------------------------------------------------- | --------------------------------------- |
+| `src/components/automations/steps/ActionsStep.tsx` | Sostituire con nuova implementazione    |
+| `src/components/automations/AutomationWizard.tsx`  | Passare `trigger?.type` a `ActionsStep` |
+| `src/i18n/locales/it/automations.json`             | Aggiungere chiavi `actionsBuilder.*`    |
+| `src/types/automation.ts`                          | Nessuna modifica (backward compat)      |
 
 ---
 
@@ -806,5 +816,5 @@ function moveActionDown(index: number) {
 
 ---
 
-*Design creato: 2026-05-24*  
-*Stato: In attesa approvazione*
+_Design creato: 2026-05-24_  
+_Stato: In attesa approvazione_

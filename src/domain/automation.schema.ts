@@ -150,15 +150,16 @@ const UpdateTicketActionSchema = z.object({
   id: z.string(),
   type: z.literal("update_ticket"),
   order: z.number(),
-  config: z.object({
-    ticket_id: z.string().optional(),
-    status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
-    priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-    assignee_id: z.string().optional(),
-  }).refine(
-    (data) => data.status || data.priority || data.assignee_id,
-    { message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)" }
-  ),
+  config: z
+    .object({
+      ticket_id: z.string().optional(),
+      status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
+      priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+      assignee_id: z.string().optional(),
+    })
+    .refine((data) => data.status || data.priority || data.assignee_id, {
+      message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)",
+    }),
 });
 
 /**
@@ -245,14 +246,15 @@ const UpdateDeviceActionSchema = z.object({
   id: z.string(),
   type: z.literal("update_device"),
   order: z.number(),
-  config: z.object({
-    device_id: z.string().optional(),
-    status: z.enum(["available", "assigned", "maintenance", "retired"]).optional(),
-    location_id: z.string().optional(),
-  }).refine(
-    (data) => data.status || data.location_id,
-    { message: "Almeno un campo da aggiornare (stato o sede)" }
-  ),
+  config: z
+    .object({
+      device_id: z.string().optional(),
+      status: z.enum(["available", "assigned", "maintenance", "retired"]).optional(),
+      location_id: z.string().optional(),
+    })
+    .refine((data) => data.status || data.location_id, {
+      message: "Almeno un campo da aggiornare (stato o sede)",
+    }),
 });
 
 /**
@@ -522,8 +524,11 @@ export function validateCondition(condition: unknown): ValidationResult {
  * @see {@link ValidationResult} for where validation errors originate
  */
 export function formatValidationErrors(errors: ValidationError[]): Record<string, string> {
-  return errors.reduce((acc, error) => {
-    acc[error.path] = error.message;
-    return acc;
-  }, {} as Record<string, string>);
+  return errors.reduce(
+    (acc, error) => {
+      acc[error.path] = error.message;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
 }

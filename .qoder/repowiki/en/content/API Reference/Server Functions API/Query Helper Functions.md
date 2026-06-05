@@ -13,6 +13,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -25,7 +26,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the database query helper functions and utility server functions used across the application. It focuses on:
+
 - Typed Supabase client abstractions and environment-driven initialization
 - Repository-style query helpers for common operations (select, insert, upsert, update, delete)
 - Schema validation patterns using Zod and data transformation utilities
@@ -35,7 +38,9 @@ This document describes the database query helper functions and utility server f
 - Integration with Zod schemas, type safety patterns, and performance optimization techniques
 
 ## Project Structure
+
 The query and database-related code is organized around:
+
 - Supabase client abstractions for server-side admin operations
 - Strongly typed database schema definitions
 - Zod-based validation and transformation utilities
@@ -64,6 +69,7 @@ G --> A
 ```
 
 **Diagram sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
@@ -73,6 +79,7 @@ G --> A
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
@@ -82,6 +89,7 @@ G --> A
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 ## Core Components
+
 - Supabase Admin Client
   - Provides a lazily initialized, proxied Supabase client configured with service role credentials for server-side admin operations.
   - Enforces environment variable presence and logs meaningful errors when missing.
@@ -103,6 +111,7 @@ G --> A
   - Route tests validate select/maybeSingle patterns and null-return semantics.
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
@@ -115,7 +124,9 @@ G --> A
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 ## Architecture Overview
+
 The system separates concerns between:
+
 - Typed schema access via generated types
 - Client initialization and lifecycle management
 - Query helpers and repository-style functions (as validated by tests)
@@ -132,12 +143,14 @@ Types --> DB
 ```
 
 **Diagram sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 
 ## Detailed Component Analysis
 
 ### Supabase Admin Client
+
 - Purpose: Provide a singleton-like, lazily created Supabase client configured with service role credentials for server-side admin operations.
 - Initialization:
   - Reads environment variables for Supabase URL and service role key.
@@ -167,12 +180,15 @@ end
 ```
 
 **Diagram sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 
 ### Typed Database Types and Helpers
+
 - Database Type Definition:
   - Comprehensive schema definition including tables, views, enums, and relationships.
   - Generic helpers to extract typed rows and enums from the schema.
@@ -202,17 +218,20 @@ Database --> CompositeTypes : "contains"
 ```
 
 **Diagram sources**
+
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
 - [types.ts:1330-1362](file://src/integrations/supabase/types.ts#L1330-L1362)
 
 **Section sources**
+
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)
 - [types.ts:1330-1362](file://src/integrations/supabase/types.ts#L1330-L1362)
 - [database.types.ts:1-1](file://src/types/database.types.ts#L1-L1)
 
 ### Validation and Transformation Utilities
+
 - Zod-based utilities:
   - Trimmed string transform
   - Optional trimmed string with empty-to-null conversion
@@ -232,13 +251,16 @@ NaNCheck --> |No| ReturnInt["Return parsed int"]
 ```
 
 **Diagram sources**
+
 - [utils.ts:12-19](file://src/lib/schemas/utils.ts#L12-L19)
 
 **Section sources**
+
 - [utils.ts:1-19](file://src/lib/schemas/utils.ts#L1-L19)
 - [index.ts:1-8](file://lib/schemas/index.ts#L1-L8)
 
 ### Query Helpers and Repository Patterns (Test-Driven)
+
 - Repository-style helpers are validated by tests to perform:
   - Insert operations into specific tables (e.g., devices, ticket_status_history, activity_log, ticket_notes)
   - Select/maybeSingle retrieval with null handling
@@ -270,21 +292,26 @@ end
 ```
 
 **Diagram sources**
+
 - [queries.mutations.test.ts:1-63](file://src/__tests__/queries.mutations.test.ts#L1-L63)
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 **Section sources**
+
 - [queries.mutations.test.ts:1-63](file://src/__tests__/queries.mutations.test.ts#L1-L63)
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 ### Shared Utilities
+
 - Tailwind-based class merging utility for UI components.
 - Minimal footprint and focused on composition of Tailwind classes.
 
 **Section sources**
+
 - [utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 
 ## Dependency Analysis
+
 - Supabase Admin Client depends on:
   - Environment variables for credentials
   - Supabase client library
@@ -308,6 +335,7 @@ Tests --> Helpers
 ```
 
 **Diagram sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [utils.ts:1-19](file://src/lib/schemas/utils.ts#L1-L19)
@@ -315,6 +343,7 @@ Tests --> Helpers
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 **Section sources**
+
 - [client.server.ts:1-42](file://src/integrations/supabase/client.server.ts#L1-L42)
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [utils.ts:1-19](file://src/lib/schemas/utils.ts#L1-L19)
@@ -322,12 +351,14 @@ Tests --> Helpers
 - [tickets.test.ts:1-35](file://src/__tests__/routes/tickets.test.ts#L1-L35)
 
 ## Performance Considerations
+
 - Lazy initialization of the Supabase client reduces startup overhead until the client is actually used.
 - Using typed helpers avoids runtime type mismatches and reduces accidental N+1 scenarios by encouraging batched operations.
 - Prefer maybeSingle for optional lookups to minimize unnecessary selects.
 - Keep payloads minimal when inserting/updating to reduce network and serialization costs.
 
 ## Troubleshooting Guide
+
 - Missing environment variables:
   - Symptom: Error thrown during client initialization.
   - Resolution: Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in the environment.
@@ -339,15 +370,18 @@ Tests --> Helpers
   - Resolution: Align payloads with generated Insert/Update types; confirm enum values match schema.
 
 **Section sources**
+
 - [client.server.ts:10-20](file://src/integrations/supabase/client.server.ts#L10-L20)
 - [tickets.test.ts:20-34](file://src/__tests__/routes/tickets.test.ts#L20-L34)
 
 ## Conclusion
+
 The repository integrates a typed Supabase client, strong schema typing, and Zod-based validation utilities to deliver safe, maintainable database operations. Test coverage demonstrates repository-style helpers for inserts and selects, while the typed schema ensures compile-time correctness. Following the patterns outlined here enables consistent query building, robust error handling, and scalable performance.
 
 ## Appendices
 
 ### Common Query Operations (Pattern References)
+
 - Insert into a table:
   - See mutation tests for insert patterns and table-specific helpers.
   - Reference: [queries.mutations.test.ts:30-38](file://src/__tests__/queries.mutations.test.ts#L30-L38)
@@ -356,12 +390,14 @@ The repository integrates a typed Supabase client, strong schema typing, and Zod
   - Reference: [tickets.test.ts:20-34](file://src/__tests__/routes/tickets.test.ts#L20-L34)
 
 ### Data Formatting and Validation Utilities
+
 - Trimming and optional conversions:
   - Reference: [utils.ts:3-10](file://src/lib/schemas/utils.ts#L3-L10)
 - Safe integer parsing:
   - Reference: [utils.ts:12-19](file://src/lib/schemas/utils.ts#L12-L19)
 
 ### Type Safety and Schema Integration
+
 - Typed tables and enums:
   - Reference: [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
   - Reference: [types.ts:1249-1278](file://src/integrations/supabase/types.ts#L1249-L1278)

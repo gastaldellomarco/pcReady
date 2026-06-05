@@ -194,7 +194,7 @@ export function getFieldDef(fieldValue: string): ConditionFieldDef | undefined {
  * @see OPERATORS_BY_FIELD_TYPE for the full mapping
  */
 export function getOperatorsForField(
-  fieldValue: string
+  fieldValue: string,
 ): { value: ConditionOperator; label: string }[] {
   const field = getFieldDef(fieldValue);
   if (!field) return [];
@@ -1124,7 +1124,12 @@ export function deserializeActions(defs: Record<string, unknown>[]): AutomationA
           type: "update_device",
           config: {
             device_id: config.device_id as string | undefined,
-            status: config.status as "available" | "assigned" | "maintenance" | "retired" | undefined,
+            status: config.status as
+              | "available"
+              | "assigned"
+              | "maintenance"
+              | "retired"
+              | undefined,
           },
         };
       default:
@@ -1184,7 +1189,9 @@ export function deserializeFlow(data: Record<string, unknown>): AutomationFlow {
     description: data.description as string | undefined,
     category: data.category as string | undefined,
     trigger: deserializeTrigger(data.trigger_definition as Record<string, unknown>),
-    conditions: deserializeConditions((data.conditions_definition as Record<string, unknown>[]) || []),
+    conditions: deserializeConditions(
+      (data.conditions_definition as Record<string, unknown>[]) || [],
+    ),
     actions: deserializeActions((data.actions_definition as Record<string, unknown>[]) || []),
     is_active: (data.is_active as boolean) ?? true,
     created_at: data.created_at as string | undefined,

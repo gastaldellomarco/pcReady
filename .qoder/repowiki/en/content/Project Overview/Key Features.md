@@ -20,6 +20,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -31,10 +32,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document presents the key features of PCReady as implemented in the application. It covers the operational dashboard, server-side filtered and paginated ticket listing, Kanban board for ticket states, configurable checklist templates, dedicated device inventory workflow, formatted PDF exports, PC preparation scripts derived from ticket data, user and role management via the Admin section, activity logging for user actions and automations, and Admin backup & disaster recovery with ZIP-like CSV exports. The content balances stakeholder-friendly explanations with developer-oriented implementation details and references.
 
 ## Project Structure
+
 PCReady is a React + TypeScript application with file-based routing, Supabase for authentication, database, and real-time replication, and PDF generation via @react-pdf/renderer. The routes under the application shell expose the primary features:
+
 - Dashboard: overview widgets, recent tickets, state distribution, and recent activity
 - Tickets: server-side filtered list with pagination and PDF export
 - Kanban: drag-and-drop board with swim lanes and WIP limits
@@ -72,6 +76,7 @@ A --> EXPORT
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 - [tickets.tsx:1-400](file://src/routes/_app/tickets.tsx#L1-L400)
 - [kanban.tsx:1-420](file://src/routes/_app/kanban.tsx#L1-L420)
@@ -86,6 +91,7 @@ A --> EXPORT
 - [export-data.ts:1-62](file://src/lib/export-data.ts#L1-L62)
 
 **Section sources**
+
 - [README.md:17-28](file://README.md#L17-L28)
 - [dashboard.tsx:1-448](file://src/routes/_app/dashboard.tsx#L1-L448)
 - [tickets.tsx:1-400](file://src/routes/_app/tickets.tsx#L1-L400)
@@ -94,6 +100,7 @@ A --> EXPORT
 - [admin.tsx:1-50](file://src/routes/_app/admin.tsx#L1-L50)
 
 ## Core Components
+
 - Dashboard: displays summary cards, analytics widgets, recent tickets, state distribution, and recent activity logs. It supports date-range filtering and PDF export of analytics.
 - Tickets: server-side paginated list with filters for status, priority, type, and client; supports PDF preview/download of current page.
 - Kanban: drag-and-drop board with “pending”, “in-progress”, “testing”, “ready” lanes; swim lane view; WIP limits; status history and completion workflow; real-time updates.
@@ -103,6 +110,7 @@ A --> EXPORT
 - Activity Logging: centralized audit log with deduplication and CSV export.
 
 **Section sources**
+
 - [dashboard.tsx:55-447](file://src/routes/_app/dashboard.tsx#L55-L447)
 - [tickets.tsx:66-394](file://src/routes/_app/tickets.tsx#L66-L394)
 - [kanban.tsx:58-406](file://src/routes/_app/kanban.tsx#L58-L406)
@@ -113,7 +121,9 @@ A --> EXPORT
 - [audit-log.ts:23-107](file://src/lib/audit-log.ts#L23-L107)
 
 ## Architecture Overview
+
 The application follows a layered architecture:
+
 - Routes define pages and orchestrate data fetching and rendering.
 - Components encapsulate UI and interactions (modals, views, PDF renderers).
 - Hooks and server functions abstract data access, real-time updates, and server-side operations.
@@ -143,6 +153,7 @@ S1 --> DB
 ## Detailed Component Analysis
 
 ### Dashboard: Operational Overview and Recent Activity
+
 - Purpose: Provide a snapshot of ticket and device health, plus recent activity.
 - Key capabilities:
   - Summary cards for totals and highlights
@@ -170,13 +181,16 @@ PDF-->>U : Downloaded report
 ```
 
 **Diagram sources**
+
 - [dashboard.tsx:55-190](file://src/routes/_app/dashboard.tsx#L55-L190)
 - [audit-log.ts:23-107](file://src/lib/audit-log.ts#L23-L107)
 
 **Section sources**
+
 - [dashboard.tsx:55-447](file://src/routes/_app/dashboard.tsx#L55-L447)
 
 ### Tickets: Server-Side Filtering, Pagination, and PDF Export
+
 - Purpose: Manage PC preparation tickets with efficient browsing and reporting.
 - Key capabilities:
   - Filters: status, priority, type, client
@@ -209,13 +223,16 @@ PDF-->>U : Downloaded file
 ```
 
 **Diagram sources**
+
 - [tickets.tsx:66-195](file://src/routes/_app/tickets.tsx#L66-L195)
 - [TicketListPdf.tsx:27-96](file://src/components/pcready/pdf/TicketListPdf.tsx#L27-L96)
 
 **Section sources**
+
 - [tickets.tsx:66-394](file://src/routes/_app/tickets.tsx#L66-L394)
 
 ### Kanban Board: Drag-and-Drop Workflow with WIP Limits
+
 - Purpose: Visualize and move tickets across states with constraints and real-time updates.
 - Key capabilities:
   - Columns view and swim lane view
@@ -249,14 +266,17 @@ K-->>U : Toast confirmation
 ```
 
 **Diagram sources**
+
 - [kanban.tsx:86-205](file://src/routes/_app/kanban.tsx#L86-L205)
 - [audit-log.ts:23-107](file://src/lib/audit-log.ts#L23-L107)
 
 **Section sources**
+
 - [kanban.tsx:58-406](file://src/routes/_app/kanban.tsx#L58-L406)
 - [SwimLaneView.tsx:34-139](file://src/components/kanban/SwimLaneView.tsx#L34-L139)
 
 ### Configurable Checklist Templates and Ticket Creation
+
 - Purpose: Standardize and pre-populate checklist structures for tickets.
 - Key capabilities:
   - Template selection with default option
@@ -282,12 +302,15 @@ Done --> End
 ```
 
 **Diagram sources**
+
 - [CreateTicketModal.tsx:138-300](file://src/components/pcready/CreateTicketModal.tsx#L138-L300)
 
 **Section sources**
+
 - [CreateTicketModal.tsx:138-559](file://src/components/pcready/CreateTicketModal.tsx#L138-L559)
 
 ### Dedicated Device Inventory Workflow
+
 - Purpose: Manage physical devices independently from tickets.
 - Key capabilities:
   - Add device via modal with client, model, serial, OS, notes
@@ -318,15 +341,18 @@ PDF-->>U : Downloaded file
 ```
 
 **Diagram sources**
+
 - [AddDeviceModal.tsx:27-118](file://src/components/pcready/AddDeviceModal.tsx#L27-L118)
 - [inventory.tsx:63-176](file://src/routes/_app/inventory.tsx#L63-L176)
 - [InventoryPdf.tsx:26-84](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L84)
 
 **Section sources**
+
 - [AddDeviceModal.tsx:27-218](file://src/components/pcready/AddDeviceModal.tsx#L27-L218)
 - [inventory.tsx:63-491](file://src/routes/_app/inventory.tsx#L63-L491)
 
 ### Formatted PDF Exports for Tickets and Inventory
+
 - Purpose: Produce branded, printable reports for audits and handovers.
 - Key capabilities:
   - Statistics strip summarizing priorities/statuses
@@ -361,14 +387,17 @@ InventoryPdf --> StatStrip : "uses"
 ```
 
 **Diagram sources**
+
 - [TicketListPdf.tsx:27-96](file://src/components/pcready/pdf/TicketListPdf.tsx#L27-L96)
 - [InventoryPdf.tsx:26-84](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L84)
 
 **Section sources**
+
 - [TicketListPdf.tsx:27-125](file://src/components/pcready/pdf/TicketListPdf.tsx#L27-L125)
 - [InventoryPdf.tsx:26-93](file://src/components/pcready/pdf/InventoryPdf.tsx#L26-L93)
 
 ### User and Role Management via Admin
+
 - Purpose: Invite users, manage roles, enable/disable accounts, bulk operations, and export user data.
 - Key capabilities:
   - Invite new users with role selection
@@ -398,13 +427,16 @@ Results --> End
 ```
 
 **Diagram sources**
+
 - [AdminUsersTab.tsx:26-491](file://src/components/admin/AdminUsersTab.tsx#L26-L491)
 
 **Section sources**
+
 - [AdminUsersTab.tsx:26-497](file://src/components/admin/AdminUsersTab.tsx#L26-L497)
 - [admin.tsx:23-48](file://src/routes/_app/admin.tsx#L23-L48)
 
 ### Activity Logging for User Actions and Automations
+
 - Purpose: Track who did what, when, and optionally which ticket was affected.
 - Key capabilities:
   - Deduplicated log entries by message and second
@@ -432,12 +464,15 @@ CSV-->>U : Downloaded file
 ```
 
 **Diagram sources**
+
 - [audit-log.ts:23-182](file://src/lib/audit-log.ts#L23-L182)
 
 **Section sources**
+
 - [audit-log.ts:23-183](file://src/lib/audit-log.ts#L23-L183)
 
 ### Admin Backup & Disaster Recovery with Data Exports
+
 - Purpose: Provide a controlled mechanism to export core data for backup/recovery.
 - Key capabilities:
   - Export tickets, devices, and clients to CSV files
@@ -462,13 +497,16 @@ EXP-->>A : JSON with files and generatedAt
 ```
 
 **Diagram sources**
+
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 
 **Section sources**
+
 - [export-data.ts:1-62](file://src/lib/export-data.ts#L1-L62)
 - [BackupMetric.tsx:1-10](file://src/components/admin/BackupMetric.tsx#L1-L10)
 
 ## Dependency Analysis
+
 - Routes depend on hooks and server functions for data fetching and mutations.
 - Components rely on shared UI primitives and PDF renderers.
 - Real-time updates leverage Supabase channels and hooks.
@@ -486,6 +524,7 @@ Export["Export All Data"] --> ServerFn2["export-data.ts"]
 ```
 
 **Diagram sources**
+
 - [tickets.tsx:80-88](file://src/routes/_app/tickets.tsx#L80-L88)
 - [kanban.tsx:86-95](file://src/routes/_app/kanban.tsx#L86-L95)
 - [dashboard.tsx:59-79](file://src/routes/_app/dashboard.tsx#L59-L79)
@@ -495,6 +534,7 @@ Export["Export All Data"] --> ServerFn2["export-data.ts"]
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 
 **Section sources**
+
 - [tickets.tsx:80-88](file://src/routes/_app/tickets.tsx#L80-L88)
 - [kanban.tsx:86-95](file://src/routes/_app/kanban.tsx#L86-L95)
 - [dashboard.tsx:59-79](file://src/routes/_app/dashboard.tsx#L59-L79)
@@ -504,6 +544,7 @@ Export["Export All Data"] --> ServerFn2["export-data.ts"]
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 
 ## Performance Considerations
+
 - Server-side pagination and filtering prevent loading large datasets client-side.
 - Real-time updates use targeted channels and local caching to minimize redundant renders.
 - PDF generation operates on current page data to avoid heavy client-side computations.
@@ -513,6 +554,7 @@ Export["Export All Data"] --> ServerFn2["export-data.ts"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Tickets list shows stale data:
   - Use the “Aggiorna” button triggered by real-time updates.
   - Verify Supabase channel subscription and network connectivity.
@@ -529,10 +571,12 @@ Export["Export All Data"] --> ServerFn2["export-data.ts"]
   - Deduplication occurs by message and second; verify filters and date range.
 
 **Section sources**
+
 - [tickets.tsx:108-122](file://src/routes/_app/tickets.tsx#L108-L122)
 - [kanban.tsx:113-146](file://src/routes/_app/kanban.tsx#L113-L146)
 - [audit-log.ts:31-81](file://src/lib/audit-log.ts#L31-L81)
 - [export-data.ts:19-20](file://src/lib/export-data.ts#L19-L20)
 
 ## Conclusion
+
 PCReady delivers a comprehensive operational platform for PC preparation and device management. Its features combine robust UI workflows with server-side efficiency, real-time collaboration, and strong administrative controls. The dashboard, tickets, Kanban, inventory, PDF exports, checklist templates, user management, activity logging, and backup/recovery collectively support streamlined operations, compliance, and scalability.

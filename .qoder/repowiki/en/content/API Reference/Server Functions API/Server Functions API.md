@@ -19,6 +19,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -31,9 +32,11 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the TanStack Server Functions API used by PCReady for managing tickets, portal interactions, and administrative operations. It covers endpoint semantics, HTTP methods, URL patterns, request/response schemas, Zod-based validation, authentication, rate limiting, access control, error handling, and testing approaches. It also explains the createServerFn pattern, handler functions, and data transformations between client and server.
 
 ## Project Structure
+
 The server functions are implemented as TanStack Server Functions using createServerFn with Zod input validators and handlers. They integrate with Supabase for authentication and data access, enforce rate limits, and trigger downstream actions such as notifications and emails.
 
 ```mermaid
@@ -81,6 +84,7 @@ SF_OAUTH --> SUPA
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [portal-tickets.ts:19-31](file://src/lib/portal-tickets.ts#L19-L31)
@@ -91,6 +95,7 @@ SF_OAUTH --> SUPA
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 
 **Section sources**
+
 - [tickets.ts:1-111](file://src/lib/tickets.ts#L1-L111)
 - [ticket-completion.ts:1-15](file://src/lib/ticket-completion.ts#L1-L15)
 - [portal-tickets.ts:1-205](file://src/lib/portal-tickets.ts#L1-L205)
@@ -101,6 +106,7 @@ SF_OAUTH --> SUPA
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 
 ## Core Components
+
 - createTicket: Creates a staff ticket after validating access token, authenticating user, applying rate limits, normalizing optional fields, and inserting into the tickets table with initial status history.
 - completeTicketServer: Triggers completion workflow (PDF generation, storage upload, email, admin notification) and returns a success flag with optional PDF URL.
 - Portal ticket functions: Dashboard, listing, detail retrieval, and creation with urgency-to-priority mapping and rate limiting keyed by contact ID.
@@ -110,6 +116,7 @@ SF_OAUTH --> SUPA
 - Authentication middleware: Validates Bearer tokens and injects user context.
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [portal-tickets.ts:19-70](file://src/lib/portal-tickets.ts#L19-L70)
@@ -119,7 +126,9 @@ SF_OAUTH --> SUPA
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 
 ## Architecture Overview
+
 The server functions follow a consistent pattern:
+
 - Define Zod schema for input validation.
 - Use createServerFn with method declaration.
 - Apply inputValidator(schema.parse).
@@ -147,6 +156,7 @@ SF-->>C : "JSON response or throws"
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [rate-limit.ts:92-104](file://src/lib/rate-limit.ts#L92-L104)
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
@@ -154,6 +164,7 @@ SF-->>C : "JSON response or throws"
 ## Detailed Component Analysis
 
 ### createTicket
+
 - Method: POST
 - URL pattern: TanStack Server Function endpoint bound to createTicket
 - Request schema:
@@ -211,16 +222,19 @@ Hist --> Ok["Return {id, ticket_code}"]
 ```
 
 **Diagram sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [rate-limit.ts:92-104](file://src/lib/rate-limit.ts#L92-L104)
 
 **Section sources**
+
 - [tickets.ts:27-30](file://src/lib/tickets.ts#L27-L30)
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [rate-limit-config.ts:20-30](file://src/lib/rate-limit-config.ts#L20-L30)
 - [rate-limit.ts:92-104](file://src/lib/rate-limit.ts#L92-L104)
 
 ### completeTicketServer
+
 - Method: POST
 - URL pattern: TanStack Server Function endpoint bound to completeTicketServer
 - Request schema:
@@ -275,15 +289,18 @@ SF-->>C : "JSON response"
 ```
 
 **Diagram sources**
+
 - [ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [ticket-completion.server.ts:49-181](file://src/lib/ticket-completion.server.ts#L49-L181)
 
 **Section sources**
+
 - [ticket-completion.ts:4-8](file://src/lib/ticket-completion.ts#L4-L8)
 - [ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [ticket-completion.server.ts:49-181](file://src/lib/ticket-completion.server.ts#L49-L181)
 
 ### Portal Ticket Functions
+
 - getPortalDashboard
   - Method: POST
   - Schema: { token: string (min length 32) }
@@ -326,9 +343,11 @@ Notify --> OkPT["Return {success, ticketId}"]
 ```
 
 **Diagram sources**
+
 - [portal-tickets.ts:133-193](file://src/lib/portal-tickets.ts#L133-L193)
 
 **Section sources**
+
 - [portal-tickets.ts:19-31](file://src/lib/portal-tickets.ts#L19-L31)
 - [portal-tickets.ts:72-131](file://src/lib/portal-tickets.ts#L72-L131)
 - [portal-tickets.ts:133-193](file://src/lib/portal-tickets.ts#L133-L193)
@@ -337,6 +356,7 @@ Notify --> OkPT["Return {success, ticketId}"]
 - [rate-limit-config.ts:23-23](file://src/lib/rate-limit-config.ts#L23-L23)
 
 ### Admin Functions
+
 - listAdminUsers
   - Method: POST
   - Schema: { accessToken: string }
@@ -392,17 +412,20 @@ SF-->>C : "JSON response"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:88-279](file://src/lib/admin-users.ts#L88-L279)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [rate-limit.ts:92-104](file://src/lib/rate-limit.ts#L92-L104)
 
 **Section sources**
+
 - [admin-users.ts:88-279](file://src/lib/admin-users.ts#L88-L279)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [rate-limit-config.ts:10-14](file://src/lib/rate-limit-config.ts#L10-L14)
 - [rate-limit.ts:92-104](file://src/lib/rate-limit.ts#L92-L104)
 
 ### OAuth Consent Functions
+
 - validateOAuthRequest
   - Method: POST
   - Schema: { accessToken: string, clientId: string, redirectUri: string, scope: string, state?: string }
@@ -432,14 +455,17 @@ BuildRedirect --> OkO["Return {redirectUrl}"]
 ```
 
 **Diagram sources**
+
 - [oauth-consent.ts:141-194](file://src/lib/oauth-consent.ts#L141-L194)
 - [oauth-consent.ts:37-48](file://src/lib/oauth-consent.ts#L37-L48)
 
 **Section sources**
+
 - [oauth-consent.ts:141-194](file://src/lib/oauth-consent.ts#L141-L194)
 - [oauth-consent.ts:37-48](file://src/lib/oauth-consent.ts#L37-L48)
 
 ## Dependency Analysis
+
 - Input validation: Zod schemas define strict shapes for all server functions.
 - Authentication: Supabase access tokens are validated either via middleware or getUser() calls; admin functions additionally check roles via RPC.
 - Rate limiting: Centralized presets and enforcement via throwIfRateLimited; 429 responses include Retry-After and X-RateLimit headers.
@@ -457,16 +483,19 @@ SF --> STORAGE["Supabase Storage"]
 ```
 
 **Diagram sources**
+
 - [tickets.ts:27-30](file://src/lib/tickets.ts#L27-L30)
 - [portal-tickets.ts:133-193](file://src/lib/portal-tickets.ts#L133-L193)
 - [ticket-completion.server.ts:104-181](file://src/lib/ticket-completion.server.ts#L104-L181)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 **Section sources**
+
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 - [rate-limit-config.ts:5-31](file://src/lib/rate-limit-config.ts#L5-L31)
 
 ## Performance Considerations
+
 - In-memory sliding window limiter is efficient for single-process deployments; consider Redis-backed limiter for multi-instance scaling by setting UPSTASH_REDIS environment variables and delegating selected keys.
 - PDF generation occurs server-side; ensure adequate memory and CPU resources; consider offloading to a worker or external service if needed.
 - Batch operations (e.g., admin user listing) use parallel queries to reduce latency.
@@ -475,6 +504,7 @@ SF --> STORAGE["Supabase Storage"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures:
   - Missing or invalid Authorization header leads to 401 responses.
   - getUser() failures or missing user cause 401.
@@ -487,6 +517,7 @@ SF --> STORAGE["Supabase Storage"]
   - Rate limit unit tests verify sliding window behavior.
 
 **Section sources**
+
 - [auth-middleware.ts:28-63](file://src/integrations/supabase/auth-middleware.ts#L28-L63)
 - [tickets.ts:56-60](file://src/lib/tickets.ts#L56-L60)
 - [rate-limit.ts:74-90](file://src/lib/rate-limit.ts#L74-L90)
@@ -494,6 +525,7 @@ SF --> STORAGE["Supabase Storage"]
 - [rate-limit.test.ts:5-20](file://src/__tests__/lib/rate-limit.test.ts#L5-L20)
 
 ## Conclusion
+
 PCReady’s TanStack Server Functions provide a robust, validated, and rate-limited API surface for ticketing, portal interactions, and administrative tasks. The architecture emphasizes clear separation of concerns, strong input validation, centralized rate limiting, and secure data access via Supabase. Extending or integrating with these functions follows the established createServerFn pattern with Zod schemas and consistent error handling.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -501,6 +533,7 @@ PCReady’s TanStack Server Functions provide a robust, validated, and rate-limi
 ## Appendices
 
 ### Endpoint Reference Summary
+
 - createTicket
   - Method: POST
   - URL: TanStack Server Function endpoint bound to createTicket
@@ -601,6 +634,7 @@ PCReady’s TanStack Server Functions provide a robust, validated, and rate-limi
   - Example response: { redirectUrl }
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [ticket-completion.ts:10-15](file://src/lib/ticket-completion.ts#L10-L15)
 - [portal-tickets.ts:19-70](file://src/lib/portal-tickets.ts#L19-L70)
@@ -608,6 +642,7 @@ PCReady’s TanStack Server Functions provide a robust, validated, and rate-limi
 - [oauth-consent.ts:141-194](file://src/lib/oauth-consent.ts#L141-L194)
 
 ### Data Transformation Examples
+
 - createTicket:
   - Normalizes empty strings to null for optional fields.
   - Maps source "portal" to "portal", otherwise "internal".
@@ -620,12 +655,14 @@ PCReady’s TanStack Server Functions provide a robust, validated, and rate-limi
   - Inserts initial status history note "Ticket creato dal portale cliente".
 
 **Section sources**
+
 - [tickets.ts:64-89](file://src/lib/tickets.ts#L64-L89)
 - [ticket-completion.server.ts:104-181](file://src/lib/ticket-completion.server.ts#L104-L181)
 - [portal-tickets.ts:8-12](file://src/lib/portal-tickets.ts#L8-L12)
 - [portal-tickets.ts:164-172](file://src/lib/portal-tickets.ts#L164-L172)
 
 ### Error Handling Patterns
+
 - 401 Unauthorized: Missing/invalid token or missing user.
 - 403 Forbidden: Insufficient permissions (admin role required).
 - 429 Too Many Requests: Rate limit exceeded; includes Retry-After and X-RateLimit headers.
@@ -633,34 +670,41 @@ PCReady’s TanStack Server Functions provide a robust, validated, and rate-limi
 - 500 Internal Server Error: Database or service failures.
 
 **Section sources**
+
 - [tickets.ts:56-60](file://src/lib/tickets.ts#L56-L60)
 - [portal-tickets.server.ts:82-83](file://src/lib/portal-tickets.server.ts#L82-L83)
 - [rate-limit.ts:74-90](file://src/lib/rate-limit.ts#L74-L90)
 
 ### Authentication and Access Control
+
 - Bearer token validation via Supabase client with Authorization header.
 - Middleware pattern validates token claims and injects user context.
 - Admin-only functions verify admin role via RPC.
 
 **Section sources**
+
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 ### Rate Limiting Enforcement
+
 - Centralized presets define limits and windows per key.
 - In-memory sliding window with periodic pruning.
 - 429 responses include standardized headers and JSON body.
 
 **Section sources**
+
 - [rate-limit-config.ts:5-31](file://src/lib/rate-limit-config.ts#L5-L31)
 - [rate-limit.ts:30-104](file://src/lib/rate-limit.ts#L30-L104)
 
 ### Testing and Debugging
+
 - Unit tests mock Supabase client to verify data retrieval behavior.
 - Rate limit tests verify sliding window behavior and retry-after calculation.
 - Client-side integration triggers completion workflow and handles errors gracefully.
 
 **Section sources**
+
 - [tickets.test.ts:15-35](file://src/__tests__/routes/tickets.test.ts#L15-L35)
 - [rate-limit.test.ts:5-20](file://src/__tests__/lib/rate-limit.test.ts#L5-L20)
 - [TicketDetailModal.tsx:189-198](file://src/components/pcready/TicketDetailModal.tsx#L189-L198)

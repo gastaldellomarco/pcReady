@@ -20,4 +20,3 @@ export const Route = createFileRoute("/auth/callback")({
     </div>
   ),
 });
-

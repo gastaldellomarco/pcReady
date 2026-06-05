@@ -81,7 +81,10 @@ export function AssignTicketBlock({
           value={action.config.ticket_id || ""}
           onChange={(v) => updateConfig({ ticket_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.optionalPlaceholder", "Lascia vuoto per usare il ticket dal trigger")}
+          placeholder={t(
+            "actionsBuilder.optionalPlaceholder",
+            "Lascia vuoto per usare il ticket dal trigger",
+          )}
         />
 
         <VariableTextField
@@ -89,7 +92,10 @@ export function AssignTicketBlock({
           value={action.config.assignee_id}
           onChange={(v) => updateConfig({ assignee_id: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.assign_ticket.assigneePlaceholder", "UUID assegnatario")}
+          placeholder={t(
+            "actionsBuilder.blocks.assign_ticket.assigneePlaceholder",
+            "UUID assegnatario",
+          )}
         />
       </div>
     </div>

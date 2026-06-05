@@ -36,7 +36,11 @@ import {
   type CalendarEvent,
 } from "@/lib/queries/calendar";
 import { listTechnicians } from "@/lib/technicians";
-import type { CalendarDraftRange, CalendarView, TechnicianOption } from "@/components/calendar/types";
+import type {
+  CalendarDraftRange,
+  CalendarView,
+  TechnicianOption,
+} from "@/components/calendar/types";
 
 export const Route = createLazyFileRoute("/_app/calendar")({
   component: CalendarPage,

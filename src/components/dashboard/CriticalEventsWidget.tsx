@@ -50,7 +50,9 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
     <div className="pc-card">
       <div className="pc-card-hd">
         <div className="flex items-center gap-2">
-          <span className="pc-card-title">{t("widgets.criticalEvents", "Eventi critici recenti")}</span>
+          <span className="pc-card-title">
+            {t("widgets.criticalEvents", "Eventi critici recenti")}
+          </span>
           {events.length + slaTickets.length > 0 && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
               {events.length + slaTickets.length}
@@ -63,7 +65,9 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
       </div>
       <div className="pc-card-body">
         {loading ? (
-          <div className="text-sm text-text3 py-4 text-center">{t("widgets.loading", "Caricamento...")}</div>
+          <div className="text-sm text-text3 py-4 text-center">
+            {t("widgets.loading", "Caricamento...")}
+          </div>
         ) : events.length === 0 && slaTickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
             <AlertTriangle className="size-5 mx-auto mb-2 opacity-40" />
@@ -79,7 +83,10 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
                 <XCircle className="size-4 text-red-500 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-text2 truncate">
-                    {ticket.ticket_code}: {ticket.sla_breached ? t("widgets.slaBreached", "SLA violato") : t("widgets.slaExpiring", "SLA in scadenza")}
+                    {ticket.ticket_code}:{" "}
+                    {ticket.sla_breached
+                      ? t("widgets.slaBreached", "SLA violato")
+                      : t("widgets.slaExpiring", "SLA in scadenza")}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[10.5px] text-text3">

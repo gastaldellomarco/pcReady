@@ -35,16 +35,11 @@ export function TimeInColumnLabel({
         color: color ?? "var(--text3)",
       }}
       title={
-        lead
-          ? `In questa colonna da ${cycle} · Aperto da ${lead}`
-          : `In questa colonna da ${cycle}`
+        lead ? `In questa colonna da ${cycle} · Aperto da ${lead}` : `In questa colonna da ${cycle}`
       }
     >
       {cycleColor && (
-        <span
-          className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-          style={{ background: color }}
-        />
+        <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
       )}
       <Clock className="h-2.5 w-2.5" />
       {cycle}

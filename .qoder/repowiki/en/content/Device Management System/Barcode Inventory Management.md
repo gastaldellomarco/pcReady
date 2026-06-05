@@ -18,6 +18,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
@@ -80,6 +81,7 @@ Toast --> UI
 ```
 
 **Diagram sources**
+
 - [BarcodeScanner.tsx:1-186](file://src/components/inventory/BarcodeScanner.tsx#L1-L186)
 - [QrCodeDialog.tsx:1-107](file://src/components/inventory/QrCodeDialog.tsx#L1-L107)
 - [inventory.tsx:1-800](file://src/routes/_app/inventory.tsx#L1-L800)
@@ -144,9 +146,11 @@ InventoryPage --> BulkOperations : executes
 ```
 
 **Diagram sources**
+
 - [inventory.tsx:147-800](file://src/routes/_app/inventory.tsx#L147-L800)
 
 **Section sources**
+
 - [inventory.tsx:147-800](file://src/routes/_app/inventory.tsx#L147-L800)
 
 ### Device Status Management
@@ -186,6 +190,7 @@ UI->>User : Open device detail or show options
 ```
 
 **Diagram sources**
+
 - [BarcodeScanner.tsx:44-86](file://src/components/inventory/BarcodeScanner.tsx#L44-L86)
 - [inventory.tsx:316-345](file://src/routes/_app/inventory.tsx#L316-L345)
 
@@ -213,6 +218,7 @@ The system implements strict security measures for camera access:
 - Handles browser compatibility issues gracefully
 
 **Section sources**
+
 - [BarcodeScanner.tsx:13-23](file://src/components/inventory/BarcodeScanner.tsx#L13-L23)
 - [BarcodeScanner.tsx:171-186](file://src/components/inventory/BarcodeScanner.tsx#L171-L186)
 
@@ -237,6 +243,7 @@ CloseDialog --> End
 ```
 
 **Diagram sources**
+
 - [QrCodeDialog.tsx:23-60](file://src/components/inventory/QrCodeDialog.tsx#L23-L60)
 - [inventory-labels.ts:30-63](file://src/lib/inventory-labels.ts#L30-L63)
 
@@ -251,6 +258,7 @@ The QR code system generates high-quality labels with the following specificatio
 - **Batch Processing**: Support for multiple device labels
 
 **Section sources**
+
 - [QrCodeDialog.tsx:20-107](file://src/components/inventory/QrCodeDialog.tsx#L20-L107)
 - [inventory-labels.ts:1-72](file://src/lib/inventory-labels.ts#L1-L72)
 
@@ -275,6 +283,7 @@ TrackErrors --> Complete[Import Complete]
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:53-96](file://src/components/inventory/ImportCsvDialog.tsx#L53-L96)
 - [inventory-import.ts:125-187](file://src/lib/inventory-import.ts#L125-L187)
 
@@ -309,6 +318,7 @@ The import system enforces comprehensive validation:
 - **Reference Validation**: Client existence verification
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:1-290](file://src/components/inventory/ImportCsvDialog.tsx#L1-L290)
 - [inventory-import.ts:15-50](file://src/lib/inventory-import.ts#L15-L50)
 
@@ -333,6 +343,7 @@ end
 ```
 
 **Diagram sources**
+
 - [device-taxonomy.ts:1-57](file://src/lib/device-taxonomy.ts#L1-L57)
 
 ### Advanced Filtering System
@@ -348,6 +359,7 @@ The inventory interface provides extensive filtering options:
 - **Update Age**: Filter by last update date
 
 **Section sources**
+
 - [device-taxonomy.ts:21-48](file://src/lib/device-taxonomy.ts#L21-L48)
 - [inventory.tsx:540-690](file://src/routes/_app/inventory.tsx#L540-L690)
 
@@ -382,6 +394,7 @@ DeviceSchema --> DeviceInput : validates
 ```
 
 **Diagram sources**
+
 - [devices.ts:5-15](file://lib/schemas/devices.ts#L5-L15)
 
 The device schema enforces:
@@ -392,6 +405,7 @@ The device schema enforces:
 - **Optional Fields**: Graceful handling of optional data fields
 
 **Section sources**
+
 - [devices.ts:1-15](file://lib/schemas/devices.ts#L1-L15)
 
 ## Maintenance and Warranty Tracking
@@ -412,6 +426,7 @@ Missing --> Expired : No Warranty Data
 ```
 
 **Diagram sources**
+
 - [warranty.ts:67-74](file://src/lib/warranty.ts#L67-L74)
 
 The warranty system tracks:
@@ -431,6 +446,7 @@ The maintenance system supports recurring schedules with automated tracking:
 - **Technician Assignment**: Resource allocation for maintenance tasks
 
 **Section sources**
+
 - [warranty.ts:1-108](file://src/lib/warranty.ts#L1-L108)
 - [maintenance.ts:1-242](file://src/lib/maintenance.ts#L1-L242)
 
@@ -493,6 +509,7 @@ DEVICES ||--|| CLIENTS : belongs_to
 ```
 
 **Diagram sources**
+
 - [20260521144536_extend_devices_it_assets.sql:1-44](file://supabase/migrations/20260521144536_extend_devices_it_assets.sql#L1-L44)
 - [20260521145745_device_asset_tag_sequence.sql:1-71](file://supabase/migrations/20260521145745_device_asset_tag_sequence.sql#L1-L71)
 
@@ -515,6 +532,7 @@ The database implements strategic indexing for optimal query performance:
 - **Asset Tag Index**: For unique device identification
 
 **Section sources**
+
 - [20260521144536_extend_devices_it_assets.sql:41-44](file://supabase/migrations/20260521144536_extend_devices_it_assets.sql#L41-L44)
 - [20260521145745_device_asset_tag_sequence.sql:67-71](file://supabase/migrations/20260521145745_device_asset_tag_sequence.sql#L67-L71)
 
@@ -571,6 +589,7 @@ The system implements several performance optimization strategies:
 - **Format Errors**: Check date formats and required field completion
 
 **Section sources**
+
 - [BarcodeScanner.tsx:180-186](file://src/components/inventory/BarcodeScanner.tsx#L180-L186)
 - [QrCodeDialog.tsx:51-60](file://src/components/inventory/QrCodeDialog.tsx#L51-L60)
 

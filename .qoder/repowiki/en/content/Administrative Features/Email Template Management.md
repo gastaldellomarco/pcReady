@@ -16,6 +16,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -28,10 +29,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the email template management system used to define, customize, and render transactional emails. It covers template structure, supported variables, the editing interface, preview and validation, inheritance and defaults, overrides, testing, and the relationship to notification triggers. It also includes guidance for branding updates, multilingual considerations, versioning, troubleshooting, and security.
 
 ## Project Structure
+
 The email template system spans frontend UI components, typed definitions, server-side logic, and database persistence:
+
 - Types and constants define event types, default templates, and variables.
 - Frontend editors provide a WYSIWYG-like HTML/text editor, variable insertion, preview, and test-send capabilities.
 - Backend APIs manage listing, retrieval, updates, creation of defaults, resets, and test sends.
@@ -72,6 +76,7 @@ TS_Types --> SSR_Server
 ```
 
 **Diagram sources**
+
 - [EmailTemplateSection.tsx:1-203](file://src/components/admin/EmailTemplateSection.tsx#L1-L203)
 - [EmailTemplateEditor.tsx:1-309](file://src/components/admin/EmailTemplateEditor.tsx#L1-L309)
 - [EmailPreviewDialog.tsx:1-77](file://src/components/admin/EmailPreviewDialog.tsx#L1-L77)
@@ -84,6 +89,7 @@ TS_Types --> SSR_Server
 - [automation-runs.server.ts:610-655](file://src/lib/automation-runs.server.ts#L610-L655)
 
 **Section sources**
+
 - [email-templates.ts:1-112](file://src/lib/email-templates.ts#L1-L112)
 - [email-templates.server.ts:1-386](file://src/lib/email-templates.server.ts#L1-L386)
 - [EmailTemplateEditor.tsx:1-309](file://src/components/admin/EmailTemplateEditor.tsx#L1-L309)
@@ -96,6 +102,7 @@ TS_Types --> SSR_Server
 - [automation-runs.server.ts:610-655](file://src/lib/automation-runs.server.ts#L610-L655)
 
 ## Core Components
+
 - Event types and variables: Enumerated event types and a mapping of allowed variables per event.
 - Default templates: Predefined HTML and text bodies plus subject lines for each event.
 - Editor UI: Provides subject/body editing, variable insertion, preview, test send, and reset-to-default.
@@ -104,6 +111,7 @@ TS_Types --> SSR_Server
 - Rendering engine: Variable substitution supporting both legacy and modern templates.
 
 Key responsibilities:
+
 - Define allowed variables and default content per event.
 - Enforce variable whitelist during updates.
 - Persist and hydrate templates with author metadata.
@@ -111,13 +119,16 @@ Key responsibilities:
 - Integrate with automation and notifications to trigger email delivery.
 
 **Section sources**
+
 - [email.ts:1-130](file://src/types/email.ts#L1-L130)
 - [email-templates.ts:1-112](file://src/lib/email-templates.ts#L1-L112)
 - [email-templates.server.ts:113-386](file://src/lib/email-templates.server.ts#L113-L386)
 - [email_templates.sql:1-89](file://supabase/migrations/20260507150000_email_templates.sql#L1-L89)
 
 ## Architecture Overview
+
 The system follows a layered architecture:
+
 - UI layer: React components for selection, editing, preview, and testing.
 - Library layer: Client-side server function wrappers and rendering helpers.
 - Server layer: Authentication checks, validation, database upserts, and email transport.
@@ -151,6 +162,7 @@ Lib-->>Admin : "result"
 ```
 
 **Diagram sources**
+
 - [email-templates.ts:59-85](file://src/lib/email-templates.ts#L59-L85)
 - [email-templates.server.ts:147-213](file://src/lib/email-templates.server.ts#L147-L213)
 - [email_templates.sql:1-89](file://supabase/migrations/20260507150000_email_templates.sql#L1-L89)
@@ -158,6 +170,7 @@ Lib-->>Admin : "result"
 ## Detailed Component Analysis
 
 ### Template Types and Variables
+
 - Event types enumerate supported email triggers.
 - Variables are grouped per event and include common tokens (organization, support email, user info) and event-specific tokens (ticket, checklist, links).
 - Defaults provide initial HTML and text bodies with embedded variables.
@@ -194,15 +207,19 @@ EmailTemplate "1" --> "*" EmailTemplateVariable : "variables"
 ```
 
 **Diagram sources**
+
 - [email.ts:1-26](file://src/types/email.ts#L1-L26)
 - [email.ts:9-12](file://src/types/email.ts#L9-L12)
 - [email.ts:94-129](file://src/types/email.ts#L94-L129)
 
 **Section sources**
+
 - [email.ts:1-130](file://src/types/email.ts#L1-L130)
 
 ### Template Editing Interface
+
 The editor provides:
+
 - Subject and dual-pane HTML/text editing.
 - Active toggle to enable/disable a template.
 - Variable palette with click-to-insert behavior.
@@ -226,14 +243,17 @@ Test --> End(["Done"])
 ```
 
 **Diagram sources**
+
 - [EmailTemplateEditor.tsx:175-298](file://src/components/admin/EmailTemplateEditor.tsx#L175-L298)
 - [EmailPreviewDialog.tsx:20-77](file://src/components/admin/EmailPreviewDialog.tsx#L20-L77)
 
 **Section sources**
+
 - [EmailTemplateEditor.tsx:1-309](file://src/components/admin/EmailTemplateEditor.tsx#L1-L309)
 - [EmailPreviewDialog.tsx:1-77](file://src/components/admin/EmailPreviewDialog.tsx#L1-L77)
 
 ### Validation and Variable Whitelisting
+
 - On update, the server validates that all variables in subject/body are allowed for the given event type.
 - Unknown tokens cause a 400 response with the offending tokens listed.
 - The renderer supports both modern templates and legacy templates with separate signatures.
@@ -250,15 +270,18 @@ Hydrate --> Done(["Return Updated Template"])
 ```
 
 **Diagram sources**
+
 - [email-templates.server.ts:147-177](file://src/lib/email-templates.server.ts#L147-L177)
 - [email-templates.server.ts:312-325](file://src/lib/email-templates.server.ts#L312-L325)
 
 **Section sources**
+
 - [email-templates.server.ts:147-177](file://src/lib/email-templates.server.ts#L147-L177)
 - [email-templates.server.ts:312-325](file://src/lib/email-templates.server.ts#L312-L325)
 - [email-templates.ts:87-112](file://src/lib/email-templates.ts#L87-L112)
 
 ### Template Inheritance, Defaults, and Overrides
+
 - Defaults are seeded into the database per event type and enforced on first access.
 - The server ensures defaults exist and returns hydrated templates with author metadata.
 - Updates/upserts persist overrides; resets restore defaults; creating defaults inserts current default values.
@@ -277,16 +300,19 @@ Server-->>Client : "template with metadata"
 ```
 
 **Diagram sources**
+
 - [email-templates.server.ts:126-145](file://src/lib/email-templates.server.ts#L126-L145)
 - [email-templates.server.ts:278-284](file://src/lib/email-templates.server.ts#L278-L284)
 - [email-templates.server.ts:286-310](file://src/lib/email-templates.server.ts#L286-L310)
 
 **Section sources**
+
 - [email-templates.server.ts:126-145](file://src/lib/email-templates.server.ts#L126-L145)
 - [email-templates.server.ts:278-284](file://src/lib/email-templates.server.ts#L278-L284)
 - [email-templates.server.ts:286-310](file://src/lib/email-templates.server.ts#L286-L310)
 
 ### Template Testing and Preview Generation
+
 - Test send builds sample values from organization and support settings, renders subject/body, and attempts SMTP delivery if configured.
 - Preview dialog renders subject and HTML body against sample values and displays in an iframe with responsive viewport.
 
@@ -314,16 +340,19 @@ Lib-->>Admin : "result"
 ```
 
 **Diagram sources**
+
 - [email-templates.ts:66-71](file://src/lib/email-templates.ts#L66-L71)
 - [email-templates.server.ts:179-213](file://src/lib/email-templates.server.ts#L179-L213)
 - [EmailPreviewDialog.tsx:20-77](file://src/components/admin/EmailPreviewDialog.tsx#L20-L77)
 
 **Section sources**
+
 - [email-templates.ts:66-71](file://src/lib/email-templates.ts#L66-L71)
 - [email-templates.server.ts:179-213](file://src/lib/email-templates.server.ts#L179-L213)
 - [EmailPreviewDialog.tsx:20-77](file://src/components/admin/EmailPreviewDialog.tsx#L20-L77)
 
 ### Relationship Between Templates and Notification Triggers
+
 - Notifications are generated by the notifications subsystem and stored in the database.
 - Email delivery is handled by automation actions that render templates and send via SMTP.
 - The automation runner resolves recipients, renders HTML/text bodies, and delivers via SMTP.
@@ -342,14 +371,17 @@ Runner-->>Trigger : "result"
 ```
 
 **Diagram sources**
+
 - [automation-runs.server.ts:617-655](file://src/lib/automation-runs.server.ts#L617-L655)
 
 **Section sources**
+
 - [notifications.ts:1-140](file://src/lib/notifications.ts#L1-L140)
 - [notifications.server.ts:1-140](file://src/lib/notifications.server.ts#L1-L140)
 - [automation-runs.server.ts:617-655](file://src/lib/automation-runs.server.ts#L617-L655)
 
 ## Dependency Analysis
+
 - UI depends on typed definitions and server functions.
 - Server functions depend on Supabase client, rate limiting, and environment variables for SMTP.
 - Database enforces RLS policies and constraints on event types.
@@ -367,6 +399,7 @@ Server --> Auto["automation-runs.server.ts"]
 ```
 
 **Diagram sources**
+
 - [EmailTemplateSection.tsx:1-203](file://src/components/admin/EmailTemplateSection.tsx#L1-L203)
 - [email-templates.ts:1-112](file://src/lib/email-templates.ts#L1-L112)
 - [email-templates.server.ts:1-386](file://src/lib/email-templates.server.ts#L1-L386)
@@ -376,6 +409,7 @@ Server --> Auto["automation-runs.server.ts"]
 - [automation-runs.server.ts:617-655](file://src/lib/automation-runs.server.ts#L617-L655)
 
 **Section sources**
+
 - [email-templates.ts:1-112](file://src/lib/email-templates.ts#L1-L112)
 - [email-templates.server.ts:1-386](file://src/lib/email-templates.server.ts#L1-L386)
 - [email.ts:1-130](file://src/types/email.ts#L1-L130)
@@ -384,13 +418,16 @@ Server --> Auto["automation-runs.server.ts"]
 - [automation-runs.server.ts:617-655](file://src/lib/automation-runs.server.ts#L617-L655)
 
 ## Performance Considerations
+
 - Variable replacement is linear in template size and number of tokens; keep templates concise.
 - Rendering occurs on the server for test sends and on demand for previews; avoid excessive re-renders in the UI.
 - Database upserts are keyed by event type; ensure indexes and constraints remain efficient.
 - SMTP transport is synchronous; consider queuing for high-volume scenarios.
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Unknown variables on save:
   - Cause: Template contains tokens not in the allowed set for the event type.
   - Resolution: Remove or replace tokens with allowed ones; refer to the variable palette.
@@ -425,11 +462,13 @@ Common issues and resolutions:
     - [email_templates.sql:24-44](file://supabase/migrations/20260507150000_email_templates.sql#L24-L44)
 
 ## Conclusion
+
 The email template management system provides a robust, extensible framework for defining, editing, validating, and delivering transactional emails. It enforces variable safety, supports previews and tests, and integrates with automation and notifications. Administrators can tailor templates per event while maintaining strong defaults and governance via database policies.
 
 ## Appendices
 
 ### Template Creation and Override Examples
+
 - Create default template for an event type:
   - Action: Call create default endpoint; inserts current default values if none exist.
   - Section sources
@@ -444,6 +483,7 @@ The email template management system provides a robust, extensible framework for
     - [email-templates.server.ts:147-177](file://src/lib/email-templates.server.ts#L147-L177)
 
 ### Localization Support
+
 - Current implementation embeds localized strings in default templates and sample values.
 - To support multiple languages:
   - Maintain multiple event types per locale or store localized variants alongside a base event type.
@@ -451,6 +491,7 @@ The email template management system provides a robust, extensible framework for
   - Ensure variable tokens remain consistent across locales.
 
 ### Security Considerations
+
 - Variable whitelisting prevents injection of unauthorized tokens.
 - RLS policies restrict template access to authenticated users with admin roles.
 - SMTP credentials are loaded from environment variables; restrict access to deployment environments.

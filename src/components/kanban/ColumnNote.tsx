@@ -46,7 +46,9 @@ export function ColumnNote({
     }
     setEditing(false);
     // Reset the guard after a tick so subsequent edits can commit again
-    setTimeout(() => { commitRef.current = false; }, 200);
+    setTimeout(() => {
+      commitRef.current = false;
+    }, 200);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -95,7 +97,10 @@ export function ColumnNote({
           className="w-full resize-none rounded-[7px] border-0 bg-transparent px-2.5 py-2 text-[11px] leading-relaxed text-text outline-none placeholder:text-text4"
           autoFocus
         />
-        <div className="flex items-center justify-between border-t px-2.5 py-1" style={{ borderColor: "var(--border)" }}>
+        <div
+          className="flex items-center justify-between border-t px-2.5 py-1"
+          style={{ borderColor: "var(--border)" }}
+        >
           <span className="text-[9px] text-text4">
             {saving ? "Salvataggio…" : "Invio per salvare · Esc per annullare"}
           </span>
@@ -126,7 +131,10 @@ export function ColumnNote({
     >
       <div className="mb-1 flex items-center gap-1.5">
         <FileText className="size-3 shrink-0" style={{ color: "var(--accent)" }} />
-        <span className="text-[9.5px] font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+        <span
+          className="text-[9.5px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--accent)" }}
+        >
           Nota
         </span>
         {canEdit && (

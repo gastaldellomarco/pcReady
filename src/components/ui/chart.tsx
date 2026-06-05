@@ -42,42 +42,44 @@ function loadRecharts() {
   return rechartsPromise;
 }
 
-const ChartContainer = React.forwardRef<any, any>(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId();
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
-  const [ResponsiveContainer, setResponsiveContainer] = React.useState<any>(null);
+const ChartContainer = React.forwardRef<any, any>(
+  ({ id, className, children, config, ...props }, ref) => {
+    const uniqueId = React.useId();
+    const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+    const [ResponsiveContainer, setResponsiveContainer] = React.useState<any>(null);
 
-  React.useEffect(() => {
-    let mounted = true;
-    loadRecharts().then((m) => {
-      if (mounted) setResponsiveContainer(() => m.ResponsiveContainer);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    React.useEffect(() => {
+      let mounted = true;
+      loadRecharts().then((m) => {
+        if (mounted) setResponsiveContainer(() => m.ResponsiveContainer);
+      });
+      return () => {
+        mounted = false;
+      };
+    }, []);
 
-  return (
-    <ChartContext.Provider value={{ config }}>
-      <div
-        data-chart={chartId}
-        ref={ref}
-        className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
-          className,
-        )}
-        {...props}
-      >
-        <ChartStyle id={chartId} config={config} />
-        {ResponsiveContainer ? (
-          <ResponsiveContainer>{children}</ResponsiveContainer>
-        ) : (
-          <div className="flex w-full h-full items-center justify-center">Loading chart…</div>
-        )}
-      </div>
-    </ChartContext.Provider>
-  );
-});
+    return (
+      <ChartContext.Provider value={{ config }}>
+        <div
+          data-chart={chartId}
+          ref={ref}
+          className={cn(
+            "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+            className,
+          )}
+          {...props}
+        >
+          <ChartStyle id={chartId} config={config} />
+          {ResponsiveContainer ? (
+            <ResponsiveContainer>{children}</ResponsiveContainer>
+          ) : (
+            <div className="flex w-full h-full items-center justify-center">Loading chart…</div>
+          )}
+        </div>
+      </ChartContext.Provider>
+    );
+  },
+);
 ChartContainer.displayName = "Chart";
 
 /**

@@ -4,11 +4,7 @@ import { UnassignedBadge } from "@/components/kanban/UnassignedBadge";
 import { AssigneeChip } from "@/components/pcready/StatusBadge";
 import { DEFAULT_WIP_LIMITS, type WipLimits } from "@/lib/app-settings";
 import { openTicketDetail } from "@/lib/detail-navigation";
-import {
-  STATUS_META,
-  type TicketPriority,
-  type TicketStatus,
-} from "@/lib/pcready";
+import { STATUS_META, type TicketPriority, type TicketStatus } from "@/lib/pcready";
 import { cn } from "@/lib/utils";
 import type { SwimLaneCard, SwimLaneGroupMode } from "./SwimLaneView";
 import type { ViewerInfo } from "@/hooks/useKanbanPresence";
@@ -95,9 +91,8 @@ export function SwimLaneRow({
   };
   const { t } = useTranslation(["kanban", "tickets"]);
   const assigneeId = technician?.id ?? null;
-  const laneId = groupMode === "technician"
-    ? (assigneeId ?? "unassigned")
-    : `${groupMode}:${groupLabel}`;
+  const laneId =
+    groupMode === "technician" ? (assigneeId ?? "unassigned") : `${groupMode}:${groupLabel}`;
 
   return (
     <tr className="border-b align-top" style={{ borderColor: "var(--border)" }}>
@@ -146,7 +141,9 @@ export function SwimLaneRow({
                   type="button"
                   onClick={() => onToggleCollapseColumn(status)}
                   className="flex flex-col items-center gap-0.5 cursor-pointer"
-                  title={t("expandColumn", "Espandi {{column}}", { column: t("tickets:status." + status, STATUS_META[status].label) })}
+                  title={t("expandColumn", "Espandi {{column}}", {
+                    column: t("tickets:status." + status, STATUS_META[status].label),
+                  })}
                 >
                   <span
                     className="size-2 rounded-full"
@@ -177,7 +174,9 @@ export function SwimLaneRow({
                   : isOver
                     ? `color-mix(in oklab, ${STATUS_META[status].color} 10%, transparent)`
                     : "var(--surface2)",
-                border: "1.5px dashed " + (isBlocked ? "#DC2626" : isOver ? STATUS_META[status].color : "var(--border)"),
+                border:
+                  "1.5px dashed " +
+                  (isBlocked ? "#DC2626" : isOver ? STATUS_META[status].color : "var(--border)"),
                 boxShadow: isBlocked ? "0 0 12px rgba(220,38,38,0.25)" : undefined,
               }}
               onDragOver={(event) => {
@@ -203,9 +202,10 @@ export function SwimLaneRow({
                     return;
                   }
                   // In non-technician modes, keep the card's current assignee
-                  const dropAssignee = groupMode === "technician"
-                    ? assigneeId
-                    : (cards.find((c) => c.id === dragId)?.assignee_id ?? null);
+                  const dropAssignee =
+                    groupMode === "technician"
+                      ? assigneeId
+                      : (cards.find((c) => c.id === dragId)?.assignee_id ?? null);
                   onMove(dragId, status, dropAssignee);
                 }
                 onDragEnd();
@@ -249,4 +249,3 @@ export function SwimLaneRow({
     </tr>
   );
 }
-

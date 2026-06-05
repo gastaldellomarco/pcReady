@@ -21,7 +21,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Added comprehensive authentication audit trail system documentation
 - Documented new auth_failed_attempts table with failed login tracking capabilities
 - Updated security monitoring and threat detection procedures
@@ -29,6 +31,7 @@
 - Added database schema and RLS policy coverage for audit trail system
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -42,7 +45,9 @@
 11. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains PCReady's security model and access control mechanisms. It covers:
+
 - Role-based access control (RBAC) with roles used in the frontend and backend
 - Supabase Row Level Security (RLS) policies across key tables
 - Customer isolation and data access boundaries
@@ -53,7 +58,9 @@ This document explains PCReady's security model and access control mechanisms. I
 - Security best practices and compliance considerations
 
 ## Project Structure
+
 PCReady integrates Supabase for authentication and authorization, with client-side React components and server-side TanStack Start server functions. The security model spans:
+
 - Frontend authentication context and role-aware UI
 - Backend authentication middleware and admin enforcement
 - Supabase RLS policies on tables and views
@@ -87,6 +94,7 @@ VIEWS --> RLS
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
@@ -98,6 +106,7 @@ VIEWS --> RLS
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 
 **Section sources**
+
 - [auth-context.tsx:1-173](file://src/lib/auth-context.tsx#L1-L173)
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
@@ -109,6 +118,7 @@ VIEWS --> RLS
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 
 ## Core Components
+
 - Authentication middleware validates Bearer tokens and injects user claims and user ID into server contexts.
 - Auth context loads user profile, resolves app role via RPC, and exposes role-aware booleans for UI rendering.
 - Admin server functions enforce admin-only access and delegate role checks to RPC functions.
@@ -117,6 +127,7 @@ VIEWS --> RLS
 - **NEW**: Authentication audit trail system tracks failed login attempts with comprehensive metadata for security monitoring.
 
 **Section sources**
+
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 - [auth-context.tsx:52-94](file://src/lib/auth-context.tsx#L52-L94)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
@@ -126,6 +137,7 @@ VIEWS --> RLS
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 
 ## Architecture Overview
+
 The security architecture combines client-side session management, server-side middleware, and Supabase RLS. The flow below shows how a request moves from UI to database with enforced policies, including the new authentication audit trail system.
 
 ```mermaid
@@ -159,6 +171,7 @@ end
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:114-146](file://src/lib/auth-context.tsx#L114-L146)
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
@@ -168,6 +181,7 @@ end
 ## Detailed Component Analysis
 
 ### Authentication Middleware and Token Validation
+
 - Validates presence of Supabase URL and publishable key
 - Requires Authorization header with Bearer token
 - Creates a Supabase client configured with the provided token
@@ -190,12 +204,15 @@ ValidClaims --> |Yes| Next["Call next with context (userId, claims)"]
 ```
 
 **Diagram sources**
+
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 
 **Section sources**
+
 - [auth-middleware.ts:7-74](file://src/integrations/supabase/auth-middleware.ts#L7-L74)
 
 ### Session Management and Role Resolution
+
 - Loads session and user from Supabase auth
 - Concurrently fetches profile, user profile, and app role via RPC
 - Normalizes display name and initials
@@ -215,12 +232,15 @@ C-->>S : "Set session, user, profile, role"
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:52-94](file://src/lib/auth-context.tsx#L52-L94)
 
 **Section sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 
 ### Admin Access Control and Enforcement
+
 - Admin-only server functions validate access tokens and enforce admin role via RPC
 - Enforces constraints such as preventing removal of the last admin
 - Provides user listing, updates, invitations, resends, disabling, and deletion
@@ -237,26 +257,31 @@ IsAdmin --> |Yes| Proceed["Proceed with operation"]
 ```
 
 **Diagram sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 
 **Section sources**
+
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [admin-users.ts:250-279](file://src/lib/admin-users.ts#L250-L279)
 
 ### RBAC Roles and Scope
+
 - App roles surfaced in the frontend include admin, tech, and viewer
 - Role resolution occurs via RPC and is used to gate UI and server operations
 - Technician listing filters to users with roles admin or tech
 
 **Section sources**
+
 - [auth-context.tsx:13-35](file://src/lib/auth-context.tsx#L13-L35)
 - [technicians.ts:10-33](file://src/lib/technicians.ts#L10-L33)
 - [admin-users.ts:53](file://src/lib/admin-users.ts#L53)
 
 ### Supabase RLS Policies and Data Access Boundaries
+
 - Profiles: Admins can read and update profiles
 - Automation flows: Select allowed broadly; insert/update/delete restricted to owner (created_by/updated_by)
 - Tickets: Deletion allowed for admins and techs
@@ -307,6 +332,7 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 ```
 
 **Diagram sources**
+
 - [20260504170000_add_rls_policies_automation_flows.sql:6-25](file://supabase/migrations/20260504170000_add_rls_policies_automation_flows.sql#L6-L25)
 - [20260514210000_tickets_tech_delete_policy.sql:4-7](file://supabase/migrations/20260514210000_tickets_tech_delete_policy.sql#L4-L7)
 - [20260515160000_automation_runs_view.sql:4-29](file://supabase/migrations/20260515160000_automation_runs_view.sql#L4-L29)
@@ -314,6 +340,7 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 - [20260505000000_patch_idempotent.sql:42-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L42-L62)
 
 **Section sources**
+
 - [20260430143000_admin_user_management_rls.sql:5-12](file://supabase/migrations/20260430143000_admin_user_management_rls.sql#L5-L12)
 - [20260504170000_add_rls_policies_automation_flows.sql:6-25](file://supabase/migrations/20260504170000_add_rls_policies_automation_flows.sql#L6-L25)
 - [20260514210000_tickets_tech_delete_policy.sql:4-7](file://supabase/migrations/20260514210000_tickets_tech_delete_policy.sql#L4-L7)
@@ -323,24 +350,29 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 - [20260505000000_patch_idempotent.sql:42-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L42-L62)
 
 ### Customer Isolation and Data Access Boundaries
+
 - Clients and related entities (e.g., devices, tickets) are linked via foreign keys
 - RLS policies on tables and views enforce access based on authenticated user and ownership/role
 - Realtime configuration ensures clients see only relevant events filtered by RLS
 
 **Section sources**
+
 - [20260514182000_realtime_replica_identity_core_tables.sql:4-7](file://supabase/migrations/20260514182000_realtime_replica_identity_core_tables.sql#L4-L7)
 
 ### Integration Between Roles, Associations, and Permissions
+
 - Role RPC functions resolve effective app roles for users
 - UI components conditionally render based on role booleans
 - Server functions enforce admin-only operations and ownership constraints
 
 **Section sources**
+
 - [auth-context.tsx:155-156](file://src/lib/auth-context.tsx#L155-L156)
 - [admin-users.server.ts:10-14](file://src/lib/admin-users.server.ts#L10-L14)
 - [technicians.ts:16-20](file://src/lib/technicians.ts#L16-L20)
 
 ### Example Policy Configurations
+
 - Profiles: Admins can read and update profiles
 - Automation flows: Select allowed; insert/update/delete restricted to owner
 - Tickets: Deletion allowed for admins and techs
@@ -348,6 +380,7 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 - **NEW**: Activity log: Authenticated users can read; insert allowed for authenticated users
 
 **Section sources**
+
 - [20260430143000_admin_user_management_rls.sql:5-12](file://supabase/migrations/20260430143000_admin_user_management_rls.sql#L5-L12)
 - [20260504170000_add_rls_policies_automation_flows.sql:9-23](file://supabase/migrations/20260504170000_add_rls_policies_automation_flows.sql#L9-L23)
 - [20260514210000_tickets_tech_delete_policy.sql:6-7](file://supabase/migrations/20260514210000_tickets_tech_delete_policy.sql#L6-L7)
@@ -355,11 +388,13 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 - [20260505000000_patch_idempotent.sql:42-62](file://supabase/migrations/20260505000000_patch_idempotent.sql#L42-L62)
 
 ### Common Access Control Scenarios
+
 - Creating a ticket: Requires authenticated user; inserts with created_by set; rate-limited
 - Listing technicians: Filters to users with roles admin or tech
 - Admin user management: Requires admin role; enforces constraints like preventing removal of the last admin
 
 **Section sources**
+
 - [tickets.ts:50-111](file://src/lib/tickets.ts#L50-L111)
 - [technicians.ts:10-33](file://src/lib/technicians.ts#L10-L33)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
@@ -367,9 +402,11 @@ AUTH_FAILED_ATTEMPTS ||--o{ ACTIVITY_LOG : "monitors"
 ## Authentication Audit Trail System
 
 ### Overview
+
 The authentication audit trail system provides comprehensive monitoring of authentication events, specifically tracking failed login attempts to detect and prevent brute force attacks and suspicious activities. This system enhances security by providing real-time visibility into authentication patterns and enabling automated threat detection.
 
 ### Database Schema
+
 The system introduces a dedicated table for tracking authentication events:
 
 ```mermaid
@@ -390,9 +427,11 @@ string auth_failed_attempts_rls
 ```
 
 **Diagram sources**
+
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 
 ### Table Structure and Columns
+
 - **id**: Unique identifier for each audit entry (UUID, auto-generated)
 - **email**: Email address associated with the authentication attempt (text, not null)
 - **success**: Boolean flag indicating whether the authentication attempt succeeded (boolean, default false)
@@ -400,15 +439,18 @@ string auth_failed_attempts_rls
 - **created_at**: Timestamp with timezone for when the attempt was recorded (timestamptz, default current timestamp)
 
 ### Indexing Strategy
+
 - Composite index on `(email, created_at DESC)` for efficient querying of recent attempts per user
 - Optimized for common security monitoring patterns: recent activity per user and time-based analysis
 
 ### RLS Policy Implementation
+
 - Row Level Security is enabled on the table to ensure proper access control
 - Policies restrict access to authenticated users who have legitimate reasons to view audit data
 - Supports both read and write operations for authorized administrative functions
 
 ### Implementation Details
+
 The audit trail is populated automatically during the authentication process:
 
 ```mermaid
@@ -423,9 +465,11 @@ AuditInsert --> BestEffort["Best-effort logging"]
 ```
 
 **Diagram sources**
+
 - [staff-auth.server.ts:58-70](file://src/lib/server/staff-auth.server.ts#L58-L70)
 
 ### Key Features
+
 - **Comprehensive Tracking**: Captures both successful and failed authentication attempts
 - **Metadata Preservation**: Stores detailed payload information for forensic analysis
 - **Performance Optimization**: Uses efficient indexing for high-volume authentication monitoring
@@ -433,17 +477,20 @@ AuditInsert --> BestEffort["Best-effort logging"]
 - **Non-blocking Design**: Uses best-effort insertion to avoid impacting primary authentication flow
 
 ### Security Monitoring Capabilities
+
 - **Brute Force Detection**: Monitor rapid successive failed attempts per user
 - **Pattern Recognition**: Identify suspicious authentication patterns across time periods
 - **Geographic Analysis**: Correlate authentication attempts with IP addresses and geographic locations
 - **Account Takeover Prevention**: Detect unusual authentication patterns that may indicate compromised accounts
 
 **Section sources**
+
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 - [staff-auth.server.ts:58-70](file://src/lib/server/staff-auth.server.ts#L58-L70)
 - [types.ts:77-100](file://src/integrations/supabase/types.ts#L77-L100)
 
 ## Dependency Analysis
+
 The following diagram maps key dependencies among authentication, server functions, RLS policies, and the new audit trail system.
 
 ```mermaid
@@ -459,6 +506,7 @@ V["automation_runs view"] --> RLS
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:69](file://src/lib/auth-context.tsx#L69)
 - [auth-middleware.ts:56](file://src/integrations/supabase/auth-middleware.ts#L56)
 - [admin-users.server.ts:10](file://src/lib/admin-users.server.ts#L10)
@@ -467,6 +515,7 @@ V["automation_runs view"] --> RLS
 - [20260515160000_automation_runs_view.sql:4](file://supabase/migrations/20260515160000_automation_runs_view.sql#L4)
 
 **Section sources**
+
 - [auth-context.tsx:69](file://src/lib/auth-context.tsx#L69)
 - [auth-middleware.ts:56](file://src/integrations/supabase/auth-middleware.ts#L56)
 - [admin-users.server.ts:10](file://src/lib/admin-users.server.ts#L10)
@@ -475,6 +524,7 @@ V["automation_runs view"] --> RLS
 - [20260515160000_automation_runs_view.sql:4](file://supabase/migrations/20260515160000_automation_runs_view.sql#L4)
 
 ## Performance Considerations
+
 - Minimize concurrent DB calls in auth context; current implementation uses Promise.all for profile, user profile, and role resolution
 - Prefer server-side RLS to avoid redundant client-side filtering
 - Use views with security invoker to centralize permission logic and reduce repeated checks
@@ -483,6 +533,7 @@ V["automation_runs view"] --> RLS
 - **NEW**: Best-effort logging approach prevents audit trail system from blocking primary authentication flow
 
 ## Troubleshooting Guide
+
 - Missing environment variables: Middleware throws 500 when Supabase URL or publishable key are not set
 - Missing or invalid Authorization header: Middleware throws 401 for missing or unsupported headers
 - Invalid token: Claims retrieval failure leads to 401
@@ -491,6 +542,7 @@ V["automation_runs view"] --> RLS
 - **NEW**: Authentication audit trail failures: The system uses best-effort logging, so failures are logged but don't block authentication flow
 
 **Section sources**
+
 - [auth-middleware.ts:9-41](file://src/integrations/supabase/auth-middleware.ts#L9-L41)
 - [admin-users.server.ts:7-8](file://src/lib/admin-users.server.ts#L7-L8)
 - [admin-users.ts:172-174](file://src/lib/admin-users.ts#L172-L174)
@@ -498,27 +550,32 @@ V["automation_runs view"] --> RLS
 - [staff-auth.server.ts:58-70](file://src/lib/server/staff-auth.server.ts#L58-L70)
 
 ## Conclusion
+
 PCReady's security model leverages Supabase authentication and RLS to enforce role-based access control, ownership constraints, and customer isolation. The addition of the comprehensive authentication audit trail system significantly enhances security monitoring capabilities by providing detailed tracking of authentication events, enabling detection of suspicious activities, and supporting compliance requirements. The frontend auth context and middleware provide robust token validation and role-aware UI, while server functions enforce admin-only operations and ownership rules. RLS policies on tables and views ensure consistent access boundaries, and views with security invoker centralize permission logic. The new audit trail system maintains non-blocking performance characteristics while providing essential security monitoring functionality. Adhering to the best practices outlined here will help maintain a secure and compliant system.
 
 ## Appendices
 
 ### Appendix A: Supabase Types and Database Types
+
 - Supabase-generated types define tables, enums, and relationships used across the application
 - Database types re-export Supabase types for consistent typing
 - **NEW**: auth_failed_attempts table types included in generated TypeScript definitions
 
 **Section sources**
+
 - [types.ts:1-800](file://src/integrations/supabase/types.ts#L1-L800)
 - [database.types.ts:1-2](file://src/types/database.types.ts#L1-L2)
 - [types.ts:77-100](file://src/integrations/supabase/types.ts#L77-L100)
 
 ### Appendix B: Authentication Audit Trail Configuration
+
 - Table creation with appropriate constraints and defaults
 - Index optimization for common query patterns
 - RLS policy implementation for access control
 - Integration with staff authentication server functions
 
 **Section sources**
+
 - [20260521205713_auth_failed_attempts.sql:1-13](file://supabase/migrations/20260521205713_auth_failed_attempts.sql#L1-L13)
 - [staff-auth.server.ts:58-70](file://src/lib/server/staff-auth.server.ts#L58-L70)
 - [types.ts:77-100](file://src/integrations/supabase/types.ts#L77-L100)

@@ -50,19 +50,18 @@ export function Modal({
   // On mobile: render as bottom Drawer sheet
   if (isMobile) {
     return createPortal(
-      <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-        <DrawerContent
-          className="max-h-[92dvh] overflow-y-auto px-4 pb-8 pt-2 safe-area-bottom"
-        >
+      <Drawer
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onClose();
+        }}
+      >
+        <DrawerContent className="max-h-[92dvh] overflow-y-auto px-4 pb-8 pt-2 safe-area-bottom">
           <DrawerHeader className="px-0">
             <DrawerTitle className="text-[16px]">{title}</DrawerTitle>
-            <DrawerDescription className="sr-only">
-              {title}
-            </DrawerDescription>
+            <DrawerDescription className="sr-only">{title}</DrawerDescription>
           </DrawerHeader>
-          <div className="flex flex-col gap-4">
-            {children}
-          </div>
+          <div className="flex flex-col gap-4">{children}</div>
           {footer && (
             <div
               className="mt-4 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end"
@@ -85,7 +84,9 @@ export function Modal({
       className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
     >
       <div
         onClick={(e) => e.stopPropagation()}

@@ -14,6 +14,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -25,10 +26,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document describes PCReady’s core domain entities and their relationships: USERS, CLIENTS, CONTACTS, DEVICES, TICKETS, and the many-to-many relationship between TICKETS and DEVICES mediated by TICKET_DEVICE_ASSIGNMENTS. It details primary keys, foreign keys, referential integrity, constraints, and audit/tracking mechanisms. It also explains entity lifecycle management, validation rules, and common query patterns grounded in the repository’s migrations and TypeScript type definitions.
 
 ## Project Structure
+
 The core schema is defined in Supabase migrations and mirrored in TypeScript types. The key areas are:
+
 - Entity definitions and constraints in migrations
 - Type-safe table definitions in TypeScript
 - Versioning and audit infrastructure
@@ -56,16 +60,19 @@ TV -. tracks changes .- D
 ```
 
 **Diagram sources**
+
 - [split_assets_clients_tickets.sql:3-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L3-L137)
 - [complete_ticket_device_separation.sql:1-83](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L1-L83)
 - [entity_versions.sql:1-41](file://supabase/migrations/20260503120000_entity_versions.sql#L1-L41)
 
 **Section sources**
+
 - [split_assets_clients_tickets.sql:1-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L1-L137)
 - [complete_ticket_device_separation.sql:1-83](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L1-L83)
 - [entity_versions.sql:1-41](file://supabase/migrations/20260503120000_entity_versions.sql#L1-L41)
 
 ## Core Components
+
 This section defines each core entity, its primary key, fields, data types, constraints, and relationships.
 
 - USERS
@@ -121,6 +128,7 @@ This section defines each core entity, its primary key, fields, data types, cons
   - Constraints: Unique index on (entity_type, entity_id, version_number); operation check constraint; RLS policies restrict inserts to authenticated users and enforce created_by equals current user for create/update; admin-only restores.
 
 **Section sources**
+
 - [split_assets_clients_tickets.sql:3-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L3-L137)
 - [expand_clients_contacts.sql:1-29](file://supabase/migrations/20260430182000_expand_clients_contacts.sql#L1-L29)
 - [complete_ticket_device_separation.sql:1-83](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L1-L83)
@@ -130,7 +138,9 @@ This section defines each core entity, its primary key, fields, data types, cons
 - [types.ts:277-1092](file://src/integrations/supabase/types.ts#L277-L1092)
 
 ## Architecture Overview
+
 The system separates concerns across:
+
 - Core entities (CLIENTS, CONTACTS, DEVICES, TICKETS)
 - Assignment bridge (TICKET_DEVICE_ASSIGNMENTS) and its history (TICKET_DEVICE_ASSIGNMENT_HISTORY)
 - Global versioning (ENTITY_VERSIONS) for audit and restore
@@ -253,6 +263,7 @@ EntityVersions --> Devices : "entity_type='devices'"
 ```
 
 **Diagram sources**
+
 - [types.ts:277-1092](file://src/integrations/supabase/types.ts#L277-L1092)
 - [split_assets_clients_tickets.sql:3-137](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L3-L137)
 - [complete_ticket_device_separation.sql:1-83](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L1-L83)
@@ -262,6 +273,7 @@ EntityVersions --> Devices : "entity_type='devices'"
 ## Detailed Component Analysis
 
 ### Entity Lifecycle Management and Validation Rules
+
 - Creation and updates
   - Timestamps: updated_at triggers are defined for clients, client_contacts, devices.
   - RLS policies: authenticated users can read; tech/admin can insert/update; admin can delete for most entities.
@@ -273,12 +285,14 @@ EntityVersions --> Devices : "entity_type='devices'"
   - A trigger mirrors assignment changes into ticket_device_assignment_history for durable audit trails.
 
 **Section sources**
+
 - [split_assets_clients_tickets.sql:50-84](file://supabase/migrations/20260430170000_split_assets_clients_tickets.sql#L50-L84)
 - [expand_clients_contacts.sql:22-29](file://supabase/migrations/20260430182000_expand_clients_contacts.sql#L22-L29)
 - [complete_ticket_device_separation.sql:1-83](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L1-L83)
 - [create_ticket_device_assignment_history.sql:34-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L34-L74)
 
 ### Business Constraints and Referential Integrity
+
 - Tickets
   - client_id, requester_contact_id, device_id optional but interdependent; device_id FK allows NULL; indexes support filtering.
   - Assignee references profiles; template_id references checklist_templates.
@@ -290,12 +304,14 @@ EntityVersions --> Devices : "entity_type='devices'"
   - Bridge table enforces referential integrity; unassigned_at indicates removal; replacement recorded with changed_fields.
 
 **Section sources**
+
 - [types.ts:967-1092](file://src/integrations/supabase/types.ts#L967-L1092)
 - [types.ts:842-886](file://src/integrations/supabase/types.ts#L842-L886)
 - [types.ts:277-335](file://src/integrations/supabase/types.ts#L277-L335)
 - [types.ts:384-436](file://src/integrations/supabase/types.ts#L384-L436)
 
 ### Audit Trail and Change Tracking
+
 - Entity versioning
   - entity_versions snapshots entire entity state per operation with computed changed_fields; supports create, update, restore, delete.
   - Policies restrict creation to authenticated users and enforce created_by equals current user; admin-only restores.
@@ -318,16 +334,19 @@ API-->>Client : "OK"
 ```
 
 **Diagram sources**
+
 - [versioning.ts:97-135](file://src/lib/versioning.ts#L97-L135)
 - [entity_versions.sql:1-41](file://supabase/migrations/20260503120000_entity_versions.sql#L1-L41)
 
 **Section sources**
+
 - [versioning.ts:1-271](file://src/lib/versioning.ts#L1-L271)
 - [entity_versions.sql:1-41](file://supabase/migrations/20260503120000_entity_versions.sql#L1-L41)
 - [harden_entity_versions.sql:1-44](file://supabase/migrations/20260509123300_harden_entity_versions.sql#L1-L44)
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 
 ### Many-to-Many Relationship: TICKETS ↔ DEVICES via TICKET_DEVICE_ASSIGNMENTS
+
 - Relationship
   - One ticket can be assigned to zero or one device at a time via ticket_device_assignments; historical changes persist in ticket_device_assignment_history.
 - Assignment lifecycle
@@ -354,13 +373,16 @@ DeleteHist --> End
 ```
 
 **Diagram sources**
+
 - [create_ticket_device_assignment_history.sql:34-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L34-L74)
 
 **Section sources**
+
 - [complete_ticket_device_separation.sql:41-51](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L41-L51)
 - [create_ticket_device_assignment_history.sql:1-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L1-L74)
 
 ### Common Query Patterns
+
 - Retrieve ticket with client and contact details
   - Join tickets with clients and client_contacts on client_id and requester_contact_id.
 - List devices for a client with status filter
@@ -373,12 +395,14 @@ DeleteHist --> End
   - Use exported function to fetch deduplicated activity_log rows and produce CSV.
 
 **Section sources**
+
 - [types.ts:967-1092](file://src/integrations/supabase/types.ts#L967-L1092)
 - [types.ts:842-886](file://src/integrations/supabase/types.ts#L842-L886)
 - [versioning.ts:162-180](file://src/lib/versioning.ts#L162-L180)
 - [audit-log.ts:109-183](file://src/lib/audit-log.ts#L109-L183)
 
 ## Dependency Analysis
+
 - Internal dependencies
   - TypeScript types define relationships and enums used across the frontend.
   - Versioning library depends on Supabase client and computes diffs.
@@ -401,16 +425,19 @@ Audit["audit-log.ts"] --> Types
 ```
 
 **Diagram sources**
+
 - [types.ts:277-1092](file://src/integrations/supabase/types.ts#L277-L1092)
 - [versioning.ts:1-271](file://src/lib/versioning.ts#L1-L271)
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 
 **Section sources**
+
 - [types.ts:277-1092](file://src/integrations/supabase/types.ts#L277-L1092)
 - [versioning.ts:1-271](file://src/lib/versioning.ts#L1-L271)
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 
 ## Performance Considerations
+
 - Indexes
   - tickets: device_id, client_id, requester_contact_id (with WHERE clauses for non-null).
   - entity_versions: composite indexes on (entity_type, entity_id, version_number) and (entity_type, entity_id, created_at DESC).
@@ -421,12 +448,14 @@ Audit["audit-log.ts"] --> Types
   - Mirroring assignment events to history adds write overhead; ensure appropriate monitoring and retention policies.
 
 **Section sources**
+
 - [complete_ticket_device_separation.sql:13-23](file://supabase/migrations/20260509002000_complete_ticket_device_separation.sql#L13-L23)
 - [entity_versions.sql:21-27](file://supabase/migrations/20260503120000_entity_versions.sql#L21-L27)
 - [create_ticket_device_assignment_history.sql:16-20](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L16-L20)
 - [audit-log.ts:36-89](file://src/lib/audit-log.ts#L36-L89)
 
 ## Troubleshooting Guide
+
 - Versioning errors
   - createVersionSnapshot throws on DB errors; ensure authenticated user context and valid snapshot.
   - restoreEntityVersion requires admin role; verify get_user_role policy enforcement.
@@ -436,10 +465,12 @@ Audit["audit-log.ts"] --> Types
   - Verify trigger existence and function permissions; ensure ticket_device_assignments operations fire the trigger.
 
 **Section sources**
+
 - [versioning.ts:97-135](file://src/lib/versioning.ts#L97-L135)
 - [versioning.ts:209-261](file://src/lib/versioning.ts#L209-L261)
 - [audit-log.ts:73-82](file://src/lib/audit-log.ts#L73-L82)
 - [create_ticket_device_assignment_history.sql:68-74](file://supabase/migrations/20260504183000_create_ticket_device_assignment_history.sql#L68-L74)
 
 ## Conclusion
+
 PCReady’s core domain is modeled with clear primary and foreign keys, robust referential integrity, and strong audit and versioning capabilities. The separation of concerns—clients, contacts, devices, tickets—and the explicit bridge table for ticket-device assignments enable precise lifecycle tracking. The global versioning and assignment history systems provide reliable change tracking and restoration, while RLS and policies ensure secure access control across entities.

@@ -107,7 +107,9 @@ function OAuthConsentPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">{t("oauth.validating", "Validazione richiesta...")}</p>
+          <p className="mt-2 text-muted-foreground">
+            {t("oauth.validating", "Validazione richiesta...")}
+          </p>
         </div>
       </div>
     );
@@ -120,9 +122,14 @@ function OAuthConsentPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <X className="mx-auto h-12 w-12 text-destructive" />
-              <h3 className="mt-2 text-lg font-semibold">{t("oauth.invalidTitle", "Richiesta non valida")}</h3>
+              <h3 className="mt-2 text-lg font-semibold">
+                {t("oauth.invalidTitle", "Richiesta non valida")}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {t("oauth.invalidDescription", "La richiesta di autorizzazione OAuth non è valida.")}
+                {t(
+                  "oauth.invalidDescription",
+                  "La richiesta di autorizzazione OAuth non è valida.",
+                )}
               </p>
             </div>
           </CardContent>
@@ -139,7 +146,9 @@ function OAuthConsentPage() {
             <Shield className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">{t("oauth.appName", "PCReady")}</CardTitle>
-          <CardDescription>{t("oauth.externalApp", "Autorizzazione richiesta da un'applicazione esterna")}</CardDescription>
+          <CardDescription>
+            {t("oauth.externalApp", "Autorizzazione richiesta da un'applicazione esterna")}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -166,7 +175,9 @@ function OAuthConsentPage() {
 
           {/* Scopes */}
           <div>
-            <h4 className="font-semibold mb-3">{t("oauth.requestedPermissions", "Permessi richiesti")}</h4>
+            <h4 className="font-semibold mb-3">
+              {t("oauth.requestedPermissions", "Permessi richiesti")}
+            </h4>
             <div className="space-y-2">
               {validation.requestedScopes.map((scope) => (
                 <div key={scope} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -194,12 +205,17 @@ function OAuthConsentPage() {
               {denying ? t("oauth.cancelling", "Annullamento...") : t("oauth.deny", "Nega")}
             </Button>
             <Button onClick={handleGrant} disabled={denying || granting} className="flex-1">
-              {granting ? t("oauth.authorizing", "Autorizzazione...") : t("oauth.authorize", "Autorizza")}
+              {granting
+                ? t("oauth.authorizing", "Autorizzazione...")
+                : t("oauth.authorize", "Autorizza")}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            {t("oauth.consentDescription", "Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra.")}
+            {t(
+              "oauth.consentDescription",
+              "Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra.",
+            )}
           </p>
         </CardContent>
       </Card>

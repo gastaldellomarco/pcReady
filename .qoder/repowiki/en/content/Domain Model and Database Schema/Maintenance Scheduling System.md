@@ -13,6 +13,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
@@ -75,6 +76,7 @@ Cron --> Functions
 ```
 
 **Diagram sources**
+
 - [maintenance.ts:1-242](file://src/lib/maintenance.ts#L1-L242)
 - [MaintenanceSchedulePanel.tsx:1-331](file://src/components/inventory/MaintenanceSchedulePanel.tsx#L1-L331)
 - [maintenance_schedules.sql:1-233](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L1-L233)
@@ -131,9 +133,11 @@ MaintenanceLibrary --> TechnicianOption
 ```
 
 **Diagram sources**
+
 - [maintenance.ts:7-41](file://src/lib/maintenance.ts#L7-L41)
 
 **Section sources**
+
 - [maintenance.ts:1-242](file://src/lib/maintenance.ts#L1-L242)
 
 ### Status Management System
@@ -158,9 +162,11 @@ Overdue --> End
 ```
 
 **Diagram sources**
+
 - [maintenance.ts:87-96](file://src/lib/maintenance.ts#L87-L96)
 
 **Section sources**
+
 - [maintenance.ts:87-96](file://src/lib/maintenance.ts#L87-L96)
 
 ## Data Model
@@ -237,9 +243,11 @@ MAINTENANCE_SCHEDULES ||--|| USER_PROFILES : "assigned_to"
 ```
 
 **Diagram sources**
+
 - [maintenance_schedules.sql:1-25](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L1-L25)
 
 **Section sources**
+
 - [maintenance_schedules.sql:1-25](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L1-L25)
 
 ## User Interface Components
@@ -272,9 +280,11 @@ Panel-->>User : Show Success Message
 ```
 
 **Diagram sources**
+
 - [MaintenanceSchedulePanel.tsx:92-119](file://src/components/inventory/MaintenanceSchedulePanel.tsx#L92-L119)
 
 **Section sources**
+
 - [MaintenanceSchedulePanel.tsx:1-331](file://src/components/inventory/MaintenanceSchedulePanel.tsx#L1-L331)
 
 ### Calendar Integration
@@ -282,6 +292,7 @@ Panel-->>User : Show Success Message
 The system provides comprehensive calendar views for visualizing maintenance schedules across different time periods and filtering options.
 
 **Section sources**
+
 - [inventory.tsx:959-1149](file://src/routes/_app/inventory.tsx#L959-L1149)
 - [calendar.tsx:1-200](file://src/routes/_app/calendar.tsx#L1-L200)
 
@@ -291,18 +302,19 @@ The PostgreSQL schema implements robust data integrity with foreign key constrai
 
 ### Table Structure and Constraints
 
-| Table | Purpose | Key Features |
-|-------|---------|--------------|
-| `maintenance_schedules` | Core maintenance schedule storage | UUID primary key, foreign key to devices, recurrence validation, auto-create ticket support |
-| `maintenance_history` | Historical record of completed maintenance | Cascade deletion with devices, audit trail of completions |
-| `user_profiles` | Technician and admin profiles | Integration with auth system for role-based access |
-| `tickets` | Auto-generated service tickets | Integration with maintenance schedules for automated work orders |
+| Table                   | Purpose                                    | Key Features                                                                                |
+| ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `maintenance_schedules` | Core maintenance schedule storage          | UUID primary key, foreign key to devices, recurrence validation, auto-create ticket support |
+| `maintenance_history`   | Historical record of completed maintenance | Cascade deletion with devices, audit trail of completions                                   |
+| `user_profiles`         | Technician and admin profiles              | Integration with auth system for role-based access                                          |
+| `tickets`               | Auto-generated service tickets             | Integration with maintenance schedules for automated work orders                            |
 
 ### Security and Access Control
 
 The system implements comprehensive Row Level Security (RLS) policies ensuring data isolation and appropriate access permissions based on user roles.
 
 **Section sources**
+
 - [maintenance_schedules.sql:26-80](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L26-L80)
 
 ## Automation Engine
@@ -331,9 +343,11 @@ UpdateDueSoon --> End([Complete])
 ```
 
 **Diagram sources**
+
 - [maintenance_schedules.sql:128-213](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L128-L213)
 
 **Section sources**
+
 - [maintenance_schedules.sql:128-213](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L128-L213)
 
 ### Notification System
@@ -341,6 +355,7 @@ UpdateDueSoon --> End([Complete])
 The automation engine generates contextual notifications for technicians when maintenance tasks are approaching their due dates, ensuring timely intervention.
 
 **Section sources**
+
 - [maintenance_schedules.sql:190-211](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L190-L211)
 
 ## Integration Points
@@ -378,10 +393,12 @@ TicketSystem --> API
 ```
 
 **Diagram sources**
+
 - [calendar-ical.ts:74-124](file://src/lib/calendar-ical.ts#L74-L124)
 - [calendar.tsx:190-195](file://src/routes/_app/calendar.tsx#L190-L195)
 
 **Section sources**
+
 - [calendar-ical.ts:1-152](file://src/lib/calendar-ical.ts#L1-L152)
 - [types.ts:1-8](file://src/components/calendar/types.ts#L1-L8)
 
@@ -390,6 +407,7 @@ TicketSystem --> API
 The maintenance system provides comprehensive dashboard widgets that display key metrics and upcoming maintenance tasks.
 
 **Section sources**
+
 - [dashboard.tsx:995-1099](file://src/routes/_app/dashboard.tsx#L995-L1099)
 
 ## Performance Considerations
@@ -413,22 +431,24 @@ The system implements several performance optimization strategies:
 
 ### Common Issues and Solutions
 
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| Maintenance tasks not appearing in calendar | Empty calendar view | Verify cron job is running and check `run_maintenance_automations` function logs |
-| Tickets not auto-created | Missing service tickets | Check `auto_create_ticket` flag and verify function execution |
-| Status not updating | Incorrect maintenance status display | Verify `getMaintenanceStatus` calculations and date formatting |
-| Notification delivery failures | Missing technician notifications | Check notification type validation and user preferences |
+| Issue                                       | Symptoms                             | Solution                                                                         |
+| ------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
+| Maintenance tasks not appearing in calendar | Empty calendar view                  | Verify cron job is running and check `run_maintenance_automations` function logs |
+| Tickets not auto-created                    | Missing service tickets              | Check `auto_create_ticket` flag and verify function execution                    |
+| Status not updating                         | Incorrect maintenance status display | Verify `getMaintenanceStatus` calculations and date formatting                   |
+| Notification delivery failures              | Missing technician notifications     | Check notification type validation and user preferences                          |
 
 ### Database Maintenance
 
 Regular maintenance tasks include:
+
 - Monitoring cron job execution logs
 - Verifying trigger function permissions
 - Checking index utilization and query performance
 - Validating RLS policy effectiveness
 
 **Section sources**
+
 - [maintenance_schedules.sql:215-233](file://supabase/migrations/20260523120000_maintenance_schedules.sql#L215-L233)
 
 ## Conclusion

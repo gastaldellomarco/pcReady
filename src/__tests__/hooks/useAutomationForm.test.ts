@@ -60,9 +60,7 @@ describe("useAutomationForm", () => {
 
   describe("initialData", () => {
     it("populates from partial initialData, fills defaults for missing", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm({ name: "My Rule" }),
-      );
+      const { result } = renderHook(() => useAutomationForm({ name: "My Rule" }));
 
       expect(result.current.data.name).toBe("My Rule");
       expect(result.current.data.description).toBeUndefined();
@@ -121,9 +119,7 @@ describe("useAutomationForm", () => {
 
   describe("updateField", () => {
     it("updates a top-level field value", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm({ name: "Old" }),
-      );
+      const { result } = renderHook(() => useAutomationForm({ name: "Old" }));
 
       act(() => {
         result.current.updateField("name", "New Name");
@@ -172,15 +168,11 @@ describe("useAutomationForm", () => {
       expect(result.current.getFieldError("trigger.config.cron")).toBeUndefined();
       expect(result.current.getFieldError("trigger.type")).toBeUndefined();
       // actions errors should remain
-      expect(result.current.getFieldError("actions.0.config.subject")).toBe(
-        "Subject required",
-      );
+      expect(result.current.getFieldError("actions.0.config.subject")).toBe("Subject required");
     });
 
     it("does not mutate the original data reference", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm({ name: "Original" }),
-      );
+      const { result } = renderHook(() => useAutomationForm({ name: "Original" }));
       const original = result.current.data;
 
       act(() => {
@@ -241,19 +233,13 @@ describe("useAutomationForm", () => {
         });
       });
 
-      expect(
-        result.current.getFieldError("trigger.config"),
-      ).toBeUndefined();
+      expect(result.current.getFieldError("trigger.config")).toBeUndefined();
       // Other error should remain
-      expect(result.current.getFieldError("trigger.type")).toBe(
-        "Invalid type",
-      );
+      expect(result.current.getFieldError("trigger.type")).toBe("Invalid type");
     });
 
     it("does nothing when the target field is not an object", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm({ name: "Test" }),
-      );
+      const { result } = renderHook(() => useAutomationForm({ name: "Test" }));
 
       act(() => {
         result.current.updateNestedField("name", "length", 42);
@@ -279,9 +265,7 @@ describe("useAutomationForm", () => {
 
   describe("validate", () => {
     it("returns true for valid data", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm(validInput()),
-      );
+      const { result } = renderHook(() => useAutomationForm(validInput()));
 
       let isValid: boolean;
       act(() => {
@@ -294,9 +278,7 @@ describe("useAutomationForm", () => {
     });
 
     it("returns false and sets errors for empty name", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm(validInput({ name: "" })),
-      );
+      const { result } = renderHook(() => useAutomationForm(validInput({ name: "" })));
 
       let isValid: boolean;
       act(() => {
@@ -304,16 +286,12 @@ describe("useAutomationForm", () => {
       });
 
       expect(isValid!).toBe(false);
-      expect(result.current.getFieldError("name")).toBe(
-        "Nome automazione richiesto",
-      );
+      expect(result.current.getFieldError("name")).toBe("Nome automazione richiesto");
       expect(result.current.isValid).toBe(false);
     });
 
     it("returns false when actions is empty", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm(validInput({ actions: [] })),
-      );
+      const { result } = renderHook(() => useAutomationForm(validInput({ actions: [] })));
 
       let isValid: boolean;
       act(() => {
@@ -368,9 +346,7 @@ describe("useAutomationForm", () => {
     });
 
     it("clears previous errors when validation passes", () => {
-      const { result } = renderHook(() =>
-        useAutomationForm(validInput({ name: "" })),
-      );
+      const { result } = renderHook(() => useAutomationForm(validInput({ name: "" })));
 
       // First validation fails
       act(() => {
@@ -569,9 +545,7 @@ describe("useAutomationForm", () => {
 
     it("rejects description exceeding 1000 characters", () => {
       const { result } = renderHook(() =>
-        useAutomationForm(
-          validInput({ description: "x".repeat(1001) }),
-        ),
+        useAutomationForm(validInput({ description: "x".repeat(1001) })),
       );
 
       let isValid: boolean;

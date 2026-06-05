@@ -38,7 +38,10 @@ export function AdminUserStatusBadge({
             color: "var(--warning, #D97706)",
           }}
         >
-          {t("statusBadge.invitedAgo", "Invitato da {{elapsed}}").replace("{{elapsed}}", fmtElapsed(invitedAt ?? null))}
+          {t("statusBadge.invitedAgo", "Invitato da {{elapsed}}").replace(
+            "{{elapsed}}",
+            fmtElapsed(invitedAt ?? null),
+          )}
         </span>
         {onResend && (
           <button

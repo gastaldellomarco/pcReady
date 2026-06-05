@@ -22,6 +22,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -33,6 +34,7 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document describes the target audience and stakeholder groups served by the application, focusing on three primary user roles and the client portal experience. It explains the personas, access capabilities, and technical requirements for each group, and maps their workflows to specific application components and backend policies.
 
 - Admin: Full administrative access for user management, configuration, and system auditing.
@@ -41,8 +43,10 @@ This document describes the target audience and stakeholder groups served by the
 - Client Portal: External stakeholders can track ticket status, create tickets, and access documents via a secure session.
 
 ## Project Structure
+
 The application separates internal and external experiences:
-- Internal app under /_app exposes administration, ticketing, and operational features.
+
+- Internal app under /\_app exposes administration, ticketing, and operational features.
 - Client portal under /portal provides read-only and submission capabilities for external stakeholders.
 
 ```mermaid
@@ -66,6 +70,7 @@ P_Dashboard --> P_Tickets
 ```
 
 **Diagram sources**
+
 - [admin.tsx:11-49](file://src/routes/_app/admin.tsx#L11-L49)
 - [tickets.tsx:37-47](file://src/routes/_app/tickets.tsx#L37-L47)
 - [dashboard.tsx:10-14](file://src/routes/portal/dashboard.tsx#L10-L14)
@@ -74,6 +79,7 @@ P_Dashboard --> P_Tickets
 - [tickets/$ticketId.tsx:9-13](file://src/routes/portal/tickets/$ticketId.tsx#L9-L13)
 
 **Section sources**
+
 - [admin.tsx:11-49](file://src/routes/_app/admin.tsx#L11-L49)
 - [tickets.tsx:37-47](file://src/routes/_app/tickets.tsx#L37-L47)
 - [dashboard.tsx:10-14](file://src/routes/portal/dashboard.tsx#L10-L14)
@@ -82,6 +88,7 @@ P_Dashboard --> P_Tickets
 - [tickets/$ticketId.tsx:9-13](file://src/routes/portal/tickets/$ticketId.tsx#L9-L13)
 
 ## Core Components
+
 - Authentication and roles:
   - AppRole union and role-aware UI helpers define admin, tech, viewer.
   - Admin-only routes guard access to administrative areas.
@@ -98,6 +105,7 @@ P_Dashboard --> P_Tickets
   - Navigation and forms tailored for external users.
 
 **Section sources**
+
 - [auth-context.tsx:13-35](file://src/lib/auth-context.tsx#L13-L35)
 - [admin-users.ts:53-135](file://src/lib/admin-users.ts#L53-L135)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
@@ -111,7 +119,9 @@ P_Dashboard --> P_Tickets
 - [NewTicketForm.tsx:8-83](file://src/components/portal/NewTicketForm.tsx#L8-L83)
 
 ## Architecture Overview
+
 The system enforces role-based access control at both UI and backend levels:
+
 - UI guards prevent unauthorized navigation.
 - Backend server functions validate tokens and roles.
 - Supabase RLS and RPC enforce row-level policies and role checks.
@@ -134,12 +144,14 @@ F --> R
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [types.ts:743-762](file://src/integrations/supabase/types.ts#L743-L762)
 
 **Section sources**
+
 - [auth-context.tsx:43-166](file://src/lib/auth-context.tsx#L43-L166)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
@@ -148,6 +160,7 @@ F --> R
 ## Detailed Component Analysis
 
 ### Roles and Access Control Model
+
 - AppRole: admin | tech | viewer.
 - UI capability flags:
   - canEdit: admin or tech.
@@ -175,17 +188,20 @@ AdminGuard --> RequireAdmin : "guards routes"
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:148-163](file://src/lib/auth-context.tsx#L148-L163)
 - [admin.tsx:23-49](file://src/routes/_app/admin.tsx#L23-L49)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 **Section sources**
+
 - [auth-context.tsx:13-35](file://src/lib/auth-context.tsx#L13-L35)
 - [auth-context.tsx:148-163](file://src/lib/auth-context.tsx#L148-L163)
 - [admin.tsx:23-49](file://src/routes/_app/admin.tsx#L23-L49)
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 ### Admin Role
+
 - Responsibilities:
   - Manage users (invite, update role, disable, delete).
   - Configure application settings.
@@ -216,6 +232,7 @@ SF-->>Route : Success/Failure
 ```
 
 **Diagram sources**
+
 - [admin.tsx:23-49](file://src/routes/_app/admin.tsx#L23-L49)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
@@ -224,6 +241,7 @@ SF-->>Route : Success/Failure
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 
 **Section sources**
+
 - [admin.tsx:36-47](file://src/routes/_app/admin.tsx#L36-L47)
 - [admin-users.ts:53-135](file://src/lib/admin-users.ts#L53-L135)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
@@ -232,6 +250,7 @@ SF-->>Route : Success/Failure
 - [admin-constants.ts:3-22](file://src/lib/admin/admin-constants.ts#L3-L22)
 
 ### Tech Role
+
 - Responsibilities:
   - Create and modify tickets.
   - Assign and follow up on work-in-progress items.
@@ -260,16 +279,19 @@ Refresh --> Done
 ```
 
 **Diagram sources**
+
 - [tickets.tsx:66-394](file://src/routes/_app/tickets.tsx#L66-L394)
 - [technicians.ts:10-33](file://src/lib/technicians.ts#L10-L33)
 - [profile.tsx:69-250](file://src/routes/_app/profile.tsx#L69-L250)
 
 **Section sources**
+
 - [tickets.tsx:66-394](file://src/routes/_app/tickets.tsx#L66-L394)
 - [technicians.ts:10-33](file://src/lib/technicians.ts#L10-L33)
 - [profile.tsx:69-250](file://src/routes/_app/profile.tsx#L69-L250)
 
 ### Viewer Role
+
 - Responsibilities:
   - Read-only monitoring and reporting.
   - Limited visibility into dashboards and lists.
@@ -280,10 +302,12 @@ Refresh --> Done
   - Viewer role inferred when no admin/tech role is present.
 
 **Section sources**
+
 - [auth-context.tsx:155-156](file://src/lib/auth-context.tsx#L155-L156)
 - [dashboard.tsx:20-104](file://src/routes/portal/dashboard.tsx#L20-L104)
 
 ### Client Portal
+
 - Purpose:
   - Allow external stakeholders to track ticket status, create tickets, and access documents.
 - Access and session:
@@ -320,6 +344,7 @@ API-->>Detail : Ticket + history
 ```
 
 **Diagram sources**
+
 - [PortalLayout.tsx:5-34](file://src/components/portal/PortalLayout.tsx#L5-L34)
 - [dashboard.tsx:20-104](file://src/routes/portal/dashboard.tsx#L20-L104)
 - [tickets/index.tsx:16-92](file://src/routes/portal/tickets/index.tsx#L16-L92)
@@ -330,6 +355,7 @@ API-->>Detail : Ticket + history
 - [NewTicketForm.tsx:8-83](file://src/components/portal/NewTicketForm.tsx#L8-L83)
 
 **Section sources**
+
 - [PortalLayout.tsx:5-34](file://src/components/portal/PortalLayout.tsx#L5-L34)
 - [dashboard.tsx:20-104](file://src/routes/portal/dashboard.tsx#L20-L104)
 - [tickets/index.tsx:16-92](file://src/routes/portal/tickets/index.tsx#L16-L92)
@@ -340,6 +366,7 @@ API-->>Detail : Ticket + history
 - [NewTicketForm.tsx:8-83](file://src/components/portal/NewTicketForm.tsx#L8-L83)
 
 ## Dependency Analysis
+
 - UI-to-backend:
   - Internal routes depend on server functions for tickets and admin operations.
   - Portal routes depend on portal-specific server functions for dashboard, tickets, and authentication.
@@ -368,6 +395,7 @@ DB --> PF
 ```
 
 **Diagram sources**
+
 - [auth-context.tsx:148-163](file://src/lib/auth-context.tsx#L148-L163)
 - [admin.tsx:23-49](file://src/routes/_app/admin.tsx#L23-L49)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
@@ -378,6 +406,7 @@ DB --> PF
 - [types.ts:743-762](file://src/integrations/supabase/types.ts#L743-L762)
 
 **Section sources**
+
 - [auth-context.tsx:148-163](file://src/lib/auth-context.tsx#L148-L163)
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 - [tickets.tsx:66-394](file://src/routes/_app/tickets.tsx#L66-L394)
@@ -387,6 +416,7 @@ DB --> PF
 - [types.ts:743-762](file://src/integrations/supabase/types.ts#L743-L762)
 
 ## Performance Considerations
+
 - Real-time updates:
   - Tickets list subscribes to PostgreSQL changes for live refresh indicators.
 - Batch operations:
@@ -395,11 +425,13 @@ DB --> PF
   - PDF generation supports both preview and download modes with busy states.
 
 **Section sources**
+
 - [tickets.tsx:112-122](file://src/routes/_app/tickets.tsx#L112-L122)
 - [admin-users.ts:93-101](file://src/lib/admin-users.ts#L93-L101)
 - [tickets.tsx:161-195](file://src/routes/_app/tickets.tsx#L161-L195)
 
 ## Troubleshooting Guide
+
 - Admin access denied:
   - Ensure the access token is valid and the user has admin role via RPC check.
 - Role validation failures:
@@ -410,6 +442,7 @@ DB --> PF
   - Check form validation and server function error messages for missing fields or invalid urgency/category.
 
 **Section sources**
+
 - [admin-users.server.ts:3-17](file://src/lib/admin-users.server.ts#L3-L17)
 - [auth-context.tsx:79-86](file://src/lib/auth-context.tsx#L79-L86)
 - [portal-auth.ts:27-60](file://src/lib/portal-auth.ts#L27-L60)
@@ -417,4 +450,5 @@ DB --> PF
 - [NewTicketForm.tsx:16-28](file://src/components/portal/NewTicketForm.tsx#L16-L28)
 
 ## Conclusion
+
 The application provides a clear separation of concerns between internal operators and external clients. Role-based access control is enforced consistently across UI guards and backend validations, ensuring that each persona can perform only authorized tasks. The client portal offers a streamlined experience for stakeholders to track and engage with tickets while maintaining strict session-based security.

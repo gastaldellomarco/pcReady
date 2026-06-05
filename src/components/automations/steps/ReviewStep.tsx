@@ -59,38 +59,73 @@ export default function ReviewStep({
     const field = c.config?.field ?? "";
     const val = c.config?.value ?? "";
     switch (c.type) {
-      case "field_equals": return t("filtersStep.human.field_equals", '{{field}} è "{{value}}"', { field, value: val });
-      case "field_not_equals": return t("filtersStep.human.field_not_equals", '{{field}} non è "{{value}}"', { field, value: val });
-      case "field_greater_than": return t("filtersStep.human.field_greater_than", "{{field}} > {{value}}", { field, value: val });
-      case "field_less_than": return t("filtersStep.human.field_less_than", "{{field}} < {{value}}", { field, value: val });
-      case "field_contains": return t("filtersStep.human.field_contains", '{{field}} contiene "{{value}}"', { field, value: val });
-      case "field_starts_with": return t("filtersStep.human.field_starts_with", '{{field}} inizia con "{{value}}"', { field, value: val });
-      case "field_ends_with": return t("filtersStep.human.field_ends_with", '{{field}} finisce con "{{value}}"', { field, value: val });
-      case "priority_high": return t("filtersStep.human.priority_high", "Priorità è alta");
-      case "tag_contains": return t("filtersStep.human.tag_contains", 'Tag contiene "{{value}}"', { value: val });
-      default: return c.type;
+      case "field_equals":
+        return t("filtersStep.human.field_equals", '{{field}} è "{{value}}"', {
+          field,
+          value: val,
+        });
+      case "field_not_equals":
+        return t("filtersStep.human.field_not_equals", '{{field}} non è "{{value}}"', {
+          field,
+          value: val,
+        });
+      case "field_greater_than":
+        return t("filtersStep.human.field_greater_than", "{{field}} > {{value}}", {
+          field,
+          value: val,
+        });
+      case "field_less_than":
+        return t("filtersStep.human.field_less_than", "{{field}} < {{value}}", {
+          field,
+          value: val,
+        });
+      case "field_contains":
+        return t("filtersStep.human.field_contains", '{{field}} contiene "{{value}}"', {
+          field,
+          value: val,
+        });
+      case "field_starts_with":
+        return t("filtersStep.human.field_starts_with", '{{field}} inizia con "{{value}}"', {
+          field,
+          value: val,
+        });
+      case "field_ends_with":
+        return t("filtersStep.human.field_ends_with", '{{field}} finisce con "{{value}}"', {
+          field,
+          value: val,
+        });
+      case "priority_high":
+        return t("filtersStep.human.priority_high", "Priorità è alta");
+      case "tag_contains":
+        return t("filtersStep.human.tag_contains", 'Tag contiene "{{value}}"', { value: val });
+      default:
+        return c.type;
     }
   }
 
   function generateHumanSummary(): string {
     if (!trigger) return t("reviewStep.incompleteConfig", "Configurazione incompleta");
-    
+
     const triggerText = triggerLabels[trigger.type] || trigger.type;
     let result = t("reviewStep.summaryPrefix", "Quando") + " " + triggerText;
-    
+
     // Add conditions
     if (conditions.length > 0) {
       const condTexts = conditions.map(renderConditionHuman);
-      result += " " + t("reviewStep.withConditions", "con") + " " + condTexts.join(" " + t("filtersStep.and", "E") + " ");
+      result +=
+        " " +
+        t("reviewStep.withConditions", "con") +
+        " " +
+        condTexts.join(" " + t("filtersStep.and", "E") + " ");
     }
-    
+
     // Add actions
     if (actions.length > 0) {
       result += " " + t("reviewStep.summaryActionSeparator", "→") + " ";
-      const actionTexts = actions.map(a => actionLabels[a.type] || a.type);
+      const actionTexts = actions.map((a) => actionLabels[a.type] || a.type);
       result += actionTexts.join(" " + t("filtersStep.and", "E") + " ");
     }
-    
+
     return result;
   }
 
@@ -108,9 +143,14 @@ export default function ReviewStep({
 
   return (
     <div>
-      <h3 className="text-lg font-semibold">{t("reviewStep.title", "Controlla prima di salvare")}</h3>
+      <h3 className="text-lg font-semibold">
+        {t("reviewStep.title", "Controlla prima di salvare")}
+      </h3>
       <p className="text-sm text-text3">
-        {t("reviewStep.description", "Verifica che tutto sia corretto. Puoi tornare indietro per modificare.")}
+        {t(
+          "reviewStep.description",
+          "Verifica che tutto sia corretto. Puoi tornare indietro per modificare.",
+        )}
       </p>
 
       <div className="mt-4 space-y-4">
@@ -120,9 +160,7 @@ export default function ReviewStep({
               <div className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">
                 {t("reviewStep.summaryTitle", "Riepilogo automazione")}
               </div>
-              <div className="text-sm font-medium leading-relaxed">
-                {generateHumanSummary()}
-              </div>
+              <div className="text-sm font-medium leading-relaxed">{generateHumanSummary()}</div>
             </div>
             {onNavigateToStep && (
               <button
@@ -138,7 +176,9 @@ export default function ReviewStep({
         </div>
 
         <div>
-          <label htmlFor="automation-name" className="text-sm font-medium">{t("reviewStep.nameLabel", "Nome automazione")}</label>
+          <label htmlFor="automation-name" className="text-sm font-medium">
+            {t("reviewStep.nameLabel", "Nome automazione")}
+          </label>
           <input
             id="automation-name"
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
@@ -149,20 +189,27 @@ export default function ReviewStep({
         </div>
 
         <div>
-          <label htmlFor="automation-description" className="text-sm font-medium">{t("reviewStep.descriptionLabel", "Descrizione")}</label>
+          <label htmlFor="automation-description" className="text-sm font-medium">
+            {t("reviewStep.descriptionLabel", "Descrizione")}
+          </label>
           <textarea
             id="automation-description"
             className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
             rows={2}
             value={description ?? ""}
             onChange={(e) => onChangeDescription(e.target.value)}
-            placeholder={t("reviewStep.descriptionPlaceholder", "Descrivi brevemente cosa fa questa automazione")}
+            placeholder={t(
+              "reviewStep.descriptionPlaceholder",
+              "Descrivi brevemente cosa fa questa automazione",
+            )}
           />
         </div>
 
         {onChangeCategory && (
           <div>
-            <label className="text-sm font-medium">{t("reviewStep.categoryLabel", "Categoria")}</label>
+            <label className="text-sm font-medium">
+              {t("reviewStep.categoryLabel", "Categoria")}
+            </label>
             <select
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
               value={category ?? ""}
@@ -183,9 +230,7 @@ export default function ReviewStep({
             <div className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">
               {t("reviewStep.scheduleLabel", "Schedulazione")}
             </div>
-            <p className="mt-1 text-sm text-purple-800">
-              Cron: {String(trigger.config?.cron)}
-            </p>
+            <p className="mt-1 text-sm text-purple-800">Cron: {String(trigger.config?.cron)}</p>
           </div>
         )}
 

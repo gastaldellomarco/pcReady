@@ -97,7 +97,13 @@ vi.mock("@/components/ui/alert-dialog", () => {
   };
   return {
     AlertDialog: FakeDialog,
-    AlertDialogAction: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    AlertDialogAction: ({
+      children,
+      onClick,
+    }: {
+      children: React.ReactNode;
+      onClick?: () => void;
+    }) => (
       <button data-testid="alert-action" onClick={onClick}>
         {children}
       </button>
@@ -111,15 +117,9 @@ vi.mock("@/components/ui/alert-dialog", () => {
     AlertDialogDescription: ({ children }: { children: React.ReactNode }) => (
       <p data-testid="alert-description">{children}</p>
     ),
-    AlertDialogFooter: ({ children }: { children: React.ReactNode }) => (
-      <div>{children}</div>
-    ),
-    AlertDialogHeader: ({ children }: { children: React.ReactNode }) => (
-      <div>{children}</div>
-    ),
-    AlertDialogTitle: ({ children }: { children: React.ReactNode }) => (
-      <h3>{children}</h3>
-    ),
+    AlertDialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    AlertDialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    AlertDialogTitle: ({ children }: { children: React.ReactNode }) => <h3>{children}</h3>,
   };
 });
 
@@ -158,14 +158,25 @@ vi.mock("@/components/ui/checkbox", () => ({
 }));
 
 vi.mock("@/components/ui/badge", () => ({
-  Badge: ({ children, className }: { children: React.ReactNode; className?: string; variant?: string }) => (
-    <span data-testid="badge" className={className}>{children}</span>
+  Badge: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    variant?: string;
+  }) => (
+    <span data-testid="badge" className={className}>
+      {children}
+    </span>
   ),
 }));
 
 vi.mock("@/components/page-states", () => ({
   TableSkeletonRows: vi.fn(() => (
-    <tr data-testid="skeleton-row"><td colSpan={9}>Loading...</td></tr>
+    <tr data-testid="skeleton-row">
+      <td colSpan={9}>Loading...</td>
+    </tr>
   )),
 }));
 
@@ -248,8 +259,16 @@ function setupUseAdminUsers(overrides: Record<string, unknown> = {}) {
     busyId: null,
     inviteBusy: false,
     inviteForm: {
-      register: vi.fn((name: string) => ({ name, onChange: vi.fn(), onBlur: vi.fn(), ref: vi.fn() })),
-      handleSubmit: vi.fn((fn: (vals: unknown) => void) => (e: React.FormEvent) => { e.preventDefault(); fn({ email: "test@test.it", fullName: "Test", role: "editor" }); }),
+      register: vi.fn((name: string) => ({
+        name,
+        onChange: vi.fn(),
+        onBlur: vi.fn(),
+        ref: vi.fn(),
+      })),
+      handleSubmit: vi.fn((fn: (vals: unknown) => void) => (e: React.FormEvent) => {
+        e.preventDefault();
+        fn({ email: "test@test.it", fullName: "Test", role: "editor" });
+      }),
       watch: vi.fn(() => ""),
       trigger: vi.fn(),
       formState: { errors: {}, isValid: true },

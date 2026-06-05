@@ -70,9 +70,9 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
               Simulazione — nessuna azione reale
             </Badge>
             <p className="text-xs text-blue-700">
-              Questa esecuzione simulata mostra il percorso che l&apos;automazione seguirebbe
-              senza applicare modifiche reali. Ideale per verificare la configurazione prima
-              di un&apos;esecuzione effettiva.
+              Questa esecuzione simulata mostra il percorso che l&apos;automazione seguirebbe senza
+              applicare modifiche reali. Ideale per verificare la configurazione prima di
+              un&apos;esecuzione effettiva.
             </p>
           </div>
         </div>
@@ -80,7 +80,12 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
         <Separator />
 
         <div className="space-y-4">
-          <Button variant="outline" onClick={handleRunDryRun} disabled={!rule || running} className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50">
+          <Button
+            variant="outline"
+            onClick={handleRunDryRun}
+            disabled={!rule || running}
+            className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50"
+          >
             {running ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
@@ -113,8 +118,7 @@ export function DryRunDialog({ open, rule, onOpenChange }: DryRunDialogProps) {
 
 function DryRunStepCard({ step }: { step: DryRunStep }) {
   const result = step?.result ?? "error";
-  const Icon =
-    result === "pass" ? CheckCircle : result === "skip" ? MinusCircle : XCircle;
+  const Icon = result === "pass" ? CheckCircle : result === "skip" ? MinusCircle : XCircle;
   return (
     <div
       className={cn(

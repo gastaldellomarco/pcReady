@@ -47,10 +47,7 @@ export function useKanbanPresence(
 
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState() as Record<
-          string,
-          PresenceState[]
-        >;
+        const state = channel.presenceState() as Record<string, PresenceState[]>;
         const byCard = new Map<string, ViewerInfo[]>();
 
         for (const presences of Object.values(state)) {

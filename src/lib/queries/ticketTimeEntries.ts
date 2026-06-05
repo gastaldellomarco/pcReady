@@ -49,7 +49,8 @@ export function formatDuration(totalMinutes: number) {
  *
  */
 export async function fetchTicketTimeSummary(ticketId: string, currentUserId?: string | null) {
-  if (!ticketId) return { entries: [], totalMinutes: 0, activeEntry: null } satisfies TicketTimeSummary;
+  if (!ticketId)
+    return { entries: [], totalMinutes: 0, activeEntry: null } satisfies TicketTimeSummary;
   const { data, error } = await (supabase as any)
     .from("ticket_time_entries")
     .select(
@@ -64,8 +65,9 @@ export async function fetchTicketTimeSummary(ticketId: string, currentUserId?: s
     return sum + value;
   }, 0);
   const activeEntry =
-    entries.find((entry) => !entry.ended_at && (!currentUserId || entry.user_id === currentUserId)) ??
-    null;
+    entries.find(
+      (entry) => !entry.ended_at && (!currentUserId || entry.user_id === currentUserId),
+    ) ?? null;
   return { entries, totalMinutes, activeEntry } satisfies TicketTimeSummary;
 }
 
@@ -100,7 +102,11 @@ export async function stopTicketTimer(entry: TicketTimeEntry, description?: stri
   const duration = minutesBetween(entry.started_at, endedAt);
   const { data, error } = await (supabase as any)
     .from("ticket_time_entries")
-    .update({ ended_at: endedAt, duration_minutes: duration, description: description ?? entry.description })
+    .update({
+      ended_at: endedAt,
+      duration_minutes: duration,
+      description: description ?? entry.description,
+    })
     .eq("id", entry.id)
     .select("id")
     .single();
@@ -195,8 +201,12 @@ export function useStopTicketTimer(ticketId: string) {
 export function useCreateManualTimeEntry(ticketId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { userId: string; startedAt: string; endedAt: string; description?: string | null }) =>
-      createManualTimeEntry({ ticketId, ...vars }),
+    mutationFn: (vars: {
+      userId: string;
+      startedAt: string;
+      endedAt: string;
+      description?: string | null;
+    }) => createManualTimeEntry({ ticketId, ...vars }),
     onSuccess() {
       qc.invalidateQueries({ queryKey: key(ticketId) });
     },

@@ -36,7 +36,12 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     ticket_categories: ["Hardware", "Software"],
     kanban_column_colors: {},
     kanban_column_notes: {
-      pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+      pending: "",
+      "in-progress": "",
+      testing: "",
+      ready: "",
+      completed: "",
+      archived: "",
     },
     mfa_require_admin_users: false,
     mfa_require_all_users: false,
@@ -93,7 +98,14 @@ describe("useAdminSettingsForm", () => {
         self_registration_enabled: true,
         os_options: ["Linux"],
         support_email: "test@org.it",
-        wip_limits: { pending: 10, "in-progress": 3, testing: 2, ready: 15, completed: 0, archived: 0 },
+        wip_limits: {
+          pending: 10,
+          "in-progress": 3,
+          testing: 2,
+          ready: 15,
+          completed: 0,
+          archived: 0,
+        },
       });
 
       const { result } = renderHook(() =>

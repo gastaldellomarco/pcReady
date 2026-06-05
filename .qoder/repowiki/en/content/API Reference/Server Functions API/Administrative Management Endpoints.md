@@ -17,6 +17,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -28,9 +29,11 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document describes the administrative management server functions for user lifecycle operations and role management. It covers user creation (invitation), updates, disabling/enabling, deletion, and role management. It also documents authentication and authorization requirements, access control, input validation and sanitization, database operations, rate limiting, and audit logging integration.
 
 ## Project Structure
+
 Administrative user management is implemented as server functions backed by Supabase Auth and Postgres. The frontend integrates with these server functions via React hooks and components.
 
 ```mermaid
@@ -81,6 +84,7 @@ Audit --> AuditActions
 ```
 
 **Diagram sources**
+
 - [AdminUsersTab.tsx:1-497](file://src/components/admin/AdminUsersTab.tsx#L1-L497)
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 - [admin.ts:1-10](file://lib/schemas/admin.ts#L1-L10)
@@ -93,6 +97,7 @@ Audit --> AuditActions
 - [audit-log-actions.ts:1-28](file://src/lib/audit-log-actions.ts#L1-L28)
 
 **Section sources**
+
 - [AdminUsersTab.tsx:1-497](file://src/components/admin/AdminUsersTab.tsx#L1-L497)
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 - [admin-users.ts:1-279](file://src/lib/admin-users.ts#L1-L279)
@@ -100,6 +105,7 @@ Audit --> AuditActions
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 
 ## Core Components
+
 - Admin user server functions:
   - List users, update roles/full name, invite users, resend invitations, disable/enable users, delete users.
 - Authentication and authorization:
@@ -112,6 +118,7 @@ Audit --> AuditActions
   - Notifications and audit log retrieval/export for admin actions.
 
 **Section sources**
+
 - [admin-users.ts:88-279](file://src/lib/admin-users.ts#L88-L279)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [admin.ts:1-10](file://lib/schemas/admin.ts#L1-L10)
@@ -120,6 +127,7 @@ Audit --> AuditActions
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 
 ## Architecture Overview
+
 Administrative actions are executed as server functions invoked from the admin UI. Each function validates the caller’s admin privileges and performs database operations against Supabase. Some operations enforce rate limits and trigger notifications for audit purposes.
 
 ```mermaid
@@ -142,6 +150,7 @@ Hook-->>UI : "Show toast + refresh list"
 ```
 
 **Diagram sources**
+
 - [AdminUsersTab.tsx:1-497](file://src/components/admin/AdminUsersTab.tsx#L1-L497)
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 - [admin-users.ts:88-279](file://src/lib/admin-users.ts#L88-L279)
@@ -150,6 +159,7 @@ Hook-->>UI : "Show toast + refresh list"
 ## Detailed Component Analysis
 
 ### Authentication and Authorization
+
 - Access token validation:
   - Extracts user from access token and verifies admin role via RPC.
   - Returns actor user ID or throws unauthorized/unauthorized messages.
@@ -168,13 +178,16 @@ RoleValid --> |Yes| ReturnId["Return actor user_id"]
 ```
 
 **Diagram sources**
+
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 
 **Section sources**
+
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [auth-middleware.ts:1-74](file://src/integrations/supabase/auth-middleware.ts#L1-L74)
 
 ### Admin User Invitation Workflow
+
 - Validates role and enforces rate limit per actor.
 - Sanitizes email and full name.
 - Invites via Supabase Auth admin API and upserts profile and user profile records.
@@ -203,16 +216,19 @@ Hook-->>UI : "Toast success + reload"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [rate-limit.ts:92-103](file://src/lib/rate-limit.ts#L92-L103)
 - [rate-limit-config.ts:5-15](file://src/lib/rate-limit-config.ts#L5-L15)
 
 **Section sources**
+
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [rate-limit.ts:92-103](file://src/lib/rate-limit.ts#L92-L103)
 - [rate-limit-config.ts:5-15](file://src/lib/rate-limit-config.ts#L5-L15)
 
 ### User Listing and Status Computation
+
 - Lists users via Supabase Auth admin API and enriches with profiles and roles.
 - Computes status based on email confirmation, bans, and timestamps.
 
@@ -228,12 +244,15 @@ Compute --> Return["Return enriched user list"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 
 **Section sources**
+
 - [admin-users.ts:88-135](file://src/lib/admin-users.ts#L88-L135)
 
 ### Role Updates and Name/Initials Normalization
+
 - Validates role, prevents removal of sole admin, and normalizes initials.
 - Updates profile full name and initials, then replaces user roles.
 
@@ -250,14 +269,17 @@ InsertRole --> Done["Return {ok:true}"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 **Section sources**
+
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 - [admin-users.ts:55-67](file://src/lib/admin-users.ts#L55-L67)
 
 ### Disable/Enable Users and Self-Protection
+
 - Prevents actor from banning themselves.
 - Enforces minimum admin count when downgrading roles.
 - Uses Supabase auth admin update to ban/unban.
@@ -274,14 +296,17 @@ Ban --> Done["Return {ok:true}"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:250-264](file://src/lib/admin-users.ts#L250-L264)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 **Section sources**
+
 - [admin-users.ts:250-264](file://src/lib/admin-users.ts#L250-L264)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 ### User Deletion and Self-Protection
+
 - Prevents actor from deleting themselves.
 - Enforces minimum admin count before deletion.
 
@@ -296,14 +321,17 @@ Delete --> Done["Return {ok:true}"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:266-279](file://src/lib/admin-users.ts#L266-L279)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 **Section sources**
+
 - [admin-users.ts:266-279](file://src/lib/admin-users.ts#L266-L279)
 - [admin-users.ts:69-86](file://src/lib/admin-users.ts#L69-L86)
 
 ### Resend Invitation
+
 - Ensures user exists, has no confirmed email, and resends invite with redirect.
 
 ```mermaid
@@ -319,12 +347,15 @@ Resend --> Done["Return {ok:true}"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:227-248](file://src/lib/admin-users.ts#L227-L248)
 
 **Section sources**
+
 - [admin-users.ts:227-248](file://src/lib/admin-users.ts#L227-L248)
 
 ### Input Validation and Sanitization
+
 - Invitation form schema enforces email format and role enum.
 - Full name and initials are trimmed and normalized.
 - Email is lowercased and validated before inviting.
@@ -339,16 +370,19 @@ Lower --> Invite["Proceed to invite"]
 ```
 
 **Diagram sources**
+
 - [admin.ts:1-10](file://lib/schemas/admin.ts#L1-L10)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 - [admin-users.ts:55-67](file://src/lib/admin-users.ts#L55-L67)
 
 **Section sources**
+
 - [admin.ts:1-10](file://lib/schemas/admin.ts#L1-L10)
 - [admin-users.ts:55-67](file://src/lib/admin-users.ts#L55-L67)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
 
 ### Rate Limiting for Admin Operations
+
 - Dedicated preset for admin user invitation.
 - Enforced per actor user ID to prevent spam.
 
@@ -361,16 +395,19 @@ Allowed --> |Yes| Proceed["Proceed to invite"]
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:169-174](file://src/lib/admin-users.ts#L169-L174)
 - [rate-limit.ts:92-103](file://src/lib/rate-limit.ts#L92-L103)
 - [rate-limit-config.ts:5-15](file://src/lib/rate-limit-config.ts#L5-L15)
 
 **Section sources**
+
 - [admin-users.ts:169-174](file://src/lib/admin-users.ts#L169-L174)
 - [rate-limit.ts:92-103](file://src/lib/rate-limit.ts#L92-L103)
 - [rate-limit-config.ts:5-15](file://src/lib/rate-limit-config.ts#L5-L15)
 
 ### Audit Logging and Notifications
+
 - On successful invite, a notification is sent to admins.
 - Audit log retrieval supports filtering and deduplication.
 - Audit action constants enumerate logged events.
@@ -386,16 +423,19 @@ Notify-->>SF : "OK"
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:216-222](file://src/lib/admin-users.ts#L216-L222)
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 - [audit-log-actions.ts:1-28](file://src/lib/audit-log-actions.ts#L1-L28)
 
 **Section sources**
+
 - [admin-users.ts:216-222](file://src/lib/admin-users.ts#L216-L222)
 - [audit-log.ts:1-183](file://src/lib/audit-log.ts#L1-L183)
 - [audit-log-actions.ts:1-28](file://src/lib/audit-log-actions.ts#L1-L28)
 
 ## Dependency Analysis
+
 - Cohesion:
   - Admin user operations are cohesive within a single module.
 - Coupling:
@@ -418,6 +458,7 @@ Hook --> AdminUsersTS
 ```
 
 **Diagram sources**
+
 - [admin-users.ts:1-279](file://src/lib/admin-users.ts#L1-L279)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [rate-limit.ts:1-104](file://src/lib/rate-limit.ts#L1-L104)
@@ -428,6 +469,7 @@ Hook --> AdminUsersTS
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 
 **Section sources**
+
 - [admin-users.ts:1-279](file://src/lib/admin-users.ts#L1-L279)
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [rate-limit.ts:1-104](file://src/lib/rate-limit.ts#L1-L104)
@@ -438,6 +480,7 @@ Hook --> AdminUsersTS
 - [useAdminUsers.ts:1-213](file://src/hooks/useAdminUsers.ts#L1-L213)
 
 ## Performance Considerations
+
 - Batch operations:
   - Bulk role updates and invites are executed concurrently with settled promises to reduce latency.
 - Deduplication:
@@ -450,6 +493,7 @@ Hook --> AdminUsersTS
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Authentication failures:
   - Missing or invalid bearer token leads to 401; ensure the frontend passes a valid access token.
 - Authorization failures:
@@ -462,6 +506,7 @@ Hook --> AdminUsersTS
   - UI surfaces friendly messages derived from server errors; inspect toast messages and network responses.
 
 **Section sources**
+
 - [admin-users.server.ts:1-18](file://src/lib/admin-users.server.ts#L1-L18)
 - [admin-users.ts:137-167](file://src/lib/admin-users.ts#L137-L167)
 - [admin-users.ts:169-225](file://src/lib/admin-users.ts#L169-L225)
@@ -470,4 +515,5 @@ Hook --> AdminUsersTS
 - [admin-error-message.ts:1-21](file://src/lib/admin/admin-error-message.ts#L1-L21)
 
 ## Conclusion
+
 The administrative management endpoints provide a secure, rate-limited, and auditable suite of operations for managing users and roles. They enforce strict authorization, sanitize inputs, and integrate with Supabase for identity and database operations. The UI binds to server functions to deliver a responsive admin experience with robust error handling and notifications.

@@ -37,7 +37,9 @@ export default defineConfig(({ command, mode }) => {
         viteEnvironment: { name: "ssr" },
       }),
       // optional bundle visualizer when ANALYZE=true or VITE_ANALYZE=true
-      ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true" ? [visualizer({ filename: "dist/stats.html", gzipSize: true, brotliSize: true })] : []),
+      ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true"
+        ? [visualizer({ filename: "dist/stats.html", gzipSize: true, brotliSize: true })]
+        : []),
     );
   }
 

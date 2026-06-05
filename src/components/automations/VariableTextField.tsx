@@ -64,9 +64,7 @@ export function VariableTextField({
 
   return (
     <div className="space-y-1.5">
-      {label && (
-        <label className="block text-sm font-medium text-text2">{label}</label>
-      )}
+      {label && <label className="block text-sm font-medium text-text2">{label}</label>}
       <div className="relative">
         {multiline ? (
           <textarea
@@ -94,10 +92,7 @@ export function VariableTextField({
           />
         )}
         <div className="absolute right-2 top-2">
-          <VariablePicker
-            variables={variables}
-            onSelect={handleVariableSelect}
-          />
+          <VariablePicker variables={variables} onSelect={handleVariableSelect} />
         </div>
       </div>
     </div>

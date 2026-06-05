@@ -14,6 +14,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -25,10 +26,13 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
+
 This document explains the client data management functionality, covering how client information is stored, searched, listed, edited, and deleted. It also details the statistics aggregation for open tickets, devices, contacts, and portal activity, along with import/export capabilities. The content is designed for both client service representatives (who need practical guidance) and system administrators (who need technical depth).
 
 ## Project Structure
+
 Client data management spans three main areas:
+
 - UI and orchestration: client listing, forms, tabs, and dialogs
 - Queries and mutations: Supabase-backed data access and transformations
 - Schemas and validations: Zod-based input validation and normalization
@@ -91,15 +95,18 @@ M_DeleteContact --> DB_Contacts
 ```
 
 **Diagram sources**
+
 - [clients.tsx:174-250](file://src/routes/_app/clients.tsx#L174-L250)
 - [clients.ts:11-42](file://src/lib/queries/clients.ts#L11-L42)
 - [clients.ts:97-152](file://src/lib/queries/clients.ts#L97-L152)
 
 **Section sources**
+
 - [clients.tsx:174-250](file://src/routes/_app/clients.tsx#L174-L250)
 - [clients.ts:11-42](file://src/lib/queries/clients.ts#L11-L42)
 
 ## Core Components
+
 - Client entity fields: name, company_name, vat_number, fiscal_code, email, phone, website_url, address, notes, updated_at, portal_enabled
 - Contact entity fields: full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes
 - Search and listing: full-text-like search across name, company_name, vat_number, fiscal_code, email, phone; pagination and filters
@@ -108,11 +115,13 @@ M_DeleteContact --> DB_Contacts
 - Import/export: CSV import for clients and contacts; export all data capability
 
 **Section sources**
+
 - [clients.tsx:67-116](file://src/routes/_app/clients.tsx#L67-L116)
 - [clients.ts:6-7](file://src/lib/queries/clients.ts#L6-L7)
 - [clients.ts:97-152](file://src/lib/queries/clients.ts#L97-L152)
 
 ## Architecture Overview
+
 The client management UI integrates with React Query for caching and optimistic updates. Data access is performed via Supabase client functions, with mutations triggering query invalidations to keep views synchronized.
 
 ```mermaid
@@ -132,12 +141,14 @@ Query-->>UI : Render list + pagination
 ```
 
 **Diagram sources**
+
 - [clients.tsx:228-229](file://src/routes/_app/clients.tsx#L228-L229)
 - [clients.ts:11-42](file://src/lib/queries/clients.ts#L11-L42)
 
 ## Detailed Component Analysis
 
 ### Client Listing and Search
+
 - Search algorithm:
   - Trims and normalizes the search term
   - Performs an email-based lookup against client_contacts to discover associated client_ids
@@ -166,13 +177,16 @@ ApplyQuery --> Return(["Return { data, count }"])
 ```
 
 **Diagram sources**
+
 - [clients.ts:11-42](file://src/lib/queries/clients.ts#L11-L42)
 
 **Section sources**
+
 - [clients.ts:11-42](file://src/lib/queries/clients.ts#L11-L42)
 - [clients.tsx:341-352](file://src/routes/_app/clients.tsx#L341-L352)
 
 ### Client CRUD Operations
+
 - Create/Update:
   - Client form uses Zod schema for validation
   - Values are normalized (trimmed, null for empty)
@@ -206,12 +220,14 @@ Mut-->>Form : Invalidate queries + notify
 ```
 
 **Diagram sources**
+
 - [clients.tsx:385-426](file://src/routes/_app/clients.tsx#L385-L426)
 - [clients.ts:269-298](file://src/lib/queries/clients.ts#L269-L298)
 - [clients.ts:4-14](file://lib/schemas/clients.ts#L4-L14)
 - [utils.ts:3-10](file://lib/schemas/utils.ts#L3-L10)
 
 **Section sources**
+
 - [clients.tsx:385-426](file://src/routes/_app/clients.tsx#L385-L426)
 - [clients.tsx:469-512](file://src/routes/_app/clients.tsx#L469-L512)
 - [clients.ts:269-320](file://src/lib/queries/clients.ts#L269-L320)
@@ -219,7 +235,9 @@ Mut-->>Form : Invalidate queries + notify
 - [utils.ts:3-10](file://lib/schemas/utils.ts#L3-L10)
 
 ### Client Statistics Calculation
+
 Statistics are computed in a single query round-up for a batch of client IDs:
+
 - Open tickets: count of tickets with statuses in ["pending","in-progress","testing","ready"]
 - Devices: total devices per client
 - Contacts: total contacts per client
@@ -241,13 +259,16 @@ Stats-->>UI : { clientId : stats }
 ```
 
 **Diagram sources**
+
 - [clients.ts:97-152](file://src/lib/queries/clients.ts#L97-L152)
 
 **Section sources**
+
 - [clients.ts:97-152](file://src/lib/queries/clients.ts#L97-L152)
 - [clients.tsx:325-352](file://src/routes/_app/clients.tsx#L325-L352)
 
 ### Client Export Functionality
+
 - Export all data: server function exports tickets, devices, and clients to CSV files
 - Client listing export: dedicated function iterates clients in chunks to avoid memory pressure
 - CSV generation: column normalization and safe cell encoding
@@ -267,14 +288,17 @@ Export-->>Admin : { files : { tickets, devices, clients } }
 ```
 
 **Diagram sources**
+
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 - [clients.ts:251-267](file://src/lib/queries/clients.ts#L251-L267)
 
 **Section sources**
+
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 - [clients.ts:251-267](file://src/lib/queries/clients.ts#L251-L267)
 
 ### Portal Access Management
+
 - Generate portal link: creates a temporary session for a contact, validates client portal_enabled flag, and returns login URL and expiry
 - Revoke portal access: revokes active sessions for a contact
 - UI supports copying the link and displays expiration
@@ -304,23 +328,28 @@ Fn-->>UI : Show modal
 ```
 
 **Diagram sources**
+
 - [portal-auth.ts:48-60](file://src/lib/portal-auth.ts#L48-L60)
 - [portal-auth.server.ts:97-116](file://src/lib/portal-auth.server.ts#L97-L116)
 
 **Section sources**
+
 - [portal-auth.ts:48-60](file://src/lib/portal-auth.ts#L48-L60)
 - [portal-auth.server.ts:97-116](file://src/lib/portal-auth.server.ts#L97-L116)
 
 ### Data Integrity Constraints
+
 - Unique constraints:
   - Unique index on lower(company_name) for clients
   - Unique index on is_primary per client_id for contacts
 - Migration-driven evolution ensures backward compatibility and data normalization
 
 **Section sources**
+
 - [20260430182000_expand_clients_contacts.sql:22-28](file://supabase/migrations/20260430182000_expand_clients_contacts.sql#L22-L28)
 
 ## Dependency Analysis
+
 - UI depends on React Query for data fetching and caching
 - Queries depend on Supabase client for SQL operations
 - Mutations depend on query invalidation to refresh lists and detail views
@@ -337,6 +366,7 @@ Portal --> PortalSrv["portal-auth.server.ts"]
 ```
 
 **Diagram sources**
+
 - [clients.tsx:174-250](file://src/routes/_app/clients.tsx#L174-L250)
 - [clients.ts:1-2](file://src/lib/queries/clients.ts#L1-L2)
 - [clients.ts:1-27](file://lib/schemas/clients.ts#L1-L27)
@@ -344,6 +374,7 @@ Portal --> PortalSrv["portal-auth.server.ts"]
 - [portal-auth.ts:1-61](file://src/lib/portal-auth.ts#L1-L61)
 
 **Section sources**
+
 - [clients.tsx:174-250](file://src/routes/_app/clients.tsx#L174-L250)
 - [clients.ts:1-2](file://src/lib/queries/clients.ts#L1-L2)
 - [clients.ts:1-27](file://lib/schemas/clients.ts#L1-L27)
@@ -351,6 +382,7 @@ Portal --> PortalSrv["portal-auth.server.ts"]
 - [portal-auth.ts:1-61](file://src/lib/portal-auth.ts#L1-L61)
 
 ## Performance Considerations
+
 - Pagination: LIST queries use range() to limit rows per page
 - Chunked export: fetchAllClientsForExport iterates in chunks to prevent memory spikes
 - Batch statistics: fetchClientStats performs parallel reads for tickets/devices/contacts
@@ -360,6 +392,7 @@ Portal --> PortalSrv["portal-auth.server.ts"]
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Duplicate client entries:
   - CSV import deduplicates by VAT or email; see deduplication logic and existing key loading
   - Unique constraints prevent duplicates at DB level
@@ -374,10 +407,12 @@ Portal --> PortalSrv["portal-auth.server.ts"]
   - Use revoke operation to invalidate active sessions
 
 **Section sources**
+
 - [clients.tsx:2187-2209](file://src/routes/_app/clients.tsx#L2187-L2209)
 - [clients.tsx:2211-2250](file://src/routes/_app/clients.tsx#L2211-L2250)
 - [20260430182000_expand_clients_contacts.sql:22-28](file://supabase/migrations/20260430182000_expand_clients_contacts.sql#L22-L28)
 - [clients.ts:97-152](file://src/lib/queries/clients.ts#L97-L152)
 
 ## Conclusion
+
 Client data management combines a robust UI with efficient Supabase-backed queries and mutations. The system supports comprehensive search, accurate statistics, safe CRUD operations, and reliable import/export workflows. Administrators benefit from constraints and server-side validations, while support agents enjoy intuitive forms and powerful filtering.

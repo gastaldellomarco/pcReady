@@ -89,7 +89,10 @@ export function SendEmailBlock({
           value={action.config.subject}
           onChange={(v) => updateConfig({ subject: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.send_email.subjectPlaceholder", "Nuovo ticket creato")}
+          placeholder={t(
+            "actionsBuilder.blocks.send_email.subjectPlaceholder",
+            "Nuovo ticket creato",
+          )}
         />
 
         <VariableTextField
@@ -97,7 +100,10 @@ export function SendEmailBlock({
           value={action.config.body}
           onChange={(v) => updateConfig({ body: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.send_email.bodyPlaceholder", "Messaggio dell'email...")}
+          placeholder={t(
+            "actionsBuilder.blocks.send_email.bodyPlaceholder",
+            "Messaggio dell'email...",
+          )}
           multiline
           rows={4}
         />

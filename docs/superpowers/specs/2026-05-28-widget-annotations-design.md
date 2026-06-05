@@ -10,12 +10,12 @@ Permettere agli utenti di aggiungere note testuali personali ai widget della das
 
 ## Requirements Summary
 
-| Aspect | Decision |
-|---|---|
-| Visibility | **Personal** — each user sees only their own notes |
-| Granularity | **Widget + optional date** |
-| Interaction | **Inline icon + aggregated drawer** |
-| Backend | **Dedicated table** (`widget_annotations`) |
+| Aspect      | Decision                                           |
+| ----------- | -------------------------------------------------- |
+| Visibility  | **Personal** — each user sees only their own notes |
+| Granularity | **Widget + optional date**                         |
+| Interaction | **Inline icon + aggregated drawer**                |
+| Backend     | **Dedicated table** (`widget_annotations`)         |
 
 ## Database Schema
 
@@ -51,18 +51,18 @@ CREATE POLICY "Users manage own annotations"
 
 ### New Files
 
-| File | Purpose |
-|---|---|
-| `supabase/migrations/20260528150000_widget_annotations.sql` | Migration creating the table |
-| `src/lib/widget-annotations.ts` | Server functions for CRUD (createServerFn pattern) |
-| `src/hooks/useWidgetAnnotations.ts` | React Query hook for fetch/mutate |
-| `src/components/dashboard/WidgetAnnotationBadge.tsx` | Inline sticky-note icon on widget |
-| `src/components/dashboard/WidgetAnnotationsDrawer.tsx` | Aggregated drawer listing all notes |
+| File                                                        | Purpose                                            |
+| ----------------------------------------------------------- | -------------------------------------------------- |
+| `supabase/migrations/20260528150000_widget_annotations.sql` | Migration creating the table                       |
+| `src/lib/widget-annotations.ts`                             | Server functions for CRUD (createServerFn pattern) |
+| `src/hooks/useWidgetAnnotations.ts`                         | React Query hook for fetch/mutate                  |
+| `src/components/dashboard/WidgetAnnotationBadge.tsx`        | Inline sticky-note icon on widget                  |
+| `src/components/dashboard/WidgetAnnotationsDrawer.tsx`      | Aggregated drawer listing all notes                |
 
 ### Modified Files
 
-| File | Change |
-|---|---|
+| File                                 | Change                                              |
+| ------------------------------------ | --------------------------------------------------- |
 | `src/routes/_app/dashboard.lazy.tsx` | Integrate badge on widgets, drawer button in header |
 
 ### Server Functions (`src/lib/widget-annotations.ts`)
@@ -82,10 +82,10 @@ export interface WidgetAnnotationRow {
 }
 
 // CRUD functions
-export const listWidgetAnnotations   // fetch all (or by widget_id)
-export const createWidgetAnnotation  // insert
-export const updateWidgetAnnotation  // update text/date
-export const deleteWidgetAnnotation  // delete
+export const listWidgetAnnotations; // fetch all (or by widget_id)
+export const createWidgetAnnotation; // insert
+export const updateWidgetAnnotation; // update text/date
+export const deleteWidgetAnnotation; // delete
 ```
 
 Each uses `createServerFn({ method: "POST" })` with `accessToken` validation and `supabaseAdmin` (server-side client). No rate limiting needed — ultra-low volume operations.
@@ -139,7 +139,7 @@ DashboardPage
   - Edit ✏️ and delete 🗑️ icon buttons (appear on row hover)
 - Footer: inline form with:
   - `<textarea>` (3 rows, placeholder "Aggiungi una nota...", `text-[13px]`)
-  - Optional `<input type="date">` 
+  - Optional `<input type="date">`
   - "Salva" button (or save on Ctrl+Enter / blur with content)
 - Empty state: "Nessuna nota per questo widget."
 
@@ -181,11 +181,11 @@ React Query `queryClient.invalidateQueries` after mutations to keep drawer and b
 
 ## Testing Plan
 
-| Test file | Coverage |
-|---|---|
-| `src/__tests__/lib/widget-annotations.test.ts` | Server functions: CRUD operations, validation, error paths |
-| `src/__tests__/hooks/useWidgetAnnotations.test.ts` | Hook: query/mutation lifecycle, optimistic updates |
-| `src/__tests__/components/WidgetAnnotationBadge.test.tsx` | Component: rendering, click, popover display |
+| Test file                                                 | Coverage                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/__tests__/lib/widget-annotations.test.ts`            | Server functions: CRUD operations, validation, error paths |
+| `src/__tests__/hooks/useWidgetAnnotations.test.ts`        | Hook: query/mutation lifecycle, optimistic updates         |
+| `src/__tests__/components/WidgetAnnotationBadge.test.tsx` | Component: rendering, click, popover display               |
 
 ## Out of Scope
 

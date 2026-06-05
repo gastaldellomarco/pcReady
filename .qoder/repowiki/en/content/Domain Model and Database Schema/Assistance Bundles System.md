@@ -11,6 +11,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
@@ -72,6 +73,7 @@ Database --> Triggers
 ```
 
 **Diagram sources**
+
 - [bundles.ts:1-449](file://src/lib/bundles.ts#L1-L449)
 - [BundleForms.tsx:1-643](file://src/components/bundles/BundleForms.tsx#L1-L643)
 - [BundleBadges.tsx:1-85](file://src/components/bundles/BundleBadges.tsx#L1-L85)
@@ -189,6 +191,7 @@ class BundleUsageEntry {
 ```
 
 **Diagram sources**
+
 - [bundles.ts:8-128](file://src/lib/bundles.ts#L8-L128)
 
 ### Business Logic Services
@@ -216,9 +219,11 @@ Service-->>Client : Assignment array
 ```
 
 **Diagram sources**
+
 - [bundles.ts:208-317](file://src/lib/bundles.ts#L208-L317)
 
 **Section sources**
+
 - [bundles.ts:1-449](file://src/lib/bundles.ts#L1-L449)
 
 ## Database Schema
@@ -315,6 +320,7 @@ BUNDLE_USAGE_ENTRIES ||--|| TICKETS : "tracks"
 ```
 
 **Diagram sources**
+
 - [20260526120000_assistance_bundles.sql:3-77](file://supabase/migrations/20260526120000_assistance_bundles.sql#L3-L77)
 
 ### Key Features of the Database Design
@@ -326,6 +332,7 @@ BUNDLE_USAGE_ENTRIES ||--|| TICKETS : "tracks"
 5. **Trigger-Based Automation**: Real-time synchronization between tickets and usage
 
 **Section sources**
+
 - [20260526120000_assistance_bundles.sql:1-606](file://supabase/migrations/20260526120000_assistance_bundles.sql#L1-L606)
 
 ## User Interface Components
@@ -350,6 +357,7 @@ UnlimittedToggle --> DisabledField["Disable Field"]
 ```
 
 **Diagram sources**
+
 - [BundleForms.tsx:135-392](file://src/components/bundles/BundleForms.tsx#L135-L392)
 - [BundleForms.tsx:394-642](file://src/components/bundles/BundleForms.tsx#L394-L642)
 
@@ -384,9 +392,11 @@ BundleUsageBar --> ColorScheme
 ```
 
 **Diagram sources**
+
 - [BundleBadges.tsx:1-85](file://src/components/bundles/BundleBadges.tsx#L1-L85)
 
 **Section sources**
+
 - [BundleForms.tsx:1-643](file://src/components/bundles/BundleForms.tsx#L1-L643)
 - [BundleBadges.tsx:1-85](file://src/components/bundles/BundleBadges.tsx#L1-L85)
 
@@ -417,6 +427,7 @@ UpdateStatus --> Invalidate
 ```
 
 **Diagram sources**
+
 - [bundles.ts:208-243](file://src/lib/bundles.ts#L208-L243)
 
 ### Usage Calculation Logic
@@ -440,9 +451,11 @@ UpdateTicket --> RecalculateSummary["Recalculate Usage Summary"]
 ```
 
 **Diagram sources**
+
 - [20260526120000_assistance_bundles.sql:402-526](file://supabase/migrations/20260526120000_assistance_bundles.sql#L402-L526)
 
 **Section sources**
+
 - [bundles.ts:184-206](file://src/lib/bundles.ts#L184-L206)
 - [bundles.ts:329-364](file://src/lib/bundles.ts#L329-L364)
 
@@ -467,6 +480,7 @@ Note over Trigger,TicketUpdate : Automatic bundle application<br/>based on clien
 ```
 
 **Diagram sources**
+
 - [20260526120000_assistance_bundles.sql:354-400](file://supabase/migrations/20260526120000_assistance_bundles.sql#L354-L400)
 
 ### Route Integration
@@ -484,9 +498,11 @@ SupabaseAPI --> Database["PostgreSQL Database"]
 ```
 
 **Diagram sources**
+
 - [routeTree.gen.ts:171-175](file://src/routeTree.gen.ts#L171-L175)
 
 **Section sources**
+
 - [bundles.tsx:1-1014](file://src/routes/_app/bundles.tsx#L1-L1014)
 - [routeTree.gen.ts:1-200](file://src/routeTree.gen.ts#L1-L200)
 
@@ -575,21 +591,25 @@ The system implements several performance optimization strategies:
 ### Common Issues and Solutions
 
 #### Bundle Creation Failures
+
 - **Issue**: Bundle creation fails with validation errors
 - **Solution**: Verify required fields are filled and numeric values are positive
 - **Prevention**: Implement client-side validation before submission
 
 #### Usage Tracking Not Working
+
 - **Issue**: Bundle usage not updating after time entries
 - **Solution**: Check database trigger permissions and function execution
 - **Debugging**: Verify `sync_bundle_usage_from_time_entry()` trigger is active
 
 #### SLA Not Applied to Tickets
+
 - **Issue**: New tickets don't inherit bundle SLA settings
 - **Solution**: Ensure `apply_bundle_to_ticket()` trigger is functioning
 - **Verification**: Check `get_active_bundle_for_client()` function returns results
 
 #### Performance Issues
+
 - **Issue**: Slow loading of bundle data
 - **Solution**: Check database indexes and optimize queries
 - **Monitoring**: Use database query plans to identify bottlenecks
@@ -616,6 +636,7 @@ ContactSupport --> CheckError
 ```
 
 **Section sources**
+
 - [bundles.ts:366-448](file://src/lib/bundles.ts#L366-L448)
 - [bundles.tsx:181-274](file://src/routes/_app/bundles.tsx#L181-L274)
 

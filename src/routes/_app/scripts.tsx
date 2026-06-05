@@ -52,7 +52,13 @@ export const Route = createFileRoute("/_app/scripts")({
   head: () => ({
     meta: [
       { title: i18n.t("scripts:meta.title", "Script — PCReady") },
-      { name: "description", content: i18n.t("scripts:meta.description", "Libreria script riutilizzabili: PowerShell, Bash e altri.") },
+      {
+        name: "description",
+        content: i18n.t(
+          "scripts:meta.description",
+          "Libreria script riutilizzabili: PowerShell, Bash e altri.",
+        ),
+      },
     ],
   }),
   component: ScriptsPage,
@@ -132,7 +138,6 @@ function getLangExtension(language: string): Extension {
       return python();
   }
 }
-
 
 function computeChangedFields(oldData: any, newData: any) {
   const changed: Record<string, { old: any; new: any }> = {};
@@ -236,7 +241,10 @@ function ScriptsPage() {
             {t("emptyTitle", "Nessuno script ancora")}
           </div>
           <div className="text-[13px] text-text3 mb-4">
-            {t("emptyDescription", "Crea il tuo primo script riutilizzabile. Lo troverai sempre qui pronto da copiare.")}
+            {t(
+              "emptyDescription",
+              "Crea il tuo primo script riutilizzabile. Lo troverai sempre qui pronto da copiare.",
+            )}
           </div>
           {canEdit && (
             <button
@@ -327,8 +335,15 @@ function ScriptsPage() {
         title={t("delete.title", "Eliminare questo script?")}
         description={
           deleteTarget
-            ? t("delete.description", 'Lo script "{{name}}" verrà rimosso dalla libreria. L\'azione non può essere annullata.', { name: deleteTarget.name })
-            : t("delete.descriptionGeneric", "Lo script verrà rimosso dalla libreria. L'azione non può essere annullata.")
+            ? t(
+                "delete.description",
+                'Lo script "{{name}}" verrà rimosso dalla libreria. L\'azione non può essere annullata.',
+                { name: deleteTarget.name },
+              )
+            : t(
+                "delete.descriptionGeneric",
+                "Lo script verrà rimosso dalla libreria. L'azione non può essere annullata.",
+              )
         }
         confirmLabel={t("delete.confirm", "Elimina script")}
         loadingLabel={t("delete.loading", "Eliminazione...")}
@@ -402,7 +417,11 @@ function ScriptCard({
         <span className="text-[10.5px] text-text3 font-mono">{t("card.open", "Apri →")}</span>
         <div className="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {onEdit && (
-            <button onClick={onEdit} className="pc-btn-icon touch-target" title={t("card.edit", "Modifica")}>
+            <button
+              onClick={onEdit}
+              className="pc-btn-icon touch-target"
+              title={t("card.edit", "Modifica")}
+            >
               <Pencil className="size-3" />
             </button>
           )}
@@ -507,7 +526,8 @@ function ScriptViewer({
 
   async function save() {
     if (!editName.trim()) return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
-    if (!editContent.trim()) return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
+    if (!editContent.trim())
+      return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
     setSaving(true);
     try {
       const newData: any = {
@@ -519,7 +539,9 @@ function ScriptViewer({
       // Fetch current data for diff
       const { data: oldData } = await supabase
         .from("scripts")
-        .select("id, name, category, description, language, content, icon, color, created_by, created_at, updated_at")
+        .select(
+          "id, name, category, description, language, content, icon, color, created_by, created_at, updated_at",
+        )
         .eq("id", script.id)
         .single();
 
@@ -596,7 +618,11 @@ function ScriptViewer({
                   <History className="size-3" /> {t("viewer.versions", "Versioni")}
                 </button>
                 {canEdit && (
-                  <button className="pc-btn pc-btn-ghost" onClick={enterEdit} disabled={loadingContent}>
+                  <button
+                    className="pc-btn pc-btn-ghost"
+                    onClick={enterEdit}
+                    disabled={loadingContent}
+                  >
                     <Pencil className="size-3" /> {t("viewer.edit", "Modifica")}
                   </button>
                 )}
@@ -694,12 +720,17 @@ function ScriptViewer({
             {loadingContent ? (
               <span className="text-text3">{t("viewer.loading", "Caricamento...")}</span>
             ) : loadError ? (
-              <span className="text-destructive">{t("viewer.loadError", "Errore nel caricamento del contenuto.")}</span>
+              <span className="text-destructive">
+                {t("viewer.loadError", "Errore nel caricamento del contenuto.")}
+              </span>
             ) : hasContent ? (
               content
             ) : (
               <span className="text-text3 italic">
-                {t("viewer.emptyHint", "Nessun codice inserito. Clicca su Modifica per aggiungere il contenuto dello script.")}
+                {t(
+                  "viewer.emptyHint",
+                  "Nessun codice inserito. Clicca su Modifica per aggiungere il contenuto dello script.",
+                )}
               </span>
             )}
           </pre>
@@ -708,7 +739,10 @@ function ScriptViewer({
       <DestructiveConfirmDialog
         open={dirtyConfirm}
         title={t("viewer.discardTitle", "Modifiche non salvate")}
-        description={t("viewer.discardDescription", "Hai modifiche non salvate. Vuoi davvero annullare?")}
+        description={t(
+          "viewer.discardDescription",
+          "Hai modifiche non salvate. Vuoi davvero annullare?",
+        )}
         confirmLabel={t("viewer.discardConfirm", "Annulla modifiche")}
         loadingLabel={t("viewer.discarding", "Annullamento...")}
         onOpenChange={(open) => !open && setDirtyConfirm(false)}
@@ -747,8 +781,10 @@ function ScriptEditor({
   });
 
   const save = form.handleSubmit(async (values) => {
-    if (!values.name.trim()) return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
-    if (!values.content.trim()) return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
+    if (!values.name.trim())
+      return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
+    if (!values.content.trim())
+      return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
     setBusy(true);
     try {
       const newData: any = {
@@ -766,7 +802,9 @@ function ScriptEditor({
         // Fetch current data for diff
         const { data } = await supabase
           .from("scripts")
-          .select("id, name, category, description, language, content, icon, color, created_by, created_at, updated_at")
+          .select(
+            "id, name, category, description, language, content, icon, color, created_by, created_at, updated_at",
+          )
           .eq("id", initial.id)
           .single();
         oldData = data as any;
@@ -820,7 +858,9 @@ function ScriptEditor({
       open
       onClose={onClose}
       size="lg"
-      title={initial ? t("editor.editTitle", "Modifica script") : t("editor.newTitle", "Nuovo script")}
+      title={
+        initial ? t("editor.editTitle", "Modifica script") : t("editor.newTitle", "Nuovo script")
+      }
       footer={
         <>
           <button className="pc-btn pc-btn-ghost" onClick={onClose}>
@@ -831,7 +871,11 @@ function ScriptEditor({
             disabled={busy || !form.formState.isValid}
             onClick={save}
           >
-            {busy ? t("editor.saving", "Salvataggio…") : initial ? t("editor.saveChanges", "Salva modifiche") : t("editor.createScript", "Crea script")}
+            {busy
+              ? t("editor.saving", "Salvataggio…")
+              : initial
+                ? t("editor.saveChanges", "Salva modifiche")
+                : t("editor.createScript", "Crea script")}
           </button>
         </>
       }
@@ -859,7 +903,11 @@ function ScriptEditor({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
           <Field label={t("editor.fieldLanguage", "Linguaggio")}>
-            <select className="pc-input" {...form.register("language")} aria-label={t("editor.fieldLanguage", "Linguaggio")}>
+            <select
+              className="pc-input"
+              {...form.register("language")}
+              aria-label={t("editor.fieldLanguage", "Linguaggio")}
+            >
               {LANGUAGES.map((l) => (
                 <option key={l} value={l}>
                   {l}
@@ -947,4 +995,3 @@ function ScriptEditor({
     </Modal>
   );
 }
-

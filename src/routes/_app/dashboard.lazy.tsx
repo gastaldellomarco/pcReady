@@ -378,11 +378,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
             return (
               <DashboardStatCard
                 label={i18n.t("dashboard:stats.slaRespected", "SLA rispettati")}
-                value={
-                  slaPct == null
-                    ? i18n.t("dashboard:widgets.na", "N/D")
-                    : `${slaPct}%`
-                }
+                value={slaPct == null ? i18n.t("dashboard:widgets.na", "N/D") : `${slaPct}%`}
                 accent={slaColor ?? "var(--accent)"}
                 sub={`${ctx.analytics?.summary?.slaRespected ?? 0}/${ctx.analytics?.summary?.slaTotal ?? 0} ${i18n.t("dashboard:stats.inPeriod", "nel periodo")}`}
                 valueColor={slaColor}
@@ -422,7 +418,11 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           />
           <DashboardStatCard
             label={i18n.t("dashboard:stats.checklistCompleted", "Checklist completate")}
-            value={ctx.checklistStats ? `${ctx.checklistStats.completedPct}%` : i18n.t("dashboard:widgets.na", "N/D")}
+            value={
+              ctx.checklistStats
+                ? `${ctx.checklistStats.completedPct}%`
+                : i18n.t("dashboard:widgets.na", "N/D")
+            }
             accent="var(--success)"
             sub={
               ctx.checklistStats
@@ -436,10 +436,16 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <DashboardStatCard
             label={i18n.t("dashboard:stats.feedbackAvg", "Soddisfazione clienti")}
             value={
-              ctx.satisfactionStats?.average == null ? i18n.t("dashboard:widgets.na", "N/D") : `${ctx.satisfactionStats.average}/5`
+              ctx.satisfactionStats?.average == null
+                ? i18n.t("dashboard:widgets.na", "N/D")
+                : `${ctx.satisfactionStats.average}/5`
             }
             accent="var(--success)"
-            sub={ctx.satisfactionStats ? `${ctx.satisfactionStats.count} feedback` : i18n.t("dashboard:stats.noData", "nessun dato")}
+            sub={
+              ctx.satisfactionStats
+                ? `${ctx.satisfactionStats.count} feedback`
+                : i18n.t("dashboard:stats.noData", "nessun dato")
+            }
             valueColor="var(--success)"
             icon={<CircleCheck className="size-5" />}
             href="/tickets"
@@ -467,7 +473,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <DashboardStatCard
             label={i18n.t("dashboard:stats.pctPerTechnician", "% checklist per tecnico")}
             value={
-              ctx.checklistStats?.topTechnician ? `${ctx.checklistStats.topTechnician.pct}%` : i18n.t("dashboard:widgets.na", "N/D")
+              ctx.checklistStats?.topTechnician
+                ? `${ctx.checklistStats.topTechnician.pct}%`
+                : i18n.t("dashboard:widgets.na", "N/D")
             }
             accent="var(--success)"
             sub={
@@ -495,13 +503,16 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="warranty-overview" className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
           <div className="pc-card lg:col-span-1">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:warranty.title", "Garanzie dispositivi")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:warranty.title", "Garanzie dispositivi")}
+              </span>
               <Link
                 to="/inventory"
                 search={() => ({ warranty: "all" }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                {i18n.t("dashboard:warranty.inventory", "Inventario")} <ArrowRight className="size-3" />
+                {i18n.t("dashboard:warranty.inventory", "Inventario")}{" "}
+                <ArrowRight className="size-3" />
               </Link>
             </div>
             <div className="pc-card-body grid grid-cols-2 gap-2 text-xs">
@@ -521,7 +532,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     className="rounded-lg border px-3 py-2"
                     style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
                   >
-                    <div className="text-[10px] uppercase text-text3">{i18n.t(`dashboard:${key}`)}</div>
+                    <div className="text-[10px] uppercase text-text3">
+                      {i18n.t(`dashboard:${key}`)}
+                    </div>
                     <div
                       className="mt-1 font-mono text-lg font-semibold"
                       style={{ color: meta.color }}
@@ -535,110 +548,139 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           </div>
           <div className="pc-card min-w-0 lg:col-span-2">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:warranty.expiringTitle", "Garanzie in scadenza (prossimi 90 giorni)")}</span>
+              <span className="pc-card-title">
+                {i18n.t(
+                  "dashboard:warranty.expiringTitle",
+                  "Garanzie in scadenza (prossimi 90 giorni)",
+                )}
+              </span>
               <span className="text-[11px] text-text3 font-mono">{expiringRows.length}</span>
-            </div>                          {!ctx.isMobile ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full min-w-[620px]">
-                                <thead>
-                                  <tr>
-                                    {[i18n.t("dashboard:warranty.tableAsset", "Asset"), i18n.t("dashboard:warranty.tableExpiry", "Scadenza"), i18n.t("dashboard:warranty.tableStatus", "Stato"), i18n.t("dashboard:warranty.tableProvider", "Fornitore")].map((h) => (
-                                      <th
-                                        key={h}
-                                        className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
-                                        style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
-                                      >
-                                        {h}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {expiringRows.map((device) => {
-                                    const status = getWarrantyStatus(device.warranty_expiry_date);
-                                    const meta = WARRANTY_STATUS_META[status];
-                                    const days = daysUntil(device.warranty_expiry_date);
-                                    return (
-                                      <tr
-                                        key={device.id}
-                                        className="border-b cursor-pointer hover:bg-surface2"
-                                        style={{ borderColor: "var(--border)" }}
-                                        onClick={() => openDeviceDetail(device.id)}
-                                      >
-                                        <td className="px-[14px] py-[10px] text-[12.5px]">
-                                          <span className="font-semibold">{device.model}</span>
-                                          <div className="font-mono text-[11px] text-text3">
-                                            {device.serial || device.id.slice(0, 8)}
-                                          </div>
-                                        </td>
-                                        <td className="px-[14px] py-[10px] text-[12px]">
-                                          {device.warranty_expiry_date ? fmtDate(device.warranty_expiry_date) : "—"}
-                                          <div className="text-[11px] text-text3">
-                                            {days == null ? "" : `${days} ${i18n.t("dashboard:warranty.days", "giorni")}`}
-                                          </div>
-                                        </td>
-                                        <td className="px-[14px] py-[10px]">
-                                          <span
-                                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-                                            style={{
-                                              color: meta.color,
-                                              background: meta.background,
-                                              borderColor: meta.color,
-                                            }}
-                                          >
-                                            {i18n.t(`dashboard:${status === "urgent" ? "warranty.status.urgent" : status === "expiring" ? "warranty.status.expiring" : status === "expired" ? "warranty.status.expired" : status === "valid" ? "warranty.status.valid" : "warranty.status.missing"}`, meta.label)}
-                                          </span>
-                                        </td>
-                                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
-                                          {device.warranty_provider || "—"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                  {!expiringRows.length && (
-                                    <tr>
-                                      <td colSpan={4} className="py-8 text-center text-sm text-text3">
-                                        {i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
+            </div>{" "}
+            {!ctx.isMobile ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px]">
+                  <thead>
+                    <tr>
+                      {[
+                        i18n.t("dashboard:warranty.tableAsset", "Asset"),
+                        i18n.t("dashboard:warranty.tableExpiry", "Scadenza"),
+                        i18n.t("dashboard:warranty.tableStatus", "Stato"),
+                        i18n.t("dashboard:warranty.tableProvider", "Fornitore"),
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
+                          style={{ background: "var(--surface2)", borderColor: "var(--border)" }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiringRows.map((device) => {
+                      const status = getWarrantyStatus(device.warranty_expiry_date);
+                      const meta = WARRANTY_STATUS_META[status];
+                      const days = daysUntil(device.warranty_expiry_date);
+                      return (
+                        <tr
+                          key={device.id}
+                          className="border-b cursor-pointer hover:bg-surface2"
+                          style={{ borderColor: "var(--border)" }}
+                          onClick={() => openDeviceDetail(device.id)}
+                        >
+                          <td className="px-[14px] py-[10px] text-[12.5px]">
+                            <span className="font-semibold">{device.model}</span>
+                            <div className="font-mono text-[11px] text-text3">
+                              {device.serial || device.id.slice(0, 8)}
                             </div>
-                          ) : (
-                            <div className="pc-card-body px-0">
-                              <MobileCardView
-                                data={expiringRows}
-                                keyField="id"
-                                columns={[
-                                  { label: "Modello", accessor: "model" as any, primary: true },
-                                  { label: "Seriale", accessor: (d: any) => d.serial || d.id.slice(0, 8) },
-                                  {
-                                    label: "Scadenza",
-                                    accessor: (d: any) => d.warranty_expiry_date ? fmtDate(d.warranty_expiry_date) : "—",
-                                  },
-                                  {
-                                    label: "Stato",
-                                    accessor: (d: any) => {
-                                      const s = getWarrantyStatus(d.warranty_expiry_date);
-                                      const m = WARRANTY_STATUS_META[s];
-                                      return (
-                                        <span
-                                          className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-                                          style={{ color: m.color, background: m.background, borderColor: m.color }}
-                                        >
-                                          {m.label}
-                                        </span>
-                                      );
-                                    },
-                                  },
-                                  { label: "Fornitore", accessor: "warranty_provider" as any },
-                                ]}
-                                onRowClick={(d) => openDeviceDetail(d.id)}
-                                emptyMessage={i18n.t("dashboard:warranty.noExpiring", "Nessuna garanzia in scadenza nei prossimi 90 giorni.")}
-                              />
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px]">
+                            {device.warranty_expiry_date
+                              ? fmtDate(device.warranty_expiry_date)
+                              : "—"}
+                            <div className="text-[11px] text-text3">
+                              {days == null
+                                ? ""
+                                : `${days} ${i18n.t("dashboard:warranty.days", "giorni")}`}
                             </div>
+                          </td>
+                          <td className="px-[14px] py-[10px]">
+                            <span
+                              className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                              style={{
+                                color: meta.color,
+                                background: meta.background,
+                                borderColor: meta.color,
+                              }}
+                            >
+                              {i18n.t(
+                                `dashboard:${status === "urgent" ? "warranty.status.urgent" : status === "expiring" ? "warranty.status.expiring" : status === "expired" ? "warranty.status.expired" : status === "valid" ? "warranty.status.valid" : "warranty.status.missing"}`,
+                                meta.label,
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                            {device.warranty_provider || "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {!expiringRows.length && (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-sm text-text3">
+                          {i18n.t(
+                            "dashboard:warranty.noExpiring",
+                            "Nessuna garanzia in scadenza nei prossimi 90 giorni.",
                           )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="pc-card-body px-0">
+                <MobileCardView
+                  data={expiringRows}
+                  keyField="id"
+                  columns={[
+                    { label: "Modello", accessor: "model" as any, primary: true },
+                    { label: "Seriale", accessor: (d: any) => d.serial || d.id.slice(0, 8) },
+                    {
+                      label: "Scadenza",
+                      accessor: (d: any) =>
+                        d.warranty_expiry_date ? fmtDate(d.warranty_expiry_date) : "—",
+                    },
+                    {
+                      label: "Stato",
+                      accessor: (d: any) => {
+                        const s = getWarrantyStatus(d.warranty_expiry_date);
+                        const m = WARRANTY_STATUS_META[s];
+                        return (
+                          <span
+                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                            style={{
+                              color: m.color,
+                              background: m.background,
+                              borderColor: m.color,
+                            }}
+                          >
+                            {m.label}
+                          </span>
+                        );
+                      },
+                    },
+                    { label: "Fornitore", accessor: "warranty_provider" as any },
+                  ]}
+                  onRowClick={(d) => openDeviceDetail(d.id)}
+                  emptyMessage={i18n.t(
+                    "dashboard:warranty.noExpiring",
+                    "Nessuna garanzia in scadenza nei prossimi 90 giorni.",
+                  )}
+                />
+              </div>
+            )}
           </div>
         </div>
       );
@@ -652,9 +694,14 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="analytics-card">
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold">{i18n.t("dashboard:analytics.overviewTitle", "Panoramica dispositivi & ticket")}</h3>
+              <h3 className="text-sm font-semibold">
+                {i18n.t("dashboard:analytics.overviewTitle", "Panoramica dispositivi & ticket")}
+              </h3>
               <div className="text-xs text-text3">
-                {i18n.t("dashboard:analytics.overviewDesc", "Trend e widget di riepilogo filtrati per periodo")}
+                {i18n.t(
+                  "dashboard:analytics.overviewDesc",
+                  "Trend e widget di riepilogo filtrati per periodo",
+                )}
               </div>
             </div>
             <DateRangePicker
@@ -714,7 +761,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="devices-without-ticket" className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:devicesWithoutTicket.title", "Dispositivi senza ticket attivo")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:devicesWithoutTicket.title", "Dispositivi senza ticket attivo")}
+              </span>
               <span className="text-[11px] text-text3 font-mono">
                 {ctx.devicesWithoutTicket.length}
               </span>
@@ -746,7 +795,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:ticketsWithoutDevice.title", "Ticket senza dispositivo associato")}</span>
+              <span className="pc-card-title">
+                {i18n.t(
+                  "dashboard:ticketsWithoutDevice.title",
+                  "Ticket senza dispositivo associato",
+                )}
+              </span>
               <span className="text-[11px] text-text3 font-mono">
                 {ctx.ticketsWithoutDeviceCount}
               </span>
@@ -782,7 +836,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:trend.title", "Trend: Ticket aperti vs Asset disponibili")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:trend.title", "Trend: Ticket aperti vs Asset disponibili")}
+              </span>
               <span className="text-[11px] text-text3 font-mono">{ctx.periodLabel}</span>
             </div>
             <div className="pc-card-body">
@@ -831,9 +887,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           render: (t: any) => (
             <div className="flex items-center justify-between">
               <span className="font-mono text-[11.5px] text-text3">{t.ticket_code}</span>
-              <span className="text-[12.5px]">
-                {dashboardDeviceLabel(t)}
-              </span>
+              <span className="text-[12.5px]">{dashboardDeviceLabel(t)}</span>
             </div>
           ),
         },
@@ -859,13 +913,16 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
         <div key="recent-tickets" className="grid grid-cols-1 lg:grid-cols-2 gap-[18px]">
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:recentTickets.title", "Ticket recenti")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:recentTickets.title", "Ticket recenti")}
+              </span>
               <Link
                 to="/tickets"
                 search={() => ({ export: false }) as any}
                 className="pc-btn pc-btn-ghost pc-btn-sm"
               >
-                {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")} <ArrowRight className="size-3" />
+                {i18n.t("dashboard:recentTickets.viewAll", "Vedi tutti")}{" "}
+                <ArrowRight className="size-3" />
               </Link>
             </div>
             {!ctx.isMobile ? (
@@ -873,7 +930,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                 <table className="w-full">
                   <thead>
                     <tr>
-                      {[i18n.t("dashboard:recentTickets.tableId", "ID"), i18n.t("dashboard:recentTickets.tableAsset", "Asset"), i18n.t("dashboard:recentTickets.tableStatus", "Stato"), i18n.t("dashboard:recentTickets.tableAssignee", "Assegnatario")].map((h) => (
+                      {[
+                        i18n.t("dashboard:recentTickets.tableId", "ID"),
+                        i18n.t("dashboard:recentTickets.tableAsset", "Asset"),
+                        i18n.t("dashboard:recentTickets.tableStatus", "Stato"),
+                        i18n.t("dashboard:recentTickets.tableAssignee", "Assegnatario"),
+                      ].map((h) => (
                         <th
                           key={h}
                           className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -916,7 +978,10 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                     {!ctx.tickets.length && (
                       <tr>
                         <td colSpan={4} className="text-center py-8 text-text3 text-sm">
-                          {i18n.t("dashboard:recentTickets.noTickets", "Nessun ticket. Creane uno con il pulsante in alto.")}
+                          {i18n.t(
+                            "dashboard:recentTickets.noTickets",
+                            "Nessun ticket. Creane uno con il pulsante in alto.",
+                          )}
                         </td>
                       </tr>
                     )}
@@ -938,8 +1003,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
           <div className="pc-card dashboard-widget">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:statusDistribution.title", "Distribuzione stati")}</span>
-              <span className="text-[11px] text-text3 font-mono">{ctx.total} {i18n.t("dashboard:statusDistribution.total", "totali")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:statusDistribution.title", "Distribuzione stati")}
+              </span>
+              <span className="text-[11px] text-text3 font-mono">
+                {ctx.total} {i18n.t("dashboard:statusDistribution.total", "totali")}
+              </span>
             </div>
             <div className="pc-card-body">
               <div className="flex gap-4 items-center lg:items-stretch">
@@ -977,13 +1046,21 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                                   background: STATUS_META[d.status].color,
                                 }}
                               />
-                              <span className="text-text2">{i18n.t(`dashboard:status.${d.status}`, STATUS_META[d.status].label)}</span>
+                              <span className="text-text2">
+                                {i18n.t(
+                                  `dashboard:status.${d.status}`,
+                                  STATUS_META[d.status].label,
+                                )}
+                              </span>
                             </div>
                             <div className="font-mono text-text3">{d.n}</div>
                           </Link>
                         ))}
                     </div>
-                    <div className="text-sm text-text3 mt-3">{ctx.total} {i18n.t("dashboard:statusDistribution.ticketTotal", "ticket totali")}</div>
+                    <div className="text-sm text-text3 mt-3">
+                      {ctx.total}{" "}
+                      {i18n.t("dashboard:statusDistribution.ticketTotal", "ticket totali")}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -991,7 +1068,6 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           </div>
         </div>
       );
-
     }
 
     case "status-distribution":
@@ -1004,9 +1080,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
           <TechnicianHeatmapWidget />
           <div className="pc-card">
             <div className="pc-card-hd">
-              <span className="pc-card-title">{i18n.t("dashboard:recentActivity.title", "Attivita recente")}</span>
+              <span className="pc-card-title">
+                {i18n.t("dashboard:recentActivity.title", "Attivita recente")}
+              </span>
               <Link to="/automations" className="pc-btn pc-btn-ghost pc-btn-sm">
-                {i18n.t("dashboard:recentActivity.fullLog", "Log completo")} <ArrowRight className="size-3" />
+                {i18n.t("dashboard:recentActivity.fullLog", "Log completo")}{" "}
+                <ArrowRight className="size-3" />
               </Link>
             </div>
             <div className="pc-card-body">
@@ -1022,7 +1101,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   >
                     <span
                       className="size-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                      title={l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}
+                      title={
+                        l.actor?.full_name ??
+                        (l.type === "user"
+                          ? i18n.t("dashboard:recentActivity.user", "Utente")
+                          : i18n.t("dashboard:recentActivity.system", "Sistema"))
+                      }
                       aria-label={`${i18n.t("dashboard:recentActivity.actionBy", "Azione eseguita da")}: ${l.actor?.full_name ?? (l.type === "user" ? i18n.t("dashboard:recentActivity.user", "Utente") : i18n.t("dashboard:recentActivity.system", "Sistema"))}`}
                       style={{
                         background:
@@ -1049,7 +1133,9 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                   </div>
                 ))}
                 {!ctx.dedupLogs.length && (
-                  <div className="text-center text-text3 text-sm py-4">{i18n.t("dashboard:recentActivity.noActivity", "Nessuna attivita")}</div>
+                  <div className="text-center text-text3 text-sm py-4">
+                    {i18n.t("dashboard:recentActivity.noActivity", "Nessuna attivita")}
+                  </div>
                 )}
               </div>
             </div>
@@ -1122,7 +1208,9 @@ function MaintenanceOverviewWidget() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
       <div className="pc-card lg:col-span-2">
         <div className="pc-card-hd">
-          <span className="pc-card-title">{t("maintenance.upcomingTitle", "Prossime manutenzioni pianificate")}</span>
+          <span className="pc-card-title">
+            {t("maintenance.upcomingTitle", "Prossime manutenzioni pianificate")}
+          </span>
           <Link to="/inventory" className="pc-btn pc-btn-ghost pc-btn-sm">
             {t("maintenance.calendar", "Calendario")} <ArrowRight className="size-3" />
           </Link>
@@ -1131,7 +1219,12 @@ function MaintenanceOverviewWidget() {
           <table className="w-full">
             <thead>
               <tr>
-                {[t("maintenance.tableIntervention", "Intervento"), t("maintenance.tableDevice", "Dispositivo"), t("maintenance.tableExpiry", "Scadenza"), t("maintenance.tableStatus", "Stato")].map((h) => (
+                {[
+                  t("maintenance.tableIntervention", "Intervento"),
+                  t("maintenance.tableDevice", "Dispositivo"),
+                  t("maintenance.tableExpiry", "Scadenza"),
+                  t("maintenance.tableStatus", "Stato"),
+                ].map((h) => (
                   <th
                     key={h}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -1195,7 +1288,9 @@ function MaintenanceOverviewWidget() {
       </div>
       <div className="pc-card">
         <div className="pc-card-hd">
-          <span className="pc-card-title">{t("maintenance.overdueTitle", "Scadute non eseguite")}</span>
+          <span className="pc-card-title">
+            {t("maintenance.overdueTitle", "Scadute non eseguite")}
+          </span>
         </div>
         <div className="pc-card-body">
           <div
@@ -1205,7 +1300,10 @@ function MaintenanceOverviewWidget() {
             {overdueCount}
           </div>
           <div className="mt-1 text-xs text-text3">
-            {t("maintenance.overdueDesc", "Manutenzioni con prossima scadenza superata e non completate.")}
+            {t(
+              "maintenance.overdueDesc",
+              "Manutenzioni con prossima scadenza superata e non completate.",
+            )}
           </div>
           <Link to="/inventory" className="pc-btn pc-btn-primary pc-btn-sm mt-4">
             {t("maintenance.openCalendar", "Apri calendario manutenzioni")}

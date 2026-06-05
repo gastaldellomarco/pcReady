@@ -165,10 +165,9 @@ export async function listPortalDocumentsServer(input: { token: string }) {
         .in("document_id", documentIds)
         .eq("client_id", session.clientId)
     : { data: [], error: null };
-  if (signaturesError) console.error("[portal-documents] signatures query failed:", signaturesError);
-  const signatureByDocument = new Map(
-    ((signatures ?? []) as any[]).map((s) => [s.document_id, s]),
-  );
+  if (signaturesError)
+    console.error("[portal-documents] signatures query failed:", signaturesError);
+  const signatureByDocument = new Map(((signatures ?? []) as any[]).map((s) => [s.document_id, s]));
 
   return {
     session,
@@ -193,8 +192,7 @@ export async function signPortalDocumentServer(input: {
   const match = /^data:image\/png;base64,(.+)$/.exec(input.signatureDataUrl);
   if (!match) throw new Response("Formato firma non valido", { status: 400 });
   const buffer = Buffer.from(match[1], "base64");
-  if (buffer.byteLength > 500 * 1024)
-    throw new Response("Firma troppo grande", { status: 400 });
+  if (buffer.byteLength > 500 * 1024) throw new Response("Firma troppo grande", { status: 400 });
 
   const now = Date.now();
   const sanitizedId = input.documentId.replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -208,18 +206,16 @@ export async function signPortalDocumentServer(input: {
     });
   if (uploadError) throw uploadError;
 
-  const { error: upsertError } = await supabaseAdmin
-    .from("document_signatures" as any)
-    .upsert(
-      {
-        document_id: input.documentId,
-        client_id: session.clientId,
-        contact_id: session.contactId,
-        signature_path: storagePath,
-        signed_at: new Date().toISOString(),
-      },
-      { onConflict: "document_id,contact_id" },
-    );
+  const { error: upsertError } = await supabaseAdmin.from("document_signatures" as any).upsert(
+    {
+      document_id: input.documentId,
+      client_id: session.clientId,
+      contact_id: session.contactId,
+      signature_path: storagePath,
+      signed_at: new Date().toISOString(),
+    },
+    { onConflict: "document_id,contact_id" },
+  );
   if (upsertError) throw upsertError;
 
   const { data: signedUrlData } = await supabaseAdmin.storage

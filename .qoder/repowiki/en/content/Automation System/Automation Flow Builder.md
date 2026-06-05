@@ -17,7 +17,9 @@
 </cite>
 
 ## Update Summary
+
 **Changes Made**
+
 - Enhanced AutomationWizard with improved visual step indicators and progress tracking
 - Added dual-mode builder support (guided wizard + advanced visual builder)
 - Improved error handling and validation across all steps
@@ -26,6 +28,7 @@
 - Implemented comprehensive flow migration from wizard to visual format
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -38,10 +41,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document describes the enhanced Automation Flow Builder interface used to construct complex automation rules through a guided wizard system. The system now features a five-step wizard process with improved visual indicators, comprehensive validation, and dual-mode builder support (guided wizard and advanced visual builder). It focuses on creating triggers, conditions, actions, scheduling, and review/publish flows with enhanced user experience and advanced configuration options.
 
 ## Project Structure
+
 The Automation Flow Builder spans several modules with enhanced integration:
+
 - **Enhanced Wizard-based guided builder** under the automations folder with visual step indicators
 - **Advanced visual builder** powered by React Flow for complex flow construction
 - **Dual-mode architecture** supporting both guided wizard and visual builder approaches
@@ -83,6 +89,7 @@ HAR --> TYPES
 ```
 
 **Diagram sources**
+
 - [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
 - [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
 - [ConditionsStep.tsx:8-18](file://src/components/automations/steps/ConditionsStep.tsx#L8-L18)
@@ -97,10 +104,12 @@ HAR --> TYPES
 - [automation-ui-constants.ts:1](file://src/lib/automations/automation-ui-constants.ts#L1)
 
 **Section sources**
+
 - [automations.tsx:286-301](file://src/routes/_app/automations.tsx#L286-L301)
 - [useAutomationRules.ts:87-88](file://src/hooks/useAutomationRules.ts#L87-L88)
 
 ## Core Components
+
 - **Enhanced AutomationWizard**: Orchestrates the guided five-step process with visual step indicators, comprehensive validation, and dual-mode support
 - **Step Components**:
   - **TriggerStep**: Enhanced trigger selection with visual cards and scheduled configuration
@@ -112,6 +121,7 @@ HAR --> TYPES
 - **Dual-Mode Architecture**: Seamless switching between guided wizard and advanced visual builder
 
 Key enhancements:
+
 - **Visual Progress Tracking**: Step-by-step progress indicators with completion states
 - **Enhanced Validation**: Comprehensive step validation with inline error handling
 - **Dual-Mode Support**: Guided wizard for beginners, visual builder for advanced users
@@ -119,6 +129,7 @@ Key enhancements:
 - **Flow Migration**: Automatic conversion from wizard format to visual React Flow format
 
 **Section sources**
+
 - [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
 - [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
 - [ConditionsStep.tsx:8-18](file://src/components/automations/steps/ConditionsStep.tsx#L8-L18)
@@ -128,6 +139,7 @@ Key enhancements:
 - [AutomationBuilder.tsx:1-527](file://src/components/pcready/automation/AutomationBuilder.tsx#L1-L527)
 
 ## Architecture Overview
+
 The enhanced system provides dual-path architecture supporting both guided wizard and advanced visual builder approaches, with seamless flow migration and comprehensive validation.
 
 ```mermaid
@@ -164,6 +176,7 @@ HR-->>U : Success toast
 ```
 
 **Diagram sources**
+
 - [automations.tsx:286-301](file://src/routes/_app/automations.tsx#L286-L301)
 - [AutomationWizard.tsx:102-149](file://src/components/automations/AutomationWizard.tsx#L102-L149)
 - [useAutomationRules.ts:188-284](file://src/hooks/useAutomationRules.ts#L188-L284)
@@ -176,6 +189,7 @@ HR-->>U : Success toast
 ## Detailed Component Analysis
 
 ### Enhanced AutomationWizard: Five-Step Process with Visual Indicators
+
 - **Enhanced State Model**:
   - Step index with visual progress tracking
   - Name/description/category configuration
@@ -219,17 +233,20 @@ Save --> End([Close with success])
 ```
 
 **Diagram sources**
+
 - [AutomationWizard.tsx:102-149](file://src/components/automations/AutomationWizard.tsx#L102-L149)
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationWizard.tsx:69-81](file://src/components/automations/AutomationWizard.tsx#L69-L81)
 
 **Section sources**
+
 - [AutomationWizard.tsx:15-21](file://src/components/automations/AutomationWizard.tsx#L15-L21)
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationWizard.tsx:69-81](file://src/components/automations/AutomationWizard.tsx#L69-L81)
 - [AutomationWizard.tsx:102-149](file://src/components/automations/AutomationWizard.tsx#L102-L149)
 
 ### Enhanced TriggerStep: Visual Trigger Selection
+
 - **Enhanced Trigger Options** with visual cards:
   - Ticket created/updated with ticket icons
   - Checklist completed with checklist icon
@@ -255,15 +272,18 @@ Parent --> Visual["Update visual state<br/>Card selection feedback"]
 ```
 
 **Diagram sources**
+
 - [TriggerStep.tsx:62-103](file://src/components/automations/steps/TriggerStep.tsx#L62-L103)
 - [TriggerStep.tsx:105-123](file://src/components/automations/steps/TriggerStep.tsx#L105-L123)
 
 **Section sources**
+
 - [TriggerStep.tsx:4-45](file://src/components/automations/steps/TriggerStep.tsx#L4-L45)
 - [TriggerStep.tsx:62-103](file://src/components/automations/steps/TriggerStep.tsx#L62-L103)
 - [TriggerStep.tsx:105-123](file://src/components/automations/steps/TriggerStep.tsx#L105-L123)
 
 ### Advanced ConditionsStep: Sophisticated Condition Management
+
 - **Enhanced Operator System** with comprehensive options:
   - Field comparison operators (equals, not equals, greater than, less than)
   - String operators (contains, starts with, ends with)
@@ -290,15 +310,18 @@ Reorder --> Render
 ```
 
 **Diagram sources**
+
 - [ConditionsStep.tsx:27-58](file://src/components/automations/steps/ConditionsStep.tsx#L27-L58)
 - [ConditionsStep.tsx:121-147](file://src/components/automations/steps/ConditionsStep.tsx#L121-L147)
 
 **Section sources**
+
 - [ConditionsStep.tsx:8-18](file://src/components/automations/steps/ConditionsStep.tsx#L8-L18)
 - [ConditionsStep.tsx:27-58](file://src/components/automations/steps/ConditionsStep.tsx#L27-L58)
 - [ConditionsStep.tsx:121-147](file://src/components/automations/steps/ConditionsStep.tsx#L121-L147)
 
 ### Enhanced ActionsStep: Comprehensive Action Configuration
+
 - **Advanced Action Types** with sophisticated defaults:
   - send_email with recipient, subject, body, HTML toggle
   - update_ticket_status with status dropdown and ID fields
@@ -333,15 +356,18 @@ ActionsStep --> NotificationTypes : "validates types"
 ```
 
 **Diagram sources**
+
 - [ActionsStep.tsx:53-79](file://src/components/automations/steps/ActionsStep.tsx#L53-L79)
 - [notifications.ts:6-16](file://src/lib/notifications.ts#L6-L16)
 
 **Section sources**
+
 - [ActionsStep.tsx:7-44](file://src/components/automations/steps/ActionsStep.tsx#L7-L44)
 - [ActionsStep.tsx:53-79](file://src/components/automations/steps/ActionsStep.tsx#L53-L79)
 - [notifications.ts:6-16](file://src/lib/notifications.ts#L6-L16)
 
 ### Enhanced ScheduleStep: Flexible Scheduling Options
+
 - **Advanced Schedule Types**:
   - None (no scheduling)
   - Cron (standard cron expression)
@@ -367,15 +393,18 @@ Parent --> Visual["Update visual state<br/>Active card highlight"]
 ```
 
 **Diagram sources**
+
 - [ScheduleStep.tsx:14-24](file://src/components/automations/steps/ScheduleStep.tsx#L14-L24)
 - [ScheduleStep.tsx:26-35](file://src/components/automations/steps/ScheduleStep.tsx#L26-L35)
 
 **Section sources**
+
 - [ScheduleStep.tsx:1-39](file://src/components/automations/steps/ScheduleStep.tsx#L1-L39)
 - [ScheduleStep.tsx:14-24](file://src/components/automations/steps/ScheduleStep.tsx#L14-L24)
 - [ScheduleStep.tsx:26-35](file://src/components/automations/steps/ScheduleStep.tsx#L26-L35)
 
 ### Enhanced ReviewStep: Comprehensive Flow Preview
+
 - **Detailed Preview System**:
   - Complete rule summary with trigger and actions
   - Enhanced configuration preview with JSON formatting
@@ -402,17 +431,20 @@ W->>W : Regenerate summary
 ```
 
 **Diagram sources**
+
 - [ReviewStep.tsx:28-42](file://src/components/automations/steps/ReviewStep.tsx#L28-L42)
 - [ReviewStep.tsx:95-102](file://src/components/automations/steps/ReviewStep.tsx#L95-L102)
 - [ReviewStep.tsx:105-191](file://src/components/automations/steps/ReviewStep.tsx#L105-L191)
 
 **Section sources**
+
 - [ReviewStep.tsx:1-196](file://src/components/automations/steps/ReviewStep.tsx#L1-L196)
 - [ReviewStep.tsx:28-42](file://src/components/automations/steps/ReviewStep.tsx#L28-L42)
 - [ReviewStep.tsx:95-102](file://src/components/automations/steps/ReviewStep.tsx#L95-L102)
 - [ReviewStep.tsx:105-191](file://src/components/automations/steps/ReviewStep.tsx#L105-L191)
 
 ### Advanced Visual Builder: React Flow Integration
+
 - **React Flow Canvas** with comprehensive features:
   - Drag-and-drop node creation from palette
   - Connectable edges with conditional branching
@@ -448,17 +480,20 @@ DB-->>AB : Success/Error
 ```
 
 **Diagram sources**
+
 - [AutomationBuilder.tsx:44-75](file://src/components/pcready/automation/AutomationBuilder.tsx#L44-L75)
 - [AutomationBuilder.tsx:80-91](file://src/components/pcready/automation/AutomationBuilder.tsx#L80-L91)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
 **Section sources**
+
 - [AutomationBuilder.tsx:1-527](file://src/components/pcready/automation/AutomationBuilder.tsx#L1-L527)
 - [AutomationBuilder.tsx:44-75](file://src/components/pcready/automation/AutomationBuilder.tsx#L44-L75)
 - [AutomationBuilder.tsx:80-91](file://src/components/pcready/automation/AutomationBuilder.tsx#L80-L91)
 - [AutomationBuilder.tsx:119-152](file://src/components/pcready/automation/AutomationBuilder.tsx#L119-L152)
 
 ## Dependency Analysis
+
 - **Enhanced Wizard Integration**: AutomationWizard composes all step components with visual indicators
 - **Dual-Mode Architecture**: Route-level mode switching between wizard and visual builder
 - **Advanced Builder Integration**: Visual builder uses React Flow with comprehensive node types
@@ -480,6 +515,7 @@ MODE --> AB
 ```
 
 **Diagram sources**
+
 - [AutomationWizard.tsx:5-9](file://src/components/automations/AutomationWizard.tsx#L5-L9)
 - [ActionsStep.tsx:7-13](file://src/components/automations/steps/ActionsStep.tsx#L7-L13)
 - [notifications.ts:6-16](file://src/lib/notifications.ts#L6-L16)
@@ -488,10 +524,12 @@ MODE --> AB
 - [automations.tsx:286-301](file://src/routes/_app/automations.tsx#L286-L301)
 
 **Section sources**
+
 - [useAutomationRules.ts:188-284](file://src/hooks/useAutomationRules.ts#L188-L284)
 - [automation.ts:23-36](file://src/types/automation.ts#L23-L36)
 
 ## Performance Considerations
+
 - **Enhanced Rendering Optimization**:
   - Minimal re-renders through efficient state updates
   - Visual progress tracking with optimized DOM updates
@@ -510,7 +548,9 @@ MODE --> AB
   - Optimized toast notifications
 
 ## Troubleshooting Guide
+
 **Enhanced Common Issues and Resolutions**:
+
 - **Missing trigger or actions**:
   - Symptom: Visual progress indicator shows error state
   - Resolution: Select trigger; add at least one action; check visual validation
@@ -531,13 +571,16 @@ MODE --> AB
   - Resolution: Ensure proper mode state management; check component loading
 
 **Section sources**
+
 - [AutomationWizard.tsx:49-60](file://src/components/automations/AutomationWizard.tsx#L49-L60)
 - [AutomationBuilder.tsx:123-127](file://src/components/pcready/automation/AutomationBuilder.tsx#L123-L127)
 - [useAutomationRules.ts:273-284](file://src/hooks/useAutomationRules.ts#L273-L284)
 - [notifications.ts:6-16](file://src/lib/notifications.ts#L6-L16)
 
 ## Conclusion
+
 The enhanced Automation Flow Builder provides a comprehensive dual-mode solution for creating automation rules:
+
 - **Guided Wizard**: Five-step process with visual indicators for quick, form-driven flows
 - **Advanced Visual Builder**: React Flow-powered visual construction for complex, graph-based flows
 - **Enhanced Validation**: Comprehensive validation with real-time feedback and error handling
@@ -549,6 +592,7 @@ Both paths converge into a standardized flow definition suitable for runtime exe
 ## Appendices
 
 ### Enhanced Concrete Examples from the Codebase
+
 - **Wizard Flow Construction**:
   - Enhanced five-step process with visual indicators and validation
   - Automatic React Flow node generation from wizard inputs
@@ -571,6 +615,7 @@ Both paths converge into a standardized flow definition suitable for runtime exe
   - See [mode switching:286-301](file://src/routes/_app/automations.tsx#L286-L301)
 
 ### Best Practices for Effective Automation Flows
+
 - **Enhanced Trigger Selection**: Choose specific triggers with clear visual indicators
 - **Advanced Condition Design**: Use sophisticated operators for precise filtering
 - **Comprehensive Action Planning**: Limit actions to essential steps with proper defaults

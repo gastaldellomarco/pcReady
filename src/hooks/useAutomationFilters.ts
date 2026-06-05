@@ -94,7 +94,17 @@ export function useAutomationFilters(
     });
 
     return filtered;
-  }, [rules, categoryFilter, statusFilter, searchQuery, triggerTypeFilter, errorFilter, sortBy, sortOrder, runStats]);
+  }, [
+    rules,
+    categoryFilter,
+    statusFilter,
+    searchQuery,
+    triggerTypeFilter,
+    errorFilter,
+    sortBy,
+    sortOrder,
+    runStats,
+  ]);
 
   return {
     categoryFilter,

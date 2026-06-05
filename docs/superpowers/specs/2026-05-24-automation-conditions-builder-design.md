@@ -3,14 +3,17 @@
 ## 1. Panoramica
 
 ### Obiettivo
+
 Introdurre una UI esplicita per i filtri delle automazioni: righe di condizioni con campo, operatore e valore, e scelta tra combinazione AND/OR. Sostituisce il `FiltersStep.tsx` esistente nel wizard.
 
 ### Scope
+
 - Solo lato frontend
 - Genera `conditions_definition` coerente con il nuovo tipo `AutomationCondition`
 - Backward compatibility con automazioni esistenti
 
 ### Acceptance Criteria
+
 - [ ] Step "Filtri" mostra elenco condizioni: [Campo] [Operatore] [Valore] [X]
 - [ ] Campi disponibili: ticket.status, ticket.priority, ticket.customer_id, ticket.assignee_id, device.customer_id, device.location_id
 - [ ] Operatori: eq, neq, contains, gt, lt, in
@@ -32,11 +35,11 @@ export type ValueType = "string" | "number" | "list" | "reference";
 
 export interface AutomationCondition {
   id: string;
-  field: string;           // ticket.status, ticket.priority, ecc.
+  field: string; // ticket.status, ticket.priority, ecc.
   operator: ConditionOperator;
   value: string | number | string[];
   valueType: ValueType;
-  label?: string;          // label user-friendly (opzionale)
+  label?: string; // label user-friendly (opzionale)
 }
 
 export interface ConditionsGroup {
@@ -54,22 +57,27 @@ export const AUTOMATION_CONDITION_FIELDS = [
   { value: "ticket.priority", label: "Priorità ticket", type: "select", entity: "ticket" },
   { value: "ticket.customer_id", label: "Cliente (ticket)", type: "reference", entity: "ticket" },
   { value: "ticket.assignee_id", label: "Assegnatario", type: "reference", entity: "ticket" },
-  // Device fields  
-  { value: "device.customer_id", label: "Cliente (dispositivo)", type: "reference", entity: "device" },
+  // Device fields
+  {
+    value: "device.customer_id",
+    label: "Cliente (dispositivo)",
+    type: "reference",
+    entity: "device",
+  },
   { value: "device.location_id", label: "Sede dispositivo", type: "reference", entity: "device" },
 ] as const;
 
-export type AutomationConditionField = typeof AUTOMATION_CONDITION_FIELDS[number]["value"];
+export type AutomationConditionField = (typeof AUTOMATION_CONDITION_FIELDS)[number]["value"];
 ```
 
 ### 2.3 Operatori per Tipo Campo
 
-| Tipo Campo | Operatori disponibili |
-|------------|----------------------|
-| `string` | eq, neq, contains |
-| `number` | eq, neq, gt, lt |
-| `select` | eq, neq, in |
-| `reference` | eq, neq, in |
+| Tipo Campo  | Operatori disponibili |
+| ----------- | --------------------- |
+| `string`    | eq, neq, contains     |
+| `number`    | eq, neq, gt, lt       |
+| `select`    | eq, neq, in           |
+| `reference` | eq, neq, in           |
 
 ### 2.4 Adattatori (Backward Compatibility)
 
@@ -109,7 +117,7 @@ export function fromConditionDef(def: ConditionDef): AutomationCondition {
 export function fromConditionDefs(defs: ConditionDef[]): ConditionsGroup {
   return {
     conditions: defs.map(fromConditionDef),
-    logic: "AND",  // Legacy assume AND implicito
+    logic: "AND", // Legacy assume AND implicito
   };
 }
 
@@ -121,7 +129,7 @@ export function toConditionDef(cond: AutomationCondition): ConditionDef {
     gt: "field_greater_than",
     lt: "field_less_than",
     contains: "field_contains",
-    in: "field_equals",  // "in" viene gestito come multipli field_equals con OR
+    in: "field_equals", // "in" viene gestito come multipli field_equals con OR
   };
 
   return {
@@ -155,7 +163,7 @@ export function toConditionDefs(group: ConditionsGroup): ConditionDef[] {
     }
     return expanded;
   }
-  
+
   return group.conditions.map(toConditionDef);
 }
 ```
@@ -169,11 +177,12 @@ export function toConditionDefs(group: ConditionsGroup): ConditionDef[] {
 **File:** `src/components/automations/AutomationConditionsBuilder.tsx`
 
 **Props:**
+
 ```typescript
 interface AutomationConditionsBuilderProps {
   value?: ConditionsGroup;
   onChange: (group: ConditionsGroup) => void;
-  triggerName?: string;  // Per contestualizzare campi disponibili
+  triggerName?: string; // Per contestualizzare campi disponibili
 }
 ```
 
@@ -212,35 +221,42 @@ interface AutomationConditionsBuilderProps {
 ### 3.4 Input Valore
 
 **Per tipo `string`:**
+
 - Text input standard
 - Placeholder: "Inserisci valore"
 
 **Per tipo `number`:**
+
 - Number input con step
 - Validazione min/max se applicabile
 
 **Per tipo `select` (ticket.status, ticket.priority):**
+
 - Dropdown con opzioni predefinite
 - ticket.status: "pending", "in-progress", "testing", "ready"
 - ticket.priority: "low", "medium", "high", "urgent"
 
 **Per tipo `reference`:**
+
 - Async select con ricerca
 - Per customer_id: ricerca clienti
 - Per assignee_id: ricerca tecnici
 - Per location_id: ricerca sedi
 
 **Per operatore `in`:**
+
 - Multi-select con chip
 - Permette selezione multipla valori
 
 ### 3.5 Gestione AND/OR
 
 **Radio group:**
+
 - **AND** (default): Tutte le condizioni devono essere vere
 - **OR**: Basta che una condizione sia vera
 
 **Comportamento:**
+
 - Visualizza "E" tra le righe condizione quando AND
 - Visualizza "OPPURE" tra le righe quando OR
 - Cambio toggle non perde condizioni esistenti
@@ -404,23 +420,23 @@ Quando non ci sono condizioni:
 
 ### 7.1 Nuovi File
 
-| File | Scopo |
-|------|-------|
-| `src/domain/automation.ts` | Nuovi tipi AutomationCondition, ConditionsGroup |
-| `src/lib/automations/condition-adapter.ts` | Adattatori da/verso ConditionDef |
-| `src/components/automations/AutomationConditionsBuilder.tsx` | Componente builder principale |
-| `src/components/automations/ConditionRow.tsx` | Riga singola condizione (sub-componente) |
-| `src/components/automations/FieldSelector.tsx` | Selettore campo con optgroup |
-| `src/components/automations/OperatorSelector.tsx` | Selettore operatore dinamico |
-| `src/components/automations/ValueInput.tsx` | Input valore adattivo per tipo |
+| File                                                         | Scopo                                           |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| `src/domain/automation.ts`                                   | Nuovi tipi AutomationCondition, ConditionsGroup |
+| `src/lib/automations/condition-adapter.ts`                   | Adattatori da/verso ConditionDef                |
+| `src/components/automations/AutomationConditionsBuilder.tsx` | Componente builder principale                   |
+| `src/components/automations/ConditionRow.tsx`                | Riga singola condizione (sub-componente)        |
+| `src/components/automations/FieldSelector.tsx`               | Selettore campo con optgroup                    |
+| `src/components/automations/OperatorSelector.tsx`            | Selettore operatore dinamico                    |
+| `src/components/automations/ValueInput.tsx`                  | Input valore adattivo per tipo                  |
 
 ### 7.2 File da Modificare
 
-| File | Modifiche |
-|------|-----------|
+| File                                               | Modifiche                                 |
+| -------------------------------------------------- | ----------------------------------------- |
 | `src/components/automations/steps/FiltersStep.tsx` | Sostituire implementazione, usare builder |
-| `src/i18n/locales/it/automations.json` | Aggiungere chiavi conditionsBuilder |
-| `src/types/automation.ts` | Nessuna modifica (backward compat) |
+| `src/i18n/locales/it/automations.json`             | Aggiungere chiavi conditionsBuilder       |
+| `src/types/automation.ts`                          | Nessuna modifica (backward compat)        |
 
 ### 7.3 File da Rimuovere
 
@@ -456,6 +472,7 @@ Nessuno — `FiltersStep.tsx` rimane come wrapper.
 ### 9.1 Serializzazione `in` con OR
 
 Quando logic è OR e un condizione usa operatore `in`:
+
 ```typescript
 // Input
 { logic: "OR", conditions: [{ field: "status", operator: "in", value: ["ready", "testing"] }] }
@@ -470,6 +487,7 @@ Quando logic è OR e un condizione usa operatore `in`:
 ### 9.2 Campi Reference
 
 Per `customer_id`, `assignee_id`, `location_id`:
+
 - Usare componente `AsyncSelect` con debounce
 - Cercare nel database in tempo reale
 - Memorizzare solo l'ID, mostrare label nel selettore
@@ -477,7 +495,7 @@ Per `customer_id`, `assignee_id`, `location_id`:
 ### 9.3 Validazione
 
 - Campo obbligatorio
-- Operatore obbligatorio  
+- Operatore obbligatorio
 - Valore obbligatorio (tranne per certi casi edge)
 - Validazione tipo: numero per gt/lt, stringa per contains
 
@@ -492,5 +510,5 @@ Per `customer_id`, `assignee_id`, `location_id`:
 
 ---
 
-*Design creato: 2026-05-24*  
-*Stato: In attesa approvazione*
+_Design creato: 2026-05-24_  
+_Stato: In attesa approvazione_

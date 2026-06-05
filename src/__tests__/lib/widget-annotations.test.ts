@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  CreateAnnotationSchema,
-  UpdateAnnotationSchema,
-} from "@/lib/widget-annotations";
+import { CreateAnnotationSchema, UpdateAnnotationSchema } from "@/lib/widget-annotations";
 
 // ── CreateAnnotationSchema ──────────────────────────────────────────────
 

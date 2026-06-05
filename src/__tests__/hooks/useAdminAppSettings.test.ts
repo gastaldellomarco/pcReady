@@ -73,7 +73,12 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     ticket_categories: ["Hardware", "Software"],
     kanban_column_colors: {},
     kanban_column_notes: {
-      pending: "", "in-progress": "", testing: "", ready: "", completed: "", archived: "",
+      pending: "",
+      "in-progress": "",
+      testing: "",
+      ready: "",
+      completed: "",
+      archived: "",
     },
     mfa_require_admin_users: false,
     mfa_require_all_users: false,
@@ -191,7 +196,14 @@ describe("useAdminAppSettings", () => {
         max_devices_per_technician: 25,
         self_registration_enabled: true,
         os_options: ["Linux"],
-        wip_limits: { pending: 10, "in-progress": 3, testing: 2, ready: 15, completed: 0, archived: 0 },
+        wip_limits: {
+          pending: 10,
+          "in-progress": 3,
+          testing: 2,
+          ready: 15,
+          completed: 0,
+          archived: 0,
+        },
       });
       serverFnMocks.getAppSettings.mockResolvedValue(settings);
 
@@ -216,9 +228,7 @@ describe("useAdminAppSettings", () => {
       const { result } = renderHook(() => useAdminAppSettings(noAuth));
 
       await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
+        await result.current.submitSettings(result.current.settingsForm.getValues());
       });
 
       expect(serverFnMocks.updateAppSettings).not.toHaveBeenCalled();
@@ -238,9 +248,7 @@ describe("useAdminAppSettings", () => {
       });
 
       act(() => {
-        result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
+        result.current.submitSettings(result.current.settingsForm.getValues());
       });
 
       expect(result.current.saveSettingsBusy).toBe(true);
@@ -250,17 +258,13 @@ describe("useAdminAppSettings", () => {
       });
 
       expect(serverFnMocks.updateAppSettings).toHaveBeenCalled();
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "Impostazioni salvate",
-      );
+      expect(toastMock.success).toHaveBeenCalledWith("Impostazioni salvate");
       expect(result.current.settings?.organization_name).toBe("PCReady");
       expect(result.current.saveSettingsBusy).toBe(false);
     });
 
     it("shows error toast on save failure", async () => {
-      serverFnMocks.updateAppSettings.mockRejectedValue(
-        new Error("Save error"),
-      );
+      serverFnMocks.updateAppSettings.mockRejectedValue(new Error("Save error"));
       const settings = createAppSettings();
       serverFnMocks.getAppSettings.mockResolvedValue(settings);
 
@@ -271,9 +275,7 @@ describe("useAdminAppSettings", () => {
       });
 
       await act(async () => {
-        await result.current.submitSettings(
-          result.current.settingsForm.getValues(),
-        );
+        await result.current.submitSettings(result.current.settingsForm.getValues());
       });
 
       expect(toastMock.error).toHaveBeenCalled();
@@ -324,20 +326,14 @@ describe("useAdminAppSettings", () => {
       });
       // Verify zip file mapping from export result
       const zipArgs = downloadMocks.downloadZip.mock.calls[0];
-      expect(zipArgs[0]).toEqual([
-        { name: "tickets.csv", content: "id,name\n1,test" },
-      ]);
+      expect(zipArgs[0]).toEqual([{ name: "tickets.csv", content: "id,name\n1,test" }]);
       expect(zipArgs[1]).toBe("pcready-export.zip");
-      expect(toastMock.success).toHaveBeenCalledWith(
-        "Export completo generato",
-      );
+      expect(toastMock.success).toHaveBeenCalledWith("Export completo generato");
       expect(result.current.exportAllBusy).toBe(false);
     });
 
     it("shows error toast on export failure", async () => {
-      serverFnMocks.exportAllData.mockRejectedValue(
-        new Error("Export error"),
-      );
+      serverFnMocks.exportAllData.mockRejectedValue(new Error("Export error"));
       const settings = createAppSettings();
       serverFnMocks.getAppSettings.mockResolvedValue(settings);
 

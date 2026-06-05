@@ -30,9 +30,7 @@ export function AutomationKpiCard({
   return (
     <div className="rounded-lg border border-border bg-surface2 px-[18px] py-[14px]">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">
-          {label}
-        </div>
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-text3">{label}</div>
         {icon && <span className="text-muted-foreground">{icon}</span>}
       </div>
       <div className="mt-1 flex items-baseline gap-2">

@@ -7,11 +7,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 
 interface AssignmentMutations {
   create: UseMutationResult<unknown, Error, Partial<ClientBundleAssignment>>;
-  update: UseMutationResult<
-    unknown,
-    Error,
-    { id: string; data: Partial<ClientBundleAssignment> }
-  >;
+  update: UseMutationResult<unknown, Error, { id: string; data: Partial<ClientBundleAssignment> }>;
   cancel: UseMutationResult<unknown, Error, string>;
   remove: UseMutationResult<unknown, Error, string>;
 }
@@ -49,9 +45,7 @@ export function useAssignmentManager(options: UseAssignmentManagerOptions) {
 
   async function save(data: Partial<ClientBundleAssignment>) {
     if (!canManage) {
-      toast.error(
-        t("errors.insufficientPermissions", "Permessi insufficienti"),
-      );
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
     try {
@@ -68,58 +62,38 @@ export function useAssignmentManager(options: UseAssignmentManagerOptions) {
       toast.success(t("success.assignmentSaved", "Assegnazione salvata"));
     } catch (error) {
       toast.error(
-        errorMessage(
-          error,
-          t("errors.saveAssignment", "Errore salvataggio assegnazione"),
-        ),
+        errorMessage(error, t("errors.saveAssignment", "Errore salvataggio assegnazione")),
       );
     }
   }
 
   async function cancel(id: string) {
     if (!canManage) {
-      toast.error(
-        t("errors.insufficientPermissions", "Permessi insufficienti"),
-      );
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
     try {
       await mutations.cancel.mutateAsync(id);
-      toast.success(
-        t("success.assignmentCancelled", "Assegnazione annullata"),
-      );
+      toast.success(t("success.assignmentCancelled", "Assegnazione annullata"));
     } catch (error) {
       toast.error(
-        errorMessage(
-          error,
-          t("errors.cancelAssignment", "Errore annullamento assegnazione"),
-        ),
+        errorMessage(error, t("errors.cancelAssignment", "Errore annullamento assegnazione")),
       );
     }
   }
 
   async function remove(id: string) {
     if (!canManage) {
-      toast.error(
-        t("errors.insufficientPermissions", "Permessi insufficienti"),
-      );
+      toast.error(t("errors.insufficientPermissions", "Permessi insufficienti"));
       return;
     }
-    if (
-      !window.confirm(
-        t("assignments.confirmDelete", "Eliminare questa assegnazione?"),
-      )
-    )
-      return;
+    if (!window.confirm(t("assignments.confirmDelete", "Eliminare questa assegnazione?"))) return;
     try {
       await mutations.remove.mutateAsync(id);
       toast.success(t("assignments.deleted", "Assegnazione eliminata"));
     } catch (error) {
       toast.error(
-        errorMessage(
-          error,
-          t("assignments.deleteError", "Errore eliminazione assegnazione"),
-        ),
+        errorMessage(error, t("assignments.deleteError", "Errore eliminazione assegnazione")),
       );
     }
   }

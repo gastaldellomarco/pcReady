@@ -23,7 +23,13 @@ export function useTicketDetail() {
   );
   const navPrev = useCallback(() => navigatePrev(), []);
   const navNext = useCallback(() => navigateNext(), []);
-  return { id: cur, close: () => closeTicketDetail(), ...neighbors, navigatePrev: navPrev, navigateNext: navNext };
+  return {
+    id: cur,
+    close: () => closeTicketDetail(),
+    ...neighbors,
+    navigatePrev: navPrev,
+    navigateNext: navNext,
+  };
 }
 
 /**

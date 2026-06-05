@@ -85,7 +85,13 @@ export function MaintenanceSchedulePanel({
         setHistory(historyRows);
         setTechnicians(technicianRows);
       })
-      .catch((error) => toast.error(error instanceof Error ? error.message : t("maintenance.fetchError", "Errore manutenzioni")))
+      .catch((error) =>
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t("maintenance.fetchError", "Errore manutenzioni"),
+        ),
+      )
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -100,7 +106,8 @@ export function MaintenanceSchedulePanel({
   );
 
   async function submitSchedule() {
-    if (!draft.title.trim()) return toast.error(t("maintenance.insertTitle", "Inserisci un titolo per la manutenzione"));
+    if (!draft.title.trim())
+      return toast.error(t("maintenance.insertTitle", "Inserisci un titolo per la manutenzione"));
     setSaving(true);
     try {
       const created = await createMaintenanceSchedule({
@@ -122,7 +129,11 @@ export function MaintenanceSchedulePanel({
       setShowForm(false);
       toast.success(t("maintenance.createdSuccess", "Manutenzione programmata creata"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("maintenance.createdError", "Errore creazione manutenzione"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("maintenance.createdError", "Errore creazione manutenzione"),
+      );
     } finally {
       setSaving(false);
     }
@@ -135,9 +146,15 @@ export function MaintenanceSchedulePanel({
       setSchedules((rows) => rows.map((row) => (row.id === schedule.id ? updated : row)));
       const historyRows = await fetchMaintenanceHistory(deviceId).catch(() => history);
       setHistory(historyRows);
-      toast.success(t("maintenance.completedSuccess", "Manutenzione completata e prossima scadenza aggiornata"));
+      toast.success(
+        t("maintenance.completedSuccess", "Manutenzione completata e prossima scadenza aggiornata"),
+      );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("maintenance.completedError", "Errore completamento manutenzione"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("maintenance.completedError", "Errore completamento manutenzione"),
+      );
     } finally {
       setCompletingId(null);
     }
@@ -149,11 +166,17 @@ export function MaintenanceSchedulePanel({
         <div>
           <div className="pc-label">{t("maintenance.title", "Manutenzione programmata")}</div>
           <p className="mt-1 text-[11px] text-text3">
-            {t("maintenance.description", "Pianifica interventi ricorrenti, traccia completamenti e abilita ticket automatici.")}
+            {t(
+              "maintenance.description",
+              "Pianifica interventi ricorrenti, traccia completamenti e abilita ticket automatici.",
+            )}
           </p>
         </div>
         {canEdit ? (
-          <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => setShowForm((v) => !v)}>
+          <button
+            className="pc-btn pc-btn-primary pc-btn-sm"
+            onClick={() => setShowForm((v) => !v)}
+          >
             <Plus className="size-3" /> {t("maintenance.newMaintenance", "Nuova manutenzione")}
           </button>
         ) : null}
@@ -196,7 +219,9 @@ export function MaintenanceSchedulePanel({
               />
             </label>
             <label className="text-xs">
-              <span className="pc-label">{t("maintenance.fieldTechnician", "Tecnico assegnato")}</span>
+              <span className="pc-label">
+                {t("maintenance.fieldTechnician", "Tecnico assegnato")}
+              </span>
               <select
                 className="pc-input mt-1 w-full"
                 value={draft.assigned_to}
@@ -216,7 +241,10 @@ export function MaintenanceSchedulePanel({
                 className="pc-input mt-1 min-h-[70px] w-full"
                 value={draft.description}
                 onChange={(e) => setDraft((v) => ({ ...v, description: e.target.value }))}
-                placeholder={t("maintenance.descriptionPlaceholder", "Dettagli operativi, checklist o note per il tecnico...")}
+                placeholder={t(
+                  "maintenance.descriptionPlaceholder",
+                  "Dettagli operativi, checklist o note per il tecnico...",
+                )}
               />
             </label>
             <label className="flex items-center gap-2 text-xs md:col-span-2">
@@ -230,7 +258,9 @@ export function MaintenanceSchedulePanel({
             {draft.auto_create_ticket ? (
               <>
                 <label className="text-xs">
-                  <span className="pc-label">{t("maintenance.fieldTicketTitle", "Titolo ticket")}</span>
+                  <span className="pc-label">
+                    {t("maintenance.fieldTicketTitle", "Titolo ticket")}
+                  </span>
                   <input
                     className="pc-input mt-1 w-full"
                     value={draft.ticket_title}
@@ -239,11 +269,15 @@ export function MaintenanceSchedulePanel({
                   />
                 </label>
                 <label className="text-xs">
-                  <span className="pc-label">{t("maintenance.fieldTicketDesc", "Descrizione ticket")}</span>
+                  <span className="pc-label">
+                    {t("maintenance.fieldTicketDesc", "Descrizione ticket")}
+                  </span>
                   <input
                     className="pc-input mt-1 w-full"
                     value={draft.ticket_description}
-                    onChange={(e) => setDraft((v) => ({ ...v, ticket_description: e.target.value }))}
+                    onChange={(e) =>
+                      setDraft((v) => ({ ...v, ticket_description: e.target.value }))
+                    }
                     placeholder={t("maintenance.ticketDescPlaceholder", "Descrizione predefinita")}
                   />
                 </label>
@@ -251,8 +285,14 @@ export function MaintenanceSchedulePanel({
             ) : null}
           </div>
           <div className="mt-3 flex gap-2">
-            <button className="pc-btn pc-btn-primary pc-btn-sm" disabled={saving} onClick={submitSchedule}>
-              {saving ? t("maintenance.saving", "Salvataggio...") : t("maintenance.save", "Salva pianificazione")}
+            <button
+              className="pc-btn pc-btn-primary pc-btn-sm"
+              disabled={saving}
+              onClick={submitSchedule}
+            >
+              {saving
+                ? t("maintenance.saving", "Salvataggio...")
+                : t("maintenance.save", "Salva pianificazione")}
             </button>
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => setShowForm(false)}>
               {t("maintenance.cancel", "Annulla")}
@@ -261,12 +301,23 @@ export function MaintenanceSchedulePanel({
         </div>
       ) : null}
 
-      <OverflowTable className="rounded-lg border" >
+      <OverflowTable className="rounded-lg border">
         <table className="w-full text-[12px]">
           <thead>
             <tr>
-              {[t("maintenance.colIntervention", "Intervento"), t("maintenance.colStatus", "Stato"), t("maintenance.colDue", "Scadenza"), t("maintenance.colRecurrence", "Ricorrenza"), t("maintenance.colTechnician", "Tecnico"), t("maintenance.colActions", "Azioni")].map((h) => (
-                <th key={h} className="border-b px-3 py-2 text-left text-[10px] font-bold uppercase text-text3" style={{ borderColor: "var(--border)" }}>
+              {[
+                t("maintenance.colIntervention", "Intervento"),
+                t("maintenance.colStatus", "Stato"),
+                t("maintenance.colDue", "Scadenza"),
+                t("maintenance.colRecurrence", "Ricorrenza"),
+                t("maintenance.colTechnician", "Tecnico"),
+                t("maintenance.colActions", "Azioni"),
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="border-b px-3 py-2 text-left text-[10px] font-bold uppercase text-text3"
+                  style={{ borderColor: "var(--border)" }}
+                >
                   {h}
                 </th>
               ))}
@@ -279,16 +330,34 @@ export function MaintenanceSchedulePanel({
                 <tr key={schedule.id} className="border-b" style={{ borderColor: "var(--border)" }}>
                   <td className="px-3 py-2">
                     <div className="font-semibold">{schedule.title}</div>
-                    {schedule.description ? <div className="text-[11px] text-text3">{schedule.description}</div> : null}
-                    {schedule.auto_create_ticket ? <div className="mt-1 text-[10px] text-accent">{t("maintenance.autoTicketActive", "Ticket automatico attivo")}</div> : null}
+                    {schedule.description ? (
+                      <div className="text-[11px] text-text3">{schedule.description}</div>
+                    ) : null}
+                    {schedule.auto_create_ticket ? (
+                      <div className="mt-1 text-[10px] text-accent">
+                        {t("maintenance.autoTicketActive", "Ticket automatico attivo")}
+                      </div>
+                    ) : null}
                   </td>
-                  <td className="px-3 py-2"><MaintenanceStatusBadge schedule={schedule} /></td>
+                  <td className="px-3 py-2">
+                    <MaintenanceStatusBadge schedule={schedule} />
+                  </td>
                   <td className="px-3 py-2">
                     <div>{fmtDate(schedule.next_due_date)}</div>
-                    <div className="text-[11px] text-text3">{days == null ? "" : days < 0 ? t("maintenance.daysAgo", "{{count}} giorni fa", { count: Math.abs(days) }) : t("maintenance.inDays", "tra {{count}} giorni", { count: days })}</div>
+                    <div className="text-[11px] text-text3">
+                      {days == null
+                        ? ""
+                        : days < 0
+                          ? t("maintenance.daysAgo", "{{count}} giorni fa", {
+                              count: Math.abs(days),
+                            })
+                          : t("maintenance.inDays", "tra {{count}} giorni", { count: days })}
+                    </div>
                   </td>
                   <td className="px-3 py-2">{MAINTENANCE_RECURRENCE_LABEL[schedule.recurrence]}</td>
-                  <td className="px-3 py-2">{schedule.assignee?.display_name || schedule.assigned_to?.slice(0, 8) || "—"}</td>
+                  <td className="px-3 py-2">
+                    {schedule.assignee?.display_name || schedule.assigned_to?.slice(0, 8) || "—"}
+                  </td>
                   <td className="px-3 py-2">
                     {canEdit ? (
                       <button
@@ -297,9 +366,13 @@ export function MaintenanceSchedulePanel({
                         onClick={() => void markCompleted(schedule)}
                       >
                         <CheckCircle2 className="size-3" />
-                        {completingId === schedule.id ? t("maintenance.updating", "Aggiornamento...") : t("maintenance.markCompleted", "Segna completata")}
+                        {completingId === schedule.id
+                          ? t("maintenance.updating", "Aggiornamento...")
+                          : t("maintenance.markCompleted", "Segna completata")}
                       </button>
-                    ) : "—"}
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               );
@@ -307,7 +380,12 @@ export function MaintenanceSchedulePanel({
             {!sortedSchedules.length && (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-sm text-text3">
-                  {loading ? t("maintenance.loadingSchedules", "Caricamento manutenzioni...") : t("maintenance.emptySchedules", "Nessuna manutenzione programmata per questo dispositivo.")}
+                  {loading
+                    ? t("maintenance.loadingSchedules", "Caricamento manutenzioni...")
+                    : t(
+                        "maintenance.emptySchedules",
+                        "Nessuna manutenzione programmata per questo dispositivo.",
+                      )}
                 </td>
               </tr>
             )}
@@ -316,7 +394,10 @@ export function MaintenanceSchedulePanel({
       </OverflowTable>
 
       {!compact ? (
-        <div className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface2)" }}>
+        <div
+          className="rounded-lg border p-3"
+          style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
+        >
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
             <Wrench className="h-3.5 w-3.5" /> {t("maintenance.historyTitle", "Storico interventi")}
           </div>
@@ -325,12 +406,20 @@ export function MaintenanceSchedulePanel({
               <div key={entry.id} className="flex items-start gap-2 text-[12px]">
                 <CalendarDays className="mt-0.5 h-3.5 w-3.5 text-text3" />
                 <div>
-                  <div className="font-semibold">{t("maintenance.completedOn", "Completata il {{date}}", { date: fmtDateTime(entry.completed_at) })}</div>
+                  <div className="font-semibold">
+                    {t("maintenance.completedOn", "Completata il {{date}}", {
+                      date: fmtDateTime(entry.completed_at),
+                    })}
+                  </div>
                   {entry.notes ? <div className="text-text3">{entry.notes}</div> : null}
                 </div>
               </div>
             ))}
-            {!history.length ? <div className="text-[12px] text-text3">{t("maintenance.emptyHistory", "Nessun intervento completato registrato.")}</div> : null}
+            {!history.length ? (
+              <div className="text-[12px] text-text3">
+                {t("maintenance.emptyHistory", "Nessun intervento completato registrato.")}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

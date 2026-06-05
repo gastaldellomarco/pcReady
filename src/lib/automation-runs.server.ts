@@ -374,9 +374,7 @@ function extractActions(flow: Partial<AutomationFlow>): FlowAction[] {
   return Array.isArray(nodeActions) ? nodeActions : [];
 }
 
-type GraphExecutionBlock =
-  | { kind: "condition"; node: any }
-  | { kind: "action"; action: any };
+type GraphExecutionBlock = { kind: "condition"; node: any } | { kind: "action"; action: any };
 
 function extractGraphExecutionBlocks(
   flow: Partial<AutomationFlow>,
@@ -390,8 +388,7 @@ function extractGraphExecutionBlocks(
 
   const byId = new Map<string, any>(nodes.map((node: any) => [String(node.id), node]));
   const trigger =
-    nodes.find((node: any) => node.data?.type === "trigger" || node.type === "trigger") ??
-    nodes[0];
+    nodes.find((node: any) => node.data?.type === "trigger" || node.type === "trigger") ?? nodes[0];
   const blocks: GraphExecutionBlock[] = [];
   const visited = new Set<string>();
   let current: any = trigger;
@@ -423,12 +420,7 @@ function extractGraphExecutionBlocks(
   return blocks;
 }
 
-function nextNodeForBranch(
-  node: any,
-  edges: any[],
-  byId: Map<string, any>,
-  passed: boolean,
-) {
+function nextNodeForBranch(node: any, edges: any[], byId: Map<string, any>, passed: boolean) {
   const outgoing = edges.filter((edge) => String(edge.source) === String(node.id));
   const wanted = passed ? "true" : "false";
   const edge =
@@ -985,8 +977,7 @@ function delayAction(
       error: parsed.error.issues.map((i) => i.message).join("; "),
     };
   }
-  const delayMs =
-    parsed.data.amount * (parsed.data.unit === "days" ? 86_400_000 : 3_600_000);
+  const delayMs = parsed.data.amount * (parsed.data.unit === "days" ? 86_400_000 : 3_600_000);
   return {
     action: actionLabel,
     blockId: actionId,
@@ -1053,7 +1044,10 @@ export async function webhookAction(
     const allowlist = process.env.ALLOWED_WEBHOOK_HOSTS;
     if (allowlist && allowlist.trim()) {
       const host = parsedUrl.hostname.toLowerCase();
-      const allowed = allowlist.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+      const allowed = allowlist
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
       const ok = allowed.some((a) => host === a || host.endsWith("." + a));
       if (!ok) throw new Error("Webhook destinazione non in allowlist");
     }

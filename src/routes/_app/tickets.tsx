@@ -6,7 +6,13 @@ export const Route = createFileRoute("/_app/tickets")({
   head: () => ({
     meta: [
       { title: i18n.t("tickets:meta.title", "Ticket PC - PCReady") },
-      { name: "description", content: i18n.t("tickets:meta.description", "Lista dei ticket di preparazione PC con filtri avanzati.") },
+      {
+        name: "description",
+        content: i18n.t(
+          "tickets:meta.description",
+          "Lista dei ticket di preparazione PC con filtri avanzati.",
+        ),
+      },
     ],
   }),
   errorComponent: (props) => <RouteError {...props} />,

@@ -12,5 +12,3 @@ export const Route = createFileRoute("/_app/notifications")({
   errorComponent: (props) => <RouteError {...props} />,
   pendingComponent: () => <LoadingSkeleton />,
 });
-
-

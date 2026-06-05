@@ -7,12 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
 import { getTechnicianStats } from "@/lib/dashboard-analytics";
 
@@ -82,12 +77,21 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span tabIndex={0} role="button" aria-label={t("technicians.activeTooltipAria", "Info: criterio tecnici attivi")}>
+                  <span
+                    tabIndex={0}
+                    role="button"
+                    aria-label={t("technicians.activeTooltipAria", "Info: criterio tecnici attivi")}
+                  >
                     <Info className="h-3 w-3 cursor-help" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[220px] text-xs">
-                  <p>{t("technicians.activeTooltip", "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti")}</p>
+                  <p>
+                    {t(
+                      "technicians.activeTooltip",
+                      "Un tecnico è attivo se ha ticket assegnati nel periodo selezionato o ticket ancora aperti",
+                    )}
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -144,42 +148,57 @@ export default function TechnicianStatsWidget({ defaultPeriod = "week" as Period
                   <Avatar className="size-9">{tech.initials}</Avatar>
                   <div>
                     <div className="font-semibold text-sm">{tech.name}</div>
-                    <div className="text-xs text-text3">{tech.title || t("technicians.technicianLabel", "Tecnico")}</div>
+                    <div className="text-xs text-text3">
+                      {tech.title || t("technicians.technicianLabel", "Tecnico")}
+                    </div>
                   </div>
                   <div className="ml-auto text-right">
-                    <div className="text-xs text-text3">{t("technicians.assigned", "Assegnati")}</div>
+                    <div className="text-xs text-text3">
+                      {t("technicians.assigned", "Assegnati")}
+                    </div>
                     <div className="font-semibold">{tech.assigned}</div>
                   </div>
                 </div>
 
                 <div className="mt-3">
                   <div className="flex items-center justify-between text-xs text-text3">
-                    <div>{t("technicians.pending", "In attesa")}: {tech.pending}</div>
-                    <div>{t("technicians.completed", "Completati")}: {tech.completed}</div>
+                    <div>
+                      {t("technicians.pending", "In attesa")}: {tech.pending}
+                    </div>
+                    <div>
+                      {t("technicians.completed", "Completati")}: {tech.completed}
+                    </div>
                   </div>
 
                   <div className="mt-2 text-xs text-text3">
-                    {t("technicians.avgTime", "Tempo medio")}: {formatDuration(tech.avg_resolution_ms)}
+                    {t("technicians.avgTime", "Tempo medio")}:{" "}
+                    {formatDuration(tech.avg_resolution_ms)}
                   </div>
 
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-xs text-text3">
                       <div>{t("technicians.completionRate", "Tasso completamento")}</div>
                       <div className="text-sm font-semibold">
-                        {tech.assigned ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100) : 0}
+                        {tech.assigned
+                          ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100)
+                          : 0}
                         %
                       </div>
                     </div>
                     <Progress
                       value={
-                        tech.assigned ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100) : 0
+                        tech.assigned
+                          ? Math.round((tech.completed / Math.max(1, tech.assigned)) * 100)
+                          : 0
                       }
                       className="mt-1"
                     />
                   </div>
 
                   <div className="mt-3">
-                    <span className={"px-2 py-1 rounded-md text-xs " + workloadColor(tech.assigned)}>
+                    <span
+                      className={"px-2 py-1 rounded-md text-xs " + workloadColor(tech.assigned)}
+                    >
                       {tech.assigned >= 10
                         ? t("technicians.overloaded", "Sovraccarico")
                         : tech.assigned >= 5

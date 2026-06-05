@@ -3,20 +3,24 @@
 ## 1. Panoramica
 
 ### Obiettivo
+
 Creare un DSL (Domain Specific Language) tipizzato per automazioni con validazione Zod centralizzata. Migliora la type safety, riusabilità frontend/backoffice/motore, e previene errori runtime.
 
 ### Scope
+
 - Nuovi tipi TypeScript fortemente tipizzati in `src/domain/automation.ts`
 - Schema Zod per validazione runtime in `src/domain/automation.schema.ts`
 - Integrazione con wizard form per validazione schema-based
 - Serializzazione/deserializzazione JSON compatibile
 
 ### Non-Scope (accettato)
+
 - Runtime di esecuzione automazioni (motore)
 - Cambi DB schema
 - Breaking changes API esistente
 
 ### Acceptance Criteria
+
 - [ ] `AutomationTrigger` union type con 5 trigger tipizzati
 - [ ] `AutomationCondition` con campi, operatori, valori validati
 - [ ] `AutomationAction` discriminated union con 4+ azioni
@@ -41,8 +45,8 @@ Creare un DSL (Domain Specific Language) tipizzato per automazioni con validazio
 export type AutomationTriggerType =
   | "ticket_created"
   | "ticket_updated"
-  | "sla_due"           // alias for sla_warning
-  | "warranty_due"      // alias for warranty_expiring_soon
+  | "sla_due" // alias for sla_warning
+  | "warranty_due" // alias for warranty_expiring_soon
   | "scheduled";
 
 // Base trigger interface
@@ -62,7 +66,7 @@ export interface TicketCreatedTrigger extends AutomationTriggerBase {
 export interface TicketUpdatedTrigger extends AutomationTriggerBase {
   type: "ticket_updated";
   config: {
-    fields?: string[];  // Optional: trigger only when specific fields change
+    fields?: string[]; // Optional: trigger only when specific fields change
   };
 }
 
@@ -70,7 +74,7 @@ export interface TicketUpdatedTrigger extends AutomationTriggerBase {
 export interface SlaDueTrigger extends AutomationTriggerBase {
   type: "sla_due";
   config: {
-    hours_before: number;  // Hours before SLA deadline to trigger
+    hours_before: number; // Hours before SLA deadline to trigger
   };
 }
 
@@ -78,7 +82,7 @@ export interface SlaDueTrigger extends AutomationTriggerBase {
 export interface WarrantyDueTrigger extends AutomationTriggerBase {
   type: "warranty_due";
   config: {
-    days_before: number;  // Days before warranty expiry to trigger
+    days_before: number; // Days before warranty expiry to trigger
   };
 }
 
@@ -86,8 +90,8 @@ export interface WarrantyDueTrigger extends AutomationTriggerBase {
 export interface ScheduledTrigger extends AutomationTriggerBase {
   type: "scheduled";
   config: {
-    cron: string;        // Cron expression
-    timezone?: string;   // Optional timezone, defaults to system
+    cron: string; // Cron expression
+    timezone?: string; // Optional timezone, defaults to system
   };
 }
 
@@ -111,7 +115,7 @@ export const DEFAULT_TRIGGER_CONFIGS: Record<AutomationTriggerType, Record<strin
 // Create default trigger
 export function createDefaultTrigger(type: AutomationTriggerType): AutomationTrigger {
   const base = { type, config: DEFAULT_TRIGGER_CONFIGS[type] };
-  
+
   switch (type) {
     case "ticket_created":
       return { ...base, type: "ticket_created", config: {} };
@@ -187,15 +191,16 @@ const SendEmailConfigSchema = z.object({
   is_html: z.boolean().default(false),
 });
 
-const UpdateTicketConfigSchema = z.object({
-  ticket_id: z.string().optional(),
-  status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
-  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-  assignee_id: z.string().optional(),
-}).refine(
-  (data) => data.status || data.priority || data.assignee_id,
-  { message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)" }
-);
+const UpdateTicketConfigSchema = z
+  .object({
+    ticket_id: z.string().optional(),
+    status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
+    priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+    assignee_id: z.string().optional(),
+  })
+  .refine((data) => data.status || data.priority || data.assignee_id, {
+    message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)",
+  });
 
 const AddCommentConfigSchema = z.object({
   ticket_id: z.string().optional(),
@@ -254,7 +259,7 @@ export const ActionsListSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface AutomationFlow {
-  id?: string;                    // Optional: set when editing existing
+  id?: string; // Optional: set when editing existing
   name: string;
   description?: string;
   category?: string;
@@ -444,15 +449,16 @@ const UpdateTicketActionSchema = z.object({
   id: z.string(),
   type: z.literal("update_ticket"),
   order: z.number(),
-  config: z.object({
-    ticket_id: z.string().optional(),
-    status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
-    priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-    assignee_id: z.string().optional(),
-  }).refine(
-    (data) => data.status || data.priority || data.assignee_id,
-    { message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)" }
-  ),
+  config: z
+    .object({
+      ticket_id: z.string().optional(),
+      status: z.enum(["pending", "in-progress", "testing", "ready"]).optional(),
+      priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+      assignee_id: z.string().optional(),
+    })
+    .refine((data) => data.status || data.priority || data.assignee_id, {
+      message: "Almeno un campo da aggiornare (stato, priorità o assegnatario)",
+    }),
 });
 
 const AddCommentActionSchema = z.object({
@@ -518,11 +524,11 @@ export interface ValidationError {
 
 export function validateFlowInput(input: unknown): ValidationResult {
   const result = AutomationFlowInputSchema.safeParse(input);
-  
+
   if (result.success) {
     return { valid: true, errors: [] };
   }
-  
+
   return {
     valid: false,
     errors: result.error.errors.map((e) => ({
@@ -534,11 +540,11 @@ export function validateFlowInput(input: unknown): ValidationResult {
 
 export function validateTrigger(trigger: unknown): ValidationResult {
   const result = AutomationTriggerSchema.safeParse(trigger);
-  
+
   if (result.success) {
     return { valid: true, errors: [] };
   }
-  
+
   return {
     valid: false,
     errors: result.error.errors.map((e) => ({
@@ -550,11 +556,11 @@ export function validateTrigger(trigger: unknown): ValidationResult {
 
 export function validateActions(actions: unknown): ValidationResult {
   const result = z.array(AutomationActionSchema).min(1).safeParse(actions);
-  
+
   if (result.success) {
     return { valid: true, errors: [] };
   }
-  
+
   return {
     valid: false,
     errors: result.error.errors.map((e) => ({
@@ -566,10 +572,13 @@ export function validateActions(actions: unknown): ValidationResult {
 
 // Format errors for display
 export function formatValidationErrors(errors: ValidationError[]): Record<string, string> {
-  return errors.reduce((acc, error) => {
-    acc[error.path] = error.message;
-    return acc;
-  }, {} as Record<string, string>);
+  return errors.reduce(
+    (acc, error) => {
+      acc[error.path] = error.message;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
 }
 ```
 
@@ -597,14 +606,14 @@ interface UseAutomationFormResult {
   validate: () => boolean;
   updateField: <K extends keyof AutomationFlowInput>(
     field: K,
-    value: AutomationFlowInput[K]
+    value: AutomationFlowInput[K],
   ) => void;
   setErrors: (errors: Record<string, string>) => void;
   clearErrors: () => void;
 }
 
 export function useAutomationForm(
-  initialData: Partial<AutomationFlowInput> = {}
+  initialData: Partial<AutomationFlowInput> = {},
 ): UseAutomationFormResult {
   const [data, setData] = useState<AutomationFlowInput>({
     name: initialData.name || "",
@@ -614,39 +623,39 @@ export function useAutomationForm(
     conditions: initialData.conditions || { conditions: [], logic: "AND" },
     actions: initialData.actions || [],
   });
-  
+
   const [errors, setErrorsState] = useState<Record<string, string>>({});
 
   const validate = useCallback((): boolean => {
     const result = validateFlowInput(data);
-    
+
     if (!result.valid) {
       setErrorsState(formatValidationErrors(result.errors));
     } else {
       setErrorsState({});
     }
-    
+
     return result.valid;
   }, [data]);
 
-  const updateField = useCallback(<K extends keyof AutomationFlowInput>(
-    field: K,
-    value: AutomationFlowInput[K]
-  ) => {
-    setData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user updates it
-    setErrorsState((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      // Also clear nested errors
-      Object.keys(newErrors).forEach((key) => {
-        if (key.startsWith(`${field}.`) || key.startsWith(`${field}[`)) {
-          delete newErrors[key];
-        }
+  const updateField = useCallback(
+    <K extends keyof AutomationFlowInput>(field: K, value: AutomationFlowInput[K]) => {
+      setData((prev) => ({ ...prev, [field]: value }));
+      // Clear error for this field when user updates it
+      setErrorsState((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        // Also clear nested errors
+        Object.keys(newErrors).forEach((key) => {
+          if (key.startsWith(`${field}.`) || key.startsWith(`${field}[`)) {
+            delete newErrors[key];
+          }
+        });
+        return newErrors;
       });
-      return newErrors;
-    });
-  }, []);
+    },
+    [],
+  );
 
   const setErrors = useCallback((newErrors: Record<string, string>) => {
     setErrorsState(newErrors);
@@ -689,7 +698,7 @@ function validateCurrentStep(): boolean {
         return false;
       }
       break;
-      
+
     case "actions":
       const actionsResult = validateActions(actions);
       if (!actionsResult.valid) {
@@ -697,7 +706,7 @@ function validateCurrentStep(): boolean {
         return false;
       }
       break;
-      
+
     case "review":
       const flowResult = validateFlowInput({
         name,
@@ -713,7 +722,7 @@ function validateCurrentStep(): boolean {
       }
       break;
   }
-  
+
   setValidationErrors({});
   return true;
 }
@@ -743,22 +752,21 @@ import {
   deserializeFlow,
   type AutomationFlow,
 } from "./automation";
-import {
-  validateFlowInput,
-  AutomationFlowInputSchema,
-} from "./automation.schema";
+import { validateFlowInput, AutomationFlowInputSchema } from "./automation.schema";
 
 describe("Automation DSL", () => {
   describe("Trigger DSL", () => {
     it("should create valid ticket_created trigger", () => {
       const trigger = createDefaultTrigger("ticket_created");
       expect(trigger.type).toBe("ticket_created");
-      expect(validateFlowInput({
-        name: "Test",
-        trigger,
-        conditions: { conditions: [], logic: "AND" },
-        actions: [createDefaultAction("send_email")],
-      }).valid).toBe(true);
+      expect(
+        validateFlowInput({
+          name: "Test",
+          trigger,
+          conditions: { conditions: [], logic: "AND" },
+          actions: [createDefaultAction("send_email")],
+        }).valid,
+      ).toBe(true);
     });
 
     it("should create valid scheduled trigger with cron", () => {
@@ -799,12 +807,12 @@ describe("Automation DSL", () => {
       };
 
       const serialized = serializeFlow(flow);
-      
+
       // Check legacy field names
       expect(serialized).toHaveProperty("trigger_definition");
       expect(serialized).toHaveProperty("conditions_definition");
       expect(serialized).toHaveProperty("actions_definition");
-      
+
       // Check trigger type mapping
       expect(serialized.trigger_definition).toEqual({
         type: "sla_warning", // mapped from sla_due
@@ -821,7 +829,7 @@ describe("Automation DSL", () => {
         conditions: { conditions: [], logic: "AND" },
         actions: [createDefaultAction("send_email")],
       });
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.path === "name")).toBe(true);
     });
@@ -833,7 +841,7 @@ describe("Automation DSL", () => {
         conditions: { conditions: [], logic: "AND" },
         actions: [],
       });
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.path === "actions")).toBe(true);
     });
@@ -841,14 +849,14 @@ describe("Automation DSL", () => {
     it("should reject send_email without subject", () => {
       const action = createDefaultAction("send_email");
       action.config.subject = "";
-      
+
       const result = validateFlowInput({
         name: "Test",
         trigger: createDefaultTrigger("ticket_created"),
         conditions: { conditions: [], logic: "AND" },
         actions: [action],
       });
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.path.includes("subject"))).toBe(true);
     });
@@ -862,54 +870,57 @@ describe("Automation DSL", () => {
 
 ### 6.1 Nuovi File
 
-| File | Scopo |
-|------|-------|
+| File                              | Scopo                      |
+| --------------------------------- | -------------------------- |
 | `src/domain/automation.schema.ts` | Schemi Zod per validazione |
-| `src/hooks/useAutomationForm.ts` | Hook per form validation |
-| `src/domain/automation.spec.ts` | Test unitari DSL |
+| `src/hooks/useAutomationForm.ts`  | Hook per form validation   |
+| `src/domain/automation.spec.ts`   | Test unitari DSL           |
 
 ### 6.2 File da Modificare
 
-| File | Modifiche |
-|------|-----------|
-| `src/domain/automation.ts` | Aggiungere Trigger DSL, Flow DSL, serializers |
-| `src/components/automations/AutomationWizard.tsx` | Integrare validazione step-by-step |
-| `src/components/automations/steps/EventStep.tsx` | Usare tipi Trigger DSL |
-| `src/components/automations/steps/ActionsStep.tsx` | Validazione actions con Zod |
-| `vitest.config.ts` | Aggiungere test domain se non presente |
+| File                                               | Modifiche                                     |
+| -------------------------------------------------- | --------------------------------------------- |
+| `src/domain/automation.ts`                         | Aggiungere Trigger DSL, Flow DSL, serializers |
+| `src/components/automations/AutomationWizard.tsx`  | Integrare validazione step-by-step            |
+| `src/components/automations/steps/EventStep.tsx`   | Usare tipi Trigger DSL                        |
+| `src/components/automations/steps/ActionsStep.tsx` | Validazione actions con Zod                   |
+| `vitest.config.ts`                                 | Aggiungere test domain se non presente        |
 
 ---
 
 ## 7. Mappatura Tipi Legacy ↔ DSL
 
-| Legacy Type | DSL Type | Note |
-|-------------|----------|------|
-| `TriggerDef` | `AutomationTrigger` | DSL più specifico con config tipizzato |
-| `ConditionDef` | `AutomationCondition` | DSL simile, operatori rinominati |
-| `ActionDef` | `AutomationAction` | DSL discriminated union |
-| `trigger_definition` (jsonb) | `serializeTrigger()` | Funzione conversione |
-| `actions_definition` (jsonb) | `serializeActions()` | Funzione conversione |
+| Legacy Type                  | DSL Type              | Note                                   |
+| ---------------------------- | --------------------- | -------------------------------------- |
+| `TriggerDef`                 | `AutomationTrigger`   | DSL più specifico con config tipizzato |
+| `ConditionDef`               | `AutomationCondition` | DSL simile, operatori rinominati       |
+| `ActionDef`                  | `AutomationAction`    | DSL discriminated union                |
+| `trigger_definition` (jsonb) | `serializeTrigger()`  | Funzione conversione                   |
+| `actions_definition` (jsonb) | `serializeActions()`  | Funzione conversione                   |
 
 ---
 
 ## 8. Note Implementative
 
 ### 8.1 Backward Compatibility
+
 - DSL mantiene compatibilità JSON con legacy
 - Adapter functions per conversione in entrambe le direzioni
 - Nuovi campi DSL ignorati da API legacy
 
 ### 8.2 Validazione Graduale
+
 - Ogni step wizard valida indipendentemente
 - Review step valida flow completo
 - Errori mostrati per campo specifico
 
 ### 8.3 Type Safety
+
 - Nessun `any` nei nuovi tipi
 - Discriminated unions per azioni e trigger
 - Config tipizzato per ogni variante
 
 ---
 
-*Design creato: 2026-05-24*  
-*Stato: In attesa approvazione*
+_Design creato: 2026-05-24_  
+_Stato: In attesa approvazione_

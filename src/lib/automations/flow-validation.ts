@@ -55,9 +55,7 @@ const ACTION_REQUIREMENTS: ActionRequirement[] = [
   {
     actionType: "update_ticket_status",
     label: "Aggiorna stato ticket",
-    requiredFields: [
-      { key: "status", label: "Stato", mustHaveValue: true },
-    ],
+    requiredFields: [{ key: "status", label: "Stato", mustHaveValue: true }],
   },
   {
     actionType: "create_notification",
@@ -70,16 +68,12 @@ const ACTION_REQUIREMENTS: ActionRequirement[] = [
   {
     actionType: "update_device_status",
     label: "Aggiorna stato dispositivo",
-    requiredFields: [
-      { key: "status", label: "Stato", mustHaveValue: true },
-    ],
+    requiredFields: [{ key: "status", label: "Stato", mustHaveValue: true }],
   },
   {
     actionType: "assign_ticket",
     label: "Assegna ticket",
-    requiredFields: [
-      { key: "assignee_id", label: "Assegnatario", mustHaveValue: true },
-    ],
+    requiredFields: [{ key: "assignee_id", label: "Assegnatario", mustHaveValue: true }],
   },
 ];
 
@@ -182,7 +176,8 @@ function validateTrigger(trigger: TriggerDef, errors: FlowValidationError[]): vo
       if (parts.length !== 5) {
         errors.push({
           path: "trigger.config.cron",
-          message: "Espressione cron non valida. Il formato richiede 5 campi (minuto ora giorno mese giorno-settimana).",
+          message:
+            "Espressione cron non valida. Il formato richiede 5 campi (minuto ora giorno mese giorno-settimana).",
           severity: "error",
         });
       }
@@ -234,7 +229,11 @@ function validateAction(action: ActionDef, idx: number, errors: FlowValidationEr
   }
 }
 
-function validateCondition(condition: ConditionDef, idx: number, errors: FlowValidationError[]): void {
+function validateCondition(
+  condition: ConditionDef,
+  idx: number,
+  errors: FlowValidationError[],
+): void {
   const path = `conditions[${idx}]`;
 
   if (!condition.type) {
@@ -299,7 +298,8 @@ function validateSchedule(schedule: ScheduleDef, errors: FlowValidationError[]):
       if (parts.length !== 5) {
         errors.push({
           path: "schedule.cron",
-          message: "Espressione cron non valida: servono 5 campi (minuto ora giorno mese giorno-settimana).",
+          message:
+            "Espressione cron non valida: servono 5 campi (minuto ora giorno mese giorno-settimana).",
           severity: "error",
         });
       }
@@ -529,7 +529,9 @@ export function validateFlowGraph(nodes: GraphNode[], edges: GraphEdge[]): FlowV
 /**
  * Group validation errors by path prefix for display.
  */
-export function groupErrorsBySection(errors: FlowValidationError[]): Record<string, FlowValidationError[]> {
+export function groupErrorsBySection(
+  errors: FlowValidationError[],
+): Record<string, FlowValidationError[]> {
   const groups: Record<string, FlowValidationError[]> = {};
   for (const error of errors) {
     const section = error.path.split(/[.[\]']/)[0];

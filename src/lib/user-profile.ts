@@ -153,10 +153,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const fallbackName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente";
 
     // Run user_profiles and activity_log in parallel — they're independent
-    const [
-      { data: profile, error },
-      { data: activity, error: activityError },
-    ] = await Promise.all([
+    const [{ data: profile, error }, { data: activity, error: activityError }] = await Promise.all([
       supabaseAdmin
         .from("user_profiles")
         .select(USER_PROFILE_SELECT)

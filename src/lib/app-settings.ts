@@ -277,7 +277,12 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_settings" as any)
       .select("key, value")
-      .in("key", ["wip_limits", "archive_after_days", "kanban_column_colors", "kanban_column_notes"]);
+      .in("key", [
+        "wip_limits",
+        "archive_after_days",
+        "kanban_column_colors",
+        "kanban_column_notes",
+      ]);
 
     if (error) throw error;
 
@@ -304,34 +309,37 @@ export const updateKanbanAppSettings = createServerFn({ method: "POST" })
       kanban_column_notes?: KanbanColumnNotes;
     }) => data,
   )
-  .handler(async ({ data: { accessToken, wip_limits, kanban_column_colors, kanban_column_notes } }) => {
-    const userId = await requireAdmin(accessToken);
-    const parsedWip = WipLimitsSchema.parse(wip_limits);
-    const parsedColors = KanbanColumnColorsSchema.parse(kanban_column_colors ?? {});
-    const parsedNotes = kanban_column_notes !== undefined
-      ? KanbanColumnNotesSchema.parse(kanban_column_notes)
-      : undefined;
-    const updates = [
-      { key: "wip_limits", value: JSON.stringify(parsedWip), updated_by: userId },
-      { key: "kanban_column_colors", value: JSON.stringify(parsedColors), updated_by: userId },
-    ];
-    if (parsedNotes !== undefined) {
-      updates.push({
-        key: "kanban_column_notes",
-        value: JSON.stringify(parsedNotes),
-        updated_by: userId,
-      });
-    }
-    const { error } = await supabaseAdmin
-      .from("app_settings" as any)
-      .upsert(updates as any, { onConflict: "key" });
-    if (error) throw error;
-    return {
-      wip_limits: parsedWip,
-      kanban_column_colors: parsedColors,
-      kanban_column_notes: parsedNotes ?? {},
-    };
-  });
+  .handler(
+    async ({ data: { accessToken, wip_limits, kanban_column_colors, kanban_column_notes } }) => {
+      const userId = await requireAdmin(accessToken);
+      const parsedWip = WipLimitsSchema.parse(wip_limits);
+      const parsedColors = KanbanColumnColorsSchema.parse(kanban_column_colors ?? {});
+      const parsedNotes =
+        kanban_column_notes !== undefined
+          ? KanbanColumnNotesSchema.parse(kanban_column_notes)
+          : undefined;
+      const updates = [
+        { key: "wip_limits", value: JSON.stringify(parsedWip), updated_by: userId },
+        { key: "kanban_column_colors", value: JSON.stringify(parsedColors), updated_by: userId },
+      ];
+      if (parsedNotes !== undefined) {
+        updates.push({
+          key: "kanban_column_notes",
+          value: JSON.stringify(parsedNotes),
+          updated_by: userId,
+        });
+      }
+      const { error } = await supabaseAdmin
+        .from("app_settings" as any)
+        .upsert(updates as any, { onConflict: "key" });
+      if (error) throw error;
+      return {
+        wip_limits: parsedWip,
+        kanban_column_colors: parsedColors,
+        kanban_column_notes: parsedNotes ?? {},
+      };
+    },
+  );
 
 export const updateAppSettings = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string; settings: AppSettings }) => data)

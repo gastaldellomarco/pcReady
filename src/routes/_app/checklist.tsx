@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_app/checklist")({
       { title: i18n.t("checklist:meta.title", "Checklist — PCReady") },
       {
         name: "description",
-        content: i18n.t("checklist:meta.description", "Crea e gestisci checklist personalizzate per la preparazione PC."),
+        content: i18n.t(
+          "checklist:meta.description",
+          "Crea e gestisci checklist personalizzate per la preparazione PC.",
+        ),
       },
     ],
   }),

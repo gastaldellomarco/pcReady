@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_app/inventory")({
       { title: i18n.t("inventory:meta.title", "Inventario - PCReady") },
       {
         name: "description",
-        content: i18n.t("inventory:meta.description", "Inventario completo dei dispositivi gestiti, con seriali e stato."),
+        content: i18n.t(
+          "inventory:meta.description",
+          "Inventario completo dei dispositivi gestiti, con seriali e stato.",
+        ),
       },
     ],
   }),

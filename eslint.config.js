@@ -67,7 +67,8 @@ export default tseslint.config(
             },
             {
               group: ["src/**"],
-              message: "Usa l'alias @/ invece del percorso assoluto 'src/'. Esempio: '@/' al posto di 'src/'",
+              message:
+                "Usa l'alias @/ invece del percorso assoluto 'src/'. Esempio: '@/' al posto di 'src/'",
             },
           ],
         },
@@ -97,20 +98,23 @@ export default tseslint.config(
       // I tipi TypeScript (type/interface/enum) sono coperti via `contexts`
       // con selettori ESTree perché il plugin non supporta TSInterfaceDeclaration
       // e simili direttamente nel `require`.
-      "jsdoc/require-jsdoc": ["error", {
-        publicOnly: { cjs: true, esm: true },
-        require: {
-          FunctionDeclaration: true,
-          ArrowFunctionExpression: true,
-          ClassDeclaration: true,
-          MethodDefinition: true,
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          publicOnly: { cjs: true, esm: true },
+          require: {
+            FunctionDeclaration: true,
+            ArrowFunctionExpression: true,
+            ClassDeclaration: true,
+            MethodDefinition: true,
+          },
+          contexts: [
+            'TSInterfaceDeclaration[parent.type="ExportNamedDeclaration"]',
+            'TSTypeAliasDeclaration[parent.type="ExportNamedDeclaration"]',
+            'TSEnumDeclaration[parent.type="ExportNamedDeclaration"]',
+          ],
         },
-        contexts: [
-          "TSInterfaceDeclaration[parent.type=\"ExportNamedDeclaration\"]",
-          "TSTypeAliasDeclaration[parent.type=\"ExportNamedDeclaration\"]",
-          "TSEnumDeclaration[parent.type=\"ExportNamedDeclaration\"]",
-        ],
-      }],
+      ],
       // TODO: abilitare gradualmente — richiedono @param/@returns su TUTTE le funzioni
       // (non solo quelle esportate), quindi generano molto rumore inizialmente.
       "jsdoc/require-param": "off",

@@ -13,6 +13,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -53,11 +54,13 @@ end
 ```
 
 **Diagram sources**
+
 - [audit-log.ts:1-446](file://src/lib/audit-log.ts#L1-L446)
 - [useAdminAudit.ts:1-331](file://src/hooks/useAdminAudit.ts#L1-L331)
 - [AdminAuditTab.tsx:1-1185](file://src/components/admin/AdminAuditTab.tsx#L1-L1185)
 
 **Section sources**
+
 - [mobile-audit.md:1-98](file://docs/mobile-audit.md#L1-L98)
 - [audit-log.ts:1-446](file://src/lib/audit-log.ts#L1-L446)
 
@@ -105,11 +108,13 @@ AdminAuditTab --> OverflowTable : "displays data"
 ```
 
 **Diagram sources**
+
 - [audit-log.ts:49-164](file://src/lib/audit-log.ts#L49-L164)
 - [useAdminAudit.ts:25-331](file://src/hooks/useAdminAudit.ts#L25-L331)
 - [AdminAuditTab.tsx:470-1185](file://src/components/admin/AdminAuditTab.tsx#L470-L1185)
 
 **Section sources**
+
 - [audit-log.ts:49-164](file://src/lib/audit-log.ts#L49-L164)
 - [useAdminAudit.ts:25-331](file://src/hooks/useAdminAudit.ts#L25-L331)
 - [AdminAuditTab.tsx:470-1185](file://src/components/admin/AdminAuditTab.tsx#L470-L1185)
@@ -137,6 +142,7 @@ Note over Mobile,Database : Mobile-optimized flow with debounced search
 ```
 
 **Diagram sources**
+
 - [AdminAuditTab.tsx:522-549](file://src/components/admin/AdminAuditTab.tsx#L522-L549)
 - [useAdminAudit.ts:109-134](file://src/hooks/useAdminAudit.ts#L109-L134)
 - [audit-log.ts:49-164](file://src/lib/audit-log.ts#L49-L164)
@@ -149,6 +155,7 @@ The architecture implements several mobile-specific optimizations:
 - **Responsive Layouts**: Table and timeline view modes optimized for mobile screens
 
 **Section sources**
+
 - [useAdminAudit.ts:136-148](file://src/hooks/useAdminAudit.ts#L136-L148)
 - [audit-log.ts:119-136](file://src/lib/audit-log.ts#L119-L136)
 
@@ -181,11 +188,13 @@ AUDIT_ACTIONS --> AuditAction : "defines constants"
 ```
 
 **Diagram sources**
+
 - [audit-log-actions.ts:1-27](file://src/lib/audit-log-actions.ts#L1-L27)
 
 The system covers critical administrative actions including ticket management, device operations, user management, OAuth client handling, and automation triggers. Each action type is consistently formatted to ensure reliable filtering and reporting.
 
 **Section sources**
+
 - [audit-log-actions.ts:1-27](file://src/lib/audit-log-actions.ts#L1-L27)
 
 ### Mobile-First Responsive Design
@@ -193,17 +202,20 @@ The system covers critical administrative actions including ticket management, d
 The audit interface implements mobile-first responsive design principles:
 
 #### Breakpoint Strategy
+
 - **Mobile**: Up to 960px width (default breakpoint)
-- **Tablet**: 961px to 1024px width  
+- **Tablet**: 961px to 1024px width
 - **Desktop**: Above 1024px width
 
 #### Touch Optimization Features
+
 - **Minimum Touch Targets**: 44px for interactive elements
 - **Safe Area Insets**: Proper spacing for modern mobile devices
 - **Touch-Friendly Controls**: Enhanced hit areas for mobile interactions
 - **Responsive Typography**: 16px font size on mobile to prevent iOS zoom
 
 **Section sources**
+
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 - [mobile-audit.md:42-56](file://docs/mobile-audit.md#L42-L56)
 
@@ -227,11 +239,13 @@ Render --> End
 ```
 
 **Diagram sources**
+
 - [overflow-table.tsx:9-23](file://src/components/ui/overflow-table.tsx#L9-L23)
 
 The component ensures that audit tables remain usable on mobile devices by implementing proper scroll behavior and accessibility features.
 
 **Section sources**
+
 - [overflow-table.tsx:1-24](file://src/components/ui/overflow-table.tsx#L1-L24)
 
 ## Responsive Design Implementation
@@ -255,12 +269,14 @@ MobileMode --> ExpandedMode : "Auto Expand"
 ```
 
 **Diagram sources**
+
 - [sidebar.tsx:69-94](file://src/components/ui/sidebar.tsx#L69-L94)
 - [sidebar.tsx:189-211](file://src/components/ui/sidebar.tsx#L189-L211)
 
 The mobile navigation system automatically switches between desktop and mobile modes based on screen size, providing appropriate touch targets and interaction patterns for each environment.
 
 **Section sources**
+
 - [sidebar.tsx:189-211](file://src/components/ui/sidebar.tsx#L189-L211)
 - [use-mobile.tsx:1-20](file://src/hooks/use-mobile.tsx#L1-L20)
 
@@ -269,18 +285,21 @@ The mobile navigation system automatically switches between desktop and mobile m
 The audit interface supports dual view modes optimized for different screen sizes:
 
 #### Table View (Desktop-Optimized)
+
 - Fixed column widths for readability
 - Advanced filtering controls
 - Comprehensive pagination
 - Export functionality
 
 #### Timeline View (Mobile-Friendly)
+
 - Vertical chronological layout
 - Simplified controls
 - Touch-friendly interaction
 - Reduced cognitive load
 
 **Section sources**
+
 - [AdminAuditTab.tsx:1027-1080](file://src/components/admin/AdminAuditTab.tsx#L1027-L1080)
 - [AdminAuditTab.tsx:1058-1079](file://src/components/admin/AdminAuditTab.tsx#L1058-L1079)
 
@@ -291,24 +310,28 @@ The audit interface supports dual view modes optimized for different screen size
 The mobile audit implementation includes several touch-specific optimizations:
 
 #### Enhanced Touch Targets
+
 - Navigation buttons: 44px minimum touch area
 - Filter controls: Increased hit zones
 - Pagination buttons: Larger tap targets
 - Action buttons: Improved accessibility
 
 #### Gesture Support
+
 - Horizontal swipe for table navigation
 - Tap-to-expand row details
 - Long-press for context actions
 - Smooth scrolling for large datasets
 
 #### Mobile-Specific UI Elements
+
 - Bottom-sheet navigation for mobile
 - Floating action buttons for primary actions
 - Simplified form layouts for mobile input
 - Adaptive keyboard behavior
 
 **Section sources**
+
 - [mobile-audit.md:30-33](file://docs/mobile-audit.md#L30-L33)
 - [sidebar.tsx:455-463](file://src/components/ui/sidebar.tsx#L455-L463)
 
@@ -317,24 +340,28 @@ The mobile audit implementation includes several touch-specific optimizations:
 Mobile performance is prioritized through several optimization strategies:
 
 #### Lazy Loading
+
 - Conditional component rendering
 - On-demand data fetching
 - Virtualized lists for large datasets
 - Image optimization for mobile networks
 
 #### Memory Management
+
 - Efficient state updates
 - Cleanup of event listeners
 - Proper disposal of resources
 - Minimized re-renders
 
 #### Network Optimization
+
 - Debounced API calls
 - Batched requests
 - Efficient caching strategies
 - Progressive data loading
 
 **Section sources**
+
 - [useAdminAudit.ts:136-148](file://src/hooks/useAdminAudit.ts#L136-L148)
 - [audit-log.ts:119-136](file://src/lib/audit-log.ts#L119-L136)
 
@@ -345,21 +372,25 @@ Mobile performance is prioritized through several optimization strategies:
 The audit system implements efficient data loading strategies optimized for mobile networks:
 
 #### Data Deduplication
+
 - Automatic removal of duplicate entries
 - Server-side filtering reduces payload size
 - Client-side caching prevents redundant requests
 
 #### Pagination Strategy
+
 - Configurable page sizes (25, 50, 100)
 - Lazy loading for subsequent pages
 - Infinite scroll potential for large datasets
 
 #### Caching Mechanisms
+
 - Local storage for filter preferences
 - Session-based caching for recent data
 - Smart invalidation strategies
 
 **Section sources**
+
 - [audit-log.ts:119-136](file://src/lib/audit-log.ts#L119-L136)
 - [useAdminAudit.ts:270-275](file://src/hooks/useAdminAudit.ts#L270-L275)
 
@@ -377,44 +408,52 @@ Performance monitoring includes mobile-specific metrics:
 ### Common Mobile Issues
 
 #### Rendering Problems
+
 - **Issue**: Tables not displaying properly on small screens
 - **Solution**: Verify overflow-table component is wrapping table content
 - **Prevention**: Test with various viewport sizes during development
 
 #### Touch Interaction Issues
+
 - **Issue**: Buttons not responding to touch
 - **Solution**: Ensure minimum 44px touch targets and proper event handlers
 - **Prevention**: Use mobile detection hook for responsive sizing
 
 #### Performance Issues
+
 - **Issue**: Slow loading on mobile devices
 - **Solution**: Implement pagination and lazy loading
 - **Prevention**: Monitor network requests and optimize data fetching
 
 #### Accessibility Concerns
+
 - **Issue**: Screen reader compatibility problems
 - **Solution**: Add proper ARIA labels and semantic markup
 - **Prevention**: Regular accessibility testing across devices
 
 **Section sources**
+
 - [mobile-audit.md:84-91](file://docs/mobile-audit.md#L84-L91)
 - [overflow-table.tsx:12-18](file://src/components/ui/overflow-table.tsx#L12-L18)
 
 ### Debugging Mobile Issues
 
 #### Mobile Testing Strategy
+
 1. **Device Testing**: Test on actual mobile devices
 2. **Browser DevTools**: Use device emulation features
 3. **Performance Profiling**: Monitor memory and CPU usage
 4. **Network Analysis**: Check API response times and sizes
 
 #### Common Debugging Scenarios
+
 - **Layout Breakage**: Check responsive breakpoints and media queries
 - **Touch Events**: Verify event propagation and handler registration
 - **Data Loading**: Monitor API calls and response handling
 - **Memory Leaks**: Track component lifecycle and cleanup
 
 **Section sources**
+
 - [mobile-audit.md:65-82](file://docs/mobile-audit.md#L65-L82)
 
 ## Conclusion

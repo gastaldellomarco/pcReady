@@ -30,17 +30,12 @@ const ACTION_SIDE_EFFECTS: Record<string, string[]> = {
     "Modifica lo stato del ticket nel sistema",
     "Impatto sul flusso di lavoro ticket e notifiche collegate",
   ],
-  create_notification: [
-    "Crea notifiche in-app per gli utenti destinatari",
-  ],
+  create_notification: ["Crea notifiche in-app per gli utenti destinatari"],
   update_device_status: [
     "Modifica lo stato del dispositivo nell'inventario",
     "Potrebbe alterare la visibilità e la disponibilità del dispositivo",
   ],
-  assign_ticket: [
-    "Riassegna il ticket a un altro tecnico",
-    "Invia notifica al nuovo assegnatario",
-  ],
+  assign_ticket: ["Riassegna il ticket a un altro tecnico", "Invia notifica al nuovo assegnatario"],
 };
 
 const ACTION_IMPACTS: Record<string, string> = {

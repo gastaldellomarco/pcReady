@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_app/bundles")({
       { title: i18n.t("bundles:meta.title", "Bundle assistenza - PCReady") },
       {
         name: "description",
-        content: i18n.t("bundles:meta.description", "Pacchetti assistenza, assegnazioni clienti e consumi"),
+        content: i18n.t(
+          "bundles:meta.description",
+          "Pacchetti assistenza, assegnazioni clienti e consumi",
+        ),
       },
     ],
   }),

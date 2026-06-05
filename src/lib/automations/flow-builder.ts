@@ -1,5 +1,10 @@
 import { randomUUID } from "@/lib/random-uuid";
-import type { ActionDef, AutomationFlowDefinition, FlowDefinitionMeta, WizardFlowPayload } from "@/types/automation";
+import type {
+  ActionDef,
+  AutomationFlowDefinition,
+  FlowDefinitionMeta,
+  WizardFlowPayload,
+} from "@/types/automation";
 
 /**
  * Builds a React Flow nodes/edges definition from a wizard payload.

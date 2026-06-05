@@ -373,9 +373,7 @@ export function useInventoryInfiniteList(params: DevicesListParams) {
         assignedIdsForFilter: needsAssignedFilter ? assignedQuery.data : undefined,
       }),
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE)
-        ? allPages.length
-        : undefined,
+      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE) ? allPages.length : undefined,
     initialPageParam: 0,
     enabled: !needsAssignedFilter || assignedQuery.isSuccess,
     staleTime: LIST_QUERY_STALE_MS,

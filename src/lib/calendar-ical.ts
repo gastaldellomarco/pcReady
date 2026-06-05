@@ -49,7 +49,7 @@ function toICalDateTime(isoString: string): string {
   // toISOString() always produces YYYY-MM-DDTHH:mm:ss.mmmZ
   return new Date(isoString)
     .toISOString()
-    .replace(/[-:]/g, "")       // remove dashes and colons
+    .replace(/[-:]/g, "") // remove dashes and colons
     .replace(/\.\d{3}Z$/, "Z"); // drop milliseconds, keep Z
 }
 
@@ -71,10 +71,7 @@ function toICalDate(isoString: string): string {
  * @param calendarName - Optional display name for the calendar (X-WR-CALNAME).
  * @returns A string containing the full iCal document.
  */
-export function exportToIcal(
-  events: CalendarEvent[],
-  calendarName = "PCReady Calendar",
-): string {
+export function exportToIcal(events: CalendarEvent[], calendarName = "PCReady Calendar"): string {
   const dtstamp = toICalDateTime(new Date().toISOString());
 
   const lines: string[] = [
@@ -129,10 +126,7 @@ export function exportToIcal(
  * @param events   - Array of CalendarEvent objects to export.
  * @param filename - Optional filename for the download (default: `pcready-calendar.ics`).
  */
-export function downloadIcal(
-  events: CalendarEvent[],
-  filename = "pcready-calendar.ics",
-): void {
+export function downloadIcal(events: CalendarEvent[], filename = "pcready-calendar.ics"): void {
   const icsContent = exportToIcal(events);
   const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);

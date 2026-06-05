@@ -91,7 +91,11 @@ export function TicketAttachments({
       for (const file of files) {
         await uploadMut.mutateAsync({ file, uploadedBy: user?.id });
       }
-      toast.success(files.length === 1 ? t("attachments.uploadSuccess", "Allegato caricato") : t("attachments.uploadSuccessPlural", "Allegati caricati"));
+      toast.success(
+        files.length === 1
+          ? t("attachments.uploadSuccess", "Allegato caricato")
+          : t("attachments.uploadSuccessPlural", "Allegati caricati"),
+      );
     } catch (err: any) {
       toast.error(err?.message || t("attachments.uploadError", "Errore caricamento allegato"));
     }
@@ -163,7 +167,9 @@ export function TicketAttachments({
           <span className="text-[12.5px] font-semibold">
             {t("attachments.dropZoneText", "Trascina qui i file o clicca per caricarli")}
           </span>
-          <span className="text-[11px] text-text3">{t("attachments.dropZoneHint", "Immagini, PDF e documenti")}</span>
+          <span className="text-[11px] text-text3">
+            {t("attachments.dropZoneHint", "Immagini, PDF e documenti")}
+          </span>
           <input
             type="file"
             multiple
@@ -177,7 +183,9 @@ export function TicketAttachments({
       )}
 
       {attachmentsQuery.isLoading && (
-        <div className="text-[12px] text-text3">{t("attachments.loadingText", "Caricamento allegati...")}</div>
+        <div className="text-[12px] text-text3">
+          {t("attachments.loadingText", "Caricamento allegati...")}
+        </div>
       )}
       {!compact && !attachmentsQuery.isLoading && attachments.length === 0 && (
         <div
@@ -275,7 +283,10 @@ export function TicketAttachments({
 
       {compact && attachments.length > 0 && (
         <div className="flex items-center gap-1 text-[11px] text-text3">
-          <Paperclip className="size-3" /> {t("attachments.noteAttachments", "{{count}} allegati nota", { count: attachments.length })}
+          <Paperclip className="size-3" />{" "}
+          {t("attachments.noteAttachments", "{{count}} allegati nota", {
+            count: attachments.length,
+          })}
         </div>
       )}
     </section>

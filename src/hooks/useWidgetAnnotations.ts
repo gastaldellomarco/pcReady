@@ -10,7 +10,7 @@ import {
 
 /**
  * React Query hook for managing widget annotations.
- * 
+ *
  * When `widgetId` is provided, fetches annotations scoped to that widget.
  * When omitted (called from the drawer), fetches all annotations for the current user.
  * Provides `create`, `update`, and `remove` mutation functions with toast error handling.
@@ -22,9 +22,7 @@ export function useWidgetAnnotations(accessToken: string | undefined, widgetId?:
   const updateFn = useServerFn(updateWidgetAnnotation);
   const deleteFn = useServerFn(deleteWidgetAnnotation);
 
-  const queryKey = widgetId
-    ? ["widget-annotations", widgetId]
-    : ["widget-annotations", "all"];
+  const queryKey = widgetId ? ["widget-annotations", widgetId] : ["widget-annotations", "all"];
 
   const query = useQuery({
     queryKey,
@@ -36,7 +34,11 @@ export function useWidgetAnnotations(accessToken: string | undefined, widgetId?:
   });
 
   const createMutation = useMutation({
-    mutationFn: async (annotation: { widget_id: string; text: string; note_date?: string | null }) => {
+    mutationFn: async (annotation: {
+      widget_id: string;
+      text: string;
+      note_date?: string | null;
+    }) => {
       if (!accessToken) throw new Error("Non autenticato");
       return createFn({ data: { accessToken, annotation } });
     },
@@ -51,9 +53,14 @@ export function useWidgetAnnotations(accessToken: string | undefined, widgetId?:
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (args: { annotationId: string; updates: { text?: string; note_date?: string | null } }) => {
+    mutationFn: async (args: {
+      annotationId: string;
+      updates: { text?: string; note_date?: string | null };
+    }) => {
       if (!accessToken) throw new Error("Non autenticato");
-      return updateFn({ data: { accessToken, annotationId: args.annotationId, updates: args.updates } });
+      return updateFn({
+        data: { accessToken, annotationId: args.annotationId, updates: args.updates },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["widget-annotations"] });

@@ -54,12 +54,15 @@ export function TechnicianKpiTable({ rows }: { rows: TechnicianKpi[] }) {
               <div className="flex-1">
                 <div className="font-semibold text-sm">{row.full_name}</div>
                 <div className="text-xs text-text3">
-                  {t("widgets.assigned", "Assegnati")}: {row.assigned} • {t("widgets.completed", "Completati")}: {row.completed}
+                  {t("widgets.assigned", "Assegnati")}: {row.assigned} •{" "}
+                  {t("widgets.completed", "Completati")}: {row.completed}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-text3">{t("widgets.avgTime", "Tempo medio")}</div>
-                <div className="text-sm font-semibold">{formatAvgDays(row.avg_days) ?? t("widgets.na", "N/D")}</div>
+                <div className="text-sm font-semibold">
+                  {formatAvgDays(row.avg_days) ?? t("widgets.na", "N/D")}
+                </div>
               </div>
             </div>
 

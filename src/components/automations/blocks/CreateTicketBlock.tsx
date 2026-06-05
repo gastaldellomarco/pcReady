@@ -88,7 +88,10 @@ export function CreateTicketBlock({
           value={action.config.title}
           onChange={(v) => updateConfig({ title: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.create_ticket.titlePlaceholder", "Titolo del nuovo ticket")}
+          placeholder={t(
+            "actionsBuilder.blocks.create_ticket.titlePlaceholder",
+            "Titolo del nuovo ticket",
+          )}
         />
 
         <VariableTextField
@@ -96,7 +99,10 @@ export function CreateTicketBlock({
           value={action.config.description}
           onChange={(v) => updateConfig({ description: v })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.create_ticket.descriptionPlaceholder", "Descrizione del problema...")}
+          placeholder={t(
+            "actionsBuilder.blocks.create_ticket.descriptionPlaceholder",
+            "Descrizione del problema...",
+          )}
           multiline
           rows={4}
         />
@@ -116,7 +122,12 @@ export function CreateTicketBlock({
             </label>
             <select
               value={action.config.priority || ""}
-              onChange={(e) => updateConfig({ priority: e.target.value as CreateTicketAction["config"]["priority"] || undefined })}
+              onChange={(e) =>
+                updateConfig({
+                  priority:
+                    (e.target.value as CreateTicketAction["config"]["priority"]) || undefined,
+                })
+              }
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             >
               <option value="">{t("actionsBuilder.selectPriority", "Seleziona priorità")}</option>
@@ -134,7 +145,10 @@ export function CreateTicketBlock({
           value={action.config.assignee_id || ""}
           onChange={(v) => updateConfig({ assignee_id: v || undefined })}
           variables={availableVariables}
-          placeholder={t("actionsBuilder.blocks.create_ticket.assigneePlaceholder", "UUID assegnatario")}
+          placeholder={t(
+            "actionsBuilder.blocks.create_ticket.assigneePlaceholder",
+            "UUID assegnatario",
+          )}
         />
       </div>
     </div>

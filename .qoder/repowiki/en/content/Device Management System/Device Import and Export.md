@@ -15,6 +15,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -27,7 +28,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the device import and export capabilities of the inventory system. It covers:
+
 - CSV import workflow via ImportCsvDialog, including parsing, validation, duplicate detection, and bulk device creation
 - Inventory import module behavior, supported CSV formats, required columns, validation rules, and error reporting
 - QR code generation and scanning for device identification and labeling
@@ -35,6 +38,7 @@ This document explains the device import and export capabilities of the inventor
 - Performance considerations for large CSV imports and data transformations
 
 ## Project Structure
+
 The import/export features are implemented across UI dialogs, a central import library, and supporting query and export utilities.
 
 ```mermaid
@@ -66,6 +70,7 @@ G --> H
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:1-281](file://src/components/inventory/ImportCsvDialog.tsx#L1-L281)
 - [inventory-import.ts:1-271](file://src/lib/inventory-import.ts#L1-L271)
 - [QrCodeDialog.tsx:1-100](file://src/components/inventory/QrCodeDialog.tsx#L1-L100)
@@ -77,6 +82,7 @@ G --> H
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:1-281](file://src/components/inventory/ImportCsvDialog.tsx#L1-L281)
 - [inventory-import.ts:1-271](file://src/lib/inventory-import.ts#L1-L271)
 - [QrCodeDialog.tsx:1-100](file://src/components/inventory/QrCodeDialog.tsx#L1-L100)
@@ -88,6 +94,7 @@ G --> H
 - [inventory.ts:1-128](file://src/lib/queries/inventory.ts#L1-L128)
 
 ## Core Components
+
 - ImportCsvDialog: Multi-step UI for CSV upload, preview, and confirmation; orchestrates parsing, validation, and import execution
 - inventory-import: Central module implementing CSV parsing, client/device lookup, validation, and import execution
 - QrCodeDialog: Generates QR codes for device identification and prints/stores labels
@@ -97,6 +104,7 @@ G --> H
 - export-data and export-format: Export utilities for generating downloadable reports
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:23-95](file://src/components/inventory/ImportCsvDialog.tsx#L23-L95)
 - [inventory-import.ts:49-180](file://src/lib/inventory-import.ts#L49-L180)
 - [QrCodeDialog.tsx:19-94](file://src/components/inventory/QrCodeDialog.tsx#L19-L94)
@@ -107,6 +115,7 @@ G --> H
 - [export-format.ts:19-35](file://src/lib/export-format.ts#L19-L35)
 
 ## Architecture Overview
+
 End-to-end flow for CSV import and QR label generation.
 
 ```mermaid
@@ -138,6 +147,7 @@ UI-->>U : "Import summary and errors"
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:72-180](file://src/lib/inventory-import.ts#L72-L180)
 - [inventory.ts:82-90](file://src/lib/queries/inventory.ts#L82-L90)
@@ -145,6 +155,7 @@ UI-->>U : "Import summary and errors"
 ## Detailed Component Analysis
 
 ### CSV Import Workflow (ImportCsvDialog)
+
 - Step 1: Upload CSV file and parse into rows
 - Step 2: Load import context (clients and existing devices) and validate rows
 - Step 3: Confirm import and execute batch operations with progress feedback
@@ -166,14 +177,17 @@ Done --> End
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:72-180](file://src/lib/inventory-import.ts#L72-L180)
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:23-95](file://src/components/inventory/ImportCsvDialog.tsx#L23-L95)
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 
 ### Inventory Import Module (inventory-import.ts)
+
 - Supported CSV headers: serial, model, os, status, client_name, notes
 - Validation rules:
   - serial, model, client_name required
@@ -209,16 +223,19 @@ M --> N
 ```
 
 **Diagram sources**
+
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 
 **Section sources**
+
 - [inventory-import.ts:6-14](file://src/lib/inventory-import.ts#L6-L14)
 - [inventory-import.ts:49-126](file://src/lib/inventory-import.ts#L49-L126)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 - [inventory.ts:82-90](file://src/lib/queries/inventory.ts#L82-L90)
 
 ### QR Code Generation and Label Printing
+
 - QR code generation uses device URL for identification
 - Labels can be downloaded as PNG or printed directly
 - Batch label generation supports multiple devices
@@ -238,16 +255,19 @@ QR-->>U : "Display QR and actions"
 ```
 
 **Diagram sources**
+
 - [QrCodeDialog.tsx:19-94](file://src/components/inventory/QrCodeDialog.tsx#L19-L94)
 - [inventory-labels.ts:5-24](file://src/lib/inventory-labels.ts#L5-L24)
 - [inventory-labels.ts:30-63](file://src/lib/inventory-labels.ts#L30-L63)
 
 **Section sources**
+
 - [QrCodeDialog.tsx:19-94](file://src/components/inventory/QrCodeDialog.tsx#L19-L94)
 - [inventory-labels.ts:5-24](file://src/lib/inventory-labels.ts#L5-L24)
 - [inventory-labels.ts:30-63](file://src/lib/inventory-labels.ts#L30-L63)
 
 ### Barcode Scanning for Device Identification
+
 - Camera-based scanning via @zxing/browser
 - Manual input fallback
 - Extracts device identifiers from URLs or raw text
@@ -277,16 +297,19 @@ end
 ```
 
 **Diagram sources**
+
 - [BarcodeScanner.tsx:11-102](file://src/components/inventory/BarcodeScanner.tsx#L11-L102)
 - [inventory.tsx:191-220](file://src/routes/_app/inventory.tsx#L191-L220)
 - [inventory.ts:72-80](file://src/lib/queries/inventory.ts#L72-L80)
 
 **Section sources**
+
 - [BarcodeScanner.tsx:11-102](file://src/components/inventory/BarcodeScanner.tsx#L11-L102)
 - [inventory.tsx:191-220](file://src/routes/_app/inventory.tsx#L191-L220)
 - [inventory.ts:72-80](file://src/lib/queries/inventory.ts#L72-L80)
 
 ### Export Functionality
+
 - Export all data (devices, clients, tickets) to CSV
 - Uses server function with rate limiting and admin checks
 - Generates filenames with date stamps
@@ -305,14 +328,17 @@ ED-->>U : "files{tickets, devices, clients} with CSV"
 ```
 
 **Diagram sources**
+
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 - [export-format.ts:8-17](file://src/lib/export-format.ts#L8-L17)
 
 **Section sources**
+
 - [export-data.ts:11-52](file://src/lib/export-data.ts#L11-L52)
 - [export-format.ts:8-17](file://src/lib/export-format.ts#L8-L17)
 
 ## Dependency Analysis
+
 - ImportCsvDialog depends on inventory-import for parsing, validation, and import execution
 - inventory-import depends on Supabase client for lookups and on inventory queries for inserts
 - QR dialog and labels depend on inventory-labels for QR generation and HTML templates
@@ -330,6 +356,7 @@ EXP["export-data.ts"] --> FMT["export-format.ts"]
 ```
 
 **Diagram sources**
+
 - [ImportCsvDialog.tsx:1-16](file://src/components/inventory/ImportCsvDialog.tsx#L1-L16)
 - [inventory-import.ts:1-2](file://src/lib/inventory-import.ts#L1-L2)
 - [inventory.ts:1-2](file://src/lib/queries/inventory.ts#L1-L2)
@@ -340,6 +367,7 @@ EXP["export-data.ts"] --> FMT["export-format.ts"]
 - [export-format.ts:1-2](file://src/lib/export-format.ts#L1-L2)
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:1-16](file://src/components/inventory/ImportCsvDialog.tsx#L1-L16)
 - [inventory-import.ts:1-2](file://src/lib/inventory-import.ts#L1-L2)
 - [inventory.ts:1-2](file://src/lib/queries/inventory.ts#L1-L2)
@@ -350,6 +378,7 @@ EXP["export-data.ts"] --> FMT["export-format.ts"]
 - [export-format.ts:1-2](file://src/lib/export-format.ts#L1-L2)
 
 ## Performance Considerations
+
 - CSV parsing is implemented with a robust tokenizer to handle quoted fields and escaped commas
 - Client and device lookups are batched:
   - Clients: up to 25 names per query using OR filters
@@ -360,17 +389,21 @@ EXP["export-data.ts"] --> FMT["export-format.ts"]
 - UI progress updates occur after each operation to keep users informed
 
 Recommendations:
+
 - For very large CSVs, consider splitting into smaller chunks and importing sequentially
 - Prefer unique serials and valid client names to minimize rejections and retries
 - Use the provided template to ensure consistent column ordering and minimal parsing overhead
 
 **Section sources**
+
 - [inventory-import.ts:236-270](file://src/lib/inventory-import.ts#L236-L270)
 - [inventory-import.ts:198-226](file://src/lib/inventory-import.ts#L198-L226)
 - [inventory.ts:92-100](file://src/lib/queries/inventory.ts#L92-L100)
 
 ## Troubleshooting Guide
+
 Common issues and resolutions:
+
 - Empty or invalid CSV:
   - Ensure the file contains headers and at least one data row
   - Use the provided template to match expected columns
@@ -388,6 +421,7 @@ Common issues and resolutions:
   - Admin access and rate limits apply; ensure proper credentials and spacing between exports
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:52-95](file://src/components/inventory/ImportCsvDialog.tsx#L52-L95)
 - [inventory-import.ts:86-126](file://src/lib/inventory-import.ts#L86-L126)
 - [QrCodeDialog.tsx:22-38](file://src/components/inventory/QrCodeDialog.tsx#L22-L38)
@@ -395,11 +429,13 @@ Common issues and resolutions:
 - [export-data.ts:11-21](file://src/lib/export-data.ts#L11-L21)
 
 ## Conclusion
+
 The inventory import/export system provides a robust, user-friendly pipeline for managing device data. CSV import validates and transforms data efficiently, while QR generation and scanning streamline device identification. Exports enable comprehensive reporting. Following the validation rules and best practices ensures smooth operations, especially for large datasets.
 
 ## Appendices
 
 ### Supported CSV Format and Required Columns
+
 - Headers: serial, model, os, status, client_name, notes
 - Notes:
   - status defaults to available if empty
@@ -407,10 +443,12 @@ The inventory import/export system provides a robust, user-friendly pipeline for
   - Blank rows are ignored
 
 **Section sources**
+
 - [inventory-import.ts:6-14](file://src/lib/inventory-import.ts#L6-L14)
 - [inventory-import.ts:49-70](file://src/lib/inventory-import.ts#L49-L70)
 
 ### Example Import Workflows
+
 - Single device update:
   - CSV contains an existing serial; validation sets action=update; import updates device fields
 - Mixed insert/update:
@@ -419,11 +457,13 @@ The inventory import/export system provides a robust, user-friendly pipeline for
   - Download the CSV template from the import dialog and fill in device details
 
 **Section sources**
+
 - [ImportCsvDialog.tsx:72-74](file://src/components/inventory/ImportCsvDialog.tsx#L72-L74)
 - [inventory-import.ts:86-126](file://src/lib/inventory-import.ts#L86-L126)
 - [inventory-import.test.ts:154-187](file://src/__tests__/lib/inventory-import.test.ts#L154-L187)
 
 ### Validation Rules Summary
+
 - Required fields: serial, model, client_name
 - Status validation: must be one of available, assigned, maintenance, retired
 - Client resolution: matches by name or company_name
@@ -431,5 +471,6 @@ The inventory import/export system provides a robust, user-friendly pipeline for
 - Blank rows: ignored during parsing
 
 **Section sources**
+
 - [inventory-import.ts:110-116](file://src/lib/inventory-import.ts#L110-L116)
 - [inventory-import.test.ts:79-125](file://src/__tests__/lib/inventory-import.test.ts#L79-L125)

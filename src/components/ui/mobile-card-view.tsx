@@ -52,9 +52,7 @@ export function MobileCardView<T extends Record<string, any>>({
   emptyMessage = "Nessun dato",
 }: MobileCardViewProps<T>) {
   if (!data.length) {
-    return (
-      <div className="py-8 text-center text-sm text-text3">{emptyMessage}</div>
-    );
+    return <div className="py-8 text-center text-sm text-text3">{emptyMessage}</div>;
   }
 
   return (

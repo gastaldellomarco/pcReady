@@ -21,6 +21,7 @@
 </cite>
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
@@ -33,9 +34,11 @@
 10. [Appendices](#appendices)
 
 ## Introduction
+
 This document explains the client portal access management system, covering authentication via contact-based magic links, session lifecycle (creation, validation, expiration, revocation), access controls driven by client portal_enabled flags and contact relationships, and the end-to-end portal ticketing workflow. It also documents the portal dashboard, ticket listing, and detail views, and provides practical troubleshooting guidance for common issues such as session timeouts and access denials.
 
 ## Project Structure
+
 The portal spans frontend routes, UI components, and backend server functions that integrate with Supabase for authentication, session storage, and ticket management.
 
 ```mermaid
@@ -88,6 +91,7 @@ S4 --> DB5
 ```
 
 **Diagram sources**
+
 - [portal/index.tsx:1-73](file://src/routes/portal/index.tsx#L1-L73)
 - [portal/dashboard.tsx:1-131](file://src/routes/portal/dashboard.tsx#L1-L131)
 - [portal/tickets/index.tsx:1-93](file://src/routes/portal/tickets/index.tsx#L1-L93)
@@ -105,6 +109,7 @@ S4 --> DB5
 - [types.ts:695-742](file://src/integrations/supabase/types.ts#L695-L742)
 
 **Section sources**
+
 - [portal/index.tsx:1-73](file://src/routes/portal/index.tsx#L1-L73)
 - [portal/dashboard.tsx:1-131](file://src/routes/portal/dashboard.tsx#L1-L131)
 - [portal/tickets/index.tsx:1-93](file://src/routes/portal/tickets/index.tsx#L1-L93)
@@ -122,6 +127,7 @@ S4 --> DB5
 - [types.ts:695-742](file://src/integrations/supabase/types.ts#L695-L742)
 
 ## Core Components
+
 - Authentication and session management:
   - Magic-link request for portal login
   - Session creation with hashed tokens and expiry
@@ -138,6 +144,7 @@ S4 --> DB5
   - Layout and reusable components for tickets and forms
 
 **Section sources**
+
 - [portal-auth.server.ts:62-95](file://src/lib/portal-auth.server.ts#L62-L95)
 - [portal-auth.server.ts:46-60](file://src/lib/portal-auth.server.ts#L46-L60)
 - [portal-auth.server.ts:196-229](file://src/lib/portal-auth.server.ts#L196-L229)
@@ -156,6 +163,7 @@ S4 --> DB5
 - [portal/tickets/$ticketId.tsx:15-39](file://src/routes/portal/tickets/$ticketId.tsx#L15-L39)
 
 ## Architecture Overview
+
 The portal relies on Supabase for identity and data. Sessions are short-lived, securely hashed, and validated on every protected request. Access is gated by client-level flags and contact relationships.
 
 ```mermaid
@@ -181,6 +189,7 @@ end
 ```
 
 **Diagram sources**
+
 - [portal/index.tsx:16-42](file://src/routes/portal/index.tsx#L16-L42)
 - [portal-auth.ts:27-40](file://src/lib/portal-auth.ts#L27-L40)
 - [portal-auth.server.ts:62-95](file://src/lib/portal-auth.server.ts#L62-L95)
@@ -191,6 +200,7 @@ end
 ## Detailed Component Analysis
 
 ### Authentication Flow: Contact-Based Login
+
 - Magic link generation:
   - Validates rate limits keyed by email
   - Resolves contact and client, checks portal_enabled
@@ -219,17 +229,20 @@ ReturnOk --> Done
 ```
 
 **Diagram sources**
+
 - [portal-auth.server.ts:62-95](file://src/lib/portal-auth.server.ts#L62-L95)
 - [portal-auth.server.ts:46-60](file://src/lib/portal-auth.server.ts#L46-L60)
 - [portal-auth.server.ts:84-94](file://src/lib/portal-auth.server.ts#L84-L94)
 
 **Section sources**
+
 - [portal-auth.server.ts:62-95](file://src/lib/portal-auth.server.ts#L62-L95)
 - [portal-auth.server.ts:46-60](file://src/lib/portal-auth.server.ts#L46-L60)
 - [portal-auth.ts:27-40](file://src/lib/portal-auth.ts#L27-L40)
 - [portal/index.tsx:16-42](file://src/routes/portal/index.tsx#L16-L42)
 
 ### Session Lifecycle: Creation, Validation, Expiration, Revocation
+
 - Creation:
   - Random token generated and hashed
   - Stored with client_id, contact_id, expires_at
@@ -259,15 +272,18 @@ G --> H["Return SessionContext"]
 ```
 
 **Diagram sources**
+
 - [portal-auth.server.ts:196-229](file://src/lib/portal-auth.server.ts#L196-L229)
 - [20260511162100_client_portal.sql:1-46](file://supabase/migrations/20260511162100_client_portal.sql#L1-L46)
 
 **Section sources**
+
 - [portal-auth.server.ts:196-229](file://src/lib/portal-auth.server.ts#L196-L229)
 - [portal-auth.server.ts:231-237](file://src/lib/portal-auth.server.ts#L231-L237)
 - [portal-auth.server.ts:147-194](file://src/lib/portal-auth.server.ts#L147-L194)
 
 ### Access Controls and Permissions
+
 - Client-level gating:
   - clients.portal_enabled controls whether a client can access the portal
 - Contact relationships:
@@ -313,16 +329,19 @@ CLIENTS ||--o{ TICKETS : "owns tickets"
 ```
 
 **Diagram sources**
+
 - [20260511162100_client_portal.sql:1-46](file://supabase/migrations/20260511162100_client_portal.sql#L1-L46)
 - [types.ts:695-742](file://src/integrations/supabase/types.ts#L695-L742)
 - [portal-tickets.server.ts:28-34](file://src/lib/portal-tickets.server.ts#L28-L34)
 
 **Section sources**
+
 - [20260511162100_client_portal.sql:1-46](file://supabase/migrations/20260511162100_client_portal.sql#L1-L46)
 - [portal-auth.server.ts:208-213](file://src/lib/portal-auth.server.ts#L208-L213)
 - [portal-tickets.server.ts:30-33](file://src/lib/portal-tickets.server.ts#L30-L33)
 
 ### Portal Ticket Submission Workflow
+
 - Categories:
   - Retrieves configured categories from app_settings
 - Creation:
@@ -352,6 +371,7 @@ FE-->>U : "Redirect to ticket detail"
 ```
 
 **Diagram sources**
+
 - [portal-tickets.ts:40-45](file://src/lib/portal-tickets.ts#L40-L45)
 - [portal-tickets.server.ts:133-193](file://src/lib/portal-tickets.server.ts#L133-L193)
 - [portal-tickets.server.ts:164-172](file://src/lib/portal-tickets.server.ts#L164-L172)
@@ -359,6 +379,7 @@ FE-->>U : "Redirect to ticket detail"
 - [NewTicketForm.tsx:16-28](file://src/components/portal/NewTicketForm.tsx#L16-L28)
 
 **Section sources**
+
 - [portal-tickets.ts:40-45](file://src/lib/portal-tickets.ts#L40-L45)
 - [portal-tickets.server.ts:133-193](file://src/lib/portal-tickets.server.ts#L133-L193)
 - [portal-tickets.server.ts:164-172](file://src/lib/portal-tickets.server.ts#L164-L172)
@@ -366,6 +387,7 @@ FE-->>U : "Redirect to ticket detail"
 - [NewTicketForm.tsx:16-28](file://src/components/portal/NewTicketForm.tsx#L16-L28)
 
 ### Portal Dashboard and Views
+
 - Dashboard:
   - Loads recent tickets and computes stats for open, in-progress, and resolved-this-month
   - Uses client_id filtering to show only the logged-in contact’s client
@@ -396,6 +418,7 @@ SF-->>FE : "{ticket, history, publicNotes}"
 ```
 
 **Diagram sources**
+
 - [portal-tickets.ts:19-38](file://src/lib/portal-tickets.ts#L19-L38)
 - [portal-tickets.server.ts:22-57](file://src/lib/portal-tickets.server.ts#L22-L57)
 - [portal-tickets.server.ts:59-69](file://src/lib/portal-tickets.server.ts#L59-L69)
@@ -405,6 +428,7 @@ SF-->>FE : "{ticket, history, publicNotes}"
 - [portal/tickets/$ticketId.tsx:15-39](file://src/routes/portal/tickets/$ticketId.tsx#L15-L39)
 
 **Section sources**
+
 - [portal-tickets.ts:19-38](file://src/lib/portal-tickets.ts#L19-L38)
 - [portal-tickets.server.ts:22-57](file://src/lib/portal-tickets.server.ts#L22-L57)
 - [portal-tickets.server.ts:59-69](file://src/lib/portal-tickets.server.ts#L59-L69)
@@ -415,6 +439,7 @@ SF-->>FE : "{ticket, history, publicNotes}"
 - [TicketCard.tsx:1-24](file://src/components/portal/TicketCard.tsx#L1-L24)
 
 ### Operator Portal Access Management
+
 - Generate access link:
   - Requires operator role (admin/tech)
   - Validates contact and client portal_enabled
@@ -445,16 +470,19 @@ SF-->>FE : "{success, revokedCount}"
 ```
 
 **Diagram sources**
+
 - [portal-auth.server.ts:97-144](file://src/lib/portal-auth.server.ts#L97-L144)
 - [portal-auth.server.ts:147-194](file://src/lib/portal-auth.server.ts#L147-L194)
-- [_app/clients.tsx:174-200](file://src/routes/_app/clients.tsx#L174-L200)
+- [\_app/clients.tsx:174-200](file://src/routes/_app/clients.tsx#L174-L200)
 
 **Section sources**
+
 - [portal-auth.server.ts:97-144](file://src/lib/portal-auth.server.ts#L97-L144)
 - [portal-auth.server.ts:147-194](file://src/lib/portal-auth.server.ts#L147-L194)
-- [_app/clients.tsx:174-200](file://src/routes/_app/clients.tsx#L174-L200)
+- [\_app/clients.tsx:174-200](file://src/routes/_app/clients.tsx#L174-L200)
 
 ## Dependency Analysis
+
 - Frontend server functions depend on Supabase client for admin operations
 - Backend server functions depend on Supabase client for database reads/writes
 - Session validation is a shared dependency across ticketing operations
@@ -468,6 +496,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
 ```
 
 **Diagram sources**
+
 - [portal-auth.ts:1-61](file://src/lib/portal-auth.ts#L1-L61)
 - [portal-tickets.ts:1-53](file://src/lib/portal-tickets.ts#L1-L53)
 - [portal-auth.server.ts:1-238](file://src/lib/portal-auth.server.ts#L1-L238)
@@ -475,6 +504,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
 - [20260511162100_client_portal.sql:1-46](file://supabase/migrations/20260511162100_client_portal.sql#L1-L46)
 
 **Section sources**
+
 - [portal-auth.ts:1-61](file://src/lib/portal-auth.ts#L1-L61)
 - [portal-tickets.ts:1-53](file://src/lib/portal-tickets.ts#L1-L53)
 - [portal-auth.server.ts:1-238](file://src/lib/portal-auth.server.ts#L1-L238)
@@ -482,6 +512,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
 - [20260511162100_client_portal.sql:1-46](file://supabase/migrations/20260511162100_client_portal.sql#L1-L46)
 
 ## Performance Considerations
+
 - Token hashing and indexing:
   - token_hash is indexed; ensure consistent hashing and avoid collisions
 - Query patterns:
@@ -495,6 +526,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+
 - Session timeout or expired session:
   - Symptom: Requests fail with invalid/expired session
   - Resolution: Ask the client to request a new magic link; sessions expire after TTL
@@ -521,6 +553,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
   - Reference: [portal-auth.server.ts:84-94](file://src/lib/portal-auth.server.ts#L84-L94)
 
 **Section sources**
+
 - [portal-auth.server.ts:207-213](file://src/lib/portal-auth.server.ts#L207-L213)
 - [portal-auth.server.ts:208-210](file://src/lib/portal-auth.server.ts#L208-L210)
 - [portal-auth.server.ts:64-64](file://src/lib/portal-auth.server.ts#L64-L64)
@@ -529,6 +562,7 @@ SUP --> DB["portal_sessions / client_contacts / clients / tickets / ticket_statu
 - [20260511162100_client_portal.sql:1-2](file://supabase/migrations/20260511162100_client_portal.sql#L1-L2)
 
 ## Conclusion
+
 The portal provides a secure, tenant-aware self-service experience for clients. Authentication is contact-based with robust session controls, access is governed by client flags and operator actions, and the ticketing workflow integrates seamlessly with internal operations. The architecture leverages Supabase for identity and data, with clear separation between frontend server functions and backend validators.
 
 [No sources needed since this section summarizes without analyzing specific files]
@@ -536,6 +570,7 @@ The portal provides a secure, tenant-aware self-service experience for clients. 
 ## Appendices
 
 ### API Surface: Authentication and Ticketing
+
 - Authentication:
   - requestPortalLoginServer: email input, optional sendMail
   - validatePortalSession: token input
@@ -550,6 +585,7 @@ The portal provides a secure, tenant-aware self-service experience for clients. 
   - getPortalTicketCategoriesServer: token
 
 **Section sources**
+
 - [portal-auth.ts:27-60](file://src/lib/portal-auth.ts#L27-L60)
 - [portal-auth.server.ts:62-95](file://src/lib/portal-auth.server.ts#L62-L95)
 - [portal-auth.server.ts:196-237](file://src/lib/portal-auth.server.ts#L196-L237)

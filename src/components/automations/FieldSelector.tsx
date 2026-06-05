@@ -22,9 +22,7 @@ export function FieldSelector({ value, onChange }: FieldSelectorProps) {
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-border px-2 py-1.5 text-sm bg-background"
     >
-      <option value="">
-        {t("conditionsBuilder.field.placeholder", "Seleziona campo")}
-      </option>
+      <option value="">{t("conditionsBuilder.field.placeholder", "Seleziona campo")}</option>
 
       <optgroup label={t("conditionsBuilder.field.groups.ticket", "Ticket")}>
         {ticketFields.map((field) => (

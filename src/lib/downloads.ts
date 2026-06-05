@@ -89,7 +89,9 @@ export async function withDownloadToast<T>(
     if (messages.success) toast.success(messages.success);
     return result;
   } catch (error) {
-    toast.error(messages.formatError ? messages.formatError(error, messages.error) : messages.error);
+    toast.error(
+      messages.formatError ? messages.formatError(error, messages.error) : messages.error,
+    );
     throw error;
   }
 }

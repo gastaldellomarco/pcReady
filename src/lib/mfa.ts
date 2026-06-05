@@ -37,9 +37,7 @@ export const regenerateBackupCodes = createServerFn({ method: "POST" })
   });
 
 export const verifyBackupCode = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; code: string; ipAddress?: string | null }) => data,
-  )
+  .inputValidator((data: { accessToken: string; code: string; ipAddress?: string | null }) => data)
   .handler(async ({ data }) => {
     const { verifyBackupCodeHandler } = await import("./mfa.server");
     return verifyBackupCodeHandler(data);

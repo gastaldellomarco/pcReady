@@ -41,7 +41,9 @@ export function OverdueTicketsWidget() {
     <div className="pc-card">
       <div className="pc-card-hd">
         <div className="flex items-center gap-2">
-          <span className="pc-card-title">{t("widgets.overdueTickets", "Ticket scaduti / SLA violati")}</span>
+          <span className="pc-card-title">
+            {t("widgets.overdueTickets", "Ticket scaduti / SLA violati")}
+          </span>
           {tickets.length > 0 && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
               {tickets.length}
@@ -54,7 +56,9 @@ export function OverdueTicketsWidget() {
       </div>
       <div className="pc-card-body">
         {loading ? (
-          <div className="text-sm text-text3 py-4 text-center">{t("widgets.loading", "Caricamento...")}</div>
+          <div className="text-sm text-text3 py-4 text-center">
+            {t("widgets.loading", "Caricamento...")}
+          </div>
         ) : tickets.length === 0 ? (
           <div className="text-sm text-text3 py-4 text-center">
             <Clock className="size-5 mx-auto mb-2 opacity-40" />
@@ -65,7 +69,14 @@ export function OverdueTicketsWidget() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {[t("widgets.tableId", "ID"), t("widgets.tableClient", "Cliente"), t("widgets.tableModel", "Modello"), t("widgets.tableStatus", "Stato"), t("widgets.tableAssignee", "Assegnatario"), t("widgets.tableSla", "SLA")].map((h) => (
+                  {[
+                    t("widgets.tableId", "ID"),
+                    t("widgets.tableClient", "Cliente"),
+                    t("widgets.tableModel", "Modello"),
+                    t("widgets.tableStatus", "Stato"),
+                    t("widgets.tableAssignee", "Assegnatario"),
+                    t("widgets.tableSla", "SLA"),
+                  ].map((h) => (
                     <th
                       key={h}
                       className="text-left px-[10px] py-[7px] text-[10px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -88,7 +99,9 @@ export function OverdueTicketsWidget() {
                       {ticket.ticket_code}
                     </td>
                     <td className="px-[10px] py-[8px] text-[12px]">{ticket.client ?? "—"}</td>
-                    <td className="px-[10px] py-[8px] text-[12px] text-text3">{ticket.model ?? "—"}</td>
+                    <td className="px-[10px] py-[8px] text-[12px] text-text3">
+                      {ticket.model ?? "—"}
+                    </td>
                     <td className="px-[10px] py-[8px]">
                       <StatusBadge status={ticket.status as TicketStatus} />
                     </td>
@@ -107,13 +120,15 @@ export function OverdueTicketsWidget() {
                         }`}
                       >
                         <Clock className="size-3" />
-                        {ticket.sla_deadline ? formatSlaCountdown(ticket.sla_deadline) : `${ticket.days_open}g`}
+                        {ticket.sla_deadline
+                          ? formatSlaCountdown(ticket.sla_deadline)
+                          : `${ticket.days_open}g`}
                       </span>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              </table>
+            </table>
           </OverflowTable>
         )}
       </div>

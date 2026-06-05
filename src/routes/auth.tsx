@@ -41,7 +41,6 @@ export const Route = createFileRoute("/auth")({
   ),
 });
 
-
 function AuthPage() {
   const { session, profile, loading, profileLoading } = useAuth();
   const navigate = useNavigate();

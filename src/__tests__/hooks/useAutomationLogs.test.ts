@@ -19,8 +19,7 @@ vi.mock("@/lib/automation-runs", () => ({
 // ── Mock useServerFn (TanStack Start) ───────────────────────────────────
 vi.mock("@tanstack/react-start", () => ({
   useServerFn: vi.fn((fn: unknown) => {
-    if (fn === serverFnMocks.listAutomationRunLogs)
-      return serverFnMocks.listAutomationRunLogs;
+    if (fn === serverFnMocks.listAutomationRunLogs) return serverFnMocks.listAutomationRunLogs;
     if (fn === serverFnMocks.listAllAutomationRunLogs)
       return serverFnMocks.listAllAutomationRunLogs;
     return vi.fn();
@@ -114,10 +113,7 @@ describe("useAutomationLogs", () => {
       expect(result.current.logsOpenRuleId).toBe("rule-1");
       expect(result.current.logsByRule["rule-1"]).toEqual(mockLogs);
       expect(serverFnMocks.listAutomationRunLogs).toHaveBeenCalledTimes(1);
-      expect(
-        serverFnMocks.listAutomationRunLogs.mock.calls[0][0].data
-          .automationId,
-      ).toBe("rule-1");
+      expect(serverFnMocks.listAutomationRunLogs.mock.calls[0][0].data.automationId).toBe("rule-1");
     });
 
     it("closes logs when tapping the same rule again", async () => {
@@ -173,10 +169,7 @@ describe("useAutomationLogs", () => {
 
     it("sets loadingLogsRuleId during fetch and clears it after", async () => {
       serverFnMocks.listAutomationRunLogs.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve([createLog()]), 100),
-          ),
+        () => new Promise((resolve) => setTimeout(() => resolve([createLog()]), 100)),
       );
 
       const { result } = renderHook(() => useAutomationLogs(loggedSession));
@@ -198,9 +191,7 @@ describe("useAutomationLogs", () => {
     });
 
     it("shows toast error when fetch fails", async () => {
-      serverFnMocks.listAutomationRunLogs.mockRejectedValue(
-        new Error("Errore di rete"),
-      );
+      serverFnMocks.listAutomationRunLogs.mockRejectedValue(new Error("Errore di rete"));
 
       const { result } = renderHook(() => useAutomationLogs(loggedSession));
       const rule = createRule({ id: "rule-1" });
@@ -223,17 +214,13 @@ describe("useAutomationLogs", () => {
         await result.current.toggleLogs(rule);
       });
 
-      expect(toastMock.error).toHaveBeenCalledWith(
-        "Errore caricamento storico",
-      );
+      expect(toastMock.error).toHaveBeenCalledWith("Errore caricamento storico");
     });
   });
 
   describe("global logs", () => {
     it("loadGlobalLogs fetches all logs and sets them", async () => {
-      const mockLogs = [
-        createLog({ id: "glog-1", automation_flows: { name: "Test Rule" } }),
-      ];
+      const mockLogs = [createLog({ id: "glog-1", automation_flows: { name: "Test Rule" } })];
       serverFnMocks.listAllAutomationRunLogs.mockResolvedValue(mockLogs);
 
       const { result } = renderHook(() => useAutomationLogs(loggedSession));
@@ -258,9 +245,7 @@ describe("useAutomationLogs", () => {
     });
 
     it("loadGlobalLogs shows toast on error", async () => {
-      serverFnMocks.listAllAutomationRunLogs.mockRejectedValue(
-        new Error("API error"),
-      );
+      serverFnMocks.listAllAutomationRunLogs.mockRejectedValue(new Error("API error"));
 
       const { result } = renderHook(() => useAutomationLogs(loggedSession));
 
@@ -281,15 +266,11 @@ describe("useAutomationLogs", () => {
         await result.current.loadGlobalLogs();
       });
 
-      expect(toastMock.error).toHaveBeenCalledWith(
-        "Errore caricamento log globali",
-      );
+      expect(toastMock.error).toHaveBeenCalledWith("Errore caricamento log globali");
     });
 
     it("auto-loads globalLogs when globalLogsOpen becomes true", async () => {
-      serverFnMocks.listAllAutomationRunLogs.mockResolvedValue([
-        createLog({ id: "glog-1" }),
-      ]);
+      serverFnMocks.listAllAutomationRunLogs.mockResolvedValue([createLog({ id: "glog-1" })]);
 
       const { result } = renderHook(() => useAutomationLogs(loggedSession));
 
@@ -354,8 +335,7 @@ describe("useAutomationLogs", () => {
         await result.current.loadGlobalLogs();
       });
 
-      const callArg =
-        serverFnMocks.listAllAutomationRunLogs.mock.calls[0][0].data;
+      const callArg = serverFnMocks.listAllAutomationRunLogs.mock.calls[0][0].data;
       expect(callArg.automationId).toBe("rule-42");
       expect(callArg.status).toBe("success");
       expect(callArg.dateFrom).toBe("2026-06-01");

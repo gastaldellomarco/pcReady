@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Eye, FileArchive, FileImage, FileText, X, RefreshCw, PenLine, CheckCircle2 } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FileArchive,
+  FileImage,
+  FileText,
+  X,
+  RefreshCw,
+  PenLine,
+  CheckCircle2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
@@ -45,9 +55,22 @@ const DOC_CATEGORIES = [
 function classifyDocument(doc: PortalDocument): string {
   if (doc.type === "completion_report") return "report";
   const name = (doc.file_name || "").toLowerCase();
-  if (name.includes("contratto") || name.includes("contract") || name.includes("contr.")) return "contract";
-  if (name.includes("fattura") || name.includes("invoice") || name.includes("fatt.") || /\binv[_\-.]/.test(name)) return "invoice";
-  if (name.includes("manuale") || name.includes("manual") || name.includes("guida") || name.includes("guide")) return "manual";
+  if (name.includes("contratto") || name.includes("contract") || name.includes("contr."))
+    return "contract";
+  if (
+    name.includes("fattura") ||
+    name.includes("invoice") ||
+    name.includes("fatt.") ||
+    /\binv[_\-.]/.test(name)
+  )
+    return "invoice";
+  if (
+    name.includes("manuale") ||
+    name.includes("manual") ||
+    name.includes("guida") ||
+    name.includes("guide")
+  )
+    return "manual";
   return "attachment";
 }
 
@@ -87,7 +110,8 @@ function PortalDocumentsPage() {
         setDiagnostics(result.diagnostics || null);
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Errore durante il caricamento dei documenti";
+        const message =
+          err instanceof Error ? err.message : "Errore durante il caricamento dei documenti";
         setError(message || "Impossibile caricare i documenti disponibili");
       })
       .finally(() => setLoading(false));
@@ -140,7 +164,11 @@ function PortalDocumentsPage() {
 
   if (error) {
     return (
-      <PageFetchError variant="portal" message={error} onRetry={() => setRetryKey((current) => current + 1)} />
+      <PageFetchError
+        variant="portal"
+        message={error}
+        onRetry={() => setRetryKey((current) => current + 1)}
+      />
     );
   }
 
@@ -227,8 +255,14 @@ function PortalDocumentsPage() {
           ) : !filteredDocuments.length ? (
             <PageEmptyState
               variant="portal"
-              title={category !== "all" ? "Nessun documento in questa categoria" : "Nessun risultato"}
-              description={category !== "all" ? "Prova a selezionare un'altra categoria." : "La ricerca non corrisponde a nessun documento disponibile."}
+              title={
+                category !== "all" ? "Nessun documento in questa categoria" : "Nessun risultato"
+              }
+              description={
+                category !== "all"
+                  ? "Prova a selezionare un'altra categoria."
+                  : "La ricerca non corrisponde a nessun documento disponibile."
+              }
             />
           ) : (
             <div className="space-y-3">
@@ -246,9 +280,7 @@ function PortalDocumentsPage() {
       </Card>
 
       {/* PDF Preview Modal */}
-      {previewDoc && (
-        <PdfPreviewModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
-      )}
+      {previewDoc && <PdfPreviewModal document={previewDoc} onClose={() => setPreviewDoc(null)} />}
 
       {/* Signature Modal */}
       {signingDoc && (
@@ -281,10 +313,17 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
       role="button"
       tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
     >
-      <div className="relative w-full max-w-4xl rounded-lg bg-card shadow-2xl" style={{ height: "85vh" }}>
+      <div
+        className="relative w-full max-w-4xl rounded-lg bg-card shadow-2xl"
+        style={{ height: "85vh" }}
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold">{document.file_name}</h2>
@@ -385,7 +424,6 @@ function SignatureModal({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#1e293b";
-
   }, []);
 
   function getPos(e: React.MouseEvent | React.TouchEvent): { x: number; y: number } {
@@ -447,8 +485,12 @@ function SignatureModal({
       role="button"
       tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape" && !busy) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !busy) onClose();
+      }}
     >
       <div className="w-full max-w-lg rounded-lg bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -471,7 +513,8 @@ function SignatureModal({
             Disegna la tua firma nel riquadro sottostante.
           </p>
 
-          <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30"
+          <div
+            className="rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30"
             style={{ touchAction: "none" }}
           >
             <canvas
@@ -497,11 +540,7 @@ function SignatureModal({
             >
               Cancella
             </Button>
-            <Button
-              onClick={submitSignature}
-              disabled={!hasDrawing || busy}
-              className="gap-2"
-            >
+            <Button onClick={submitSignature} disabled={!hasDrawing || busy} className="gap-2">
               <PenLine className="size-4" />
               {busy ? "Salvataggio..." : "Firma documento"}
             </Button>
@@ -542,7 +581,10 @@ function DocumentRow({
               {DOC_CATEGORIES.find((c) => c.key === cat)?.label || "Allegato"}
             </Badge>
             {isSigned && (
-              <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400">
+              <Badge
+                variant="outline"
+                className="border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400"
+              >
                 <CheckCircle2 className="mr-1 size-3" />
                 Firmato
               </Badge>
@@ -592,8 +634,7 @@ function DocumentRow({
 function DocumentIcon({ mimeType, fileName }: { mimeType: string | null; fileName: string }) {
   const lower = `${mimeType || ""} ${fileName}`.toLowerCase();
   if (lower.includes("image/")) return <FileImage className="size-5" />;
-  if (lower.includes("zip") || lower.includes("archive"))
-    return <FileArchive className="size-5" />;
+  if (lower.includes("zip") || lower.includes("archive")) return <FileArchive className="size-5" />;
   return <FileText className="size-5" />;
 }
 

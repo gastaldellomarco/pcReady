@@ -184,8 +184,14 @@ describe("useAutomationFilters", () => {
 
     it("empty trigger filter shows all", () => {
       const rules = [
-        createRule({ id: "1", flow_definition: { meta: { wizard: { trigger_definition: { type: "ticket_created" } } } } }),
-        createRule({ id: "2", flow_definition: { meta: { wizard: { trigger_definition: { type: "manual" } } } } }),
+        createRule({
+          id: "1",
+          flow_definition: { meta: { wizard: { trigger_definition: { type: "ticket_created" } } } },
+        }),
+        createRule({
+          id: "2",
+          flow_definition: { meta: { wizard: { trigger_definition: { type: "manual" } } } },
+        }),
       ];
       const { result } = renderHook(() => useAutomationFilters(rules, emptyStats));
 
@@ -252,8 +258,18 @@ describe("useAutomationFilters", () => {
 
   describe("sorting", () => {
     const rules = [
-      createRule({ id: "1", name: "B Rule", updated_at: "2026-01-01T00:00:00.000Z", last_run_at: null }),
-      createRule({ id: "2", name: "A Rule", updated_at: "2026-06-01T00:00:00.000Z", last_run_at: "2026-06-01T00:00:00.000Z" }),
+      createRule({
+        id: "1",
+        name: "B Rule",
+        updated_at: "2026-01-01T00:00:00.000Z",
+        last_run_at: null,
+      }),
+      createRule({
+        id: "2",
+        name: "A Rule",
+        updated_at: "2026-06-01T00:00:00.000Z",
+        last_run_at: "2026-06-01T00:00:00.000Z",
+      }),
     ];
     const stats: Record<string, AutomationRunStats> = {
       "1": createStats({ automation_id: "1", success: 5 }),
@@ -337,15 +353,21 @@ describe("useAutomationFilters", () => {
     it("applies trigger + error + sort simultaneously", () => {
       const rules = [
         createRule({
-          id: "1", name: "A", active: true,
+          id: "1",
+          name: "A",
+          active: true,
           flow_definition: { meta: { wizard: { trigger_definition: { type: "ticket_created" } } } },
         }),
         createRule({
-          id: "2", name: "B", active: false,
+          id: "2",
+          name: "B",
+          active: false,
           flow_definition: { meta: { wizard: { trigger_definition: { type: "manual" } } } },
         }),
         createRule({
-          id: "3", name: "C", active: true,
+          id: "3",
+          name: "C",
+          active: true,
           flow_definition: { meta: { wizard: { trigger_definition: { type: "ticket_created" } } } },
         }),
       ];
@@ -443,7 +465,9 @@ describe("useAutomationFilters", () => {
 
     it("returns manual when trigger_definition is empty", () => {
       const rule = createRule({
-        flow_definition: { meta: { wizard: { trigger_definition: { type: "manual", config: {} } } } },
+        flow_definition: {
+          meta: { wizard: { trigger_definition: { type: "manual", config: {} } } },
+        },
       } as AutomationRule);
       expect(getRuleTriggerType(rule)).toBe("manual");
     });

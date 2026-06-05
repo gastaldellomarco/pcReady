@@ -308,9 +308,7 @@ export const exportAuditLog = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
 
     if (filters?.search) {
-      query = query.or(
-        `actor_name.ilike.%${filters.search}%,message.ilike.%${filters.search}%`,
-      );
+      query = query.or(`actor_name.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
     }
 
     if (filters?.user) {
@@ -411,9 +409,7 @@ export const listAuditPresets = createServerFn({ method: "GET" })
   });
 
 export const saveAuditPreset = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; name: string; filters: AuditLogFilters }) => data,
-  )
+  .inputValidator((data: { accessToken: string; name: string; filters: AuditLogFilters }) => data)
   .handler(async ({ data: { accessToken, name, filters } }) => {
     const userId = await requireAdmin(accessToken);
 
