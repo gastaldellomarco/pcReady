@@ -457,12 +457,12 @@ async function generateCompletionPdf(
         .font("Helvetica-Bold")
         .fontSize(7.5)
         .fillColor(brand.muted)
-        .text(label.toUpperCase(), x, yPos, { width });
+        .text(cleanPdfText(label).toUpperCase(), x, yPos, { width });
       doc
         .font("Helvetica")
         .fontSize(10.5)
         .fillColor(brand.navy)
-        .text(value || "-", x, yPos + 13, { width });
+        .text(cleanPdfText(value || "-"), x, yPos + 13, { width });
     }
 
     function splitTextForHeight(text: string, width: number, maxHeight: number, fontSize: number) {
@@ -507,7 +507,7 @@ async function generateCompletionPdf(
     }
 
     function workField(title: string, value: string, options?: { accent?: string }) {
-      const safeValue = value?.trim() || "-";
+      const safeValue = cleanPdfText(value) || "-";
       const innerWidth = contentWidth - 38;
       const textWidth = innerWidth - 18;
       const chunks = splitTextForHeight(safeValue, textWidth, pageHeight - 190, 10);
@@ -532,7 +532,7 @@ async function generateCompletionPdf(
           .font("Helvetica-Bold")
           .fontSize(9)
           .fillColor(brand.navy)
-          .text(panelTitle, marginX + 18, y + 13, { width: innerWidth });
+          .text(cleanPdfText(panelTitle), marginX + 18, y + 13, { width: innerWidth });
         doc
           .font("Helvetica")
           .fontSize(10)
@@ -545,7 +545,7 @@ async function generateCompletionPdf(
 
     function workBulletList(title: string, items: string[]) {
       const safeItems = items.length
-        ? items
+        ? items.map(cleanPdfText)
         : ["Intervento completato senza ulteriori dettagli operativi pubblicati."];
       const innerWidth = contentWidth - 42;
       const chunks: string[][] = [];
@@ -595,9 +595,14 @@ async function generateCompletionPdf(
           .font("Helvetica-Bold")
           .fontSize(9)
           .fillColor(brand.navy)
-          .text(chunkIndex === 0 ? title : `${title} (continua)`, marginX + 18, y + 13, {
-            width: innerWidth,
-          });
+          .text(
+            cleanPdfText(chunkIndex === 0 ? title : `${title} (continua)`),
+            marginX + 18,
+            y + 13,
+            {
+              width: innerWidth,
+            },
+          );
         let bulletY = y + 34;
         chunk.forEach((item) => {
           const itemHeight = Math.max(
@@ -661,7 +666,7 @@ async function generateCompletionPdf(
           .font("Helvetica-Bold")
           .fontSize(11)
           .fillColor(brand.navy)
-          .text(`${index + 1}. ${checklist.title}`, marginX + 16, y + 14, {
+          .text(cleanPdfText(`${index + 1}. ${checklist.title}`), marginX + 16, y + 14, {
             width: contentWidth - 180,
           });
         const statusColor = checklist.requiredMissing ? brand.warning : brand.success;
@@ -677,7 +682,13 @@ async function generateCompletionPdf(
           .fontSize(9)
           .fillColor(brand.muted)
           .text(
-            `${checklist.done}/${checklist.total} voci completate · ${pct}%${checklist.completed_at ? ` · completata il ${formatPdfDateTime(checklist.completed_at)}` : ""}`,
+            cleanPdfText(
+              `${formatProgressText(checklist.done, checklist.total, "voci completate")} | ${pct}%${
+                checklist.completed_at
+                  ? ` | completata il ${formatPdfDateTime(checklist.completed_at)}`
+                  : ""
+              }`,
+            ),
             marginX + 16,
             y + 34,
             { width: contentWidth - 32 },
@@ -714,7 +725,7 @@ async function generateCompletionPdf(
             .font("Helvetica")
             .fontSize(8.5)
             .fillColor(brand.slate)
-            .text(item, marginX + 32, detailY, { width: contentWidth - 48 });
+            .text(cleanPdfText(item), marginX + 32, detailY, { width: contentWidth - 48 });
           detailY += 18;
         });
         if (hiddenCount) {
@@ -744,14 +755,22 @@ async function generateCompletionPdf(
         ? "Verifica finale basata su chiusura ticket: nessuna checklist strutturata associata."
         : missing > 0
           ? `Verifica finale con attenzione: ${missing} step obbligatori risultano non completati.`
-          : `Verifica finale positiva: ${done}/${total} controlli completati e nessun obbligatorio mancante.`;
+          : `Verifica finale positiva: ${formatProgressText(done, total, "controlli completati")} e nessun obbligatorio mancante.`;
       sectionTitle(
         "Verifiche finali",
         "Esito sintetico dei controlli procedurali prima della chiusura.",
       );
       workField(
         "Esito verifiche",
-        `${finalOutcome}${summaries.length ? ` Conferme completamento checklist: ${confirmed}/${summaries.length}.` : ""}`,
+        `${finalOutcome}${
+          summaries.length
+            ? ` Conferme completamento checklist: ${formatProgressText(
+                confirmed,
+                summaries.length,
+                "confermate",
+              )}.`
+            : ""
+        }`,
         { accent: missing > 0 ? brand.warning : brand.success },
       );
     }
@@ -1282,7 +1301,7 @@ function formatMinutesDuration(minutes: number) {
 }
 
 function displayValue(value?: string | null, fallback = "Non disponibile") {
-  const normalized = value?.trim();
+  const normalized = cleanPdfText(value);
   if (!normalized || normalized === "-" || normalized.toLowerCase() === "n/d") return fallback;
   return normalized;
 }
@@ -1373,7 +1392,6 @@ function extractStructuredWorkFields(text: string) {
     diagnosi: "diagnosis",
     "attività svolte": "activities",
     "attivita svolte": "activities",
-    attività: "activities",
     attivita: "activities",
     "esito finale": "outcome",
     esito: "outcome",
@@ -1388,7 +1406,7 @@ function extractStructuredWorkFields(text: string) {
     .sort((a, b) => b.length - a.length)
     .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("|");
-  const regex = new RegExp(`(?:^|\\n)\\s*(${labelPattern})\\s*[:：-]\\s*`, "gi");
+  const regex = new RegExp(`(?:^|\\n)\\s*(${labelPattern})\\s*[:\\uFF1A-]\\s*`, "gi");
   const matches = [...text.matchAll(regex)];
   matches.forEach((match, index) => {
     const rawLabel = match[1].toLowerCase();
@@ -1405,17 +1423,38 @@ function extractStructuredWorkFields(text: string) {
 
 function splitActivities(text: string) {
   return cleanWorkText(text)
-    .split(/\n+|(?:^|\s)[•*-]\s+/)
+    .split(/\n+|(?:^|\s)[\u2022*-]\s+/)
     .map((item) => cleanWorkText(item.replace(/^\d+[.)]\s*/, "")))
     .filter((item) => item.length > 0 && item.length < 600);
 }
 
 function cleanWorkText(text: string) {
-  return (text || "")
+  return cleanPdfText(text)
     .replace(/\r/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
+
+function cleanPdfText(value?: string | null) {
+  return String(value ?? "")
+    .replace(/\u00C2\u00B7/g, "|")
+    .replace(/\u00C3\u00A0/g, "\u00E0")
+    .replace(/\u00C3\u00A8/g, "\u00E8")
+    .replace(/\u00C3\u00A9/g, "\u00E9")
+    .replace(/\u00C3\u00AC/g, "\u00EC")
+    .replace(/\u00C3\u00B2/g, "\u00F2")
+    .replace(/\u00C3\u00B9/g, "\u00F9")
+    .replace(/\u00E2\u20AC\u201C/g, "-")
+    .replace(/\u00E2\u20AC\u201D/g, "-")
+    .replace(/\u00E2\u20AC\u00A2/g, "-")
+    .replace(/\u00EF\u00BC\u0161/g, ":")
+    .replace(/\xA0/g, " ")
+    .trim();
+}
+
+function formatProgressText(done: number, total: number, label: string) {
+  return `${done} di ${total} ${label}`;
 }
 
 function dedupeStrings(items: string[]) {

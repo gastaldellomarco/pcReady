@@ -2,6 +2,15 @@ import { Circle, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pd
 import { pdfFonts, pdfPalette } from "./theme";
 import type { Style } from "@react-pdf/stylesheet";
 
+const A4_PORTRAIT_CONTENT_WIDTH = 539;
+const CARD_LAYOUT_COLUMN_LIMIT = 5;
+const DEFAULT_COMPANY_CONTACTS = "support@pcready.it | pcready.it";
+
+/**
+ *
+ */
+export type PdfTableLayout = "auto" | "table" | "cards";
+
 /**
  *
  */
@@ -25,11 +34,37 @@ export interface PdfColumn<T> {
   value: (row: T) => string;
 }
 
+/**
+ *
+ */
+export class PCReadyPDFTemplate {
+  static readonly contentWidth = A4_PORTRAIT_CONTENT_WIDTH;
+  static readonly columnLimit = CARD_LAYOUT_COLUMN_LIMIT;
+  static readonly contacts = DEFAULT_COMPANY_CONTACTS;
+
+  /**
+   *
+   */
+  static shouldUseCardLayout(columns: PdfColumn<unknown>[]) {
+    return (
+      columns.length > PCReadyPDFTemplate.columnLimit ||
+      numericColumnWidth(columns) > PCReadyPDFTemplate.contentWidth
+    );
+  }
+
+  /**
+   *
+   */
+  static cleanText(value: unknown) {
+    return normalizePdfText(value);
+  }
+}
+
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 92,
+    paddingTop: 104,
     paddingRight: 28,
-    paddingBottom: 42,
+    paddingBottom: 48,
     paddingLeft: 28,
     fontFamily: pdfFonts.body,
     color: pdfPalette.ink,
@@ -38,36 +73,44 @@ const styles = StyleSheet.create({
   },
   header: {
     position: "absolute",
-    top: 18,
+    top: 20,
     left: 28,
     right: 28,
-    minHeight: 54,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: pdfPalette.surface,
     border: `1 solid ${pdfPalette.line}`,
-    borderRadius: 8,
+    borderRadius: 6,
     color: pdfPalette.ink,
     flexDirection: "row",
     alignItems: "center",
   },
   logo: {
-    width: 34,
-    height: 34,
-    marginRight: 10,
+    width: 38,
+    height: 38,
+    marginLeft: 12,
   },
   brand: {
     fontFamily: pdfFonts.bold,
-    fontSize: 16,
+    fontSize: 15,
     color: pdfPalette.accent,
   },
   subtitle: {
-    marginTop: 2,
-    fontSize: 9,
+    marginTop: 4,
+    fontSize: 11,
+    fontFamily: pdfFonts.bold,
+    color: pdfPalette.ink,
+  },
+  documentInfo: {
+    marginTop: 3,
+    fontSize: 8,
+    color: pdfPalette.muted,
+    lineHeight: 1.25,
     opacity: 0.86,
   },
   orgLine: {
-    marginTop: 2,
+    marginTop: 3,
     fontSize: 7,
     color: pdfPalette.muted,
   },
@@ -82,7 +125,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     paddingVertical: 3,
     paddingHorizontal: 8,
-    borderRadius: 12,
+    borderRadius: 10,
     backgroundColor: pdfPalette.accentSoft,
     color: pdfPalette.accent,
     fontFamily: pdfFonts.bold,
@@ -90,16 +133,17 @@ const styles = StyleSheet.create({
   },
   stats: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   stat: {
     flexGrow: 1,
-    flexBasis: 0,
+    flexBasis: 104,
     minHeight: 58,
     backgroundColor: pdfPalette.surface,
     border: `1 solid ${pdfPalette.line}`,
-    borderRadius: 8,
+    borderRadius: 6,
     paddingVertical: 9,
     paddingHorizontal: 12,
   },
@@ -119,9 +163,9 @@ const styles = StyleSheet.create({
     fontSize: 7,
   },
   section: {
-    marginTop: 10,
-    marginBottom: 8,
-    paddingTop: 8,
+    marginTop: 12,
+    marginBottom: 10,
+    paddingTop: 10,
     borderTop: `1.5 solid ${pdfPalette.lineStrong}`,
     flexDirection: "row",
     alignItems: "center",
@@ -135,7 +179,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: pdfFonts.bold,
-    fontSize: 11,
+    fontSize: 12,
+    color: pdfPalette.accent,
   },
   sectionMeta: {
     marginLeft: "auto",
@@ -144,15 +189,16 @@ const styles = StyleSheet.create({
   },
   chartGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 12,
   },
   chartPanel: {
     flexGrow: 1,
-    flexBasis: 0,
+    flexBasis: 240,
     backgroundColor: pdfPalette.paper,
     border: `1 solid ${pdfPalette.line}`,
-    borderRadius: 8,
+    borderRadius: 6,
     padding: 10,
   },
   chartTitle: {
@@ -242,7 +288,7 @@ const styles = StyleSheet.create({
   table: {
     backgroundColor: pdfPalette.paper,
     border: `1 solid ${pdfPalette.line}`,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   row: {
     flexDirection: "row",
@@ -250,9 +296,9 @@ const styles = StyleSheet.create({
     borderBottom: `1 solid ${pdfPalette.line}`,
   },
   headerRow: {
-    backgroundColor: pdfPalette.surface2,
-    color: pdfPalette.muted,
-    minHeight: 24,
+    backgroundColor: pdfPalette.accent,
+    color: "#FFFFFF",
+    minHeight: 26,
   },
   cell: {
     paddingHorizontal: 6,
@@ -263,7 +309,7 @@ const styles = StyleSheet.create({
     fontFamily: pdfFonts.bold,
     fontSize: 7,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0,
   },
   cellText: {
     fontSize: 8,
@@ -295,8 +341,60 @@ const styles = StyleSheet.create({
   footerStamp: {
     marginLeft: 10,
   },
+  footerContacts: {
+    marginLeft: 10,
+  },
   pageNumber: {
     marginLeft: "auto",
+  },
+  cards: {
+    gap: 10,
+  },
+  dataCard: {
+    backgroundColor: pdfPalette.paper,
+    border: `1 solid ${pdfPalette.line}`,
+    borderRadius: 6,
+    padding: 12,
+  },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 8,
+    marginBottom: 8,
+    borderBottom: `1 solid ${pdfPalette.line}`,
+  },
+  cardTitle: {
+    fontFamily: pdfFonts.bold,
+    color: pdfPalette.accent,
+    fontSize: 10.5,
+  },
+  cardTitleSecondary: {
+    marginLeft: "auto",
+    color: pdfPalette.ink,
+    fontSize: 9,
+    maxWidth: 220,
+    textAlign: "right",
+  },
+  cardFields: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  cardField: {
+    width: "48%",
+    marginBottom: 6,
+  },
+  cardLabel: {
+    fontSize: 7,
+    color: pdfPalette.muted,
+    fontFamily: pdfFonts.bold,
+    textTransform: "uppercase",
+  },
+  cardValue: {
+    marginTop: 3,
+    fontSize: 8.5,
+    lineHeight: 1.3,
+    color: pdfPalette.ink,
   },
 });
 
@@ -308,11 +406,13 @@ export function BrandedPage({
   meta,
   children,
   organizationName,
+  contacts,
 }: {
   title: string;
   meta: string;
   children: React.ReactNode;
   organizationName?: string;
+  contacts?: string;
 }) {
   const generatedAt = new Date().toLocaleString("it-IT", {
     dateStyle: "long",
@@ -320,9 +420,21 @@ export function BrandedPage({
   });
   const org =
     organizationName || (globalThis as any).__APP_SETTINGS__?.organization_name || "PCReady";
+  const companyContacts =
+    contacts || (globalThis as any).__APP_SETTINGS__?.support_email || PCReadyPDFTemplate.contacts;
   return (
-    <Page size="A4" orientation="landscape" style={styles.page}>
+    <Page size="A4" orientation="portrait" style={styles.page}>
       <View style={styles.header} fixed>
+        <View>
+          <Text style={styles.brand}>PCReady</Text>
+          <Text style={styles.subtitle}>{normalizePdfText(title)}</Text>
+          <Text style={styles.documentInfo}>{normalizePdfText(meta)}</Text>
+          <Text style={styles.orgLine}>{normalizePdfText(org)}</Text>
+        </View>
+        <View style={styles.headerMeta}>
+          <Text>{generatedAt}</Text>
+          <Text style={styles.metaChip}>A4 verticale</Text>
+        </View>
         <Svg style={styles.logo} viewBox="0 0 48 48">
           <Rect
             x="5"
@@ -350,20 +462,12 @@ export function BrandedPage({
             strokeLinecap="round"
           />
         </Svg>
-        <View>
-          <Text style={styles.brand}>pcReady</Text>
-          <Text style={styles.subtitle}>{title}</Text>
-          <Text style={styles.orgLine}>{org}</Text>
-        </View>
-        <View style={styles.headerMeta}>
-          <Text>{generatedAt}</Text>
-          <Text style={styles.metaChip}>{meta}</Text>
-        </View>
       </View>
       {children}
       <View style={styles.footer} fixed>
-        <Text>{org}</Text>
-        <Text style={styles.footerStamp}>Export: {generatedAt}</Text>
+        <Text>{normalizePdfText(org)}</Text>
+        <Text style={styles.footerContacts}>{normalizePdfText(companyContacts)}</Text>
+        <Text style={styles.footerStamp}>Generato: {generatedAt}</Text>
         <Text
           style={styles.pageNumber}
           render={({ pageNumber, totalPages }) => `Pagina ${pageNumber} di ${totalPages}`}
@@ -612,11 +716,37 @@ function Legend({ items }: { items: { label: string; color: string }[] }) {
  *
  */
 export function PdfTable<T>({ rows, columns }: { rows: T[]; columns: PdfColumn<T>[] }) {
+  return <AdaptivePdfTable rows={rows} columns={columns} />;
+}
+
+/**
+ *
+ */
+export function AdaptivePdfTable<T>({
+  rows,
+  columns,
+  layout = "auto",
+}: {
+  rows: T[];
+  columns: PdfColumn<T>[];
+  layout?: PdfTableLayout;
+}) {
+  const useCards =
+    layout === "cards" ||
+    (layout === "auto" && PCReadyPDFTemplate.shouldUseCardLayout(columns as PdfColumn<unknown>[]));
+
+  if (useCards) {
+    return <PdfCardList rows={rows} columns={columns} />;
+  }
+
   return (
     <View style={styles.table}>
       <View style={[styles.row, styles.headerRow]} fixed>
-        {columns.map((column) => (
-          <View key={column.key} style={[styles.cell, widthStyle(column.width)]}>
+        {columns.map((column, columnIndex) => (
+          <View
+            key={`${column.key}-${columnIndex}`}
+            style={[styles.cell, widthStyle(column.width)]}
+          >
             <Text style={styles.headCellText}>{column.label}</Text>
           </View>
         ))}
@@ -630,8 +760,11 @@ export function PdfTable<T>({ rows, columns }: { rows: T[]; columns: PdfColumn<T
           ]}
           wrap={false}
         >
-          {columns.map((column) => (
-            <View key={column.key} style={[styles.cell, widthStyle(column.width)]}>
+          {columns.map((column, columnIndex) => (
+            <View
+              key={`${column.key}-${columnIndex}`}
+              style={[styles.cell, widthStyle(column.width)]}
+            >
               <PdfCell row={row} column={column} />
             </View>
           ))}
@@ -657,9 +790,93 @@ function PdfCell<T>({ row, column }: { row: T; column: PdfColumn<T> }) {
     textStyle.push({ color: column.color(row), fontFamily: pdfFonts.bold } as Style);
   }
 
-  return <Text style={textStyle}>{column.value(row)}</Text>;
+  return <Text style={textStyle}>{normalizePdfText(column.value(row))}</Text>;
+}
+
+function PdfCardList<T>({ rows, columns }: { rows: T[]; columns: PdfColumn<T>[] }) {
+  return (
+    <View style={styles.cards}>
+      {rows.map((row, index) => {
+        const primary = columns[0];
+        const secondary = columns[1];
+        return (
+          <View key={index} style={styles.dataCard} wrap={false}>
+            <View style={styles.cardTitleRow}>
+              <Text style={styles.cardTitle}>
+                {primary ? normalizePdfText(primary.value(row)) : `Riga ${index + 1}`}
+              </Text>
+              {secondary ? (
+                <Text style={styles.cardTitleSecondary}>
+                  {normalizePdfText(secondary.value(row))}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.cardFields}>
+              {columns.slice(2).map((column, columnIndex) => (
+                <View key={`${column.key}-${columnIndex}`} style={styles.cardField}>
+                  <Text style={styles.cardLabel}>{normalizePdfText(column.label)}</Text>
+                  <PdfCardValue row={row} column={column} />
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function PdfCardValue<T>({ row, column }: { row: T; column: PdfColumn<T> }) {
+  const badge = column.badge?.(row);
+  if (badge) {
+    return (
+      <Text
+        style={[
+          styles.badge,
+          { color: badge.color, backgroundColor: badge.backgroundColor, marginTop: 3 },
+        ]}
+      >
+        {normalizePdfText(badge.label)}
+      </Text>
+    );
+  }
+
+  const textStyle: Style[] = [styles.cardValue as Style];
+  if (column.mono) textStyle.push(styles.mono as Style);
+  if (column.color) {
+    textStyle.push({ color: column.color(row), fontFamily: pdfFonts.bold } as Style);
+  }
+
+  return <Text style={textStyle}>{normalizePdfText(column.value(row))}</Text>;
 }
 
 function widthStyle(width: number | `${number}%`) {
   return typeof width === "number" ? { width } : { width };
+}
+
+function numericColumnWidth(columns: PdfColumn<unknown>[]) {
+  return columns.reduce((sum, column) => {
+    if (typeof column.width === "number") return sum + column.width;
+    const pct = Number.parseFloat(column.width);
+    return Number.isFinite(pct) ? sum + (pct / 100) * A4_PORTRAIT_CONTENT_WIDTH : sum;
+  }, 0);
+}
+
+function normalizePdfText(value: unknown) {
+  return String(value ?? "-")
+    .replace(/\u00C2\u00B7/g, "|")
+    .replace(/\u00C3\u00A0/g, "\u00E0")
+    .replace(/\u00C3\u00A8/g, "\u00E8")
+    .replace(/\u00C3\u00A9/g, "\u00E9")
+    .replace(/\u00C3\u00AC/g, "\u00EC")
+    .replace(/\u00C3\u00B2/g, "\u00F2")
+    .replace(/\u00C3\u00B9/g, "\u00F9")
+    .replace(/\u00E2\u20AC\u201C/g, "-")
+    .replace(/\u00E2\u20AC\u201D/g, "-")
+    .replace(/\u00E2\u20AC\u00A2/g, "-")
+    .replace(/\u00EF\u00BC\u0161/g, ":")
+    .replace(/\r/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
