@@ -1,12 +1,15 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   Download,
+  Eye,
   FileDown,
   FileText,
   Info,
   Pencil,
+  Plus,
   ReceiptText,
   Save,
   Send,
@@ -21,7 +24,9 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTool
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { QuoteModal, QuoteStatusBadge, QuoteActions, createEmptyQuoteLine } from "@/components/pcready/QuoteModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -140,7 +145,26 @@ type QuoteRow = {
   total_amount: number;
   notes: string | null;
   converted_ticket_id: string | null;
+  converted_invoice_id?: string | null;
   client?: ClientOption | null;
+};
+
+type QuoteItemRow = {
+  id?: string;
+  quote_id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_total?: number;
+  item_type?: "service" | "labor" | "material" | "extra";
+};
+
+type QuoteLineDraft = {
+  id: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  itemType: "service" | "labor" | "material" | "extra";
 };
 
 type BudgetUsageRow = {
@@ -165,6 +189,8 @@ type PeriodicReportRow = {
   sent_at: string | null;
   client?: ClientOption | null;
 };
+
+type CostsTab = "dashboard" | "contracts" | "billing" | "materials" | "report";
 
 const today = new Date();
 const defaultDateTo = today.toISOString().slice(0, 10);
@@ -266,15 +292,25 @@ function CostsPage() {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [budgetUsage, setBudgetUsage] = useState<BudgetUsageRow[]>([]);
-  const [periodicReports, setPeriodicReports] = useState<PeriodicReportRow[]>([]);
+  const [_periodicReports, setPeriodicReports] = useState<PeriodicReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [invoicePdfOpen, setInvoicePdfOpen] = useState(false);
+  const [quotePdfOpen, setQuotePdfOpen] = useState(false);
+  const [quotePdfItems, setQuotePdfItems] = useState<QuoteItemRow[]>([]);
+  const [quotePdfMeta, setQuotePdfMeta] = useState<QuoteRow | null>(null);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceStep, setInvoiceStep] = useState<"details" | "preview">("details");
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState<QuoteRow["status"] | "all">("all");
+  const [quoteClientFilter, setQuoteClientFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [draft, setDraft] = useState<ContractDraft>(emptyContractDraft);
   const [invoiceDraft, setInvoiceDraft] = useState<InvoiceDraft>(emptyInvoiceDraft);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(emptyQuoteDraft);
+  const [quoteLines, setQuoteLines] = useState<QuoteLineDraft[]>(() => [createEmptyQuoteLine()]);
+  const [quoteTicketId, setQuoteTicketId] = useState("");
   const [materialDraft, setMaterialDraft] = useState<MaterialDraft>(emptyMaterialDraft);
   const [budgetDraft, setBudgetDraft] = useState<BudgetDraft>(emptyBudgetDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -283,6 +319,7 @@ function CostsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<{ type: "client" | "technician"; name: string } | null>(null);
   const [detailGroupBy, setDetailGroupBy] = useState<"none" | "client" | "technician">("none");
+  const [activeTab, setActiveTab] = useState<CostsTab>("dashboard");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -333,7 +370,7 @@ function CostsPage() {
       setInvoices((invoiceResult.data ?? []) as InvoiceRow[]);
       setQuotes((quoteResult.data ?? []) as QuoteRow[]);
       setBudgetUsage((budgetResult.data ?? []) as BudgetUsageRow[]);
-      setPeriodicReports((reportResult.data ?? []) as PeriodicReportRow[]);
+      setPeriodicReports((reportResult.data ?? []) as PeriodicReportRow[]); // stored in _periodicReports
     } catch (error) {
       toast.error(errorMessage(error, t("feedback.loadError", "Errore caricamento costi")));
     } finally {
@@ -429,6 +466,66 @@ function CostsPage() {
     [clientFilter, filteredTickets],
   );
 
+  const invoiceSourceRows = useMemo(
+    () => selectedClient && clientFilter !== "all" ? selectedClientTickets : [],
+    [clientFilter, selectedClient, selectedClientTickets],
+  );
+
+  const invoicePreviewItems = useMemo<InvoiceItemRow[]>(
+    () =>
+      invoiceSourceRows.map((ticket) => ({
+        description: `${ticket.ticket_code} - ${ticket.client_name ?? selectedClient?.name ?? ""}`,
+        quantity: 1,
+        unit_price: money(ticket.total_cost),
+        line_total: money(ticket.total_cost),
+        item_type: "service",
+      })),
+    [invoiceSourceRows, selectedClient],
+  );
+
+  const invoicePreviewTotals = useMemo(() => {
+    const subtotal = invoiceSourceRows.reduce((sum, ticket) => sum + money(ticket.total_cost), 0);
+    const taxRate = positiveNumber(invoiceDraft.taxRate);
+    const taxAmount = roundMoney(subtotal * taxRate / 100);
+    return {
+      subtotal,
+      taxRate,
+      taxAmount,
+      total: roundMoney(subtotal + taxAmount),
+    };
+  }, [invoiceDraft.taxRate, invoiceSourceRows]);
+
+  const quoteTotals = useMemo(() => {
+    const subtotal = quoteLines.reduce((sum, line) => sum + positiveNumber(line.quantity) * positiveNumber(line.unitPrice), 0);
+    const taxRate = 22;
+    const taxAmount = roundMoney(subtotal * taxRate / 100);
+    return {
+      subtotal: roundMoney(subtotal),
+      taxRate,
+      taxAmount,
+      total: roundMoney(subtotal + taxAmount),
+    };
+  }, [quoteLines]);
+
+  const quoteTicketOptions = useMemo(
+    () =>
+      filteredTickets.filter((ticket) => {
+        if (!quoteDraft.clientId) return true;
+        return ticket.client_id === quoteDraft.clientId;
+      }),
+    [filteredTickets, quoteDraft.clientId],
+  );
+
+  const filteredQuotes = useMemo(
+    () =>
+      quotes.filter((quote) => {
+        if (quoteStatusFilter !== "all" && quote.status !== quoteStatusFilter) return false;
+        if (quoteClientFilter !== "all" && quote.client_id !== quoteClientFilter) return false;
+        return true;
+      }),
+    [quoteClientFilter, quoteStatusFilter, quotes],
+  );
+
   const byClient = useMemo(
     () => groupCosts(filteredTickets, "client_name", { client: t("fallbacks.clientNotIndicated", "Cliente non indicato") }),
     [filteredTickets, t],
@@ -458,6 +555,11 @@ function CostsPage() {
     return { hours, labor, materials, total };
   }, [detailTickets]);
 
+  const nextInvoiceNumber = useMemo(
+    () => buildNextInvoiceNumber(invoices),
+    [invoices],
+  );
+
   const groupedDetail = useMemo(() => {
     if (detailGroupBy === "none") return null;
     const key = detailGroupBy === "client" ? "client_name" : "technician_name";
@@ -481,6 +583,45 @@ function CostsPage() {
   function openDetail(type: "client" | "technician", name: string) {
     setDetailEntity({ type, name });
     setDetailOpen(true);
+  }
+
+  function openNewInvoice() {
+    if (clientFilter === "all" || !selectedClient) {
+      toast.error(t("feedback.selectClient", "Seleziona un cliente"));
+      return;
+    }
+    setInvoiceDraft((prev) => ({
+      ...prev,
+      invoiceNumber: nextInvoiceNumber,
+      recipientName: selectedClient.company_name || selectedClient.name,
+    }));
+    setInvoiceStep("details");
+    setInvoiceModalOpen(true);
+  }
+
+  function closeInvoiceModal(open: boolean) {
+    setInvoiceModalOpen(open);
+    if (!open) setInvoiceStep("details");
+  }
+
+  function resetQuoteDraft(clientId = clientFilter !== "all" ? clientFilter : "") {
+    setQuoteDraft({
+      ...emptyQuoteDraft,
+      clientId,
+      quoteNumber: quoteSeed(),
+    });
+    setQuoteLines([createEmptyQuoteLine()]);
+    setQuoteTicketId("");
+  }
+
+  function openNewQuote() {
+    resetQuoteDraft(clientFilter !== "all" ? clientFilter : "");
+    setQuoteModalOpen(true);
+  }
+
+  function closeQuoteModal(open: boolean) {
+    setQuoteModalOpen(open);
+    if (!open) resetQuoteDraft("");
   }
 
   function startEdit(contract: ContractRow) {
@@ -620,16 +761,14 @@ function CostsPage() {
   async function createInvoice() {
     if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     if (clientFilter === "all" || !selectedClient) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
-    const rows = selectedClientTickets.length ? selectedClientTickets : filteredTickets.filter((ticket) => ticket.client_id === selectedClient.id);
+    const rows = invoiceSourceRows;
     if (!rows.length) return toast.error(t("finance.invoiceNoRows", "Nessun ticket da fatturare per il cliente selezionato"));
     setBusy(true);
     try {
-      const subtotal = rows.reduce((sum, ticket) => sum + money(ticket.total_cost), 0);
-      const taxRate = positiveNumber(invoiceDraft.taxRate);
-      const taxAmount = roundMoney(subtotal * taxRate / 100);
+      const { subtotal, taxRate, taxAmount, total } = invoicePreviewTotals;
       const invoicePayload = {
         client_id: selectedClient.id,
-        invoice_number: invoiceDraft.invoiceNumber.trim() || invoiceSeed(),
+        invoice_number: invoiceDraft.invoiceNumber.trim() || nextInvoiceNumber,
         status: "draft",
         issue_date: invoiceDraft.issueDate || defaultDateTo,
         due_date: invoiceDraft.dueDate || null,
@@ -638,7 +777,7 @@ function CostsPage() {
         subtotal,
         tax_rate: taxRate,
         tax_amount: taxAmount,
-        total_amount: roundMoney(subtotal + taxAmount),
+        total_amount: total,
         paid_amount: 0,
         logo_url: invoiceDraft.logoUrl.trim() || null,
         sender_name: invoiceDraft.senderName.trim() || "PCReady",
@@ -663,7 +802,13 @@ function CostsPage() {
       }));
       const { error: itemsError } = await (supabase as any).from("cost_invoice_items").insert(items);
       if (itemsError) throw itemsError;
-      setInvoiceDraft({ ...emptyInvoiceDraft, invoiceNumber: invoiceSeed() });
+      const createdInvoice = { ...(invoice as InvoiceRow), client: selectedClient };
+      setSelectedInvoice(createdInvoice);
+      setInvoiceItems(invoicePreviewItems);
+      setInvoiceModalOpen(false);
+      setInvoiceStep("details");
+      setInvoicePdfOpen(true);
+      setInvoiceDraft({ ...emptyInvoiceDraft, invoiceNumber: buildNextInvoiceNumber([createdInvoice, ...invoices]) });
       await loadData();
       toast.success(t("finance.invoiceCreated", "Fattura creata"));
     } catch (error) {
@@ -692,6 +837,25 @@ function CostsPage() {
     }
   }
 
+  async function openQuotePdf(quote: QuoteRow) {
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("cost_quote_items")
+        .select("description, quantity, unit_price, line_total, item_type")
+        .eq("quote_id", quote.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      setQuotePdfItems((data ?? []) as QuoteItemRow[]);
+      setQuotePdfMeta(quote);
+      setQuotePdfOpen(true);
+    } catch (error) {
+      toast.error(errorMessage(error, t("finance.quoteLoadError", "Errore caricamento preventivo")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function updateInvoiceStatus(invoice: InvoiceRow, status: InvoiceRow["status"]) {
     setBusy(true);
     try {
@@ -713,12 +877,22 @@ function CostsPage() {
   async function createQuote() {
     if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
     if (!quoteDraft.clientId) return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
-    const subtotal = positiveNumber(quoteDraft.quantity) * positiveNumber(quoteDraft.unitPrice);
-    if (subtotal <= 0) return toast.error(t("finance.quoteAmountRequired", "Inserisci almeno una voce di preventivo"));
+    const validLines = quoteLines
+      .map((line) => ({
+        ...line,
+        description: line.description.trim(),
+        quantity: positiveNumber(line.quantity),
+        unitPrice: positiveNumber(line.unitPrice),
+      }))
+      .filter((line) => line.description && line.quantity > 0 && line.unitPrice >= 0);
+    if (!validLines.length || quoteTotals.subtotal <= 0) return toast.error(t("finance.quoteAmountRequired", "Inserisci almeno una voce di preventivo"));
     setBusy(true);
     try {
-      const taxRate = 22;
-      const taxAmount = roundMoney(subtotal * taxRate / 100);
+      const linkedTicket = quoteTicketOptions.find((ticket) => ticket.id === quoteTicketId);
+      const notes = [
+        quoteDraft.notes.trim(),
+        linkedTicket ? `Ticket collegato: ${linkedTicket.ticket_code}` : "",
+      ].filter(Boolean).join("\n");
       const { data: quote, error: quoteError } = await (supabase as any)
         .from("cost_quotes")
         .insert({
@@ -727,24 +901,26 @@ function CostsPage() {
           title: quoteDraft.title.trim() || "Preventivo extra-contratto",
           status: "draft",
           valid_until: quoteDraft.validUntil || null,
-          subtotal,
-          tax_rate: taxRate,
-          tax_amount: taxAmount,
-          total_amount: roundMoney(subtotal + taxAmount),
-          notes: quoteDraft.notes.trim() || null,
+          subtotal: quoteTotals.subtotal,
+          tax_rate: quoteTotals.taxRate,
+          tax_amount: quoteTotals.taxAmount,
+          total_amount: quoteTotals.total,
+          notes: notes || null,
         })
         .select()
         .single();
       if (quoteError) throw quoteError;
-      const { error: itemError } = await (supabase as any).from("cost_quote_items").insert({
-        quote_id: quote.id,
-        description: quoteDraft.description.trim() || quoteDraft.title,
-        quantity: positiveNumber(quoteDraft.quantity) || 1,
-        unit_price: positiveNumber(quoteDraft.unitPrice),
-        item_type: "extra",
-      });
+      const { error: itemError } = await (supabase as any).from("cost_quote_items").insert(
+        validLines.map((line) => ({
+          quote_id: quote.id,
+          description: line.description,
+          quantity: line.quantity,
+          unit_price: line.unitPrice,
+          item_type: line.itemType,
+        })),
+      );
       if (itemError) throw itemError;
-      setQuoteDraft({ ...emptyQuoteDraft, quoteNumber: quoteSeed() });
+      closeQuoteModal(false);
       await loadData();
       toast.success(t("finance.quoteCreated", "Preventivo creato"));
     } catch (error) {
@@ -786,6 +962,112 @@ function CostsPage() {
       toast.success(t("finance.quoteConverted", "Preventivo convertito in ticket"));
     } catch (error) {
       toast.error(errorMessage(error, t("finance.quoteConvertError", "Errore conversione preventivo")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateQuoteStatus(quote: QuoteRow, status: QuoteRow["status"]) {
+    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    setBusy(true);
+    try {
+      const payload: Record<string, unknown> = { status };
+      if (status === "approved") payload.approved_at = new Date().toISOString();
+      const { error } = await (supabase as any)
+        .from("cost_quotes")
+        .update(payload)
+        .eq("id", quote.id);
+      if (error) throw error;
+      await loadData();
+      toast.success(t("finance.quoteStatusUpdated", "Stato preventivo aggiornato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("finance.quoteStatusError", "Errore aggiornamento preventivo")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function convertQuoteToInvoice(quote: QuoteRow) {
+    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (quote.status !== "approved") return toast.error(t("finance.quoteMustBeApproved", "Approva il preventivo prima di convertirlo in fattura"));
+    setBusy(true);
+    try {
+      const { data: quoteItems, error: itemLoadError } = await (supabase as any)
+        .from("cost_quote_items")
+        .select("description, quantity, unit_price, line_total, item_type")
+        .eq("quote_id", quote.id)
+        .order("created_at", { ascending: true });
+      if (itemLoadError) throw itemLoadError;
+      const items = (quoteItems ?? []) as QuoteItemRow[];
+      if (!items.length) throw new Error(t("finance.quoteNoRows", "Il preventivo non contiene righe"));
+
+      const client = quote.client ?? clients.find((c) => c.id === quote.client_id);
+      const invoiceNumber = buildNextInvoiceNumber(invoices);
+      const { data: invoice, error: invoiceError } = await (supabase as any)
+        .from("cost_invoices")
+        .insert({
+          client_id: quote.client_id,
+          invoice_number: invoiceNumber,
+          status: "draft",
+          issue_date: defaultDateTo,
+          due_date: defaultDateTo,
+          period_start: dateFrom,
+          period_end: dateTo,
+          subtotal: quote.subtotal,
+          tax_rate: quote.tax_rate,
+          tax_amount: quote.tax_amount,
+          total_amount: quote.total_amount,
+          paid_amount: 0,
+          sender_name: invoiceDraft.senderName.trim() || "PCReady",
+          sender_address: invoiceDraft.senderAddress.trim() || null,
+          recipient_name: client?.company_name || client?.name || null,
+          recipient_address: null,
+          notes: `Convertita da preventivo ${quote.quote_number}`,
+        })
+        .select()
+        .single();
+      if (invoiceError) throw invoiceError;
+
+      const invoiceRows = items.map((item) => ({
+        invoice_id: invoice.id,
+        description: item.description,
+        quantity: money(item.quantity),
+        unit_price: money(item.unit_price),
+        item_type: item.item_type ?? "extra",
+      }));
+      const { error: invoiceItemsError } = await (supabase as any).from("cost_invoice_items").insert(invoiceRows);
+      if (invoiceItemsError) throw invoiceItemsError;
+
+      const { error: quoteError } = await (supabase as any)
+        .from("cost_quotes")
+        .update({ status: "converted", converted_invoice_id: invoice.id })
+        .eq("id", quote.id);
+      if (quoteError) throw quoteError;
+
+      const createdInvoice = { ...(invoice as InvoiceRow), client };
+      setSelectedInvoice(createdInvoice);
+      setInvoiceItems(invoiceRows);
+      setInvoicePdfOpen(true);
+      await loadData();
+      toast.success(t("finance.quoteConvertedToInvoice", "Preventivo convertito in fattura"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("finance.quoteInvoiceError", "Errore conversione in fattura")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteQuote(quote: QuoteRow) {
+    if (!canManageCosts || !canEdit) return toast.error(t("feedback.insufficientPermissions", "Permessi insufficienti"));
+    if (!window.confirm(t("finance.confirmDeleteQuote", "Eliminare questo preventivo?"))) return;
+    setBusy(true);
+    try {
+      const { error } = await (supabase as any).from("cost_quotes").delete().eq("id", quote.id);
+      if (error) throw error;
+      await loadData();
+      toast.success(t("finance.quoteDeleted", "Preventivo eliminato"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("finance.quoteDeleteError", "Errore eliminazione preventivo")));
     } finally {
       setBusy(false);
     }
@@ -1068,6 +1350,17 @@ function CostsPage() {
         </div>
       </div>
 
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as CostsTab)} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:w-auto lg:grid-cols-5">
+          <TabsTrigger value="dashboard">{t("tabs.dashboard", "Dashboard")}</TabsTrigger>
+          <TabsTrigger value="contracts">{t("tabs.contracts", "Contratti / SLA")}</TabsTrigger>
+          <TabsTrigger value="billing">{t("tabs.billing", "Fatturazione")}</TabsTrigger>
+          <TabsTrigger value="materials">{t("tabs.materials", "Materiali")}</TabsTrigger>
+          <TabsTrigger value="report">{t("tabs.report", "Report")}</TabsTrigger>
+        </TabsList>
+
+      {activeTab === "dashboard" && (
+        <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <CostStat label={t("stats.ticketTotal", "Totale ticket")} value={formatCurrency(summary.ticketTotal)} />
         <CostStat label={t("stats.labor", "Manodopera")} value={formatCurrency(summary.labor)} />
@@ -1228,8 +1521,10 @@ function CostsPage() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
-      {canManageCosts && (
+      {activeTab === "contracts" && canManageCosts && (
         <div className="pc-card">
           <div className="pc-card-hd">
             <div className="pc-card-title">
@@ -1527,8 +1822,10 @@ function CostsPage() {
         </div>
       )}
 
-      {canManageCosts && (
-        <div className="grid gap-4 xl:grid-cols-3">
+      {(activeTab === "billing" || activeTab === "materials") && canManageCosts && (
+        <div className={`grid gap-4 ${activeTab === "billing" ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
+          {activeTab === "billing" && (
+            <>
           <div className="pc-card">
             <div className="pc-card-hd">
               <div>
@@ -1536,7 +1833,7 @@ function CostsPage() {
                 <div className="mt-1 text-sm text-text3">
                   {selectedClient
                     ? t("finance.invoiceClientHint", "{{count}} ticket per {{client}}", {
-                        count: selectedClientTickets.length,
+                        count: invoiceSourceRows.length,
                         client: selectedClient.company_name || selectedClient.name,
                       })
                     : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
@@ -1544,117 +1841,139 @@ function CostsPage() {
               </div>
               <ReceiptText className="size-5 text-text3" />
             </div>
-            <div className="pc-card-body space-y-2">
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.invoiceNumberLabel", "Numero fattura")}
-                <input
-                  className="pc-input"
-                  value={invoiceDraft.invoiceNumber}
-                  onChange={(e) => setInvoiceDraft((v) => ({ ...v, invoiceNumber: e.target.value }))}
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.issueDateLabel", "Data emissione")}
-                  <DatePickerInput value={invoiceDraft.issueDate} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, issueDate: v }))} />
-                </label>
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.dueDateLabel", "Scadenza")}
-                  <DatePickerInput value={invoiceDraft.dueDate} minDate={invoiceDraft.issueDate || undefined} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, dueDate: v }))} />
-                </label>
+            <div className="pc-card-body space-y-4">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <ContractMetric label={t("finance.invoiceContextPeriod", "Periodo")} value={`${dateFrom} - ${dateTo}`} />
+                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
+                <ContractMetric label={t("finance.invoiceContextNextNumber", "Prossimo numero")} value={nextInvoiceNumber} />
               </div>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.senderNameLabel", "Ragione sociale emittente")}
-                <input
-                  className="pc-input"
-                  value={invoiceDraft.senderName}
-                  onChange={(e) => setInvoiceDraft((v) => ({ ...v, senderName: e.target.value }))}
-                />
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.senderAddressLabel", "Indirizzo emittente")}
-                <textarea
-                  className="pc-input min-h-16"
-                  value={invoiceDraft.senderAddress}
-                  onChange={(e) => setInvoiceDraft((v) => ({ ...v, senderAddress: e.target.value }))}
-                />
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.recipientNameLabel", "Cliente destinatario")}
-                <input
-                  className="pc-input"
-                  value={invoiceDraft.recipientName}
-                  onChange={(e) => setInvoiceDraft((v) => ({ ...v, recipientName: e.target.value }))}
-                  placeholder={selectedClient?.company_name || selectedClient?.name || undefined}
-                />
-              </label>
-
-              <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={createInvoice} disabled={busy || !selectedClient || !selectedClientTickets.length}>
-                <FileText className="size-3" /> {t("finance.createInvoice", "Crea fattura PDF")}
+              <div className="rounded-lg border border-dashed p-3 text-sm text-text3" style={{ borderColor: "var(--border)" }}>
+                {selectedClient
+                  ? t("finance.invoiceContextHint", "La fattura userà i ticket del cliente selezionato nei filtri correnti.")
+                  : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
+              </div>
+              <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={openNewInvoice} disabled={busy || !selectedClient || !invoiceSourceRows.length}>
+                <Plus className="size-3" /> {t("finance.newInvoice", "Nuova fattura")}
               </button>
             </div>
           </div>
 
           <div className="pc-card">
             <div className="pc-card-hd">
-              <div className="pc-card-title">{t("finance.quoteTitle", "Preventivo / quote")}</div>
-              <Send className="size-5 text-text3" />
+              <div>
+                <div className="pc-card-title">{t("finance.quoteTitle", "Preventivi")}</div>
+                <div className="mt-1 text-sm text-text3">
+                  {t("finance.quoteSubtitle", "{{count}} preventivi trovati", { count: filteredQuotes.length })}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewQuote} disabled={busy}>
+                  <Plus className="size-3" /> {t("finance.newQuote", "Nuovo preventivo")}
+                </button>
+              </div>
             </div>
-            <div className="pc-card-body space-y-2">
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.clientLabel", "Cliente")}
+            <div className="pc-card-body">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <select
-                  className="pc-input"
-                  value={quoteDraft.clientId}
-                  onChange={(e) => setQuoteDraft((v) => ({ ...v, clientId: e.target.value }))}
+                  className="pc-input w-auto"
+                  value={quoteStatusFilter}
+                  onChange={(e) => setQuoteStatusFilter(e.target.value as QuoteRow["status"] | "all")}
                 >
-                  <option value="">{t("contractForm.clientPlaceholder", "Seleziona cliente...")}</option>
+                  <option value="all">{t("finance.allStatuses", "Tutti gli stati")}</option>
+                  <option value="draft">{t("finance.quoteStatusDraft", "Bozza")}</option>
+                  <option value="sent">{t("finance.quoteStatusSent", "Inviato")}</option>
+                  <option value="approved">{t("finance.quoteStatusApproved", "Approvato")}</option>
+                  <option value="rejected">{t("finance.quoteStatusRejected", "Rifiutato")}</option>
+                  <option value="converted">{t("finance.quoteStatusConverted", "Convertito")}</option>
+                  <option value="expired">{t("finance.quoteStatusExpired", "Scaduto")}</option>
+                </select>
+                <select
+                  className="pc-input w-auto"
+                  value={quoteClientFilter}
+                  onChange={(e) => setQuoteClientFilter(e.target.value)}
+                >
+                  <option value="all">{t("filters.allClients", "Tutti i clienti")}</option>
                   {clients.map((client) => (
-                    <option key={client.id} value={client.id}>{client.company_name || client.name}</option>
+                    <option key={client.id} value={client.id}>
+                      {client.company_name || client.name}
+                    </option>
                   ))}
                 </select>
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.quoteNumberLabel", "Numero preventivo")}
-                <input className="pc-input" value={quoteDraft.quoteNumber} onChange={(e) => setQuoteDraft((v) => ({ ...v, quoteNumber: e.target.value }))} />
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.quoteTitleLabel", "Titolo")}
-                <input className="pc-input" value={quoteDraft.title} onChange={(e) => setQuoteDraft((v) => ({ ...v, title: e.target.value }))} />
-              </label>
-
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("finance.quoteDescriptionLabel", "Descrizione")}
-                <textarea
-                  className="pc-input min-h-16"
-                  value={quoteDraft.description}
-                  onChange={(e) => setQuoteDraft((v) => ({ ...v, description: e.target.value }))}
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.quantityLabel", "Quantità")}
-                  <input className="pc-input" type="number" min="0" step="0.25" value={quoteDraft.quantity} onChange={(e) => setQuoteDraft((v) => ({ ...v, quantity: e.target.value }))} />
-                </label>
-                <label className="space-y-1 text-sm font-medium text-text2">
-                  {t("finance.unitPriceLabel", "Prezzo unitario")}
-                  <input className="pc-input" type="number" min="0" step="0.01" value={quoteDraft.unitPrice} onChange={(e) => setQuoteDraft((v) => ({ ...v, unitPrice: e.target.value }))} />
-                </label>
               </div>
 
-              <button className="pc-btn pc-btn-primary pc-btn-sm w-full" onClick={createQuote} disabled={busy || !quoteDraft.clientId}>
-                <Save className="size-3" /> {t("finance.createQuote", "Crea preventivo")}
-              </button>
+              {filteredQuotes.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px] text-[12.5px]">
+                    <thead style={{ background: "var(--surface2)" }}>
+                      <tr>
+                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                          {t("finance.quoteNumberLabel", "Numero")}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                          {t("contractForm.clientLabel", "Cliente")}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                          {t("finance.quoteTitleLabel", "Titolo")}
+                        </th>
+                        <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                          {t("detailTable.headers.total", "Totale")}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                          {t("contractTable.headers.status", "Stato")}
+                        </th>
+                        <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                          {t("contractTable.headers.actions", "Azioni")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredQuotes.map((quote) => (
+                        <tr key={quote.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <td className="px-3 py-2 font-mono font-semibold">{quote.quote_number}</td>
+                          <td className="px-3 py-2">
+                            {quote.client?.company_name || quote.client?.name || "-"}
+                          </td>
+                          <td className="px-3 py-2 max-w-[180px] truncate" title={quote.title}>
+                            {quote.title}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(quote.total_amount)}</td>
+                          <td className="px-3 py-2">
+                            <QuoteStatusBadge status={quote.status} />
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <QuoteActions
+                              quote={quote}
+                              busy={busy} onStatusChange={updateQuoteStatus}
+                              onConvertToTicket={convertQuoteToTicket}
+                              onConvertToInvoice={convertQuoteToInvoice}
+                              onDelete={deleteQuote}
+                              onViewPdf={openQuotePdf}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-text3">
+                  <Send className="mx-auto h-8 w-8 mb-2 opacity-40" />
+                  <p>{t("finance.noQuotes", "Nessun preventivo creato.")}</p>
+                  <button
+                    className="pc-btn pc-btn-primary pc-btn-sm mt-3"
+                    onClick={openNewQuote}
+                    disabled={busy}
+                  >
+                    <Plus className="size-3" /> {t("finance.createFirstQuote", "Crea primo preventivo")}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+            </>
+          )}
 
+          {activeTab === "materials" && (
           <div className="pc-card">
             <div className="pc-card-hd">
               <div className="pc-card-title">{t("finance.materialTitle", "Materiali / ricambi")}</div>
@@ -1711,16 +2030,18 @@ function CostsPage() {
               </button>
             </div>
           </div>
+          )}
         </div>
       )}
 
+      {activeTab === "billing" && (
       <div className="grid gap-4 xl:grid-cols-2">
         <FinanceTable
           title={t("finance.invoicesTitle", "Fatture e pagamenti")}
           empty={t("finance.noInvoices", "Nessuna fattura nel periodo selezionato.")}
           emptyIcon={<FileText className="h-8 w-8" />}
           emptyAction={canManageCosts ? (
-            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewInvoice} disabled={!selectedClient || !invoiceSourceRows.length}>
               {t("finance.createFirstInvoice", "Crea prima fattura")}
             </button>
           ) : undefined}
@@ -1756,12 +2077,12 @@ function CostsPage() {
         </FinanceTable>
 
         <FinanceTable
-          title={`${t("finance.quotesTitle", "Preventivi")} · ${periodicReports.length} report`}
-          empty={t("finance.noQuotes", "Nessun preventivo nel periodo selezionato.")}
+          title={`${t("finance.quotesTitle", "Tutti i preventivi")}`}
+          empty={t("finance.noQuotes", "Nessun preventivo creato.")}
           emptyIcon={<Send className="h-8 w-8" />}
           emptyAction={canManageCosts ? (
-            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}>
-              {t("finance.createFirstQuote", "Crea primo preventivo")}
+            <button className="pc-btn pc-btn-primary pc-btn-sm" onClick={openNewQuote}>
+              <Plus className="size-3" /> {t("finance.createFirstQuote", "Crea primo preventivo")}
             </button>
           ) : undefined}
           actions={
@@ -1776,18 +2097,26 @@ function CostsPage() {
               <td className="px-3 py-2">{quote.client?.company_name || quote.client?.name || "-"}</td>
               <td className="px-3 py-2 font-mono">{formatCurrency(quote.total_amount)}</td>
               <td className="px-3 py-2">
-                <span className="rounded-full bg-surface2 px-2 py-1 text-[11px] font-bold">{quote.status}</span>
+                <QuoteStatusBadge status={quote.status} />
               </td>
               <td className="px-3 py-2 text-right">
-                <button className="pc-btn pc-btn-ghost pc-btn-xs" onClick={() => convertQuoteToTicket(quote)} disabled={quote.status === "converted"}>
-                  {t("finance.convertToTicket", "Ticket")}
-                </button>
+                <QuoteActions
+                  quote={quote}
+                  busy={busy} onStatusChange={updateQuoteStatus}
+                  onConvertToTicket={convertQuoteToTicket}
+                  onConvertToInvoice={convertQuoteToInvoice}
+                  onDelete={deleteQuote}
+                              onViewPdf={openQuotePdf}
+                />
               </td>
             </tr>
           ))}
         </FinanceTable>
       </div>
+      )}
 
+      {activeTab === "report" && (
+        <>
       <div className="grid gap-4 xl:grid-cols-2">
         <SummaryTable
           title={t("summaryTables.perClient", "Costi per cliente")}
@@ -1963,7 +2292,10 @@ function CostsPage() {
           </table>
         </div>
       </div>
+        </>
+      )}
 
+      {activeTab === "contracts" && (
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
           <div className="pc-card-title">{t("contracts.title", "Contratti attivi e ore extra")}</div>
@@ -2046,6 +2378,9 @@ function CostsPage() {
           )}
         </div>
       </div>
+      )}
+
+      </Tabs>
 
       <ExportPdf<TicketCostRow, TicketCostRow>
         open={exportModalOpen}
@@ -2075,6 +2410,226 @@ function CostsPage() {
         totalFilteredCount={filteredTickets.length}
         onSuccess={exportPdfSuccess}
         onError={exportPdfError}
+      />
+
+      <Dialog open={invoiceModalOpen} onOpenChange={closeInvoiceModal}>
+        <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto xs:fixed xs:inset-0 xs:m-0 xs:h-full xs:max-w-full xs:rounded-none">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ReceiptText className="size-4" />
+              {t("finance.newInvoice", "Nuova fattura")}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedClient
+                ? t("finance.invoiceModalDescription", "{{count}} ticket di {{client}} dal {{from}} al {{to}}", {
+                    count: invoiceSourceRows.length,
+                    client: selectedClient.company_name || selectedClient.name,
+                    from: dateFrom,
+                    to: dateTo,
+                  })
+                : t("finance.invoiceSelectHint", "Filtra un cliente per generare la fattura")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-wrap gap-2">
+            {(["details", "preview"] as const).map((step) => (
+              <button
+                key={step}
+                type="button"
+                className={`pc-btn pc-btn-sm ${invoiceStep === step ? "pc-btn-primary" : "pc-btn-ghost"}`}
+                onClick={() => setInvoiceStep(step)}
+                disabled={step === "preview" && (!selectedClient || !invoiceSourceRows.length)}
+              >
+                {step === "details"
+                  ? t("finance.invoiceStepDetails", "Dettagli")
+                  : t("finance.invoiceStepPreview", "Anteprima")}
+              </button>
+            ))}
+          </div>
+
+          {invoiceStep === "details" ? (
+            <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm font-medium text-text2">
+                    {t("finance.issueDateLabel", "Data emissione")}
+                    <DatePickerInput value={invoiceDraft.issueDate} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, issueDate: v }))} />
+                  </label>
+                  <label className="space-y-1 text-sm font-medium text-text2">
+                    {t("finance.dueDateLabel", "Scadenza")}
+                    <DatePickerInput value={invoiceDraft.dueDate} minDate={invoiceDraft.issueDate || undefined} onChange={(v) => setInvoiceDraft((prev) => ({ ...prev, dueDate: v }))} />
+                  </label>
+                </div>
+
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("finance.recipientNameLabel", "Cliente destinatario")}
+                  <input
+                    className="pc-input"
+                    value={invoiceDraft.recipientName}
+                    onChange={(e) => setInvoiceDraft((v) => ({ ...v, recipientName: e.target.value }))}
+                    placeholder={selectedClient?.company_name || selectedClient?.name || undefined}
+                  />
+                </label>
+
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("finance.recipientAddressLabel", "Indirizzo destinatario")}
+                  <textarea
+                    className="pc-input min-h-16"
+                    value={invoiceDraft.recipientAddress}
+                    onChange={(e) => setInvoiceDraft((v) => ({ ...v, recipientAddress: e.target.value }))}
+                  />
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+                  <label className="space-y-1 text-sm font-medium text-text2">
+                    {t("finance.taxRateLabel", "IVA %")}
+                    <input
+                      className="pc-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={invoiceDraft.taxRate}
+                      onChange={(e) => setInvoiceDraft((v) => ({ ...v, taxRate: e.target.value }))}
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm font-medium text-text2">
+                    {t("finance.notesLabel", "Note")}
+                    <input
+                      className="pc-input"
+                      value={invoiceDraft.notes}
+                      onChange={(e) => setInvoiceDraft((v) => ({ ...v, notes: e.target.value }))}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-lg bg-surface2 p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">{t("finance.invoiceNumberLabel", "Numero fattura")}</div>
+                  <div className="mt-1 font-mono text-lg font-bold">{invoiceDraft.invoiceNumber}</div>
+                  <div className="mt-1 text-xs text-text3">{t("finance.invoiceNumberAutoHint", "Generato automaticamente in sequenza.")}</div>
+                </div>
+                <div className="rounded-lg bg-surface2 p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-text3">{t("finance.senderNameLabel", "Ragione sociale emittente")}</div>
+                  <div className="mt-1 text-sm font-semibold">{invoiceDraft.senderName || "PCReady"}</div>
+                  {invoiceDraft.senderAddress && <div className="mt-1 whitespace-pre-line text-xs text-text3">{invoiceDraft.senderAddress}</div>}
+                </div>
+                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
+                <ContractMetric label={t("finance.invoicePreviewTotal", "Totale")} value={formatCurrency(invoicePreviewTotals.total)} />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-2 sm:grid-cols-4">
+                <ContractMetric label={t("finance.invoiceNumberLabel", "Numero fattura")} value={invoiceDraft.invoiceNumber} />
+                <ContractMetric label={t("finance.invoiceContextRows", "Righe")} value={String(invoiceSourceRows.length)} />
+                <ContractMetric label={t("finance.invoicePreviewSubtotal", "Imponibile")} value={formatCurrency(invoicePreviewTotals.subtotal)} />
+                <ContractMetric label={t("finance.invoicePreviewTotal", "Totale")} value={formatCurrency(invoicePreviewTotals.total)} />
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
+                <table className="w-full min-w-[680px] text-[12.5px]">
+                  <thead style={{ background: "var(--surface2)" }}>
+                    <tr>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.ticket", "Ticket")}</th>
+                      <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.client", "Cliente")}</th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.hours", "Ore")}</th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.labor", "Manodopera")}</th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.materials", "Materiali")}</th>
+                      <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">{t("detailTable.headers.total", "Totale")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoiceSourceRows.map((ticket) => (
+                      <tr key={ticket.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                        <td className="px-3 py-2 font-mono font-semibold">{ticket.ticket_code}</td>
+                        <td className="px-3 py-2">{ticket.client_name || selectedClient?.name || "-"}</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatHours(ticket.billable_hours)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.labor_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatCurrency(ticket.material_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono font-bold">{formatCurrency(ticket.total_cost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="ml-auto grid max-w-sm gap-2 text-sm">
+                <div className="flex justify-between gap-4"><span className="text-text3">{t("finance.invoicePreviewSubtotal", "Imponibile")}</span><span className="font-mono font-semibold">{formatCurrency(invoicePreviewTotals.subtotal)}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-text3">IVA {invoicePreviewTotals.taxRate}%</span><span className="font-mono font-semibold">{formatCurrency(invoicePreviewTotals.taxAmount)}</span></div>
+                <div className="flex justify-between gap-4 border-t pt-2 text-base" style={{ borderColor: "var(--border)" }}><span className="font-bold">{t("finance.invoicePreviewTotal", "Totale")}</span><span className="font-mono font-bold">{formatCurrency(invoicePreviewTotals.total)}</span></div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end" style={{ borderColor: "var(--border)" }}>
+            {invoiceStep === "preview" && (
+              <button type="button" className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => setInvoiceStep("details")} disabled={busy}>
+                <ArrowLeft className="size-3" /> {t("finance.backToDetails", "Torna ai dettagli")}
+              </button>
+            )}
+            {invoiceStep === "details" ? (
+              <button type="button" className="pc-btn pc-btn-primary pc-btn-sm" onClick={() => setInvoiceStep("preview")} disabled={!selectedClient || !invoiceSourceRows.length}>
+                <Eye className="size-3" /> {t("finance.previewInvoice", "Anteprima")}
+              </button>
+            ) : (
+              <button type="button" className="pc-btn pc-btn-primary pc-btn-sm" onClick={createInvoice} disabled={busy || !selectedClient || !invoiceSourceRows.length}>
+                <FileText className="size-3" /> {t("finance.createInvoice", "Crea fattura PDF")}
+              </button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <QuoteModal
+        open={quoteModalOpen}
+        onOpenChange={closeQuoteModal}
+        quoteDraft={quoteDraft}
+        setQuoteDraft={setQuoteDraft}
+        quoteLines={quoteLines}
+        setQuoteLines={setQuoteLines}
+        quoteTicketId={quoteTicketId}
+        setQuoteTicketId={setQuoteTicketId}
+        clients={clients}
+        ticketOptions={quoteTicketOptions}
+        busy={busy}
+        onCreateQuote={createQuote}
+      />
+
+      <ExportPdf<QuoteItemRow, QuoteItemRow>
+        open={quotePdfOpen}
+        onOpenChange={setQuotePdfOpen}
+        entityLabel="preventivo"
+        currentPageRows={quotePdfItems}
+        totalFilteredCount={quotePdfItems.length}
+        mapRow={(row) => row}
+        activeFilters={{}}
+        fetchAll={async () => ({ data: quotePdfItems, count: quotePdfItems.length })}
+        renderPdf={async (rows) => {
+          const { QuotePdf } = await import("@/components/pcready/pdf/InvoicePdf");
+          const meta = quotePdfMeta;
+          const client = meta?.client ?? clients.find((c) => c.id === meta?.client_id);
+          return (
+            <QuotePdf
+              title="Preventivo"
+              number={meta?.quote_number ?? ""}
+              status={meta?.status}
+              issueDate={meta?.issue_date ?? ""}
+              dueDate={meta?.valid_until ?? null}
+              senderName="PCReady"
+              recipientName={client?.company_name || client?.name || "Cliente"}
+              notes={meta?.notes}
+              subtotal={meta?.subtotal ?? 0}
+              taxRate={meta?.tax_rate ?? 22}
+              taxAmount={meta?.tax_amount ?? 0}
+              total={meta?.total_amount ?? 0}
+              items={rows}
+            />
+          );
+        }}
+        fileName={`preventivo-${quotePdfMeta?.quote_number ?? "export"}`}
+        onSuccess={() => toast.success(t("finance.quotePdfExported", "PDF preventivo esportato"))}
+        onError={(err) => toast.error(errorMessage(err, t("finance.quotePdfError", "Errore export PDF preventivo")))}
       />
 
       <ExportPdf<InvoiceItemRow, InvoiceItemRow>
@@ -2443,6 +2998,18 @@ function numberFromDraft(value: string) {
 
 function roundMoney(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function buildNextInvoiceNumber(invoices: Array<{ invoice_number?: string | null }>) {
+  const year = new Date().getFullYear();
+  const prefix = `${year}-`;
+  const max = invoices.reduce((highest, invoice) => {
+    const number = invoice.invoice_number ?? "";
+    if (!number.startsWith(prefix)) return highest;
+    const suffix = Number(number.slice(prefix.length));
+    return Number.isFinite(suffix) ? Math.max(highest, suffix) : highest;
+  }, 0);
+  return `${prefix}${String(max + 1).padStart(3, "0")}`;
 }
 
 function formatCurrency(value: unknown) {
