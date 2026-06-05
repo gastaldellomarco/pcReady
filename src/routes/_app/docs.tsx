@@ -5,10 +5,15 @@ import i18n from "@/i18n";
 export const Route = createFileRoute("/_app/docs")({
   head: () => ({
     meta: [
-      { title: i18n.t("docs.pageTitle", "API Docs - PCReady") },
+      {
+        title: i18n.t("docs.pageTitle", "Knowledge Base - PCReady"),
+      },
       {
         name: "description",
-        content: i18n.t("docs.pageDescription", "Documentazione OpenAPI e console Swagger UI."),
+        content: i18n.t(
+          "docs.pageDescription",
+          "Knowledge Base: onboarding, architecture, database schema, feature lifecycle, and API documentation.",
+        ),
       },
     ],
   }),

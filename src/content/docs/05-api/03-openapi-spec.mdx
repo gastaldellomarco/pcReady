@@ -1,0 +1,124 @@
+---
+title: "OpenAPI Specification"
+description: "API reference, authentication, endpoints, and usage"
+order: 3
+---
+
+# OpenAPI Specification
+
+pcReady exposes an OpenAPI specification describing all available server functions and their request/response schemas.
+
+## Where to find the spec
+
+The OpenAPI specification is located at:
+
+```
+public/openapi/openapi.yaml
+```
+
+It's served as a static file and accessible at `/openapi/openapi.yaml` in any environment.
+
+## Authentication
+
+All endpoints require authentication via one of two headers:
+
+### Bearer JWT (session token)
+
+```
+Authorization: Bearer <access_token>
+```
+
+Used by the staff application. The access token comes from `session.access_token` in the auth context.
+
+### API Key (Supabase publishable key)
+
+```
+apikey: <VITE_SUPABASE_PUBLISHABLE_KEY>
+```
+
+Used for public/anonymous access to specific endpoints.
+
+## Available endpoints
+
+| Group | Endpoints |
+|-------|-----------|
+| **Tickets** | List, create, get detail, update status, complete, delete |
+| **Devices** | List, create, get detail, update, delete, update status |
+| **Clients & Contacts** | List, create, update, delete clients and contacts |
+| **Automations** | List flows, get flow, trigger run, list run logs |
+| **Users** | List, invite, update, disable, delete (admin only) |
+| **Audit** | List audit logs, export, presets CRUD |
+| **Dashboard** | Analytics, technician stats, KPIs |
+| **Calendar** | List events, create, update, delete |
+| **Notifications** | List, mark read, mark all read, delete |
+| **Settings** | Get, update app settings |
+| **Email Templates** | List, get, update, send test |
+
+## Using the spec
+
+### Import into API tools
+
+The OpenAPI spec can be imported into:
+
+- **Postman** — File → Import → Upload `openapi.yaml`
+- **Insomnia** — Create → Import From → File
+- **Swagger Editor** — Paste the YAML content
+
+### Generate client SDKs
+
+Use OpenAPI code generators:
+
+```bash
+# openapi-generator example
+npx @openapitools/openapi-generator-cli generate \
+  -i public/openapi/openapi.yaml \
+  -g typescript-fetch \
+  -o ./generated-client
+```
+
+## Common patterns
+
+### Pagination
+
+List endpoints use Supabase's range-based pagination:
+
+```http
+GET /tickets
+Range: 0-49
+```
+
+Returns 50 items starting from offset 0. Response includes `Content-Range` header.
+
+### Filtering
+
+Query parameters map to Supabase filters:
+
+```http
+GET /tickets?status=in-progress&priority=high
+```
+
+### Error responses
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "You do not have permission to perform this action",
+  "status": 403
+}
+```
+
+## Rate limits
+
+Endpoints have rate limits enforced by server functions:
+
+| Endpoint type | Limit |
+|--------------|-------|
+| Read operations | 100 req/min |
+| Write operations | 30 req/min |
+| Auth operations | 5 req/min |
+
+Rate-limited responses return HTTP 429 with a `Retry-After` header.
+
+## Swagger UI (legacy)
+
+The Swagger UI was previously embedded on `/docs`. It has been replaced by this Knowledge Base. The OpenAPI spec remains accessible at `/openapi/openapi.yaml` for external tooling.

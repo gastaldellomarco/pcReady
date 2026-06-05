@@ -29,7 +29,7 @@
     "costs": "Costi",
     "bundles": "Bundle",
     "inventory": "Inventario",
-    "docs": "API Docs",
+    "docs": "Knowledge Base",
     "admin": "Admin / Utenti"
   },
   "pageTitle": {
@@ -44,7 +44,7 @@
     "costs": "Costi",
     "bundles": "Bundle assistenza",
     "inventory": "Inventario",
-    "docs": "API Docs",
+    "docs": "Knowledge Base",
     "admin": "Admin / Utenti",
     "profile": "Profilo",
     "notifications": "Notifiche",
@@ -92,9 +92,19 @@
     "consentDescription": "Autorizzando, consenti all'applicazione di accedere ai tuoi dati come indicato sopra."
   },
   "docs": {
-    "pageTitle": "API Docs - PCReady",
-    "pageDescription": "Documentazione OpenAPI e console Swagger UI.",
-    "loading": "Caricamento documentazione..."
+    "pageTitle": "Knowledge Base - PCReady",
+    "pageDescription": "Knowledge Base: onboarding, architettura, schema database, ciclo di vita delle feature e documentazione API.",
+    "loading": "Caricamento documentazione...",
+    "accessDenied": "Knowledge Base disponibile solo per amministratori e tecnici.",
+    "landingTitle": "Knowledge Base",
+    "landingSubtitle": "Tutto ciò che serve per comprendere, sviluppare e mantenere pcReady. Dal setup locale allo schema del database, dalle API al ciclo di vita delle feature.",
+    "articlePlaceholder": "Questo articolo è in fase di sviluppo. Il contenuto MDX completo sarà disponibile nella Fase 2.",
+    "placeholderDetail": "Questa sezione conterrà documentazione tecnica dettagliata con diagrammi, esempi di codice e guide passo-passo.",
+    "sidebarDescription": "Barra laterale di navigazione della Knowledge Base",
+    "searchPlaceholder": "Cerca articoli…",
+    "noResults": "Nessun articolo corrisponde alla ricerca.",
+    "result": "risultato",
+    "results": "risultati"
   },
   "actions": {
     "delete": "Elimina",

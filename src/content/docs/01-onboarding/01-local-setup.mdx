@@ -1,0 +1,89 @@
+---
+title: "Local Setup"
+description: "Set up the pcReady development environment on your local machine"
+order: 1
+---
+
+# Local Setup
+
+This guide walks you through setting up pcReady on your local machine. By the end, you'll have a running dev server with hot module replacement.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Bun** >= 1.x (package manager and runtime)
+- **Git** (version control)
+- **A Supabase account** (free tier is sufficient)
+- **Node.js** >= 22.12.0
+
+### Verify your toolchain
+
+```bash
+bun --version
+git --version
+node --version
+```
+
+## Cloning the repository
+
+```bash
+git clone https://github.com/gastaldellomarco/pcReady.git
+cd pcReady
+```
+
+The project uses two main branches:
+
+- `main` — production-ready code
+- `develop` — integration branch for features
+
+## Installing dependencies
+
+pcReady uses **Bun** as its package manager. The lockfile is `bun.lockb`.
+
+```bash
+bun install
+```
+
+> **Note:** Do not use `npm install`. Stick with `bun install` to keep the lockfile consistent.
+
+## Project structure tour
+
+Here's a quick overview of the key directories:
+
+| Directory | What it contains |
+|-----------|-----------------|
+| `src/routes/` | File-based routes (TanStack Router) |
+| `src/components/` | React UI components and domain components |
+| `src/lib/` | Business logic, utilities, server functions, queries |
+| `src/hooks/` | Custom React hooks |
+| `src/integrations/supabase/` | Supabase client initialization and generated types |
+| `supabase/migrations/` | Database migration files (ordered by timestamp) |
+| `public/` | Static assets (favicon, logos, OpenAPI spec) |
+| `scripts/` | Standalone Node.js scripts (backup, reset, validation) |
+| `e2e/` | End-to-end tests (Playwright) |
+| `docs/` | Project documentation |
+
+Import paths use the `@/` alias (resolves to `src/`) and `@root/` (resolves to the project root).
+
+## Package manager & toolchain
+
+All scripts are defined in `package.json`:
+
+| Command | Purpose |
+|---------|---------|
+| `bun run dev` | Start Vite dev server with HMR |
+| `bun run build` | Production build |
+| `bun run lint` | ESLint checks |
+| `bun run typecheck` | TypeScript type checking (`tsc --noEmit`) |
+| `bun run test` | Vitest unit tests with coverage |
+| `bun run test:e2e` | Playwright end-to-end tests |
+| `bun run format` | Prettier formatting |
+
+## Windows notes
+
+Bun works on Windows. Some verification commands can be run with `npm.cmd` if needed, but dependency management stays with Bun.
+
+## Next steps
+
+Now that you have the project installed, proceed to **[Environment Variables](/docs#01-onboarding/02-env-config)** to configure your Supabase connection.

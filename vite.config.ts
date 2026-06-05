@@ -1,7 +1,12 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
+import mdx from "@mdx-js/rollup";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
@@ -18,6 +23,10 @@ export default defineConfig(({ command, mode }) => {
     react(),
     tailwindcss(),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
+    mdx({
+      remarkPlugins: [remarkGfm, remarkFrontmatter],
+      rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings],
+    }),
   ];
 
   if (command === "build") {
