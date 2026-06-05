@@ -11,6 +11,8 @@ import {
 import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
+const MAX_PDF_ROWS = 500;
+
 /**
  *
  */
@@ -95,7 +97,7 @@ export function TicketListPdf({
           ]}
         />
         <PdfSection title="Dettaglio ticket" meta={`${rows.length} righe`}>
-          <PdfTable rows={rows} columns={columns} />
+          <PdfTable rows={rows.slice(0, MAX_PDF_ROWS)} columns={columns} />
         </PdfSection>
       </BrandedPage>
     </Document>

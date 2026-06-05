@@ -5,6 +5,8 @@ import { getWarrantyStatus, WARRANTY_STATUS_META, type WarrantyStatus } from "@/
 import { BrandedPage, PdfSection, PdfTable, StatStrip, type PdfColumn } from "./shared";
 import { pdfPalette } from "./theme";
 
+const MAX_PDF_ROWS = 500;
+
 /**
  *
  */
@@ -188,14 +190,14 @@ export function InventoryPdf({
             title="In scadenza nei prossimi 90 giorni"
             meta={`${warrantyRows.length} righe`}
           >
-            <PdfTable rows={warrantyRows} columns={warrantyColumns} />
+            <PdfTable rows={warrantyRows.slice(0, MAX_PDF_ROWS)} columns={warrantyColumns} />
           </PdfSection>
         )}
         <PdfSection
           title={variant === "warranty" ? "Dettaglio garanzie" : "Dettaglio dispositivi"}
           meta={`${rows.length} righe`}
         >
-          <PdfTable rows={rows} columns={activeColumns} />
+          <PdfTable rows={rows.slice(0, MAX_PDF_ROWS)} columns={activeColumns} />
         </PdfSection>
       </BrandedPage>
     </Document>

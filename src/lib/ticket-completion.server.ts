@@ -74,6 +74,17 @@ interface TicketPublicNote {
 
 type PDFKitDocument = any;
 
+/** Minimal valid PDF bytes used as ultimate fallback when pdfkit cannot be imported. */
+const RAW_ERROR_PDF_BYTES =
+  "%PDF-1.4\n" +
+  "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+  "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+  "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj\n" +
+  "4 0 obj<</Length 54>>stream\n" +
+  "BT /F1 12 Tf 50 750 Td (Errore generazione PDF) Tj ET\n" +
+  "endstream\nendobj\n" +
+  "trailer<</Size 5/Root 1 0 R>>";
+
 interface ClientData {
   id: string;
   name: string;
@@ -1181,19 +1192,7 @@ async function generateErrorPdf(errorMessage: string): Promise<Buffer> {
       default: new (options?: Record<string, unknown>) => any;
     } | null;
     if (!pdfkitModule) {
-      // Minimal valid PDF bytes (triple-fallback: only if pdfkit import itself fails).
-      // Content stream is exactly 54 bytes.
-      return Buffer.from(
-        "%PDF-1.4\n" +
-          "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
-          "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
-          "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj\n" +
-          "4 0 obj<</Length 54>>stream\n" +
-          "BT /F1 12 Tf 50 750 Td (Errore generazione PDF) Tj ET\n" +
-          "endstream\nendobj\n" +
-          "trailer<</Size 5/Root 1 0 R>>",
-        "utf-8",
-      );
+      return Buffer.from(RAW_ERROR_PDF_BYTES, "utf-8");
     }
 
     const PDFDocument = pdfkitModule.default;
@@ -1286,18 +1285,7 @@ async function generateErrorPdf(errorMessage: string): Promise<Buffer> {
 
     return Buffer.concat(chunks);
   } catch {
-    // Ultimate fallback: raw valid PDF bytes
-    return Buffer.from(
-      "%PDF-1.4\n" +
-        "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
-        "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
-        "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj\n" +
-        "4 0 obj<</Length 62>>stream\n" +
-        "BT /F1 12 Tf 50 750 Td (Errore generazione PDF) Tj ET\n" +
-        "endstream\nendobj\n" +
-        "trailer<</Size 5/Root 1 0 R>>",
-      "utf-8",
-    );
+    return Buffer.from(RAW_ERROR_PDF_BYTES, "utf-8");
   }
 }
 

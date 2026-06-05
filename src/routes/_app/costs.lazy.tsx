@@ -23,11 +23,16 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  ResponsiveContainer,
-  Tooltip as ChartTooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -195,6 +200,8 @@ type BudgetUsageRow = {
   used_percent: number;
   alert_active: boolean;
   active: boolean;
+  starts_on: string;
+  ends_on: string | null;
 };
 
 type PeriodicReportRow = {
@@ -245,7 +252,7 @@ const emptyContractDraft: ContractDraft = {
   recurring_fee: "0",
   included_hours: "0",
   extra_hourly_rate: "0",
-  start_date: defaultDateFrom,
+  start_date: "",
   end_date: "",
 };
 
@@ -351,6 +358,9 @@ function CostsPage() {
   } | null>(null);
   const [detailGroupBy, setDetailGroupBy] = useState<"none" | "client" | "technician">("none");
   const [activeTab, setActiveTab] = useState<CostsTab>("dashboard");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -695,6 +705,7 @@ function CostsPage() {
       start_date: contract.start_date,
       end_date: contract.end_date ?? "",
     });
+    setIsFormOpen(true);
   }
 
   function cancelEdit() {
@@ -702,6 +713,7 @@ function CostsPage() {
     setErrors({});
     setTouched({});
     setDraft(emptyContractDraft);
+    setIsFormOpen(false);
   }
 
   async function deleteContract(id: string) {
@@ -715,6 +727,7 @@ function CostsPage() {
         setDraft(emptyContractDraft);
         setErrors({});
         setTouched({});
+        setIsFormOpen(false);
       }
       await loadData();
       toast.success(t("contractTable.deleted", "Contratto eliminato"));
@@ -810,6 +823,7 @@ function CostsPage() {
       setEditingId(null);
       setErrors({});
       setTouched({});
+      setIsFormOpen(false);
       await loadData();
       toast.success(
         editingId
@@ -1198,7 +1212,10 @@ function CostsPage() {
       return toast.error(t("feedback.selectClient", "Seleziona un cliente"));
     setBusy(true);
     try {
-      const { error } = await (supabase as any).from("client_budgets").insert({
+      const client = clients.find((c) => c.id === budgetDraft.clientId);
+      const clientName = client ? (client.company_name || client.name) : "";
+
+      const payload = {
         client_id: budgetDraft.clientId,
         period: budgetDraft.period,
         budget_amount: positiveNumber(budgetDraft.budgetAmount),
@@ -1206,11 +1223,29 @@ function CostsPage() {
         starts_on: budgetDraft.startsOn || defaultDateFrom,
         ends_on: budgetDraft.endsOn || null,
         active: true,
-      });
+      };
+
+      let error;
+      if (editingBudgetId) {
+        ({ error } = await (supabase as any)
+          .from("client_budgets")
+          .update(payload)
+          .eq("id", editingBudgetId));
+      } else {
+        ({ error } = await (supabase as any).from("client_budgets").insert(payload));
+      }
+
       if (error) throw error;
       setBudgetDraft(emptyBudgetDraft);
+      setEditingBudgetId(null);
+      setBudgetModalOpen(false);
       await loadData();
-      toast.success(t("finance.budgetSaved", "Budget salvato"));
+
+      toast.success(
+        editingBudgetId
+          ? t("finance.budgetUpdatedForClient", "Budget aggiornato per {{client}}", { client: clientName })
+          : t("finance.budgetSavedForClient", "Budget impostato per {{client}}", { client: clientName })
+      );
     } catch (error) {
       toast.error(errorMessage(error, t("finance.budgetSaveError", "Errore salvataggio budget")));
     } finally {
@@ -1512,68 +1547,106 @@ function CostsPage() {
                 <div className="pc-card-hd">
                   <div>
                     <div className="pc-card-title">
-                      {t("finance.profitabilityTitle", "Dashboard profittabilita")}
+                      {t("finance.profitabilityTitle", "Dashboard profittabilità")}
                     </div>
                     <div className="mt-1 text-sm text-text3">
                       {t(
                         "finance.profitabilitySubtitle",
-                        "Ricavo contratto mensilizzato vs costo effettivo nel periodo",
+                        "Ricavo contratto (azzurro), costo effettivo (giallo) e margine (verde) nel periodo",
                       )}
                     </div>
                   </div>
                   <TrendingUp className="size-5 text-text3" />
                 </div>
                 <div className="pc-card-body">
-                  <div className="h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-[280px] w-full">
+                    <ChartContainer
+                      config={{
+                        revenue: { label: t("finance.revenue", "Ricavo"), color: "var(--accent)" },
+                        actualCost: { label: t("finance.cost", "Costo"), color: "var(--warning)" },
+                        margin: { label: t("finance.margin", "Margine"), color: "var(--success)" },
+                      }}
+                      className="h-full w-full"
+                    >
                       <BarChart
                         data={profitability.slice(0, 8)}
-                        margin={{ top: 8, right: 8, left: 0, bottom: 32 }}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
                       >
                         <CartesianGrid stroke="var(--border)" vertical={false} />
                         <XAxis
                           dataKey="clientName"
-                          tick={{ fill: "var(--text3)", fontSize: 11 }}
+                          tick={{ fill: "var(--text3)", fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
                           interval={0}
-                          angle={-18}
-                          textAnchor="end"
-                          height={54}
+                          height={24}
                         />
                         <YAxis
-                          tick={{ fill: "var(--text3)", fontSize: 11 }}
+                          tick={{ fill: "var(--text3)", fontSize: 10 }}
                           tickFormatter={(value) => `${value}€`}
+                          tickLine={false}
+                          axisLine={false}
                         />
                         <ChartTooltip
-                          formatter={(value: any, name) => [
-                            formatCurrency(value),
-                            name === "margin" ? "Margine" : name === "revenue" ? "Ricavo" : "Costo",
-                          ]}
-                          contentStyle={{
-                            background: "var(--surface)",
-                            borderColor: "var(--border)",
-                            borderRadius: 8,
-                          }}
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value: any, name: any) => (
+                                <>
+                                  <div
+                                    className="size-2 shrink-0 rounded-[2px]"
+                                    style={{
+                                      backgroundColor:
+                                        name === "margin" || name === "Margine"
+                                          ? "var(--success)"
+                                          : name === "revenue" || name === "Ricavo"
+                                            ? "var(--accent)"
+                                            : "var(--warning)",
+                                    }}
+                                  />
+                                  <div className="flex flex-1 justify-between items-center gap-4 text-xs">
+                                    <span className="text-muted-foreground">
+                                      {name === "margin" || name === "Margine"
+                                        ? t("finance.margin", "Margine")
+                                        : name === "revenue" || name === "Ricavo"
+                                          ? t("finance.revenue", "Ricavo")
+                                          : t("finance.cost", "Costo")}
+                                    </span>
+                                    <span className="font-mono font-medium text-foreground">
+                                      {formatCurrency(Number(value))}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                            />
+                          }
                         />
                         <Bar
                           dataKey="revenue"
-                          fill="var(--accent)"
-                          name="Ricavo"
+                          fill="var(--color-revenue)"
                           radius={[4, 4, 0, 0]}
                         />
                         <Bar
                           dataKey="actualCost"
-                          fill="var(--warning)"
-                          name="Costo"
+                          fill="var(--color-actualCost)"
                           radius={[4, 4, 0, 0]}
                         />
                         <Bar
                           dataKey="margin"
-                          fill="var(--success)"
-                          name="Margine"
+                          fill="var(--color-margin)"
                           radius={[4, 4, 0, 0]}
                         />
+                        <ChartLegend content={<ChartLegendContent />} />
                       </BarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                  <div className="mt-4 flex items-start gap-1.5 text-xs text-text3 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+                    <Info className="size-3.5 shrink-0 text-accent mt-0.5" />
+                    <span>
+                      {t(
+                        "finance.profitabilityNegativeNote",
+                        "Nota: I valori negativi sull'asse Y indicano che i costi effettivi nel periodo (manodopera e materiali) hanno superato i ricavi del contratto mensilizzato per quel cliente.",
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1581,85 +1654,25 @@ function CostsPage() {
               <div className="pc-card">
                 <div className="pc-card-hd">
                   <div className="pc-card-title">{t("finance.budgetTitle", "Budget clienti")}</div>
-                  <AlertTriangle className="size-5 text-text3" />
+                  <div className="flex items-center gap-2">
+                    {canManageCosts && (
+                      <button
+                        type="button"
+                        className="pc-btn pc-btn-primary pc-btn-xs flex items-center gap-1"
+                        onClick={() => {
+                          setBudgetDraft(emptyBudgetDraft);
+                          setEditingBudgetId(null);
+                          setBudgetModalOpen(true);
+                        }}
+                        title={t("finance.newBudget", "Imposta budget")}
+                      >
+                        <Plus className="size-3" /> {t("finance.newBudget", "Imposta budget")}
+                      </button>
+                    )}
+                    <AlertTriangle className="size-5 text-text3" />
+                  </div>
                 </div>
                 <div className="pc-card-body space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="space-y-1 text-sm font-medium text-text2 col-span-2">
-                      {t("contractForm.clientLabel", "Cliente")}
-                      <select
-                        className="pc-input"
-                        value={budgetDraft.clientId}
-                        onChange={(e) =>
-                          setBudgetDraft((v) => ({ ...v, clientId: e.target.value }))
-                        }
-                      >
-                        <option value="">
-                          {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
-                        </option>
-                        {clients.map((client) => (
-                          <option key={client.id} value={client.id}>
-                            {client.company_name || client.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="space-y-1 text-sm font-medium text-text2">
-                      {t("contractForm.billingPeriodLabel", "Fatturazione")}
-                      <select
-                        className="pc-input"
-                        value={budgetDraft.period}
-                        onChange={(e) =>
-                          setBudgetDraft((v) => ({
-                            ...v,
-                            period: e.target.value as BudgetDraft["period"],
-                          }))
-                        }
-                      >
-                        <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
-                        <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
-                      </select>
-                    </label>
-
-                    <label className="space-y-1 text-sm font-medium text-text2">
-                      {t("finance.budgetAmountLabel", "Budget")}
-                      <input
-                        className="pc-input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={budgetDraft.budgetAmount}
-                        onChange={(e) =>
-                          setBudgetDraft((v) => ({ ...v, budgetAmount: e.target.value }))
-                        }
-                      />
-                    </label>
-
-                    <label className="space-y-1 text-sm font-medium text-text2">
-                      {t("finance.alertThresholdLabel", "Alert %")}
-                      <input
-                        className="pc-input"
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={budgetDraft.alertThresholdPercent}
-                        onChange={(e) =>
-                          setBudgetDraft((v) => ({ ...v, alertThresholdPercent: e.target.value }))
-                        }
-                      />
-                    </label>
-
-                    <div>
-                      <button
-                        className="pc-btn pc-btn-primary pc-btn-sm"
-                        disabled={busy || !budgetDraft.clientId}
-                        onClick={saveBudget}
-                      >
-                        <Save className="size-3" /> {t("finance.saveBudget", "Salva budget")}
-                      </button>
-                    </div>
-                  </div>
                   <div className="space-y-2">
                     {budgetUsage.slice(0, 5).map((budget) => {
                       const pct = money(budget.used_percent);
@@ -1683,12 +1696,35 @@ function CostsPage() {
                         >
                           <div className="flex items-center justify-between gap-2 text-sm">
                             <span className="font-semibold">{budget.client_name}</span>
-                            <span
-                              className="font-mono"
-                              style={{ color: overBudget ? "#ef4444" : undefined }}
-                            >
-                              {pct.toFixed(0)}%
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="font-mono"
+                                style={{ color: overBudget ? "#ef4444" : undefined }}
+                              >
+                                {pct.toFixed(0)}%
+                              </span>
+                              {canManageCosts && (
+                                <button
+                                  type="button"
+                                  className="rounded p-0.5 text-text3 hover:bg-surface2 hover:text-text1"
+                                  onClick={() => {
+                                    setEditingBudgetId(budget.budget_id);
+                                    setBudgetDraft({
+                                      clientId: budget.client_id,
+                                      period: budget.period,
+                                      budgetAmount: String(budget.budget_amount),
+                                      alertThresholdPercent: String(budget.alert_threshold_percent),
+                                      startsOn: budget.starts_on || defaultDateFrom,
+                                      endsOn: budget.ends_on || "",
+                                    });
+                                    setBudgetModalOpen(true);
+                                  }}
+                                  title={t("finance.editBudget", "Modifica budget")}
+                                >
+                                  <Pencil className="size-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface2">
                             <div
@@ -1739,188 +1775,220 @@ function CostsPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {editingId && (
+                {isFormOpen ? (
+                  <>
+                    <button
+                      type="button"
+                      className="pc-btn pc-btn-ghost pc-btn-sm"
+                      onClick={() => {
+                        if (editingId) {
+                          cancelEdit();
+                        } else {
+                          setDraft(emptyContractDraft);
+                          setErrors({});
+                          setTouched({});
+                          setIsFormOpen(false);
+                        }
+                      }}
+                      disabled={busy}
+                    >
+                      <X className="size-3" /> {t("contractForm.cancelEdit", "Annulla")}
+                    </button>
+                    <button
+                      className="pc-btn pc-btn-primary pc-btn-sm"
+                      onClick={saveContract}
+                      disabled={busy || !canEdit || !draft.client_id}
+                    >
+                      <Save className="size-3" />{" "}
+                      {editingId
+                        ? t("contractForm.update", "Aggiorna contratto")
+                        : t("contractForm.save", "Salva contratto")}
+                    </button>
+                  </>
+                ) : (
                   <button
                     type="button"
-                    className="pc-btn pc-btn-ghost pc-btn-sm"
-                    onClick={cancelEdit}
-                    disabled={busy}
+                    className="pc-btn pc-btn-primary pc-btn-sm"
+                    onClick={() => {
+                      const todayStr = new Date().toISOString().slice(0, 10);
+                      const oneYearLater = new Date();
+                      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                      const oneYearLaterStr = oneYearLater.toISOString().slice(0, 10);
+                      setDraft({
+                        ...emptyContractDraft,
+                        start_date: todayStr,
+                        end_date: oneYearLaterStr,
+                      });
+                      setIsFormOpen(true);
+                    }}
                   >
-                    <X className="size-3" /> {t("contractForm.cancelEdit", "Annulla")}
+                    <Plus className="size-3" /> {t("contractForm.newContract", "+ Nuovo contratto")}
                   </button>
                 )}
-                <button
-                  className="pc-btn pc-btn-primary pc-btn-sm"
-                  onClick={saveContract}
-                  disabled={busy || !canEdit || !draft.client_id}
-                >
-                  <Save className="size-3" />{" "}
-                  {editingId
-                    ? t("contractForm.update", "Aggiorna contratto")
-                    : t("contractForm.save", "Salva contratto")}
-                </button>
               </div>
             </div>
-            <div className="pc-card-body grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-8">
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.clientLabel", "Cliente")}
-                <select
-                  className="pc-input"
-                  value={draft.client_id}
-                  onBlur={() => touchField("client_id")}
-                  onChange={(e) => {
-                    clearFieldError("client_id");
-                    setDraft((v) => ({ ...v, client_id: e.target.value }));
-                  }}
-                >
-                  <option value="" disabled>
-                    {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
-                  </option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.company_name || client.name}
+            {isFormOpen && (
+              <div className="pc-card-body grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-8">
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.clientLabel", "Cliente")}
+                  <select
+                    className="pc-input"
+                    value={draft.client_id}
+                    onBlur={() => touchField("client_id")}
+                    onChange={(e) => {
+                      clearFieldError("client_id");
+                      setDraft((v) => ({ ...v, client_id: e.target.value }));
+                    }}
+                  >
+                    <option value="" disabled>
+                      {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
                     </option>
-                  ))}
-                </select>
-                {touched.client_id && errors.client_id && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.client_id}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.nameLabel", "Nome contratto")}
-                <input
-                  className="pc-input"
-                  value={draft.name}
-                  onBlur={() => touchField("name")}
-                  onChange={(e) => {
-                    clearFieldError("name");
-                    setDraft((v) => ({ ...v, name: e.target.value }));
-                  }}
-                  placeholder={t("contractForm.namePlaceholder", "es. Contratto base")}
-                />
-                {touched.name && errors.name && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.name}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.billingPeriodLabel", "Fatturazione")}
-                <select
-                  className="pc-input"
-                  value={draft.billing_period}
-                  onChange={(e) =>
-                    setDraft((v) => ({
-                      ...v,
-                      billing_period: e.target.value as ContractDraft["billing_period"],
-                    }))
-                  }
-                >
-                  <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
-                  <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
-                </select>
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.feeLabel", "Canone (€)")}
-                <input
-                  className="pc-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={draft.recurring_fee}
-                  onBlur={() => touchField("recurring_fee")}
-                  onChange={(e) => {
-                    clearFieldError("recurring_fee");
-                    setDraft((v) => ({ ...v, recurring_fee: e.target.value }));
-                  }}
-                  placeholder={t("contractForm.feePlaceholder", "0")}
-                />
-                {touched.recurring_fee && errors.recurring_fee && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.recurring_fee}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.hoursLabel", "Ore incluse")}
-                <input
-                  className="pc-input"
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={draft.included_hours}
-                  onBlur={() => touchField("included_hours")}
-                  onChange={(e) => {
-                    clearFieldError("included_hours");
-                    setDraft((v) => ({ ...v, included_hours: e.target.value }));
-                  }}
-                  placeholder={t("contractForm.hoursPlaceholder", "0")}
-                />
-                {touched.included_hours && errors.included_hours && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.included_hours}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.extraRateLabel", "Tariffa extra/h (€)")}
-                <input
-                  className="pc-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={draft.extra_hourly_rate}
-                  onBlur={() => touchField("extra_hourly_rate")}
-                  onChange={(e) => {
-                    clearFieldError("extra_hourly_rate");
-                    setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }));
-                  }}
-                  placeholder={t("contractForm.extraRatePlaceholder", "0")}
-                />
-                {touched.extra_hourly_rate && errors.extra_hourly_rate && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.extra_hourly_rate}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.startDateLabel", "Data inizio")}
-                <DatePickerInput
-                  value={draft.start_date}
-                  minDate={defaultDateFrom}
-                  onBlur={() => touchField("start_date")}
-                  onChange={(v) => {
-                    clearFieldError("start_date");
-                    clearFieldError("end_date");
-                    setDraft((prev) => ({ ...prev, start_date: v }));
-                  }}
-                />
-                {touched.start_date && errors.start_date && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.start_date}
-                  </p>
-                )}
-              </label>
-              <label className="space-y-1 text-sm font-medium text-text2">
-                {t("contractForm.endDateLabel", "Data fine")}
-                <DatePickerInput
-                  value={draft.end_date}
-                  minDate={draft.start_date || undefined}
-                  onBlur={() => touchField("end_date")}
-                  onChange={(v) => {
-                    clearFieldError("end_date");
-                    setDraft((prev) => ({ ...prev, end_date: v }));
-                  }}
-                />
-                {touched.end_date && errors.end_date && (
-                  <p className="text-xs" style={{ color: "var(--destructive)" }}>
-                    {errors.end_date}
-                  </p>
-                )}
-              </label>
-            </div>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.company_name || client.name}
+                      </option>
+                    ))}
+                  </select>
+                  {touched.client_id && errors.client_id && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.client_id}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.nameLabel", "Nome contratto")}
+                  <input
+                    className="pc-input"
+                    value={draft.name}
+                    onBlur={() => touchField("name")}
+                    onChange={(e) => {
+                      clearFieldError("name");
+                      setDraft((v) => ({ ...v, name: e.target.value }));
+                    }}
+                    placeholder={t("contractForm.namePlaceholder", "es. Contratto base")}
+                  />
+                  {touched.name && errors.name && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.name}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.billingPeriodLabel", "Fatturazione")}
+                  <select
+                    className="pc-input"
+                    value={draft.billing_period}
+                    onChange={(e) =>
+                      setDraft((v) => ({
+                        ...v,
+                        billing_period: e.target.value as ContractDraft["billing_period"],
+                      }))
+                    }
+                  >
+                    <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+                    <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.feeLabel", "Canone (€)")}
+                  <input
+                    className="pc-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draft.recurring_fee}
+                    onBlur={() => touchField("recurring_fee")}
+                    onChange={(e) => {
+                      clearFieldError("recurring_fee");
+                      setDraft((v) => ({ ...v, recurring_fee: e.target.value }));
+                    }}
+                    placeholder={t("contractForm.feePlaceholder", "0")}
+                  />
+                  {touched.recurring_fee && errors.recurring_fee && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.recurring_fee}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.hoursLabel", "Ore incluse")}
+                  <input
+                    className="pc-input"
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    value={draft.included_hours}
+                    onBlur={() => touchField("included_hours")}
+                    onChange={(e) => {
+                      clearFieldError("included_hours");
+                      setDraft((v) => ({ ...v, included_hours: e.target.value }));
+                    }}
+                    placeholder={t("contractForm.hoursPlaceholder", "0")}
+                  />
+                  {touched.included_hours && errors.included_hours && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.included_hours}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.extraRateLabel", "Tariffa extra/h (€)")}
+                  <input
+                    className="pc-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draft.extra_hourly_rate}
+                    onBlur={() => touchField("extra_hourly_rate")}
+                    onChange={(e) => {
+                      clearFieldError("extra_hourly_rate");
+                      setDraft((v) => ({ ...v, extra_hourly_rate: e.target.value }));
+                    }}
+                    placeholder={t("contractForm.extraRatePlaceholder", "0")}
+                  />
+                  {touched.extra_hourly_rate && errors.extra_hourly_rate && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.extra_hourly_rate}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.startDateLabel", "Data inizio")}
+                  <DatePickerInput
+                    value={draft.start_date}
+                    minDate={undefined}
+                    onBlur={() => touchField("start_date")}
+                    onChange={(v) => {
+                      clearFieldError("start_date");
+                      clearFieldError("end_date");
+                      setDraft((prev) => ({ ...prev, start_date: v }));
+                    }}
+                  />
+                  {touched.start_date && errors.start_date && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.start_date}
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-1 text-sm font-medium text-text2">
+                  {t("contractForm.endDateLabel", "Data fine")}
+                  <DatePickerInput
+                    value={draft.end_date}
+                    minDate={draft.start_date || undefined}
+                    onBlur={() => touchField("end_date")}
+                    onChange={(v) => {
+                      clearFieldError("end_date");
+                      setDraft((prev) => ({ ...prev, end_date: v }));
+                    }}
+                  />
+                  {touched.end_date && errors.end_date && (
+                    <p className="text-xs" style={{ color: "var(--destructive)" }}>
+                      {errors.end_date}
+                    </p>
+                  )}
+                </label>
+              </div>
+            )}
             {filteredContracts.length > 0 && (
               <div className="border-t overflow-x-auto" style={{ borderColor: "var(--border)" }}>
                 <table className="w-full min-w-[800px] text-[12.5px]">
@@ -3309,6 +3377,130 @@ function CostsPage() {
                 {t("detailDialog.empty", "Nessun ticket trovato")}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={budgetModalOpen} onOpenChange={setBudgetModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingBudgetId
+                ? t("finance.editBudgetTitle", "Modifica budget cliente")
+                : t("finance.newBudgetTitle", "Imposta budget cliente")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("finance.budgetDesc", "Configura il budget di spesa massima ed avvisi per questo cliente.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <label className="space-y-1 text-sm font-medium text-text2 block">
+              {t("contractForm.clientLabel", "Cliente")}
+              <select
+                className="pc-input w-full"
+                value={budgetDraft.clientId}
+                disabled={!!editingBudgetId}
+                onChange={(e) =>
+                  setBudgetDraft((v) => ({ ...v, clientId: e.target.value }))
+                }
+              >
+                <option value="">
+                  {t("contractForm.clientPlaceholder", "Seleziona cliente...")}
+                </option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company_name || client.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1 text-sm font-medium text-text2 block">
+                {t("contractForm.billingPeriodLabel", "Fatturazione")}
+                <select
+                  className="pc-input w-full"
+                  value={budgetDraft.period}
+                  onChange={(e) =>
+                    setBudgetDraft((v) => ({
+                      ...v,
+                      period: e.target.value as BudgetDraft["period"],
+                    }))
+                  }
+                >
+                  <option value="monthly">{t("contracts.period.monthly", "Mensile")}</option>
+                  <option value="annual">{t("contracts.period.annual", "Annuale")}</option>
+                </select>
+              </label>
+
+              <label className="space-y-1 text-sm font-medium text-text2 block">
+                {t("finance.budgetAmountLabel", "Budget (€)")}
+                <input
+                  className="pc-input w-full"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={budgetDraft.budgetAmount}
+                  onChange={(e) =>
+                    setBudgetDraft((v) => ({ ...v, budgetAmount: e.target.value }))
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1 text-sm font-medium text-text2 block">
+                <span className="flex items-center gap-1">
+                  {t("finance.alertThresholdLabel", "Alert %")}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex cursor-help">
+                          <Info className="h-3.5 w-3.5 text-text3 hover:text-text2 transition-colors" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[220px] text-xs leading-relaxed">
+                        {t("finance.alertThresholdTooltip", "Riceverai un avviso quando la spesa supera la percentuale impostata del budget.")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
+                <input
+                  className="pc-input w-full"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={budgetDraft.alertThresholdPercent}
+                  onChange={(e) =>
+                    setBudgetDraft((v) => ({ ...v, alertThresholdPercent: e.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="space-y-1 text-sm font-medium text-text2 block">
+                {t("finance.startsOnLabel", "Inizio validità")}
+                <DatePickerInput
+                  value={budgetDraft.startsOn}
+                  onChange={(v) => setBudgetDraft((prev) => ({ ...prev, startsOn: v }))}
+                />
+              </label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              onClick={() => setBudgetModalOpen(false)}
+            >
+              {t("contractForm.cancelEdit", "Annulla")}
+            </button>
+            <button
+              className="pc-btn pc-btn-primary pc-btn-sm"
+              disabled={busy || !budgetDraft.clientId}
+              onClick={saveBudget}
+            >
+              <Save className="size-3" /> {t("finance.saveBudget", "Salva budget")}
+            </button>
           </div>
         </DialogContent>
       </Dialog>
