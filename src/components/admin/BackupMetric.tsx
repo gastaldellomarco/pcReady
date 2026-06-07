@@ -1,4 +1,4 @@
-import { Shield } from "lucide-react";
+import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -24,12 +24,11 @@ export function BackupMetric({
           ? "border-2 border-dashed border-muted/40 bg-muted/5 text-muted-foreground"
           : "rounded-lg border bg-muted/30")
       }
-      aria-hidden={readOnly}
     >
       {readOnly ? (
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-muted/10 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-          <Shield className="size-3 text-muted-foreground" />
-          {t("settings.backup.readOnlyBadge", "Gestito dal provider")}
+        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-muted/30 px-2 py-0.5 text-[11px] font-medium text-muted-foreground/70">
+          <Info className="size-3" />
+          {t("settings.backup.readOnlyBadge", "Read-only")}
         </span>
       ) : null}
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>

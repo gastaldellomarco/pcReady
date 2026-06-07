@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_EVENT_LABELS,
+  EMAIL_EVENT_META,
   EMAIL_TEMPLATE_VARIABLES,
   type EmailEventType,
   type EmailTemplate,
@@ -147,7 +148,7 @@ export function EmailTemplateEditor({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold">{EMAIL_EVENT_LABELS[template.event_type]}</h3>
+              <h3 className="text-base font-semibold">{t(EMAIL_EVENT_LABELS[template.event_type])}</h3>
               {isDirtyFromDefault && (
                 <Badge variant="outline" className="text-yellow-600 border-yellow-500/50">
                   {t("emailTemplate.badge.modified", "Modificato dal default")}
@@ -160,6 +161,20 @@ export function EmailTemplateEditor({
                 name: template.last_modified_by_name || t("emailTemplate.system", "Sistema"),
               })}
             </p>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <span className="font-medium text-foreground/70">
+                  {t("emailTemplate.meta.whenLabel", "Quando:")}
+                </span>
+                {t(EMAIL_EVENT_META[template.event_type]?.when ?? "")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="font-medium text-foreground/70">
+                  {t("emailTemplate.meta.recipientLabel", "Destinatario:")}
+                </span>
+                {t(EMAIL_EVENT_META[template.event_type]?.recipient ?? "")}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="template-active" className="text-sm">

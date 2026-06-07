@@ -39,19 +39,67 @@ export interface EmailTemplate {
 }
 
 export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
-  invite: "Invito nuovo utente",
-  reset_password: "Reset password",
-  confirm_account: "Conferma account",
-  ticket_assigned: "Notifica assegnazione ticket",
-  checklist_completed: "Notifica completamento checklist",
-  ticket_completed: "Notifica completamento ticket (cliente)",
-  portal_ticket_created: "Portale - ticket aperto",
-  portal_ticket_status_changed: "Portale - cambio stato ticket",
-  portal_public_note_added: "Portale - nota pubblica aggiunta",
-  portal_ticket_closed_feedback: "Portale - ticket chiuso con feedback",
+  invite: "emailTemplate.events.invite",
+  reset_password: "emailTemplate.events.reset_password",
+  confirm_account: "emailTemplate.events.confirm_account",
+  ticket_assigned: "emailTemplate.events.ticket_assigned",
+  checklist_completed: "emailTemplate.events.checklist_completed",
+  ticket_completed: "emailTemplate.events.ticket_completed",
+  portal_ticket_created: "emailTemplate.events.portal_ticket_created",
+  portal_ticket_status_changed: "emailTemplate.events.portal_ticket_status_changed",
+  portal_public_note_added: "emailTemplate.events.portal_public_note_added",
+  portal_ticket_closed_feedback: "emailTemplate.events.portal_ticket_closed_feedback",
 };
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
+
+export interface EmailEventMeta {
+  when: string;
+  recipient: string;
+}
+
+export const EMAIL_EVENT_META: Record<EmailEventType, EmailEventMeta> = {
+  invite: {
+    when: "emailTemplate.meta.invite.when",
+    recipient: "emailTemplate.meta.invite.recipient",
+  },
+  reset_password: {
+    when: "emailTemplate.meta.reset_password.when",
+    recipient: "emailTemplate.meta.reset_password.recipient",
+  },
+  confirm_account: {
+    when: "emailTemplate.meta.confirm_account.when",
+    recipient: "emailTemplate.meta.confirm_account.recipient",
+  },
+  ticket_assigned: {
+    when: "emailTemplate.meta.ticket_assigned.when",
+    recipient: "emailTemplate.meta.ticket_assigned.recipient",
+  },
+  checklist_completed: {
+    when: "emailTemplate.meta.checklist_completed.when",
+    recipient: "emailTemplate.meta.checklist_completed.recipient",
+  },
+  ticket_completed: {
+    when: "emailTemplate.meta.ticket_completed.when",
+    recipient: "emailTemplate.meta.ticket_completed.recipient",
+  },
+  portal_ticket_created: {
+    when: "emailTemplate.meta.portal_ticket_created.when",
+    recipient: "emailTemplate.meta.portal_ticket_created.recipient",
+  },
+  portal_ticket_status_changed: {
+    when: "emailTemplate.meta.portal_ticket_status_changed.when",
+    recipient: "emailTemplate.meta.portal_ticket_status_changed.recipient",
+  },
+  portal_public_note_added: {
+    when: "emailTemplate.meta.portal_public_note_added.when",
+    recipient: "emailTemplate.meta.portal_public_note_added.recipient",
+  },
+  portal_ticket_closed_feedback: {
+    when: "emailTemplate.meta.portal_ticket_closed_feedback.when",
+    recipient: "emailTemplate.meta.portal_ticket_closed_feedback.recipient",
+  },
+};
 
 export const DEFAULT_TEMPLATES: Record<
   EmailEventType,

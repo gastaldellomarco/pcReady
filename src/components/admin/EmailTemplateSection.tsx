@@ -1,5 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EmailTemplateEditor } from "@/components/admin/EmailTemplateEditor";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function EmailTemplateSection({
   organizationName,
   supportEmail,
 }: EmailTemplateSectionProps) {
+  const { t } = useTranslation("admin");
   const loadTemplates = useServerFn(listEmailTemplates);
   const saveTemplate = useServerFn(updateEmailTemplate);
   const sendTemplateTest = useServerFn(sendTestEmail);
@@ -163,7 +165,7 @@ export function EmailTemplateSection({
             <SelectContent>
               {EMAIL_EVENT_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {EMAIL_EVENT_LABELS[type]}
+                  {t(EMAIL_EVENT_LABELS[type])}
                 </SelectItem>
               ))}
             </SelectContent>

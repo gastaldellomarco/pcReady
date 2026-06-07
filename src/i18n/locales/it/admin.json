@@ -7,7 +7,8 @@
   "subtitle": "Gestione utenti, ruoli, impostazioni di sistema e audit log.",
   "tabs": {
     "users": "Utenti",
-    "settings": "Impostazioni App",
+    "settings": "Impostazioni",
+    "backupDr": "Backup & DR",
     "oauth": "OAuth / Applicazioni",
     "audit": "Audit Log"
   },
@@ -108,6 +109,9 @@
     "tabs": {
       "general": "Generale",
       "emailTemplates": "Template Email"
+    },
+    "emailTemplates": {
+      "description": "Personalizza le email inviate automaticamente dal sistema: notifiche ticket, inviti utenti, alert SLA e report periodici. Se è la prima volta che accedi, usa \"Crea template di default\" per generare il template iniziale. Dopo la creazione, seleziona il template dal menu a tendina per modificarlo e usa \"Anteprima\" per visualizzarlo prima del salvataggio."
     },
     "backup": {
       "title": "Backup & Disaster Recovery",
@@ -483,6 +487,62 @@
     "disabled": "Disabilitato"
   },
   "emailTemplate": {
+    "meta": {
+      "whenLabel": "Quando:",
+      "recipientLabel": "Destinatario:",
+      "invite": {
+        "when": "Inviata quando un admin invita un nuovo utente",
+        "recipient": "Nuovo utente invitato"
+      },
+      "reset_password": {
+        "when": "Inviata quando un utente richiede il reset della password",
+        "recipient": "Utente (tecnico o admin)"
+      },
+      "confirm_account": {
+        "when": "Inviata quando un utente completa la registrazione autonoma",
+        "recipient": "Nuovo utente registrato"
+      },
+      "ticket_assigned": {
+        "when": "Inviata quando un ticket viene assegnato a un tecnico",
+        "recipient": "Tecnico assegnatario"
+      },
+      "checklist_completed": {
+        "when": "Inviata quando una checklist associata a un ticket viene completata",
+        "recipient": "Tecnico assegnatario"
+      },
+      "ticket_completed": {
+        "when": "Inviata quando un ticket viene completato e il verbale \u00e8 disponibile",
+        "recipient": "Cliente"
+      },
+      "portal_ticket_created": {
+        "when": "Inviata quando un cliente apre un ticket dal portale",
+        "recipient": "Cliente"
+      },
+      "portal_ticket_status_changed": {
+        "when": "Inviata quando lo stato di un ticket cambia",
+        "recipient": "Cliente"
+      },
+      "portal_public_note_added": {
+        "when": "Inviata quando viene aggiunta una nota pubblica a un ticket",
+        "recipient": "Cliente"
+      },
+      "portal_ticket_closed_feedback": {
+        "when": "Inviata quando un ticket viene chiuso per richiedere feedback",
+        "recipient": "Cliente"
+      }
+    },
+    "events": {
+      "invite": "Invito nuovo utente",
+      "reset_password": "Reset password",
+      "confirm_account": "Conferma account",
+      "ticket_assigned": "Notifica assegnazione ticket",
+      "checklist_completed": "Notifica completamento checklist",
+      "ticket_completed": "Notifica completamento ticket (cliente)",
+      "portal_ticket_created": "Portale - ticket aperto",
+      "portal_ticket_status_changed": "Portale - cambio stato ticket",
+      "portal_public_note_added": "Portale - nota pubblica aggiunta",
+      "portal_ticket_closed_feedback": "Portale - ticket chiuso con feedback"
+    },
     "badge": {
       "modified": "Modificato dal default"
     },

@@ -3,11 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
+import { AdminBackupDrTab } from "@/components/admin/AdminBackupDrTab";
 import { AdminOAuthTab } from "@/components/admin/AdminOAuthTab";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 import i18n from "@/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { checkAdmin } from "@/lib/check-admin";
@@ -44,7 +46,7 @@ export const Route = createFileRoute("/_app/admin")({
 
 function AdminUsersPage() {
   const { t } = useTranslation("admin");
-  const { loading, session } = useAuth();
+  const { loading, session, user } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const check = useServerFn(checkAdmin);
@@ -52,6 +54,32 @@ function AdminUsersPage() {
     loading: boolean;
     isAdmin: boolean;
   }>({ loading: true, isAdmin: false });
+
+  const isAdmin = serverVerified.isAdmin;
+  const accessToken = session?.access_token;
+
+  // Single hook call shared by both settings and backup-DR tabs
+  const {
+    settings,
+    loadingSettings,
+    settingsForm,
+    submitSettings,
+    saveSettingsBusy,
+    exportAllBusy,
+    handleExportAllData,
+  } = useAdminAppSettings({ accessToken, isAdmin });
+
+  // Warn on browser refresh/close when settings have unsaved changes
+  const isDirty = settingsForm.formState.isDirty;
+  useEffect(() => {
+    if (!isDirty) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   useEffect(() => {
     let mounted = true;
@@ -87,14 +115,28 @@ function AdminUsersPage() {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="users">{t("tabs.users", "Utenti")}</TabsTrigger>
-        <TabsTrigger value="settings">{t("tabs.settings", "Impostazioni App")}</TabsTrigger>
+        <TabsTrigger value="settings">{t("tabs.settings", "Impostazioni")}</TabsTrigger>
+        <TabsTrigger value="backup-dr">{t("tabs.backupDr", "Backup & DR")}</TabsTrigger>
         <TabsTrigger value="oauth">{t("tabs.oauth", "OAuth / Applicazioni")}</TabsTrigger>
         <TabsTrigger value="audit">{t("tabs.audit", "Audit Log")}</TabsTrigger>
       </TabsList>
       <AdminUsersTab />
-      <AdminSettingsTab />
+      <AdminSettingsTab
+        accessToken={accessToken}
+        userEmail={user?.email ?? ""}
+        settings={settings}
+        loadingSettings={loadingSettings}
+        settingsForm={settingsForm}
+        submitSettings={submitSettings}
+        saveSettingsBusy={saveSettingsBusy}
+      />
+      <AdminBackupDrTab
+        settings={settings}
+        exportAllBusy={exportAllBusy}
+        handleExportAllData={handleExportAllData}
+      />
       <AdminOAuthTab />
       <AdminAuditTab searchParams={search} />
     </Tabs>

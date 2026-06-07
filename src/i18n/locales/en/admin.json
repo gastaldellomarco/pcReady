@@ -7,7 +7,8 @@
   "subtitle": "Manage users, roles, system settings, and audit logs.",
   "tabs": {
     "users": "Users",
-    "settings": "App Settings",
+    "settings": "Settings",
+    "backupDr": "Backup & DR",
     "oauth": "OAuth / Apps",
     "audit": "Audit Log"
   },
@@ -108,6 +109,9 @@
     "tabs": {
       "general": "General",
       "emailTemplates": "Email Templates"
+    },
+    "emailTemplates": {
+      "description": "Customize the emails sent automatically by the system: ticket notifications, user invitations, SLA alerts and periodic reports. If this is your first time, use \"Create default template\" to generate the initial template. After creation, select the template from the dropdown to edit it and use \"Preview\" to view it before saving."
     },
     "backup": {
       "title": "Backup & Disaster Recovery",
@@ -483,6 +487,62 @@
     "disabled": "Disabled"
   },
   "emailTemplate": {
+    "meta": {
+      "whenLabel": "When:",
+      "recipientLabel": "Recipient:",
+      "invite": {
+        "when": "Sent when an admin invites a new user",
+        "recipient": "New invited user"
+      },
+      "reset_password": {
+        "when": "Sent when a user requests a password reset",
+        "recipient": "User (technician or admin)"
+      },
+      "confirm_account": {
+        "when": "Sent when a user completes self-registration",
+        "recipient": "New registered user"
+      },
+      "ticket_assigned": {
+        "when": "Sent when a ticket is assigned to a technician",
+        "recipient": "Assigned technician"
+      },
+      "checklist_completed": {
+        "when": "Sent when a checklist associated with a ticket is completed",
+        "recipient": "Assigned technician"
+      },
+      "ticket_completed": {
+        "when": "Sent when a ticket is completed and the report is available",
+        "recipient": "Client"
+      },
+      "portal_ticket_created": {
+        "when": "Sent when a client opens a ticket from the portal",
+        "recipient": "Client"
+      },
+      "portal_ticket_status_changed": {
+        "when": "Sent when a ticket status changes",
+        "recipient": "Client"
+      },
+      "portal_public_note_added": {
+        "when": "Sent when a public note is added to a ticket",
+        "recipient": "Client"
+      },
+      "portal_ticket_closed_feedback": {
+        "when": "Sent when a ticket is closed to request feedback",
+        "recipient": "Client"
+      }
+    },
+    "events": {
+      "invite": "New user invitation",
+      "reset_password": "Password reset",
+      "confirm_account": "Account confirmation",
+      "ticket_assigned": "Ticket assignment notification",
+      "checklist_completed": "Checklist completion notification",
+      "ticket_completed": "Ticket completion notification (client)",
+      "portal_ticket_created": "Portal - ticket opened",
+      "portal_ticket_status_changed": "Portal - ticket status changed",
+      "portal_public_note_added": "Portal - public note added",
+      "portal_ticket_closed_feedback": "Portal - ticket closed with feedback"
+    },
     "badge": {
       "modified": "Modified from default"
     },

@@ -1,17 +1,16 @@
-﻿import {
-  Bell,
+import {
+  AlertTriangle,
   CheckCircle2,
   DatabaseBackup,
-  Download,
   Globe2,
-  Mail,
   Save,
-  Settings,
   Shield,
   SlidersHorizontal,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { BackupMetric } from "@/components/admin/BackupMetric";
+import { useTranslation } from "react-i18next";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
 import { TagListEditor } from "@/components/admin/TagListEditor";
 import { Button } from "@/components/ui/button";
@@ -21,9 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import OverflowTable from "@/components/ui/overflow-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAdminAppSettings } from "@/hooks/useAdminAppSettings";
 import { ADMIN_WIP_LIMIT_FIELDS, ADMIN_SLA_CONFIG_FIELDS } from "@/lib/admin/admin-constants";
-import { useAuth } from "@/lib/auth-context";
+import type { AppSettings } from "@/lib/app-settings";
+import { AppSettingsSchema } from "@/lib/schemas";
 
 function SettingSection({
   icon,
@@ -50,168 +49,146 @@ function SettingSection({
   );
 }
 
-/**
- *
- */
-export function AdminSettingsTab() {
-  const { session, user, isAdmin } = useAuth();
-  const accessToken = session?.access_token;
-  const {
-    settings,
-    loadingSettings,
-    settingsForm,
-    submitSettings,
-    saveSettingsBusy,
-    exportAllBusy,
-    handleExportAllData,
-  } = useAdminAppSettings({ accessToken, isAdmin });
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+function SaveButton({
+  saveSettingsBusy,
+  isValid,
+  isDirty,
+}: {
+  saveSettingsBusy: boolean;
+  isValid: boolean;
+  isDirty: boolean;
+}) {
+  const disabled = !isValid || saveSettingsBusy || !isDirty;
 
-  const settingsSections = [
-    {
-      icon: Globe2,
-      title: "Generale",
-      description: "Branding, fuso orario e contatti di supporto.",
-    },
-    {
-      icon: SlidersHorizontal,
-      title: "Operatività",
-      description: "Limiti tecnici, liste operative, Kanban, SLA e archiviazione.",
-    },
-    {
-      icon: Shield,
-      title: "Sicurezza",
-      description: "Registrazione utenti, approvazione admin e policy 2FA.",
-    },
-    {
-      icon: Bell,
-      title: "Retention",
-      description: "Conservazione log audit ed export dati.",
-    },
-  ];
+  return (
+    <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-2 py-3 backdrop-blur">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {isDirty ? (
+          <>
+            <AlertTriangle className="size-3.5 text-amber-500" />
+            <span className="text-amber-600 dark:text-amber-400">Modifiche non salvate</span>
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="size-3.5 text-emerald-500" />
+            <span>Tutte le modifiche salvate</span>
+          </>
+        )}
+      </div>
+      <Button type="submit" disabled={disabled}>
+        <Save className="size-4 mr-2" />
+        {saveSettingsBusy ? (
+          <>
+            <svg
+              className="-ml-1 mr-2 h-4 w-4 animate-spin text-current"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            Salvataggio...
+          </>
+        ) : (
+          "Salva Impostazioni"
+        )}
+      </Button>
+    </div>
+  );
+}
+
+type SettingsFormValues = z.input<typeof AppSettingsSchema>;
+
+interface AdminSettingsTabProps {
+  accessToken: string | undefined;
+  userEmail: string;
+  settings: AppSettings | null;
+  loadingSettings: boolean;
+  settingsForm: UseFormReturn<SettingsFormValues>;
+  submitSettings: (values: SettingsFormValues) => Promise<void>;
+  saveSettingsBusy: boolean;
+}
+
+/**
+ * Admin settings tab: flattened to 2 levels.
+ * Level 2 tabs: Generale | Operatività | Sicurezza | Retention | Template Email
+ * Backup & DR is now a separate top-level tab.
+ * Receives data from the parent admin page to avoid duplicate fetching.
+ */
+export function AdminSettingsTab({
+  accessToken,
+  userEmail,
+  settings,
+  loadingSettings,
+  settingsForm,
+  submitSettings,
+  saveSettingsBusy,
+}: AdminSettingsTabProps) {
+  const { t: tAdmin } = useTranslation("admin");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   async function handleSettingsSubmit(values: Parameters<typeof submitSettings>[0]) {
     await submitSettings(values);
     setLastSavedAt(new Date());
   }
 
+  const successBanner = lastSavedAt ? (
+    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+      <CheckCircle2 className="size-4" />
+      Ultimo salvataggio completato alle{" "}
+      {lastSavedAt.toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
+    </div>
+  ) : null;
+
   return (
     <TabsContent value="settings" className="space-y-5">
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general">Generale</TabsTrigger>
-          <TabsTrigger value="email-templates">Template Email</TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe2 className="size-5" />
+            Impostazioni Applicazione
+          </CardTitle>
+          <CardDescription>
+            Configura le impostazioni globali dell&apos;applicazione PCReady
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingSettings ? (
+            <p className="text-center py-4 text-muted-foreground">
+              Caricamento impostazioni...
+            </p>
+          ) : settings ? (
+            <Tabs defaultValue="generale" className="space-y-4">
+              <TabsList className="flex flex-wrap">
+                <TabsTrigger value="generale">Generale</TabsTrigger>
+                <TabsTrigger value="operativita">Operatività</TabsTrigger>
+                <TabsTrigger value="sicurezza">Sicurezza</TabsTrigger>
+                <TabsTrigger value="retention">Retention</TabsTrigger>
+                <TabsTrigger value="email-templates">Template Email</TabsTrigger>
+              </TabsList>
 
-        <TabsContent value="general">
-          <Card className="mb-5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DatabaseBackup className="size-5" />
-                Backup &amp; Disaster Recovery
-              </CardTitle>
-              <CardDescription>
-                Policy di protezione dati, continuità operativa ed export manuale.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                <BackupMetric
-                  label="Frequenza"
-                  value="Giornaliero automatico"
-                  detail="Backup gestiti da Supabase"
-                  readOnly
-                />
-                <BackupMetric
-                  label="Retention"
-                  value="30 giorni Pro / 7 giorni Free"
-                  detail="In base al piano Supabase"
-                  readOnly
-                />
-                <BackupMetric
-                  label="Ultimo backup"
-                  value="Gestito dal provider"
-                  detail="Verificabile dalla dashboard Supabase"
-                />
-                <BackupMetric
-                  label="RPO"
-                  value="< 24 ore"
-                  detail="Per backup automatici giornalieri"
-                  readOnly
-                />
-                <BackupMetric
-                  label="RTO"
-                  value="< 4 ore"
-                  detail="Ripristino coordinato con il supporto"
-                  readOnly
-                />
-                <BackupMetric
-                  label="Emergenze"
-                  value={settings?.support_email || "Email supporto non configurata"}
-                  detail="Contatto operativo per restore e incidenti"
-                  readOnly
-                />
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Export manuale dati</p>
-                  <p className="text-xs text-muted-foreground">
-                    Scarica un archivio ZIP con CSV di ticket, dispositivi e clienti.
-                  </p>
-                </div>
-                <Button onClick={handleExportAllData} disabled={exportAllBusy} variant="outline">
-                  <Download className="size-4 mr-2" />
-                  {exportAllBusy ? "Esportazione..." : "Esporta tutti i dati"}
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Shield className="size-3" />
-                <span>Dati protetti con backup giornalieri automatici</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="size-5" />
-                Impostazioni Applicazione
-              </CardTitle>
-              <CardDescription>
-                Configura le impostazioni globali dell'applicazione PCReady
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingSettings ? (
-                <p className="text-center py-4 text-muted-foreground">
-                  Caricamento impostazioni...
-                </p>
-              ) : settings ? (
+              {/* --- Generale --- */}
+              <TabsContent value="generale" className="mt-0">
                 <form
                   onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)}
                   className="space-y-6"
                 >
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {settingsSections.map(({ icon: Icon, title, description }) => (
-                      <div key={title} className="rounded-xl border p-3 bg-muted/30">
-                        <div className="flex items-center gap-2 font-semibold">
-                          <Icon className="h-4 w-4 text-primary" /> {title}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {lastSavedAt ? (
-                    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-                      <CheckCircle2 className="size-4" />
-                      Ultimo salvataggio completato alle{" "}
-                      {lastSavedAt.toLocaleTimeString("it-IT", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  ) : null}
-
+                  {successBanner && <div className="mb-4">{successBanner}</div>}
                   <SettingSection
                     icon={<Globe2 className="size-4" />}
                     title="Generale"
@@ -246,43 +223,37 @@ export function AdminSettingsTab() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="max_devices_per_technician">
-                          Max Dispositivi per Tecnico
-                        </Label>
-                        <Input
-                          id="max_devices_per_technician"
-                          type="number"
-                          min={1}
-                          max={100}
-                          {...settingsForm.register("max_devices_per_technician")}
-                        />
-                        {settingsForm.formState.errors.max_devices_per_technician && (
-                          <p className="text-sm text-destructive mt-1">
-                            {String(
-                              settingsForm.formState.errors.max_devices_per_technician?.message,
-                            )}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <Label htmlFor="support_email">Email Supporto</Label>
-                        <Input
-                          id="support_email"
-                          type="email"
-                          {...settingsForm.register("support_email")}
-                          placeholder="support@pcready.it"
-                        />
-                        {settingsForm.formState.errors.support_email && (
-                          <p className="text-sm text-destructive mt-1">
-                            {String(settingsForm.formState.errors.support_email?.message)}
-                          </p>
-                        )}
-                      </div>
+                    <div>
+                      <Label htmlFor="support_email">Email Supporto</Label>
+                      <Input
+                        id="support_email"
+                        type="email"
+                        {...settingsForm.register("support_email")}
+                        placeholder="support@pcready.it"
+                      />
+                      {settingsForm.formState.errors.support_email && (
+                        <p className="text-sm text-destructive mt-1">
+                          {String(settingsForm.formState.errors.support_email?.message)}
+                        </p>
+                      )}
                     </div>
                   </SettingSection>
 
+                  <SaveButton
+                    saveSettingsBusy={saveSettingsBusy}
+                    isValid={settingsForm.formState.isValid}
+                    isDirty={settingsForm.formState.isDirty}
+                  />
+                </form>
+              </TabsContent>
+
+              {/* --- Operatività --- */}
+              <TabsContent value="operativita" className="mt-0">
+                <form
+                  onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)}
+                  className="space-y-6"
+                >
+                  {successBanner && <div className="mb-4">{successBanner}</div>}
                   <SettingSection
                     icon={<SlidersHorizontal className="size-4" />}
                     title="Operatività"
@@ -293,7 +264,7 @@ export function AdminSettingsTab() {
                         <div>
                           <h3 className="font-medium">Variabili di sistema</h3>
                           <p className="text-sm text-muted-foreground">
-                            Gestisci le liste usate nei form operativi dell'applicazione.
+                            Gestisci le liste usate nei form operativi dell&apos;applicazione.
                           </p>
                         </div>
                         <TagListEditor
@@ -336,7 +307,8 @@ export function AdminSettingsTab() {
                         <div>
                           <h3 className="font-medium">Deprecazione automatica dispositivi</h3>
                           <p className="text-sm text-muted-foreground">
-                            Soglie per marcare automaticamente i dispositivi come "da sostituire".
+                            Soglie per marcare automaticamente i dispositivi come &quot;da
+                            sostituire&quot;.
                           </p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -367,9 +339,39 @@ export function AdminSettingsTab() {
                         </div>
                       </div>
 
-                      <div>
-                        <Label>Limiti WIP Kanban</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      <div className="rounded-lg border p-4">
+                        <h3 className="font-medium">Limiti operativi</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Limite sul numero massimo di dispositivi assegnabili a un singolo
+                          tecnico.
+                        </p>
+                        <div className="max-w-[200px]">
+                          <Label htmlFor="max_devices_per_technician">
+                            Max Dispositivi per Tecnico
+                          </Label>
+                          <Input
+                            id="max_devices_per_technician"
+                            type="number"
+                            min={1}
+                            max={100}
+                            {...settingsForm.register("max_devices_per_technician")}
+                          />
+                          {settingsForm.formState.errors.max_devices_per_technician && (
+                            <p className="text-sm text-destructive mt-1">
+                              {String(
+                                settingsForm.formState.errors.max_devices_per_technician?.message,
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border p-4">
+                        <h3 className="font-medium">Limiti WIP Kanban</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Numero massimo di ticket per ogni colonna. 0 = nessun limite.
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           {ADMIN_WIP_LIMIT_FIELDS.map(([status, label]) => (
                             <div key={status}>
                               <Label
@@ -395,10 +397,16 @@ export function AdminSettingsTab() {
                             </div>
                           ))}
                         </div>
-                        <div className="mt-3">
-                          <Label htmlFor="archive_after_days">
-                            Archiviazione automatica (giorni)
-                          </Label>
+                      </div>
+
+                      <div className="rounded-lg border p-4">
+                        <h3 className="font-medium">Archiviazione automatica</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          I ticket completati vengono spostati automaticamente in archivio dopo il
+                          numero di giorni specificato.
+                        </p>
+                        <div className="max-w-[200px]">
+                          <Label htmlFor="archive_after_days">Giorni prima dell&apos;archiviazione</Label>
                           <Input
                             id="archive_after_days"
                             type="number"
@@ -411,71 +419,85 @@ export function AdminSettingsTab() {
                               {String(settingsForm.formState.errors.archive_after_days?.message)}
                             </p>
                           )}
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Numero di giorni dopo il completamento per spostare il ticket in
-                            archivio. 0 = mai.
+                          <p className="text-xs text-muted-foreground mt-1">
+                            0 = mai. Max 365 giorni.
                           </p>
                         </div>
+                      </div>
 
-                        <div className="space-y-3 rounded-lg border p-4 mt-4">
-                          <div>
-                            <h3 className="font-medium">Configurazione SLA per priorita</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Configura i tempi massimi di prima risposta e risoluzione. La scadenza
-                              SLA del ticket viene calcolata sul tempo di risoluzione.
-                            </p>
-                          </div>
-                          <OverflowTable>
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b">
-                                  <th className="py-2 pr-3 text-left text-xs font-semibold uppercase text-muted-foreground">
-                                    Priorita
-                                  </th>
-                                  <th className="py-2 px-3 text-left text-xs font-semibold uppercase text-muted-foreground">
-                                    Tempo risposta (ore)
-                                  </th>
-                                  <th className="py-2 pl-3 text-left text-xs font-semibold uppercase text-muted-foreground">
-                                    Tempo risoluzione (ore)
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {ADMIN_SLA_CONFIG_FIELDS.map(([priority, label]) => (
-                                  <tr key={priority} className="border-b last:border-0">
-                                    <td className="py-3 pr-3 font-medium">{label}</td>
-                                    <td className="py-3 px-3">
-                                      <Input
-                                        id={`sla_${priority}_response`}
-                                        type="number"
-                                        min={1}
-                                        max={999}
-                                        {...(settingsForm.register as any)(
-                                          `sla_config.${priority}.responseHours`,
-                                        )}
-                                      />
-                                    </td>
-                                    <td className="py-3 pl-3">
-                                      <Input
-                                        id={`sla_${priority}_resolution`}
-                                        type="number"
-                                        min={1}
-                                        max={999}
-                                        {...(settingsForm.register as any)(
-                                          `sla_config.${priority}.resolutionHours`,
-                                        )}
-                                      />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </OverflowTable>
+                      <div className="space-y-3 rounded-lg border p-4">
+                        <div>
+                          <h3 className="font-medium">Configurazione SLA per priorità</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Configura i tempi massimi di prima risposta e risoluzione. La
+                            scadenza SLA del ticket viene calcolata sul tempo di risoluzione.
+                          </p>
                         </div>
+                        <OverflowTable>
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="py-2 pr-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                                  Priorità
+                                </th>
+                                <th className="py-2 px-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                                  Tempo risposta (ore)
+                                </th>
+                                <th className="py-2 pl-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                                  Tempo risoluzione (ore)
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ADMIN_SLA_CONFIG_FIELDS.map(([priority, label]) => (
+                                <tr key={priority} className="border-b last:border-0">
+                                  <td className="py-3 pr-3 font-medium">{label}</td>
+                                  <td className="py-3 px-3">
+                                    <Input
+                                      id={`sla_${priority}_response`}
+                                      type="number"
+                                      min={1}
+                                      max={999}
+                                      {...(settingsForm.register as any)(
+                                        `sla_config.${priority}.responseHours`,
+                                      )}
+                                    />
+                                  </td>
+                                  <td className="py-3 pl-3">
+                                    <Input
+                                      id={`sla_${priority}_resolution`}
+                                      type="number"
+                                      min={1}
+                                      max={999}
+                                      {...(settingsForm.register as any)(
+                                        `sla_config.${priority}.resolutionHours`,
+                                      )}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </OverflowTable>
                       </div>
                     </div>
                   </SettingSection>
 
+                  <SaveButton
+                    saveSettingsBusy={saveSettingsBusy}
+                    isValid={settingsForm.formState.isValid}
+                    isDirty={settingsForm.formState.isDirty}
+                  />
+                </form>
+              </TabsContent>
+
+              {/* --- Sicurezza --- */}
+              <TabsContent value="sicurezza" className="mt-0">
+                <form
+                  onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)}
+                  className="space-y-6"
+                >
+                  {successBanner && <div className="mb-4">{successBanner}</div>}
                   <SettingSection
                     icon={<Shield className="h-4 w-4" />}
                     title="Sicurezza e accessi"
@@ -549,7 +571,9 @@ export function AdminSettingsTab() {
                         </Label>
                       </div>
                       <div className="max-w-xs">
-                        <Label htmlFor="mfa_grace_period_days">Periodo di grazia (giorni)</Label>
+                        <Label htmlFor="mfa_grace_period_days">
+                          Periodo di grazia (giorni)
+                        </Label>
                         <Input
                           id="mfa_grace_period_days"
                           type="number"
@@ -565,24 +589,40 @@ export function AdminSettingsTab() {
                     </div>
                   </SettingSection>
 
+                  <SaveButton
+                    saveSettingsBusy={saveSettingsBusy}
+                    isValid={settingsForm.formState.isValid}
+                    isDirty={settingsForm.formState.isDirty}
+                  />
+                </form>
+              </TabsContent>
+
+              {/* --- Retention --- */}
+              <TabsContent value="retention" className="mt-0">
+                <form
+                  onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)}
+                  className="space-y-6"
+                >
+                  {successBanner && <div className="mb-4">{successBanner}</div>}
                   <SettingSection
                     icon={<DatabaseBackup className="size-4" />}
                     title="Audit e conservazione"
                     description="Definisce per quanto tempo conservare i log operativi prima dell'archiviazione."
                   >
-                    {/* Log Retention */}
                     <div className="space-y-3 rounded-lg border p-4 mt-4">
                       <div>
                         <h3 className="font-medium">Retention Log di Audit</h3>
                         <p className="text-sm text-muted-foreground">
-                          Configura per quanti giorni mantenere i log di attivita prima
+                          Configura per quanti giorni mantenere i log di attività prima
                           dell&apos;archiviazione automatica.
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <select
                           className="pc-input max-w-[200px]"
-                          value={String((settingsForm.watch as any)("log_retention_days") ?? 365)}
+                          value={String(
+                            (settingsForm.watch as any)("log_retention_days") ?? 365,
+                          )}
                           onChange={(e) =>
                             (settingsForm.setValue as any)(
                               "log_retention_days",
@@ -596,76 +636,53 @@ export function AdminSettingsTab() {
                           <option value="730">730 giorni (2 anni)</option>
                         </select>
                         <span className="text-xs text-muted-foreground">
-                          I log piu vecchi verranno spostati nell&apos;archivio
+                          I log più vecchi verranno spostati nell&apos;archivio
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DatabaseBackup className="h-3 w-3" />
-                        <span>Log archiviati disponibili in sola lettura nella sezione Log</span>
+                        <span>
+                          Log archiviati disponibili in sola lettura nella sezione Log
+                        </span>
                       </div>
                     </div>
                   </SettingSection>
 
-                  <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-2 py-3 backdrop-blur">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="size-3.5" />
-                      Le modifiche vengono applicate ai nuovi flussi e alle configurazioni globali.
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={!settingsForm.formState.isValid || saveSettingsBusy}
-                    >
-                      <Save className="size-4 mr-2" />
-                      {saveSettingsBusy ? (
-                        <>
-                          <svg
-                            className="-ml-1 mr-2 h-4 w-4 animate-spin text-current"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            ></path>
-                          </svg>
-                          Salvataggio...
-                        </>
-                      ) : (
-                        "Salva Impostazioni"
-                      )}
-                    </Button>
-                  </div>
+                  <SaveButton
+                    saveSettingsBusy={saveSettingsBusy}
+                    isValid={settingsForm.formState.isValid}
+                    isDirty={settingsForm.formState.isDirty}
+                  />
                 </form>
-              ) : (
-                <p className="text-center py-4 text-muted-foreground">
-                  Errore nel caricamento delle impostazioni
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </TabsContent>
 
-        <TabsContent value="email-templates">
-          {accessToken ? (
-            <EmailTemplateSection
-              accessToken={accessToken}
-              adminEmail={user?.email ?? ""}
-              organizationName={settings?.organization_name ?? "PCReady"}
-              supportEmail={settings?.support_email ?? ""}
-            />
-          ) : null}
-        </TabsContent>
-      </Tabs>
+              {/* --- Template Email --- */}
+              <TabsContent value="email-templates" className="mt-0">
+                <div className="mb-4 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                  <p>
+                    {tAdmin(
+                      "settings.emailTemplates.description",
+                      "Personalizza le email inviate automaticamente dal sistema: notifiche ticket, inviti utenti, alert SLA e report periodici. Se &egrave; la prima volta che accedi, usa &quot;Crea template di default&quot; per generare il template iniziale. Dopo la creazione, seleziona il template dal menu a tendina per modificarlo e usa &quot;Anteprima&quot; per visualizzarlo prima del salvataggio.",
+                    )}
+                  </p>
+                </div>
+                {accessToken ? (
+                  <EmailTemplateSection
+                    accessToken={accessToken}
+                    adminEmail={userEmail}
+                    organizationName={settings?.organization_name ?? "PCReady"}
+                    supportEmail={settings?.support_email ?? ""}
+                  />
+                ) : null}
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <p className="text-center py-4 text-muted-foreground">
+              Errore nel caricamento delle impostazioni
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </TabsContent>
   );
 }
