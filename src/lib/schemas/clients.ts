@@ -42,6 +42,11 @@ export const ContactSchema = z.object({
   department: optionalTrimmed(),
   is_primary: z.boolean().optional(),
   notes: optionalTrimmed(),
+  private_note: optionalTrimmed(),
+  is_starred: z.boolean().optional(),
+  availability_status: z.string().nullable().optional(),
+  return_date: z.string().nullable().optional(),
+  group_id: z.string().uuid().nullable().optional(),
 });
 
 /**

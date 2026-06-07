@@ -41,7 +41,19 @@
     "error": "Unable to load clients. Check your connection and try again.",
     "filterAll": "All",
     "filterOpenTickets": "Open tickets",
-    "filterPortalActive": "Portal active"
+    "filterPortalActive": "Portal active",
+    "loadingMore": "Loading..."
+  },
+  "tags": {
+    "filterLabel": "Filter by tag",
+    "filterAll": "All tags",
+    "title": "Client segmentation",
+    "newPlaceholder": "New tag, e.g. VIP",
+    "add": "Add",
+    "updated": "Tags updated",
+    "updateError": "Error updating tags",
+    "created": "Tag assigned",
+    "createError": "Error creating tag"
   },
   "form": {
     "createTitle": "New Client",
@@ -54,6 +66,7 @@
     "save": "Save Client",
     "cancel": "Cancel",
     "delete": "Delete",
+    "edit": "Edit",
     "saveClient": "Save client",
     "ragioneSociale": "Company Name *",
     "partitaIva": "VAT No.",
@@ -94,6 +107,23 @@
     "copied": "Copied",
     "copyLink": "Copy link"
   },
+  "overview": {
+    "openTickets": "Open tickets",
+    "avgResolution": "Avg. resolution time",
+    "totalBilled": "Revenue",
+    "contractExpiry": "Contract expiry",
+    "bundleTitle": "Active service bundle",
+    "bundleSubtitle": "Effective SLA and contract expiry",
+    "configure": "Configure",
+    "bundleName": "Name",
+    "responseSla": "Response",
+    "resolutionSla": "Resolution",
+    "noBundle": "No active bundle linked to this client.",
+    "quickStats": "Client summary",
+    "contacts": "Contacts",
+    "devices": "Devices",
+    "uploadDocument": "Upload document"
+  },
   "detail": {
     "contactInfoEmpty": "Client contact info not filled in",
     "openTickets": "open tickets",
@@ -101,10 +131,15 @@
     "contacts": "contacts"
   },
   "tabs": {
+    "overview": "Overview",
     "info": "Info",
+    "notes": "Notes",
     "contacts": "Contacts",
     "tickets": "Tickets",
-    "devices": "Devices"
+    "devices": "Devices",
+    "activity": "Activity",
+    "documents": "Documents",
+    "settings": "SLA & Tags"
   },
   "contacts": {
     "count": "{{count}} registered contacts",
@@ -124,6 +159,14 @@
     "link": "Link",
     "revoke": "Revoke",
     "deleteTitle": "Delete contact",
+    "star": "Add to favorites",
+    "unstar": "Remove favorite",
+    "hasPrivateNote": "Private note present",
+    "availabilityVacation": "On vacation",
+    "availabilitySick": "Sick leave",
+    "availabilityUnavailable": "Unavailable",
+    "availabilityAvailable": "Available",
+    "returnsOn": "Returns on {{date}}",
     "modalTitleEdit": "Edit contact",
     "modalTitleNew": "New contact",
     "formName": "Full Name *",
@@ -133,8 +176,30 @@
     "formDepartment": "Department",
     "formPrimary": "Primary Contact",
     "formNotes": "Notes",
+    "formPrivateNote": "Private note (techs only)",
+    "formPrivateNotePlaceholder": "Internal notes not visible on the client portal...",
+    "formAvailability": "Availability",
+    "availabilityDefault": "No indication",
+    "formReturnDate": "Return date",
+    "formGroup": "Group",
+    "groupNone": "No group",
     "save": "Save contact",
     "saving": "Saving..."
+  },
+  "notes": {
+    "saved": "Note saved",
+    "saveError": "Error saving note",
+    "deleted": "Note deleted",
+    "deleteError": "Error deleting note",
+    "editorLabel": "Internal note",
+    "update": "Update note",
+    "add": "Add note",
+    "unknownAuthor": "Author not available",
+    "history": "History",
+    "empty": "No internal notes for this client.",
+    "historyTitle": "Revision history",
+    "previous": "Before",
+    "noRevisions": "No revisions recorded."
   },
   "tickets": {
     "count": "{{count}} linked tickets",
@@ -151,6 +216,30 @@
     },
     "unassigned": "Unassigned"
   },
+  "documents": {
+    "uploaded": "Document uploaded",
+    "uploadError": "Error uploading document",
+    "openError": "Error opening document",
+    "deleted": "Document deleted",
+    "deleteError": "Error deleting document",
+    "typeLabel": "Document type",
+    "typeContract": "Contract",
+    "typeNda": "NDA",
+    "typeTechnical": "Technical",
+    "typeOther": "Other",
+    "description": "Document description",
+    "descriptionLabel": "Document description",
+    "uploading": "Uploading...",
+    "upload": "Upload",
+    "empty": "No documents attached to this client.",
+    "headers": {
+      "name": "Name",
+      "type": "Type",
+      "size": "Size",
+      "uploaded": "Uploaded",
+      "actions": "Actions"
+    }
+  },
   "devices": {
     "addDevice": "Add device",
     "empty": "No devices for this client.",
@@ -162,8 +251,10 @@
       "os": "OS",
       "status": "Status",
       "assignedTo": "Assigned To",
-      "date": "Added"
-    }
+      "date": "Added",
+      "actions": "Actions"
+    },
+    "createTicket": "Create ticket"
   },
   "errors": {
     "selectClientFirst": "Select a client first",
@@ -332,5 +423,15 @@
   },
   "general": {
     "ok": "OK"
+  },
+  "activity": {
+    "empty": "No activity available.",
+    "labelTicketCreated": "Ticket opened",
+    "labelTicketClosed": "Ticket closed",
+    "labelNote": "Internal note",
+    "labelDocument": "Document",
+    "labelPortalAccess": "Portal access",
+    "labelBundle": "Contract",
+    "viewTicket": "View ticket"
   }
 }

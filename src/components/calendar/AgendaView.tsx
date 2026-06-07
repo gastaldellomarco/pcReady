@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { pcReadyColors } from "@/lib/design-system";
+import { openTicketDetail } from "@/lib/detail-navigation";
 import { resolveEventColors } from "./eventColors";
 import type { CalendarEvent } from "@/lib/queries/calendar";
 
@@ -132,15 +133,18 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
                             </span>
                           ) : null}
                           {event.tickets?.map((ticket) => (
-                            <a
+                            <button
                               key={ticket.id}
-                              href={`/tickets?ticket=${encodeURIComponent(ticket.ticket_code)}`}
-                              className="inline-flex items-center gap-1 font-mono font-semibold text-blue-700 hover:underline"
-                              onClick={(clickEvent) => clickEvent.stopPropagation()}
+                              type="button"
+                              className="inline-flex items-center gap-1 font-mono font-semibold text-blue-700 hover:underline cursor-pointer"
+                              onClick={(clickEvent) => {
+                                clickEvent.stopPropagation();
+                                openTicketDetail(ticket.id);
+                              }}
                             >
                               <LinkIcon className="h-3.5 w-3.5" />
                               {ticket.ticket_code}
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>

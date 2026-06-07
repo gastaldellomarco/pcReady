@@ -671,10 +671,90 @@ export type Database = {
           },
         ]
       }
+      calendar_event_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          event_id: string
+          id: string
+          offset_minutes: number
+          sent_at: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          event_id: string
+          id?: string
+          offset_minutes: number
+          sent_at?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          offset_minutes?: number
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_event_tickets: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_tickets_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_tickets_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           all_day: boolean
           assignee_id: string | null
+          availability_status: string | null
+          client_id: string | null
           color: string | null
           created_at: string
           created_by: string | null
@@ -682,9 +762,21 @@ export type Database = {
           end_at: string
           estimated_duration_minutes: number | null
           event_type: string
+          external_event_id: string | null
+          external_provider: string | null
+          external_updated_at: string | null
           id: string
           notes: string | null
+          recurrence_count: number | null
+          recurrence_days: string[] | null
+          recurrence_exception_date: string | null
+          recurrence_frequency: string | null
+          recurrence_interval: number | null
+          recurrence_parent_id: string | null
+          recurrence_series_id: string | null
+          recurrence_until: string | null
           start_at: string
+          sync_status: string | null
           ticket_id: string | null
           title: string
           updated_at: string
@@ -692,6 +784,8 @@ export type Database = {
         Insert: {
           all_day?: boolean
           assignee_id?: string | null
+          availability_status?: string | null
+          client_id?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -699,9 +793,21 @@ export type Database = {
           end_at: string
           estimated_duration_minutes?: number | null
           event_type?: string
+          external_event_id?: string | null
+          external_provider?: string | null
+          external_updated_at?: string | null
           id?: string
           notes?: string | null
+          recurrence_count?: number | null
+          recurrence_days?: string[] | null
+          recurrence_exception_date?: string | null
+          recurrence_frequency?: string | null
+          recurrence_interval?: number | null
+          recurrence_parent_id?: string | null
+          recurrence_series_id?: string | null
+          recurrence_until?: string | null
           start_at: string
+          sync_status?: string | null
           ticket_id?: string | null
           title: string
           updated_at?: string
@@ -709,6 +815,8 @@ export type Database = {
         Update: {
           all_day?: boolean
           assignee_id?: string | null
+          availability_status?: string | null
+          client_id?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -716,9 +824,21 @@ export type Database = {
           end_at?: string
           estimated_duration_minutes?: number | null
           event_type?: string
+          external_event_id?: string | null
+          external_provider?: string | null
+          external_updated_at?: string | null
           id?: string
           notes?: string | null
+          recurrence_count?: number | null
+          recurrence_days?: string[] | null
+          recurrence_exception_date?: string | null
+          recurrence_frequency?: string | null
+          recurrence_interval?: number | null
+          recurrence_parent_id?: string | null
+          recurrence_series_id?: string | null
+          recurrence_until?: string | null
           start_at?: string
+          sync_status?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string
@@ -732,10 +852,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "calendar_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "calendar_events_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_recurrence_series_id_fkey"
+            columns: ["recurrence_series_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
             referencedColumns: ["id"]
           },
           {
@@ -754,6 +895,51 @@ export type Database = {
           },
         ]
       }
+      calendar_sync_connections: {
+        Row: {
+          access_token: string | null
+          account_email: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          refresh_token: string | null
+          sync_cursor: string | null
+          sync_enabled: boolean
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_email?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          sync_cursor?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          account_email?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          sync_cursor?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checklist_templates: {
         Row: {
           created_at: string
@@ -763,6 +949,7 @@ export type Database = {
           is_default: boolean
           name: string
           structure: Json
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -773,6 +960,7 @@ export type Database = {
           is_default?: boolean
           name: string
           structure?: Json
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -783,9 +971,60 @@ export type Database = {
           is_default?: boolean
           name?: string
           structure?: Json
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
+      }
+      client_budgets: {
+        Row: {
+          active: boolean
+          alert_threshold_percent: number
+          budget_amount: number
+          client_id: string
+          created_at: string
+          ends_on: string | null
+          id: string
+          notes: string | null
+          period: string
+          starts_on: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          alert_threshold_percent?: number
+          budget_amount?: number
+          client_id: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          period?: string
+          starts_on?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          alert_threshold_percent?: number
+          budget_amount?: number
+          client_id?: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          period?: string
+          starts_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_budgets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_bundle_assignments: {
         Row: {
@@ -874,56 +1113,95 @@ export type Database = {
       }
       client_contacts: {
         Row: {
+          availability_status: string | null
           client_id: string
           created_at: string
           department: string | null
           email: string | null
           first_name: string
           full_name: string | null
+          group_id: string | null
           id: string
           is_primary: boolean
+          is_starred: boolean
           job_title: string | null
           last_name: string | null
+          merged_at: string | null
+          merged_into_id: string | null
           notes: string | null
+          notification_preferences: Json | null
           phone: string | null
+          portal_2fa_enabled: boolean | null
+          portal_2fa_pending_code: string | null
+          portal_2fa_pending_expires: string | null
+          portal_2fa_pending_login_token: string | null
           portal_password_hash: string | null
           portal_password_updated_at: string | null
+          preferred_language: string | null
+          private_note: string | null
+          return_date: string | null
           role: string | null
           updated_at: string
         }
         Insert: {
+          availability_status?: string | null
           client_id: string
           created_at?: string
           department?: string | null
           email?: string | null
           first_name: string
           full_name?: string | null
+          group_id?: string | null
           id?: string
           is_primary?: boolean
+          is_starred?: boolean
           job_title?: string | null
           last_name?: string | null
+          merged_at?: string | null
+          merged_into_id?: string | null
           notes?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
+          portal_2fa_enabled?: boolean | null
+          portal_2fa_pending_code?: string | null
+          portal_2fa_pending_expires?: string | null
+          portal_2fa_pending_login_token?: string | null
           portal_password_hash?: string | null
           portal_password_updated_at?: string | null
+          preferred_language?: string | null
+          private_note?: string | null
+          return_date?: string | null
           role?: string | null
           updated_at?: string
         }
         Update: {
+          availability_status?: string | null
           client_id?: string
           created_at?: string
           department?: string | null
           email?: string | null
           first_name?: string
           full_name?: string | null
+          group_id?: string | null
           id?: string
           is_primary?: boolean
+          is_starred?: boolean
           job_title?: string | null
           last_name?: string | null
+          merged_at?: string | null
+          merged_into_id?: string | null
           notes?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
+          portal_2fa_enabled?: boolean | null
+          portal_2fa_pending_code?: string | null
+          portal_2fa_pending_expires?: string | null
+          portal_2fa_pending_login_token?: string | null
           portal_password_hash?: string | null
           portal_password_updated_at?: string | null
+          preferred_language?: string | null
+          private_note?: string | null
+          return_date?: string | null
           role?: string | null
           updated_at?: string
         }
@@ -933,6 +1211,102 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "contact_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_merged_into_id_fkey"
+            columns: ["merged_into_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_contract_alerts: {
+        Row: {
+          bundle_assignment_id: string | null
+          channel: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          days_before: number
+          enabled: boolean
+          id: string
+          last_notified_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bundle_assignment_id?: string | null
+          channel?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          days_before?: number
+          enabled?: boolean
+          id?: string
+          last_notified_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bundle_assignment_id?: string | null
+          channel?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          days_before?: number
+          enabled?: boolean
+          id?: string
+          last_notified_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contract_alerts_bundle_assignment_id_fkey"
+            columns: ["bundle_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "active_client_bundle_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contract_alerts_bundle_assignment_id_fkey"
+            columns: ["bundle_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "bundle_assignment_usage_summary"
+            referencedColumns: ["assignment_id"]
+          },
+          {
+            foreignKeyName: "client_contract_alerts_bundle_assignment_id_fkey"
+            columns: ["bundle_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "bundle_assignment_usage_summary"
+            referencedColumns: ["client_bundle_assignment_id"]
+          },
+          {
+            foreignKeyName: "client_contract_alerts_bundle_assignment_id_fkey"
+            columns: ["bundle_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "client_bundle_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contract_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contract_alerts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -993,6 +1367,221 @@ export type Database = {
           },
         ]
       }
+      client_documents: {
+        Row: {
+          client_id: string
+          description: string | null
+          document_type: string
+          file_name: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          storage_bucket: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          description?: string | null
+          document_type?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          storage_bucket?: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          description?: string | null
+          document_type?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_note_revisions: {
+        Row: {
+          author_id: string | null
+          changed_at: string
+          client_id: string
+          id: string
+          new_content: string
+          note_id: string
+          previous_content: string
+        }
+        Insert: {
+          author_id?: string | null
+          changed_at?: string
+          client_id: string
+          id?: string
+          new_content: string
+          note_id: string
+          previous_content: string
+        }
+        Update: {
+          author_id?: string | null
+          changed_at?: string
+          client_id?: string
+          id?: string
+          new_content?: string
+          note_id?: string
+          previous_content?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_note_revisions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_note_revisions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_note_revisions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "client_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          author_id: string | null
+          client_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          client_id: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          client_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_tag_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          client_id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id: string
+          tag_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tag_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tag_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "client_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -1052,6 +1641,361 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      contact_groups: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_groups_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          item_type: string
+          line_total: number | null
+          quantity: number
+          ticket_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          item_type?: string
+          line_total?: number | null
+          quantity?: number
+          ticket_id?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          item_type?: string
+          line_total?: number | null
+          quantity?: number
+          ticket_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "cost_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_invoice_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_invoice_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_invoices: {
+        Row: {
+          accounting_export_format: string | null
+          accounting_exported_at: string | null
+          client_id: string
+          created_at: string
+          currency: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          logo_url: string | null
+          notes: string | null
+          paid_amount: number
+          period_end: string | null
+          period_start: string | null
+          recipient_address: string | null
+          recipient_name: string | null
+          sender_address: string | null
+          sender_name: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          accounting_export_format?: string | null
+          accounting_exported_at?: string | null
+          client_id: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          logo_url?: string | null
+          notes?: string | null
+          paid_amount?: number
+          period_end?: string | null
+          period_start?: string | null
+          recipient_address?: string | null
+          recipient_name?: string | null
+          sender_address?: string | null
+          sender_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          accounting_export_format?: string | null
+          accounting_exported_at?: string | null
+          client_id?: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          logo_url?: string | null
+          notes?: string | null
+          paid_amount?: number
+          period_end?: string | null
+          period_start?: string | null
+          recipient_address?: string | null
+          recipient_name?: string | null
+          sender_address?: string | null
+          sender_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_periodic_reports: {
+        Row: {
+          client_id: string
+          created_at: string
+          email_to: string | null
+          error_message: string | null
+          generated_pdf_path: string | null
+          id: string
+          report_month: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          email_to?: string | null
+          error_message?: string | null
+          generated_pdf_path?: string | null
+          id?: string
+          report_month: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          email_to?: string | null
+          error_message?: string | null
+          generated_pdf_path?: string | null
+          id?: string
+          report_month?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_periodic_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_quote_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          item_type: string
+          line_total: number | null
+          quantity: number
+          quote_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          item_type?: string
+          line_total?: number | null
+          quantity?: number
+          quote_id: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          item_type?: string
+          line_total?: number | null
+          quantity?: number
+          quote_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "cost_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_quotes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string
+          converted_ticket_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          issue_date: string
+          notes: string | null
+          quote_number: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          title: string
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id: string
+          converted_ticket_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          quote_number: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          title?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string
+          converted_ticket_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          quote_number?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          title?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_quotes_converted_ticket_id_fkey"
+            columns: ["converted_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_quotes_converted_ticket_id_fkey"
+            columns: ["converted_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       devices: {
         Row: {
@@ -1228,6 +2172,51 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_signatures: {
+        Row: {
+          client_id: string
+          contact_id: string
+          created_at: string
+          document_id: string
+          id: string
+          signature_path: string
+          signed_at: string
+        }
+        Insert: {
+          client_id: string
+          contact_id: string
+          created_at?: string
+          document_id: string
+          id?: string
+          signature_path: string
+          signed_at?: string
+        }
+        Update: {
+          client_id?: string
+          contact_id?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          signature_path?: string
+          signed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signatures_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -2043,6 +3032,69 @@ export type Database = {
           },
           {
             foreignKeyName: "ticket_feedback_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_material_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          resale_margin_percent: number
+          sku: string | null
+          supplier: string | null
+          ticket_id: string
+          total_cost: number | null
+          total_price: number | null
+          unit_cost: number
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          quantity?: number
+          resale_margin_percent?: number
+          sku?: string | null
+          supplier?: string | null
+          ticket_id: string
+          total_cost?: number | null
+          total_price?: number | null
+          unit_cost?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          resale_margin_percent?: number
+          sku?: string | null
+          supplier?: string | null
+          ticket_id?: string
+          total_cost?: number | null
+          total_price?: number | null
+          unit_cost?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_material_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_material_items_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
@@ -2875,6 +3927,31 @@ export type Database = {
           },
         ]
       }
+      client_budget_usage_summary: {
+        Row: {
+          active: boolean | null
+          alert_active: boolean | null
+          alert_threshold_percent: number | null
+          budget_amount: number | null
+          budget_id: string | null
+          client_id: string | null
+          client_name: string | null
+          ends_on: string | null
+          period: string | null
+          starts_on: string | null
+          used_amount: number | null
+          used_percent: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_budgets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_cost_summary: {
         Row: {
           assignee_id: string | null
@@ -2889,6 +3966,9 @@ export type Database = {
           id: string | null
           labor_cost: number | null
           material_cost: number | null
+          material_items_count: number | null
+          material_margin: number | null
+          material_revenue: number | null
           priority: Database["public"]["Enums"]["ticket_priority"] | null
           status: Database["public"]["Enums"]["ticket_status"] | null
           technician_name: string | null
@@ -2914,45 +3994,35 @@ export type Database = {
           },
         ]
       }
+      ticket_material_summary: {
+        Row: {
+          material_cost: number | null
+          material_items_count: number | null
+          material_margin: number | null
+          material_revenue: number | null
+          ticket_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_material_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_material_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _ref_val: { Args: { key_: string }; Returns: string }
       archive_completed_tickets: { Args: never; Returns: undefined }
-      get_active_bundle_for_client: {
-        Args: { _client_id: string }
-        Returns: {
-          auto_renew: boolean | null
-          billing_type: string | null
-          bundle_description: string | null
-          bundle_id: string | null
-          bundle_name: string | null
-          client_id: string | null
-          client_name: string | null
-          created_at: string | null
-          currency: string | null
-          days_until_expiry: number | null
-          effective_extra_hourly_rate: number | null
-          effective_fee: number | null
-          effective_included_hours: number | null
-          effective_included_onsite_visits: number | null
-          effective_sla_resolution_hours: number | null
-          effective_sla_response_hours: number | null
-          end_date: string | null
-          id: string | null
-          notes: string | null
-          remote_support: boolean | null
-          renewal_mode: string | null
-          start_date: string | null
-          status: string | null
-          ticket_priority: string | null
-          updated_at: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "active_client_bundle_assignments"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
       get_sla_resolution_hours: {
         Args: {
           ticket_priority: Database["public"]["Enums"]["ticket_priority"]
@@ -2994,6 +4064,7 @@ export type Database = {
         Returns: string
       }
       refresh_ticket_sla_breaches: { Args: never; Returns: number }
+      run_client_contract_alerts: { Args: never; Returns: undefined }
       run_maintenance_automations: { Args: never; Returns: undefined }
       validate_action_types: { Args: { actions: Json }; Returns: boolean }
     }

@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Building2,
   Bell,
+  CalendarDays,
   CheckCircle2,
   Clock,
   Copy,
@@ -14,6 +15,9 @@ import {
   HardDrive,
   History,
   Link2,
+  Lock,
+  LogIn,
+  Package,
   Pencil,
   Plus,
   Save,
@@ -25,7 +29,7 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -90,6 +94,11 @@ type ContactRow = {
   department: string | null;
   is_primary: boolean;
   notes: string | null;
+  is_starred: boolean | null;
+  private_note: string | null;
+  availability_status: string | null;
+  return_date: string | null;
+  group_id: string | null;
 };
 
 type ClientForm = {
@@ -116,6 +125,10 @@ type ContactForm = {
   department: string;
   is_primary: boolean;
   notes: string;
+  private_note: string;
+  availability_status: string;
+  return_date: string;
+  group_id: string;
 };
 
 type ClientTab =
@@ -181,6 +194,10 @@ const emptyContact: ContactForm = {
   department: "",
   is_primary: false,
   notes: "",
+  private_note: "",
+  availability_status: "",
+  return_date: "",
+  group_id: "",
 };
 
 const PAGE_SIZE = LIST_PAGE_SIZE;
@@ -244,6 +261,8 @@ function ClientsPage() {
     useClientTags,
     useClientTagAssignments,
     useClientOverview,
+    useContactGroups,
+    useToggleStarContact,
   } = queries as any;
   const listQuery = useClientsInfiniteList({ q, pageSize: PAGE_SIZE });
   const {
@@ -263,6 +282,9 @@ function ClientsPage() {
   const createContactMut = useCreateContact();
   const updateContactMut = useUpdateContact();
   const deleteContactMut = useDeleteContact();
+  const toggleStarMut = useToggleStarContact();
+  const groupsQuery = useContactGroups(selectedId);
+  const groups = (groupsQuery.data ?? []) as import("@/lib/queries/clients").ContactGroup[];
   const clients = useMemo(() => {
     const fromPages = (listQuery.data?.pages ?? []).flatMap((p) => (p.data ?? []) as ClientRow[]);
     if (!extraClients.length) return fromPages;
@@ -433,12 +455,13 @@ function ClientsPage() {
     });
   }
 
+  const CONTACT_SELECT =
+    "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, is_starred, private_note, availability_status, return_date, group_id";
+
   async function loadContacts(clientId: string) {
     const { data, error } = await supabase
       .from("client_contacts")
-      .select(
-        "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes",
-      )
+      .select(CONTACT_SELECT)
       .eq("client_id", clientId)
       .order("is_primary", { ascending: false })
       .order("full_name");
@@ -548,6 +571,10 @@ function ClientsPage() {
       department: contact.department || null,
       is_primary: contact.is_primary,
       notes: contact.notes || null,
+      private_note: contact.private_note || null,
+      availability_status: contact.availability_status || null,
+      return_date: contact.return_date || null,
+      group_id: contact.group_id || null,
     } as ContactInput);
     setContactModalOpen(true);
   }
@@ -575,6 +602,10 @@ function ClientsPage() {
         department: clean(values.department || ""),
         is_primary: !!values.is_primary,
         notes: clean(values.notes || ""),
+        private_note: clean(values.private_note || ""),
+        availability_status: values.availability_status || null,
+        return_date: values.return_date || null,
+        group_id: values.group_id || null,
       };
       if (editingContactId) {
         await updateContactMut.mutateAsync({
@@ -1254,10 +1285,45 @@ function ClientsPage() {
                   ]}
                   rows={contacts.map((contact) => [
                     <span className="inline-flex items-center gap-1 font-semibold">
+                      <button
+                        type="button"
+                        className="relative -ml-0.5 flex items-center justify-center rounded p-0.5 transition-colors hover:bg-surface2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleStarMut.mutate({
+                            contactId: contact.id,
+                            isStarred: !contact.is_starred,
+                          });
+                        }}
+                        title={
+                          contact.is_starred
+                            ? t("contacts.unstar", "Rimuovi preferito")
+                            : t("contacts.star", "Aggiungi preferito")
+                        }
+                      >
+                        <Star
+                          className="size-3.5 transition-colors"
+                          style={{
+                            color: contact.is_starred
+                              ? "var(--warn)"
+                              : "var(--text3)",
+                            fill: contact.is_starred ? "var(--warn)" : "transparent",
+                          }}
+                        />
+                      </button>
                       {contact.is_primary && (
                         <Star className="size-3" style={{ color: "var(--warn)" }} />
                       )}
                       {contactLabel(contact)}
+                      {contact.private_note && (
+                        <span
+                          className="ml-1 inline-flex"
+                          title={t("contacts.hasPrivateNote", "Nota interna presente")}
+                        >
+                          <Lock className="size-3" style={{ color: "var(--text3)" }} />
+                        </span>
+                      )}
+                      {contactAvailabilityBadge(contact)}
                     </span>,
                     contact.job_title || "-",
                     contact.department || "-",
@@ -1370,29 +1436,37 @@ function ClientsPage() {
                       {t("devices.addFirstDevice", "Aggiungi primo dispositivo")}
                     </button>
                   }
-                  headers={[
-                    t("devices.headers.model", "Modello"),
-                    t("devices.headers.assetTag", "Asset tag"),
-                    t("devices.headers.serial", "Seriale produttore"),
-                    t("devices.headers.os", "OS"),
-                    t("devices.headers.status", "Stato"),
-                    t("devices.headers.assignedTo", "Assegnato a"),
-                    t("devices.headers.date", "Inserito"),
-                  ]}
-                  rows={devices.map((device) => [
-                    <button
-                      className="font-semibold text-accent"
-                      onClick={() => openDeviceDetail(device.id)}
-                    >
-                      {device.model}
-                    </button>,
-                    <span className="font-mono text-[12px]">{device.asset_tag || "-"}</span>,
-                    <span className="font-mono text-[12px]">{device.serial || "-"}</span>,
-                    device.os || "-",
-                    <DeviceStatusPill status={device.status} />,
-                    device.assigned_to || "-",
-                    fmtDate(device.created_at),
-                  ])}
+      headers={[
+        t("devices.headers.model", "Modello"),
+        t("devices.headers.assetTag", "Asset tag"),
+        t("devices.headers.serial", "Seriale produttore"),
+        t("devices.headers.os", "OS"),
+        t("devices.headers.status", "Stato"),
+        t("devices.headers.assignedTo", "Assegnato a"),
+        t("devices.headers.date", "Inserito"),
+        t("devices.headers.actions", "Azioni"),
+      ]}
+      rows={devices.map((device) => [
+        <button
+          className="font-semibold text-accent"
+          onClick={() => openDeviceDetail(device.id)}
+        >
+          {device.model}
+        </button>,
+        <span className="font-mono text-[12px]">{device.asset_tag || "-"}</span>,
+        <span className="font-mono text-[12px]">{device.serial || "-"}</span>,
+        device.os || "-",
+        <DeviceStatusPill status={device.status} />,
+        device.assigned_to || "-",
+        fmtDate(device.created_at),
+        <button
+          className="pc-btn pc-btn-ghost pc-btn-xs"
+          onClick={openCreate}
+          title={t("devices.createTicket", "Crea ticket per questo dispositivo")}
+        >
+          <Ticket className="size-3" /> {t("devices.createTicket", "Crea ticket")}
+        </button>,
+      ])}
                 />
               </div>
             )}
@@ -1489,6 +1563,7 @@ function ClientsPage() {
         canEdit={canEdit}
         busy={busy}
         form={contactForm}
+        groups={groups}
         onClose={() => {
           setContactModalOpen(false);
           resetContactForm();
@@ -1592,6 +1667,43 @@ function destructiveDialogCopy(action: DestructiveAction | null) {
   };
 }
 
+/** Show availability badge for a contact (check-on-read: hide if return_date is past). */
+function contactAvailabilityBadge(contact: ContactRow) {
+  const status = contact.availability_status;
+  const returnDate = contact.return_date;
+  if (!status) return null;
+
+  const now = new Date();
+  if (returnDate) {
+    const ret = new Date(returnDate);
+    if (ret < now) return null;
+  }
+
+  const config: Record<string, { label: string; color: string }> = {
+    vacation: { label: i18n.t("contacts.availabilityVacation", "In ferie"), color: "#F59E0B" },
+    sick_leave: { label: i18n.t("contacts.availabilitySick", "In malattia"), color: "#EF4444" },
+    unavailable: { label: i18n.t("contacts.availabilityUnavailable", "Non disp."), color: "#6B7280" },
+    available: { label: i18n.t("contacts.availabilityAvailable", "Disponibile"), color: "#22C55E" },
+  };
+  const cfg = config[status];
+  if (!cfg) return null;
+
+  return (
+    <span
+      className="ml-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+      style={{
+        background: `${cfg.color}18`,
+        color: cfg.color,
+        border: `1px solid ${cfg.color}40`,
+      }}
+      title={returnDate ? i18n.t("contacts.returnsOn", { defaultValue: "Rientro il {{date}}", date: returnDate }) : undefined}
+    >
+      <CalendarDays className="size-2.5" />
+      {cfg.label}
+    </span>
+  );
+}
+
 function ContactModal({
   open,
   title,
@@ -1600,6 +1712,7 @@ function ContactModal({
   form,
   onClose,
   onSave,
+  groups,
 }: {
   open: boolean;
   title: string;
@@ -1608,6 +1721,7 @@ function ContactModal({
   form: UseFormReturn<ContactInput>;
   onClose: () => void;
   onSave: () => void;
+  groups: readonly import("@/lib/queries/clients").ContactGroup[];
 }) {
   const { t } = useTranslation("clients");
   return (
@@ -1660,6 +1774,37 @@ function ContactModal({
             <textarea className="pc-input min-h-[82px]" {...form.register("notes")} />
           </Field>
         </div>
+        <div className="md:col-span-2">
+          <Field label={t("contacts.formPrivateNote", "Nota privata (solo tecnici)")}>
+            <textarea
+              className="pc-input min-h-[72px]"
+              placeholder={t("contacts.formPrivateNotePlaceholder", "Note interne non visibili dal portale cliente...")}
+              {...form.register("private_note")}
+            />
+          </Field>
+        </div>
+        <Field label={t("contacts.formAvailability", "Disponibilita")}>
+          <select className="pc-input" {...form.register("availability_status")}>
+            <option value="">{t("contacts.availabilityDefault", "Nessuna indicazione")}</option>
+            <option value="available">{t("contacts.availabilityAvailable", "Disponibile")}</option>
+            <option value="vacation">{t("contacts.availabilityVacation", "In ferie")}</option>
+            <option value="sick_leave">{t("contacts.availabilitySick", "In malattia")}</option>
+            <option value="unavailable">{t("contacts.availabilityUnavailable", "Non disponibile")}</option>
+          </select>
+        </Field>
+        <Field label={t("contacts.formReturnDate", "Data rientro")}>
+          <input className="pc-input" type="date" {...form.register("return_date")} />
+        </Field>
+        <Field label={t("contacts.formGroup", "Gruppo")}>
+          <select className="pc-input" {...form.register("group_id")}>
+            <option value="">{t("contacts.groupNone", "Nessun gruppo")}</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </Field>
       </div>
     </Modal>
   );
@@ -2121,36 +2266,158 @@ function ClientNotesPanel({
   );
 }
 
+function activityIcon(type: string) {
+  switch (type) {
+    case "ticket_created":
+      return <Ticket className="size-3.5" style={{ color: "var(--text3)" }} />;
+    case "ticket_closed":
+      return <CheckCircle2 className="size-3.5" style={{ color: "var(--text3)" }} />;
+    case "note":
+      return <Lock className="size-3.5" style={{ color: "var(--text3)" }} />;
+    case "document":
+      return <FileText className="size-3.5" style={{ color: "var(--text3)" }} />;
+    case "portal_access":
+      return <LogIn className="size-3.5" style={{ color: "var(--text3)" }} />;
+    case "bundle":
+      return <Package className="size-3.5" style={{ color: "var(--text3)" }} />;
+    default:
+      return <History className="size-3.5" style={{ color: "var(--text3)" }} />;
+  }
+}
+
+function activityColor(type: string): string {
+  switch (type) {
+    case "ticket_created":
+      return "#3B82F6";
+    case "ticket_closed":
+      return "#22C55E";
+    case "note":
+      return "#F59E0B";
+    case "document":
+      return "#8B5CF6";
+    case "portal_access":
+      return "#6366F1";
+    case "bundle":
+      return "#14B8A6";
+    default:
+      return "var(--text3)";
+  }
+}
+
+function activityLabel(
+  type: string,
+  t: (key: string, fallback?: string) => string,
+): string {
+  switch (type) {
+    case "ticket_created":
+      return t("activity.labelTicketCreated", "Ticket aperto");
+    case "ticket_closed":
+      return t("activity.labelTicketClosed", "Ticket chiuso");
+    case "note":
+      return t("activity.labelNote", "Nota interna");
+    case "document":
+      return t("activity.labelDocument", "Documento");
+    case "portal_access":
+      return t("activity.labelPortalAccess", "Accesso portale");
+    case "bundle":
+      return t("activity.labelBundle", "Contratto");
+    default:
+      return type;
+  }
+}
+
 function ClientActivityTimeline({ clientId }: { clientId: string }) {
   const { t } = useTranslation("clients");
   const activityQuery = (queries as any).useClientActivity(clientId);
   const items = (activityQuery.data ?? []) as import("@/lib/queries/clients").ClientActivityItem[];
+
+  const goToLink = useCallback((link: string | undefined) => {
+    if (!link) return;
+    const parsed = new URL(link, window.location.origin);
+    const id = parsed.searchParams.get("id");
+    if (id) openTicketDetail(id);
+  }, []);
+
   return (
     <div className="pc-card-body">
       {activityQuery.isLoading ? (
         <ListSkeleton rows={5} variant="app" />
       ) : items.length ? (
-        <div className="space-y-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex gap-3 rounded-md border p-3"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-surface2 text-text3">
-                <History className="size-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">{item.title}</div>
-                  <div className="font-mono text-xs text-text3">{fmtDate(item.created_at)}</div>
-                </div>
-                {item.description && (
-                  <p className="mt-1 line-clamp-2 text-xs text-text3">{item.description}</p>
+        <div className="space-y-0">
+          {items.map((item, i) => {
+            const icon = activityIcon(item.type);
+            const isTicketAction = item.type === "ticket_created" || item.type === "ticket_closed";
+            return (
+              <div key={item.id} className="relative flex gap-3 pb-5 last:pb-0">
+                {/* Timeline connector */}
+                {i < items.length - 1 && (
+                  <div
+                    className="absolute left-[15px] top-8 bottom-0 w-px"
+                    style={{ background: "var(--border)" }}
+                  />
                 )}
+                {/* Icon */}
+                <div
+                  className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "var(--surface2)" }}
+                >
+                  {icon}
+                </div>
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      {isTicketAction ? (
+                        <button
+                          type="button"
+                          className="text-left text-[12.5px] font-semibold text-text2 hover:text-accent transition-colors"
+                          onClick={() => goToLink(item.link)}
+                        >
+                          {item.title}
+                        </button>
+                      ) : (
+                        <span className="text-[12.5px] font-semibold text-text2">
+                          {item.title}
+                        </span>
+                      )}
+                      {item.description && (
+                        <span className="ml-1.5 text-[11.5px] text-text3">{item.description}</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[10.5px] text-text3 font-mono">
+                      {fmtDate(item.created_at)}
+                    </span>
+                  </div>
+                  <div className="mt-0.5">
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      style={{
+                        background: "var(--surface2)",
+                        color: activityColor(item.type),
+                      }}
+                    >
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ background: activityColor(item.type) }}
+                      />
+                      {activityLabel(item.type, t as any)}
+                    </span>
+                    {isTicketAction && (
+                      <button
+                        type="button"
+                        className="ml-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-[var(--surface2)]"
+                        style={{ borderColor: "var(--border)", color: "var(--accent)" }}
+                        onClick={() => goToLink(item.link)}
+                      >
+                        <Ticket className="size-3" />
+                        {t("activity.viewTicket", "Vedi ticket")}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div

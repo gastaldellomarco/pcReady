@@ -74,7 +74,7 @@ export async function fetchClientContacts(clientId: string) {
   const { data, error } = await supabase
     .from("client_contacts")
     .select(
-      "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes",
+      "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, is_starred, private_note, availability_status, return_date, group_id",
     )
     .eq("client_id", clientId)
     .order("is_primary", { ascending: false })
@@ -151,6 +151,7 @@ export type ClientActivityItem = {
   title: string;
   description: string | null;
   created_at: string;
+  link?: string;
 };
 
 export type GlobalContactRow = {
@@ -167,6 +168,36 @@ export type GlobalContactRow = {
   notes: string | null;
   client: { id: string; name: string; company_name: string | null; portal_enabled: boolean } | null;
   portal_active: boolean;
+  is_starred: boolean;
+  private_note: string | null;
+  availability_status: "available" | "vacation" | "sick_leave" | "unavailable" | null;
+  return_date: string | null;
+  group_id: string | null;
+  group_name?: string | null;
+};
+
+export type ContactGroup = {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ContactInteractionItem = {
+  id: string;
+  type: "ticket_opened" | "ticket_closed" | "portal_login" | "email_sent";
+  title: string;
+  description: string | null;
+  created_at: string;
+  link?: string;
+};
+
+export type DuplicateCandidate = {
+  contactA: GlobalContactRow;
+  contactB: GlobalContactRow;
+  similarity: number;
 };
 
 export async function fetchClientStats(clientIds: string[]) {
@@ -488,6 +519,7 @@ export async function fetchClientActivity(clientId: string) {
       title: `Ticket ${ticket.ticket_code} aperto`,
       description: ticket.status,
       created_at: ticket.created_at,
+      link: `/tickets?id=${ticket.id}`,
     });
     if (ticket.completed_at || ticket.closed_at) {
       items.push({
@@ -496,6 +528,7 @@ export async function fetchClientActivity(clientId: string) {
         title: `Ticket ${ticket.ticket_code} chiuso`,
         description: null,
         created_at: ticket.completed_at || ticket.closed_at,
+        link: `/tickets?id=${ticket.id}`,
       });
     }
   }
@@ -695,6 +728,432 @@ export function useContactPortalAccess(contactIds: string[]) {
   });
 }
 
+// ---------------------------------------------------------------
+// Contact groups
+// ---------------------------------------------------------------
+
+export async function fetchContactGroups(clientId: string) {
+  if (!clientId) return [];
+  const { data, error } = await (supabase as any)
+    .from("contact_groups")
+    .select("id, client_id, name, description, created_at, updated_at")
+    .eq("client_id", clientId)
+    .order("name");
+  if (error) throw error;
+  return (data ?? []) as ContactGroup[];
+}
+
+export function useContactGroups(clientId: string | null) {
+  return useQuery({
+    queryKey: ["clients", clientId, "groups"],
+    queryFn: () => fetchContactGroups(clientId as string),
+    enabled: !!clientId,
+  });
+}
+
+export async function createContactGroup(clientId: string, name: string, description?: string | null) {
+  const { error } = await (supabase as any)
+    .from("contact_groups")
+    .insert({ client_id: clientId, name: name.trim(), description: description?.trim() || null });
+  if (error) throw error;
+  return true;
+}
+
+export async function updateContactGroup(id: string, name: string, description?: string | null) {
+  const { error } = await (supabase as any)
+    .from("contact_groups")
+    .update({ name: name.trim(), description: description?.trim() || null })
+    .eq("id", id);
+  if (error) throw error;
+  return true;
+}
+
+export async function deleteContactGroup(id: string) {
+  const { error } = await (supabase as any).from("contact_groups").delete().eq("id", id);
+  if (error) throw error;
+  return true;
+}
+
+export function useCreateContactGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, name, description }: { clientId: string; name: string; description?: string | null }) =>
+      createContactGroup(clientId, name, description),
+    onSuccess: (_res, vars) =>
+      qc.invalidateQueries({ queryKey: ["clients", vars.clientId, "groups"] }),
+  });
+}
+
+export function useUpdateContactGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name, description }: { id: string; name: string; description?: string | null }) =>
+      updateContactGroup(id, name, description),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
+  });
+}
+
+export function useDeleteContactGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, clientId: _clientId }: { id: string; clientId: string }) => deleteContactGroup(id),
+    onSuccess: (_res, vars) => {
+      qc.invalidateQueries({ queryKey: ["clients", vars.clientId, "groups"] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------
+// Starred toggle
+// ---------------------------------------------------------------
+
+export async function toggleStarContact(contactId: string, isStarred: boolean) {
+  const { error } = await supabase
+    .from("client_contacts")
+    .update({ is_starred: isStarred } as any)
+    .eq("id", contactId);
+  if (error) throw error;
+  return true;
+}
+
+export function useToggleStarContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contactId, isStarred }: { contactId: string; isStarred: boolean }) =>
+      toggleStarContact(contactId, isStarred),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients", "contacts"] }),
+  });
+}
+
+// ---------------------------------------------------------------
+// Availability
+// ---------------------------------------------------------------
+
+export async function updateContactAvailability(
+  contactId: string,
+  availabilityStatus: string | null,
+  returnDate: string | null,
+) {
+  const { error } = await supabase
+    .from("client_contacts")
+    .update({
+      availability_status: availabilityStatus,
+      return_date: returnDate,
+    } as any)
+    .eq("id", contactId);
+  if (error) throw error;
+  return true;
+}
+
+export function useUpdateContactAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      availabilityStatus,
+      returnDate,
+    }: {
+      contactId: string;
+      availabilityStatus: string | null;
+      returnDate: string | null;
+    }) => updateContactAvailability(contactId, availabilityStatus, returnDate),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients", "contacts"] }),
+  });
+}
+
+// ---------------------------------------------------------------
+// Private notes
+// ---------------------------------------------------------------
+
+export async function updateContactPrivateNote(contactId: string, privateNote: string | null) {
+  const { error } = await supabase
+    .from("client_contacts")
+    .update({ private_note: privateNote?.trim() || null } as any)
+    .eq("id", contactId);
+  if (error) throw error;
+  return true;
+}
+
+export function useUpdateContactPrivateNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contactId, privateNote }: { contactId: string; privateNote: string | null }) =>
+      updateContactPrivateNote(contactId, privateNote),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients", "contacts"] }),
+  });
+}
+
+// ---------------------------------------------------------------
+// Duplicate detection & merge
+// ---------------------------------------------------------------
+
+export async function fetchDuplicateCandidates(clientId: string) {
+  if (!clientId) return [];
+  const { data, error } = await supabase
+    .from("client_contacts")
+    .select(
+      "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, is_starred, private_note, availability_status, return_date, group_id, client:clients(id, name, company_name, portal_enabled)",
+    )
+    .eq("client_id", clientId)
+    .not("email", "is", null)
+    .order("full_name");
+  if (error) throw error;
+
+  const rows = (data ?? []) as Record<string, any>[];
+  const candidates: DuplicateCandidate[] = [];
+  const seen = new Set<string>();
+
+  // First pass: collect all candidate pairs
+  const rawCandidates: { a: Record<string, any>; b: Record<string, any>; similarity: number }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      const a = rows[i];
+      const b = rows[j];
+      const pairKey = [a.id, b.id].sort().join("|");
+      if (seen.has(pairKey)) continue;
+
+      const emailA = ((a.email as string) || "").toLowerCase().trim();
+      const emailB = ((b.email as string) || "").toLowerCase().trim();
+      if (emailA !== emailB) continue;
+
+      const nameA = ((a.full_name as string) || "").toLowerCase().trim();
+      const nameB = ((b.full_name as string) || "").toLowerCase().trim();
+      const similarity = diceSimilarity(nameA, nameB);
+      if (similarity < 0.75) continue;
+
+      seen.add(pairKey);
+      rawCandidates.push({ a, b, similarity: Math.round(similarity * 100) / 100 });
+    }
+  }
+
+  // Batch portal access check for all candidate contacts
+  const allIds = Array.from(
+    new Set(rawCandidates.flatMap((c) => [c.a.id as string, c.b.id as string])),
+  );
+  const access = allIds.length ? await fetchContactPortalAccess(allIds) : {};
+
+  for (const { a, b, similarity } of rawCandidates) {
+    candidates.push({
+      contactA: { ...a, portal_active: !!access[a.id] } as unknown as GlobalContactRow,
+      contactB: { ...b, portal_active: !!access[b.id] } as unknown as GlobalContactRow,
+      similarity,
+    });
+  }
+
+  return candidates.sort((a, b) => b.similarity - a.similarity);
+}
+
+export function useDuplicateCandidates(clientId: string | null) {
+  return useQuery({
+    queryKey: ["clients", clientId, "duplicates"],
+    queryFn: () => fetchDuplicateCandidates(clientId as string),
+    enabled: !!clientId,
+  });
+}
+
+export async function mergeContacts(params: {
+  survivorId: string;
+  sourceId: string;
+  fieldChoices: Record<string, "a" | "b">;
+  deleteSource: boolean;
+}) {
+  const { survivorId, sourceId, fieldChoices, deleteSource } = params;
+
+  const [survivorRes, sourceRes] = await Promise.all([
+    supabase.from("client_contacts").select("*").eq("id", survivorId).single(),
+    supabase.from("client_contacts").select("*").eq("id", sourceId).single(),
+  ]);
+  if (survivorRes.error) throw survivorRes.error;
+  if (sourceRes.error) throw sourceRes.error;
+
+  const survivor = survivorRes.data as Record<string, any>;
+  const source = sourceRes.data as Record<string, any>;
+
+  const mergableFields = [
+    "full_name", "first_name", "last_name", "email", "phone",
+    "job_title", "department", "is_primary", "is_starred",
+    "notes", "private_note", "group_id",
+    "availability_status", "return_date",
+  ];
+
+  const merged: Record<string, any> = {};
+  for (const field of mergableFields) {
+    const choice = fieldChoices[field] ?? "a";
+    merged[field] = choice === "a" ? survivor[field] : source[field];
+  }
+
+  // 1. Update survivor first (safe — source still intact if it fails)
+  const { error: updateError } = await supabase
+    .from("client_contacts")
+    .update(merged as any)
+    .eq("id", survivorId);
+  if (updateError) throw updateError;
+
+  // 2. Reassign related entities
+  const reassignOps: Promise<any>[] = [
+    supabase.from("tickets").update({ requester_contact_id: survivorId } as any).eq("requester_contact_id", sourceId),
+    supabase.from("portal_sessions").update({ contact_id: survivorId } as any).eq("contact_id", sourceId),
+    (supabase as any).from("document_signatures").update({ contact_id: survivorId }).eq("contact_id", sourceId),
+  ];
+  const reassignResults = await Promise.allSettled(reassignOps);
+  for (const result of reassignResults) {
+    if (result.status === "rejected") throw result.reason;
+  }
+
+  // 3. Handle source (soft-delete or hard-delete)
+  if (deleteSource) {
+    const { error: deleteError } = await supabase
+      .from("client_contacts")
+      .delete()
+      .eq("id", sourceId);
+    if (deleteError) throw deleteError;
+  } else {
+    const { error: softError } = await supabase
+      .from("client_contacts")
+      .update({ merged_into_id: survivorId, merged_at: new Date().toISOString() } as any)
+      .eq("id", sourceId);
+    if (softError) throw softError;
+  }
+
+  // 4. Log the merge to activity_log
+  const survivorName = merged.full_name || [merged.first_name, merged.last_name].filter(Boolean).join(" ");
+  const sourceName = source.full_name || [source.first_name, source.last_name].filter(Boolean).join(" ");
+  await (supabase as any).from("activity_log").insert({
+    type: "contact_merged",
+    message: `Contatti uniti: ${survivorName} ← ${sourceName}`,
+    entity_type: "client_contact",
+    entity_id: survivorId,
+    action_type: "contact_merged",
+    severity: "info",
+  });
+
+  return true;
+}
+
+export function useMergeContacts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: mergeContacts,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
+  });
+}
+
+// ---------------------------------------------------------------
+// Interaction history
+// ---------------------------------------------------------------
+
+export async function fetchContactInteractionHistory(contactId: string) {
+  if (!contactId) return [];
+
+  // NOTE: email history depends on activity_log entries having
+  // entity_type='client_contact' and action_type='email_sent'.
+  // Email sending code (email-templates.server.ts) may need to be updated
+  // to set these fields when sending to a contact.
+  const [ticketsRes, portalRes, activityRes] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select("id, ticket_code, software, status, created_at, completed_at, closed_at")
+      .eq("requester_contact_id", contactId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("portal_sessions")
+      .select("id, created_at, expires_at, revoked_at")
+      .eq("contact_id", contactId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    (supabase as any)
+      .from("activity_log")
+      .select("id, message, created_at")
+      .eq("entity_type", "client_contact")
+      .eq("entity_id", contactId)
+      .eq("action_type", "email_sent")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  if (ticketsRes.error) throw ticketsRes.error;
+  if (portalRes.error) throw portalRes.error;
+  if (activityRes.error) throw activityRes.error;
+
+  const items: ContactInteractionItem[] = [];
+
+  for (const ticket of (ticketsRes.data ?? []) as any[]) {
+    items.push({
+      id: `ticket-opened-${ticket.id}`,
+      type: "ticket_opened",
+      title: `Ticket ${ticket.ticket_code} — ${ticket.software || "Senza titolo"}`,
+      description: ticket.status,
+      created_at: ticket.created_at,
+      link: `/tickets?id=${ticket.id}`,
+    });
+    if (ticket.completed_at || ticket.closed_at) {
+      items.push({
+        id: `ticket-closed-${ticket.id}`,
+        type: "ticket_closed",
+        title: `Ticket ${ticket.ticket_code} chiuso`,
+        description: null,
+        created_at: ticket.completed_at || ticket.closed_at,
+        link: `/tickets?id=${ticket.id}`,
+      });
+    }
+  }
+
+  for (const session of (portalRes.data ?? []) as any[]) {
+    items.push({
+      id: `portal-${session.id}`,
+      type: "portal_login",
+      title: session.revoked_at ? "Accesso portale revocato" : "Accesso al portale",
+      description: session.revoked_at
+        ? `Revocato il ${session.revoked_at}`
+        : `Scade il ${session.expires_at}`,
+      created_at: session.created_at,
+    });
+  }
+
+  for (const log of (activityRes.data ?? []) as any[]) {
+    items.push({
+      id: `email-${log.id}`,
+      type: "email_sent",
+      title: "Email inviata",
+      description: log.message,
+      created_at: log.created_at,
+    });
+  }
+
+  return items.sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+export function useContactInteractionHistory(contactId: string | null) {
+  return useQuery({
+    queryKey: ["clients", "contacts", contactId, "interactions"],
+    queryFn: () => fetchContactInteractionHistory(contactId as string),
+    enabled: !!contactId,
+  });
+}
+
+// ---------------------------------------------------------------
+// Dice coefficient for fuzzy name matching
+// ---------------------------------------------------------------
+
+function diceSimilarity(a: string, b: string): number {
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return a === b ? 1 : 0;
+  const bigramsA = bigrams(a);
+  const bigramsB = bigrams(b);
+  const intersection = bigramsA.filter((bg) => bigramsB.includes(bg)).length;
+  return (2 * intersection) / (bigramsA.length + bigramsB.length);
+}
+
+function bigrams(s: string): string[] {
+  const result: string[] = [];
+  for (let i = 0; i < s.length - 1; i++) {
+    result.push(s.slice(i, i + 2));
+  }
+  return result;
+}
+
 export type GlobalContactsParams = { q?: string; page?: number; pageSize?: number };
 
 export async function fetchGlobalContacts(params?: GlobalContactsParams) {
@@ -703,7 +1162,7 @@ export async function fetchGlobalContacts(params?: GlobalContactsParams) {
   let query = supabase
     .from("client_contacts")
     .select(
-      "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, client:clients(id, name, company_name, portal_enabled)",
+      "id, client_id, full_name, first_name, last_name, email, phone, job_title, department, is_primary, notes, is_starred, private_note, availability_status, return_date, group_id, client:clients(id, name, company_name, portal_enabled)",
     )
     .order("full_name");
   const term = (params?.q || "").trim().replace(/[,%]/g, "");
@@ -1007,4 +1466,30 @@ export default {
   useCreateContact,
   useUpdateContact,
   useDeleteContact,
+  // Contact groups
+  fetchContactGroups,
+  useContactGroups,
+  createContactGroup,
+  updateContactGroup,
+  deleteContactGroup,
+  useCreateContactGroup,
+  useUpdateContactGroup,
+  useDeleteContactGroup,
+  // Starred
+  toggleStarContact,
+  useToggleStarContact,
+  // Availability
+  updateContactAvailability,
+  useUpdateContactAvailability,
+  // Private notes
+  updateContactPrivateNote,
+  useUpdateContactPrivateNote,
+  // Duplicate detection & merge
+  fetchDuplicateCandidates,
+  useDuplicateCandidates,
+  mergeContacts,
+  useMergeContacts,
+  // Interaction history
+  fetchContactInteractionHistory,
+  useContactInteractionHistory,
 };

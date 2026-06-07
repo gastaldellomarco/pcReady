@@ -41,7 +41,19 @@
     "error": "Impossibile caricare i clienti. Controlla la connessione e riprova.",
     "filterAll": "Tutti",
     "filterOpenTickets": "Ticket aperti",
-    "filterPortalActive": "Portale attivo"
+    "filterPortalActive": "Portale attivo",
+    "loadingMore": "Caricamento..."
+  },
+  "tags": {
+    "filterLabel": "Filtra per tag",
+    "filterAll": "Tutti i tag",
+    "title": "Segmentazione cliente",
+    "newPlaceholder": "Nuovo tag, es. VIP",
+    "add": "Aggiungi",
+    "updated": "Tag aggiornati",
+    "updateError": "Errore aggiornamento tag",
+    "created": "Tag assegnato",
+    "createError": "Errore creazione tag"
   },
   "form": {
     "createTitle": "Nuovo Cliente",
@@ -54,6 +66,7 @@
     "save": "Salva Cliente",
     "cancel": "Annulla",
     "delete": "Elimina",
+    "edit": "Modifica",
     "saveClient": "Salva cliente",
     "ragioneSociale": "Ragione sociale *",
     "partitaIva": "P.IVA",
@@ -100,11 +113,33 @@
     "devices": "dispositivi",
     "contacts": "referenti"
   },
+  "overview": {
+    "openTickets": "Ticket aperti",
+    "avgResolution": "Tempo medio risoluzione",
+    "totalBilled": "Fatturato",
+    "contractExpiry": "Scadenza contratto",
+    "bundleTitle": "Bundle assistenza attivo",
+    "bundleSubtitle": "SLA effettivi e scadenza contratto",
+    "configure": "Configura",
+    "bundleName": "Nome",
+    "responseSla": "Risposta",
+    "resolutionSla": "Risoluzione",
+    "noBundle": "Nessun bundle attivo collegato a questo cliente.",
+    "quickStats": "Scheda cliente",
+    "contacts": "Referenti",
+    "devices": "Device",
+    "uploadDocument": "Carica documento"
+  },
   "tabs": {
+    "overview": "Overview",
     "info": "Informazioni",
+    "notes": "Note",
     "contacts": "Referenti",
     "tickets": "Ticket",
-    "devices": "Dispositivi"
+    "devices": "Dispositivi",
+    "activity": "Attivita'",
+    "documents": "Documenti",
+    "settings": "SLA e tag"
   },
   "contacts": {
     "count": "{{count}} referenti registrati",
@@ -124,6 +159,14 @@
     "link": "Link",
     "revoke": "Revoca",
     "deleteTitle": "Elimina referente",
+    "star": "Aggiungi preferito",
+    "unstar": "Rimuovi preferito",
+    "hasPrivateNote": "Nota interna presente",
+    "availabilityVacation": "In ferie",
+    "availabilitySick": "In malattia",
+    "availabilityUnavailable": "Non disp.",
+    "availabilityAvailable": "Disponibile",
+    "returnsOn": "Rientro il {{date}}",
     "modalTitleEdit": "Modifica referente",
     "modalTitleNew": "Nuovo referente",
     "formName": "Nome e cognome *",
@@ -133,8 +176,30 @@
     "formDepartment": "Reparto",
     "formPrimary": "Referente principale",
     "formNotes": "Note",
+    "formPrivateNote": "Nota privata (solo tecnici)",
+    "formPrivateNotePlaceholder": "Note interne non visibili dal portale cliente...",
+    "formAvailability": "Disponibilita",
+    "availabilityDefault": "Nessuna indicazione",
+    "formReturnDate": "Data rientro",
+    "formGroup": "Gruppo",
+    "groupNone": "Nessun gruppo",
     "save": "Salva referente",
     "saving": "Salvataggio..."
+  },
+  "notes": {
+    "saved": "Nota salvata",
+    "saveError": "Errore salvataggio nota",
+    "deleted": "Nota eliminata",
+    "deleteError": "Errore eliminazione nota",
+    "editorLabel": "Nota interna",
+    "update": "Aggiorna nota",
+    "add": "Aggiungi nota",
+    "unknownAuthor": "Autore non disponibile",
+    "history": "Storico",
+    "empty": "Nessuna nota interna per questo cliente.",
+    "historyTitle": "Storico modifiche",
+    "previous": "Prima",
+    "noRevisions": "Nessuna modifica registrata."
   },
   "tickets": {
     "count": "{{count}} ticket collegati",
@@ -151,6 +216,30 @@
     },
     "unassigned": "Non assegnato"
   },
+  "documents": {
+    "uploaded": "Documento caricato",
+    "uploadError": "Errore upload documento",
+    "openError": "Errore apertura documento",
+    "deleted": "Documento eliminato",
+    "deleteError": "Errore eliminazione documento",
+    "typeLabel": "Tipo documento",
+    "typeContract": "Contratto",
+    "typeNda": "NDA",
+    "typeTechnical": "Tecnico",
+    "typeOther": "Altro",
+    "description": "Descrizione documento",
+    "descriptionLabel": "Descrizione documento",
+    "uploading": "Upload in corso...",
+    "upload": "Carica",
+    "empty": "Nessun documento allegato al cliente.",
+    "headers": {
+      "name": "Nome",
+      "type": "Tipo",
+      "size": "Dimensione",
+      "uploaded": "Caricato",
+      "actions": "Azioni"
+    }
+  },
   "devices": {
     "addDevice": "Aggiungi dispositivo",
     "empty": "Nessun dispositivo per questo cliente.",
@@ -162,8 +251,10 @@
       "os": "OS",
       "status": "Stato",
       "assignedTo": "Assegnato a",
-      "date": "Inserito"
-    }
+      "date": "Inserito",
+      "actions": "Azioni"
+    },
+    "createTicket": "Crea ticket"
   },
   "errors": {
     "selectClientFirst": "Seleziona prima un cliente",
@@ -332,5 +423,15 @@
   },
   "general": {
     "ok": "OK"
+  },
+  "activity": {
+    "empty": "Nessuna attivita' disponibile.",
+    "labelTicketCreated": "Ticket aperto",
+    "labelTicketClosed": "Ticket chiuso",
+    "labelNote": "Nota interna",
+    "labelDocument": "Documento",
+    "labelPortalAccess": "Accesso portale",
+    "labelBundle": "Contratto",
+    "viewTicket": "Vedi ticket"
   }
 }

@@ -10,7 +10,8 @@
     "allStatuses": "Tutti gli stati",
     "primary": "Referente principale",
     "portalActive": "Portale attivo",
-    "missingEmail": "Senza email"
+    "missingEmail": "Senza email",
+    "starred": "Preferiti"
   },
   "roles": {
     "admin": "Amministratore",
@@ -54,7 +55,18 @@
     "phoneLabel": "Telefono",
     "roleLabel": "Ruolo",
     "departmentLabel": "Reparto",
-    "isPrimaryLabel": "Referente principale"
+    "isPrimaryLabel": "Referente principale",
+    "privateNoteLabel": "Nota privata (solo tech/admin)",
+    "availabilityLabel": "Disponibilità",
+    "availabilityNone": "Disponibile",
+    "availabilityVacation": "In ferie",
+    "availabilitySickLeave": "In malattia",
+    "availabilityUnavailable": "Non disponibile",
+    "returnDateLabel": "Data rientro",
+    "isStarredLabel": "Preferito",
+    "notesLabel": "Note",
+    "groupLabel": "Gruppo",
+    "groupNone": "Nessun gruppo"
   },
   "portalModal": {
     "title": "Link accesso portale",
@@ -86,6 +98,78 @@
     "invalidSession": "Sessione non valida",
     "portalLinkGenerated": "Link portale generato",
     "portalLinkError": "Errore generazione link portale",
-    "copyLinkError": "Impossibile copiare il link"
+    "copyLinkError": "Impossibile copiare il link",
+    "starToggled": "Preferito aggiornato"
+  },
+  "starred": {
+    "toggleOn": "Aggiungi ai preferiti",
+    "toggleOff": "Rimuovi dai preferiti"
+  },
+  "availability": {
+    "vacation": "In ferie",
+    "sickLeave": "In malattia",
+    "unavailable": "Non disponibile",
+    "returnLabel": "Rientro: {{date}}"
+  },
+  "privateNote": {
+    "hasNote": "Nota privata presente",
+    "hasNoteTitle": "Nota privata"
+  },
+  "detail": {
+    "title": "Dettaglio referente",
+    "tabInfo": "Info",
+    "tabInteractions": "Interazioni",
+    "clientLabel": "Cliente",
+    "roleLabel": "Ruolo",
+    "departmentLabel": "Reparto",
+    "emailLabel": "Email",
+    "phoneLabel": "Telefono",
+    "primaryLabel": "Referente principale",
+    "portalStatusLabel": "Accesso portale",
+    "portalStatusActive": "Attivo",
+    "portalStatusInactive": "Nessuno",
+    "groupLabel": "Gruppo",
+    "availabilityLabel": "Disponibilità",
+    "availabilityNone": "-",
+    "privateNoteLabel": "Nota privata",
+    "privateNoteEmpty": "Nessuna",
+    "ticketsCount": "Ticket",
+    "interactionsEmpty": "Nessuna interazione registrata.",
+    "interactionsCount": "{{count}} interazioni",
+    "ticketOpened": "Ticket aperto",
+    "ticketClosed": "Ticket chiuso",
+    "portalLogin": "Accesso portale",
+    "portalRevoked": "Accesso revocato",
+    "emailSent": "Email inviata",
+    "expiresOn": "Scade il {{date}}",
+    "revokedOn": "Revocato il {{date}}"
+  },
+  "merge": {
+    "title": "Unisci contatti duplicati",
+    "clientLabel": "Seleziona un cliente",
+    "clientPlaceholder": "Scegli un cliente per cercare duplicati...",
+    "noCandidates": "Nessun duplicato trovato per questo cliente.",
+    "hasCandidates": "{{count}} {{count, plural, one{coppia} other{coppie}}} di duplicati trovate",
+    "candidateCard": "Unisci",
+    "similarity": "{{value}}% corrispondenza",
+    "wizardTitle": "Unione: {{name}}",
+    "keepA": "Mantieni questo",
+    "keepB": "Mantieni questo",
+    "keepHeaderA": "Contatto A (conservato)",
+    "keepHeaderB": "Contatto B (sorgente)",
+    "chooseSurvivor": "Scegli quale contatto mantenere come principale:",
+    "fieldName": "Campo",
+    "fieldValueA": "Contatto A",
+    "fieldValueB": "Contatto B",
+    "winner": "✓ Conservato",
+    "deleteSource": "Elimina il contatto sorgente dopo l'unione",
+    "deleteSourceHint": "Se non selezionato, il contatto sorgente verrà conservato ma marcato come unito (soft-delete).",
+    "cancel": "Annulla",
+    "execute": "Unisci contatti",
+    "executing": "Unione in corso...",
+    "success": "Contatti uniti con successo",
+    "choosePair": "Seleziona una coppia dall'elenco sopra per iniziare l'unione.",
+    "survivor": "Conservato",
+    "fieldValueSurvivor": "Conservato"
   }
 }

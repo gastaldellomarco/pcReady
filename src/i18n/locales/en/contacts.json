@@ -10,7 +10,8 @@
     "allStatuses": "All statuses",
     "primary": "Primary contact",
     "portalActive": "Portal active",
-    "missingEmail": "No email"
+    "missingEmail": "No email",
+    "starred": "Starred"
   },
   "roles": {
     "admin": "Administrator",
@@ -54,7 +55,18 @@
     "phoneLabel": "Phone",
     "roleLabel": "Role",
     "departmentLabel": "Department",
-    "isPrimaryLabel": "Primary contact"
+    "isPrimaryLabel": "Primary contact",
+    "privateNoteLabel": "Private note (tech/admin only)",
+    "availabilityLabel": "Availability",
+    "availabilityNone": "Available",
+    "availabilityVacation": "On vacation",
+    "availabilitySickLeave": "Sick leave",
+    "availabilityUnavailable": "Unavailable",
+    "returnDateLabel": "Return date",
+    "isStarredLabel": "Favorite",
+    "notesLabel": "Notes",
+    "groupLabel": "Group",
+    "groupNone": "No group"
   },
   "portalModal": {
     "title": "Portal access link",
@@ -86,6 +98,78 @@
     "invalidSession": "Invalid session",
     "portalLinkGenerated": "Portal link generated",
     "portalLinkError": "Error generating portal link",
-    "copyLinkError": "Unable to copy link"
+    "copyLinkError": "Unable to copy link",
+    "starToggled": "Star updated"
+  },
+  "starred": {
+    "toggleOn": "Add to favorites",
+    "toggleOff": "Remove from favorites"
+  },
+  "availability": {
+    "vacation": "On vacation",
+    "sickLeave": "Sick leave",
+    "unavailable": "Unavailable",
+    "returnLabel": "Return: {{date}}"
+  },
+  "privateNote": {
+    "hasNote": "Private note exists",
+    "hasNoteTitle": "Private note"
+  },
+  "detail": {
+    "title": "Contact details",
+    "tabInfo": "Info",
+    "tabInteractions": "Interactions",
+    "clientLabel": "Client",
+    "roleLabel": "Role",
+    "departmentLabel": "Department",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "primaryLabel": "Primary contact",
+    "portalStatusLabel": "Portal access",
+    "portalStatusActive": "Active",
+    "portalStatusInactive": "None",
+    "groupLabel": "Group",
+    "availabilityLabel": "Availability",
+    "availabilityNone": "-",
+    "privateNoteLabel": "Private note",
+    "privateNoteEmpty": "None",
+    "ticketsCount": "Tickets",
+    "interactionsEmpty": "No interactions recorded yet.",
+    "interactionsCount": "{{count}} interactions",
+    "ticketOpened": "Ticket opened",
+    "ticketClosed": "Ticket closed",
+    "portalLogin": "Portal access",
+    "portalRevoked": "Access revoked",
+    "emailSent": "Email sent",
+    "expiresOn": "Expires {{date}}",
+    "revokedOn": "Revoked {{date}}"
+  },
+  "merge": {
+    "title": "Merge duplicate contacts",
+    "clientLabel": "Select a client",
+    "clientPlaceholder": "Choose a client to check for duplicates...",
+    "noCandidates": "No duplicates found for this client.",
+    "hasCandidates": "{{count}} duplicate {{count, plural, one{pair} other{pairs}}} found",
+    "candidateCard": "Merge",
+    "similarity": "{{value}}% match",
+    "wizardTitle": "Merge: {{name}}",
+    "keepA": "Keep this",
+    "keepB": "Keep this",
+    "keepHeaderA": "Contact A (survivor)",
+    "keepHeaderB": "Contact B (source)",
+    "chooseSurvivor": "Choose which contact to keep as primary:",
+    "fieldName": "Field",
+    "fieldValueA": "Contact A",
+    "fieldValueB": "Contact B",
+    "winner": "✓ Kept",
+    "deleteSource": "Delete source contact after merge",
+    "deleteSourceHint": "If unchecked, the source contact will be kept but marked as merged (soft-delete).",
+    "cancel": "Cancel",
+    "execute": "Merge contacts",
+    "executing": "Merging...",
+    "success": "Contacts merged successfully",
+    "choosePair": "Select a pair from the list above to start merging.",
+    "survivor": "Kept",
+    "fieldValueSurvivor": "Kept"
   }
 }
