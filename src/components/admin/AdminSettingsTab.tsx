@@ -331,6 +331,42 @@ export function AdminSettingsTab() {
                         />
                       </div>
 
+                      {/* Deprecation thresholds */}
+                      <div className="space-y-3 rounded-lg border p-4">
+                        <div>
+                          <h3 className="font-medium">Deprecazione automatica dispositivi</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Soglie per marcare automaticamente i dispositivi come "da sostituire".
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="device_deprecation_max_age_years">
+                              Età massima (anni)
+                            </Label>
+                            <Input
+                              id="device_deprecation_max_age_years"
+                              type="number"
+                              min={1}
+                              max={20}
+                              {...settingsForm.register("device_deprecation_max_age_years" as any)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="device_deprecation_max_tickets_12m">
+                              Max ticket in 12 mesi
+                            </Label>
+                            <Input
+                              id="device_deprecation_max_tickets_12m"
+                              type="number"
+                              min={1}
+                              max={100}
+                              {...settingsForm.register("device_deprecation_max_tickets_12m" as any)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
                         <Label>Limiti WIP Kanban</Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">

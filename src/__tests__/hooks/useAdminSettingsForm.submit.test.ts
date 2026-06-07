@@ -66,6 +66,8 @@ const MAKE_SETTINGS = {
   mfa_require_admin_users: false,
   mfa_require_all_users: false,
   mfa_grace_period_days: 7,
+  device_deprecation_max_age_years: 3,
+  device_deprecation_max_tickets_12m: 5,
 };
 
 function makeSaveSettingsMock() {

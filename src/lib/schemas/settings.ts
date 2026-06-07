@@ -41,6 +41,18 @@ export const AppSettingsSchema = z.object({
   mfa_require_admin_users: z.boolean().default(false),
   mfa_require_all_users: z.boolean().default(false),
   mfa_grace_period_days: numberInput("Giorni di grazia per configurare il 2FA"),
+  device_deprecation_max_age_years: z
+    .union([z.number().int().min(1), z.string().regex(/^[0-9]+$/, "Età massima device prima della deprecazione")])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
+    .refine((v) => Number.isInteger(v) && v >= 1 && v <= 20, {
+      message: "Deve essere un numero intero tra 1 e 20",
+    }),
+  device_deprecation_max_tickets_12m: z
+    .union([z.number().int().min(1), z.string().regex(/^[0-9]+$/, "Ticket massimi in 12 mesi prima della deprecazione")])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
+    .refine((v) => Number.isInteger(v) && v >= 1 && v <= 100, {
+      message: "Deve essere un numero intero tra 1 e 100",
+    }),
 });
 
 /**

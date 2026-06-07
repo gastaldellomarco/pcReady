@@ -22,6 +22,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
+import { DeviceLifecyclePanel } from "@/components/inventory/DeviceLifecyclePanel";
+import { DeviceSoftwarePanel } from "@/components/inventory/DeviceSoftwarePanel";
 import { MaintenanceSchedulePanel } from "@/components/inventory/MaintenanceSchedulePanel";
 import {
   AlertDialog,
@@ -212,7 +214,7 @@ const DEVICE_STATUS_OPTIONS: DeviceInventoryStatus[] = [
 
 const DEVICE_STATUS_OPTION_SET = new Set<string>(DEVICE_STATUS_OPTIONS);
 
-type DeviceDetailTab = "info" | "hardware" | "maintenance" | "tickets" | "history";
+type DeviceDetailTab = "info" | "hardware" | "lifecycle" | "software" | "maintenance" | "tickets" | "history";
 type DeviceBarcodeTarget = "asset_tag" | "serial";
 
 type HardwareDraft = {
@@ -867,6 +869,8 @@ export function DeviceDetailModal() {
           [
             ["info", t("device.tabs.info", "Informazioni")],
             ["hardware", t("device.tabs.hardware", "Hardware")],
+            ["lifecycle", t("device.tabs.lifecycle", "Ciclo di vita")],
+            ["software", t("device.tabs.software", "Software")],
             ["maintenance", t("device.tabs.maintenance", "Manutenzione")],
             [
               "tickets",
@@ -1396,6 +1400,24 @@ export function DeviceDetailModal() {
             </div>
           )}
         </>
+      )}
+
+      {activeTab === "lifecycle" && (
+        <div
+          className="mb-4 rounded-lg p-3"
+          style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+        >
+          <DeviceLifecyclePanel deviceId={d.id} canEdit={canEdit} />
+        </div>
+      )}
+
+      {activeTab === "software" && (
+        <div
+          className="mb-4 rounded-lg p-3"
+          style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}
+        >
+          <DeviceSoftwarePanel deviceId={d.id} canEdit={canEdit} />
+        </div>
       )}
 
       {activeTab === "hardware" && (

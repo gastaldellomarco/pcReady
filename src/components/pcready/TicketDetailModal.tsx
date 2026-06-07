@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { BundleUsageBar } from "@/components/bundles/BundleBadges";
 import { TicketAttachments } from "@/components/tickets/TicketAttachments";
+import { TicketDeviceCheckout } from "@/components/tickets/TicketDeviceCheckout";
 import { TicketNotes } from "@/components/tickets/TicketNotes";
 import { TicketRelations } from "@/components/tickets/TicketRelations";
 import { TicketTimeTracking } from "@/components/tickets/TicketTimeTracking";
@@ -1176,6 +1177,15 @@ export function TicketDetailModal() {
               </div>
             )}
           </section>
+
+          {ticket.device_id && (
+            <TicketDeviceCheckout
+              ticketId={ticket.id}
+              deviceId={ticket.device_id}
+              canEdit={canEdit}
+              technicianId={user?.id ?? ""}
+            />
+          )}
 
           <TicketRelations ticketId={ticket.id} />
 

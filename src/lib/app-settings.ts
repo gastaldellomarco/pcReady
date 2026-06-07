@@ -57,6 +57,8 @@ export type AppSettings = {
   mfa_require_admin_users: boolean;
   mfa_require_all_users: boolean;
   mfa_grace_period_days: number;
+  device_deprecation_max_age_years: number;
+  device_deprecation_max_tickets_12m: number;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -86,6 +88,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   mfa_require_admin_users: false,
   mfa_require_all_users: false,
   mfa_grace_period_days: 7,
+  device_deprecation_max_age_years: 3,
+  device_deprecation_max_tickets_12m: 5,
 };
 
 type AppSettingRow = { key: string; value: unknown };
@@ -411,11 +415,14 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
     archive_after_days: settings.archive_after_days ?? DEFAULT_SETTINGS.archive_after_days,
     log_retention_days: settings.log_retention_days ?? DEFAULT_SETTINGS.log_retention_days,
     kanban_column_colors: settings.kanban_column_colors ?? DEFAULT_SETTINGS.kanban_column_colors,
-    kanban_column_notes: settings.kanban_column_notes ?? DEFAULT_SETTINGS.kanban_column_notes,
-    mfa_require_admin_users:
-      settings.mfa_require_admin_users ?? DEFAULT_SETTINGS.mfa_require_admin_users,
-    mfa_require_all_users: settings.mfa_require_all_users ?? DEFAULT_SETTINGS.mfa_require_all_users,
-    mfa_grace_period_days: settings.mfa_grace_period_days ?? DEFAULT_SETTINGS.mfa_grace_period_days,
+    kanban_column_notes: settings.kanban_column_notes ?? DEFAULT_SETTINGS.kanban_column_notes,      mfa_require_admin_users:
+        settings.mfa_require_admin_users ?? DEFAULT_SETTINGS.mfa_require_admin_users,
+      mfa_require_all_users: settings.mfa_require_all_users ?? DEFAULT_SETTINGS.mfa_require_all_users,
+      mfa_grace_period_days: settings.mfa_grace_period_days ?? DEFAULT_SETTINGS.mfa_grace_period_days,
+      device_deprecation_max_age_years:
+        settings.device_deprecation_max_age_years ?? DEFAULT_SETTINGS.device_deprecation_max_age_years,
+      device_deprecation_max_tickets_12m:
+        settings.device_deprecation_max_tickets_12m ?? DEFAULT_SETTINGS.device_deprecation_max_tickets_12m,
   };
 
   mergedSettings.sla_limits = slaConfigToLimits(mergedSettings.sla_config);
@@ -445,6 +452,8 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
       mfa_require_admin_users: z.boolean(),
       mfa_require_all_users: z.boolean(),
       mfa_grace_period_days: z.number().int().min(0).max(365),
+      device_deprecation_max_age_years: z.number().int().min(1).max(20),
+      device_deprecation_max_tickets_12m: z.number().int().min(1).max(100),
     })
     .parse(mergedSettings);
 }

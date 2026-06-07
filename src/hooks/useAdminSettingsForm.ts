@@ -59,6 +59,8 @@ export function useAdminSettingsForm(args: {
       mfa_require_admin_users: false,
       mfa_require_all_users: false,
       mfa_grace_period_days: 7,
+      device_deprecation_max_age_years: 3,
+      device_deprecation_max_tickets_12m: 5,
     } as any,
   });
 
@@ -97,6 +99,8 @@ export function useAdminSettingsForm(args: {
       mfa_require_admin_users: settings?.mfa_require_admin_users ?? false,
       mfa_require_all_users: settings?.mfa_require_all_users ?? false,
       mfa_grace_period_days: settings?.mfa_grace_period_days ?? 7,
+      device_deprecation_max_age_years: settings?.device_deprecation_max_age_years ?? 3,
+      device_deprecation_max_tickets_12m: settings?.device_deprecation_max_tickets_12m ?? 5,
     } as any);
   }, [settings]);
 
@@ -155,6 +159,8 @@ export function useAdminSettingsForm(args: {
         mfa_require_admin_users: !!(values as any).mfa_require_admin_users,
         mfa_require_all_users: !!(values as any).mfa_require_all_users,
         mfa_grace_period_days: Number((values as any).mfa_grace_period_days ?? 7),
+        device_deprecation_max_age_years: Number((values as any).device_deprecation_max_age_years ?? 3),
+        device_deprecation_max_tickets_12m: Number((values as any).device_deprecation_max_tickets_12m ?? 5),
       };
 
       await saveSettings({ data: { accessToken, settings: payload } });
