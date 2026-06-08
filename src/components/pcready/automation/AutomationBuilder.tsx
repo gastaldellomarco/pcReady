@@ -547,8 +547,8 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                 <div className="mb-3 w-full space-y-1">
                   <p className="text-xs font-semibold text-red-600">Errori di validazione:</p>
                   <ul className="list-disc list-inside space-y-0.5">
-                    {validationErrors.map((err, i) => (
-                      <li key={i} className="text-xs text-red-500">
+                    {validationErrors.map((err) => (
+                      <li key={err.path || err.message} className="text-xs text-red-500">
                         {err.message}
                       </li>
                     ))}

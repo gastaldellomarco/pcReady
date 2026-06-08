@@ -383,8 +383,8 @@ export default function AutomationWizard({
                 <ul className="mt-0.5 list-disc list-inside space-y-0.5">
                   {errs
                     .filter((e) => e.severity === "error")
-                    .map((err, i) => (
-                      <li key={i} className="text-xs text-red-600">
+                    .map((err) => (
+                      <li key={err.message} className="text-xs text-red-600">
                         {err.message}
                       </li>
                     ))}
@@ -403,8 +403,8 @@ export default function AutomationWizard({
             <ul className="list-disc list-inside space-y-0.5">
               {validation.errors
                 .filter((e) => e.severity === "warning")
-                .map((err, i) => (
-                  <li key={i} className="text-xs text-amber-600">
+                .map((err) => (
+                  <li key={err.message} className="text-xs text-amber-600">
                     {err.message}
                   </li>
                 ))}

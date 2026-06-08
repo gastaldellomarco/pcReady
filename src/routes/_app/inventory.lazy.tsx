@@ -1356,6 +1356,7 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reloads when calendar filters change
   }, [from, to, assignedTo, typeFilter, statusFilter]);
 
   const byDay = useMemo(() => {

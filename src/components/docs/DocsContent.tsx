@@ -134,6 +134,7 @@ const mdxComponents = {
   // Style images
   img: (props: any) => (
     <img
+      alt=""
       className="my-4 max-w-full rounded-lg border"
       style={{ borderColor: "var(--border)" }}
       loading="lazy"

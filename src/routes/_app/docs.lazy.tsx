@@ -93,14 +93,14 @@ function HighlightText({ text, query }: { text: string; query: string }) {
       {parts.map((part, i) =>
         regex.test(part) ? (
           <mark
-            key={i}
+            key={`hl-${i}`}
             className="rounded-sm px-0.5"
             style={{ background: "var(--accent2)", color: "var(--accent)" }}
           >
             {part}
           </mark>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={`txt-${i}`}>{part}</span>
         ),
       )}
     </>

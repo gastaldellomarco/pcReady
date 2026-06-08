@@ -491,7 +491,7 @@ export function DeviceDetailModal() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, t]);
 
   const ticketCodeById = useMemo(() => {
     const m = new Map<string, string>();

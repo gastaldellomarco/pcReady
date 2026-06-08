@@ -206,7 +206,7 @@ export function GlobalRunLogsPanel({
                                 <div className="mt-1 space-y-1.5">
                                   {log.actions_executed.map((action, idx) => (
                                     <div
-                                      key={idx}
+                                      key={`${action.action}-${idx}`}
                                       className={cn(
                                         "rounded-md border p-2 text-xs",
                                         action.status === "success" &&

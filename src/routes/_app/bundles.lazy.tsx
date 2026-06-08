@@ -156,10 +156,12 @@ function BundlesPage() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
   }, []);
 
   useEffect(() => {
     billing.refreshPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- billing is stable; dataUpdatedAt triggers refresh
   }, [assignmentsQuery.dataUpdatedAt, usageQuery.dataUpdatedAt]);
 
   const stats = useMemo(() => {

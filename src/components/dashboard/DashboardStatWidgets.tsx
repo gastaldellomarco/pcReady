@@ -231,7 +231,7 @@ export function DashboardAreaSparkMulti({
             .join(" ");
           return (
             <path
-              key={si}
+              key={s.label || si}
               d={path}
               fill="none"
               stroke={s.color}

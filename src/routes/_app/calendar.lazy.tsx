@@ -104,6 +104,7 @@ function CalendarPage() {
     loadTechniciansServerFn({ data: { accessToken: session.access_token } })
       .then((t) => setTechnicians(Array.isArray(t) ? t : []))
       .catch(() => toast.error(t("errors.loadTechnicians", "Impossibile caricare i tecnici")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t and toast are stable; load when token changes
   }, [session?.access_token, loadTechniciansServerFn]);
 
   // ── Tech color map ───────────────────────────────────────────────────────
@@ -217,6 +218,7 @@ function CalendarPage() {
     if (eventsQuery.isError) {
       toast.error(t("errors.loadEvents", "Impossibile caricare gli eventi del calendario"));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t and toast are stable
   }, [eventsQuery.isError]);
 
   // ── Render ───────────────────────────────────────────────────────────────

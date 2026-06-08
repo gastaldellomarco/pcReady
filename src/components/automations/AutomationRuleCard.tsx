@@ -214,8 +214,8 @@ export function AutomationRuleCard({
                 <TooltipContent side="top" className="text-xs max-w-[200px]">
                   <p className="font-medium mb-1">Regola incompleta:</p>
                   <ul className="list-disc list-inside space-y-0.5">
-                    {completeness.missing.map((item, i) => (
-                      <li key={i}>{item}</li>
+                    {completeness.missing.map((item) => (
+                      <li key={item}>{item}</li>
                     ))}
                   </ul>
                 </TooltipContent>

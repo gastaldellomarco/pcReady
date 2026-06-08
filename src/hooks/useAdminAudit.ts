@@ -103,6 +103,7 @@ export function useAdminAudit(args: {
         setLoadingAudit(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setAuditFilters is stable from useState
     [accessToken, canViewAuditLog, loadAuditLog, auditPageSize, onFiltersChange],
   );
 

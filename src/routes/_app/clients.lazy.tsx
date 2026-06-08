@@ -1284,7 +1284,7 @@ function ClientsPage() {
                     t("contacts.headers.actions", "Azioni"),
                   ]}
                   rows={contacts.map((contact) => [
-                    <span className="inline-flex items-center gap-1 font-semibold">
+                    <span key={`c-name-${contact.id}`} className="inline-flex items-center gap-1 font-semibold">
                       <button
                         type="button"
                         className="relative -ml-0.5 flex items-center justify-center rounded p-0.5 transition-colors hover:bg-surface2"
@@ -1329,8 +1329,8 @@ function ClientsPage() {
                     contact.department || "-",
                     contact.email || "-",
                     contact.phone || "-",
-                    <PortalBadge active={!!portalAccess[contact.id]} />,
-                    <div className="flex flex-wrap justify-end gap-1">
+                    <PortalBadge key={`c-portal-${contact.id}`} active={!!portalAccess[contact.id]} />,
+                    <div key={`c-actions-${contact.id}`} className="flex flex-wrap justify-end gap-1">
                       <button
                         className="pc-btn pc-btn-ghost pc-btn-xs"
                         onClick={() => openEditContactModal(contact)}
@@ -1399,14 +1399,15 @@ function ClientsPage() {
                   ]}
                   rows={tickets.map((ticket) => [
                     <button
+                      key={`t-code-${ticket.id}`}
                       className="font-mono text-[12px] font-semibold text-accent"
                       onClick={() => openTicketDetail(ticket.id)}
                     >
                       {ticket.ticket_code}
                     </button>,
                     ticket.software || ticket.requester || "-",
-                    <StatusPill value={ticket.status} />,
-                    <PriorityPill value={ticket.priority} />,
+                    <StatusPill key={`t-status-${ticket.id}`} value={ticket.status} />,
+                    <PriorityPill key={`t-prio-${ticket.id}`} value={ticket.priority} />,
                     ticket.assignee?.full_name || t("tickets.unassigned", "Non assegnato"),
                     fmtDate(ticket.created_at),
                   ])}
@@ -1448,18 +1449,20 @@ function ClientsPage() {
       ]}
       rows={devices.map((device) => [
         <button
+          key={`d-model-${device.id}`}
           className="font-semibold text-accent"
           onClick={() => openDeviceDetail(device.id)}
         >
           {device.model}
         </button>,
-        <span className="font-mono text-[12px]">{device.asset_tag || "-"}</span>,
-        <span className="font-mono text-[12px]">{device.serial || "-"}</span>,
+        <span key={`d-asset-${device.id}`} className="font-mono text-[12px]">{device.asset_tag || "-"}</span>,
+        <span key={`d-serial-${device.id}`} className="font-mono text-[12px]">{device.serial || "-"}</span>,
         device.os || "-",
-        <DeviceStatusPill status={device.status} />,
+        <DeviceStatusPill key={`d-status-${device.id}`} status={device.status} />,
         device.assigned_to || "-",
         fmtDate(device.created_at),
         <button
+          key={`d-ticket-${device.id}`}
           className="pc-btn pc-btn-ghost pc-btn-xs"
           onClick={openCreate}
           title={t("devices.createTicket", "Crea ticket per questo dispositivo")}
@@ -2544,6 +2547,7 @@ function ClientDocumentsPanel({
         ]}
         rows={documents.map((document) => [
           <button
+            key={`doc-name-${document.id}`}
             className="font-semibold text-accent"
             type="button"
             onClick={() => void openDocument(document)}
@@ -2553,7 +2557,7 @@ function ClientDocumentsPanel({
           documentTypeLabel(document.document_type),
           formatFileSize(document.file_size),
           fmtDate(document.uploaded_at),
-          <div className="flex gap-1">
+          <div key={`doc-actions-${document.id}`} className="flex gap-1">
             <button
               className="pc-btn pc-btn-ghost pc-btn-xs"
               type="button"

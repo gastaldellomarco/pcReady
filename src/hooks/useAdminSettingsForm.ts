@@ -102,7 +102,7 @@ export function useAdminSettingsForm(args: {
       device_deprecation_max_age_years: settings?.device_deprecation_max_age_years ?? 3,
       device_deprecation_max_tickets_12m: settings?.device_deprecation_max_tickets_12m ?? 5,
     } as any);
-  }, [settings]);
+  }, [settings, settingsForm]);
 
   async function submitSettings(values: z.input<typeof AppSettingsSchema>) {
     if (!accessToken) return;

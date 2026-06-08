@@ -98,6 +98,7 @@ export function MaintenanceSchedulePanel({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reloads when deviceId changes
   }, [deviceId]);
 
   const sortedSchedules = useMemo(

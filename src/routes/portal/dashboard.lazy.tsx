@@ -284,11 +284,11 @@ function ServiceStatusSection({ services }: { services: ServiceItem[] }) {
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {services.map((svc, idx) => {
+        {services.map((svc) => {
           const cfg = SERVICE_STATUS_CONFIG[svc.status] || SERVICE_STATUS_CONFIG.operational;
           const Icon = cfg.icon;
           return (
-            <div key={idx} className={`rounded-lg border p-4 ${cfg.border} ${cfg.bg}`}>
+            <div key={svc.name} className={`rounded-lg border p-4 ${cfg.border} ${cfg.bg}`}>
               <div className="flex items-center gap-2.5">
                 <Icon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
                 <div className="min-w-0">

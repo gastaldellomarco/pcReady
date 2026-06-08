@@ -46,7 +46,7 @@ export function QrCodeDialog({ device, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [device]);
+  }, [device, t]);
 
   if (!device) return null;
 

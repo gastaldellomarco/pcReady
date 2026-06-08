@@ -151,8 +151,8 @@ export function ExportPdf<TData, TPdfRow>({
           <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-text3">
             Filtri attivi
           </div>
-          {filterLines.map((line, i) => (
-            <div key={i} className="text-text2 leading-relaxed">
+          {filterLines.map((line) => (
+            <div key={line} className="text-text2 leading-relaxed">
               {line}
             </div>
           ))}

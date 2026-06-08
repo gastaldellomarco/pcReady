@@ -92,7 +92,7 @@ export function BarcodeScanner({
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [mode, open, onDetected]);
+  }, [mode, open, onDetected, t]);
 
   function submitManualCode() {
     const value = manualCode.trim();

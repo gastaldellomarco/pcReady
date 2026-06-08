@@ -429,6 +429,7 @@ function CostsPage() {
 
   useEffect(() => {
     void loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadData deps already include dateFrom, dateTo
   }, [loadData]);
 
   // Persist date range to localStorage so it's remembered across visits
@@ -441,6 +442,7 @@ function CostsPage() {
     } catch {
       /* localStorage unavailable — ignore */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only persist when filter values change
   }, [dateFrom, dateTo, clientFilter, technicianFilter]);
 
   const technicians = useMemo(

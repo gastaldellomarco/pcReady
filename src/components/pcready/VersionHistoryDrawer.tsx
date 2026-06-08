@@ -43,7 +43,7 @@ export function VersionHistoryDrawer({
       if (!authorId) return t("versionHistory.system", "Sistema");
       return authors[authorId] || authorId;
     },
-    [authors],
+    [authors, t],
   );
 
   const loadVersions = useCallback(async () => {
@@ -73,7 +73,7 @@ export function VersionHistoryDrawer({
     } finally {
       setLoading(false);
     }
-  }, [entityId, entityType]);
+  }, [entityId, entityType, t]);
 
   useEffect(() => {
     if (open && entityId) {

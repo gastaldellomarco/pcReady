@@ -199,8 +199,7 @@ function WarehousePage() {
 
   useEffect(() => {
     void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
 
   // ── Actions ──
 

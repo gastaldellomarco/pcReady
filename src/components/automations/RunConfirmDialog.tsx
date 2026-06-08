@@ -96,8 +96,8 @@ export function RunConfirmDialog({
                   Regola incompleta — esecuzione bloccata
                 </p>
                 <ul className="mt-1 list-inside list-disc text-xs text-red-600">
-                  {completeness.missing.map((item, i) => (
-                    <li key={i}>{item}</li>
+                  {completeness.missing.map((item) => (
+                    <li key={item}>{item}</li>
                   ))}
                 </ul>
               </div>
@@ -114,9 +114,9 @@ export function RunConfirmDialog({
                 </span>
               </div>
               <ul className="space-y-1">
-                {impacts.map((impact, i) => (
+                {impacts.map((impact) => (
                   <li
-                    key={i}
+                    key={impact}
                     className={cn(
                       "text-sm",
                       impact.startsWith("  →") ? "pl-4 text-muted-foreground" : "font-medium",
@@ -136,8 +136,8 @@ export function RunConfirmDialog({
               <div>
                 <p className="text-sm font-medium text-amber-700">Side-effect esterni</p>
                 <ul className="mt-1 list-inside list-disc text-xs text-amber-600">
-                  {sideEffects.map((effect, i) => (
-                    <li key={i}>{effect}</li>
+                  {sideEffects.map((effect) => (
+                    <li key={effect}>{effect}</li>
                   ))}
                 </ul>
               </div>

@@ -23,6 +23,7 @@ export function ValueInput({ field, operator, value, onChange }: ValueInputProps
     return (
       <div className="space-y-2">
         {values.map((val, idx) => (
+          // eslint-disable-next-line react/no-array-index-key -- values never reorder, only append/remove
           <div key={idx} className="flex items-center gap-2">
             {field?.type === "select" && field.options ? (
               <select

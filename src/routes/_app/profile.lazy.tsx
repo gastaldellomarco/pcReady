@@ -227,6 +227,7 @@ function ProfilePage() {
       )
       .finally(() => setLoading(false));
   }, [session?.access_token, loadProfile, profileReloadToken]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- t is stable from useTranslation; profileReloadToken triggers reload
 
   useEffect(() => {
     if (tab !== "activity" || !session?.access_token || technicianOverview) return;
@@ -244,6 +245,7 @@ function ProfilePage() {
       )
       .finally(() => setTechnicianOverviewLoading(false));
   }, [loadTechnicianOverview, session?.access_token, tab, technicianOverview]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- t is stable; only load when tab/techOverview changes
 
   const initials = useMemo(() => {
     const name = personal.display_name || authProfile?.full_name || profile?.email || "U";
@@ -358,6 +360,7 @@ function ProfilePage() {
     if (tab !== "security" || !session?.access_token) return;
     void refreshMfaStatus();
   }, [refreshMfaStatus, session?.access_token, tab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when tab becomes "security"
 
   async function startMfaSetup() {
     setMfaLoading(true);

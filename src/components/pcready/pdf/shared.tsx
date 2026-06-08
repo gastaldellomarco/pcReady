@@ -753,7 +753,7 @@ export function AdaptivePdfTable<T>({
       </View>
       {rows.map((row, index) => (
         <View
-          key={index}
+          key={`table-row-${index}`}
           style={[
             styles.row,
             { backgroundColor: index % 2 === 0 ? pdfPalette.paper : pdfPalette.surface },
@@ -800,7 +800,7 @@ function PdfCardList<T>({ rows, columns }: { rows: T[]; columns: PdfColumn<T>[] 
         const primary = columns[0];
         const secondary = columns[1];
         return (
-          <View key={index} style={styles.dataCard} wrap={false}>
+          <View key={`card-${index}`} style={styles.dataCard} wrap={false}>
             <View style={styles.cardTitleRow}>
               <Text style={styles.cardTitle}>
                 {primary ? normalizePdfText(primary.value(row)) : `Riga ${index + 1}`}
