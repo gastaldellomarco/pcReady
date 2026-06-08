@@ -1,4 +1,4 @@
-﻿import { MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
+﻿import { Eye, MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
@@ -65,7 +65,8 @@ function MfaStatusBadge({
  */
 export function AdminUsersTab() {
   const { t } = useTranslation("admin");
-  const { session, user, isAdmin } = useAuth();
+  const { session, user, hasPermission, startImpersonation, isImpersonating } = useAuth();
+  const canManageUsers = hasPermission("can_manage_users");
   const accessToken = session?.access_token;
   const {
     rows,
@@ -102,7 +103,7 @@ export function AdminUsersTab() {
     setDisabled,
   } = useAdminUsers({
     accessToken,
-    isAdmin,
+    canManageUsers,
     currentUserId: user?.id,
   });
 
@@ -118,7 +119,7 @@ export function AdminUsersTab() {
     EMAIL_RE.test(watchedEmail) &&
     inviteForm.formState.isValid;
 
-  const { settings } = useAdminAppSettings({ accessToken, isAdmin });
+  const { settings } = useAdminAppSettings({ accessToken, canManageSettings: hasPermission("can_manage_settings") });
   const isMobile = useIsMobile();
 
   const userCardColumns: MobileCardColumn<any>[] = [
@@ -179,6 +180,17 @@ export function AdminUsersTab() {
       label: "Azioni",
       render: (row: any) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {canManageUsers && row.id !== user?.id && row.status !== "invited" && (
+            <button
+              className="pc-btn-icon touch-target"
+              title={t("users.tooltip.impersonate", "Impersona utente")}
+              disabled={isImpersonating || busyId === row.id}
+              onClick={() => startImpersonation(row.id)}
+              style={{ color: "var(--warning, #D97706)" }}
+            >
+              <Eye className="size-3.5" />
+            </button>
+          )}
           <button
             className="pc-btn-icon touch-target"
             title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
@@ -606,6 +618,17 @@ export function AdminUsersTab() {
                       </td>
                       <td className="px-[14px] py-[10px]">
                         <div className="flex items-center gap-1">
+                          {canManageUsers && row.id !== user?.id && row.status !== "invited" && (
+                            <button
+                              className="pc-btn-icon touch-target"
+                              title={t("users.tooltip.impersonate", "Impersona utente")}
+                              disabled={isImpersonating || busyId === row.id}
+                              onClick={() => startImpersonation(row.id)}
+                              style={{ color: "var(--warning, #D97706)" }}
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                          )}
                           <button
                             className="pc-btn-icon touch-target"
                             title={

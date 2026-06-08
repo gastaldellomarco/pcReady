@@ -44,7 +44,8 @@ import type { OAuthClientInfo } from "@/lib/oauth-consent";
  */
 export function AdminOAuthTab() {
   const { t } = useTranslation("admin");
-  const { session, isAdmin } = useAuth();
+  const { session, hasPermission } = useAuth();
+  const canManageOAuth = hasPermission("can_manage_oauth");
   const accessToken = session?.access_token;
   const {
     clients,
@@ -61,7 +62,7 @@ export function AdminOAuthTab() {
     rotateClientSecret,
     actionBusyId,
     lifecycle,
-  } = useAdminOAuthClients({ accessToken, isAdmin });
+  } = useAdminOAuthClients({ accessToken, canManageOAuth });
 
   const [rotateTarget, setRotateTarget] = useState<OAuthClientInfo | null>(null);
   const [disableTarget, setDisableTarget] = useState<OAuthClientInfo | null>(null);

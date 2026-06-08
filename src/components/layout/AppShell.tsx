@@ -6,6 +6,7 @@ import {
   AuthLoadingScreen,
   MissingProfileScreen,
 } from "@/components/auth/AuthStateScreens";
+import { ImpersonationBanner } from "@/components/layout/ImpersonationBanner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { PageErrorBoundary } from "@/components/page-states";
@@ -35,14 +36,14 @@ try {
  *
  */
 export function AppShell() {
-  const { session, profile, authError, refreshProfile, signOut } = useAuth();
+  const { session, profile, authError, refreshProfile, signOut, hasPermission } = useAuth();
   const { t } = useTranslation("common");
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
   const route = useRouterState({ select: (s) => s.location.pathname });
   const { guardLoading, mfaRequiredMessage, organizationName } = useAuthGuard();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const adminErrorCount = useAdminAuditBadge(session?.access_token, profile?.role === "admin");
+  const adminErrorCount = useAdminAuditBadge(session?.access_token, hasPermission("can_view_audit_log"));
 
   // ── Page title management ──────────────────────────────────────
   useEffect(() => {
@@ -139,6 +140,7 @@ export function AppShell() {
 
       {/* MAIN */}
       <div className="flex min-w-0 flex-1 flex-col" style={{ marginLeft: isMobile ? 0 : 240 }}>
+        <ImpersonationBanner />
         <TopBar
           pageTitle={pageTitle}
           isMobile={isMobile}

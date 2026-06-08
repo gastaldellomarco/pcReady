@@ -96,9 +96,9 @@ function createClientCreated(
 }
 
 // ── Common args ────────────────────────────────────────────────────────
-const adminAuth = { accessToken: "token-123", isAdmin: true };
-const noAuth = { accessToken: undefined, isAdmin: false };
-const userAuth = { accessToken: "token-123", isAdmin: false };
+const adminAuth = { accessToken: "token-123", canManageOAuth: true };
+const noAuth = { accessToken: undefined, canManageOAuth: false };
+const userAuth = { accessToken: "token-123", canManageOAuth: false };
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ describe("useAdminOAuthClients", () => {
       expect(serverFnMocks.listOAuthClients).not.toHaveBeenCalled();
     });
 
-    it("skips auto-load when isAdmin is false", async () => {
+    it("skips auto-load when canManageOAuth is false", async () => {
       renderHook(() => useAdminOAuthClients(userAuth));
 
       await new Promise((r) => setTimeout(r, 50));

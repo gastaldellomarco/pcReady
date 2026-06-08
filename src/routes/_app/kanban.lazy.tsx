@@ -135,7 +135,7 @@ function KanbanPage() {
   const { t } = useTranslation(["kanban", "tickets"]);
   const isMobile = useIsMobile();
   useTickets();
-  const { canEdit, isAdmin, user, profile, session } = useAuth();
+  const { canEdit, hasPermission, user, profile, session } = useAuth();
   const loadKanbanSettings = useServerFn(getKanbanAppSettings);
   const saveKanbanSettings = useServerFn(updateKanbanAppSettings);
   const loadTechnicians = useServerFn(listTechnicians);
@@ -302,7 +302,7 @@ function KanbanPage() {
   }, []);
 
   async function saveColumnNote(status: TicketStatus, text: string) {
-    if (!session?.access_token || !isAdmin) return;
+    if (!session?.access_token || !hasPermission("can_manage_settings")) return;
     setNoteSaving(status);
     try {
       const updated = { ...columnNotes, [status]: text };
@@ -323,7 +323,7 @@ function KanbanPage() {
   }
 
   async function saveWipSettings() {
-    if (!session?.access_token || !isAdmin)
+    if (!session?.access_token || !hasPermission("can_manage_settings"))
       return toast.error(t("tickets:toasts.adminOnly", "Solo admin"));
     setSavingWip(true);
     try {
@@ -759,7 +759,7 @@ function KanbanPage() {
           ) : null}
           {filteredRows.length} {t("tickets:of", "di")} {rows.length} {t("ticketCount", "ticket")}
         </span>
-        {isAdmin && (
+        {hasPermission("can_manage_settings") && (
           <button
             type="button"
             className="pc-btn pc-btn-ghost pc-btn-sm"
@@ -865,7 +865,7 @@ function KanbanPage() {
           overCol={overCol}
           overLimitCol={overLimitCol}
           canEdit={canEdit}
-          isAdmin={isAdmin}
+          canManageSettings={hasPermission("can_manage_settings")}
           technicians={Array.isArray(technicians) ? technicians : []}
           selectedTicketIds={selectedTicketIds}
           cardViewers={cardViewers}

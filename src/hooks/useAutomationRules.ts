@@ -44,7 +44,8 @@ export { getRuleTriggerType, TRIGGER_TYPE_LABELS, TRIGGER_TYPE_OPTIONS };
  * data fetching (rules, runStats, kpis) e operazioni CRUD.
  */
 export function useAutomationRules() {
-  const { isAdmin, session } = useAuth();
+  const { hasPermission, session } = useAuth();
+  const canManageAutomations = hasPermission("can_manage_automations");
   const loadRunStats = useServerFn(getAutomationRunStats);
   const executeRun = useServerFn(runAutomationNow);
 
@@ -104,7 +105,7 @@ export function useAutomationRules() {
   }, [listQuery.data, loadStats]);
 
   async function toggleRule(rule: AutomationRule) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!canManageAutomations) return toast.error("Solo amministratori");
     try {
       await toggleMut.mutateAsync({ id: rule.id, active: !rule.active });
     } catch (err) {
@@ -113,7 +114,7 @@ export function useAutomationRules() {
   }
 
   async function duplicateRule(rule: AutomationRule) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!canManageAutomations) return toast.error("Solo amministratori");
     try {
       const newId = await duplicateMut.mutateAsync({
         id: rule.id,
@@ -145,7 +146,7 @@ export function useAutomationRules() {
   // ── Delete flow ──────────────────────────────────────────────
 
   async function deleteRule(rule: AutomationRule) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!canManageAutomations) return toast.error("Solo amministratori");
     dialogs.setConfirmDeleteRule(rule);
   }
 
@@ -163,7 +164,7 @@ export function useAutomationRules() {
   // ── Archive flow ─────────────────────────────────────────────
 
   async function archiveRule(rule: AutomationRule) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!canManageAutomations) return toast.error("Solo amministratori");
     dialogs.setConfirmArchiveRule(rule);
   }
 
@@ -246,7 +247,7 @@ export function useAutomationRules() {
   // ── Save wizard flow ─────────────────────────────────────────
 
   async function saveWizardFlow(flow: WizardFlowPayload) {
-    if (!isAdmin) return toast.error("Solo amministratori");
+    if (!canManageAutomations) return toast.error("Solo amministratori");
 
     const validation = validateWizardPayload(flow);
     if (!validation.valid) {
@@ -345,7 +346,8 @@ export function useAutomationRules() {
     loadingRules,
 
     // Auth
-    isAdmin,
+    hasPermission,
+    canManageAutomations,
     session,
 
     // Filters / sort

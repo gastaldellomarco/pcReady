@@ -69,8 +69,8 @@ type ClientOption = {
 
 function BundlesPage() {
   const { t } = useTranslation("bundles");
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const { profile, hasPermission } = useAuth();
+  const canManageBundles = hasPermission("can_manage_bundles");
   const canManageAssignments = profile?.role === "admin" || profile?.role === "tech";
   const [activeTab, setActiveTab] = useState<BundleTab>("catalog");
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -106,7 +106,7 @@ function BundlesPage() {
   }, [assignments]);
 
   const bundleManager = useBundleManager({
-    isAdmin,
+    canManageBundles,
     userId: profile?.id ?? null,
     mutations: {
       create: createBundleMutation,
@@ -233,7 +233,7 @@ function BundlesPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {isAdmin && (
+            {canManageBundles && (
               <button
                 className="pc-btn pc-btn-primary pc-btn-sm"
                 onClick={() => {
@@ -350,7 +350,7 @@ function BundlesPage() {
           {activeTab === "catalog" && (
             <CatalogTab
               bundles={bundles}
-              isAdmin={isAdmin}
+              canManageBundles={canManageBundles}
               onEdit={setEditingBundleWithTab}
               onToggle={bundleManager.toggle}
             />
@@ -420,12 +420,12 @@ function BundlesPage() {
 
 function CatalogTab({
   bundles,
-  isAdmin,
+  canManageBundles,
   onEdit,
   onToggle,
 }: {
   bundles: AssistanceBundle[];
-  isAdmin: boolean;
+  canManageBundles: boolean;
   onEdit: (bundle: AssistanceBundle) => void;
   onToggle: (bundle: AssistanceBundle) => void;
 }) {
@@ -453,7 +453,7 @@ function CatalogTab({
                 <div className="mt-1 text-sm text-text3">{bundle.description}</div>
               )}
             </div>
-            {isAdmin && (
+            {canManageBundles && (
               <div className="flex gap-2">
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onEdit(bundle)}>
                   <Pencil className="size-3" /> {t("catalog.edit", "Modifica")}

@@ -29,8 +29,8 @@ async function copyOAuthField(label: string, text: string) {
 /**
  *
  */
-export function useAdminOAuthClients(args: { accessToken: string | undefined; isAdmin: boolean }) {
-  const { accessToken, isAdmin } = args;
+export function useAdminOAuthClients(args: { accessToken: string | undefined; canManageOAuth: boolean }) {
+  const { accessToken, canManageOAuth } = args;
   const listClients = useServerFn(listOAuthClients);
   const createClient = useServerFn(createOAuthClient);
   const setStatusFn = useServerFn(setOAuthClientStatus);
@@ -56,7 +56,7 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
   });
 
   const loadClients = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
+    if (!accessToken || !canManageOAuth) return;
     setLoadingClients(true);
     try {
       const data = await listClients({ data: { accessToken } });
@@ -66,7 +66,7 @@ export function useAdminOAuthClients(args: { accessToken: string | undefined; is
     } finally {
       setLoadingClients(false);
     }
-  }, [accessToken, isAdmin, listClients]);
+  }, [accessToken, canManageOAuth, listClients]);
 
   useEffect(() => {
     void loadClients();

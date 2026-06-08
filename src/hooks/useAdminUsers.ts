@@ -22,10 +22,10 @@ import type { AppRole } from "@/lib/auth-context";
  */
 export function useAdminUsers(args: {
   accessToken: string | undefined;
-  isAdmin: boolean;
+  canManageUsers: boolean;
   currentUserId: string | undefined;
 }) {
-  const { accessToken, isAdmin, currentUserId } = args;
+  const { accessToken, canManageUsers, currentUserId } = args;
   const listUsers = useServerFn(listAdminUsers);
   const updateUser = useServerFn(updateAdminUser);
   const setDisabled = useServerFn(setAdminUserDisabled);
@@ -54,7 +54,7 @@ export function useAdminUsers(args: {
   });
 
   const load = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
+    if (!accessToken || !canManageUsers) return;
     setLoadingRows(true);
     try {
       const data = await listUsers({ data: { accessToken } });
@@ -64,7 +64,7 @@ export function useAdminUsers(args: {
     } finally {
       setLoadingRows(false);
     }
-  }, [accessToken, isAdmin, listUsers]);
+  }, [accessToken, canManageUsers, listUsers]);
 
   useEffect(() => {
     void load();

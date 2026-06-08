@@ -49,7 +49,7 @@ function AutomationsPage() {
     setVersionHistoryRuleId,
     loadingRules,
     listQuery,
-    isAdmin,
+    canManageAutomations,
     openCreateDialog,
     openEditDialog,
     toggleRule,
@@ -208,7 +208,7 @@ function AutomationsPage() {
             variant="secondary"
             size="sm"
             onClick={openCreateDialog}
-            disabled={!isAdmin}
+            disabled={!canManageAutomations}
             className="gap-1.5"
           >
             <Plus className="h-4 w-4" />
@@ -235,7 +235,7 @@ function AutomationsPage() {
             <AutomationRuleCard
               key={rule.id}
               rule={rule}
-              isAdmin={isAdmin}
+              canManageAutomations={canManageAutomations}
               expanded={expandedRuleId === rule.id}
               stats={(runStats ?? {})[rule.id]}
               logsOpen={logsOpenRuleId === rule.id}

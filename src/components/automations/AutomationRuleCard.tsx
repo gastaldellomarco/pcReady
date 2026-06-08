@@ -79,7 +79,7 @@ function ErrorIndicator({ health }: { health: HealthStatus }) {
  */
 export function AutomationRuleCard({
   rule,
-  isAdmin,
+  canManageAutomations,
   expanded,
   stats,
   logsOpen,
@@ -98,7 +98,7 @@ export function AutomationRuleCard({
   onArchive,
 }: {
   rule: AutomationRule;
-  isAdmin: boolean;
+  canManageAutomations: boolean;
   expanded: boolean;
   stats?: AutomationRunStats;
   logsOpen: boolean;
@@ -165,7 +165,7 @@ export function AutomationRuleCard({
         <div className="flex flex-wrap items-center gap-3">
           <Switch
             checked={rule.active}
-            disabled={!isAdmin}
+            disabled={!canManageAutomations}
             onCheckedChange={onToggle}
             className={cn(
               "h-6 w-11 [&>span]:h-5 [&>span]:w-5 [&>span]:data-[state=checked]:translate-x-5",
@@ -224,7 +224,7 @@ export function AutomationRuleCard({
           )}
           {totalExecutions > 0 && <ErrorIndicator health={health} />}
           <div className="ml-auto flex items-center gap-1.5">
-            <Button variant="ghost" size="sm" onClick={onEdit} disabled={!isAdmin}>
+            <Button variant="ghost" size="sm" onClick={onEdit} disabled={!canManageAutomations}>
               <Pencil className="size-3.5" />
               <span className="hidden sm:inline">Modifica</span>
             </Button>
@@ -236,7 +236,7 @@ export function AutomationRuleCard({
                       variant="outline"
                       size="sm"
                       onClick={onRunNow}
-                      disabled={!isAdmin || running || !completeness.complete}
+                      disabled={!canManageAutomations || running || !completeness.complete}
                       className="gap-1"
                     >
                       <Play className="size-3.5" />
@@ -253,7 +253,7 @@ export function AutomationRuleCard({
             </TooltipProvider>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={!isAdmin}>
+                <Button variant="ghost" size="icon" disabled={!canManageAutomations}>
                   <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>

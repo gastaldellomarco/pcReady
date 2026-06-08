@@ -74,7 +74,7 @@ interface TechnicianOption {
 
 function ChecklistPage() {
   const { t } = useTranslation("checklist");
-  const { user, canEdit, isAdmin } = useAuth();
+  const { user, canEdit, hasPermission } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +131,7 @@ function ChecklistPage() {
   }
 
   async function setDefault(id: string) {
-    if (!isAdmin) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
+    if (!hasPermission("can_manage_checklist_templates")) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
     const template = templates.find((item) => item.id === id);
     await setDefaultMut.mutateAsync(id);
     if (template) {
@@ -170,7 +170,7 @@ function ChecklistPage() {
   }
 
   async function remove(id: string) {
-    if (!isAdmin) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
+    if (!hasPermission("can_manage_checklist_templates")) return toast.error(t("toasts.adminOnly", "Solo amministratori"));
     const template = templates.find((item) => item.id === id);
     if (template) {
       await createVersion(
@@ -376,7 +376,7 @@ function ChecklistPage() {
           key={current.id}
           template={current}
           canEdit={canEdit}
-          isAdmin={isAdmin}
+          canManageChecklists={hasPermission("can_manage_checklist_templates")}
           onUpdate={(p, n) => update(current, p, n)}
           onDelete={() => setDeleteTemplateTarget(current)}
           onOpenVersions={() => setVersionHistoryOpen(true)}
@@ -426,7 +426,7 @@ function ChecklistPage() {
 function TemplateEditor({
   template,
   canEdit,
-  isAdmin,
+  canManageChecklists,
   onUpdate,
   onDelete,
   onSetDefault,
@@ -436,7 +436,7 @@ function TemplateEditor({
 }: {
   template: Template;
   canEdit: boolean;
-  isAdmin: boolean;
+  canManageChecklists: boolean;
   onUpdate: (p: Partial<Template>, changeNote?: string) => void;
   onDelete: () => void;
   onSetDefault: () => void;
@@ -804,7 +804,7 @@ function TemplateEditor({
               <History className="size-3" /> {t("actions.versions", "Versioni")}
             </button>
 
-            {isAdmin && !template.is_default && (
+            {canManageChecklists && !template.is_default && (
               <button
                 className="pc-btn pc-btn-ghost pc-btn-sm"
                 onClick={onSetDefault}
@@ -813,7 +813,7 @@ function TemplateEditor({
                 <StarOff className="size-3" /> {t("setDefault", "Imposta predefinito")}
               </button>
             )}
-            {isAdmin && (
+            {canManageChecklists && (
               <button className="pc-btn pc-btn-danger pc-btn-sm" onClick={onDelete}>
                 <Trash2 className="size-3" /> {t("delete", "Elimina")}
               </button>

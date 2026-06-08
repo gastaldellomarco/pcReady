@@ -11,7 +11,7 @@ interface BundleMutations {
 }
 
 interface UseBundleManagerOptions {
-  isAdmin: boolean;
+  canManageBundles: boolean;
   userId: string | null;
   mutations: BundleMutations;
 }
@@ -21,7 +21,7 @@ interface UseBundleManagerOptions {
  */
 export function useBundleManager(options: UseBundleManagerOptions) {
   const { t } = useTranslation("bundles");
-  const { isAdmin, userId, mutations } = options;
+  const { canManageBundles, userId, mutations } = options;
 
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<AssistanceBundle | null>(null);
@@ -42,7 +42,7 @@ export function useBundleManager(options: UseBundleManagerOptions) {
   }
 
   async function save(data: Partial<AssistanceBundle>) {
-    if (!isAdmin) {
+    if (!canManageBundles) {
       toast.error(t("errors.adminOnly", "Solo gli admin possono gestire i bundle"));
       return;
     }
@@ -63,7 +63,7 @@ export function useBundleManager(options: UseBundleManagerOptions) {
   }
 
   async function toggle(bundle: AssistanceBundle) {
-    if (!isAdmin) {
+    if (!canManageBundles) {
       toast.error(t("errors.adminOnlyEdit", "Solo gli admin possono modificare i bundle"));
       return;
     }

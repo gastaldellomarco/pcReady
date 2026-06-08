@@ -99,9 +99,9 @@ function createExportResult() {
 }
 
 // ── Common args ────────────────────────────────────────────────────────
-const adminAuth = { accessToken: "token-123", isAdmin: true };
-const noAuth = { accessToken: undefined, isAdmin: false };
-const userAuth = { accessToken: "token-123", isAdmin: false };
+const adminAuth = { accessToken: "token-123", canManageSettings: true };
+const noAuth = { accessToken: undefined, canManageSettings: false };
+const userAuth = { accessToken: "token-123", canManageSettings: false };
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
@@ -132,7 +132,7 @@ describe("useAdminAppSettings", () => {
       expect(serverFnMocks.getAppSettings).not.toHaveBeenCalled();
     });
 
-    it("skips auto-load when isAdmin is false", async () => {
+    it("skips auto-load when canManageSettings is false", async () => {
       renderHook(() => useAdminAppSettings(userAuth));
 
       await new Promise((r) => setTimeout(r, 50));

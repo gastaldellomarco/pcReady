@@ -30,14 +30,14 @@ export type ViewMode = "table" | "timeline";
  */
 export function useAdminAudit(args: {
   accessToken: string | undefined;
-  isAdmin: boolean;
+  canViewAuditLog: boolean;
   auditPageSize?: number;
   initialFilters?: AuditLogFilters;
   onFiltersChange?: (filters: AuditLogFilters) => void;
 }) {
   const {
     accessToken,
-    isAdmin,
+    canViewAuditLog,
     auditPageSize: initialPageSize = 25,
     initialFilters: initFilters,
     onFiltersChange,
@@ -81,7 +81,7 @@ export function useAdminAudit(args: {
   // --- Sub-hooks ---
   const loadAudit = useCallback(
     async (page = 1, filters: AuditLogFilters = {}) => {
-      if (!accessToken || !isAdmin) return;
+      if (!accessToken || !canViewAuditLog) return;
       setLoadingAudit(true);
       try {
         const data = await loadAuditLog({
@@ -103,7 +103,7 @@ export function useAdminAudit(args: {
         setLoadingAudit(false);
       }
     },
-    [accessToken, isAdmin, loadAuditLog, auditPageSize, onFiltersChange],
+    [accessToken, canViewAuditLog, loadAuditLog, auditPageSize, onFiltersChange],
   );
 
   const { auditFilters, setAuditFilters, datePreset, updateSearch, applyDatePreset, resetFilters } =
@@ -121,7 +121,7 @@ export function useAdminAudit(args: {
 
   // --- KPI ---
   const fetchKpi = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
+    if (!accessToken || !canViewAuditLog) return;
     setLoadingKpi(true);
     try {
       const data = await loadKpi({ data: { accessToken } });
@@ -131,11 +131,11 @@ export function useAdminAudit(args: {
     } finally {
       setLoadingKpi(false);
     }
-  }, [accessToken, isAdmin, loadKpi]);
+  }, [accessToken, canViewAuditLog, loadKpi]);
 
   // --- Users ---
   const fetchUsers = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
+    if (!accessToken || !canViewAuditLog) return;
     setLoadingUsers(true);
     try {
       const data = await loadUsers({ data: { accessToken } });
@@ -145,18 +145,18 @@ export function useAdminAudit(args: {
     } finally {
       setLoadingUsers(false);
     }
-  }, [accessToken, isAdmin, loadUsers]);
+  }, [accessToken, canViewAuditLog, loadUsers]);
 
   // Initial load
   const initialLoadDone = useRef(false);
   useEffect(() => {
-    if (!initialLoadDone.current && accessToken && isAdmin) {
+    if (!initialLoadDone.current && accessToken && canViewAuditLog) {
       initialLoadDone.current = true;
       void loadAudit(1, initFilters || {});
       void fetchKpi();
       void fetchUsers();
     }
-  }, [accessToken, isAdmin, loadAudit, fetchKpi, fetchUsers, initFilters]);
+  }, [accessToken, canViewAuditLog, loadAudit, fetchKpi, fetchUsers, initFilters]);
 
   const totalPages = Math.ceil(auditTotal / auditPageSize) || 1;
 

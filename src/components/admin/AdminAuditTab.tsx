@@ -467,7 +467,8 @@ function TimelineEntry({ entry }: { entry: ActivityLogEntry }) {
  *
  */
 export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, unknown> }) {
-  const { session, isAdmin } = useAuth();
+  const { session, hasPermission } = useAuth();
+  const canViewAuditLog = hasPermission("can_view_audit_log");
   const accessToken = session?.access_token;
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
@@ -542,7 +543,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
     setAuditPageSize,
   } = useAdminAudit({
     accessToken,
-    isAdmin,
+    canViewAuditLog,
     initialFilters: urlFilters,
     onFiltersChange: handleFiltersChange,
   });
@@ -575,10 +576,10 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
   }, [accessToken, loadPresetsFn]);
 
   useEffect(() => {
-    if (accessToken && isAdmin) {
+    if (accessToken && canViewAuditLog) {
       void loadPresets();
     }
-  }, [accessToken, isAdmin, loadPresets]);
+  }, [accessToken, canViewAuditLog, loadPresets]);
 
   // Apply a preset
   const applyPreset = useCallback(

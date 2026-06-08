@@ -5,13 +5,13 @@ import { getAuditLogKpi } from "@/lib/audit-log";
 /**
  *
  */
-export function useAdminAuditBadge(accessToken: string | undefined, isAdmin: boolean) {
+export function useAdminAuditBadge(accessToken: string | undefined, canViewAuditLog: boolean) {
   const [errorCount, setErrorCount] = useState(0);
   const loadKpi = useServerFn(getAuditLogKpi);
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
-    if (!accessToken || !isAdmin) {
+    if (!accessToken || !canViewAuditLog) {
       setErrorCount(0);
       return;
     }
@@ -28,7 +28,7 @@ export function useAdminAuditBadge(accessToken: string | undefined, isAdmin: boo
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [accessToken, isAdmin, loadKpi]);
+  }, [accessToken, canViewAuditLog, loadKpi]);
 
   return errorCount;
 }

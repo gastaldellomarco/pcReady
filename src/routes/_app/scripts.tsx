@@ -151,7 +151,7 @@ function computeChangedFields(oldData: any, newData: any) {
 
 function ScriptsPage() {
   const { t } = useTranslation("scripts");
-  const { canEdit, isAdmin } = useAuth();
+  const { canEdit, hasPermission } = useAuth();
   const [rows, setRows] = useState<ScriptRow[]>([]);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
@@ -287,7 +287,7 @@ function ScriptsPage() {
                       }
                     : undefined
                 }
-                onDelete={isAdmin ? () => setDeleteTarget(s) : undefined}
+                onDelete={hasPermission("can_manage_automations") ? () => setDeleteTarget(s) : undefined}
               />
             ))}
           </div>

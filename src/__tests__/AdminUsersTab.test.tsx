@@ -308,10 +308,13 @@ function setupUseAdminUsers(overrides: Record<string, unknown> = {}) {
 }
 
 function setupAuth(overrides: Record<string, unknown> = {}) {
-  const defaults = {
+  const defaults: Record<string, unknown> = {
     session: { access_token: "test-token" },
     user: { id: "u-current" },
     isAdmin: true,
+    hasPermission: (permission: string) => permission === "can_manage_users" || permission === "can_manage_settings",
+    startImpersonation: vi.fn(),
+    isImpersonating: false,
   };
   authMock.useAuth.mockReturnValue({ ...defaults, ...overrides });
 }
@@ -421,9 +424,9 @@ describe("AdminUsersTab", () => {
     expect(saveRole).toHaveBeenCalledWith(MOCK_ROWS[0], "editor");
   });
 
-  // ── Test 7: Permessi insufficienti (isAdmin=false) ────────────────────
-  it("gestisce il caso di utente non admin", () => {
-    setupAuth({ isAdmin: false });
+  // ── Test 7: Permessi insufficienti (hasPermission false) ──────────────
+  it("gestisce il caso di utente senza permessi", () => {
+    setupAuth({ isAdmin: false, hasPermission: () => false });
     setupUseAdminUsers();
     render(<AdminUsersTab />);
 

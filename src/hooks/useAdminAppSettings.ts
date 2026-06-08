@@ -10,8 +10,8 @@ import { exportAllData } from "@/lib/export-data";
 /**
  *
  */
-export function useAdminAppSettings(args: { accessToken: string | undefined; isAdmin: boolean }) {
-  const { accessToken, isAdmin } = args;
+export function useAdminAppSettings(args: { accessToken: string | undefined; canManageSettings: boolean }) {
+  const { accessToken, canManageSettings } = args;
   const loadSettings = useServerFn(getAppSettings);
   const saveSettings = useServerFn(updateAppSettings);
   const exportData = useServerFn(exportAllData);
@@ -32,7 +32,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
   });
 
   const loadAppSettings = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
+    if (!accessToken || !canManageSettings) return;
     setLoadingSettings(true);
     try {
       const data = await loadSettings({ data: { accessToken } });
@@ -42,7 +42,7 @@ export function useAdminAppSettings(args: { accessToken: string | undefined; isA
     } finally {
       setLoadingSettings(false);
     }
-  }, [accessToken, isAdmin, loadSettings]);
+  }, [accessToken, canManageSettings, loadSettings]);
 
   useEffect(() => {
     void loadAppSettings();

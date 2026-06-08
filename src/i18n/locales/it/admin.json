@@ -7,6 +7,7 @@
   "subtitle": "Gestione utenti, ruoli, impostazioni di sistema e audit log.",
   "tabs": {
     "users": "Utenti",
+    "permissions": "Permessi",
     "settings": "Impostazioni",
     "backupDr": "Backup & DR",
     "oauth": "OAuth / Applicazioni",
@@ -69,6 +70,7 @@
       "noUsers": "Nessun utente trovato"
     },
     "tooltip": {
+      "impersonate": "Impersona utente",
       "enableUser": "Riabilita utente",
       "disableUser": "Disabilita utente",
       "removeUser": "Rimuovi utente"
@@ -485,6 +487,22 @@
     "resendInvite": "Re-invia invito",
     "active": "Attivo",
     "disabled": "Disabilitato"
+  },
+  "permissions": {
+    "title": "Permessi Ruoli",
+    "description": "Assegna permessi granulari ai ruoli Tech e Viewer. Il ruolo Admin ha sempre tutti i permessi.",
+    "loading": "Caricamento permessi...",
+    "save": "Salva permessi",
+    "saving": "Salvataggio...",
+    "adminRole": "Amministratore",
+    "adminAll": "tutti i permessi (non modificabile)",
+    "techRole": "Tecnico",
+    "viewerRole": "Visualizzatore"
+  },
+  "impersonation": {
+    "banner": "Stai impersonando {{name}} ({{role}})",
+    "warning": "Le azioni vengono registrate nell'audit log",
+    "end": "Termina impersonificazione"
   },
   "emailTemplate": {
     "meta": {

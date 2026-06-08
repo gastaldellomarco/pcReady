@@ -193,7 +193,7 @@ export function TicketDetailModal() {
     navigatePrev: navPrev,
     navigateNext: navNext,
   } = useTicketDetail();
-  const { canEdit, user, session, isAdmin } = useAuth();
+  const { canEdit, user, session, hasPermission } = useAuth();
   const notify = useServerFn(createNotification);
   const sendChecklistEmail = useServerFn(sendChecklistCompletedEmail);
   const loadTechnicians = useServerFn(listTechnicians);
@@ -693,7 +693,7 @@ export function TicketDetailModal() {
     const assignedTo =
       instance.section_assignments?.[sectionKey] ||
       (instance.structure as any)[sectionKey]?.assigned_to;
-    if (assignedTo && assignedTo !== user.id && !isAdmin) {
+    if (assignedTo && assignedTo !== user.id && !hasPermission("can_manage_checklist_templates")) {
       return toast.error(
         t(
           "detail.toasts.checklistSectionAssigned",
@@ -1621,7 +1621,7 @@ export function TicketDetailModal() {
           technicians={technicians}
           currentUserId={user?.id ?? null}
           canEdit={canEdit}
-          isAdmin={isAdmin}
+          canManageChecklists={hasPermission("can_manage_checklist_templates")}
         />
       )}
 
@@ -1671,7 +1671,7 @@ function TicketChecklistPanel({
   technicians,
   currentUserId,
   canEdit,
-  isAdmin,
+  canManageChecklists,
 }: {
   instances: TicketChecklistInstanceRow[];
   instancesLoading: boolean;
@@ -1689,7 +1689,7 @@ function TicketChecklistPanel({
   technicians: TechnicianOption[];
   currentUserId: string | null;
   canEdit: boolean;
-  isAdmin: boolean;
+  canManageChecklists: boolean;
 }) {
   const { t } = useTranslation("tickets");
   return (
@@ -1835,7 +1835,7 @@ function TicketChecklistPanel({
                           instance.section_assignments?.[groupKey] || section.assigned_to || null;
                         const assignedTech = technicians.find((tech) => tech.id === assignedTo);
                         const sectionLocked =
-                          !!assignedTo && assignedTo !== currentUserId && !isAdmin;
+                          !!assignedTo && assignedTo !== currentUserId && !canManageChecklists;
                         const responses = responseMap(instance.responses);
                         return (
                           <div
@@ -1903,7 +1903,7 @@ function TicketChecklistPanel({
                             null;
                           const assignedTech = technicians.find((tech) => tech.id === assignedTo);
                           const sectionLocked =
-                            !!assignedTo && assignedTo !== currentUserId && !isAdmin;
+                            !!assignedTo && assignedTo !== currentUserId && !canManageChecklists;
                           const responses = responseMap(instance.responses);
                           return (
                             <div

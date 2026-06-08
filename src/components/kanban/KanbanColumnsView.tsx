@@ -37,7 +37,7 @@ export interface KanbanColumnsViewProps {
   overCol: TicketStatus | null;
   overLimitCol: TicketStatus | null;
   canEdit: boolean;
-  isAdmin: boolean;
+  canManageSettings: boolean;
   technicians: TechnicianOption[];
   selectedTicketIds: Set<string>;
   cardViewers: ReadonlyMap<string, { initials: string; full_name: string }[]>;
@@ -73,7 +73,7 @@ export function KanbanColumnsView({
   overCol,
   overLimitCol,
   canEdit,
-  isAdmin,
+  canManageSettings,
   technicians,
   selectedTicketIds,
   cardViewers,
@@ -228,7 +228,7 @@ export function KanbanColumnsView({
             <ColumnNote
               note={columnNotes[s] ?? ""}
               saving={noteSaving === s}
-              canEdit={isAdmin}
+              canEdit={canManageSettings}
               onSave={(text: string) => {
                 void onSaveColumnNote(s, text);
               }}

@@ -7,6 +7,12 @@ import { Ctx, type AuthProfile } from "./auth-context";
 import { getMyAuthProfile } from "./get-my-auth-profile";
 import type { Session, User } from "@supabase/supabase-js";
 
+interface ImpersonationState {
+  targetUserId: string;
+  targetProfile: AuthProfile;
+  adminProfile: AuthProfile;
+}
+
 /**
  *
  */
@@ -18,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const profileRequestId = useRef(0);
+  const [impersonation, setImpersonation] = useState<ImpersonationState | null>(null);
 
   const getProfile = useServerFn(getMyAuthProfile);
 
@@ -28,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthError(null);
 
       try {
-        // Single server round-trip: profiles + user_profiles + role all in parallel via supabaseAdmin
         const result = await getProfile({ data: { accessToken: accessToken ?? "" } });
 
         if (requestId !== profileRequestId.current) return;
@@ -55,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!s?.user) {
         profileRequestId.current++;
         setProfile(null);
+        setImpersonation(null);
         setProfileLoading(false);
         setAuthError(null);
         return;
@@ -102,15 +109,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [applySession]);
 
+  // The effective profile: when impersonating, use target profile; otherwise real profile
+  const effectiveProfile = impersonation?.targetProfile ?? profile;
+
+  const startImpersonation = useCallback(
+    async (targetUserId: string) => {
+      if (!profile || profile.role !== "admin") {
+        setAuthError("Solo gli amministratori possono impersonare altri utenti");
+        return;
+      }
+
+      const { data: { session: current } } = await supabase.auth.getSession();
+      const token = current?.access_token;
+      if (!token) {
+        setAuthError("Sessione non valida");
+        return;
+      }
+
+      try {
+        const { getImpersonatedProfile, logImpersonationStart } =
+          await import("@/lib/impersonation");
+
+        const targetProfile = (await getImpersonatedProfile({
+          data: { accessToken: token, targetUserId },
+        })) as unknown as AuthProfile;
+
+        // Log audit event (fire-and-forget)
+        void logImpersonationStart({ data: { accessToken: token, targetUserId } });
+
+        setImpersonation({
+          targetUserId,
+          targetProfile,
+          adminProfile: profile,
+        });
+      } catch (err: unknown) {
+        setAuthError(errorMessage(err, "Impossibile avviare l'impersonificazione"));
+      }
+    },
+    [profile],
+  );
+
+  const endImpersonation = useCallback(async () => {
+    if (!impersonation) return;
+
+    const { data: { session: current } } = await supabase.auth.getSession();
+    const token = current?.access_token;
+
+    if (token) {
+      const { logImpersonationEnd } = await import("@/lib/impersonation");
+      void logImpersonationEnd({ data: { accessToken: token } });
+    }
+
+    setImpersonation(null);
+  }, [impersonation]);
+
   const value = {
     session,
     user,
-    profile,
+    profile: effectiveProfile,
     loading,
     profileLoading,
     authError,
-    canEdit: profile?.role === "admin" || profile?.role === "tech",
-    isAdmin: profile?.role === "admin",
+    canEdit: effectiveProfile?.role === "admin" || effectiveProfile?.role === "tech",
+    isAdmin: effectiveProfile?.role === "admin",
+    hasPermission: (permission: string) => {
+      if (!effectiveProfile) return false;
+      if (effectiveProfile.role === "admin") return true;
+      return (effectiveProfile.permissions ?? []).includes(permission);
+    },
+    isImpersonating: !!impersonation,
+    impersonatingTargetId: impersonation?.targetUserId ?? null,
+    startImpersonation,
+    endImpersonation,
     refreshProfile: async () => {
       if (!user) return;
       const {

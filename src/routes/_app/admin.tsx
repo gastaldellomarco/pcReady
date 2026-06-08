@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
 import { AdminBackupDrTab } from "@/components/admin/AdminBackupDrTab";
 import { AdminOAuthTab } from "@/components/admin/AdminOAuthTab";
+import { AdminPermissionsTab } from "@/components/admin/AdminPermissionsTab";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/_app/admin")({
 
 function AdminUsersPage() {
   const { t } = useTranslation("admin");
-  const { loading, session, user } = useAuth();
+  const { loading, session, user, hasPermission } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const check = useServerFn(checkAdmin);
@@ -55,8 +56,13 @@ function AdminUsersPage() {
     isAdmin: boolean;
   }>({ loading: true, isAdmin: false });
 
-  const isAdmin = serverVerified.isAdmin;
   const accessToken = session?.access_token;
+
+  // Compute permission booleans from granular permissions
+  const canViewAuditLog = hasPermission("can_view_audit_log");
+  const canManageOAuth = hasPermission("can_manage_oauth");
+  const canManageSettings = hasPermission("can_manage_settings");
+  const canExportData = hasPermission("can_export_data");
 
   // Single hook call shared by both settings and backup-DR tabs
   const {
@@ -67,7 +73,7 @@ function AdminUsersPage() {
     saveSettingsBusy,
     exportAllBusy,
     handleExportAllData,
-  } = useAdminAppSettings({ accessToken, isAdmin });
+  } = useAdminAppSettings({ accessToken, canManageSettings });
 
   // Warn on browser refresh/close when settings have unsaved changes
   const isDirty = settingsForm.formState.isDirty;
@@ -115,30 +121,44 @@ function AdminUsersPage() {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="users">{t("tabs.users", "Utenti")}</TabsTrigger>
-        <TabsTrigger value="settings">{t("tabs.settings", "Impostazioni")}</TabsTrigger>
-        <TabsTrigger value="backup-dr">{t("tabs.backupDr", "Backup & DR")}</TabsTrigger>
-        <TabsTrigger value="oauth">{t("tabs.oauth", "OAuth / Applicazioni")}</TabsTrigger>
-        <TabsTrigger value="audit">{t("tabs.audit", "Audit Log")}</TabsTrigger>
+        <TabsTrigger value="permissions">{t("tabs.permissions", "Permessi")}</TabsTrigger>
+        {canManageSettings && (
+          <TabsTrigger value="settings">{t("tabs.settings", "Impostazioni")}</TabsTrigger>
+        )}
+        {canExportData && (
+          <TabsTrigger value="backup-dr">{t("tabs.backupDr", "Backup & DR")}</TabsTrigger>
+        )}
+        {canManageOAuth && (
+          <TabsTrigger value="oauth">{t("tabs.oauth", "OAuth / Applicazioni")}</TabsTrigger>
+        )}
+        {canViewAuditLog && (
+          <TabsTrigger value="audit">{t("tabs.audit", "Audit Log")}</TabsTrigger>
+        )}
       </TabsList>
       <AdminUsersTab />
-      <AdminSettingsTab
-        accessToken={accessToken}
-        userEmail={user?.email ?? ""}
-        settings={settings}
-        loadingSettings={loadingSettings}
-        settingsForm={settingsForm}
-        submitSettings={submitSettings}
-        saveSettingsBusy={saveSettingsBusy}
-      />
-      <AdminBackupDrTab
-        settings={settings}
-        exportAllBusy={exportAllBusy}
-        handleExportAllData={handleExportAllData}
-      />
-      <AdminOAuthTab />
-      <AdminAuditTab searchParams={search} />
+      <AdminPermissionsTab accessToken={accessToken} />
+      {canManageSettings && (
+        <AdminSettingsTab
+          accessToken={accessToken}
+          userEmail={user?.email ?? ""}
+          settings={settings}
+          loadingSettings={loadingSettings}
+          settingsForm={settingsForm}
+          submitSettings={submitSettings}
+          saveSettingsBusy={saveSettingsBusy}
+        />
+      )}
+      {canExportData && (
+        <AdminBackupDrTab
+          settings={settings}
+          exportAllBusy={exportAllBusy}
+          handleExportAllData={handleExportAllData}
+        />
+      )}
+      {canManageOAuth && <AdminOAuthTab />}
+      {canViewAuditLog && <AdminAuditTab searchParams={search} />}
     </Tabs>
   );
 }
