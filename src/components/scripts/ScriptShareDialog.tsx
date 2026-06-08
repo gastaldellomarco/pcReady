@@ -94,7 +94,7 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
         },
       });
 
-      setGeneratedUrl(`${window.location.origin}/share/script?token=${(created as any).token}`);
+      setGeneratedUrl(`${window.location.origin}/script?token=${(created as any).token}`);
       setPassword("");
       toast.success(t("share.linkCreated", "Link creato"));
       loadLinks();

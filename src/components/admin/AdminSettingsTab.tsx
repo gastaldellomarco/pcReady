@@ -51,14 +51,14 @@ function SettingSection({
 
 function SaveButton({
   saveSettingsBusy,
-  isValid,
   isDirty,
 }: {
   saveSettingsBusy: boolean;
-  isValid: boolean;
   isDirty: boolean;
 }) {
-  const disabled = !isValid || saveSettingsBusy || !isDirty;
+  // Allow saving whenever the form is dirty (user has made changes).
+  // Form validation runs on submit via handleSubmit, so isValid is not needed here.
+  const disabled = saveSettingsBusy || !isDirty;
 
   return (
     <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-2 py-3 backdrop-blur">
@@ -241,7 +241,6 @@ export function AdminSettingsTab({
 
                   <SaveButton
                     saveSettingsBusy={saveSettingsBusy}
-                    isValid={settingsForm.formState.isValid}
                     isDirty={settingsForm.formState.isDirty}
                   />
                 </form>
@@ -485,7 +484,6 @@ export function AdminSettingsTab({
 
                   <SaveButton
                     saveSettingsBusy={saveSettingsBusy}
-                    isValid={settingsForm.formState.isValid}
                     isDirty={settingsForm.formState.isDirty}
                   />
                 </form>
@@ -506,7 +504,14 @@ export function AdminSettingsTab({
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="self_registration_enabled"
-                        {...settingsForm.register("self_registration_enabled")}
+                        checked={!!settingsForm.watch("self_registration_enabled" as any)}
+                        onCheckedChange={(checked) =>
+                          settingsForm.setValue(
+                            "self_registration_enabled" as any,
+                            checked === true,
+                            { shouldDirty: true, shouldValidate: true },
+                          )
+                        }
                       />
                       <Label htmlFor="self_registration_enabled">
                         Abilita registrazione autonoma nuovi utenti
@@ -516,7 +521,14 @@ export function AdminSettingsTab({
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="admin_approval_required"
-                        {...settingsForm.register("admin_approval_required")}
+                        checked={!!settingsForm.watch("admin_approval_required" as any)}
+                        onCheckedChange={(checked) =>
+                          settingsForm.setValue(
+                            "admin_approval_required" as any,
+                            checked === true,
+                            { shouldDirty: true, shouldValidate: true },
+                          )
+                        }
                       />
                       <Label htmlFor="admin_approval_required">
                         Richiedi approvazione admin per nuovi account
@@ -591,7 +603,6 @@ export function AdminSettingsTab({
 
                   <SaveButton
                     saveSettingsBusy={saveSettingsBusy}
-                    isValid={settingsForm.formState.isValid}
                     isDirty={settingsForm.formState.isDirty}
                   />
                 </form>
@@ -627,6 +638,7 @@ export function AdminSettingsTab({
                             (settingsForm.setValue as any)(
                               "log_retention_days",
                               Number(e.target.value),
+                              { shouldDirty: true, shouldValidate: true },
                             )
                           }
                         >
@@ -650,7 +662,6 @@ export function AdminSettingsTab({
 
                   <SaveButton
                     saveSettingsBusy={saveSettingsBusy}
-                    isValid={settingsForm.formState.isValid}
                     isDirty={settingsForm.formState.isDirty}
                   />
                 </form>

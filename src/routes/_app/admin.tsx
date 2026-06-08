@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
+import { AdminScriptShareTab } from "@/components/admin/AdminScriptShareTab";
 import { AdminBackupDrTab } from "@/components/admin/AdminBackupDrTab";
 import { AdminOAuthTab } from "@/components/admin/AdminOAuthTab";
 import { AdminPermissionsTab } from "@/components/admin/AdminPermissionsTab";
@@ -121,7 +122,7 @@ function AdminUsersPage() {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className="grid w-full grid-cols-7">
         <TabsTrigger value="users">{t("tabs.users", "Utenti")}</TabsTrigger>
         <TabsTrigger value="permissions">{t("tabs.permissions", "Permessi")}</TabsTrigger>
         {canManageSettings && (
@@ -136,6 +137,7 @@ function AdminUsersPage() {
         {canViewAuditLog && (
           <TabsTrigger value="audit">{t("tabs.audit", "Audit Log")}</TabsTrigger>
         )}
+        <TabsTrigger value="script-shares">{t("tabs.scriptShares", "Link script")}</TabsTrigger>
       </TabsList>
       <AdminUsersTab />
       <AdminPermissionsTab accessToken={accessToken} />
@@ -159,6 +161,7 @@ function AdminUsersPage() {
       )}
       {canManageOAuth && <AdminOAuthTab />}
       {canViewAuditLog && <AdminAuditTab searchParams={search} />}
+      <AdminScriptShareTab accessToken={accessToken} />
     </Tabs>
   );
 }

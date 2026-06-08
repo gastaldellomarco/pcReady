@@ -43,6 +43,12 @@ export const createScriptShareLink = createServerFn({ method: "POST" })
   .handler(async ({ data: validated }) => {
     const supabaseAny = supabaseAdmin as any;
 
+    // Authenticate and get the creator user
+    const { data: userData, error: userError } =
+      await supabaseAdmin.auth.getUser(validated.accessToken);
+    if (userError || !userData.user)
+      throw new Response("Non autenticato", { status: 401 });
+
     const token = generateToken();
     const passwordHash = sha256Hash(validated.password);
     const expiresAt = validated.expiresInHours
@@ -56,6 +62,7 @@ export const createScriptShareLink = createServerFn({ method: "POST" })
         token,
         password_hash: passwordHash,
         expires_at: expiresAt,
+        created_by: userData.user.id,
       })
       .select("id, token, expires_at, created_at")
       .single();
@@ -121,4 +128,56 @@ export const listScriptShareLinks = createServerFn({ method: "POST" })
 
     if (error) throw error;
     return links ?? [];
+  });
+
+const ListAllShareLinksSchema = z.object({
+  accessToken: z.string().min(1),
+});
+
+export const listAllScriptShareLinks = createServerFn({ method: "POST" })
+  .validator(ListAllShareLinksSchema)
+  .handler(async ({ data: _validated }) => {
+    const supabaseAny = supabaseAdmin as any;
+
+    const { data: links, error } = await supabaseAny
+      .from("script_share_links")
+      .select(`
+        id, token, expires_at, is_revoked, created_at, created_by,
+        scripts!inner(id, name, category, language)
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    const rows = (links ?? []) as {
+      id: string;
+      token: string;
+      expires_at: string | null;
+      is_revoked: boolean | null;
+      created_at: string | null;
+      created_by: string | null;
+      scripts: { id: string; name: string; category: string; language: string };
+    }[];
+
+    // Batch-fetch creator profiles
+    const userIds = rows
+      .map((r) => r.created_by)
+      .filter((id): id is string => !!id);
+    const uniqueIds = [...new Set(userIds)];
+    const profileMap = new Map<string, string>();
+    if (uniqueIds.length > 0) {
+      const { data: profiles } = await supabaseAny
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", uniqueIds);
+      if (profiles) {
+        for (const p of profiles) {
+          profileMap.set(p.id, p.full_name);
+        }
+      }
+    }
+
+    return rows.map((r) => ({
+      ...r,
+      creator_name: r.created_by ? (profileMap.get(r.created_by) ?? null) : null,
+    }));
   });

@@ -66,8 +66,8 @@ export function useAdminSettingsForm(args: {
 
   useEffect(() => {
     settingsForm.reset({
-      organization_name: settings?.organization_name ?? "",
-      default_timezone: settings?.default_timezone ?? "",
+      organization_name: settings?.organization_name || "PCReady",
+      default_timezone: settings?.default_timezone || "Europe/Rome",
       max_devices_per_technician: settings?.max_devices_per_technician ?? 1,
       self_registration_enabled: settings?.self_registration_enabled ?? false,
       admin_approval_required: settings?.admin_approval_required ?? false,
@@ -102,6 +102,10 @@ export function useAdminSettingsForm(args: {
       device_deprecation_max_age_years: settings?.device_deprecation_max_age_years ?? 3,
       device_deprecation_max_tickets_12m: settings?.device_deprecation_max_tickets_12m ?? 5,
     } as any);
+
+    // Trigger validation so formState.isValid is computed.
+    // We don't await it - the update happens asynchronously.
+    void settingsForm.trigger();
   }, [settings, settingsForm]);
 
   async function submitSettings(values: z.input<typeof AppSettingsSchema>) {
