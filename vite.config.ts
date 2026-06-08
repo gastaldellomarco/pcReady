@@ -1,4 +1,3 @@
-import { cloudflare } from "@cloudflare/vite-plugin";
 import mdx from "@mdx-js/rollup";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -41,9 +40,6 @@ export default defineConfig(({ command, mode }) => {
           multipass: true,
           plugins: [{ name: "preset-default", params: { overrides: { removeViewBox: false } } }],
         },
-      }),
-      cloudflare({
-        viteEnvironment: { name: "ssr" },
       }),
       // optional bundle visualizer when ANALYZE=true or VITE_ANALYZE=true
       ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true"

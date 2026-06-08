@@ -31,7 +31,7 @@ Il valore deve essere una stringa ISO 8601 con fuso orario esplicito. Esempi:
 | Tipo                 |          Prefisso | Disponibile                              | Dove                     |
 | -------------------- | ----------------: | ---------------------------------------- | ------------------------ |
 | Build-time           |           `VITE_` | Solo nel bundle client dopo `vite build` | Browser / client-side    |
-| Runtime (SSR/server) | (nessun prefisso) | Solo al runtime del server/process       | Server / Workers / Cloud |
+| Runtime (SSR/server) | (nessun prefisso) | Solo al runtime del server/process |
 
 Esempi:
 
@@ -51,7 +51,7 @@ Esempi:
    - Ridistribuite il bundle sul server/Hosting.
 
 2. Per una manutenzione breve senza rebuild:
-   - Impostate `MAINTENANCE_MODE=true` e `MAINTENANCE_END=...` nel processo server/Workers.
+   - Impostate `MAINTENANCE_MODE=true` e `MAINTENANCE_END=...` nel processo server.
    - Implementate lato server la logica che serve la pagina di manutenzione quando `MAINTENANCE_MODE` è attiva.
 
-Per altre opzioni di deployment e script Cloudflare Workers vedi `wrangler.jsonc` e la sezione _Deployment_ nel `README.md`.
+Per altre opzioni di deployment vedi la sezione _Deployment_ nel `README.md`.

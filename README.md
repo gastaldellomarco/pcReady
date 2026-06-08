@@ -12,7 +12,6 @@ Applicazione web per gestire preparazione PC, ticket operativi, checklist, inven
 - Vite
 - shadcn/ui + Tailwind CSS
 - jsPDF + jspdf-autotable per export PDF
-- Cloudflare Workers con Wrangler
 
 ## Funzionalita Principali
 
@@ -98,8 +97,6 @@ Configurare in GitHub Secrets:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
 
 ## Database e Migration
 
@@ -182,7 +179,6 @@ La procedura completa è documentata in [`docs/BACKUP.md`](docs/BACKUP.md).
 ├── tailwind.config.ts            # Tailwind CSS config
 ├── eslint.config.js              # ESLint flat config
 ├── playwright.config.ts          # Playwright config
-├── wrangler.jsonc                # Cloudflare Workers config
 ├── components.json               # shadcn/ui config
 ├── bunfig.toml                   # Bun config
 ├── .node-version / .nvmrc        # Versione Node.js
