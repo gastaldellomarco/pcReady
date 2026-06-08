@@ -1,6 +1,6 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { loginPortalWithPassword, verifyPortalLogin2FA } from "@/lib/portal-auth";
@@ -21,6 +21,12 @@ function PortalLoginPage() {
   const [requires2FA, setRequires2FA] = useState(false);
   const [pendingToken, setPendingToken] = useState("");
   const [code, setCode] = useState("");
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the code input when 2FA step appears so keyboard users can type immediately
+  useEffect(() => {
+    if (requires2FA) codeInputRef.current?.focus();
+  }, [requires2FA]);
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
@@ -94,7 +100,7 @@ function PortalLoginPage() {
               onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
               placeholder="000000"
               maxLength={6}
-              autoFocus
+              ref={codeInputRef}
               required
             />
           </div>

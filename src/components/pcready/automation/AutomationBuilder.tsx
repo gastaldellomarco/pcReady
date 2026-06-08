@@ -514,6 +514,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                         value={selectedNode.data?.config?.payload ?? ""}
                         onChange={(e) => updateSelectedNodeConfig({ payload: e.target.value })}
                         disabled={loading}
+                        aria-label="Payload JSON"
                       />
                     </div>
                   )}

@@ -59,13 +59,13 @@ export function TeamActivityWidget() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span
-                    tabIndex={0}
-                    role="button"
+                  <button
+                    type="button"
+                    className="border-0 bg-transparent p-0 cursor-help"
                     aria-label={t("widgets.activeTooltipAria", "Info: criterio tecnici attivi")}
                   >
-                    <Info className="h-3 w-3 cursor-help" />
-                  </span>
+                    <Info className="h-3 w-3" />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[220px] text-xs">
                   <p>

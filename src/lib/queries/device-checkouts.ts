@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
 
+/**
+ *
+ */
 export interface DeviceCheckout {
   id: string;
   device_id: string;
@@ -21,6 +24,9 @@ export interface DeviceCheckout {
 
 // ── Queries ──
 
+/**
+ *
+ */
 export async function fetchDeviceCheckouts(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("device_checkouts")
@@ -34,6 +40,9 @@ export async function fetchDeviceCheckouts(deviceId: string) {
   return (data ?? []) as DeviceCheckout[];
 }
 
+/**
+ *
+ */
 export async function fetchTicketCheckouts(ticketId: string) {
   const { data, error } = await (supabase as any)
     .from("device_checkouts")
@@ -47,6 +56,9 @@ export async function fetchTicketCheckouts(ticketId: string) {
   return (data ?? []) as DeviceCheckout[];
 }
 
+/**
+ *
+ */
 export async function fetchActiveCheckout(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("device_checkouts")
@@ -61,6 +73,9 @@ export async function fetchActiveCheckout(deviceId: string) {
   return (data ?? null) as DeviceCheckout | null;
 }
 
+/**
+ *
+ */
 export function useDeviceCheckouts(deviceId: string | null | undefined) {
   return useQuery({
     queryKey: ["device-checkouts", deviceId],
@@ -69,6 +84,9 @@ export function useDeviceCheckouts(deviceId: string | null | undefined) {
   });
 }
 
+/**
+ *
+ */
 export function useTicketCheckouts(ticketId: string | null | undefined) {
   return useQuery({
     queryKey: ["ticket-checkouts", ticketId],
@@ -77,6 +95,9 @@ export function useTicketCheckouts(ticketId: string | null | undefined) {
   });
 }
 
+/**
+ *
+ */
 export function useActiveCheckout(deviceId: string | null | undefined) {
   return useQuery({
     queryKey: ["device-active-checkout", deviceId],
@@ -127,6 +148,9 @@ async function uploadSignatureFile(params: {
 
 // ── Mutations ──
 
+/**
+ *
+ */
 export interface CheckoutParams {
   deviceId: string;
   ticketId: string;
@@ -135,6 +159,9 @@ export interface CheckoutParams {
   conditionNotes?: string;
 }
 
+/**
+ *
+ */
 export async function checkoutDevice(params: CheckoutParams) {
   const { deviceId, ticketId, technicianId, signatureDataUrl, conditionNotes } = params;
 
@@ -171,6 +198,9 @@ export async function checkoutDevice(params: CheckoutParams) {
   }
 }
 
+/**
+ *
+ */
 export interface CheckinParams {
   checkoutId: string;
   deviceId: string;
@@ -180,6 +210,9 @@ export interface CheckinParams {
   conditionNotes?: string;
 }
 
+/**
+ *
+ */
 export async function checkinDevice(params: CheckinParams) {
   const { checkoutId, deviceId, ticketId, technicianId, signatureDataUrl, conditionNotes } = params;
 
@@ -219,6 +252,9 @@ export async function checkinDevice(params: CheckinParams) {
 
 // ── Hooks ──
 
+/**
+ *
+ */
 export function useCheckoutDevice() {
   const qc = useQueryClient();
   return useMutation({
@@ -231,6 +267,9 @@ export function useCheckoutDevice() {
   });
 }
 
+/**
+ *
+ */
 export function useCheckinDevice() {
   const qc = useQueryClient();
   return useMutation({

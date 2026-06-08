@@ -1,12 +1,18 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createHash, randomBytes } from "node:crypto";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+/**
+ *
+ */
 export type MfaBackupCodeStatus = {
   remaining: number;
   total: number;
   last_used_at: string | null;
 };
 
+/**
+ *
+ */
 export type MfaAccessStatus = {
   required: boolean;
   graceExpired: boolean;
@@ -98,6 +104,9 @@ async function readSettingsMap(keys: string[]) {
   return map;
 }
 
+/**
+ *
+ */
 export async function getMfaPolicyForUser(
   userId: string,
   createdAt?: string | null,
@@ -125,11 +134,17 @@ export async function getMfaPolicyForUser(
   };
 }
 
+/**
+ *
+ */
 export async function getMyMfaAccessStatusHandler(data: { accessToken: string }) {
   const user = await getUserFromToken(data.accessToken);
   return getMfaPolicyForUser(user.id, user.created_at ?? null);
 }
 
+/**
+ *
+ */
 export async function getBackupCodeStatusHandler(data: { accessToken: string }) {
   const user = await getUserFromToken(data.accessToken);
   const { data: result, error } = await supabaseAdmin
@@ -151,6 +166,9 @@ export async function getBackupCodeStatusHandler(data: { accessToken: string }) 
   } satisfies MfaBackupCodeStatus;
 }
 
+/**
+ *
+ */
 export async function regenerateBackupCodesHandler(data: { accessToken: string }) {
   const user = await getUserFromToken(data.accessToken);
   const codes = await generateBackupCodes();
@@ -180,6 +198,9 @@ export async function regenerateBackupCodesHandler(data: { accessToken: string }
   return { codes };
 }
 
+/**
+ *
+ */
 export async function verifyBackupCodeHandler(data: {
   accessToken: string;
   code: string;
@@ -221,6 +242,9 @@ export async function verifyBackupCodeHandler(data: {
   return { ok: true };
 }
 
+/**
+ *
+ */
 export async function logMfaAuditEventHandler(data: {
   accessToken: string;
   actionType: string;

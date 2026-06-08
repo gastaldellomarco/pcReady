@@ -75,11 +75,10 @@ export function DashboardDonut({
   let off = 0;
   const segments =
     total > 0
-      ? data
-          .filter((d) => d.n > 0)
-          .map((d) => {
-            const len = (d.n / total) * c;
-            const seg = (
+      ? data.reduce<React.ReactElement[]>((acc, d) => {
+          if (d.n <= 0) return acc;
+          const len = (d.n / total) * c;
+          acc.push((
               <circle
                 key={d.status}
                 cx={55}
@@ -91,10 +90,10 @@ export function DashboardDonut({
                 strokeDasharray={`${len} ${c}`}
                 strokeDashoffset={-off}
               />
-            );
+            ));
             off += len;
-            return seg;
-          })
+            return acc;
+          }, [])
       : [];
 
   const svg = (
@@ -266,7 +265,7 @@ export function DashboardAreaSparkMulti({
           }}
         >
           {series.map((s, i) => (
-            <div key={i} className="flex items-center gap-2 text-[12px]">
+            <div key={s.label || s.color || String(i)} className="flex items-center gap-2 text-[12px]">
               <span
                 style={{ width: 10, height: 6, background: s.color, display: "inline-block" }}
               />

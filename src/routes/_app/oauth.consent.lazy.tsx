@@ -62,8 +62,8 @@ function OAuthConsentPage() {
     }
 
     validate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount/change of auth state
-  }, [loading, session, search, navigate, validateRequest]);
+     
+  }, [loading, session, search, navigate, validateRequest, t]);
 
   const handleGrant = async () => {
     if (!validation || !session?.access_token) return;

@@ -1,7 +1,7 @@
 import { createLazyFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,8 @@ function TwoFactorChallengePage() {
   const [useBackup, setUseBackup] = useState(false);
   const [busy, setBusy] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(300);
+  const totpInputRef = useRef<HTMLInputElement>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
 
   const accessToken = session?.access_token;
   const maskedEmail = useMemo(() => user?.email ?? "account", [user?.email]);
@@ -116,6 +118,12 @@ function TwoFactorChallengePage() {
     if (!useBackup && code.length === 6 && !busy) void verifyTotp(code);
   }, [busy, code, useBackup, verifyTotp]);
 
+  // Focus the appropriate input when toggling between TOTP and backup modes
+  useEffect(() => {
+    if (useBackup) backupInputRef.current?.focus();
+    else totpInputRef.current?.focus();
+  }, [useBackup]);
+
   if (!loading && !session) return <Navigate to="/auth" replace />;
 
   async function verifyBackup() {
@@ -153,7 +161,7 @@ function TwoFactorChallengePage() {
             <>
               <Input
                 inputMode="numeric"
-                autoFocus
+                ref={totpInputRef}
                 maxLength={6}
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -178,7 +186,7 @@ function TwoFactorChallengePage() {
           ) : (
             <>
               <Input
-                autoFocus
+                ref={backupInputRef}
                 value={backupCode}
                 onChange={(event) => setBackupCode(event.target.value.toUpperCase())}
                 placeholder="ABCD-1234-EF"

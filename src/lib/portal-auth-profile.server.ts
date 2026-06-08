@@ -1,6 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getPortalSession, hashPortalPassword } from "@/lib/portal-auth.server";
 
+/**
+ *
+ */
 export async function updatePortalContactProfileServer(input: {
   token: string;
   fullName: string;
@@ -35,6 +38,9 @@ export async function updatePortalContactProfileServer(input: {
   return { success: true };
 }
 
+/**
+ *
+ */
 export async function updatePortalContactLanguageServer(input: {
   token: string;
   language: "it" | "en";
@@ -49,6 +55,9 @@ export async function updatePortalContactLanguageServer(input: {
   return { success: true, language: input.language };
 }
 
+/**
+ *
+ */
 export async function getPortalAccessHistoryServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data, error } = await supabaseAdmin
@@ -70,6 +79,9 @@ export async function getPortalAccessHistoryServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function updatePortalNotificationPreferencesServer(input: {
   token: string;
   preferences: Record<string, boolean>;

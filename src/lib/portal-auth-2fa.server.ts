@@ -1,7 +1,10 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getPortalSession } from "@/lib/portal-auth.server";
 import { sendEmail } from "@/lib/email-templates.server";
+import { getPortalSession } from "@/lib/portal-auth.server";
 
+/**
+ *
+ */
 export async function setupPortal2FAServer(input: { token: string; enable: boolean }) {
   const session = await getPortalSession(input.token);
   if (input.enable) {
@@ -39,6 +42,9 @@ export async function setupPortal2FAServer(input: { token: string; enable: boole
   }
 }
 
+/**
+ *
+ */
 export async function verifyPortal2FAServer(input: { token: string; code: string }) {
   const session = await getPortalSession(input.token);
   const { data: contact, error } = await supabaseAdmin

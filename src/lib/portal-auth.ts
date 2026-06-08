@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { PortalSessionContext } from "@/lib/portal-auth.server";
-import { PortalTokenSchema } from "@/lib/portal-shared";
 import { z } from "zod";
+import { PortalTokenSchema } from "@/lib/portal-shared";
+import type { PortalSessionContext } from "@/lib/portal-auth.server";
 
 export type { PortalSessionContext };
 

@@ -1,4 +1,5 @@
-﻿import { Eye, MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
+﻿import DOMPurify from "dompurify";
+import { Eye, MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
@@ -688,13 +689,15 @@ export function AdminUsersTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("users.delete.title", "Rimuovi utente")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {/* render translation which contains HTML (<strong>{{email}}</strong>) */}
+              {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
               <div
                 dangerouslySetInnerHTML={{
-                  __html: t("users.delete.description", {
-                    email: deleteTarget?.email ?? "",
-                    interpolation: { escapeValue: false },
-                  }),
+                  __html: DOMPurify.sanitize(
+                    t("users.delete.description", {
+                      email: deleteTarget?.email ?? "",
+                      interpolation: { escapeValue: false },
+                    }),
+                  ),
                 }}
               />
               <div className="mt-2">

@@ -356,15 +356,7 @@ function AuditTableRow({
   return (
     <>
       <TableRow
-        role="button"
-        tabIndex={0}
         onClick={onToggle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
-        }}
         className={cn(
           "cursor-pointer transition-colors",
           index % 2 === 0 ? "bg-white dark:bg-zinc-950" : "bg-zinc-50/60 dark:bg-zinc-900/40",

@@ -83,21 +83,17 @@ export function DatePickerInput({
           <CalendarIcon className="h-4 w-4 shrink-0 text-text3" aria-hidden="true" />
           <span className="flex-1 truncate">{value ? fmtDate(value) : placeholder}</span>
           {value && !disabled && (
-            <span
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-label="Cancella data"
-              className="ml-auto shrink-0 rounded p-0.5 text-text3 hover:bg-muted hover:text-text1"
+              className="ml-auto shrink-0 rounded p-0.5 text-text3 hover:bg-muted hover:text-text1 border-0 bg-transparent"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange("");
               }}
-              onKeyDown={(e) => {
-                if (e.key === " ") e.preventDefault();
-              }}
             >
               <X className="h-3.5 w-3.5" />
-            </span>
+            </button>
           )}
         </button>
       </PopoverTrigger>

@@ -69,6 +69,7 @@ export function EmailPreviewDialog({
             className="h-[560px] rounded-md border bg-background"
             style={{ width: viewport === "desktop" ? 720 : 390 }}
             srcDoc={renderedHtml}
+            sandbox="allow-same-origin allow-popups"
           />
         </div>
       </DialogContent>

@@ -93,6 +93,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   }
 
   return (
+    // eslint-disable-next-line react/no-danger -- CSS custom properties from developer-defined ChartConfig; no user input
     <style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
@@ -107,8 +108,7 @@ ${colorConfig
   .join("\n")}
 }
 `,
-          )
-          .join("\n"),
+          )            .join("\n"),
       }}
     />
   );

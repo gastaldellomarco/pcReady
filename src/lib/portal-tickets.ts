@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { PortalTokenSchema } from "@/lib/portal-shared";
 import { z } from "zod";
+import { PortalTokenSchema } from "@/lib/portal-shared";
 
 const PortalTicketListSchema = z.object({
   token: z.string().min(32),

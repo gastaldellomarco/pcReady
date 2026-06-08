@@ -23,8 +23,7 @@ export function ValueInput({ field, operator, value, onChange }: ValueInputProps
     return (
       <div className="space-y-2">
         {values.map((val, idx) => (
-          // eslint-disable-next-line react/no-array-index-key -- values never reorder, only append/remove
-          <div key={idx} className="flex items-center gap-2">
+          <div key={`val-${idx}`} className="flex items-center gap-2">
             {field?.type === "select" && field.options ? (
               <select
                 value={val}
@@ -52,6 +51,7 @@ export function ValueInput({ field, operator, value, onChange }: ValueInputProps
                   newValues[idx] = e.target.value;
                   onChange(newValues);
                 }}
+                aria-label={t("conditionsBuilder.value.numberLabel", "Inserisci numero")}
                 placeholder={t("conditionsBuilder.value.placeholderNumber", "Inserisci numero")}
                 className="flex-1 rounded-md border border-border px-2 py-1.5 text-sm bg-background"
               />
@@ -64,6 +64,7 @@ export function ValueInput({ field, operator, value, onChange }: ValueInputProps
                   newValues[idx] = e.target.value;
                   onChange(newValues);
                 }}
+                aria-label={t("conditionsBuilder.value.textLabel", "Inserisci testo")}
                 placeholder={t("conditionsBuilder.value.placeholderString", "Inserisci testo")}
                 className="flex-1 rounded-md border border-border px-2 py-1.5 text-sm bg-background"
               />

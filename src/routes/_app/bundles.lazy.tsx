@@ -156,13 +156,11 @@ function BundlesPage() {
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     billing.refreshPayments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- billing is stable; dataUpdatedAt triggers refresh
-  }, [assignmentsQuery.dataUpdatedAt, usageQuery.dataUpdatedAt]);
+  }, [assignmentsQuery.dataUpdatedAt, usageQuery.dataUpdatedAt, billing]);
 
   const stats = useMemo(() => {
     const activeBundles = bundles.filter((bundle) => bundle.active).length;

@@ -140,16 +140,14 @@ function SignatureDialog({
   }, [onClose, busy]);
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 border-0"
       onClick={(e) => {
         if (e.target === e.currentTarget && !busy) onClose();
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && !busy) onClose();
-      }}
+      aria-label="Chiudi"
     >
       <div className="w-full max-w-lg rounded-lg bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -224,7 +222,7 @@ function SignatureDialog({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

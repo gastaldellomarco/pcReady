@@ -2,6 +2,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { AUDIT_ACTIONS } from "@/lib/audit-log-actions";
 import { assertPortalLinkOperator, createPortalSession } from "@/lib/portal-auth.server";
 
+/**
+ *
+ */
 export async function generatePortalAccessLinkServer(input: {
   accessToken: string;
   contactId: string;
@@ -52,6 +55,9 @@ export async function generatePortalAccessLinkServer(input: {
   };
 }
 
+/**
+ *
+ */
 export async function revokePortalAccessLinkServer(input: {
   accessToken: string;
   contactId: string;

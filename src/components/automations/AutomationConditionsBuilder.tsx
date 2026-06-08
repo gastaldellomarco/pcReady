@@ -71,21 +71,12 @@ export function AutomationConditionsBuilder({
         {/* Logic toggle */}
         <div className="flex flex-wrap gap-2 relative z-10">
           <label
-            role="button"
-            tabIndex={0}
             className={cn(
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "AND"
                 ? "border-accent bg-accent/10 text-accent"
                 : "border-border hover:border-accent/50",
             )}
-            onClick={() => handleLogicChange("AND")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleLogicChange("AND");
-              }
-            }}
           >
             <input
               type="radio"
@@ -99,21 +90,12 @@ export function AutomationConditionsBuilder({
           </label>
 
           <label
-            role="button"
-            tabIndex={0}
             className={cn(
               "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors pointer-events-auto select-none",
               group.logic === "OR"
                 ? "border-accent bg-accent/10 text-accent"
                 : "border-border hover:border-accent/50",
             )}
-            onClick={() => handleLogicChange("OR")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleLogicChange("OR");
-              }
-            }}
           >
             <input
               type="radio"

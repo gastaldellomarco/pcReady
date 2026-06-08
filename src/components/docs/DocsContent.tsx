@@ -1,9 +1,9 @@
-import { lazy, Suspense } from "react";
 import { MDXProvider } from "@mdx-js/react";
-import type { ComponentType } from "react";
-import { MermaidDiagram } from "@/components/docs/MermaidDiagram";
+import { lazy, Suspense } from "react";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { ARTICLE_IMPORTS } from "@/components/docs/loadKBStructure";
+import { MermaidDiagram } from "@/components/docs/MermaidDiagram";
+import type { ComponentType } from "react";
 
 // ---------------------------------------------------------------
 // MDX article imports (lazy-loaded)
@@ -40,19 +40,17 @@ const mdxComponents = {
     children?: string;
   }) => {
     const language = className?.replace("language-", "");
+    // MDX always passes code as a string; normalize defensively
+    const content = children ?? "";
 
     // Mermaid diagrams
-    if (language === "mermaid" && typeof children === "string") {
-      return <MermaidDiagram className="my-6">{children}</MermaidDiagram>;
+    if (language === "mermaid") {
+      return <MermaidDiagram className="my-6">{content}</MermaidDiagram>;
     }
 
     // Fenced code blocks (have a language-xxx class)
     if (language) {
-      return (
-        <CodeBlock language={language}>
-          {typeof children === "string" ? children : String(children ?? "")}
-        </CodeBlock>
-      );
+      return <CodeBlock language={language}>{content}</CodeBlock>;
     }
 
     // Inline code — render as simple styled code element
@@ -65,20 +63,23 @@ const mdxComponents = {
           color: "var(--danger)",
         }}
       >
-        {children}
+        {content}
       </code>
     );
   },
 
-  // Style links
-  a: (props: any) => (
+  // Style links — explicit children rendering so screen readers and static
+  // analyzers see the anchor content (children come from MDX link text).
+  a: ({ children, ...props }: any) => (
     <a
       {...props}
       className="underline decoration-1 underline-offset-2"
       style={{ color: "var(--accent)" }}
       target={props.href?.startsWith("http") ? "_blank" : undefined}
       rel={props.href?.startsWith("http") ? "noopener noreferrer" : undefined}
-    />
+    >
+      {children}
+    </a>
   ),
 
   // Style tables

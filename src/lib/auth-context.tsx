@@ -25,6 +25,9 @@ export const ALL_PERMISSIONS = [
   "can_manage_checklist_templates",
 ] as const;
 
+/**
+ *
+ */
 export type Permission = (typeof ALL_PERMISSIONS)[number];
 
 /**

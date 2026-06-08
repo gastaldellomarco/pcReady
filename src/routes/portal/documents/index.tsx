@@ -309,16 +309,14 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
   }, [onClose]);
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 border-0"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
+      aria-label="Chiudi anteprima"
     >
       <div
         className="relative w-full max-w-4xl rounded-lg bg-card shadow-2xl"
@@ -357,6 +355,7 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
               src={document.view_url}
               className="h-full w-full border-0"
               title={document.file_name}
+              sandbox="allow-scripts allow-same-origin"
             />
           ) : document.view_url ? (
             <div className="flex h-full items-center justify-center p-8">
@@ -379,7 +378,7 @@ function PdfPreviewModal({ document, onClose }: { document: PortalDocument; onCl
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -481,16 +480,14 @@ function SignatureModal({
   }
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 border-0"
       onClick={(e) => {
         if (e.target === e.currentTarget && !busy) onClose();
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && !busy) onClose();
-      }}
+      aria-label="Chiudi"
     >
       <div className="w-full max-w-lg rounded-lg bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -547,7 +544,7 @@ function SignatureModal({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

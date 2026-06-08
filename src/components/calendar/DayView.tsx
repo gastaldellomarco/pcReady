@@ -207,11 +207,10 @@ export function DayView({
               );
 
               return (
-                <div
+                <button
                   key={event.id}
-                  role="button"
-                  tabIndex={0}
-                  className="absolute left-1 right-2 rounded-md px-2 py-1 overflow-hidden z-10 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+                  type="button"
+                  className="absolute left-1 right-2 rounded-md px-2 py-1 overflow-hidden z-10 cursor-pointer hover:opacity-90 transition-opacity shadow-sm border-0 text-left"
                   style={{
                     top: `${top}px`,
                     height: `${height}px`,
@@ -222,13 +221,6 @@ export function DayView({
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick(event);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onEventClick(event);
-                    }
                   }}
                 >
                   {/* Title */}
@@ -261,7 +253,7 @@ export function DayView({
                         : `${durationMin} min`}
                     </p>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>

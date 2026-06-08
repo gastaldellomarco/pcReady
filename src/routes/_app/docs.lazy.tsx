@@ -2,12 +2,12 @@ import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { BookOpenText, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/lib/auth-context";
+import { DocsContent } from "@/components/docs/DocsContent";
 import {
   KnowledgeBaseLayout,
 } from "@/components/docs/KnowledgeBaseLayout";
 import { KB_SECTIONS, ICON_MAP } from "@/components/docs/loadKBStructure";
-import { DocsContent } from "@/components/docs/DocsContent";
+import { useAuth } from "@/lib/auth-context";
 import type { DocsArticle, DocsSection } from "@/components/docs/loadKBStructure";
 
 export const Route = createLazyFileRoute("/_app/docs")({
@@ -93,14 +93,14 @@ function HighlightText({ text, query }: { text: string; query: string }) {
       {parts.map((part, i) =>
         regex.test(part) ? (
           <mark
-            key={`hl-${i}`}
+            key={`hl-${part.substring(0, 16)}-${i}`}
             className="rounded-sm px-0.5"
             style={{ background: "var(--accent2)", color: "var(--accent)" }}
           >
             {part}
           </mark>
         ) : (
-          <span key={`txt-${i}`}>{part}</span>
+          <span key={`txt-${part.substring(0, 16)}-${i}`}>{part}</span>
         ),
       )}
     </>

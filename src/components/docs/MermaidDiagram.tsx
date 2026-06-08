@@ -1,5 +1,5 @@
-import { useEffect, useId, useState } from "react";
 import mermaid from "mermaid";
+import { useEffect, useId, useState } from "react";
 
 const MERMAID_INITIALIZED = Symbol("mermaid-initialized");
 
@@ -82,6 +82,7 @@ export function MermaidDiagram({ children, className }: MermaidDiagramProps) {
     );
   }
 
+  // eslint-disable-next-line react/no-danger -- Mermaid .render() SVG output is safe; input is developer-authored diagrams
   return (
     <div
       className={className}

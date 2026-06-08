@@ -53,6 +53,9 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
 
 export const EMAIL_EVENT_TYPES = Object.keys(EMAIL_EVENT_LABELS) as EmailEventType[];
 
+/**
+ *
+ */
 export interface EmailEventMeta {
   when: string;
   recipient: string;

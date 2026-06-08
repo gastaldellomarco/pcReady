@@ -44,14 +44,12 @@ export function WipConfigDialog({
   if (!open) return null;
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       tabIndex={-1}
-      className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4 border-0"
       onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
+      aria-label="Chiudi"
     >
       <div
         className="w-full max-w-2xl rounded-xl border bg-surface p-5 shadow-lg"
@@ -148,6 +146,6 @@ export function WipConfigDialog({
           </button>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

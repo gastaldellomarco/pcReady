@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import DOMPurify from "dompurify";
 import {
   Plus,
   FileDown,
@@ -829,7 +830,8 @@ function InventoryPage() {
               </div>
             ) : !data.length ? (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
-                <span dangerouslySetInnerHTML={{ __html: t("empty.mobile") }} />
+                {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
+                <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t("empty.mobile")) }} />
               </div>
             ) : data.length > 20 ? (
               <div style={{ position: "relative", height: mobileVirtualTotalSize }}>
@@ -939,7 +941,8 @@ function InventoryPage() {
                   ) : !data.length ? (
                     <tr>
                       <td colSpan={13} className="text-center py-12 text-text3 text-sm">
-                        <span dangerouslySetInnerHTML={{ __html: t("empty.desktop") }} />
+                        {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
+                        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t("empty.desktop")) }} />
                       </td>
                     </tr>
                   ) : data.length > 50 ? (
@@ -1356,8 +1359,8 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reloads when calendar filters change
-  }, [from, to, assignedTo, typeFilter, statusFilter]);
+     
+  }, [from, to, assignedTo, typeFilter, statusFilter, t]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, MaintenanceSchedule[]>();

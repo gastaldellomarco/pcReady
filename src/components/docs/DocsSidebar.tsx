@@ -1,12 +1,12 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { sectionIcon } from "@/components/docs/loadKBStructure";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { DocsSection } from "@/components/docs/loadKBStructure";
-import { sectionIcon } from "@/components/docs/loadKBStructure";
 
 /**
  *

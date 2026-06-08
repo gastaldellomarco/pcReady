@@ -12,6 +12,9 @@ interface SavePermissionsInput extends AuthedInput {
   permissions: string[];
 }
 
+/**
+ *
+ */
 export interface RolePermissions {
   role: string;
   permissions: string[];

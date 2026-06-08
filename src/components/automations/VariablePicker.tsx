@@ -1,5 +1,5 @@
 import { Variable, Search } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { groupVariablesByCategory, searchVariables } from "@/domain/automation-variables";
 import type { AutomationVariable } from "@/domain/automation-variables";
@@ -17,6 +17,12 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
   const { t } = useTranslation("automations");
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the search input when the dropdown opens so keyboard users can type immediately
+  useEffect(() => {
+    if (isOpen) searchInputRef.current?.focus();
+  }, [isOpen]);
 
   const groupedVariables = useMemo(() => {
     const filtered = searchQuery ? searchVariables(variables, searchQuery) : variables;
@@ -48,14 +54,15 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
 
       {isOpen && (
         <>
-          <div
-            role="button"
+          <button
+            type="button"
             tabIndex={-1}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 border-0 bg-transparent cursor-default"
             onClick={() => setIsOpen(false)}
             onKeyDown={(e) => {
               if (e.key === "Escape" || e.key === "Enter") setIsOpen(false);
             }}
+            aria-label={t("actionsBuilder.variablePicker.close", "Chiudi")}
           />
           <div className="absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
@@ -67,7 +74,7 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("actionsBuilder.variablePicker.search", "Cerca variabili...")}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                  autoFocus
+                  ref={searchInputRef}
                   aria-label={t("actionsBuilder.variablePicker.search", "Cerca variabili")}
                 />
               </div>

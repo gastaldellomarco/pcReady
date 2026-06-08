@@ -1,6 +1,6 @@
+import { getRequest } from "@tanstack/react-start/server";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getAppBaseUrl } from "@/lib/server-utils";
-import { getRequest } from "@tanstack/react-start/server";
 
 vi.mock("@tanstack/react-start/server", () => ({
   getRequest: vi.fn(),

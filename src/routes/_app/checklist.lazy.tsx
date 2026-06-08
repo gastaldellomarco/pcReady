@@ -32,7 +32,7 @@ import {
   Type,
   Hash,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ListSkeleton, PageEmptyState, PageFetchError } from "@/components/page-states";
@@ -462,6 +462,16 @@ function TemplateEditor({
   const [deleteGroupKey, setDeleteGroupKey] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const groupRenameInputRef = useRef<HTMLInputElement>(null);
+  const sectionRenameInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus rename inputs when inline editing starts
+  useEffect(() => {
+    if (editingGroupKey) groupRenameInputRef.current?.focus();
+  }, [editingGroupKey]);
+  useEffect(() => {
+    if (editingTab) sectionRenameInputRef.current?.focus();
+  }, [editingTab]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -886,7 +896,7 @@ function TemplateEditor({
                       {editingGroupKey === gk ? (
                         <div className="flex items-center gap-1">
                           <input
-                            autoFocus
+                            ref={groupRenameInputRef}
                             className="pc-input !py-0.5 !text-[12px] max-w-[140px]"
                             value={groupLabel}
                             onChange={(e) => setGroupLabel(e.target.value)}
@@ -950,7 +960,7 @@ function TemplateEditor({
                               {isEditing ? (
                                 <div className="flex items-center gap-1 px-2 py-1.5">
                                   <input
-                                    autoFocus
+                                    ref={sectionRenameInputRef}
                                     className="pc-input !py-1 !text-[12px] max-w-[140px]"
                                     value={tabLabel}
                                     onChange={(e) => setTabLabel(e.target.value)}

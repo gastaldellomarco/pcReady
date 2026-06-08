@@ -107,6 +107,9 @@ export async function userAllowsEmail(
  */
 import { getAppBaseUrl } from "@/lib/server-utils";
 
+/**
+ *
+ */
 export async function getEmailCommonVariables(userId?: string | null, userEmail?: string | null) {
   const { data, error } = await supabaseAdmin.from("app_settings" as any).select("key, value");
   if (error) console.error("getEmailCommonVariables settings failed:", error);

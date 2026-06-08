@@ -9,6 +9,9 @@ export const LIFECYCLE_PHASES = [
   "decommissioned",
 ] as const;
 
+/**
+ *
+ */
 export type LifecyclePhase = (typeof LIFECYCLE_PHASES)[number];
 
 export const LIFECYCLE_PHASE_LABELS: Record<LifecyclePhase, string> = {
@@ -19,6 +22,9 @@ export const LIFECYCLE_PHASE_LABELS: Record<LifecyclePhase, string> = {
   decommissioned: "Dismesso",
 };
 
+/**
+ *
+ */
 export interface LifecycleHistoryEntry {
   id: string;
   device_id: string;
@@ -30,6 +36,9 @@ export interface LifecycleHistoryEntry {
   changer?: { display_name: string | null } | null;
 }
 
+/**
+ *
+ */
 export interface DeviceAttachment {
   id: string;
   device_id: string;
@@ -47,6 +56,9 @@ export interface DeviceAttachment {
 
 // ── Queries ──
 
+/**
+ *
+ */
 export async function fetchDeviceLifecycleHistory(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("device_lifecycle_history")
@@ -58,6 +70,9 @@ export async function fetchDeviceLifecycleHistory(deviceId: string) {
   return (data ?? []) as LifecycleHistoryEntry[];
 }
 
+/**
+ *
+ */
 export async function fetchDeviceAttachments(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("device_attachments")
@@ -69,6 +84,9 @@ export async function fetchDeviceAttachments(deviceId: string) {
   return (data ?? []) as DeviceAttachment[];
 }
 
+/**
+ *
+ */
 export function useDeviceLifecycleHistory(deviceId: string | null | undefined) {
   return useQuery({
     queryKey: ["device-lifecycle-history", deviceId],
@@ -77,6 +95,9 @@ export function useDeviceLifecycleHistory(deviceId: string | null | undefined) {
   });
 }
 
+/**
+ *
+ */
 export function useDeviceAttachments(deviceId: string | null | undefined) {
   return useQuery({
     queryKey: ["device-attachments", deviceId],
@@ -87,6 +108,9 @@ export function useDeviceAttachments(deviceId: string | null | undefined) {
 
 // ── Mutations ──
 
+/**
+ *
+ */
 export async function transitionDevicePhase({
   deviceId,
   phase,
@@ -114,6 +138,9 @@ export async function transitionDevicePhase({
   return true;
 }
 
+/**
+ *
+ */
 export async function uploadDeviceAttachment({
   deviceId,
   phase,
@@ -161,6 +188,9 @@ export async function uploadDeviceAttachment({
   return data;
 }
 
+/**
+ *
+ */
 export async function deleteDeviceAttachment(attachment: DeviceAttachment) {
   const bucket = attachment.storage_bucket || "device-documents";
   const { error: storageError } = await supabase.storage
@@ -176,6 +206,9 @@ export async function deleteDeviceAttachment(attachment: DeviceAttachment) {
   return true;
 }
 
+/**
+ *
+ */
 export async function getDeviceAttachmentSignedUrl(attachment: DeviceAttachment) {
   const bucket = attachment.storage_bucket || "device-documents";
   const { data, error } = await supabase.storage
@@ -189,6 +222,9 @@ export async function getDeviceAttachmentSignedUrl(attachment: DeviceAttachment)
 
 // ── Hooks ──
 
+/**
+ *
+ */
 export function useTransitionDevicePhase() {
   const qc = useQueryClient();
   return useMutation({
@@ -199,6 +235,9 @@ export function useTransitionDevicePhase() {
   });
 }
 
+/**
+ *
+ */
 export function useUploadDeviceAttachment(deviceId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -210,6 +249,9 @@ export function useUploadDeviceAttachment(deviceId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteDeviceAttachment(deviceId: string) {
   const qc = useQueryClient();
   return useMutation({

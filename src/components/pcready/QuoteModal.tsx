@@ -19,6 +19,9 @@ import { randomUUID } from "@/lib/random-uuid";
 type ClientOption = { id: string; name: string; company_name: string | null };
 type TicketLike = { id: string; ticket_code: string; client_id: string | null };
 
+/**
+ *
+ */
 export type QuoteLineDraft = {
   id: string;
   description: string;
@@ -27,6 +30,9 @@ export type QuoteLineDraft = {
   itemType: "service" | "labor" | "material" | "extra";
 };
 
+/**
+ *
+ */
 export function createEmptyQuoteLine(): QuoteLineDraft {
   return {
     id: randomUUID(),
@@ -96,6 +102,9 @@ const STATUS_LABELS: Record<string, string> = {
   expired: "Scaduto",
 };
 
+/**
+ *
+ */
 export function QuoteStatusBadge({ status }: { status: QuoteRow["status"] }) {
   const { t } = useTranslation("costs");
   const { bg, fg } = quoteStatusColor(status);
@@ -120,6 +129,9 @@ type QuoteActionsProps = {
   onViewPdf?: (quote: QuoteRow) => void;
 };
 
+/**
+ *
+ */
 export function QuoteActions({
   quote,
   busy,
@@ -210,6 +222,9 @@ export function QuoteActions({
   );
 }
 
+/**
+ *
+ */
 export function QuoteModal({
   open,
   onOpenChange,

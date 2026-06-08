@@ -372,17 +372,10 @@ function ScriptCard({
   const Icon = ICONS[s.icon || ""] || Terminal;
   const color = s.color || "#1B4FD8";
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className="pc-card group relative p-4 text-left transition-all hover:-translate-y-0.5"
+      className="pc-card group relative p-4 text-left transition-all hover:-translate-y-0.5 border-0"
       style={{ boxShadow: "var(--shadow-sm)", cursor: "pointer" }}
     >
       <div className="flex items-start gap-3">
@@ -437,7 +430,7 @@ function ScriptCard({
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

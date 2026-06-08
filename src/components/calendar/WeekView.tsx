@@ -211,11 +211,10 @@ export function WeekView({
                   const colors = resolveEventColors(event, techColorMap, colorMode);
 
                   return (
-                    <div
+                    <button
                       key={event.id}
-                      role="button"
-                      tabIndex={0}
-                      className="absolute left-0.5 right-0.5 rounded text-xs px-1.5 py-0.5 overflow-hidden z-10 cursor-pointer hover:opacity-80 transition-opacity"
+                      type="button"
+                      className="absolute left-0.5 right-0.5 rounded text-xs px-1.5 py-0.5 overflow-hidden z-10 cursor-pointer hover:opacity-80 transition-opacity border-0 text-left"
                       style={{
                         top: `${top}px`,
                         height: `${height}px`,
@@ -227,13 +226,6 @@ export function WeekView({
                         e.stopPropagation();
                         onEventClick(event);
                       }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onEventClick(event);
-                        }
-                      }}
                     >
                       <p className="font-medium truncate leading-tight">{event.title}</p>
                       {height > 44 && event.assignee_initials && (
@@ -241,7 +233,7 @@ export function WeekView({
                           {event.assignee_initials}
                         </p>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>

@@ -345,12 +345,13 @@ export default function AutomationWizard({
             {errors.actions && <div className="mt-2 text-sm text-rose-600">{errors.actions}</div>}
             {/* Display field-specific errors */}
             {Object.entries(errors)
-              .filter(([k]) => k.startsWith("actions["))
-              .map(([k, v]) => (
-                <div key={k} className="mt-1 text-xs text-rose-600">
-                  {v}
-                </div>
-              ))}
+              .flatMap(([k, v]) =>
+                k.startsWith("actions[") ? [(
+                  <div key={k} className="mt-1 text-xs text-rose-600">
+                    {v}
+                  </div>
+                )] : [],
+              )}
           </div>
         )}
         {step === 4 && (

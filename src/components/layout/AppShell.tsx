@@ -53,7 +53,7 @@ export function AppShell() {
       : "PCReady";
     const org = organizationName || "PCReady";
     document.title = currentPageTitle ? `${currentPageTitle} - ${org}` : org;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- t is stable via useTranslation; i18n.language already triggers re-run
+     
   }, [route, organizationName, i18n.language]);
 
   // ── Guard: loading / auth error / missing profile ──────────────

@@ -195,10 +195,10 @@ export function AutomationActionsBuilder({
 
         {isMenuOpen && (
           <>
-            <div
-              role="button"
+            <button
+              type="button"
               tabIndex={-1}
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-40 bg-transparent border-0 cursor-default"
               onClick={() => setIsMenuOpen(false)}
               onKeyDown={(e) => {
                 if (e.key === "Escape" || e.key === "Enter") setIsMenuOpen(false);

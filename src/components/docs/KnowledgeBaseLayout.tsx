@@ -1,11 +1,11 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
 import { Menu, BookOpenText } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { DocsSidebar } from "@/components/docs/DocsSidebar";
 import { DocsSidebarMobile } from "@/components/docs/DocsSidebarMobile";
 import { KB_SECTIONS } from "@/components/docs/loadKBStructure";
+import { useIsMobile } from "@/hooks/use-mobile";
+import type { ReactNode } from "react";
 
 export type { DocsSection, DocsArticle } from "@/components/docs/loadKBStructure";
 

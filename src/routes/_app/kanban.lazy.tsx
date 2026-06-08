@@ -287,7 +287,7 @@ function KanbanPage() {
         ),
       );
   }, [session?.access_token, loadKanbanSettings, loadTechnicians]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- t and toast are stable; only runs on token change
+   
 
   function setFilter<K extends keyof KanbanFilters>(key: K, value: KanbanFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));

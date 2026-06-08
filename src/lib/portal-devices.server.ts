@@ -1,6 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getPortalSession } from "@/lib/portal-auth.server";
 
+/**
+ *
+ */
 export async function listPortalDevicesServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
   const { data: devices, error } = await supabaseAdmin

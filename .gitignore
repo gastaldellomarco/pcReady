@@ -89,3 +89,9 @@ supabase/seed_demo_full.sql
 docs/superpowers/specs/2026-06-03-checklist-enhancements-design.md
 .claude/skills/react-doctor/SKILL.md
 .superpowers/
+react-doctor-output.txt
+.goose/skills/react-doctor/SKILL.md
+.kiro/skills/react-doctor/SKILL.md
+.qoder/skills/react-doctor/SKILL.md
+.windsurf/skills/react-doctor/SKILL.md
+skills/react-doctor/SKILL.md

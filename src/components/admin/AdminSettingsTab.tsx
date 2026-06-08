@@ -9,8 +9,6 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
 import { EmailTemplateSection } from "@/components/admin/EmailTemplateSection";
 import { TagListEditor } from "@/components/admin/TagListEditor";
 import { Button } from "@/components/ui/button";
@@ -21,8 +19,10 @@ import { Label } from "@/components/ui/label";
 import OverflowTable from "@/components/ui/overflow-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ADMIN_WIP_LIMIT_FIELDS, ADMIN_SLA_CONFIG_FIELDS } from "@/lib/admin/admin-constants";
-import type { AppSettings } from "@/lib/app-settings";
 import { AppSettingsSchema } from "@/lib/schemas";
+import type { AppSettings } from "@/lib/app-settings";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 function SettingSection({
   icon,

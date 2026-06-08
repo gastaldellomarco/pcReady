@@ -16,7 +16,7 @@ import {
   Timer,
   UserRound,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
@@ -182,6 +182,15 @@ function ProfilePage() {
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
   const [disableRequiresCode, setDisableRequiresCode] = useState(true);
   const [disableCode, setDisableCode] = useState("");
+  const disableMfaInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the TOTP code input when the disable MFA dialog opens
+  useEffect(() => {
+    if (disableDialogOpen) {
+      // Small delay to let the Dialog animation finish
+      setTimeout(() => disableMfaInputRef.current?.focus(), 100);
+    }
+  }, [disableDialogOpen]);
 
   useEffect(() => {
     setTab(searchToTab(search.tab));
@@ -227,7 +236,7 @@ function ProfilePage() {
       )
       .finally(() => setLoading(false));
   }, [session?.access_token, loadProfile, profileReloadToken]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- t is stable from useTranslation; profileReloadToken triggers reload
+   
 
   useEffect(() => {
     if (tab !== "activity" || !session?.access_token || technicianOverview) return;
@@ -245,7 +254,7 @@ function ProfilePage() {
       )
       .finally(() => setTechnicianOverviewLoading(false));
   }, [loadTechnicianOverview, session?.access_token, tab, technicianOverview]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- t is stable; only load when tab/techOverview changes
+   
 
   const initials = useMemo(() => {
     const name = personal.display_name || authProfile?.full_name || profile?.email || "U";
@@ -360,7 +369,7 @@ function ProfilePage() {
     if (tab !== "security" || !session?.access_token) return;
     void refreshMfaStatus();
   }, [refreshMfaStatus, session?.access_token, tab]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when tab becomes "security"
+   
 
   async function startMfaSetup() {
     setMfaLoading(true);
@@ -1050,7 +1059,7 @@ function ProfilePage() {
                     <Input
                       id="disable-mfa-code"
                       inputMode="numeric"
-                      autoFocus
+                      ref={disableMfaInputRef}
                       maxLength={6}
                       value={disableCode}
                       onChange={(event) =>
@@ -1542,6 +1551,7 @@ function QrCodeBox({ qrCode }: { qrCode: string }) {
       </div>
     );
   if (qrCode.trim().startsWith("<svg")) {
+    // eslint-disable-next-line react/no-danger -- QR code SVG from Supabase Auth enroll(); trusted provider output
     return (
       <div
         className="mx-auto flex w-fit justify-center rounded-lg border bg-white p-4"

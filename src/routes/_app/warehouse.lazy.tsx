@@ -12,12 +12,12 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { Modal } from "@/components/pcready/Modal";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { openTicketDetail } from "@/lib/detail-navigation";
@@ -167,7 +167,7 @@ function WarehousePage() {
 
   // ── Data loading ──
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [materialsResult, ticketsResult] = await Promise.all([
@@ -195,7 +195,7 @@ function WarehousePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadData();

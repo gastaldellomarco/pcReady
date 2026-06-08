@@ -27,6 +27,9 @@ function normalizeDocumentTicket(ticket: any) {
   return Array.isArray(ticket) ? ticket[0] : ticket;
 }
 
+/**
+ *
+ */
 export async function listPortalDocumentsServer(input: { token: string }) {
   const session = await getPortalSession(input.token);
 
@@ -182,6 +185,9 @@ export async function listPortalDocumentsServer(input: { token: string }) {
   };
 }
 
+/**
+ *
+ */
 export async function signPortalDocumentServer(input: {
   token: string;
   documentId: string;

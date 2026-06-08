@@ -79,7 +79,7 @@ function NotificationsPage() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load has its own stable deps
+     
   }, [load]);
 
   useEffect(() => {

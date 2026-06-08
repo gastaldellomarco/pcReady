@@ -38,6 +38,9 @@ export interface PortalSessionContext {
  * Shared helpers — exported for use by domain-split sibling files.
  */
 
+/**
+ *
+ */
 export function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
@@ -48,6 +51,9 @@ function portalBaseUrl() {
   return getAppBaseUrl();
 }
 
+/**
+ *
+ */
 export function hashPortalPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const hash = pbkdf2Sync(password, salt, 120_000, 32, "sha256").toString("hex");
@@ -75,10 +81,16 @@ function clientBranding(client: any): PortalBranding {
   };
 }
 
+/**
+ *
+ */
 export function portalLoginUrl(token: string) {
   return `${portalBaseUrl().replace(/\/$/, "")}/portal?token=${encodeURIComponent(token)}`;
 }
 
+/**
+ *
+ */
 export async function assertPortalLinkOperator(accessToken: string) {
   const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
   if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
@@ -95,6 +107,9 @@ export async function assertPortalLinkOperator(accessToken: string) {
   return userData.user;
 }
 
+/**
+ *
+ */
 export async function createPortalSession(contact: any, ttlHours = 24) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * ttlHours).toISOString();

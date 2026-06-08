@@ -26,6 +26,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
+import { ExportPdf } from "@/components/ExportPdf";
+import {
+  QuoteModal,
+  QuoteStatusBadge,
+  QuoteActions,
+  createEmptyQuoteLine,
+} from "@/components/pcready/QuoteModal";
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,15 +41,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
-import { toast } from "sonner";
-import { ExportPdf } from "@/components/ExportPdf";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import {
-  QuoteModal,
-  QuoteStatusBadge,
-  QuoteActions,
-  createEmptyQuoteLine,
-} from "@/components/pcready/QuoteModal";
 import {
   Dialog,
   DialogContent,
@@ -425,11 +425,11 @@ function CostsPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, t]);
 
   useEffect(() => {
     void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadData deps already include dateFrom, dateTo
+     
   }, [loadData]);
 
   // Persist date range to localStorage so it's remembered across visits
@@ -442,7 +442,7 @@ function CostsPage() {
     } catch {
       /* localStorage unavailable — ignore */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only persist when filter values change
+     
   }, [dateFrom, dateTo, clientFilter, technicianFilter]);
 
   const technicians = useMemo(

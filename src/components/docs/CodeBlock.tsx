@@ -85,6 +85,7 @@ export function CodeBlock({ language, children, filename }: CodeBlockProps) {
       {/* Code content */}
       <div className="overflow-x-auto px-4 py-3">
         {highlighted ? (
+          // eslint-disable-next-line react/no-danger -- Shiki codeToHtml output is safe; properly escapes all code content
           <div
             className="text-[13px] leading-relaxed"
             style={{ fontFamily: "var(--font-mono)" }}

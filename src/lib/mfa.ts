@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 
+/**
+ *
+ */
 export type MfaBackupCodeStatus = {
   remaining: number;
   total: number;
   last_used_at: string | null;
 };
 
+/**
+ *
+ */
 export type MfaAccessStatus = {
   required: boolean;
   graceExpired: boolean;

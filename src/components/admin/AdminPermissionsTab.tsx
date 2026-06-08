@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
-import { ALL_PERMISSIONS } from "@/lib/auth-context";
 import { type RolePermissions } from "@/lib/admin-permissions";
+import { ALL_PERMISSIONS } from "@/lib/auth-context";
 
 const PERMISSION_LABELS: Record<string, { it: string; en: string }> = {
   can_view_costs: { it: "Visualizzare i costi", en: "View costs" },
@@ -28,6 +28,9 @@ interface Props {
   accessToken: string | undefined;
 }
 
+/**
+ *
+ */
 export function AdminPermissionsTab({ accessToken }: Props) {
   const { t, i18n } = useTranslation("admin");
   const lang = (i18n.language?.split("-")[0] ?? "it") as "it" | "en";

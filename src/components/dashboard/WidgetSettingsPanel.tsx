@@ -110,14 +110,11 @@ export function WidgetSettingsPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={-1}
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-black/30 border-0"
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-        }}
         aria-label={t("widgets.closePanel", "Chiudi pannello")}
       />
       <div

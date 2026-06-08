@@ -87,24 +87,13 @@ export function TicketCard({
         : t("tickets:sla.ok", indicator.label);
 
   return (
-    <div
+    <button
+      type="button"
       draggable={canEdit}
       onDragStart={() => onDragStart(card.id)}
       onDragEnd={onDragEnd}
       onMouseEnter={() => onHover(card.id)}
       onMouseLeave={() => onHover(null)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          if (onClick) {
-            onClick(event as any, card.id);
-          } else {
-            onOpenDetail();
-          }
-        }
-      }}
       onClick={(event) => {
         if (onClick) {
           onClick(event, card.id);
@@ -226,6 +215,6 @@ export function TicketCard({
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

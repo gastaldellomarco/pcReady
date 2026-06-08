@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
 
+/**
+ *
+ */
 export interface DeviceSoftware {
   id: string;
   device_id: string;
@@ -16,6 +19,9 @@ export interface DeviceSoftware {
   latest_version?: string | null;
 }
 
+/**
+ *
+ */
 export interface SoftwareCatalogEntry {
   id: string;
   name: string;
@@ -27,6 +33,9 @@ export interface SoftwareCatalogEntry {
 
 // ── Queries ──
 
+/**
+ *
+ */
 export async function fetchDeviceSoftware(deviceId: string) {
   const { data, error } = await (supabase as any)
     .from("device_software")
@@ -41,7 +50,7 @@ export async function fetchDeviceSoftware(deviceId: string) {
 
   // Fetch catalog for latest versions
   const softwareNames = (data ?? []).map((s: DeviceSoftware) => s.software_name);
-  let catalogMap: Map<string, string> = new Map();
+  const catalogMap: Map<string, string> = new Map();
 
   if (softwareNames.length) {
     const { data: catalogData, error: catalogError } = await (supabase as any)
@@ -62,6 +71,9 @@ export async function fetchDeviceSoftware(deviceId: string) {
   }));
 }
 
+/**
+ *
+ */
 export async function fetchSoftwareCatalog() {
   const { data, error } = await (supabase as any)
     .from("software_catalog")
@@ -72,6 +84,9 @@ export async function fetchSoftwareCatalog() {
   return (data ?? []) as SoftwareCatalogEntry[];
 }
 
+/**
+ *
+ */
 export function useDeviceSoftware(deviceId: string | null | undefined) {
   return useQuery({
     queryKey: ["device-software", deviceId],
@@ -80,6 +95,9 @@ export function useDeviceSoftware(deviceId: string | null | undefined) {
   });
 }
 
+/**
+ *
+ */
 export function useSoftwareCatalog() {
   return useQuery({
     queryKey: ["software-catalog"],
@@ -89,6 +107,9 @@ export function useSoftwareCatalog() {
 
 // ── Mutations: Device Software ──
 
+/**
+ *
+ */
 export async function upsertDeviceSoftware(params: {
   deviceId: string;
   softwareName: string;
@@ -118,6 +139,9 @@ export async function upsertDeviceSoftware(params: {
   return true;
 }
 
+/**
+ *
+ */
 export async function deleteDeviceSoftware(softwareId: string) {
   const { error } = await (supabase as any)
     .from("device_software")
@@ -130,6 +154,9 @@ export async function deleteDeviceSoftware(softwareId: string) {
 
 // ── Mutations: Software Catalog ──
 
+/**
+ *
+ */
 export async function upsertSoftwareCatalog(entry: {
   name: string;
   latestVersion: string;
@@ -152,6 +179,9 @@ export async function upsertSoftwareCatalog(entry: {
   return true;
 }
 
+/**
+ *
+ */
 export async function deleteSoftwareCatalog(entryId: string) {
   const { error } = await (supabase as any)
     .from("software_catalog")
@@ -164,6 +194,9 @@ export async function deleteSoftwareCatalog(entryId: string) {
 
 // ── Hooks ──
 
+/**
+ *
+ */
 export function useUpsertDeviceSoftware(deviceId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -175,6 +208,9 @@ export function useUpsertDeviceSoftware(deviceId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteDeviceSoftware(deviceId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -185,6 +221,9 @@ export function useDeleteDeviceSoftware(deviceId: string) {
   });
 }
 
+/**
+ *
+ */
 export function useUpsertSoftwareCatalog() {
   const qc = useQueryClient();
   return useMutation({
@@ -195,6 +234,9 @@ export function useUpsertSoftwareCatalog() {
   });
 }
 
+/**
+ *
+ */
 export function useDeleteSoftwareCatalog() {
   const qc = useQueryClient();
   return useMutation({

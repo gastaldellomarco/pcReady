@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import matter from "gray-matter";
 import {
   Rocket,
   Workflow,
@@ -8,13 +8,16 @@ import {
   FileText,
   type LucideIcon,
 } from "lucide-react";
-import matter from "gray-matter";
+import type { ComponentType } from "react";
 
 // ---------------------------------------------------------------
 // Types (moved here so both KnowledgeBaseLayout and DocsSidebar
 // can import from a single source of truth)
 // ---------------------------------------------------------------
 
+/**
+ *
+ */
 export interface DocsSection {
   id: string;
   label: string;
@@ -22,6 +25,9 @@ export interface DocsSection {
   articles: DocsArticle[];
 }
 
+/**
+ *
+ */
 export interface DocsArticle {
   id: string;
   label: string;
