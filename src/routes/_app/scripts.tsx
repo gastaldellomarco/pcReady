@@ -25,6 +25,8 @@ import {
   History,
   Check,
   X,
+  Link2,
+  Play,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -36,15 +38,22 @@ import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer"
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { Field } from "@/components/ui/form-field";
+import { ScriptParametersEditor } from "@/components/scripts/ScriptParametersEditor";
+import { ScriptParametersRunner } from "@/components/scripts/ScriptParametersRunner";
+import { ScriptTagInput } from "@/components/scripts/ScriptTagInput";
+import { ScriptShareDialog } from "@/components/scripts/ScriptShareDialog";
+import { ScriptFavoriteButton } from "@/components/scripts/ScriptFavoriteButton";
 import { useTheme } from "@/hooks/use-theme";
 import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadText } from "@/lib/downloads";
+import { substituteParams } from "@/lib/template-params";
 import { errorMessage } from "@/lib/errors";
-import queries, { fetchScriptById } from "@/lib/queries/scripts";
-import { ScriptSchema, type ScriptInput } from "@/lib/schemas/scripts";
-import { createVersion } from "@/lib/versioning";
+import queries, { fetchScriptById, fetchScriptTags, useScriptFavorites, useToggleFavorite } from "@/lib/queries/scripts";
+import { ScriptSchema, type ScriptInput, type ScriptParameter } from "@/lib/schemas/scripts";
+import { computeChangedFields, createVersion } from "@/lib/versioning";
+import type { Json, Tables } from "@/integrations/supabase/types";
 import type { Extension } from "@codemirror/state";
 import type { LucideIcon } from "lucide-react";
 
@@ -66,17 +75,10 @@ export const Route = createFileRoute("/_app/scripts")({
   pendingComponent: () => <LoadingSkeleton />,
 });
 
-interface ScriptRow {
-  id: string;
-  name: string;
-  category: string;
-  description: string | null;
-  language: string;
-  content: string;
-  icon: string | null;
-  color: string | null;
-  updated_at: string;
-}
+type ScriptRow = Omit<Tables<"scripts">, "parameters" | "tags"> & {
+  parameters: ScriptParameter[];
+  tags: string[];
+};
 
 const LANGUAGES = ["powershell", "bash", "python", "cmd", "sql", "javascript"] as const;
 const CATEGORIES = [
@@ -139,55 +141,80 @@ function getLangExtension(language: string): Extension {
   }
 }
 
-function computeChangedFields(oldData: any, newData: any) {
-  const changed: Record<string, { old: any; new: any }> = {};
-  for (const key in newData) {
-    if (oldData[key] !== newData[key]) {
-      changed[key] = { old: oldData[key], new: newData[key] };
-    }
-  }
-  return Object.keys(changed).length ? changed : null;
-}
-
 function ScriptsPage() {
   const { t } = useTranslation("scripts");
-  const { canEdit, hasPermission } = useAuth();
+  const { canEdit, hasPermission, user } = useAuth();
   const [rows, setRows] = useState<ScriptRow[]>([]);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
+  const [tag, setTag] = useState("");
   const [viewer, setViewer] = useState<ScriptRow | null>(null);
   const [editor, setEditor] = useState<ScriptRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ScriptRow | null>(null);
+  const [shareDialogScript, setShareDialogScript] = useState<ScriptRow | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
-  const { useScriptsList, useDeleteScript } = queries as any;
+  const { useScriptsList, useDeleteScript } = queries;
   const listQuery = useScriptsList();
   const deleteMut = useDeleteScript();
+  const favoritesQuery = useScriptFavorites(user?.id);
+  const favorites = useMemo(() => new Set(favoritesQuery.data ?? []), [favoritesQuery.data]);
+  const toggleFavorite = useToggleFavorite();
+
+  const handleToggleFavorite = useCallback(
+    (scriptId: string, favored: boolean) => {
+      if (!user?.id) return;
+      toggleFavorite.mutate({ userId: user.id, scriptId, favored }, {
+        onError: () => {
+          toast.error(t("favorites.toggleError", "Errore aggiornamento preferiti"));
+        },
+      });
+    },
+    [user?.id, toggleFavorite, t],
+  );
 
   useEffect(() => {
     if (listQuery.data) setRows(listQuery.data as ScriptRow[]);
   }, [listQuery.data]);
+
+  useEffect(() => {
+    fetchScriptTags()
+      .then(setAllTags)
+      .catch(() => {});
+  }, []);
 
   const filtered = useMemo(
     () =>
       rows.filter(
         (r) =>
           (!cat || r.category === cat) &&
+          (!tag || (r.tags ?? []).includes(tag)) &&
           (!q ||
-            (r.name + (r.description || "") + r.category).toLowerCase().includes(q.toLowerCase())),
+            (r.name + (r.description || "") + r.category + (r.tags ?? []).join(" "))
+              .toLowerCase()
+              .includes(q.toLowerCase())),
       ),
-    [rows, q, cat],
+    [rows, q, cat, tag],
   );
+
+  const sorted = useMemo(() => {
+    const fav = filtered.filter((r) => favorites.has(r.id));
+    const rest = filtered.filter((r) => !favorites.has(r.id));
+    return [...fav, ...rest];
+  }, [filtered, favorites]);
 
   const grouped = useMemo(() => {
     const m: Record<string, ScriptRow[]> = {};
-    filtered.forEach((r) => {
+    sorted.forEach((r) => {
       (m[r.category] ||= []).push(r);
     });
     return m;
-  }, [filtered]);
+  }, [sorted]);
+
+  const hasFavorites = sorted.some((r) => favorites.has(r.id));
 
   const cats = Array.from(new Set(rows.map((r) => r.category))).sort();
 
@@ -223,6 +250,19 @@ function ScriptsPage() {
             <option key={c}>{c}</option>
           ))}
         </select>
+        {allTags.length > 0 && (
+          <select
+            className="pc-input max-w-[180px]"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            aria-label={t("tags.filterLabel", "Filtra per tag")}
+          >
+            <option value="">{t("allCategories", "Tutti i tag")}</option>
+            {allTags.map((tTag) => (
+              <option key={tTag}>{tTag}</option>
+            ))}
+          </select>
+        )}
         <span className="ml-auto self-center text-xs text-text3 font-mono">
           {t("scriptCount", "{{count}} script", { count: filtered.length })}
         </span>
@@ -237,7 +277,7 @@ function ScriptsPage() {
       {!rows.length && (
         <div className="pc-card p-10 text-center">
           <Terminal className="size-10 mx-auto mb-3 text-text3" />
-          <div className="text-[15px] font-bold mb-1" style={{ fontFamily: "var(--font-head)" }}>
+          <div className="text-[15px] font-bold mb-1 font-head">
             {t("emptyTitle", "Nessuno script ancora")}
           </div>
           <div className="text-[13px] text-text3 mb-4">
@@ -257,13 +297,54 @@ function ScriptsPage() {
         </div>
       )}
 
+      {/* FAVORITES SECTION */}
+      {hasFavorites && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <h2
+              className="text-[12px] font-bold tracking-[1.5px] uppercase text-amber-600 font-mono"
+            >
+              ★ {t("favorites.section", "Preferiti")}
+            </h2>
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {sorted
+              .filter((s) => favorites.has(s.id))
+              .map((s) => (
+                <ScriptCard
+                  key={s.id}
+                  s={s}
+                  favored={true}
+                  onToggleFavorite={handleToggleFavorite}
+                  onOpen={() => {
+                    setViewer(s);
+                    setSelectedScriptId(s.id);
+                  }}
+                  onEdit={
+                    canEdit
+                      ? () => {
+                          setEditor(s);
+                          setSelectedScriptId(s.id);
+                        }
+                      : undefined
+                  }
+                  onDelete={hasPermission("can_manage_automations") ? () => setDeleteTarget(s) : undefined}
+                />
+              ))}
+          </div>
+        </section>
+      )}
+
       {/* GRUPPI PER CATEGORIA */}
-      {Object.entries(grouped).map(([category, items]) => (
+      {Object.entries(grouped).map(([category, items]) => {
+        const nonFavItems = items.filter((s) => !favorites.has(s.id));
+        if (nonFavItems.length === 0) return null;
+        return (
         <section key={category} className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <h2
-              className="text-[12px] font-bold tracking-[1.5px] uppercase text-text3"
-              style={{ fontFamily: "var(--font-mono)" }}
+              className="text-[12px] font-bold tracking-[1.5px] uppercase text-text3 font-mono"
             >
               {category}
             </h2>
@@ -271,10 +352,12 @@ function ScriptsPage() {
             <span className="text-[10.5px] text-text3 font-mono">{items.length}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {items.map((s) => (
+            {nonFavItems.map((s) => (
               <ScriptCard
                 key={s.id}
                 s={s}
+                favored={favorites.has(s.id)}
+                onToggleFavorite={handleToggleFavorite}
                 onOpen={() => {
                   setViewer(s);
                   setSelectedScriptId(s.id);
@@ -292,7 +375,8 @@ function ScriptsPage() {
             ))}
           </div>
         </section>
-      ))}
+        );
+      })}
 
       {/* MODALI */}
       {viewer && (
@@ -306,11 +390,13 @@ function ScriptsPage() {
           onSaved={() => {
             void listQuery.refetch();
           }}
+          onShare={() => setShareDialogScript(viewer)}
         />
       )}
       {(editor || createOpen) && (
         <ScriptEditor
           initial={editor}
+          allTags={allTags}
           onClose={() => {
             setEditor(null);
             setCreateOpen(false);
@@ -330,6 +416,13 @@ function ScriptsPage() {
         onClose={() => setVersionHistoryOpen(false)}
         onRestored={() => void listQuery.refetch()}
       />
+      {shareDialogScript && (
+        <ScriptShareDialog
+          scriptId={shareDialogScript.id}
+          open={!!shareDialogScript}
+          onClose={() => setShareDialogScript(null)}
+        />
+      )}
       <DestructiveConfirmDialog
         open={!!deleteTarget}
         title={t("delete.title", "Eliminare questo script?")}
@@ -362,15 +455,20 @@ function ScriptCard({
   onOpen,
   onEdit,
   onDelete,
+  favored = false,
+  onToggleFavorite,
 }: {
   s: ScriptRow;
   onOpen: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  favored?: boolean;
+  onToggleFavorite?: (scriptId: string, favored: boolean) => void;
 }) {
   const { t } = useTranslation("scripts");
   const Icon = ICONS[s.icon || ""] || Terminal;
   const color = s.color || "#1B4FD8";
+  const tags: string[] = s.tags ?? [];
   return (
     <button
       type="button"
@@ -388,12 +486,14 @@ function ScriptCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <div
-              className="text-[13.5px] font-bold leading-tight truncate"
-              style={{ fontFamily: "var(--font-head)" }}
+              className="text-[13.5px] font-bold leading-tight truncate font-head"
             >
               {s.name}
             </div>
             <VersionBadge entityType="scripts" entityId={s.id} />
+            <div className="ml-auto flex items-center" onClick={(e) => e.stopPropagation()}>
+              <ScriptFavoriteButton scriptId={s.id} favored={favored} onToggle={onToggleFavorite || (() => {})} size="sm" />
+            </div>
           </div>
           <div className="text-[10.5px] uppercase tracking-wider text-text3 mt-0.5 font-mono">
             {s.language}
@@ -402,6 +502,24 @@ function ScriptCard({
       </div>
       {s.description && (
         <p className="text-[12px] text-text2 mt-3 line-clamp-2 leading-snug">{s.description}</p>
+      )}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {tags.slice(0, 3).map((tagName) => (
+            <span
+              key={tagName}
+              className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold"
+              style={{ borderColor: "var(--border)", background: "var(--surface2)", color: "var(--text3)" }}
+            >
+              {tagName}
+            </span>
+          ))}
+          {tags.length > 3 && (
+            <span className="text-[10px] text-text3 font-bold">
+              {t("card.moreTags", "+{{count}}", { count: tags.length - 3 })}
+            </span>
+          )}
+        </div>
       )}
       <div
         className="flex items-center gap-1 mt-3 pt-3 border-t opacity-0 group-hover:opacity-100 transition-opacity"
@@ -440,11 +558,13 @@ function ScriptViewer({
   onClose,
   onOpenVersions,
   onSaved,
+  onShare,
 }: {
   script: ScriptRow;
   onClose: () => void;
   onOpenVersions: () => void;
   onSaved: () => void;
+  onShare?: () => void;
 }) {
   const { t } = useTranslation("scripts");
   const { canEdit } = useAuth();
@@ -461,6 +581,9 @@ function ScriptViewer({
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [dirtyConfirm, setDirtyConfirm] = useState(false);
+  const [showParams, setShowParams] = useState(false);
+  const [appliedParamValues, setAppliedParamValues] = useState<Record<string, string> | null>(null);
+  const params: ScriptParameter[] = script.parameters ?? [];
 
   const fetchContent = useCallback(async () => {
     setLoadingContent(true);
@@ -508,13 +631,19 @@ function ScriptViewer({
   }
 
   function copy() {
-    navigator.clipboard.writeText(content ?? "");
+    const finalContent = appliedParamValues
+      ? substituteParams(content ?? "", appliedParamValues)
+      : (content ?? "");
+    navigator.clipboard.writeText(finalContent);
     toast.success(t("viewer.copied", "Script copiato negli appunti"));
   }
 
   function download() {
     const ext = LANG_EXT[script.language] || "txt";
-    downloadText(content ?? "", buildDownloadFileName(script.name, ext));
+    const finalContent = appliedParamValues
+      ? substituteParams(content ?? "", appliedParamValues)
+      : (content ?? "");
+    downloadText(finalContent, buildDownloadFileName(script.name, ext));
   }
 
   async function save() {
@@ -523,7 +652,7 @@ function ScriptViewer({
       return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
     setSaving(true);
     try {
-      const newData: any = {
+      const newData: Record<string, unknown> = {
         name: editName,
         description: editDescription || null,
         content: editContent,
@@ -538,19 +667,15 @@ function ScriptViewer({
         .eq("id", script.id)
         .single();
 
-      const { error } = await supabase.from("scripts").update(newData).eq("id", script.id);
+      const { error } = await supabase.from("scripts").update(newData as any).eq("id", script.id);
       if (error) throw error;
 
       // Versioning
-      const rawChanged = computeChangedFields(oldData, newData);
-      const changedFields = rawChanged
-        ? (Object.fromEntries(
-            Object.entries(rawChanged).map(([k, v]) => [
-              k,
-              { from: (v as any).old, to: (v as any).new },
-            ]),
-          ) as Record<string, { from: unknown; to: unknown }>)
-        : undefined;
+      const rawChanged = computeChangedFields(
+        (oldData as Record<string, unknown>) ?? {},
+        newData,
+      );
+      const changedFields = Object.keys(rawChanged).length > 0 ? rawChanged : undefined;
 
       await createVersion(
         "scripts",
@@ -610,6 +735,11 @@ function ScriptViewer({
                 <button className="pc-btn pc-btn-ghost" onClick={onOpenVersions}>
                   <History className="size-3" /> {t("viewer.versions", "Versioni")}
                 </button>
+                {canEdit && onShare && (
+                  <button className="pc-btn pc-btn-ghost" onClick={onShare}>
+                    <Link2 className="size-3" /> {t("viewer.share", "Condividi")}
+                  </button>
+                )}
                 {canEdit && (
                   <button
                     className="pc-btn pc-btn-ghost"
@@ -617,6 +747,11 @@ function ScriptViewer({
                     disabled={loadingContent}
                   >
                     <Pencil className="size-3" /> {t("viewer.edit", "Modifica")}
+                  </button>
+                )}
+                {params.length > 0 && !showParams && (
+                  <button className="pc-btn pc-btn-ghost" onClick={() => setShowParams(true)}>
+                    <Play className="size-3" /> {t("viewer.runWithParams", "Esegui con parametri")}
                   </button>
                 )}
                 <button className="pc-btn pc-btn-ghost" onClick={download} disabled={!hasContent}>
@@ -640,8 +775,7 @@ function ScriptViewer({
           <div className="flex-1">
             {editing ? (
               <input
-                className="pc-input !text-[18px] !font-bold max-w-[420px]"
-                style={{ fontFamily: "var(--font-head)" }}
+                className="pc-input !text-[18px] !font-bold max-w-[420px] font-head"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder={t("editor.namePlaceholder", "Nome script")}
@@ -649,8 +783,7 @@ function ScriptViewer({
               />
             ) : (
               <h2
-                className="text-[18px] font-bold leading-tight"
-                style={{ fontFamily: "var(--font-head)" }}
+                className="text-[18px] font-bold leading-tight font-head"
               >
                 {script.name}
               </h2>
@@ -673,8 +806,43 @@ function ScriptViewer({
                 <p className="text-[13px] text-text2 mt-2 leading-snug">{script.description}</p>
               )
             )}
+            {params.length > 0 && !editing && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {params.map((p) => (
+                  <span
+                    key={p.name}
+                    className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono"
+                    style={{ borderColor: "var(--border)", background: "var(--surface2)", color: "var(--text2)" }}
+                  >
+                    {`{{${p.name}}}`}{p.required ? " *" : ""}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+        {showParams && params.length > 0 && !editing && (
+          <ScriptParametersRunner
+            parameters={params}
+            onApply={(values) => {
+              setAppliedParamValues(values);
+              setShowParams(false);
+            }}
+            onCancel={() => setShowParams(false)}
+          />
+        )}
+        {appliedParamValues && !editing && (
+          <div
+            className="rounded-md border px-3 py-2 text-xs mb-4"
+            style={{ borderColor: "var(--accent)", background: "var(--surface2)" }}
+          >
+            <span className="font-bold text-accent">
+              {t("runner.title", "Parametri applicati")}
+            </span>
+            {" — "}
+            {Object.entries(appliedParamValues).map(([k, v]) => `${k}=${v}`).join(", ")}
+          </div>
+        )}
         {editing ? (
           <div className="flex flex-col gap-2">
             <label className="pc-label">{t("editor.fieldContent", "Contenuto script *")}</label>
@@ -748,10 +916,12 @@ function ScriptViewer({
 // ------------------------- EDITOR -------------------------
 function ScriptEditor({
   initial,
+  allTags,
   onClose,
   onSaved,
 }: {
   initial: ScriptRow | null;
+  allTags?: string[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -759,7 +929,7 @@ function ScriptEditor({
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const form = useForm<ScriptInput>({
-    resolver: zodResolver(ScriptSchema),
+    resolver: zodResolver(ScriptSchema as any),
     mode: "onChange",
     defaultValues: {
       name: initial?.name || "",
@@ -769,9 +939,13 @@ function ScriptEditor({
       content: initial?.content || "",
       icon: initial?.icon || "terminal",
       color: initial?.color || COLORS[0],
+      parameters: initial?.parameters ?? [],
+      tags: initial?.tags ?? [],
       changeNote: null,
     },
   });
+  const [editorParams, setEditorParams] = useState<ScriptParameter[]>(initial?.parameters ?? []);
+  const [editorTags, setEditorTags] = useState<string[]>(initial?.tags ?? []);
 
   const save = form.handleSubmit(async (values) => {
     if (!values.name.trim())
@@ -780,7 +954,7 @@ function ScriptEditor({
       return toast.error(t("editor.errors.contentRequired", "Lo script è vuoto"));
     setBusy(true);
     try {
-      const newData: any = {
+      const newData: Record<string, unknown> = {
         name: values.name,
         category: values.category,
         description: values.description || null,
@@ -788,9 +962,11 @@ function ScriptEditor({
         content: values.content,
         icon: values.icon,
         color: values.color,
+        parameters: editorParams as unknown as Json,
+        tags: editorTags,
       };
 
-      let oldData: any = null;
+      let oldData: Record<string, unknown> | null = null;
       if (initial) {
         // Fetch current data for diff
         const { data } = await supabase
@@ -800,38 +976,31 @@ function ScriptEditor({
           )
           .eq("id", initial.id)
           .single();
-        oldData = data as any;
+        oldData = (data as Record<string, unknown>) ?? null;
       }
 
       if (initial) {
-        const { error } = await supabase.from("scripts").update(newData).eq("id", initial.id);
+        const { error } = await supabase.from("scripts").update(newData as any).eq("id", initial.id);
         if (error) throw error;
         toast.success(t("success.updated", "Script aggiornato"));
       } else {
         const { data: inserted, error } = await supabase
           .from("scripts")
-          .insert({ ...newData, created_by: user!.id })
+          .insert({ ...newData, created_by: user!.id } as any)
           .select("id")
           .single();
         if (error) throw error;
-        newData.id = (inserted as any).id; // For versioning
+        if (inserted) newData.id = (inserted as Record<string, unknown>).id; // For versioning
         toast.success(t("success.created", "Script creato"));
       }
 
       // Create version
       const rawChanged = oldData ? computeChangedFields(oldData, newData) : null;
-      const changedFields = rawChanged
-        ? (Object.fromEntries(
-            Object.entries(rawChanged).map(([k, v]) => [
-              k,
-              { from: (v as any).old, to: (v as any).new },
-            ]),
-          ) as Record<string, { from: unknown; to: unknown }>)
-        : undefined;
+      const changedFields = rawChanged && Object.keys(rawChanged).length > 0 ? rawChanged : undefined;
 
       await createVersion(
         "scripts",
-        initial?.id || newData.id,
+        initial?.id || (newData as any).id,
         newData,
         changedFields,
         values.changeNote || undefined,
@@ -966,6 +1135,19 @@ function ScriptEditor({
             placeholder={t("editor.descriptionPlaceholder", "Cosa fa questo script?")}
           />
         </Field>
+        <Field label={t("editor.fieldTags", "Tag")}>
+          <ScriptTagInput
+            value={editorTags}
+            onChange={setEditorTags}
+            suggestions={allTags}
+            disabled={busy}
+          />
+        </Field>
+        <ScriptParametersEditor
+          value={editorParams}
+          onChange={setEditorParams}
+          disabled={busy}
+        />
         <Field label={t("editor.fieldContent", "Contenuto script *")}>
           <textarea
             className="pc-input font-mono text-[12px] min-h-[260px]"

@@ -30,14 +30,17 @@ COMMENT ON COLUMN public.client_contacts.group_id IS 'Gruppo di contatti a cui a
 COMMENT ON TABLE public.contact_groups IS 'Gruppi di contatti per cliente, usati per organizzazione e azioni bulk';
 
 -- Trigger for updated_at
+DROP TRIGGER IF EXISTS contact_groups_updated ON public.contact_groups;
 CREATE TRIGGER contact_groups_updated BEFORE UPDATE ON public.contact_groups
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- RLS: all authenticated users can read groups
+DROP POLICY IF EXISTS "All authed read contact_groups" ON public.contact_groups;
 CREATE POLICY "All authed read contact_groups" ON public.contact_groups
   FOR SELECT TO authenticated USING (true);
 
 -- RLS: tech/admin can insert/update/delete groups
+DROP POLICY IF EXISTS "Tech/admin manage contact_groups" ON public.contact_groups;
 CREATE POLICY "Tech/admin manage contact_groups" ON public.contact_groups
   FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'tech'));

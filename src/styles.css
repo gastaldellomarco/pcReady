@@ -59,7 +59,7 @@
   --color-input: var(--border2);
   --color-ring: var(--primary);
   --font-sans: var(--font-sans);
-  --font-head: var(--font-head);
+  --font-head: var(--font-sans);
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);
   --text-xs: 11px;
@@ -142,7 +142,6 @@
   --badge-danger-border: transparent;
 
   --font-sans: "Geist", "Inter", system-ui, sans-serif;
-  --font-head: var(--font-sans);
   --font-body: var(--font-sans);
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);

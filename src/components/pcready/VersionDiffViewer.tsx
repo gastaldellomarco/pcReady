@@ -41,6 +41,75 @@ function formatValue(value: unknown, t: any) {
   return JSON.stringify(value, null, 2);
 }
 
+function CodeDiffBlock({ oldContent, newContent }: { oldContent: string; newContent: string }) {
+  const oldLines = oldContent.split("\n");
+  const newLines = newContent.split("\n");
+
+  // Simple line-by-line comparison
+  const maxLen = Math.max(oldLines.length, newLines.length);
+  const left: { text: string; type: "removed" | "unchanged" }[] = [];
+  const right: { text: string; type: "added" | "unchanged" }[] = [];
+
+  for (let i = 0; i < maxLen; i++) {
+    const oldLine = oldLines[i];
+    const newLine = newLines[i];
+
+    if (oldLine === newLine) {
+      left.push({ text: oldLine ?? "", type: "unchanged" });
+      right.push({ text: newLine ?? "", type: "unchanged" });
+    } else {
+      if (oldLine !== undefined) {
+        left.push({ text: oldLine, type: "removed" });
+        right.push({ text: "", type: "unchanged" });
+      } else {
+        left.push({ text: "", type: "unchanged" });
+      }
+      if (newLine !== undefined) {
+        right[right.length - 1] = { text: newLine, type: "added" };
+      }
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-0 border rounded overflow-hidden">
+      <div className="bg-red-50 dark:bg-red-950/20 font-mono text-xs leading-relaxed overflow-x-auto">
+        {left.map((line, i) => (
+          <div
+            key={i}
+            className={`px-2 py-0.5 border-b border-red-100 dark:border-red-900/30 ${
+              line.type === "removed"
+                ? "bg-red-100 dark:bg-red-900/40 text-red-900 dark:text-red-200"
+                : "text-muted-foreground"
+            }`}
+          >
+            <span className="inline-block w-8 text-right mr-2 text-muted-foreground select-none">
+              {line.type === "removed" ? "-" : i + 1}
+            </span>
+            {line.text || "\u00A0"}
+          </div>
+        ))}
+      </div>
+      <div className="bg-green-50 dark:bg-green-950/20 font-mono text-xs leading-relaxed overflow-x-auto border-l">
+        {right.map((line, i) => (
+          <div
+            key={i}
+            className={`px-2 py-0.5 border-b border-green-100 dark:border-green-900/30 ${
+              line.type === "added"
+                ? "bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-200"
+                : "text-muted-foreground"
+            }`}
+          >
+            <span className="inline-block w-8 text-right mr-2 text-muted-foreground select-none">
+              {line.type === "added" ? "+" : i + 1}
+            </span>
+            {line.text || "\u00A0"}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ValueBlock({
   value,
   tone,
@@ -183,20 +252,24 @@ export function VersionDiffViewer({
                           <div className="font-medium mb-2 capitalize">
                             {formatFieldName(key, t)}
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-sm text-muted-foreground mb-1">
-                                {t("versionDiff.previous", "Precedente")}
+                          {key === "content" && typeof change.old === "string" && typeof change.new === "string" ? (
+                            <CodeDiffBlock oldContent={change.old as string} newContent={change.new as string} />
+                          ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">
+                                  {t("versionDiff.previous", "Precedente")}
+                                </div>
+                                <ValueBlock value={change.old} tone="old" t={t} />
                               </div>
-                              <ValueBlock value={change.old} tone="old" t={t} />
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground mb-1">
-                                {t("versionDiff.new", "Nuovo")}
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">
+                                  {t("versionDiff.new", "Nuovo")}
+                                </div>
+                                <ValueBlock value={change.new} tone="new" t={t} />
                               </div>
-                              <ValueBlock value={change.new} tone="new" t={t} />
                             </div>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </div>

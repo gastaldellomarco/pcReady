@@ -20,16 +20,28 @@
     "install": "Installation",
     "security": "Security"
   },
+  "favorites": {
+    "section": "Favorites",
+    "add": "Add to favorites",
+    "remove": "Remove from favorites"
+  },
+  "tags": {
+    "placeholder": "Add tag...",
+    "filterLabel": "Filter by tag"
+  },
   "card": {
     "open": "Open →",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "moreTags": "+{{count}}"
   },
   "viewer": {
     "close": "Close",
     "versions": "Versions",
     "download": "Download",
     "copy": "Copy",
+    "share": "Share",
+    "runWithParams": "Run with parameters",
     "emptyScript": "// Empty script",
     "copied": "Script copied to clipboard",
     "edit": "Edit",
@@ -59,6 +71,21 @@
     "fieldDescription": "Description",
     "fieldContent": "Script content *",
     "fieldChangeNote": "Change note (optional)",
+    "fieldTags": "Tags",
+    "fieldParameters": "Parameters",
+    "addParameter": "Add parameter",
+    "removeParameter": "Remove parameter",
+    "parametersHelp": "Use {{parameter_name}} in code to insert the value at runtime.",
+    "noParameters": "No parameters defined.",
+    "paramName": "var_name",
+    "paramNameLabel": "Variable name",
+    "paramLabel": "Label",
+    "paramLabelLabel": "Parameter label",
+    "paramType": "Parameter type",
+    "paramTypeText": "Text",
+    "paramTypeNumber": "Number",
+    "paramTypeBoolean": "Yes/No",
+    "paramRequired": "Required",
     "namePlaceholder": "Reset Windows Update",
     "descriptionPlaceholder": "What does this script do?",
     "contentPlaceholder": "# Your code here...",
@@ -68,6 +95,42 @@
       "contentRequired": "Script is empty",
       "saveFailed": "Save error"
     }
+  },
+  "runner": {
+    "title": "Required parameters",
+    "description": "Fill in the parameters before running the script.",
+    "requiredField": "Required field",
+    "cancel": "Cancel",
+    "run": "Run"
+  },
+  "share": {
+    "title": "Share script",
+    "description": "Generate a password-protected link to share this script with a client.",
+    "password": "Password *",
+    "passwordPlaceholder": "Password for the client",
+    "passwordRequired": "Password is required",
+    "expiry": "Expiry",
+    "expiry24h": "24 hours",
+    "expiry7d": "7 days",
+    "expiry30d": "30 days",
+    "expiryNever": "Never",
+    "generate": "Generate link",
+    "generating": "Generating...",
+    "linkCreated": "Link created",
+    "createError": "Error creating link",
+    "linkReady": "Link ready",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "close": "Close",
+    "warning": "Anyone with the link and password can download this script.",
+    "existingLinks": "Existing links",
+    "validUntil": "Valid until {{date}}",
+    "expired": "Expired",
+    "never": "Never",
+    "revoke": "Revoke",
+    "revoked": "Link revoked",
+    "revokeError": "Error revoking link",
+    "pageTitle": "Shared script — PCReady"
   },
   "delete": {
     "title": "Delete this script?",

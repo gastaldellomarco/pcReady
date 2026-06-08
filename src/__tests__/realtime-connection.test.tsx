@@ -6,12 +6,6 @@ import { queryClient } from "@/lib/queries/queryClient";
 let channelSubscribeCallback: ((status: string) => void) | undefined;
 
 const realtimeMock = {
-  channel: vi.fn(() => ({
-    subscribe: vi.fn((cb: (status: string) => void) => {
-      channelSubscribeCallback = cb;
-      return { unsubscribe: vi.fn() };
-    }),
-  })),
   connect: vi.fn(),
   onHeartbeat: vi.fn(),
   setAuth: vi.fn(),
@@ -19,6 +13,12 @@ const realtimeMock = {
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
+    channel: vi.fn(() => ({
+      subscribe: vi.fn((cb: (status: string) => void) => {
+        channelSubscribeCallback = cb;
+        return { unsubscribe: vi.fn() };
+      }),
+    })),
     realtime: realtimeMock,
   })),
 }));

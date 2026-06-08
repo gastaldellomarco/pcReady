@@ -1997,10 +1997,236 @@ export type Database = {
           },
         ]
       }
+      device_attachments: {
+        Row: {
+          created_at: string
+          description: string | null
+          device_id: string
+          file_name: string
+          file_size: number | null
+          id: string
+          lifecycle_phase: string
+          mime_type: string | null
+          storage_bucket: string
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          device_id: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          lifecycle_phase: string
+          mime_type?: string | null
+          storage_bucket?: string
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          device_id?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          lifecycle_phase?: string
+          mime_type?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_attachments_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_checkouts: {
+        Row: {
+          checkin_at: string | null
+          checkin_signature_id: string | null
+          checkout_at: string
+          checkout_signature_id: string | null
+          condition_notes: string | null
+          created_at: string
+          device_id: string
+          id: string
+          technician_id: string
+          ticket_id: string
+        }
+        Insert: {
+          checkin_at?: string | null
+          checkin_signature_id?: string | null
+          checkout_at?: string
+          checkout_signature_id?: string | null
+          condition_notes?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          technician_id: string
+          ticket_id: string
+        }
+        Update: {
+          checkin_at?: string | null
+          checkin_signature_id?: string | null
+          checkout_at?: string
+          checkout_signature_id?: string | null
+          condition_notes?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          technician_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_checkouts_checkin_signature_id_fkey"
+            columns: ["checkin_signature_id"]
+            isOneToOne: false
+            referencedRelation: "document_signatures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_checkouts_checkout_signature_id_fkey"
+            columns: ["checkout_signature_id"]
+            isOneToOne: false
+            referencedRelation: "document_signatures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_checkouts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_checkouts_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_checkouts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_checkouts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_lifecycle_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          device_id: string
+          id: string
+          notes: string | null
+          phase: string
+          previous_phase: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          device_id: string
+          id?: string
+          notes?: string | null
+          phase: string
+          previous_phase?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          device_id?: string
+          id?: string
+          notes?: string | null
+          phase?: string
+          previous_phase?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_lifecycle_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_lifecycle_history_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_software: {
+        Row: {
+          device_id: string
+          first_seen_at: string
+          id: string
+          install_date: string | null
+          last_seen_at: string
+          publisher: string | null
+          software_name: string
+          version: string
+        }
+        Insert: {
+          device_id: string
+          first_seen_at?: string
+          id?: string
+          install_date?: string | null
+          last_seen_at?: string
+          publisher?: string | null
+          software_name: string
+          version: string
+        }
+        Update: {
+          device_id?: string
+          first_seen_at?: string
+          id?: string
+          install_date?: string | null
+          last_seen_at?: string
+          publisher?: string | null
+          software_name?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_software_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           asset_tag: string
           assigned_to: string | null
+          azure_ad_device_id: string | null
           bluetooth: string | null
           brand: string | null
           category: string
@@ -2013,8 +2239,10 @@ export type Database = {
           device_type: string
           ethernet: string | null
           firmware_version: string | null
+          hostname: string | null
           id: string
           ip_address: unknown
+          last_ad_sync_at: string | null
           license_expiry: string | null
           location: string | null
           location_desk: string | null
@@ -2049,6 +2277,7 @@ export type Database = {
           updated_at: string
           vlan_config: string | null
           warranty_expiry_date: string | null
+          warranty_expiry_notified_for: string | null
           warranty_notes: string | null
           warranty_provider: string | null
           warranty_type: string | null
@@ -2057,6 +2286,7 @@ export type Database = {
         Insert: {
           asset_tag: string
           assigned_to?: string | null
+          azure_ad_device_id?: string | null
           bluetooth?: string | null
           brand?: string | null
           category?: string
@@ -2069,8 +2299,10 @@ export type Database = {
           device_type?: string
           ethernet?: string | null
           firmware_version?: string | null
+          hostname?: string | null
           id?: string
           ip_address?: unknown
+          last_ad_sync_at?: string | null
           license_expiry?: string | null
           location?: string | null
           location_desk?: string | null
@@ -2105,6 +2337,7 @@ export type Database = {
           updated_at?: string
           vlan_config?: string | null
           warranty_expiry_date?: string | null
+          warranty_expiry_notified_for?: string | null
           warranty_notes?: string | null
           warranty_provider?: string | null
           warranty_type?: string | null
@@ -2113,6 +2346,7 @@ export type Database = {
         Update: {
           asset_tag?: string
           assigned_to?: string | null
+          azure_ad_device_id?: string | null
           bluetooth?: string | null
           brand?: string | null
           category?: string
@@ -2125,8 +2359,10 @@ export type Database = {
           device_type?: string
           ethernet?: string | null
           firmware_version?: string | null
+          hostname?: string | null
           id?: string
           ip_address?: unknown
+          last_ad_sync_at?: string | null
           license_expiry?: string | null
           location?: string | null
           location_desk?: string | null
@@ -2161,6 +2397,7 @@ export type Database = {
           updated_at?: string
           vlan_config?: string | null
           warranty_expiry_date?: string | null
+          warranty_expiry_notified_for?: string | null
           warranty_notes?: string | null
           warranty_provider?: string | null
           warranty_type?: string | null
@@ -2181,28 +2418,37 @@ export type Database = {
           client_id: string
           contact_id: string
           created_at: string
+          device_id: string | null
           document_id: string
+          document_type: string
           id: string
           signature_path: string
           signed_at: string
+          ticket_id: string | null
         }
         Insert: {
           client_id: string
           contact_id: string
           created_at?: string
+          device_id?: string | null
           document_id: string
+          document_type?: string
           id?: string
           signature_path: string
           signed_at?: string
+          ticket_id?: string | null
         }
         Update: {
           client_id?: string
           contact_id?: string
           created_at?: string
+          device_id?: string | null
           document_id?: string
+          document_type?: string
           id?: string
           signature_path?: string
           signed_at?: string
+          ticket_id?: string | null
         }
         Relationships: [
           {
@@ -2217,6 +2463,27 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_cost_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -2653,6 +2920,91 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          permission: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          permission: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          permission?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      script_favorites: {
+        Row: {
+          created_at: string | null
+          script_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          script_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          script_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_favorites_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      script_share_links: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_revoked: boolean | null
+          password_hash: string
+          script_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          password_hash: string
+          script_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          password_hash?: string
+          script_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_share_links_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scripts: {
         Row: {
           category: string
@@ -2665,6 +3017,8 @@ export type Database = {
           id: string
           language: string
           name: string
+          parameters: Json | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -2678,6 +3032,8 @@ export type Database = {
           id?: string
           language?: string
           name: string
+          parameters?: Json | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -2691,6 +3047,35 @@ export type Database = {
           id?: string
           language?: string
           name?: string
+          parameters?: Json | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      software_catalog: {
+        Row: {
+          category: string | null
+          id: string
+          latest_version: string
+          name: string
+          publisher: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          id?: string
+          latest_version: string
+          name: string
+          publisher?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          id?: string
+          latest_version?: string
+          name?: string
+          publisher?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4023,6 +4408,7 @@ export type Database = {
     Functions: {
       _ref_val: { Args: { key_: string }; Returns: string }
       archive_completed_tickets: { Args: never; Returns: undefined }
+      evaluate_device_deprecation: { Args: never; Returns: undefined }
       get_sla_resolution_hours: {
         Args: {
           ticket_priority: Database["public"]["Enums"]["ticket_priority"]
@@ -4064,8 +4450,87 @@ export type Database = {
         Returns: string
       }
       refresh_ticket_sla_breaches: { Args: never; Returns: number }
+      replace_role_permissions: {
+        Args: { _permissions: string[]; _role: string }
+        Returns: undefined
+      }
       run_client_contract_alerts: { Args: never; Returns: undefined }
       run_maintenance_automations: { Args: never; Returns: undefined }
+      send_warranty_expiry_alerts: { Args: never; Returns: undefined }
+      sync_azure_ad_device: {
+        Args: {
+          _assigned_to: string
+          _azure_ad_device_id: string
+          _hostname: string
+          _os: string
+        }
+        Returns: {
+          asset_tag: string
+          assigned_to: string | null
+          azure_ad_device_id: string | null
+          bluetooth: string | null
+          brand: string | null
+          category: string
+          client_id: string
+          cpu_cores: number | null
+          cpu_frequency_ghz: number | null
+          cpu_name: string | null
+          created_at: string
+          created_by: string | null
+          device_type: string
+          ethernet: string | null
+          firmware_version: string | null
+          hostname: string | null
+          id: string
+          ip_address: unknown
+          last_ad_sync_at: string | null
+          license_expiry: string | null
+          location: string | null
+          location_desk: string | null
+          location_floor: string | null
+          location_office: string | null
+          mac_address: unknown
+          model: string
+          notes: string | null
+          os: string | null
+          os_architecture: string | null
+          os_version: string | null
+          page_count: number | null
+          poe_supported: boolean | null
+          port_count: number | null
+          print_technology: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          rack_position: string | null
+          ram_frequency_mhz: number | null
+          ram_gb: number | null
+          ram_type: string | null
+          screen_resolution: string | null
+          screen_size_inches: number | null
+          screen_type: string | null
+          serial: string | null
+          server_role: string | null
+          status: Database["public"]["Enums"]["device_status"]
+          storage_capacity_gb: number | null
+          storage_drive_count: number | null
+          storage_type: string | null
+          toner_model: string | null
+          updated_at: string
+          vlan_config: string | null
+          warranty_expiry_date: string | null
+          warranty_expiry_notified_for: string | null
+          warranty_notes: string | null
+          warranty_provider: string | null
+          warranty_type: string | null
+          wifi: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "devices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       validate_action_types: { Args: { actions: Json }; Returns: boolean }
     }
     Enums: {

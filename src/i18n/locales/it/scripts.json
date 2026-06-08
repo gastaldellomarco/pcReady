@@ -20,16 +20,28 @@
     "install": "Installazione",
     "security": "Sicurezza"
   },
+  "favorites": {
+    "section": "Preferiti",
+    "add": "Aggiungi ai preferiti",
+    "remove": "Rimuovi dai preferiti"
+  },
+  "tags": {
+    "placeholder": "Aggiungi tag...",
+    "filterLabel": "Filtra per tag"
+  },
   "card": {
     "open": "Apri →",
     "edit": "Modifica",
-    "delete": "Elimina"
+    "delete": "Elimina",
+    "moreTags": "+{{count}}"
   },
   "viewer": {
     "close": "Chiudi",
     "versions": "Versioni",
     "download": "Scarica",
     "copy": "Copia",
+    "share": "Condividi",
+    "runWithParams": "Esegui con parametri",
     "emptyScript": "// Script vuoto",
     "copied": "Script copiato negli appunti",
     "edit": "Modifica",
@@ -59,6 +71,21 @@
     "fieldDescription": "Descrizione",
     "fieldContent": "Contenuto script *",
     "fieldChangeNote": "Nota modifica (opzionale)",
+    "fieldTags": "Tag",
+    "fieldParameters": "Parametri",
+    "addParameter": "Aggiungi parametro",
+    "removeParameter": "Rimuovi parametro",
+    "parametersHelp": "Usa {{nome_parametro}} nel codice per inserire il valore a runtime.",
+    "noParameters": "Nessun parametro definito.",
+    "paramName": "nome_var",
+    "paramNameLabel": "Nome variabile",
+    "paramLabel": "Etichetta",
+    "paramLabelLabel": "Etichetta parametro",
+    "paramType": "Tipo parametro",
+    "paramTypeText": "Testo",
+    "paramTypeNumber": "Numero",
+    "paramTypeBoolean": "Sì/No",
+    "paramRequired": "Obbligatorio",
     "namePlaceholder": "Reset Windows Update",
     "descriptionPlaceholder": "Cosa fa questo script?",
     "contentPlaceholder": "# Il tuo codice qui...",
@@ -68,6 +95,42 @@
       "contentRequired": "Lo script è vuoto",
       "saveFailed": "Errore salvataggio"
     }
+  },
+  "runner": {
+    "title": "Parametri richiesti",
+    "description": "Compila i parametri prima di eseguire lo script.",
+    "requiredField": "Campo obbligatorio",
+    "cancel": "Annulla",
+    "run": "Esegui"
+  },
+  "share": {
+    "title": "Condividi script",
+    "description": "Genera un link protetto da password per condividere questo script con un cliente.",
+    "password": "Password *",
+    "passwordPlaceholder": "Password per il cliente",
+    "passwordRequired": "La password è obbligatoria",
+    "expiry": "Scadenza",
+    "expiry24h": "24 ore",
+    "expiry7d": "7 giorni",
+    "expiry30d": "30 giorni",
+    "expiryNever": "Mai",
+    "generate": "Genera link",
+    "generating": "Generazione...",
+    "linkCreated": "Link creato",
+    "createError": "Errore creazione link",
+    "linkReady": "Link pronto",
+    "copyLink": "Copia link",
+    "copied": "Link copiato",
+    "close": "Chiudi",
+    "warning": "Chiunque abbia il link e la password può scaricare questo script.",
+    "existingLinks": "Link esistenti",
+    "validUntil": "Valido fino al {{date}}",
+    "expired": "Scaduto",
+    "never": "Mai",
+    "revoke": "Revoca",
+    "revoked": "Link revocato",
+    "revokeError": "Errore revoca link",
+    "pageTitle": "Script condiviso — PCReady"
   },
   "delete": {
     "title": "Eliminare questo script?",
