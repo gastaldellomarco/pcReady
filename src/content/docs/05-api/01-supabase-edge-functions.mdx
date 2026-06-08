@@ -6,7 +6,7 @@ order: 1
 
 # Supabase Server Functions
 
-pcReady uses TanStack Start's `createServerFn` to define server-side logic that executes in Cloudflare Workers with access to the Supabase service role key.
+pcReady uses TanStack Start's `createServerFn` to define server-side logic that executes with access to the Supabase service role key.
 
 ## Server function pattern
 
@@ -14,7 +14,7 @@ pcReady uses TanStack Start's `createServerFn` to define server-side logic that 
 sequenceDiagram
     participant Browser
     participant SFn as createServerFn
-    participant Worker as Cloudflare Worker
+    participant Worker as Server Function
     participant Supabase as Supabase (service_role)
     participant DB as Postgres
 
@@ -31,9 +31,9 @@ sequenceDiagram
 
 ## How they execute
 
-Server functions run in Cloudflare Workers — not in Supabase Edge Functions. This means:
+Server functions run server-side — not in Supabase Edge Functions. This means:
 
-- Access to Node.js-compatible APIs (via `nodejs_compat` flag in Wrangler)
+- Access to Node.js-compatible APIs
 - Access to environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `SMTP_*`, etc.)
 - Not subject to Supabase Edge Function limits
 

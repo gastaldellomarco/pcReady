@@ -96,7 +96,7 @@ export async function sendEmail(
 
   if ("WebSocketPair" in globalThis) {
     console.warn(
-      "SMTP diretto non supportato in Cloudflare Workers: email non inviata. " +
+      "SMTP diretto non supportato in questo ambiente server: email non inviata. " +
         "Configurare un provider HTTP per l'invio email in produzione.",
     );
     return;

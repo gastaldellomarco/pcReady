@@ -24,7 +24,7 @@ You need two sets of Supabase variables — one for the client (browser) and one
 
 ### Server-side variables
 
-These are read at runtime by server functions (Cloudflare Workers). They must **never** be exposed to the browser.
+These are read at runtime by server functions. They must **never** be exposed to the browser.
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
@@ -121,8 +121,6 @@ For GitHub Actions, configure these repository secrets:
 |--------|---------|
 | `SUPABASE_URL` | CI, Deploy |
 | `SUPABASE_ANON_KEY` | CI |
-| `CLOUDFLARE_API_TOKEN` | Deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | Deploy |
 
 ## Next steps
 

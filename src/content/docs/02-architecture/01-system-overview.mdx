@@ -6,7 +6,7 @@ order: 1
 
 # System Overview
 
-pcReady follows a modern single-page application (SPA) architecture backed by Supabase as a Backend-as-a-Service (BaaS). There is no traditional backend server — business logic runs in server functions executed by Cloudflare Workers.
+pcReady follows a modern single-page application (SPA) architecture backed by Supabase as a Backend-as-a-Service (BaaS). There is no traditional backend server — business logic runs in server functions.
 
 ## Technology stack
 
@@ -17,11 +17,11 @@ pcReady follows a modern single-page application (SPA) architecture backed by Su
 | **Styling** | Tailwind CSS 4 + shadcn/ui components |
 | **State management** | TanStack Query (server state) + React hooks (UI state) |
 | **Backend / BaaS** | Supabase (Postgres, Auth, RLS, Realtime, Storage) |
-| **Server functions** | TanStack Start `createServerFn` → Cloudflare Workers |
+| **Server functions** | TanStack Start `createServerFn` |
 | **Build tool** | Vite 7 |
 | **Package manager** | Bun |
 | **Testing** | Vitest (unit) + Playwright (E2E) |
-| **Deployment** | Cloudflare Workers via Wrangler |
+| **Deployment** | Vite + Bun |
 
 ## High-level architecture
 
@@ -32,7 +32,7 @@ graph TB
         Router["TanStack Router"]
         Query["TanStack Query"]
     end
-    subgraph Edge["Cloudflare Workers"]
+    subgraph Edge["Server Functions"]
         SFn["Server Functions"]
     end
     subgraph Supabase["Supabase"]

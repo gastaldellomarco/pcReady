@@ -500,7 +500,7 @@ package.json                          (new dependencies)
 - **Client vs Server variables** — `VITE_*` prefix (build-time, embedded in bundle) vs unprefixed (runtime, server-only). Security: never put `SERVICE_ROLE_KEY` in a `VITE_*` var
 - **SMTP / Email** — `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` for nodemailer
 - **Optional vars** — `VITE_DEPLOYMENT_LABEL`, `VITE_MAINTENANCE_MODE`/`VITE_MAINTENANCE_END`, Upstash Redis for distributed rate limiting
-- **CI/CD secrets** — GitHub Secrets needed: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- **CI/CD secrets** — GitHub Secrets needed: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
 
 ---
 
@@ -541,7 +541,7 @@ package.json                          (new dependencies)
 - **Unit tests** — `bun run test` (Vitest), `bun run test:watch`, coverage reports
 - **E2E tests** — `bun run test:e2e` (Playwright), test files in `e2e/`: auth-flow, kanban-drag, ticket-flow
 - **Database utilities** — `bun run db:backup`, `bun run db:reset`
-- **CI/CD pipeline** — GitHub Actions: CI on PR (lint, typecheck, migrations check, build), deploy on push to main (Cloudflare Workers)
+- **CI/CD pipeline** — GitHub Actions: CI on PR (lint, typecheck, migrations check, build), deploy on push to main
 
 ---
 
@@ -556,14 +556,14 @@ package.json                          (new dependencies)
 | Field | Value |
 |-------|-------|
 | **Frontmatter title** | `System Overview` |
-| **Mermaid diagrams** | `graph TB` — Full stack: Browser ↔ Cloudflare Workers ↔ Vite/React ↔ Supabase (Auth, DB, Storage, Realtime) |
+| **Mermaid diagrams** | `graph TB` — Full stack: Browser ↔ Server Functions ↔ Vite/React ↔ Supabase (Auth, DB, Storage, Realtime) |
 | | `graph TB` — Source tree: routes/ → components/ → lib/ → integrations/supabase/ → Postgres |
 | **Code examples** | `vite.config.ts` alias config, `tsconfig.json` path aliases, `src/router.tsx` |
 
 **Content sections:**
 
-- **Technology stack** — React 19 + TypeScript, TanStack Router/Start (file-based routing), Vite 7, Supabase (Postgres + Auth + RLS + Realtime), shadcn/ui + Tailwind CSS 4, Cloudflare Workers (Wrangler)
-- **High-level architecture** — SPA served by Cloudflare Workers, Supabase as BaaS (auth, database, real-time), no traditional backend server
+- **Technology stack** — React 19 + TypeScript, TanStack Router/Start (file-based routing), Vite 7, Supabase (Postgres + Auth + RLS + Realtime), shadcn/ui + Tailwind CSS 4
+- **High-level architecture** — SPA served by server functions, Supabase as BaaS (auth, database, real-time), no traditional backend server
 - **Directory conventions** — What goes where: `src/lib/` (business logic), `src/components/` (UI), `src/routes/` (pages), `src/hooks/` (custom hooks), `src/integrations/` (third-party)
 - **Import aliases** — `@/` → `src/`, `@root/` → project root
 - **Key libraries** — TanStack Query (server state), React Hook Form + Zod (forms/validation), Recharts (charts), ReactFlow (flow diagrams), CodeMirror (code editor), jsPDF/pdfkit/@react-pdf/renderer (PDFs)
@@ -582,7 +582,7 @@ package.json                          (new dependencies)
 **Content sections:**
 
 - **Request lifecycle** — TanStack Router matches URL → lazy-loads route component → component mounts → queries fire → data renders
-- **Server functions** — `createServerFn` pattern: server-only code that runs in Cloudflare Workers, called from client like a regular async function
+- **Server functions** — `createServerFn` pattern: server-only code that runs server-side, called from client like a regular async function
 - **TanStack Query layer** — `useQuery` / `useMutation` for server state; caching, refetching, optimistic updates
 - **Supabase client** — Two clients: browser client (`VITE_SUPABASE_*` vars, RLS-enforced) and server client (`SUPABASE_SERVICE_ROLE_KEY`, bypasses RLS)
 - **Real-time subscriptions** — Supabase Realtime for live updates on tickets, devices, notifications; `useRealtimeTable` hook
@@ -758,13 +758,13 @@ package.json                          (new dependencies)
 | Field | Value |
 |-------|-------|
 | **Frontmatter title** | `Supabase Server Functions` |
-| **Mermaid diagrams** | `sequenceDiagram` — Client → TanStack Start server fn → Cloudflare Worker → Supabase (auth check → query → RLS) → response |
+| **Mermaid diagrams** | `sequenceDiagram` — Client → TanStack Start server fn → Server Function → Supabase (auth check → query → RLS) → response |
 | **Code examples** | `createServerFn` pattern, rate limiting, auth validation, Supabase admin client usage |
 
 **Content sections:**
 
 - **Server function pattern** — `createServerFn` from TanStack Start: define server-only logic, callable from client like a normal function
-- **How they execute** — Run in Cloudflare Workers (not Supabase Edge Functions); access to `SUPABASE_SERVICE_ROLE_KEY`
+- **How they execute** — Run server-side (not Supabase Edge Functions); access to `SUPABASE_SERVICE_ROLE_KEY`
 - **Key server functions** — Ticket creation/completion, device CRUD, automation execution, user management, notification dispatch, PDF generation, audit logging
 - **Authentication** — Server functions validate the caller's session token before executing
 - **Rate limiting** — In-memory sliding window (single process) or distributed via Upstash Redis; configurable limits per function

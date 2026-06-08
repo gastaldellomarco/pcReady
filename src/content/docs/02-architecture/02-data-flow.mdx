@@ -35,18 +35,18 @@ sequenceDiagram
 
 ## Server functions
 
-For mutations and sensitive operations, pcReady uses TanStack Start server functions (`createServerFn`). These execute in Cloudflare Workers with access to the Supabase service role key.
+For mutations and sensitive operations, pcReady uses TanStack Start server functions (`createServerFn`). These execute with access to the Supabase service role key.
 
 ```mermaid
 sequenceDiagram
     participant Browser
     participant SFn as createServerFn
-    participant Worker as Cloudflare Worker
+    participant Worker as Server Function
     participant Supabase as Supabase (service_role)
     participant DB as Postgres
 
     Browser->>SFn: Call function
-    SFn->>Worker: Execute in worker
+    SFn->>Worker: Execute server-side
     Worker->>Worker: Validate session token
     Worker->>Supabase: Query with service_role
     Supabase->>DB: Bypasses RLS
@@ -64,7 +64,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 export const createTicket = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
-    // Runs in Cloudflare Worker
+    // Runs server-side
     // Has access to SUPABASE_SERVICE_ROLE_KEY
     const supabase = createAdminClient();
 
