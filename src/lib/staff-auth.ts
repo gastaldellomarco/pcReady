@@ -8,7 +8,7 @@ const LoginSchema = z.object({
 });
 
 export const staffLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: any) => LoginSchema.parse(d))
+  .validator(LoginSchema)
   .handler(async ({ data }) => {
     const { staffLoginServer } = await import("@/lib/server/staff-auth.server");
     return staffLoginServer(data as any);

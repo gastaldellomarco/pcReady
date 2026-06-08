@@ -78,13 +78,13 @@ export function Modal({
 
   // Desktop: render as centered modal
   return createPortal(
-    <button
-      type="button"
-      tabIndex={-1}
-      className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8 border-0"
+    <div
+      className="fixed inset-0 z-[500] flex items-start justify-center overflow-y-auto p-0 sm:px-4 sm:py-8"
       style={{ background: "rgba(0,0,0,.45)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
-      aria-label="Chiudi"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -124,7 +124,7 @@ export function Modal({
           </div>
         )}
       </div>
-    </button>,
+    </div>,
     document.body,
   );
 }

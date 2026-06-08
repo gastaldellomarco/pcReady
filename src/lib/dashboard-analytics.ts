@@ -60,7 +60,7 @@ const AnalyticsInputSchema = z.object({
 });
 
 export const getDashboardAnalytics = createServerFn({ method: "GET" })
-  .inputValidator((data: z.input<typeof AnalyticsInputSchema>) => AnalyticsInputSchema.parse(data))
+  .validator(AnalyticsInputSchema)
   .handler(async ({ data }): Promise<DashboardAnalytics> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
@@ -317,7 +317,7 @@ export function computeTechnicianStats(
 }
 
 export const getTechnicianStats = createServerFn({ method: "GET" })
-  .inputValidator((data: any) => data)
+  .validator(z.any())
   .handler(async ({ data }): Promise<any[]> => {
     const period = (data?.period as string) ?? "week";
     const now = new Date();
@@ -378,7 +378,7 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
   });
 
 export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
-  .inputValidator((data: any) => data)
+  .validator(z.any())
   .handler(async ({ data }): Promise<any> => {
     const weekOffset = Number(data?.weekOffset || 0); // 0 = current week, -1 previous, +1 next
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -475,8 +475,10 @@ export interface OverdueTicketRow {
   sla_breached?: boolean | null;
 }
 
+const OverdueTicketsSchema = z.object({ accessToken: z.string(), thresholdDays: z.number().optional() })
+
 export const getOverdueTickets = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string; thresholdDays?: number }) => data)
+  .validator(OverdueTicketsSchema)
   .handler(async ({ data }): Promise<OverdueTicketRow[]> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(data.accessToken);
@@ -527,9 +529,7 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
   });
 
 export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
-  .inputValidator((data: any) => {
-    return data;
-  })
+  .validator(z.any())
   .handler(async ({ data }): Promise<any> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(

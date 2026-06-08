@@ -8,6 +8,9 @@ interface ScriptParametersRunnerProps {
   onCancel: () => void;
 }
 
+/**
+ *
+ */
 export function ScriptParametersRunner({ parameters, onApply, onCancel }: ScriptParametersRunnerProps) {
   const { t } = useTranslation("scripts");
   const [values, setValues] = useState<Record<string, string>>({});

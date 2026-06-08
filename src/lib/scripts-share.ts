@@ -39,7 +39,7 @@ function sha256Hash(input: string): string {
 }
 
 export const createScriptShareLink = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => CreateShareLinkSchema.parse(data))
+  .validator(CreateShareLinkSchema)
   .handler(async ({ data: validated }) => {
     const supabaseAny = supabaseAdmin as any;
 
@@ -65,7 +65,7 @@ export const createScriptShareLink = createServerFn({ method: "POST" })
   });
 
 export const validateScriptShareToken = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => ValidateShareLinkSchema.parse(data))
+  .validator(ValidateShareLinkSchema)
   .handler(async ({ data: validated }) => {
     const supabaseAny = supabaseAdmin as any;
 
@@ -95,7 +95,7 @@ export const validateScriptShareToken = createServerFn({ method: "POST" })
   });
 
 export const revokeScriptShareLink = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => RevokeShareLinkSchema.parse(data))
+  .validator(RevokeShareLinkSchema)
   .handler(async ({ data: validated }) => {
     const supabaseAny = supabaseAdmin as any;
 
@@ -109,7 +109,7 @@ export const revokeScriptShareLink = createServerFn({ method: "POST" })
   });
 
 export const listScriptShareLinks = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => ListShareLinksSchema.parse(data))
+  .validator(ListShareLinksSchema)
   .handler(async ({ data: validated }) => {
     const supabaseAny = supabaseAdmin as any;
 

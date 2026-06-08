@@ -103,16 +103,15 @@ const RunInputSchema = AutomationInputSchema.extend({
 });
 
 export const listAutomationRunLogs = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof AutomationInputSchema>) => data)
+  .validator(AutomationInputSchema)
   .handler(async ({ data }) => {
-    const input = AutomationInputSchema.parse(data);
     const { requireAutomationRunnerUser, supabaseAdmin } = await import("./automation-runs.server");
-    await requireAutomationRunnerUser(input.accessToken);
+    await requireAutomationRunnerUser(data.accessToken);
 
     const { data: rows, error } = await supabaseAdmin
       .from("automation_run_logs" as any)
       .select(AUTOMATION_RUN_LOG_SELECT)
-      .eq("automation_id", input.automationId)
+      .eq("automation_id", data.automationId)
       .order("triggered_at", { ascending: false })
       .limit(20);
     if (error) throw error;
@@ -127,11 +126,10 @@ const GlobalLogsAuthedSchema = AuthedSchema.extend({
 });
 
 export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof GlobalLogsAuthedSchema>) => data)
+  .validator(GlobalLogsAuthedSchema)
   .handler(async ({ data }) => {
-    const input = GlobalLogsAuthedSchema.parse(data);
     const { requireAutomationRunnerUser, supabaseAdmin } = await import("./automation-runs.server");
-    await requireAutomationRunnerUser(input.accessToken);
+    await requireAutomationRunnerUser(data.accessToken);
 
     let query = supabaseAdmin
       .from("automation_run_logs" as any)
@@ -139,17 +137,17 @@ export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
       .order("triggered_at", { ascending: false })
       .limit(200);
 
-    if (input.automationId) {
-      query = query.eq("automation_id", input.automationId);
+    if (data.automationId) {
+      query = query.eq("automation_id", data.automationId);
     }
-    if (input.status) {
-      query = query.eq("status", input.status);
+    if (data.status) {
+      query = query.eq("status", data.status);
     }
-    if (input.dateFrom) {
-      query = query.gte("triggered_at", input.dateFrom);
+    if (data.dateFrom) {
+      query = query.gte("triggered_at", data.dateFrom);
     }
-    if (input.dateTo) {
-      query = query.lte("triggered_at", input.dateTo);
+    if (data.dateTo) {
+      query = query.lte("triggered_at", data.dateTo);
     }
 
     const { data: rows, error } = await query;
@@ -160,29 +158,27 @@ export const listAllAutomationRunLogs = createServerFn({ method: "POST" })
   });
 
 export const runAutomationNow = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof RunInputSchema>) => data)
+  .validator(RunInputSchema)
   .handler(async ({ data }) => {
-    const input = RunInputSchema.parse(data);
     const { executeAutomationFlow, requireAutomationRunnerUser } =
       await import("./automation-runs.server");
-    const user = await requireAutomationRunnerUser(input.accessToken);
+    const user = await requireAutomationRunnerUser(data.accessToken);
     return executeAutomationFlow({
-      flowId: input.automationId,
-      trigger: input.isDryRun ? "manual_dry_run" : "manual_run",
-      input: input.triggerPayload ?? {},
+      flowId: data.automationId,
+      trigger: data.isDryRun ? "manual_dry_run" : "manual_run",
+      input: data.triggerPayload ?? {},
       triggeredBy: user.id,
-      isDryRun: input.isDryRun,
+      isDryRun: data.isDryRun,
     });
   });
 
 export const executeDryRun = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof DryRunInputSchema>) => data)
+  .validator(DryRunInputSchema)
   .handler(async ({ data }) => {
-    const input = DryRunInputSchema.parse(data);
     const { requireAutomationRunnerUser, simulateAutomationDryRun } =
       await import("./automation-runs.server");
-    await requireAutomationRunnerUser(input.accessToken);
-    return simulateAutomationDryRun(input.flowId);
+    await requireAutomationRunnerUser(data.accessToken);
+    return simulateAutomationDryRun(data.flowId);
   });
 
 const ExecuteAutomationFlowSchema = AuthedSchema.extend({
@@ -194,28 +190,26 @@ const ExecuteAutomationFlowSchema = AuthedSchema.extend({
 
 /** Esecuzione runtime con trigger e payload strutturato (stesso runner di "Esegui ora"). */
 export const executeAutomationFlow = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof ExecuteAutomationFlowSchema>) => data)
+  .validator(ExecuteAutomationFlowSchema)
   .handler(async ({ data }) => {
-    const input = ExecuteAutomationFlowSchema.parse(data);
     const { executeAutomationFlow: runFlow, requireAutomationRunnerUser } =
       await import("./automation-runs.server");
-    const user = await requireAutomationRunnerUser(input.accessToken);
+    const user = await requireAutomationRunnerUser(data.accessToken);
     return runFlow({
-      flowId: input.flowId,
-      trigger: input.trigger,
-      input: input.input,
+      flowId: data.flowId,
+      trigger: data.trigger,
+      input: data.input,
       triggeredBy: user.id,
-      isDryRun: input.isDryRun ?? false,
+      isDryRun: data.isDryRun ?? false,
     });
   });
 
 export const getAutomationRunStats = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof AuthedSchema>) => data)
+  .validator(AuthedSchema)
   .handler(async ({ data }) => {
-    const input = AuthedSchema.parse(data);
     const { computeHealth, requireAutomationRunnerUser, supabaseAdmin } =
       await import("./automation-runs.server");
-    await requireAutomationRunnerUser(input.accessToken);
+    await requireAutomationRunnerUser(data.accessToken);
 
     const { data: flows, error: flowsError } = await supabaseAdmin
       .from("automation_flows" as any)

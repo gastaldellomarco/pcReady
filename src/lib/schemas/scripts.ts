@@ -7,6 +7,9 @@ const ScriptParameterSchema = z.object({
   required: z.boolean().default(false),
 });
 
+/**
+ *
+ */
 export type ScriptParameter = z.infer<typeof ScriptParameterSchema>;
 
 export const ScriptSchema = z.object({

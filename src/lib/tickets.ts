@@ -58,9 +58,7 @@ function createSupabaseForAccessToken(accessToken: string) {
 }
 
 export const createTicket = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof CreateTicketInputSchema>) =>
-    CreateTicketInputSchema.parse(data),
-  )
+  .validator(CreateTicketInputSchema)
   .handler(async ({ data }) => {
     const supabase = createSupabaseForAccessToken(data.accessToken);
     const {

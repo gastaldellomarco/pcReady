@@ -1,11 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
-interface Input {
-  accessToken: string;
-}
+const CheckAdminSchema = z.object({ accessToken: z.string() });
 
 export const checkAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: Input) => d)
+  .validator(CheckAdminSchema)
   .handler(async ({ data }) => {
     const { requireAdmin } = await import("./admin-users.server");
     try {

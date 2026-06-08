@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, Lock, ShieldAlert } from "lucide-react";
 import { useState } from "react";
+import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
 import i18n from "@/i18n";
 import { buildDownloadFileName, downloadText } from "@/lib/downloads";
-import { validateScriptShareToken } from "@/lib/scripts-share.server";
-import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
+import { validateScriptShareToken } from "@/lib/scripts-share";
 
 const REASON_MAP: Record<string, string> = {
   token_invalid: "Link non valido.",
@@ -87,8 +87,7 @@ function SharedScriptPage() {
             </div>
             <div>
               <h1
-                className="text-xl font-bold"
-                style={{ fontFamily: "var(--font-head)" }}
+                className="text-xl font-bold font-head"
               >
                 {script.name}
               </h1>
@@ -126,8 +125,7 @@ function SharedScriptPage() {
         <div className="text-center">
           <Lock className="size-10 mx-auto mb-2" style={{ color: "var(--accent)" }} />
           <h1
-            className="text-lg font-bold"
-            style={{ fontFamily: "var(--font-head)" }}
+            className="text-lg font-bold font-head"
           >
             Script condiviso
           </h1>

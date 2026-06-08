@@ -87,7 +87,7 @@ export async function staffLoginServer(data: {
 
 // Export a server-only createServerFn for direct server usage (kept for completeness)
 export const staffLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: any) => LoginSchema.parse(d))
+  .validator(LoginSchema)
   .handler(async ({ data }) => {
     return staffLoginServer(data as any);
   });

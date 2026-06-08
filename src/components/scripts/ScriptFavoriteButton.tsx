@@ -7,6 +7,9 @@ interface ScriptFavoriteButtonProps {
   size?: "sm" | "md";
 }
 
+/**
+ *
+ */
 export function ScriptFavoriteButton({
   scriptId,
   favored,

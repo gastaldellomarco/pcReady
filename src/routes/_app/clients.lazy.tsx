@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/clipboard";
 import { ClientActivityTimeline } from "@/components/clients/ClientActivityTimeline";
 import { ClientDocumentsPanel } from "@/components/clients/ClientDocumentsPanel";
 import { ClientNotesPanel } from "@/components/clients/ClientNotesPanel";
@@ -661,11 +662,11 @@ function ClientsPage() {
 
   async function copyPortalLink() {
     if (!portalLink?.loginUrl) return;
-    try {
-      await navigator.clipboard.writeText(portalLink.loginUrl);
+    const ok = await copyToClipboard(portalLink.loginUrl);
+    if (ok) {
       setCopiedPortalLink(true);
       setTimeout(() => setCopiedPortalLink(false), 2000);
-    } catch {
+    } else {
       toast.error(t("errors.cannotCopyLink", "Impossibile copiare il link"));
     }
   }

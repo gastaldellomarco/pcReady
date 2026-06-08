@@ -64,49 +64,49 @@ const Portal2FALoginSchema = z.object({
 });
 
 export const requestPortalLogin = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => RequestPortalLoginSchema.parse(data))
+  .validator(RequestPortalLoginSchema)
   .handler(async ({ data }) => {
     const { requestPortalLoginServer } = await import("@/lib/portal-auth.server");
     return requestPortalLoginServer(data);
   });
 
 export const loginPortalWithPassword = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalPasswordLoginSchema.parse(data))
+  .validator(PortalPasswordLoginSchema)
   .handler(async ({ data }) => {
     const { loginPortalWithPasswordServer } = await import("@/lib/portal-auth.server");
     return loginPortalWithPasswordServer(data);
   });
 
 export const validatePortalSession = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { validatePortalSessionServer } = await import("@/lib/portal-auth.server");
     return validatePortalSessionServer(data);
   });
 
 export const updatePortalContactProfile = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalProfileUpdateSchema.parse(data))
+  .validator(PortalProfileUpdateSchema)
   .handler(async ({ data }) => {
     const { updatePortalContactProfileServer } = await import("@/lib/portal-auth-profile.server");
     return updatePortalContactProfileServer(data);
   });
 
 export const updatePortalContactLanguage = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalLanguageSchema.parse(data))
+  .validator(PortalLanguageSchema)
   .handler(async ({ data }) => {
     const { updatePortalContactLanguageServer } = await import("@/lib/portal-auth-profile.server");
     return updatePortalContactLanguageServer(data);
   });
 
 export const getPortalAccessHistory = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalAccessHistorySchema.parse(data))
+  .validator(PortalAccessHistorySchema)
   .handler(async ({ data }) => {
     const { getPortalAccessHistoryServer } = await import("@/lib/portal-auth-profile.server");
     return getPortalAccessHistoryServer(data);
   });
 
 export const updatePortalNotificationPreferences = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalNotificationPrefsSchema.parse(data))
+  .validator(PortalNotificationPrefsSchema)
   .handler(async ({ data }) => {
     const { updatePortalNotificationPreferencesServer } =
       await import("@/lib/portal-auth-profile.server");
@@ -114,49 +114,49 @@ export const updatePortalNotificationPreferences = createServerFn({ method: "POS
   });
 
 export const setupPortal2FA = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => Portal2FASetupSchema.parse(data))
+  .validator(Portal2FASetupSchema)
   .handler(async ({ data }) => {
     const { setupPortal2FAServer } = await import("@/lib/portal-auth-2fa.server");
     return setupPortal2FAServer(data);
   });
 
 export const verifyPortal2FA = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => Portal2FAVerifySchema.parse(data))
+  .validator(Portal2FAVerifySchema)
   .handler(async ({ data }) => {
     const { verifyPortal2FAServer } = await import("@/lib/portal-auth-2fa.server");
     return verifyPortal2FAServer(data);
   });
 
 export const generatePortalAccessLink = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalContactLinkSchema.parse(data))
+  .validator(PortalContactLinkSchema)
   .handler(async ({ data }) => {
     const { generatePortalAccessLinkServer } = await import("@/lib/portal-auth-links.server");
     return generatePortalAccessLinkServer(data);
   });
 
 export const revokePortalAccessLink = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => RevokePortalContactLinkSchema.parse(data))
+  .validator(RevokePortalContactLinkSchema)
   .handler(async ({ data }) => {
     const { revokePortalAccessLinkServer } = await import("@/lib/portal-auth-links.server");
     return revokePortalAccessLinkServer(data);
   });
 
 export const getPortalClientContacts = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { getPortalClientContactsServer } = await import("@/lib/portal-auth.server");
     return getPortalClientContactsServer(data);
   });
 
 export const verifyPortalLogin2FA = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => Portal2FALoginSchema.parse(data))
+  .validator(Portal2FALoginSchema)
   .handler(async ({ data }) => {
     const { verifyPortalLogin2FAServer } = await import("@/lib/portal-auth.server");
     return verifyPortalLogin2FAServer(data);
   });
 
 export const logoutPortalSession = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { logoutPortalSessionServer } = await import("@/lib/portal-auth.server");
     return logoutPortalSessionServer(data);

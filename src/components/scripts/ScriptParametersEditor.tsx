@@ -8,6 +8,9 @@ interface ScriptParametersEditorProps {
   disabled?: boolean;
 }
 
+/**
+ *
+ */
 export function ScriptParametersEditor({ value, onChange, disabled }: ScriptParametersEditorProps) {
   const { t } = useTranslation("scripts");
 

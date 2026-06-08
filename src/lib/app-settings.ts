@@ -147,8 +147,13 @@ const KanbanColumnNotesSchema = z
   })
   .default({});
 
+const SettingsAuthedSchema = z.object({ accessToken: z.string() });
+const AssigneeIdSchema = z.object({ assigneeId: z.string() });
+const KanbanUpdateSchema = z.object({ accessToken: z.string(), wip_limits: WipLimitsSchema, kanban_column_colors: KanbanColumnColorsSchema.optional(), kanban_column_notes: KanbanColumnNotesSchema.optional() });
+const AppSettingsUpdateSchema = z.object({ accessToken: z.string(), settings: z.any() })
+
 export const getAppSettings = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(SettingsAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     await requireAdmin(accessToken);
 
@@ -160,7 +165,7 @@ export const getAppSettings = createServerFn({ method: "GET" })
   });
 
 export const getPublicAppSettings = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(SettingsAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
@@ -246,7 +251,7 @@ export function getClientAppSettings(): AppSettings {
  * This can be called from client code (via `useServerFn`) before assigning/creating device tickets.
  */
 export const validateTechnicianDeviceLimit = createServerFn({ method: "POST" })
-  .inputValidator((data: { assigneeId: string }) => data)
+  .validator(AssigneeIdSchema)
   .handler(async ({ data: { assigneeId } }) => {
     // Count active device tickets assigned to this technician
     const { data, error, count } = await supabaseAdmin
@@ -273,7 +278,7 @@ export const validateTechnicianDeviceLimit = createServerFn({ method: "POST" })
   });
 
 export const getKanbanAppSettings = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(SettingsAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
@@ -305,14 +310,7 @@ export const getKanbanAppSettings = createServerFn({ method: "GET" })
   });
 
 export const updateKanbanAppSettings = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: {
-      accessToken: string;
-      wip_limits: WipLimits;
-      kanban_column_colors?: KanbanColumnColors;
-      kanban_column_notes?: KanbanColumnNotes;
-    }) => data,
-  )
+  .validator(KanbanUpdateSchema)
   .handler(
     async ({ data: { accessToken, wip_limits, kanban_column_colors, kanban_column_notes } }) => {
       const userId = await requireAdmin(accessToken);
@@ -346,7 +344,7 @@ export const updateKanbanAppSettings = createServerFn({ method: "POST" })
   );
 
 export const updateAppSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; settings: AppSettings }) => data)
+  .validator(AppSettingsUpdateSchema)
   .handler(async ({ data: { accessToken, settings } }) => {
     const userId = await requireAdmin(accessToken);
 

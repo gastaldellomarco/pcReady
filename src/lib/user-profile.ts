@@ -123,6 +123,11 @@ const ProfileUpdateSchema = z.object({
   webhook_url: z.string().trim().max(500).nullable().optional(),
 });
 
+const ProfAuthedSchema = z.object({ accessToken: z.string() });
+const ProfUpdateSchema = z.object({ accessToken: z.string(), profile: ProfileUpdateSchema });
+const ProfLayoutSchema = z.object({ accessToken: z.string(), layout: z.any() });
+const ProfPwdSchema = z.object({ accessToken: z.string(), password: z.string() })
+
 const ChangePasswordSchema = z.object({
   password: z.string().min(8, "La password deve avere almeno 8 caratteri"),
 });
@@ -146,7 +151,7 @@ function normalizeInitials(name: string) {
 }
 
 export const getMyProfile = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(ProfAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const user = await getAuthedUser(accessToken);
 
@@ -222,7 +227,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
   });
 
 export const getMyTechnicianOverview = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(ProfAuthedSchema)
   .handler(async ({ data: { accessToken } }): Promise<TechnicianProfileOverview> => {
     const user = await getAuthedUser(accessToken);
     const closedStatuses = ["ready", "completed", "archived"];
@@ -367,9 +372,7 @@ export const getMyTechnicianOverview = createServerFn({ method: "GET" })
   });
 
 export const updateMyProfile = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; profile: z.input<typeof ProfileUpdateSchema> }) => data,
-  )
+  .validator(ProfUpdateSchema)
   .handler(async ({ data: { accessToken, profile } }) => {
     const user = await getAuthedUser(accessToken);
     const validated = ProfileUpdateSchema.parse(profile);
@@ -409,7 +412,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   });
 
 export const getMyDashboardLayout = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(ProfAuthedSchema)
   .handler(async ({ data: { accessToken } }): Promise<DashboardLayout | null> => {
     const user = await getAuthedUser(accessToken);
 
@@ -428,7 +431,7 @@ export const getMyDashboardLayout = createServerFn({ method: "GET" })
   });
 
 export const updateMyDashboardLayout = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; layout: DashboardLayout }) => data)
+  .validator(ProfLayoutSchema)
   .handler(async ({ data: { accessToken, layout } }) => {
     const user = await getAuthedUser(accessToken);
 
@@ -446,7 +449,7 @@ export const updateMyDashboardLayout = createServerFn({ method: "POST" })
   });
 
 export const changePassword = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; password: string }) => data)
+  .validator(ProfPwdSchema)
   .handler(async ({ data: { accessToken, password } }) => {
     const user = await getAuthedUser(accessToken);
     const validated = ChangePasswordSchema.parse({ password });

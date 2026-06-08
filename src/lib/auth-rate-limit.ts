@@ -16,9 +16,7 @@ const StaffLoginEmailSchema = z.object({
  * Honest clients call this first; abuse mitigation also relies on Supabase Auth limits.
  */
 export const assertStaffLoginRateLimit = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof StaffLoginEmailSchema>) =>
-    StaffLoginEmailSchema.parse(data),
-  )
+  .validator(StaffLoginEmailSchema)
   .handler(async ({ data }) => {
     const email = data.email.trim().toLowerCase();
     throwIfRateLimited(`email:${email}`, RATE_LIMITER_KEYS.STAFF_PASSWORD_LOGIN);

@@ -830,7 +830,7 @@ function InventoryPage() {
               </div>
             ) : !data.length ? (
               <div className="pc-card pc-card-body text-center text-sm text-text3">
-                {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
+                { }
                 <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t("empty.mobile")) }} />
               </div>
             ) : data.length > 20 ? (
@@ -941,7 +941,7 @@ function InventoryPage() {
                   ) : !data.length ? (
                     <tr>
                       <td colSpan={13} className="text-center py-12 text-text3 text-sm">
-                        {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
+                        { }
                         <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t("empty.desktop")) }} />
                       </td>
                     </tr>

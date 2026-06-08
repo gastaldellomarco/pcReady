@@ -28,8 +28,13 @@ async function getAuthedUser(accessToken: string) {
  * Server function: lists all annotations for the authenticated user,
  * optionally filtered by widgetId.
  */
+const WAnnListSchema = z.object({ accessToken: z.string(), widgetId: z.string().optional() });
+const WAnnCreateSchema = z.object({ accessToken: z.string(), annotation: z.object({ widget_id: z.string(), text: z.string(), note_date: z.string().nullable().optional() }) });
+const WAnnUpdateSchema = z.object({ accessToken: z.string(), annotationId: z.string(), updates: z.object({ text: z.string().optional(), note_date: z.string().nullable().optional() }) });
+const WAnnDeleteSchema = z.object({ accessToken: z.string(), annotationId: z.string() });
+
 export const listWidgetAnnotations = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; widgetId?: string }) => data)
+  .validator(WAnnListSchema)
   .handler(async ({ data: { accessToken, widgetId } }) => {
     const user = await getAuthedUser(accessToken);
 
@@ -54,13 +59,16 @@ export const CreateAnnotationSchema = z.object({
   note_date: z.string().nullable().optional(),
 });
 
+export const UpdateAnnotationSchema = z.object({
+  text: z.string().min(1).max(500).optional(),
+  note_date: z.string().nullable().optional(),
+});
+
 /**
  * Server function: creates a new widget annotation for the authenticated user.
  */
 export const createWidgetAnnotation = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { accessToken: string; annotation: z.input<typeof CreateAnnotationSchema> }) => data,
-  )
+  .validator(WAnnCreateSchema)
   .handler(async ({ data: { accessToken, annotation } }) => {
     const user = await getAuthedUser(accessToken);
     const input = CreateAnnotationSchema.parse(annotation);
@@ -80,22 +88,12 @@ export const createWidgetAnnotation = createServerFn({ method: "POST" })
     return row as Database["public"]["Tables"]["widget_annotations"]["Row"];
   });
 
-export const UpdateAnnotationSchema = z.object({
-  text: z.string().min(1).max(500).optional(),
-  note_date: z.string().nullable().optional(),
-});
 
 /**
  * Server function: updates an existing annotation owned by the authenticated user.
  */
 export const updateWidgetAnnotation = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: {
-      accessToken: string;
-      annotationId: string;
-      updates: z.input<typeof UpdateAnnotationSchema>;
-    }) => data,
-  )
+  .validator(WAnnUpdateSchema)
   .handler(async ({ data: { accessToken, annotationId, updates } }) => {
     const user = await getAuthedUser(accessToken);
     const input = UpdateAnnotationSchema.parse(updates);
@@ -119,7 +117,7 @@ export const updateWidgetAnnotation = createServerFn({ method: "POST" })
  * Server function: deletes an annotation owned by the authenticated user.
  */
 export const deleteWidgetAnnotation = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; annotationId: string }) => data)
+  .validator(WAnnDeleteSchema)
   .handler(async ({ data: { accessToken, annotationId } }) => {
     const user = await getAuthedUser(accessToken);
 

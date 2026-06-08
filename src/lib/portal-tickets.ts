@@ -50,70 +50,70 @@ const PortalDocumentSignSchema = z.object({
 });
 
 export const getPortalDashboard = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { getPortalDashboardServer } = await import("@/lib/portal-tickets.server");
     return getPortalDashboardServer(data);
   });
 
 export const listPortalTickets = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTicketListSchema.parse(data))
+  .validator(PortalTicketListSchema)
   .handler(async ({ data }) => {
     const { listPortalTicketsServer } = await import("@/lib/portal-tickets.server");
     return listPortalTicketsServer(data);
   });
 
 export const getPortalTicketDetail = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTicketDetailSchema.parse(data))
+  .validator(PortalTicketDetailSchema)
   .handler(async ({ data }) => {
     const { getPortalTicketDetailServer } = await import("@/lib/portal-tickets.server");
     return getPortalTicketDetailServer(data);
   });
 
 export const createPortalTicket = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => NewPortalTicketSchema.parse(data))
+  .validator(NewPortalTicketSchema)
   .handler(async ({ data }) => {
     const { createPortalTicketServer } = await import("@/lib/portal-tickets.server");
     return createPortalTicketServer(data);
   });
 
 export const submitPortalTicketFeedback = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTicketFeedbackSchema.parse(data))
+  .validator(PortalTicketFeedbackSchema)
   .handler(async ({ data }) => {
     const { submitPortalTicketFeedbackServer } = await import("@/lib/portal-tickets.server");
     return submitPortalTicketFeedbackServer(data);
   });
 
 export const getPortalProfileOverview = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { getPortalProfileOverviewServer } = await import("@/lib/portal-tickets.server");
     return getPortalProfileOverviewServer(data);
   });
 
 export const getPortalTicketCategories = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { getPortalTicketCategoriesServer } = await import("@/lib/portal-tickets.server");
     return getPortalTicketCategoriesServer(data);
   });
 
 export const listPortalDevices = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { listPortalDevicesServer } = await import("@/lib/portal-devices.server");
     return listPortalDevicesServer(data);
   });
 
 export const listPortalDocuments = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalTokenSchema.parse(data))
+  .validator(PortalTokenSchema)
   .handler(async ({ data }) => {
     const { listPortalDocumentsServer } = await import("@/lib/portal-documents.server");
     return listPortalDocumentsServer(data);
   });
 
 export const signPortalDocument = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => PortalDocumentSignSchema.parse(data))
+  .validator(PortalDocumentSignSchema)
   .handler(async ({ data }) => {
     const { signPortalDocumentServer } = await import("@/lib/portal-documents.server");
     return signPortalDocumentServer(data);

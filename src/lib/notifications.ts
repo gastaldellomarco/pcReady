@@ -65,8 +65,12 @@ const ListNotificationsSchema = z.object({
   type: z.enum(NOTIFICATION_TYPES).nullable().optional(),
 });
 
+const NotifAuthedSchema = z.object({ accessToken: z.string() });
+const NotifCreateSchema = z.object({ accessToken: z.string(), notification: CreateNotificationSchema });
+const NotifMarkReadSchema = z.object({ accessToken: z.string(), notificationId: z.string() })
+
 export const createNotification = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; notification: CreateNotificationParams }) => data)
+  .validator(NotifCreateSchema)
   .handler(async ({ data: { accessToken, notification } }) => {
     const { createNotificationForUser, getAuthedNotificationUser } =
       await import("./notifications.server");
@@ -79,13 +83,12 @@ export const createNotification = createServerFn({ method: "POST" })
 const NOTIFICATION_SELECT = "id, user_id, type, title, body, payload, link, read_at, created_at";
 
 export const listNotifications = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof ListNotificationsSchema>) => data)
+  .validator(ListNotificationsSchema)
   .handler(async ({ data }) => {
-    const input = ListNotificationsSchema.parse(data);
     const { getAuthedNotificationUser, supabaseAdmin } = await import("./notifications.server");
-    const user = await getAuthedNotificationUser(input.accessToken);
-    const from = input.page * input.limit;
-    const to = from + input.limit - 1;
+    const user = await getAuthedNotificationUser(data.accessToken);
+    const from = data.page * data.limit;
+    const to = from + data.limit - 1;
 
     let query = supabaseAdmin
       .from("notifications" as any)
@@ -93,8 +96,8 @@ export const listNotifications = createServerFn({ method: "POST" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (input.unreadOnly) query = query.is("read_at", null);
-    if (input.type) query = query.eq("type", input.type);
+    if (data.unreadOnly) query = query.is("read_at", null);
+    if (data.type) query = query.eq("type", data.type);
 
     const { data: rows, count, error } = await query.range(from, to);
     if (error) throw error;
@@ -106,7 +109,7 @@ export const listNotifications = createServerFn({ method: "POST" })
   });
 
 export const getUnreadNotificationCount = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(NotifAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { getAuthedNotificationUser, supabaseAdmin } = await import("./notifications.server");
     const user = await getAuthedNotificationUser(accessToken);
@@ -120,7 +123,7 @@ export const getUnreadNotificationCount = createServerFn({ method: "GET" })
   });
 
 export const markNotificationRead = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; notificationId: string }) => data)
+  .validator(NotifMarkReadSchema)
   .handler(async ({ data: { accessToken, notificationId } }) => {
     const { getAuthedNotificationUser, markNotificationReadForUser } =
       await import("./notifications.server");
@@ -129,7 +132,7 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   });
 
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(NotifAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { getAuthedNotificationUser, markAllNotificationsReadForUser } =
       await import("./notifications.server");
@@ -138,7 +141,7 @@ export const markAllNotificationsRead = createServerFn({ method: "POST" })
   });
 
 export const deleteReadNotifications = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(NotifAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { getAuthedNotificationUser, supabaseAdmin } = await import("./notifications.server");
     const user = await getAuthedNotificationUser(accessToken);

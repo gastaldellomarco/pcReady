@@ -1,16 +1,17 @@
 import { Copy, Link2, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Modal } from "@/components/pcready/Modal";
 import { Field } from "@/components/ui/form-field";
 import { useAuth } from "@/lib/auth-context";
 import { errorMessage } from "@/lib/errors";
+import { copyToClipboard } from "@/lib/clipboard";
 import {
   createScriptShareLink,
   listScriptShareLinks,
   revokeScriptShareLink,
-} from "@/lib/scripts-share.server";
+} from "@/lib/scripts-share";
 
 interface ShareLink {
   id: string;
@@ -26,6 +27,9 @@ interface ScriptShareDialogProps {
   onClose: () => void;
 }
 
+/**
+ *
+ */
 export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialogProps) {
   const { t } = useTranslation("scripts");
   const { session } = useAuth();
@@ -35,13 +39,10 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
   const [links, setLinks] = useState<ShareLink[]>([]);
   const [generatedUrl, setGeneratedUrl] = useState("");
 
-  useEffect(() => {
-    if (open && session?.access_token) {
-      loadLinks();
-    }
-  }, [open, session?.access_token]);
+  const mountedRef = useRef(true);
+  mountedRef.current = true; // always true during render, survives Strict Mode double-fire
 
-  async function loadLinks() {
+  const loadLinks = useCallback(async () => {
     if (!session?.access_token) return;
     try {
       const data = await listScriptShareLinks({
@@ -50,11 +51,25 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
           scriptId,
         },
       });
-      setLinks((data ?? []) as ShareLink[]);
+      if (mountedRef.current) {
+        setLinks((data ?? []) as ShareLink[]);
+      }
     } catch {
       // silently fail
     }
-  }
+  }, [session?.access_token, scriptId]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (open && session?.access_token) {
+      loadLinks().catch(() => {});
+    }
+  }, [open, loadLinks]);
 
   async function generateLink() {
     if (!password.trim()) {
@@ -106,9 +121,13 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
     }
   }
 
-  function copyUrl(url: string) {
-    navigator.clipboard.writeText(url);
-    toast.success(t("share.copied", "Link copiato"));
+  async function copyUrl(url: string) {
+    const ok = await copyToClipboard(url);
+    if (ok) {
+      toast.success(t("share.copied", "Link copiato"));
+    } else {
+      toast.error(t("share.copyError", "Seleziona e copia il link manualmente"));
+    }
   }
 
   function formatExpiry(expiresAt: string | null) {

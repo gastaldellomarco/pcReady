@@ -12,30 +12,22 @@ import type { OAuthScope } from "@/lib/oauth-scopes";
  *
  */
 export type OAuthClientStatus = Database["public"]["Enums"]["oauth_client_status"];
-
-interface AuthedInput {
-  accessToken: string;
-}
-
-interface ValidateOAuthRequestInput extends AuthedInput {
-  clientId: string;
-  redirectUri: string;
-  scope: string;
-  state?: string;
-}
-
-interface GrantConsentInput extends AuthedInput {
-  clientId: string;
-  redirectUri: string;
-  scopes: OAuthScope[];
-  state?: string;
-}
+import { z } from "zod";
 
 interface DenyConsentInput {
   clientId: string;
   redirectUri: string;
   state?: string;
 }
+
+const OAuthAuthedSchema = z.object({ accessToken: z.string() });
+const OAuthValidateSchema = z.object({ accessToken: z.string(), clientId: z.string(), redirectUri: z.string(), scope: z.string(), state: z.string().optional() });
+const OAuthGrantSchema = z.object({ accessToken: z.string(), clientId: z.string(), redirectUri: z.string(), scopes: z.array(z.string()), state: z.string().optional() });
+const OAuthCreateClientSchema = z.object({ accessToken: z.string(), name: z.string(), description: z.string().optional(), redirectUris: z.array(z.string()), scopesAllowed: z.array(z.string()) });
+const OAuthStatusSchema = z.object({ accessToken: z.string(), clientId: z.string(), nextStatus: z.string() });
+const OAuthRotateSchema = z.object({ accessToken: z.string(), clientId: z.string() });
+const OAuthLifecycleSchema = z.object({ accessToken: z.string(), clientId: z.string() });
+const OAuthDenySchema = z.object({ clientId: z.string(), redirectUri: z.string(), state: z.string().optional() });
 
 async function requireAdminUserId(accessToken: string): Promise<{ userId: string }> {
   const token = accessToken?.trim();
@@ -163,7 +155,7 @@ export interface OAuthClientLifecyclePayload {
 
 // Validate OAuth request parameters
 export const validateOAuthRequest = createServerFn({ method: "POST" })
-  .inputValidator((data: ValidateOAuthRequestInput) => data)
+  .validator(OAuthValidateSchema)
   .handler(async ({ data }): Promise<OAuthValidationResult> => {
     const token = data.accessToken?.trim();
     if (!token) throw new Response("Unauthorized", { status: 401 });
@@ -219,7 +211,7 @@ export const validateOAuthRequest = createServerFn({ method: "POST" })
 
 // Grant consent and generate authorization code
 export const grantConsent = createServerFn({ method: "POST" })
-  .inputValidator((data: GrantConsentInput) => data)
+  .validator(OAuthGrantSchema)
   .handler(async ({ data }): Promise<{ redirectUrl: string }> => {
     const token = data.accessToken?.trim();
     if (!token) throw new Response("Unauthorized", { status: 401 });
@@ -279,18 +271,9 @@ export const grantConsent = createServerFn({ method: "POST" })
     };
   });
 
-interface CreateOAuthClientInput extends AuthedInput {
-  name: string;
-  description?: string;
-  redirectUris: string[];
-  scopesAllowed: OAuthScope[];
-}
-
-type ListOAuthClientsInput = AuthedInput;
-
 // List OAuth clients (admin only)
 export const listOAuthClients = createServerFn({ method: "POST" })
-  .inputValidator((data: ListOAuthClientsInput) => data)
+  .validator(OAuthAuthedSchema)
   .handler(async ({ data }): Promise<OAuthClientInfo[]> => {
     const { userId } = await requireAdminUserId(data.accessToken);
     void userId;
@@ -319,7 +302,7 @@ export const listOAuthClients = createServerFn({ method: "POST" })
 
 // Create OAuth client (admin only)
 export const createOAuthClient = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateOAuthClientInput) => data)
+  .validator(OAuthCreateClientSchema)
   .handler(async ({ data }): Promise<OAuthClientCreated> => {
     const { userId } = await requireAdminUserId(data.accessToken);
 
@@ -368,13 +351,8 @@ export const createOAuthClient = createServerFn({ method: "POST" })
     };
   });
 
-interface SetOAuthClientStatusInput extends AuthedInput {
-  clientId: string;
-  nextStatus: OAuthClientStatus;
-}
-
 export const setOAuthClientStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: SetOAuthClientStatusInput) => data)
+  .validator(OAuthStatusSchema)
   .handler(async ({ data }): Promise<{ ok: true; status: OAuthClientStatus }> => {
     const { userId } = await requireAdminUserId(data.accessToken);
 
@@ -386,7 +364,7 @@ export const setOAuthClientStatus = createServerFn({ method: "POST" })
     if (fetchErr || !row) throw new Response("Client non trovato", { status: 404 });
 
     const prev = (row as any).status as OAuthClientStatus;
-    const next = data.nextStatus;
+    const next = data.nextStatus as OAuthClientStatus;
     if (prev === "revoked") {
       throw new Response("Client gia' revocato: non e' possibile modificarlo.", { status: 400 });
     }
@@ -425,12 +403,8 @@ export const setOAuthClientStatus = createServerFn({ method: "POST" })
     return { ok: true, status: next };
   });
 
-interface RotateOAuthSecretInput extends AuthedInput {
-  clientId: string;
-}
-
 export const rotateOAuthClientSecret = createServerFn({ method: "POST" })
-  .inputValidator((data: RotateOAuthSecretInput) => data)
+  .validator(OAuthRotateSchema)
   .handler(async ({ data }): Promise<{ clientId: string; clientSecret: string }> => {
     const { userId } = await requireAdminUserId(data.accessToken);
 
@@ -463,12 +437,8 @@ export const rotateOAuthClientSecret = createServerFn({ method: "POST" })
     return { clientId: data.clientId, clientSecret: newSecret };
   });
 
-interface GetOAuthClientLifecycleInput extends AuthedInput {
-  clientId: string;
-}
-
 export const getOAuthClientLifecycle = createServerFn({ method: "POST" })
-  .inputValidator((data: GetOAuthClientLifecycleInput) => data)
+  .validator(OAuthLifecycleSchema)
   .handler(async ({ data }): Promise<OAuthClientLifecyclePayload> => {
     await requireAdminUserId(data.accessToken);
     const clientId = data.clientId;
@@ -541,7 +511,7 @@ export const getOAuthClientLifecycle = createServerFn({ method: "POST" })
 
 // Deny consent
 export const denyConsent = createServerFn({ method: "POST" })
-  .inputValidator((data: DenyConsentInput) => data)
+  .validator(OAuthDenySchema)
   .handler(async ({ data }): Promise<{ redirectUrl: string }> => {
     return {
       redirectUrl: buildDenyConsentRedirect(data),

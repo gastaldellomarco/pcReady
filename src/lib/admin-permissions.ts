@@ -2,15 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ALL_PERMISSIONS } from "@/lib/auth-context";
 import { requireAdmin } from "./admin-users.server";
-
-interface AuthedInput {
-  accessToken: string;
-}
-
-interface SavePermissionsInput extends AuthedInput {
-  role: string;
-  permissions: string[];
-}
+import { z } from "zod";
 
 /**
  *
@@ -24,8 +16,11 @@ export interface RolePermissions {
  * Lists all role-permission assignments for every role.
  * Admin always returns all permissions (not stored in DB).
  */
+const PermAuthedSchema = z.object({ accessToken: z.string() });
+const PermSaveSchema = z.object({ accessToken: z.string(), role: z.string(), permissions: z.array(z.string()) });
+
 export const listRolePermissions = createServerFn({ method: "POST" })
-  .inputValidator((data: AuthedInput) => data)
+  .validator(PermAuthedSchema)
   .handler(async ({ data }): Promise<RolePermissions[]> => {
     await requireAdmin(data.accessToken);
 
@@ -63,7 +58,7 @@ export const listRolePermissions = createServerFn({ method: "POST" })
  * Admin permissions are immutable and cannot be changed.
  */
 export const saveRolePermissions = createServerFn({ method: "POST" })
-  .inputValidator((data: SavePermissionsInput) => data)
+  .validator(PermSaveSchema)
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
 

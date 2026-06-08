@@ -8,6 +8,9 @@ interface ScriptTagInputProps {
   disabled?: boolean;
 }
 
+/**
+ *
+ */
 export function ScriptTagInput({ value, onChange, suggestions = [], disabled }: ScriptTagInputProps) {
   const [input, setInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);

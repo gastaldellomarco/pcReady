@@ -6,6 +6,7 @@ import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { requireAdmin } from "./admin-users.server";
 import type { AppRole } from "@/lib/auth-context";
+import { z } from "zod";
 
 /**
  *
@@ -22,38 +23,6 @@ export interface AdminUserRow {
   invited_at: string | null;
   mfa_enabled: boolean;
   mfa_required: boolean;
-}
-
-interface AuthedInput {
-  accessToken: string;
-}
-
-interface UpdateUserInput extends AuthedInput {
-  userId: string;
-  role: AppRole;
-  fullName?: string;
-  initials?: string;
-}
-
-interface UserStateInput extends AuthedInput {
-  userId: string;
-  disabled: boolean;
-}
-
-interface DeleteUserInput extends AuthedInput {
-  userId: string;
-}
-
-interface InviteUserInput extends AuthedInput {
-  email: string;
-  fullName?: string;
-  role: AppRole;
-  redirectTo?: string;
-}
-
-interface ResendInviteInput extends AuthedInput {
-  userId: string;
-  redirectTo?: string;
 }
 
 const APP_ROLES: AppRole[] = ["admin", "tech", "viewer"];
@@ -91,8 +60,15 @@ async function assertCanRemoveAdmin(targetUserId: string, nextRole?: AppRole) {
     throw new Response("Impossibile rimuovere l'ultimo amministratore", { status: 400 });
 }
 
+const AdmAuthedSchema = z.object({ accessToken: z.string() });
+const AdmUpdateSchema = z.object({ accessToken: z.string(), userId: z.string(), role: z.string(), fullName: z.string().optional(), initials: z.string().optional() });
+const AdmInviteSchema = z.object({ accessToken: z.string(), email: z.string(), fullName: z.string().optional(), role: z.string(), redirectTo: z.string().optional() });
+const AdmResendSchema = z.object({ accessToken: z.string(), userId: z.string(), redirectTo: z.string().optional() });
+const AdmStateSchema = z.object({ accessToken: z.string(), userId: z.string(), disabled: z.boolean() });
+const AdmDeleteSchema = z.object({ accessToken: z.string(), userId: z.string() });
+
 export const listAdminUsers = createServerFn({ method: "POST" })
-  .inputValidator((data: AuthedInput) => data)
+  .validator(AdmAuthedSchema)
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
 
@@ -157,12 +133,12 @@ export const listAdminUsers = createServerFn({ method: "POST" })
   });
 
 export const updateAdminUser = createServerFn({ method: "POST" })
-  .inputValidator((data: UpdateUserInput) => data)
+  .validator(AdmUpdateSchema)
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
-    if (!APP_ROLES.includes(data.role)) throw new Response("Ruolo non valido", { status: 400 });
+    if (!APP_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
 
-    await assertCanRemoveAdmin(data.userId, data.role);
+    await assertCanRemoveAdmin(data.userId, data.role as AppRole);
 
     const fullName = data.fullName?.trim();
     if (fullName !== undefined) {
@@ -181,7 +157,7 @@ export const updateAdminUser = createServerFn({ method: "POST" })
 
     const { error: insertError } = await supabaseAdmin.from("user_roles").insert({
       user_id: data.userId,
-      role: data.role,
+      role: data.role as AppRole,
     });
     if (insertError) throw new Error(insertError.message);
 
@@ -189,11 +165,11 @@ export const updateAdminUser = createServerFn({ method: "POST" })
   });
 
 export const inviteAdminUser = createServerFn({ method: "POST" })
-  .inputValidator((data: InviteUserInput) => data)
+  .validator(AdmInviteSchema)
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
     throwIfRateLimited(actorId, RATE_LIMITER_KEYS.INVITE_ADMIN_USER);
-    if (!APP_ROLES.includes(data.role)) throw new Response("Ruolo non valido", { status: 400 });
+    if (!APP_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
 
     const email = data.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
@@ -231,7 +207,7 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
 
     const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
       user_id: invitedUserId,
-      role: data.role,
+      role: data.role as AppRole,
     });
     if (roleError) throw new Error(roleError.message);
 
@@ -247,7 +223,7 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
   });
 
 export const resendAdminUserInvite = createServerFn({ method: "POST" })
-  .inputValidator((data: ResendInviteInput) => data)
+  .validator(AdmResendSchema)
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
 
@@ -270,7 +246,7 @@ export const resendAdminUserInvite = createServerFn({ method: "POST" })
   });
 
 export const setAdminUserDisabled = createServerFn({ method: "POST" })
-  .inputValidator((data: UserStateInput) => data)
+  .validator(AdmStateSchema)
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
     if (actorId === data.userId)
@@ -286,7 +262,7 @@ export const setAdminUserDisabled = createServerFn({ method: "POST" })
   });
 
 export const deleteAdminUser = createServerFn({ method: "POST" })
-  .inputValidator((data: DeleteUserInput) => data)
+  .validator(AdmDeleteSchema)
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
     if (actorId === data.userId)

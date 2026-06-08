@@ -106,6 +106,9 @@ export function useUpdateScript() {
 }
 
 // ── Tags ──
+/**
+ *
+ */
 export async function fetchScriptTags(): Promise<string[]> {
   const { data: raw, error } = await supabase
     .from("scripts")
@@ -119,6 +122,9 @@ export async function fetchScriptTags(): Promise<string[]> {
 }
 
 // ── Favorites ──
+/**
+ *
+ */
 export function useScriptFavorites(userId: string | undefined) {
   return useQuery({
     queryKey: ["scripts", "favorites", userId],
@@ -135,6 +141,9 @@ export function useScriptFavorites(userId: string | undefined) {
   });
 }
 
+/**
+ *
+ */
 export function useToggleFavorite() {
   const qc = useQueryClient();
   return useMutation({

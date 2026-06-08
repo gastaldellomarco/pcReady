@@ -24,6 +24,9 @@ const CreateTemplateSchema = z.object({
   eventType: EmailEventSchema,
 });
 
+const ListTemplatesSchema = z.object({ accessToken: z.string().min(1) });
+const GetTemplateSchema = z.object({ accessToken: z.string().min(1), eventType: EmailEventSchema })
+
 type LegacyEmailTemplate = {
   id: string;
   subject: string;
@@ -46,42 +49,42 @@ export function getTemplates() {
 }
 
 export const listEmailTemplates = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(ListTemplatesSchema)
   .handler(async ({ data }) => {
     const { listEmailTemplatesServer } = await import("@/lib/email-templates.server");
     return listEmailTemplatesServer(data);
   });
 
 export const getEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; eventType: EmailEventType }) => data)
+  .validator(GetTemplateSchema)
   .handler(async ({ data }) => {
     const { getEmailTemplateServer } = await import("@/lib/email-templates.server");
     return getEmailTemplateServer(data);
   });
 
 export const updateEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => TemplateUpdateSchema.parse(data))
+  .validator(TemplateUpdateSchema)
   .handler(async ({ data }) => {
     const { updateEmailTemplateServer } = await import("@/lib/email-templates.server");
     return updateEmailTemplateServer(data);
   });
 
 export const sendTestEmail = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => TestEmailSchema.parse(data))
+  .validator(TestEmailSchema)
   .handler(async ({ data }) => {
     const { sendTestEmailServer } = await import("@/lib/email-templates.server");
     return sendTestEmailServer(data);
   });
 
 export const createDefaultEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => CreateTemplateSchema.parse(data))
+  .validator(CreateTemplateSchema)
   .handler(async ({ data }) => {
     const { createDefaultEmailTemplateServer } = await import("@/lib/email-templates.server");
     return createDefaultEmailTemplateServer(data);
   });
 
 export const resetEmailTemplate = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => CreateTemplateSchema.parse(data))
+  .validator(CreateTemplateSchema)
   .handler(async ({ data }) => {
     const { resetEmailTemplateServer } = await import("@/lib/email-templates.server");
     return resetEmailTemplateServer(data);

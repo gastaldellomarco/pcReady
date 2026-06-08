@@ -1551,7 +1551,7 @@ function QrCodeBox({ qrCode }: { qrCode: string }) {
       </div>
     );
   if (qrCode.trim().startsWith("<svg")) {
-    // eslint-disable-next-line react/no-danger -- QR code SVG from Supabase Auth enroll(); trusted provider output
+     
     return (
       <div
         className="mx-auto flex w-fit justify-center rounded-lg border bg-white p-4"

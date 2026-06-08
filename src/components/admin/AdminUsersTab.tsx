@@ -689,7 +689,7 @@ export function AdminUsersTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("users.delete.title", "Rimuovi utente")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {/* eslint-disable-next-line react/no-danger -- translation HTML sanitized with DOMPurify */}
+              { }
               <div
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(

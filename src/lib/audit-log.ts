@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildDownloadFileName } from "@/lib/export-format";
 import { requireAdmin } from "./admin-users.server";
@@ -61,11 +62,10 @@ export type AuditLogUserOption = {
   count: number;
 };
 
+const AuditAuthedSchema = z.object({ accessToken: z.string() });
+
 export const getAuditLog = createServerFn({ method: "GET" })
-  .inputValidator(
-    (data: { accessToken: string; page?: number; pageSize?: number; filters?: AuditLogFilters }) =>
-      data,
-  )
+  .validator(z.object({ accessToken: z.string(), page: z.number().optional(), pageSize: z.number().optional(), filters: z.any().optional() }))
   .handler(async ({ data: { accessToken, page = 1, pageSize = 25, filters } }) => {
     await requireAdmin(accessToken);
 
@@ -179,7 +179,7 @@ export const getAuditLog = createServerFn({ method: "GET" })
   });
 
 export const getAuditLogKpi = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(AuditAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     await requireAdmin(accessToken);
 
@@ -212,7 +212,7 @@ export const getAuditLogKpi = createServerFn({ method: "GET" })
   });
 
 export const getAuditLogUsers = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(AuditAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     await requireAdmin(accessToken);
 
@@ -239,7 +239,7 @@ export const getAuditLogUsers = createServerFn({ method: "GET" })
   });
 
 export const getCriticalEvents = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string; limit?: number }) => data)
+  .validator(z.object({ accessToken: z.string(), limit: z.number().optional() }))
   .handler(async ({ data: { accessToken, limit = 5 } }) => {
     await requireAdmin(accessToken);
 
@@ -284,7 +284,7 @@ export const getCriticalEvents = createServerFn({ method: "GET" })
   });
 
 export const exportAuditLog = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string; filters?: AuditLogFilters }) => data)
+  .validator(z.object({ accessToken: z.string(), filters: z.any().optional() }))
   .handler(async ({ data: { accessToken, filters } }) => {
     await requireAdmin(accessToken);
 
@@ -393,7 +393,7 @@ export type AuditPreset = {
 };
 
 export const listAuditPresets = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(AuditAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const userId = await requireAdmin(accessToken);
 
@@ -409,7 +409,7 @@ export const listAuditPresets = createServerFn({ method: "GET" })
   });
 
 export const saveAuditPreset = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; name: string; filters: AuditLogFilters }) => data)
+  .validator(z.object({ accessToken: z.string(), name: z.string(), filters: z.any() }))
   .handler(async ({ data: { accessToken, name, filters } }) => {
     const userId = await requireAdmin(accessToken);
 
@@ -443,7 +443,7 @@ export const saveAuditPreset = createServerFn({ method: "POST" })
   });
 
 export const deleteAuditPreset = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string; presetId: string }) => data)
+  .validator(z.object({ accessToken: z.string(), presetId: z.string() }))
   .handler(async ({ data: { accessToken, presetId } }) => {
     const userId = await requireAdmin(accessToken);
 

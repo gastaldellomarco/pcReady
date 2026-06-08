@@ -2,21 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ALL_PERMISSIONS, type AuthProfile } from "@/lib/auth-context";
 import { requireAdmin } from "./admin-users.server";
-
-interface AuthedInput {
-  accessToken: string;
-}
-
-interface ImpersonationInput extends AuthedInput {
-  targetUserId: string;
-}
+import { z } from "zod";
 
 /**
  * Loads the full profile for a target user (for impersonation).
  * Only callable by admins.
  */
+const ImpAuthedSchema = z.object({ accessToken: z.string() });
+const ImpTargetSchema = z.object({ accessToken: z.string(), targetUserId: z.string() });
+
 export const getImpersonatedProfile = createServerFn({ method: "POST" })
-  .inputValidator((data: ImpersonationInput) => data)
+  .validator(ImpTargetSchema)
   .handler(async ({ data: { accessToken, targetUserId } }): Promise<AuthProfile> => {
     const actorId = await requireAdmin(accessToken);
 
@@ -78,7 +74,7 @@ export const getImpersonatedProfile = createServerFn({ method: "POST" })
  * Logs the start of an impersonation session in the audit log.
  */
 export const logImpersonationStart = createServerFn({ method: "POST" })
-  .inputValidator((data: ImpersonationInput) => data)
+  .validator(ImpTargetSchema)
   .handler(async ({ data: { accessToken, targetUserId } }) => {
     const actorId = await requireAdmin(accessToken);
 
@@ -110,7 +106,7 @@ export const logImpersonationStart = createServerFn({ method: "POST" })
  * Logs the end of an impersonation session in the audit log.
  */
 export const logImpersonationEnd = createServerFn({ method: "POST" })
-  .inputValidator((data: AuthedInput) => data)
+  .validator(ImpAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const actorId = await requireAdmin(accessToken);
 

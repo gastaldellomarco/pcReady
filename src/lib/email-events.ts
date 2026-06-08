@@ -12,12 +12,12 @@ const ChecklistCompletedEmailSchema = z.object({
 });
 
 export const sendTicketAssignedEmail = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof TicketAssignedEmailSchema>) => data)
+  .validator(TicketAssignedEmailSchema)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchEmailForUser, getEmailCommonVariables, sendEmailEvent, userAllowsEmail } =
       await import("@/lib/email-helpers.server");
-    const { ticketId, assigneeId } = TicketAssignedEmailSchema.parse(data);
+    const { ticketId, assigneeId } = data;
     const allowed = await userAllowsEmail(assigneeId, "notify_ticket_assigned");
     if (!allowed) return { skipped: true };
 
@@ -56,12 +56,12 @@ export const sendTicketAssignedEmail = createServerFn({ method: "POST" })
   });
 
 export const sendChecklistCompletedEmail = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof ChecklistCompletedEmailSchema>) => data)
+  .validator(ChecklistCompletedEmailSchema)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchEmailForUser, getEmailCommonVariables, sendEmailEvent, userAllowsEmail } =
       await import("@/lib/email-helpers.server");
-    const { ticketId, checklistName } = ChecklistCompletedEmailSchema.parse(data);
+    const { ticketId, checklistName } = data;
 
     const { data: ticket, error } = await supabaseAdmin
       .from("tickets" as any)

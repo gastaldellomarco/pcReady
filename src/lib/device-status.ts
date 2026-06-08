@@ -20,15 +20,14 @@ const UpdateDeviceStatusSchema = z.object({
 });
 
 export const updateDeviceStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof UpdateDeviceStatusSchema>) => data)
+  .validator(UpdateDeviceStatusSchema)
   .handler(async ({ data }) => {
-    const input = UpdateDeviceStatusSchema.parse(data);
-    const authUser = await requireAutomationRunnerUser(input.accessToken);
+    const authUser = await requireAutomationRunnerUser(data.accessToken);
 
     const { data: before, error: selErr } = await supabaseAdmin
       .from("devices")
       .select("id, model, serial, status")
-      .eq("id", input.deviceId)
+      .eq("id", data.deviceId)
       .maybeSingle();
     if (selErr) throw selErr;
     if (!before) throw new Response("Dispositivo non trovato", { status: 404 });
@@ -37,8 +36,8 @@ export const updateDeviceStatus = createServerFn({ method: "POST" })
 
     const { data: device, error: updErr } = await supabaseAdmin
       .from("devices")
-      .update({ status: input.status })
-      .eq("id", input.deviceId)
+      .update({ status: data.status })
+      .eq("id", data.deviceId)
       .select("id, model, serial, status")
       .single();
     if (updErr) throw updErr;
@@ -47,9 +46,9 @@ export const updateDeviceStatus = createServerFn({ method: "POST" })
     const label = [row.model, row.serial].filter(Boolean).join(" \u00B7 ") || row.model;
 
     // Log status change to activity_log
-    if (previousStatus !== input.status) {
+    if (previousStatus !== data.status) {
       const fromLabel = DEVICE_STATUS_LABELS[previousStatus] || previousStatus;
-      const toLabel = DEVICE_STATUS_LABELS[input.status] || input.status;
+      const toLabel = DEVICE_STATUS_LABELS[data.status] || data.status;
       const { error: logErr } = await supabaseAdmin.from("activity_log").insert({
         type: "user",
         message: `Dispositivo ${label}: stato cambiato da "${fromLabel}" a "${toLabel}"`,
@@ -61,13 +60,13 @@ export const updateDeviceStatus = createServerFn({ method: "POST" })
     }
 
     if (
-      (input.status === "maintenance" || input.status === "retired") &&
-      previousStatus !== input.status
+      (data.status === "maintenance" || data.status === "retired") &&
+      previousStatus !== data.status
     ) {
       await notifyDeviceStatusChangedForAdmins({
         deviceId: row.id,
         deviceName: label,
-        status: input.status,
+        status: data.status,
         previousStatus,
       });
     }

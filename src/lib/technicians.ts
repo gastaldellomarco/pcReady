@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { z } from "zod";
+
+const TechAuthedSchema = z.object({ accessToken: z.string() })
 
 /**
  *
@@ -11,7 +14,7 @@ export interface TechnicianOption {
 }
 
 export const listTechnicians = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(TechAuthedSchema)
   .handler(async ({ data: { accessToken } }) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });

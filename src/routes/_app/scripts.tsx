@@ -36,22 +36,23 @@ import { Modal } from "@/components/pcready/Modal";
 import { VersionBadge } from "@/components/pcready/VersionBadge";
 import { VersionHistoryDrawer } from "@/components/pcready/VersionHistoryDrawer";
 import { LoadingSkeleton, RouteError } from "@/components/RouteHelpers";
-import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
-import { Field } from "@/components/ui/form-field";
+import { ScriptFavoriteButton } from "@/components/scripts/ScriptFavoriteButton";
 import { ScriptParametersEditor } from "@/components/scripts/ScriptParametersEditor";
 import { ScriptParametersRunner } from "@/components/scripts/ScriptParametersRunner";
-import { ScriptTagInput } from "@/components/scripts/ScriptTagInput";
 import { ScriptShareDialog } from "@/components/scripts/ScriptShareDialog";
-import { ScriptFavoriteButton } from "@/components/scripts/ScriptFavoriteButton";
+import { ScriptTagInput } from "@/components/scripts/ScriptTagInput";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
+import { Field } from "@/components/ui/form-field";
 import { useTheme } from "@/hooks/use-theme";
 import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadText } from "@/lib/downloads";
-import { substituteParams } from "@/lib/template-params";
+import { copyToClipboard } from "@/lib/clipboard";
 import { errorMessage } from "@/lib/errors";
 import queries, { fetchScriptById, fetchScriptTags, useScriptFavorites, useToggleFavorite } from "@/lib/queries/scripts";
 import { ScriptSchema, type ScriptInput, type ScriptParameter } from "@/lib/schemas/scripts";
+import { substituteParams } from "@/lib/template-params";
 import { computeChangedFields, createVersion } from "@/lib/versioning";
 import type { Json, Tables } from "@/integrations/supabase/types";
 import type { Extension } from "@codemirror/state";
@@ -630,12 +631,16 @@ function ScriptViewer({
     setEditing(false);
   }
 
-  function copy() {
+  async function copy() {
     const finalContent = appliedParamValues
       ? substituteParams(content ?? "", appliedParamValues)
       : (content ?? "");
-    navigator.clipboard.writeText(finalContent);
-    toast.success(t("viewer.copied", "Script copiato negli appunti"));
+    const ok = await copyToClipboard(finalContent);
+    if (ok) {
+      toast.success(t("viewer.copied", "Script copiato negli appunti"));
+    } else {
+      toast.error(t("viewer.copyError", "Seleziona e copia il contenuto manualmente"));
+    }
   }
 
   function download() {

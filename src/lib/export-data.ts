@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { buildDownloadFileName, csvCell } from "@/lib/export-format";
+
+const ExportAuthedSchema = z.object({ accessToken: z.string() });
 
 /**
  *
@@ -15,7 +18,7 @@ export type ExportAllDataResult = {
 };
 
 export const exportAllData = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(ExportAuthedSchema)
   .handler(async ({ data: { accessToken } }): Promise<ExportAllDataResult> => {
     const { requireAdmin } = await import("./admin-users.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

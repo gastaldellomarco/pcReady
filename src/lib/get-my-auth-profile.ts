@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { ALL_PERMISSIONS, type AuthProfile } from "./auth-context";
+import { z } from "zod";
 
 /**
  * Server function that loads the minimal auth profile in a single round-trip.
  * Runs profiles, user_profiles, role, and permissions queries in parallel via supabaseAdmin.
  * Admins always receive all permissions; other roles get only explicitly assigned permissions.
  */
+const AuthAuthedSchema = z.object({ accessToken: z.string() })
+
 export const getMyAuthProfile = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken: string }) => data)
+  .validator(AuthAuthedSchema)
   .handler(async ({ data: { accessToken } }): Promise<AuthProfile> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

@@ -12,8 +12,8 @@ const CompleteTicketSchema = z.object({
 });
 
 export const completeTicketServer = createServerFn({ method: "POST" })
-  .inputValidator((data: z.input<typeof CompleteTicketSchema>) => data)
+  .validator(CompleteTicketSchema)
   .handler(async ({ data }) => {
     const { completeTicket } = await import("./ticket-completion.server");
-    return completeTicket(CompleteTicketSchema.parse(data));
+    return completeTicket(data);
   });
