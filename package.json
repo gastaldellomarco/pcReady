@@ -29,7 +29,8 @@
     "db:reset": "node scripts/supabase-reset.mjs --target=local",
     "db:reset:linked": "node scripts/supabase-reset.mjs --target=linked",
     "migrations:check": "node scripts/validate-migrations.mjs",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
