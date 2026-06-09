@@ -28,12 +28,8 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
-import {
-  QuoteModal,
-  QuoteStatusBadge,
-  QuoteActions,
-  createEmptyQuoteLine,
-} from "@/components/pcready/QuoteModal";
+import { createEmptyQuoteLine } from "@/components/pcready/quote-helpers";
+import { QuoteModal, QuoteStatusBadge, QuoteActions } from "@/components/pcready/QuoteModal";
 import {
   ChartContainer,
   ChartTooltip,

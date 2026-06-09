@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { positiveNumber, type QuoteDraft } from "@/lib/costs-finance";
-import { randomUUID } from "@/lib/random-uuid";
+import { createEmptyQuoteLine } from "./quote-helpers";
 
 type ClientOption = { id: string; name: string; company_name: string | null };
 type TicketLike = { id: string; ticket_code: string; client_id: string | null };
@@ -29,19 +29,6 @@ export type QuoteLineDraft = {
   unitPrice: string;
   itemType: "service" | "labor" | "material" | "extra";
 };
-
-/**
- *
- */
-export function createEmptyQuoteLine(): QuoteLineDraft {
-  return {
-    id: randomUUID(),
-    description: "",
-    quantity: "1",
-    unitPrice: "0",
-    itemType: "extra",
-  };
-}
 
 type QuoteModalProps = {
   open: boolean;

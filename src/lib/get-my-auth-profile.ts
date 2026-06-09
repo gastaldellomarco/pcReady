@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { ALL_PERMISSIONS, type AuthProfile } from "./auth-context";
 import { z } from "zod";
+import { ALL_PERMISSIONS, type AuthProfile } from "./auth-context";
 
 /**
  * Server function that loads the minimal auth profile in a single round-trip.

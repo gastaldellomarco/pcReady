@@ -24,7 +24,7 @@ export function useWidgetAnnotations(accessToken: string | undefined, widgetId?:
 
   const queryKey = widgetId ? ["widget-annotations", widgetId] : ["widget-annotations", "all"];
 
-  const query = useQuery({
+  const { data: annotationsData, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!accessToken) return [];
@@ -88,8 +88,8 @@ export function useWidgetAnnotations(accessToken: string | undefined, widgetId?:
   });
 
   return {
-    annotations: query.data ?? [],
-    isLoading: query.isLoading,
+    annotations: annotationsData ?? [],
+    isLoading,
     create: createMutation.mutate,
     update: updateMutation.mutate,
     remove: deleteMutation.mutate,

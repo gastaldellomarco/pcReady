@@ -11,7 +11,7 @@ export function getAppBaseUrl(): string {
       const url = new URL(request.url);
       return url.origin;
     }
-  } catch (error) {
+  } catch (_error) {
     // Context is not an active web request (e.g. tests or background scripts)
   }
   return process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000";

@@ -1,7 +1,8 @@
 import { Bell, Clock, FileText, Pencil, Ticket, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
-import { formatHours, SummaryBox } from "./helpers";
+import { SummaryBox } from "./helpers";
+import { formatHours } from "./helpers.fast";
 
 /**
  *

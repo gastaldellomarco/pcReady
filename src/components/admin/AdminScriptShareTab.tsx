@@ -59,7 +59,7 @@ export function AdminScriptShareTab({ accessToken }: AdminScriptShareTabProps) {
 
   useEffect(() => {
     void loadLinks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [accessToken]);
 
   async function handleRevoke(linkId: string) {

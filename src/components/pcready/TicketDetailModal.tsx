@@ -154,7 +154,7 @@ export function TicketDetailModal() {
   const deleteTicket = useDeleteTicket();
   const qc = useQueryClient();
   const timeSummaryQuery = useTicketTimeSummary(id, user?.id);
-  const materialItemsQuery = useQuery({
+  const { data: materialItemsData, isLoading: materialItemsLoading } = useQuery({
     queryKey: ["tickets", id, "material-items"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -169,7 +169,7 @@ export function TicketDetailModal() {
     },
     enabled: !!id,
   });
-  const bundleInfoQuery = useQuery({
+  const { data: bundleInfoData } = useQuery({
     queryKey: ["ticket", id, "bundle-info"],
     queryFn: () => fetchTicketBundleInfo(id as string),
     enabled: !!id,
@@ -179,7 +179,7 @@ export function TicketDetailModal() {
   const createChecklistInstance = useCreateTicketChecklistInstance();
   const upsertChecklistResponse = useUpsertTicketChecklistResponse(id || "");
   const completeChecklistInstance = useCompleteTicketChecklistInstance(id || "");
-  const materialItems = materialItemsQuery.data ?? [];
+  const materialItems = materialItemsData ?? [];
   const materialItemsCost = materialItems.reduce(
     (sum, item) => sum + parseCostNumber(item.total_cost),
     0,
@@ -1157,7 +1157,7 @@ export function TicketDetailModal() {
                 </button>
               )}
             </div>
-            {bundleInfoQuery.data?.assignment?.bundle && (
+            {bundleInfoData?.assignment?.bundle && (
               <div
                 className="mb-3 rounded-lg border bg-surface2/40 p-3"
                 style={{ borderColor: "var(--border)" }}
@@ -1166,14 +1166,14 @@ export function TicketDetailModal() {
                   <div>
                     <div className="text-[12px] font-bold text-text2">
                       {t("detail.section.bundleActive", {
-                        name: bundleInfoQuery.data.assignment.bundle.name,
+                        name: bundleInfoData.assignment.bundle.name,
                         defaultValue: "Bundle attivo: {{name}}",
                       })}
                     </div>
                     <div className="text-[11px] text-text3">
                       {t("detail.section.bundleSla", {
-                        response: bundleInfoQuery.data.assignment.bundle.sla_response_hours,
-                        resolution: bundleInfoQuery.data.assignment.bundle.sla_resolution_hours,
+                        response: bundleInfoData.assignment.bundle.sla_response_hours,
+                        resolution: bundleInfoData.assignment.bundle.sla_resolution_hours,
                         cost: formatBundleMoney(Number(ticket.bundle_extra_amount ?? 0)),
                         defaultValue:
                           "SLA risposta {{response}}h · risoluzione {{resolution}}h · extra ticket {{cost}}",
@@ -1188,11 +1188,11 @@ export function TicketDetailModal() {
                   </span>
                 </div>
                 <BundleUsageBar
-                  used={bundleInfoQuery.data.usageSummary?.used_hours}
+                  used={bundleInfoData.usageSummary?.used_hours}
                   total={
-                    bundleInfoQuery.data.usageSummary?.effective_included_hours ??
-                    bundleInfoQuery.data.assignment.custom_included_hours ??
-                    bundleInfoQuery.data.assignment.bundle.included_hours
+                    bundleInfoData.usageSummary?.effective_included_hours ??
+                    bundleInfoData.assignment.custom_included_hours ??
+                    bundleInfoData.assignment.bundle.included_hours
                   }
                   label={t("detail.section.hourlyConsumption", "Consumo ore bundle cliente")}
                 />
@@ -1288,7 +1288,7 @@ export function TicketDetailModal() {
                   {t("detail.section.materialItems", "Materiali / Ricambi")}
                 </h3>
                 <p className="text-[11px] text-text3">
-                  {materialItemsQuery.isLoading
+                  {materialItemsLoading
                     ? t("detail.section.loading", "Caricamento...")
                     : materialItems.length
                       ? t("detail.section.materialSummary", {

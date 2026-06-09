@@ -214,11 +214,11 @@ function DashboardPage() {
   const { visibleWidgets, allWidgets, editMode, setEditMode, reorder, toggleVisibility } =
     useDashboardLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const checklistStatsQuery = useQuery({
+  const { data: checklistStatsData } = useQuery({
     queryKey: ["dashboard", "checklist-stats"],
     queryFn: fetchChecklistStats,
   });
-  const satisfactionQuery = useQuery({
+  const { data: satisfactionData } = useQuery({
     queryKey: ["dashboard", "customer-satisfaction"],
     queryFn: fetchCustomerSatisfactionStats,
   });
@@ -297,8 +297,8 @@ function DashboardPage() {
             counts,
             total,
             priorityCounts,
-            checklistStats: checklistStatsQuery.data ?? null,
-            satisfactionStats: satisfactionQuery.data ?? null,
+            checklistStats: checklistStatsData ?? null,
+            satisfactionStats: satisfactionData ?? null,
             loadSettings,
             session,
           })}
@@ -1197,12 +1197,12 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
 function MaintenanceOverviewWidget() {
   const { t } = useTranslation("dashboard");
-  const query = useQuery({
+  const { data: maintenanceData, isLoading: maintenanceLoading } = useQuery({
     queryKey: ["dashboard", "maintenance-overview"],
     queryFn: fetchMaintenanceDashboard,
   });
-  const upcoming = query.data?.upcoming ?? [];
-  const overdueCount = query.data?.overdueCount ?? 0;
+  const upcoming = maintenanceData?.upcoming ?? [];
+  const overdueCount = maintenanceData?.overdueCount ?? 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
@@ -1276,7 +1276,7 @@ function MaintenanceOverviewWidget() {
               {!upcoming.length && (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-text3">
-                    {query.isLoading
+                    {maintenanceLoading
                       ? t("maintenance.loading", "Caricamento manutenzioni...")
                       : t("maintenance.noEvents", "Nessuna manutenzione pianificata.")}
                   </td>

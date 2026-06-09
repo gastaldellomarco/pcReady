@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient, useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import type { ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QUERY_KEYS } from "./keys";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
@@ -10,6 +9,7 @@ import type {
   ChecklistState,
   ChecklistStructure,
 } from "@/lib/pcready";
+import type { ComponentType } from "react";
 
 /**
  * Full ticket detail row returned by useTicketQuery / fetchTicketById.

@@ -1,14 +1,4 @@
-/**
- * Format hours into a human-readable string.
- */
-export function formatHours(value: number | string | null | undefined) {
-  if (value === null || value === undefined || value === "") return "-";
-  const v = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(v)) return "-";
-  if (v < 1) return `${Math.round(v * 60)}m`;
-  if (v === 1) return "1h";
-  return `${Math.round(v)}h`;
-}
+// `formatHours` moved to helpers.fast and is imported where needed.
 
 /**
  * Small stat box with label and value.
