@@ -55,13 +55,15 @@ export const getImpersonatedProfile = createServerFn({ method: "POST" })
         .map((r: any) => r.permission);
     }
 
-    const displayName = (up as any)?.display_name || p.full_name;
+    const displayName = (up as any)?.display_name || p.full_name || "Utente";
     const userLang: "it" | "en" = (up as any)?.language === "en" ? "en" : "it";
+
+    const initials = p.initials || displayName.slice(0, 2).toUpperCase();
 
     return {
       id: p.id,
       full_name: displayName,
-      initials: p.initials || displayName.slice(0, 2).toUpperCase(),
+      initials,
       avatar_url: (up as any)?.avatar_url ?? null,
       password_set: (up as any)?.password_set ?? true,
       role,

@@ -3,9 +3,11 @@ import { Link2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ImpersonationReadOnlyBanner } from "@/components/admin/ImpersonationReadOnlyBanner";
 import { TabsContent } from "@/components/ui/tabs";
 import { copyToClipboard } from "@/lib/clipboard";
 import { errorMessage } from "@/lib/errors";
+import { useAuth } from "@/lib/auth-context";
 import {
   listAllScriptShareLinks,
   revokeScriptShareLink,
@@ -36,6 +38,8 @@ interface AdminScriptShareTabProps {
  */
 export function AdminScriptShareTab({ accessToken }: AdminScriptShareTabProps) {
   const { t } = useTranslation("admin");
+  const { isImpersonating, isAdmin } = useAuth();
+  const readOnly = isImpersonating && !isAdmin;
   const listAll = useServerFn(listAllScriptShareLinks);
   const revokeLink = useServerFn(revokeScriptShareLink);
   const [links, setLinks] = useState<ShareLinkRow[]>([]);
@@ -98,6 +102,7 @@ export function AdminScriptShareTab({ accessToken }: AdminScriptShareTabProps) {
 
   return (
     <TabsContent value="script-shares" className="space-y-4">
+      <ImpersonationReadOnlyBanner />
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -219,13 +224,14 @@ export function AdminScriptShareTab({ accessToken }: AdminScriptShareTabProps) {
                           className="pc-btn pc-btn-ghost pc-btn-xs"
                           onClick={() => handleCopyToken(link.token)}
                           title="Copia link"
+                          disabled={readOnly}
                         >
                           <Link2 className="size-3" />
                         </button>
                         {!revoked && (
                           <button
                             className="pc-btn pc-btn-ghost pc-btn-xs"
-                            disabled={revokingId === link.id}
+                            disabled={readOnly || revokingId === link.id}
                             onClick={() => handleRevoke(link.id)}
                             style={{ color: revoked || expired ? "var(--text3)" : "var(--danger)" }}
                             title="Revoca"

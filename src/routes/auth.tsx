@@ -42,7 +42,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { session, profile, loading, profileLoading } = useAuth();
+  const { session, profile, loading, profileLoading, isImpersonating } = useAuth();
   const navigate = useNavigate();
   const route = useRouterState({ select: (state) => state.location.pathname });
   const assertLoginLimit = useServerFn(assertStaffLoginRateLimit);
@@ -60,7 +60,7 @@ function AuthPage() {
   if (!loading && !profileLoading && session) {
     return (
       <Navigate
-        to={profile?.password_set === false ? "/auth/set-password" : "/dashboard"}
+        to={profile?.password_set === false && !isImpersonating ? "/auth/set-password" : "/dashboard"}
         replace
       />
     );

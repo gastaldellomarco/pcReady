@@ -284,7 +284,7 @@ export function structureOverallProgress(state: ChecklistState, struct: Checklis
 /**
  *
  */
-export function avatarColors(initials: string): { bg: string; fg: string } {
+export function avatarColors(initials?: string | null): { bg: string; fg: string } {
   // deterministic palette
   const palette = [
     { bg: "#DDD6FE", fg: "#4C1D95" },
@@ -295,7 +295,8 @@ export function avatarColors(initials: string): { bg: string; fg: string } {
     { bg: "#FCE7F3", fg: "#9D174D" },
   ];
   let h = 0;
-  for (let i = 0; i < initials.length; i++) h = (h * 31 + initials.charCodeAt(i)) >>> 0;
+  const chars = initials || "U";
+  for (let i = 0; i < chars.length; i++) h = (h * 31 + chars.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
 }
 

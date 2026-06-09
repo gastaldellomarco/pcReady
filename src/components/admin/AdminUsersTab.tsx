@@ -2,6 +2,7 @@
 import { Eye, MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ImpersonationReadOnlyBanner } from "@/components/admin/ImpersonationReadOnlyBanner";
 import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
 import { AdminUserStatusBadge } from "@/components/admin/AdminUserStatusBadge";
 import { TableSkeletonRows } from "@/components/page-states";
@@ -68,6 +69,7 @@ export function AdminUsersTab() {
   const { t } = useTranslation("admin");
   const { session, user, hasPermission, startImpersonation, isImpersonating } = useAuth();
   const canManageUsers = hasPermission("can_manage_users");
+  const showManagementControls = !isImpersonating || canManageUsers;
   const accessToken = session?.access_token;
   const {
     rows,
@@ -147,10 +149,9 @@ export function AdminUsersTab() {
     {
       label: "Ruolo",
       render: (row: any) => (
-        <AdminUserRoleEditor
-          role={row.role}
-          disabled={busyId === row.id}
-          onChange={(nextRole: AppRole) => saveRole(row, nextRole)}
+        <AdminUserRoleEditor                          role={row.role}
+                          disabled={busyId === row.id || (isImpersonating && !canManageUsers)}
+                          onChange={(nextRole: AppRole) => saveRole(row, nextRole)}
         />
       ),
     },
@@ -195,7 +196,7 @@ export function AdminUsersTab() {
           <button
             className="pc-btn-icon touch-target"
             title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
-            disabled={busyId === row.id || row.id === user?.id}
+            disabled={busyId === row.id || row.id === user?.id || (isImpersonating && !canManageUsers)}
             onClick={() => toggleDisabled(row)}
           >
             {row.status === "disabled" ? (
@@ -207,7 +208,7 @@ export function AdminUsersTab() {
           <button
             className="pc-btn-icon touch-target"
             title="Rimuovi utente"
-            disabled={busyId === row.id || row.id === user?.id}
+            disabled={busyId === row.id || row.id === user?.id || (isImpersonating && !canManageUsers)}
             onClick={() => remove(row)}
             style={{ color: "var(--danger, #DC2626)" }}
           >
@@ -220,6 +221,8 @@ export function AdminUsersTab() {
 
   return (
     <TabsContent value="users" className="space-y-5">
+      <ImpersonationReadOnlyBanner />
+      {showManagementControls && (
       <form
         className="pc-card p-4 flex flex-wrap items-end gap-3"
         onSubmit={inviteForm.handleSubmit(inviteSubmit)}
@@ -285,7 +288,9 @@ export function AdminUsersTab() {
             : t("users.invite.submit", "Invita")}
         </button>
       </form>
+      )}
 
+      {showManagementControls && (
       <div className="flex flex-wrap items-center gap-2">
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] flex-1 min-w-[220px] max-w-[360px]"
@@ -316,6 +321,16 @@ export function AdminUsersTab() {
           {t("users.search.count", "{{count}} utenti", { count: (filtered ?? []).length })}
         </span>
       </div>
+      )}
+
+      {/* Always show user count even when controls are hidden */}
+      {!showManagementControls && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="ml-auto self-center text-xs text-text3 font-mono">
+            {t("users.search.count", "{{count}} utenti", { count: (filtered ?? []).length })}
+          </span>
+        </div>
+      )}
 
       <div className="pc-card overflow-hidden">
         {/* MFA policy banner: show when policy requires MFA and there are users missing it */}
@@ -355,7 +370,7 @@ export function AdminUsersTab() {
             }
             return null;
           })()}
-        {selectedIds.size > 0 && (
+        {selectedIds.size > 0 && showManagementControls && (
           <div className="px-4 py-3 border-b bg-surface2 border-border flex items-center gap-3">
             <div className="text-sm text-text3">
               {t("users.bulk.selected", "{{count}} selezionati", { count: selectedIds.size })}
@@ -517,9 +532,10 @@ export function AdminUsersTab() {
                     aria-label={t("users.table.selectAll", "Seleziona tutti")}
                   >
                     <Checkbox
-                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                      checked={(filtered ?? []).length > 0 && selectedIds.size === (filtered ?? []).length}
+                      disabled={isImpersonating && !canManageUsers}
                       onCheckedChange={(val) => {
-                        if (val) setSelectedIds(new Set(filtered.map((r) => r.id)));
+                        if (val) setSelectedIds(new Set((filtered ?? []).map((r) => r.id)));
                         else setSelectedIds(new Set());
                       }}
                     />
@@ -548,7 +564,7 @@ export function AdminUsersTab() {
                 {loadingRows ? (
                   <TableSkeletonRows rows={10} columns={9} cellClassName="px-[14px] py-[10px]" />
                 ) : (
-                  filtered.map((row) => (
+                  (filtered ?? []).map((row) => (
                     <tr
                       key={row.id}
                       className="border-b hover:bg-surface2 transition-colors"
@@ -557,6 +573,7 @@ export function AdminUsersTab() {
                       <td className="px-[14px] py-[10px]">
                         <Checkbox
                           checked={selectedIds.has(row.id)}
+                          disabled={isImpersonating && !canManageUsers}
                           onCheckedChange={(val) => {
                             const next = new Set(selectedIds);
                             if (val) next.add(row.id);
@@ -637,7 +654,7 @@ export function AdminUsersTab() {
                                 ? t("users.tooltip.enableUser", "Riabilita utente")
                                 : t("users.tooltip.disableUser", "Disabilita utente")
                             }
-                            disabled={busyId === row.id || row.id === user?.id}
+                            disabled={busyId === row.id || row.id === user?.id || (isImpersonating && !canManageUsers)}
                             onClick={() => toggleDisabled(row)}
                           >
                             {row.status === "disabled" ? (
@@ -649,7 +666,7 @@ export function AdminUsersTab() {
                           <button
                             className="pc-btn-icon touch-target"
                             title={t("users.tooltip.removeUser", "Rimuovi utente")}
-                            disabled={busyId === row.id || row.id === user?.id}
+                            disabled={busyId === row.id || row.id === user?.id || (isImpersonating && !canManageUsers)}
                             onClick={() => remove(row)}
                             style={{ color: "var(--danger, #DC2626)" }}
                           >

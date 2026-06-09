@@ -1,13 +1,14 @@
 import { ShieldCheck, Save, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ImpersonationReadOnlyBanner } from "@/components/admin/ImpersonationReadOnlyBanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
 import { type RolePermissions } from "@/lib/admin-permissions";
-import { ALL_PERMISSIONS } from "@/lib/auth-context";
+import { ALL_PERMISSIONS, useAuth } from "@/lib/auth-context";
 
 const PERMISSION_LABELS: Record<string, { it: string; en: string }> = {
   can_view_costs: { it: "Visualizzare i costi", en: "View costs" },
@@ -33,7 +34,9 @@ interface Props {
  */
 export function AdminPermissionsTab({ accessToken }: Props) {
   const { t, i18n } = useTranslation("admin");
+  const { isImpersonating, isAdmin } = useAuth();
   const lang = (i18n.language?.split("-")[0] ?? "it") as "it" | "en";
+  const readOnly = isImpersonating && !isAdmin;
 
   const [rolePerms, setRolePerms] = useState<RolePermissions[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +116,7 @@ export function AdminPermissionsTab({ accessToken }: Props) {
 
   return (
     <TabsContent value="permissions" className="space-y-5">
+      <ImpersonationReadOnlyBanner />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -184,7 +188,7 @@ export function AdminPermissionsTab({ accessToken }: Props) {
                       </div>
                       <Button
                         size="sm"
-                        disabled={!isDirty || isSaving}
+                        disabled={!isDirty || isSaving || readOnly}
                         onClick={() => handleSave(rp.role)}
                       >
                         {isSaving ? (
@@ -206,6 +210,7 @@ export function AdminPermissionsTab({ accessToken }: Props) {
                           <Checkbox
                             id={`perm-${rp.role}-${perm}`}
                             checked={currentPerms.has(perm)}
+                            disabled={readOnly}
                             onCheckedChange={() => togglePermission(rp.role, perm)}
                           />
                           <Label

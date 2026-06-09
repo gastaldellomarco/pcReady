@@ -36,7 +36,7 @@ try {
  *
  */
 export function AppShell() {
-  const { session, profile, authError, refreshProfile, signOut, hasPermission } = useAuth();
+  const { session, profile, authError, refreshProfile, signOut, hasPermission, isImpersonating } = useAuth();
   const { t } = useTranslation("common");
   const isMobile = useIsMobile();
   const { pendingCount, openCreate } = useTickets();
@@ -75,7 +75,7 @@ export function AppShell() {
     return <MissingProfileScreen onRetry={() => refreshProfile()} onSignOut={() => signOut()} />;
   }
 
-  if (!profile.password_set) {
+  if (!profile.password_set && !isImpersonating) {
     return <AuthLoadingScreen message={t("sidebar.redirecting", "Reindirizzamento...")} />;
   }
 

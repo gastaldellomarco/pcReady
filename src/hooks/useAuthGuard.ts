@@ -27,7 +27,7 @@ export interface AuthGuardState {
  *    MFA is required by policy but not yet configured.
  */
 export function useAuthGuard(): AuthGuardState {
-  const { session, profile, loading, profileLoading } = useAuth();
+  const { session, profile, loading, profileLoading, isImpersonating } = useAuth();
   const navigate = useNavigate();
   const route = useRouterState({ select: (s) => s.location.pathname });
   const loadSettings = useServerFn(getPublicAppSettings);
@@ -102,10 +102,10 @@ export function useAuthGuard(): AuthGuardState {
 
   // ── 4. Password-set redirect ─────────────────────────────────────
   useEffect(() => {
-    if (!loading && session && profile && !profile.password_set) {
+    if (!loading && session && profile && !profile.password_set && !isImpersonating) {
       navigate({ to: "/auth/set-password", replace: true });
     }
-  }, [loading, navigate, profile, session]);
+  }, [loading, navigate, profile, session, isImpersonating]);
 
   const guardLoading = loading || profileLoading || !session || mfaChecking;
 
