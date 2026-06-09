@@ -13,6 +13,55 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+## [1.4.0] - 2026-06-09
+
+### Added
+- Reorganize and optimize component imports, enhance error handling, and refactor utility functions
+- Enhance error handling and localization across components
+- Implement AdminScriptShareTab for managing shared script links and enhance script sharing functionality
+- Enhance script management with parameters, tags, and sharing functionality
+- Add ClientNotesPanel, ClientOverviewPanel, ClientSettingsPanel, and related components
+- Add React Doctor workflow for code quality checks and integrate into package scripts
+- Implement granular role-based permissions system
+- Enhance admin panel with Backup & Disaster Recovery tab and email template metadata
+- Implement device lifecycle management and software tracking
+- Add contact enhancement columns and create contact groups table
+- Add comprehensive Knowledge Base documentation including automation system, server functions, webhooks, and OpenAPI spec
+- Limit PDF rows to a maximum of 500 in InventoryPdf and TicketListPdf components
+- Add QuoteModal component for creating and managing quotes with dynamic line items
+- Refactor portal authentication and ticket handling to use createServerFn for improved structure and dynamic imports
+- Enhance PDF generation with text normalization and layout improvements
+
+### Changed
+- Downgrade @types/dompurify to version 3.2.0 for compatibility
+- Reorganize and optimize component imports, enhance error handling, and refactor utility functions
+- Enhance error handling and localization across components
+- Implement AdminScriptShareTab for managing shared script links and enhance script sharing functionality
+- Refactor input validation to use Zod schemas across various server functions for improved type safety and consistency
+- Enhance script management with parameters, tags, and sharing functionality
+- Update documentation to remove Cloudflare Workers references and clarify server function execution
+- Remove Cloudflare Workers configuration and related references
+- Add ClientNotesPanel, ClientOverviewPanel, ClientSettingsPanel, and related components
+- Improve key assignment in map functions for better performance and readability
+- Add React Doctor workflow for code quality checks and integrate into package scripts
+- Implement granular role-based permissions system
+- Enhance admin panel with Backup & Disaster Recovery tab and email template metadata
+- Implement device lifecycle management and software tracking
+- Add contact enhancement columns and create contact groups table
+- Add comprehensive Knowledge Base documentation including automation system, server functions, webhooks, and OpenAPI spec
+- Limit PDF rows to a maximum of 500 in InventoryPdf and TicketListPdf components
+- Add warehouse management feature with localization support
+- Refactor document classification logic and improve error handling in PortalDocumentsPage; enhance layout and readability in various components; update styles for consistency; add server utility for dynamic base URL resolution; implement tests for server utility; create warehouse route with metadata.
+- Merge branch 'main' of https://github.com/gastaldellomarco/pcReady
+- Add QuoteModal component for creating and managing quotes with dynamic line items
+- Refactor portal authentication and ticket handling to use createServerFn for improved structure and dynamic imports
+- Refactor portal authentication and ticket handling
+- Enhance PDF generation with text normalization and layout improvements
+
+### Fixed
+- Downgrade @types/dompurify to version 3.2.0 for compatibility
+- Limit PDF rows to a maximum of 500 in InventoryPdf and TicketListPdf components
+
 ## [1.3.0] - 2026-06-03
 
 ### Added
@@ -240,5 +289,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 [1.1.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.0.0...v1.1.0
 [1.1.1]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.0...v1.1.1
 [1.2.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.1.1...v1.2.0
-[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.3.0...HEAD
 [1.3.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.2.0...v1.3.0
+
+[Unreleased]: https://github.com/gastaldellomarco/pcReady/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/gastaldellomarco/pcReady/compare/v1.3.0...v1.4.0
