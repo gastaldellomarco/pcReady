@@ -174,7 +174,8 @@
     "addNote": "Add note",
     "addSuccess": "Note added",
     "addError": "Error adding note",
-    "enterNote": "Enter a note"
+    "enterNote": "Enter a note",
+    "techniciansLoadError": "Error loading technicians"
   },
   "createTicket": {
     "title": "New PC ticket",
@@ -218,7 +219,9 @@
     "selectDeviceRequired": "Select a device",
     "invalidSession": "Invalid session",
     "selectClientRequired": "Select a client",
-    "selectRequesterRequired": "Select a requester or use free fallback"
+    "selectRequesterRequired": "Select a requester or use free fallback",
+    "categoriesLoadError": "Error loading categories",
+    "assignedEmailError": "Error sending assignment email"
   },
   "toasts": {
     "loadClientsError": "Error loading clients",
@@ -439,7 +442,10 @@
       "materialAdded": "Material added",
       "materialAddError": "Error saving material",
       "materialDeleted": "Material deleted",
-      "materialDeleteError": "Error deleting material"
+      "materialDeleteError": "Error deleting material",
+      "techniciansLoadError": "Error loading technicians",
+      "checklistEmailError": "Error sending checklist email",
+      "statusHistoryError": "Error saving history"
     }
   },
   "device": {

@@ -174,7 +174,8 @@
     "addNote": "Aggiungi nota",
     "addSuccess": "Nota aggiunta",
     "addError": "Errore inserimento nota",
-    "enterNote": "Inserisci una nota"
+    "enterNote": "Inserisci una nota",
+    "techniciansLoadError": "Errore caricamento tecnici"
   },
   "createTicket": {
     "title": "Nuovo ticket PC",
@@ -218,7 +219,9 @@
     "selectDeviceRequired": "Seleziona un dispositivo",
     "invalidSession": "Sessione non valida",
     "selectClientRequired": "Seleziona un cliente",
-    "selectRequesterRequired": "Seleziona un richiedente o usa il fallback libero"
+    "selectRequesterRequired": "Seleziona un richiedente o usa il fallback libero",
+    "categoriesLoadError": "Errore caricamento categorie",
+    "assignedEmailError": "Errore invio email assegnazione"
   },
   "toasts": {
     "loadClientsError": "Errore caricamento clienti",
@@ -419,7 +422,10 @@
       "materialAdded": "Materiale aggiunto",
       "materialAddError": "Errore salvataggio materiale",
       "materialDeleted": "Materiale eliminato",
-      "materialDeleteError": "Errore eliminazione materiale"
+      "materialDeleteError": "Errore eliminazione materiale",
+      "techniciansLoadError": "Errore caricamento tecnici",
+      "checklistEmailError": "Errore invio email checklist",
+      "statusHistoryError": "Errore salvataggio storico"
     }
   },
   "device": {

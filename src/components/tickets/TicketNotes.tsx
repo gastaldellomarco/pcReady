@@ -42,7 +42,11 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
     if (!session?.access_token) return;
     loadTechnicians({ data: { accessToken: session.access_token } })
       .then(setTechnicians)
-      .catch(() => setTechnicians([]));
+      .catch((err) => {
+        console.error("Failed to load technicians for notes", err);
+        toast.error(t("notes.techniciansLoadError", "Errore caricamento tecnici"));
+        setTechnicians([]);
+      });
   }, [session?.access_token, loadTechnicians]);
 
   const mentionMatch = content.match(/(^|\s)@([^@\s]*)$/);
@@ -79,8 +83,10 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
       setFiles([]);
       toast.success(t("notes.addSuccess", "Nota aggiunta"));
       onChanged?.();
-    } catch (err: any) {
-      toast.error(err?.message || t("notes.addError", "Errore inserimento nota"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : t("notes.addError", "Errore inserimento nota");
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +121,7 @@ export function TicketNotes({ ticketId, onChanged }: { ticketId: string; onChang
             {t("notes.emptyText", "Nessuna nota inserita")}
           </div>
         )}
-        {notesQuery.data?.map((note: any) => (
+        {notesQuery.data?.map((note: TicketNote) => (
           <article
             key={note.id}
             className="rounded-md border p-3"

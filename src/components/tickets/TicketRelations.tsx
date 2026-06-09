@@ -42,7 +42,8 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
       .then((rows) => {
         if (!cancelled) setOptions(rows);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to search relations", err);
         if (!cancelled) setOptions([]);
       })
       .finally(() => {
@@ -61,8 +62,12 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
       setSearch("");
       setOptions([]);
       toast.success(t("relations.addSuccess", "Ticket collegato"));
-    } catch (err: any) {
-      toast.error(err?.message || t("relations.addError", "Errore collegamento ticket"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("relations.addError", "Errore collegamento ticket");
+      toast.error(message);
     }
   }
 
@@ -71,8 +76,12 @@ export function TicketRelations({ ticketId }: { ticketId: string }) {
     try {
       await deleteMut.mutateAsync(id);
       toast.success(t("relations.removeSuccess", "Collegamento rimosso"));
-    } catch (err: any) {
-      toast.error(err?.message || t("relations.removeError", "Errore rimozione collegamento"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("relations.removeError", "Errore rimozione collegamento");
+      toast.error(message);
     }
   }
 

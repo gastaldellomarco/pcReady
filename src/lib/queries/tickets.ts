@@ -1,7 +1,120 @@
 import { useMutation, useQueryClient, useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import type { ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QUERY_KEYS } from "./keys";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
+import type {
+  TicketPriority,
+  TicketStatus,
+  TicketType,
+  ChecklistState,
+  ChecklistStructure,
+} from "@/lib/pcready";
+
+/**
+ * Full ticket detail row returned by useTicketQuery / fetchTicketById.
+ * Extracted from TicketDetailModal to avoid duplication.
+ */
+export interface TicketDetailRow {
+  id: string;
+  ticket_code: string;
+  client: string;
+  client_id: string | null;
+  requester: string;
+  ticket_type: TicketType;
+  priority: TicketPriority;
+  status: TicketStatus;
+  assignee_id: string | null;
+  software: string | null;
+  notes: string | null;
+  checklist: ChecklistState;
+  created_at: string;
+  due_date?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: boolean | null;
+  sla_response_at?: string | null;
+  billable_hours?: number | null;
+  hourly_rate?: number | null;
+  material_cost?: number | null;
+  labor_cost?: number | null;
+  total_cost?: number | null;
+  cost_notes?: string | null;
+  cost_currency?: string | null;
+  bundle_assignment_id?: string | null;
+  bundle_extra_hours?: number | null;
+  bundle_extra_amount?: number | null;
+  onsite_visit?: boolean | null;
+  sla_response_due_at?: string | null;
+  sla_resolution_due_at?: string | null;
+  device_id: string | null;
+  model?: string | null;
+  checklist_structure?: ChecklistStructure | null;
+  device?: {
+    id: string;
+    model: string;
+    serial: string | null;
+    os: string | null;
+    assigned_to: string | null;
+    status: string;
+  } | null;
+  assignee?: { full_name: string; initials: string } | null;
+}
+
+/**
+ * Device assignment row for a ticket, returned by useTicketAssignmentsQuery.
+ */
+export interface TicketDeviceAssignmentRow {
+  id: string;
+  assigned_at: string;
+  unassigned_at: string | null;
+  notes: string | null;
+  device?: { id?: string; model: string; serial: string | null } | null;
+}
+
+/**
+ * Material item row from ticket_material_items table.
+ */
+export interface TicketMaterialItem {
+  id: string;
+  description: string;
+  supplier: string | null;
+  sku: string | null;
+  quantity: number;
+  unit_cost: number;
+  resale_margin_percent: number;
+  unit_price: number;
+  total_cost: number;
+  total_price: number;
+  created_at: string;
+}
+
+/**
+ * Material item draft for the add form in TicketDetailModal.
+ */
+export interface TicketMaterialDraft {
+  description: string;
+  supplier: string;
+  sku: string;
+  quantity: string;
+  unitCost: string;
+  resaleMarginPercent: string;
+}
+
+/**
+ * Tab keys for the TicketDetailModal detail view.
+ */
+export type DetailTab = "detail" | "checklists" | "notes" | "history" | "attachments";
+
+/**
+ * Timeline item displayed in the TicketHistory component.
+ */
+export interface TicketTimelineItem {
+  id: string;
+  at: string;
+  title: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+}
 
 const TICKET_DETAIL_SELECT =
   "id, ticket_code, client, client_id, requester, ticket_type, priority, status, source, assignee_id, software, notes, checklist, checklist_structure, created_at, updated_at, due_date, sla_deadline, sla_breached, sla_response_at, sla_response_due_at, sla_resolution_due_at, completed_at, device_id, model, billable_hours, hourly_rate, material_cost, labor_cost, total_cost, cost_notes, cost_currency, bundle_assignment_id, bundle_extra_hours, bundle_extra_amount, onsite_visit, device:devices(id, model, serial, os, assigned_to, status), assignee:profiles!tickets_assignee_id_fkey(full_name, initials)";

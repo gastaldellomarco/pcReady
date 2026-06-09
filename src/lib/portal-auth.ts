@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { PortalTokenSchema } from "@/lib/portal-shared";
-import type { PortalSessionContext } from "@/lib/portal-auth.server";
+import type { PortalSessionContext, PortalBranding } from "@/lib/portal-auth.server";
 
-export type { PortalSessionContext };
+export type { PortalSessionContext, PortalBranding };
 
 const RequestPortalLoginSchema = z.object({
   email: z.string().email(),

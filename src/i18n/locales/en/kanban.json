@@ -60,6 +60,7 @@
     "priorityError": "Priority update error",
     "ticketUpdateError": "Ticket update error",
     "completeEmailError": "Ticket completed, but error sending email/report",
+    "assignedEmailError": "Error sending assignment email",
     "bulkSuccess": "{{action}}: {{count}} tickets updated",
     "bulkError": "Bulk operation failed"
   }

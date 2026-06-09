@@ -39,7 +39,7 @@ export default defineConfig(({ command, mode }) => {
         svg: {
           multipass: true,
           plugins: [{ name: "preset-default", params: { overrides: { removeViewBox: false } } }],
-        },
+        } as any,
       }),
       // optional bundle visualizer when ANALYZE=true or VITE_ANALYZE=true
       ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true"

@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   Radar,
   RadarChart,
@@ -13,7 +14,11 @@ import {
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
-import { getTechnicianRadarMetrics } from "@/lib/dashboard-analytics";
+import {
+  getTechnicianRadarMetrics,
+  type TechnicianRadarRow,
+} from "@/lib/dashboard-analytics";
+
 import { pcReadyChartColors } from "@/lib/design-system";
 
 function clamp(v: number, a: number, b: number) {
@@ -33,7 +38,7 @@ export default function TechnicianRadarWidget({
   const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianRadarMetrics);
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<TechnicianRadarRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -48,6 +53,7 @@ export default function TechnicianRadarWidget({
       setSelectedId((prev) => prev ?? out[0]?.id ?? out[0]?.technician_id ?? null);
     } catch (err) {
       console.error(err);
+      toast.error(t("radar.error", "Errore caricamento radar tecnici"));
       setRows([]);
       setSelectedId(null);
     } finally {
@@ -101,7 +107,7 @@ export default function TechnicianRadarWidget({
     ];
 
     return metricKeys.map((m) => {
-      const entry: any = { metric: m.label };
+      const entry: Record<string, string | number> = { metric: m.label };
       for (const r of rows) {
         const n = r.normalized ?? {};
         entry[`t_${r.id}`] = clamp(Number(n[m.key] ?? 0), 0, 100);

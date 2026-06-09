@@ -77,7 +77,10 @@ export function MaintenanceSchedulePanel({
     Promise.all([
       fetchDeviceMaintenanceSchedules(deviceId),
       fetchMaintenanceHistory(deviceId),
-      fetchTechnicianOptions().catch(() => []),
+      fetchTechnicianOptions().catch((err) => {
+        console.error("Failed to load technician options", err);
+        return [];
+      }),
     ])
       .then(([scheduleRows, historyRows, technicianRows]) => {
         if (cancelled) return;
@@ -145,7 +148,10 @@ export function MaintenanceSchedulePanel({
     try {
       const updated = await completeMaintenanceSchedule(schedule, currentUserId);
       setSchedules((rows) => rows.map((row) => (row.id === schedule.id ? updated : row)));
-      const historyRows = await fetchMaintenanceHistory(deviceId).catch(() => history);
+      const historyRows = await fetchMaintenanceHistory(deviceId).catch((err) => {
+        console.error("Failed to load maintenance history", err);
+        return history;
+      });
       setHistory(historyRows);
       toast.success(
         t("maintenance.completedSuccess", "Manutenzione completata e prossima scadenza aggiornata"),

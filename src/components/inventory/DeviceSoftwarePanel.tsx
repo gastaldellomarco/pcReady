@@ -122,9 +122,9 @@ export function DeviceSoftwarePanel({
       setAddInstallDate("");
       setShowAddForm(false);
       toast.success(t("device.software.addSuccess", "Software aggiunto"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.software.addError", "Errore nell'aggiunta del software"),
+        err instanceof Error ? err.message : t("device.software.addError", "Errore nell'aggiunta del software"),
       );
     } finally {
       setAddBusy(false);
@@ -135,9 +135,9 @@ export function DeviceSoftwarePanel({
     try {
       await deleteMut.mutateAsync(sw.id);
       toast.success(t("device.software.deleteSuccess", "Software rimosso"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.software.deleteError", "Errore nella rimozione del software"),
+        err instanceof Error ? err.message : t("device.software.deleteError", "Errore nella rimozione del software"),
       );
     }
   }
@@ -150,9 +150,9 @@ export function DeviceSoftwarePanel({
         publisher: sw.publisher ?? undefined,
       });
       toast.success(t("device.software.catalogAddSuccess", "Versione aggiornata nel catalogo"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.software.catalogAddError", "Errore aggiornamento catalogo"),
+        err instanceof Error ? err.message : t("device.software.catalogAddError", "Errore aggiornamento catalogo"),
       );
     }
   }
@@ -177,9 +177,9 @@ export function DeviceSoftwarePanel({
       setCatalogPublisher("");
       setCatalogCategory("");
       toast.success(t("device.software.catalogSaved", "Catalogo aggiornato"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.software.catalogSaveError", "Errore salvataggio catalogo"),
+        err instanceof Error ? err.message : t("device.software.catalogSaveError", "Errore salvataggio catalogo"),
       );
     } finally {
       setCatalogBusy(false);
@@ -190,9 +190,9 @@ export function DeviceSoftwarePanel({
     try {
       await deleteCatalogMut.mutateAsync(entry.id);
       toast.success(t("device.software.catalogDeleteSuccess", "Voce catalogo rimossa"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.software.catalogDeleteError", "Errore rimozione catalogo"),
+        err instanceof Error ? err.message : t("device.software.catalogDeleteError", "Errore rimozione catalogo"),
       );
     }
   }

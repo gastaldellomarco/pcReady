@@ -33,8 +33,10 @@ import {
   useUpdateCalendarEvent,
   useUpdateRecurringOccurrence,
   type AvailabilityStatus,
+  type CalendarClientOption,
   type CalendarEvent,
   type CalendarEventType,
+  type CalendarTicketLink,
   type CreateCalendarEventData,
   type RecurrenceFrequency,
   type ReminderChannel,
@@ -143,12 +145,8 @@ export function EventModal({
   const [editScope, setEditScope] = useState<"single" | "series">("single");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [clientOptions, setClientOptions] = useState<
-    Array<{ id: string; name: string; company_name: string | null }>
-  >([]);
-  const [ticketOptions, setTicketOptions] = useState<
-    Array<{ id: string; ticket_code: string; client: string | null; client_id: string | null }>
-  >([]);
+  const [clientOptions, setClientOptions] = useState<CalendarClientOption[]>([]);
+  const [ticketOptions, setTicketOptions] = useState<CalendarTicketLink[]>([]);
 
   const isPending =
     createMutation.isPending ||
@@ -203,14 +201,20 @@ export function EventModal({
     if (!open) return;
     fetchCalendarClientOptions("")
       .then(setClientOptions)
-      .catch(() => setClientOptions([]));
+      .catch((err) => {
+        console.error("Failed to load calendar clients", err);
+        setClientOptions([]);
+      });
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     fetchCalendarTicketOptions(ticketSearch)
       .then(setTicketOptions)
-      .catch(() => setTicketOptions([]));
+      .catch((err) => {
+        console.error("Failed to load calendar tickets", err);
+        setTicketOptions([]);
+      });
   }, [open, ticketSearch]);
 
   const selectedTickets = useMemo(

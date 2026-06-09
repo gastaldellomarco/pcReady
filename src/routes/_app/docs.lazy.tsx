@@ -228,7 +228,7 @@ function KnowledgeBasePage() {
                       setSearchQuery("");
                       searchInputRef.current?.focus();
                     }}
-                    aria-label="Clear search"
+                    aria-label={t("docs.clearSearch", "Cancella ricerca")}
                   >
                     <X className="size-3.5" style={{ color: "var(--text3)" }} />
                   </button>
@@ -342,7 +342,7 @@ function KnowledgeBasePage() {
                         ))}
                         {section.articles.length > 4 && (
                           <li className="text-[11px] text-text3 pl-3.5">
-                            +{section.articles.length - 4} more articles
+                            {t("docs.moreArticles", "+{{count}} altri articoli", { count: section.articles.length - 4 })}
                           </li>
                         )}
                       </ul>

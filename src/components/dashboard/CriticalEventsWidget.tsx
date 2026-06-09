@@ -3,8 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { XCircle, AlertTriangle, RefreshCw, ArrowRight } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { getCriticalEvents } from "@/lib/audit-log";
-import { getOverdueTickets } from "@/lib/dashboard-analytics";
+import { getOverdueTickets, type OverdueTicketRow } from "@/lib/dashboard-analytics";
 import { fmtDateTime, formatSlaCountdown } from "@/lib/pcready";
 import type { ActivityLogEntry } from "@/lib/audit-log";
 
@@ -22,7 +23,7 @@ function asArray<T>(value: unknown): T[] {
 export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps) {
   const { t } = useTranslation("dashboard");
   const [events, setEvents] = useState<ActivityLogEntry[]>([]);
-  const [slaTickets, setSlaTickets] = useState<any[]>([]);
+  const [slaTickets, setSlaTickets] = useState<OverdueTicketRow[]>([]);
   const [loading, setLoading] = useState(false);
   const loadCritical = useServerFn(getCriticalEvents);
   const loadSlaTickets = useServerFn(getOverdueTickets);
@@ -36,9 +37,12 @@ export function CriticalEventsWidget({ accessToken }: CriticalEventsWidgetProps)
     ])
       .then(([critical, sla]) => {
         setEvents(asArray<ActivityLogEntry>(critical));
-        setSlaTickets(asArray<any>(sla).slice(0, 3));
+        setSlaTickets(asArray<OverdueTicketRow>(sla).slice(0, 3));
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Failed to load critical events", err);
+        toast.error(t("widgets.loadError", "Errore caricamento eventi critici"));
+      })
       .finally(() => setLoading(false));
   }, [accessToken, loadCritical, loadSlaTickets]);
 

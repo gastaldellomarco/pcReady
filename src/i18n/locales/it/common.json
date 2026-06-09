@@ -104,7 +104,9 @@
     "searchPlaceholder": "Cerca articoli…",
     "noResults": "Nessun articolo corrisponde alla ricerca.",
     "result": "risultato",
-    "results": "risultati"
+    "results": "risultati",
+    "clearSearch": "Cancella ricerca",
+    "moreArticles": "+{{count}} altri articoli"
   },
   "actions": {
     "delete": "Elimina",
@@ -119,5 +121,9 @@
     "loadingInProgress": "Caricamento in corso",
     "loadingTable": "Caricamento tabella",
     "loadingCards": "Caricamento schede"
+  },
+  "portal": {
+    "devicesLoadError": "Errore caricamento dispositivi",
+    "sessionValidationError": "Errore validazione sessione portale"
   }
 }

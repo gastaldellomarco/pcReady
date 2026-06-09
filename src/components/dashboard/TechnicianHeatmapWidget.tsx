@@ -2,10 +2,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
-import { getTechnicianWeeklyActivity } from "@/lib/dashboard-analytics";
+import {
+  getTechnicianWeeklyActivity,
+  type WeeklyActivityTechnician,
+  type WeeklyActivityResponse,
+} from "@/lib/dashboard-analytics";
 
 function dayLabels(startIso: string) {
   const start = new Date(startIso);
@@ -36,7 +41,7 @@ export default function TechnicianHeatmapWidget() {
   const { session } = useAuth();
   const fetcher = useServerFn(getTechnicianWeeklyActivity);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<WeeklyActivityResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -47,6 +52,7 @@ export default function TechnicianHeatmapWidget() {
       setData(res);
     } catch (err) {
       console.error(err);
+      toast.error(t("heatmap.error", "Errore caricamento attività tecnici"));
       setData(null);
     } finally {
       setLoading(false);
@@ -107,7 +113,7 @@ export default function TechnicianHeatmapWidget() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {technicians.map((tech: any) => (
+                {technicians.map((tech: WeeklyActivityTechnician) => (
                   <div key={tech.id} className="grid grid-cols-8 gap-2 items-center p-2 pc-card">
                     <div className="font-semibold text-sm">
                       {tech.initials} {tech.name}

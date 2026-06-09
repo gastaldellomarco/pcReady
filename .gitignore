@@ -97,3 +97,6 @@ react-doctor-output.txt
 skills/react-doctor/SKILL.md
 supabase/.temp/storage-version
 
+.claude/skills/react-doctor/references/explain.md
+docs/code-review-report.md
+docs/code-review-spec.md

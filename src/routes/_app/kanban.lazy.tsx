@@ -360,9 +360,13 @@ function KanbanPage() {
           priority: t("tickets:priority." + priority, PRIORITY_LABEL[priority]),
         }),
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setRows((current) => current.map((row) => (row.id === id ? card : row)));
-      toast.error(err?.message || t("toasts.priorityError", "Errore aggiornamento priorità"));
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("toasts.priorityError", "Errore aggiornamento priorità");
+      toast.error(message);
     }
   }
 
@@ -395,8 +399,12 @@ function KanbanPage() {
     );
     try {
       await updateTicket.mutateAsync({ id, patch: { status, assignee_id: nextAssigneeId } });
-    } catch (err: any) {
-      toast.error(err?.message || t("toasts.ticketUpdateError", "Errore aggiornamento ticket"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("toasts.ticketUpdateError", "Errore aggiornamento ticket");
+      toast.error(message);
       setRows((rs) => rs.map((r) => (r.id === id ? card : r)));
       return;
     }
@@ -458,6 +466,7 @@ function KanbanPage() {
       void sendAssignedEmail({ data: { ticketId: card.id, assigneeId: nextAssigneeId } }).catch(
         (err) => {
           console.error("Failed to send ticket assigned email:", err);
+          toast.error(t("toasts.assignedEmailError", "Errore invio email assegnazione"));
         },
       );
     }

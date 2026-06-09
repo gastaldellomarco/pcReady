@@ -183,7 +183,11 @@ export function CreateTicketModal() {
     if (session?.access_token) {
       loadSettings({ data: { accessToken: session.access_token } })
         .then((s) => setTicketCategories(s?.ticket_categories ?? []))
-        .catch(() => setTicketCategories([]));
+        .catch((err) => {
+          console.error("Failed to load ticket categories", err);
+          toast.error(t("createTicket.categoriesLoadError", "Errore caricamento categorie"));
+          setTicketCategories([]);
+        });
     } else {
       setTicketCategories([]);
     }
@@ -311,6 +315,7 @@ export function CreateTicketModal() {
         void sendAssignedEmail({ data: { ticketId: data.id, assigneeId: f.assignee_id } }).catch(
           (err) => {
             console.error("Failed to send ticket assigned email:", err);
+            toast.error(t("createTicket.assignedEmailError", "Errore invio email assegnazione"));
           },
         );
         if (assignee)

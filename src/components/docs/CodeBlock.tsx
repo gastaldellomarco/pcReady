@@ -37,8 +37,8 @@ export function CodeBlock({ language, children, filename }: CodeBlockProps) {
       .then((html) => {
         if (!cancelled) setHighlighted(html);
       })
-      .catch(() => {
-        // Fallback: show plain text if highlighting fails
+      .catch((err) => {
+        console.error("Shiki highlight failed", err);
       });
     return () => {
       cancelled = true;

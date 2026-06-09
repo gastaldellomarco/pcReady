@@ -106,8 +106,8 @@ export default function TicketsArchivePage() {
       });
       toast.success(t("toasts.ticketReopened", "Ticket riaperto"));
       await listQuery.refetch();
-    } catch (err: any) {
-      toast.error(err?.message || t("toasts.ticketReopenError", "Errore riapertura ticket"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("toasts.ticketReopenError", "Errore riapertura ticket"));
     }
   }
 

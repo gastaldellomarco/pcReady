@@ -96,8 +96,8 @@ export function TicketAttachments({
           ? t("attachments.uploadSuccess", "Allegato caricato")
           : t("attachments.uploadSuccessPlural", "Allegati caricati"),
       );
-    } catch (err: any) {
-      toast.error(err?.message || t("attachments.uploadError", "Errore caricamento allegato"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("attachments.uploadError", "Errore caricamento allegato"));
     }
   }
 
@@ -105,8 +105,8 @@ export function TicketAttachments({
     try {
       const url = await getAttachmentSignedUrl(attachment);
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err: any) {
-      toast.error(err?.message || t("attachments.previewError", "Anteprima non disponibile"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("attachments.previewError", "Anteprima non disponibile"));
     }
   }
 
@@ -114,8 +114,8 @@ export function TicketAttachments({
     try {
       const url = await downloadAttachment(attachment);
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err: any) {
-      toast.error(err?.message || t("attachments.downloadError", "Download non disponibile"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("attachments.downloadError", "Download non disponibile"));
     }
   }
 
@@ -124,8 +124,8 @@ export function TicketAttachments({
     try {
       await deleteMut.mutateAsync(attachment);
       toast.success(t("attachments.deleteSuccess", "Allegato eliminato"));
-    } catch (err: any) {
-      toast.error(err?.message || t("attachments.deleteError", "Errore eliminazione allegato"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("attachments.deleteError", "Errore eliminazione allegato"));
     }
   }
 

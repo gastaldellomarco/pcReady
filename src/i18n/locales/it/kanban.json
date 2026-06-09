@@ -60,6 +60,7 @@
     "priorityError": "Errore aggiornamento priorità",
     "ticketUpdateError": "Errore aggiornamento ticket",
     "completeEmailError": "Ticket completato, ma errore invio email/verbale",
+    "assignedEmailError": "Errore invio email assegnazione",
     "bulkSuccess": "{{action}}: {{count}} ticket aggiornati",
     "bulkError": "Operazione bulk non riuscita"
   }

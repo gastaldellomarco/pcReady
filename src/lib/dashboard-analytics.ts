@@ -92,8 +92,20 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
     if (ticketsRes.error) throw ticketsRes.error;
     if (archivedHistRes.error) throw archivedHistRes.error;
 
-    const ticketsAll = (ticketsRes.data ?? []) as any[];
-    const archivedHist = (archivedHistRes.data ?? []) as any[];
+    const ticketsAll = (ticketsRes.data ?? []) as Array<{
+      id: string;
+      created_at: string;
+      closed_at: string | null;
+      status: string;
+      assignee_id: string | null;
+      priority: string;
+      sla_deadline: string | null;
+      sla_breached: boolean | null;
+    }>;
+    const archivedHist = (archivedHistRes.data ?? []) as Array<{
+      ticket_id: string;
+      changed_at: string;
+    }>;
 
     // map ticket_id -> archived changed_at (first occurrence)
     const archivedDateByTicket = new Map<string, string>();
@@ -178,7 +190,7 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
         const entry = slaByTechnician.get(key) ?? { total: 0, respected: 0 };
         entry.total += 1;
         const respected =
-          !t.sla_breached && (!closedAt || new Date(closedAt) <= new Date(t.sla_deadline));
+          !t.sla_breached && (!closedAt || new Date(closedAt!) <= new Date(t.sla_deadline!));
         if (respected) entry.respected += 1;
         slaByTechnician.set(key, entry);
       }
@@ -194,7 +206,13 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
       }
     }
 
-    const technicianKpi = ((technicianRes.data ?? []) as any[]).map((row) => {
+    const technicianKpi = ((technicianRes.data ?? []) as Array<{
+      technician_id: string | null;
+      full_name?: string;
+      assigned?: number;
+      completed?: number;
+      avg_days?: number | null;
+    }>).map((row) => {
       const key = row.technician_id ?? null;
       const sla = slaByTechnician.get(key) ?? { total: 0, respected: 0 };
       return {
@@ -256,30 +274,112 @@ export const getDashboardAnalytics = createServerFn({ method: "GET" })
   });
 
 /**
+ * Input rows for computeTechnicianStats.
+ */
+interface TechRoleRow {
+  user_id: string;
+  role?: string;
+}
+
+interface TechProfileRow {
+  id: string;
+  full_name: string;
+  initials: string | null;
+}
+
+interface OpenTicketRow {
+  assignee_id: string;
+}
+
+/**
+ * Weekly activity per technician (heatmap).
+ */
+export interface WeeklyActivityTechnician {
+  id: string;
+  name: string;
+  initials: string;
+  counts: number[];
+}
+
+/**
+ * Weekly activity response returned by getTechnicianWeeklyActivity.
+ */
+export interface WeeklyActivityResponse {
+  weekStart: string;
+  weekEnd: string;
+  technicians: WeeklyActivityTechnician[];
+}
+
+/**
+ * Normalized radar metrics for a single technician.
+ */
+export interface NormalizedMetrics {
+  volume: number;
+  velocita: number;
+  completamento: number;
+  reattivita: number;
+  affidabilita: number;
+}
+
+/**
+ * Radar row consumed by TechnicianRadarWidget.
+ */
+export interface TechnicianRadarRow {
+  id: string;
+  technician_id: string;
+  full_name: string;
+  assigned: number;
+  completed: number;
+  completionPct: number;
+  avgResolutionDays: number | null;
+  avgFirstRespMs: number | null;
+  reopenCount: number;
+  reliabilityPct: number;
+  volumeScore: number;
+  normalized: NormalizedMetrics;
+}
+
+/**
+ * Technician stat row consumed by TechnicianStatsWidget and TeamActivityWidget.
+ */
+export interface TechnicianStatRow {
+  id: string;
+  name: string;
+  initials: string;
+  assigned: number;
+  completed: number;
+  pending: number;
+  avg_days: number | null;
+  avg_resolution_ms: number | null;
+  active: boolean;
+  title: string | null;
+}
+
+/**
  * Pure computation: merge KPI data, profiles, roles, and open-ticket counts
  * into the technician stats rows consumed by TeamActivityWidget and TechnicianStatsWidget.
  * Extracted for testability.
  */
 export function computeTechnicianStats(
-  kpiData: any[],
-  roles: any[],
-  profiles: any[],
-  openTicketsData: any[],
-): any[] {
-  const kpiById = new Map<string | null, any>();
+  kpiData: TechnicianKpi[],
+  roles: TechRoleRow[],
+  profiles: TechProfileRow[],
+  openTicketsData: OpenTicketRow[],
+): TechnicianStatRow[] {
+  const kpiById = new Map<string | null, TechnicianKpi>();
   for (const row of kpiData) {
     kpiById.set(row.technician_id ?? null, row);
   }
 
-  const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
+  const assignableIds = new Set((roles ?? []).map((r) => r.user_id));
 
   const openCountByTech = new Map<string, number>();
   for (const t of openTicketsData ?? []) {
-    const tid = t.assignee_id as string;
+    const tid = t.assignee_id;
     openCountByTech.set(tid, (openCountByTech.get(tid) ?? 0) + 1);
   }
 
-  const out: any[] = [];
+  const out: TechnicianStatRow[] = [];
   for (const p of profiles ?? []) {
     if (!assignableIds.has(p.id)) continue;
     const row = kpiById.get(p.id) ?? null;
@@ -318,7 +418,7 @@ export function computeTechnicianStats(
 
 export const getTechnicianStats = createServerFn({ method: "GET" })
   .validator(z.any())
-  .handler(async ({ data }): Promise<any[]> => {
+  .handler(async ({ data }): Promise<TechnicianStatRow[]> => {
     const period = (data?.period as string) ?? "week";
     const now = new Date();
     let from = new Date();
@@ -359,7 +459,7 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
     if (rolesError) throw rolesError;
     if (profilesError) throw profilesError;
 
-    const techIds = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+    const techIds = Array.from(new Set((roles ?? []).map((r: TechRoleRow) => r.user_id)));
     const { data: openTicketsData } = techIds.length
       ? await supabaseAdmin
           .from("tickets")
@@ -370,7 +470,7 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
       : { data: [] as any[] };
 
     return computeTechnicianStats(
-      (technicianRes.data ?? []) as any[],
+      (technicianRes.data ?? []) as TechnicianKpi[],
       roles ?? [],
       profiles ?? [],
       openTicketsData ?? [],
@@ -379,7 +479,7 @@ export const getTechnicianStats = createServerFn({ method: "GET" })
 
 export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
   .validator(z.any())
-  .handler(async ({ data }): Promise<any> => {
+  .handler(async ({ data }): Promise<WeeklyActivityResponse> => {
     const weekOffset = Number(data?.weekOffset || 0); // 0 = current week, -1 previous, +1 next
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(
@@ -419,10 +519,10 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
       supabaseAdmin.from("profiles").select("id, full_name, initials").order("full_name"),
     ]);
 
-    const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
+    const assignableIds = new Set((roles ?? []).map((r: TechRoleRow) => r.user_id));
     const technicians = (profiles ?? [])
-      .filter((p: any) => assignableIds.has(p.id))
-      .map((p: any) => ({
+      .filter((p: TechProfileRow) => assignableIds.has(p.id))
+      .map((p: TechProfileRow) => ({
         id: p.id,
         full_name: p.full_name,
         initials: p.initials || p.full_name.slice(0, 2).toUpperCase(),
@@ -443,7 +543,7 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     }
 
     // prepare output: technicians with counts for each day of the week
-    const out = technicians.map((t: any) => {
+    const out: WeeklyActivityTechnician[] = technicians.map((t) => {
       const counts: number[] = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(start);
@@ -512,7 +612,19 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
 
     if (error) throw error;
 
-    return ((tickets ?? []) as any[]).map((t: any) => ({
+    return ((tickets ?? []) as any[]).map((t: {
+      id: string;
+      ticket_code: string;
+      status: string;
+      priority: string;
+      client: string | null;
+      model: string | null;
+      created_at: string;
+      updated_at: string | null;
+      sla_deadline: string | null;
+      sla_breached: boolean | null;
+      assignee: { full_name: string } | null;
+    }) => ({
       id: t.id,
       ticket_code: t.ticket_code,
       status: t.status,
@@ -530,7 +642,7 @@ export const getOverdueTickets = createServerFn({ method: "GET" })
 
 export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
   .validator(z.any())
-  .handler(async ({ data }): Promise<any> => {
+  .handler(async ({ data }): Promise<{ dateFrom?: string; dateTo?: string; rows: TechnicianRadarRow[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(
       data?.accessToken || "",
@@ -550,7 +662,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     if (rolesError) throw rolesError;
     if (profilesError) throw profilesError;
 
-    const assignableIds = new Set((roles ?? []).map((r: any) => r.user_id));
+    const assignableIds = new Set((roles ?? []).map((r: TechRoleRow) => r.user_id));
 
     // Fetch tickets in range (by creation) to compute assigned/volume
     // include `status` so we can treat archived tickets as closed even when closed_at is null
@@ -567,7 +679,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     const ticketIds = tickets.map((t) => t.id);
 
     // Fetch first update times (ticket_notes) for these tickets
-    let notes: any[] = [];
+    let notes: Array<{ ticket_id: string; created_at: string }> = [];
     if (ticketIds.length) {
       const notesRes = await supabaseAdmin
         .from("ticket_notes")
@@ -575,11 +687,11 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
         .in("ticket_id", ticketIds)
         .order("created_at", { ascending: true });
       if (notesRes.error) throw notesRes.error;
-      notes = (notesRes.data ?? []) as any[];
+      notes = (notesRes.data ?? []) as Array<{ ticket_id: string; created_at: string }>;
     }
 
     // Fetch status history to count reopens
-    let history: any[] = [];
+    let history: Array<{ ticket_id: string; changed_at: string; from_status: string; to_status: string }> = [];
     if (ticketIds.length) {
       const histRes = await supabaseAdmin
         .from("ticket_status_history")
@@ -587,7 +699,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
         .in("ticket_id", ticketIds)
         .order("changed_at", { ascending: true });
       if (histRes.error) throw histRes.error;
-      history = (histRes.data ?? []) as any[];
+      history = (histRes.data ?? []) as Array<{ ticket_id: string; changed_at: string; from_status: string; to_status: string }>;
     }
 
     // Aggregate per technician
@@ -621,7 +733,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
       if (!notesByTicket.has(n.ticket_id)) notesByTicket.set(n.ticket_id, n.created_at);
     }
 
-    const historyByTicket = new Map<string, any[]>();
+    const historyByTicket = new Map<string, Array<{ ticket_id: string; changed_at: string; from_status: string; to_status: string }>>();
     for (const h of history) {
       const arr = historyByTicket.get(h.ticket_id) ?? [];
       arr.push(h);
@@ -671,7 +783,7 @@ export const getTechnicianRadarMetrics = createServerFn({ method: "GET" })
     const assignedValues = Array.from(byTech.values()).map((v) => v.assigned);
     const maxAssigned = assignedValues.length ? Math.max(...assignedValues) : 1;
 
-    const rows: any[] = [];
+    const rows: Array<Omit<TechnicianRadarRow, "normalized">> = [];
     // create a map for profile full names
     const profileNameById = new Map<string, string>();
     for (const p of profiles ?? []) profileNameById.set(p.id, p.full_name || "");

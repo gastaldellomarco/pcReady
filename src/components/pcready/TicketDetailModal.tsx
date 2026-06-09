@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Clock,
   Copy,
   GitBranch,
   History,
@@ -43,9 +42,7 @@ import {
   type ChecklistState,
   STATUS_META,
   PRIORITY_LABEL,
-  type TicketPriority,
   type TicketStatus,
-  type TicketType,
   fmtDate,
   fmtDateTime,
   type ChecklistItemDef,
@@ -75,6 +72,12 @@ import {
   useUpdateTicket,
   useDeleteTicket,
   addTicketStatusHistory,
+  type TicketDetailRow,
+  type TicketDeviceAssignmentRow,
+  type TicketMaterialItem,
+  type TicketMaterialDraft,
+  type DetailTab,
+  type TicketTimelineItem,
 } from "@/lib/queries/tickets";
 import { formatDuration, useTicketTimeSummary } from "@/lib/queries/ticketTimeEntries";
 import { listTechnicians, type TechnicianOption } from "@/lib/technicians";
@@ -83,83 +86,7 @@ import { Modal } from "./Modal";
 import { AssigneeChip, PriorityLabel, StatusBadge, TicketTypeBadge } from "./StatusBadge";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
-interface TicketRow {
-  id: string;
-  ticket_code: string;
-  client: string;
-  client_id: string | null;
-  requester: string;
-  ticket_type: TicketType;
-  priority: TicketPriority;
-  status: TicketStatus;
-  assignee_id: string | null;
-  software: string | null;
-  notes: string | null;
-  checklist: ChecklistState;
-  created_at: string;
-  due_date?: string | null;
-  sla_deadline?: string | null;
-  sla_breached?: boolean | null;
-  sla_response_at?: string | null;
-  billable_hours?: number | null;
-  hourly_rate?: number | null;
-  material_cost?: number | null;
-  labor_cost?: number | null;
-  total_cost?: number | null;
-  cost_notes?: string | null;
-  cost_currency?: string | null;
-  bundle_assignment_id?: string | null;
-  bundle_extra_hours?: number | null;
-  bundle_extra_amount?: number | null;
-  onsite_visit?: boolean | null;
-  sla_response_due_at?: string | null;
-  sla_resolution_due_at?: string | null;
-  device_id: string | null;
-  model?: string | null;
-  checklist_structure?: ChecklistStructure | null;
-  device?: {
-    id: string;
-    model: string;
-    serial: string | null;
-    os: string | null;
-    assigned_to: string | null;
-    status: string;
-  } | null;
-  assignee?: { full_name: string; initials: string } | null;
-}
-
-interface AssignmentRow {
-  id: string;
-  assigned_at: string;
-  unassigned_at: string | null;
-  notes: string | null;
-  device?: { id?: string; model: string; serial: string | null } | null;
-}
-
-type TicketMaterialItem = {
-  id: string;
-  description: string;
-  supplier: string | null;
-  sku: string | null;
-  quantity: number;
-  unit_cost: number;
-  resale_margin_percent: number;
-  unit_price: number;
-  total_cost: number;
-  total_price: number;
-  created_at: string;
-};
-
-type MaterialDraft = {
-  description: string;
-  supplier: string;
-  sku: string;
-  quantity: string;
-  unitCost: string;
-  resaleMarginPercent: string;
-};
-
-type DetailTab = "detail" | "checklists" | "notes" | "history" | "attachments";
+type TimelineItem = TicketTimelineItem;
 
 const DETAIL_TABS: { key: DetailTab; labelKey: string; icon: typeof ListChecks }[] = [
   { key: "detail", labelKey: "detail.tabs.detail", icon: ListChecks },
@@ -169,7 +96,7 @@ const DETAIL_TABS: { key: DetailTab; labelKey: string; icon: typeof ListChecks }
   { key: "attachments", labelKey: "detail.tabs.attachments", icon: Paperclip },
 ];
 
-const emptyMaterialDraft: MaterialDraft = {
+const emptyMaterialDraft: TicketMaterialDraft = {
   description: "",
   supplier: "",
   sku: "",
@@ -199,7 +126,7 @@ export function TicketDetailModal() {
   const loadTechnicians = useServerFn(listTechnicians);
   useTickets();
 
-  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const [assignments, setAssignments] = useState<TicketDeviceAssignmentRow[]>([]);
   const [mainTab, setMainTab] = useState<DetailTab>("detail");
   const [checklistTab, setChecklistTab] = useState<string>("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -216,7 +143,7 @@ export function TicketDetailModal() {
     material_cost: "0",
     cost_notes: "",
   });
-  const [materialDraft, setMaterialDraft] = useState<MaterialDraft>(emptyMaterialDraft);
+  const [materialDraft, setMaterialDraft] = useState<TicketMaterialDraft>(emptyMaterialDraft);
   const [materialBusy, setMaterialBusy] = useState(false);
 
   const ticketQuery = useTicketQuery(id);
@@ -268,7 +195,7 @@ export function TicketDetailModal() {
   const materialPreviewTotalPrice = materialPreviewUnitPrice * materialQuantity;
 
   useEffect(() => {
-    if (assignmentsQuery.data) setAssignments(assignmentsQuery.data as AssignmentRow[]);
+    if (assignmentsQuery.data) setAssignments(assignmentsQuery.data as TicketDeviceAssignmentRow[]);
   }, [assignmentsQuery.data]);
 
   useEffect(() => {
@@ -276,7 +203,7 @@ export function TicketDetailModal() {
   }, [id]);
 
   useEffect(() => {
-    const ticket = ticketQuery.data as TicketRow | null | undefined;
+    const ticket = ticketQuery.data as TicketDetailRow | null | undefined;
     if (ticket) {
       setTitleDraft(ticket.model || ticket.device?.model || ticket.ticket_code);
       setCostDraft({
@@ -292,11 +219,15 @@ export function TicketDetailModal() {
     if (!session?.access_token) return;
     loadTechnicians({ data: { accessToken: session.access_token } })
       .then(setTechnicians)
-      .catch(() => setTechnicians([]));
+      .catch((err) => {
+        console.error("Failed to load technicians", err);
+        toast.error(t("detail.toasts.techniciansLoadError", "Errore caricamento tecnici"));
+        setTechnicians([]);
+      });
   }, [session?.access_token, loadTechnicians]);
 
   useEffect(() => {
-    const ticket = ticketQuery.data as TicketRow | null | undefined;
+    const ticket = ticketQuery.data as TicketDetailRow | null | undefined;
     if (!ticket?.client_id || !deviceSearch.trim()) {
       setDeviceOptions([]);
       return;
@@ -307,7 +238,8 @@ export function TicketDetailModal() {
       .then((rows) => {
         if (!cancelled) setDeviceOptions(rows.filter((device) => device.id !== ticket.device_id));
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load device options", err);
         if (!cancelled) setDeviceOptions([]);
       })
       .finally(() => {
@@ -342,7 +274,7 @@ export function TicketDetailModal() {
   }, [handleKeyDown]);
 
   if (!id || ticketQuery.isLoading || !ticketQuery.data) return null;
-  const ticket = ticketQuery.data as TicketRow;
+  const ticket = ticketQuery.data as TicketDetailRow;
   const struct: ChecklistStructure =
     ticket.checklist_structure && Object.keys(ticket.checklist_structure).length
       ? parseChecklistStructure(ticket.checklist_structure)
@@ -365,7 +297,7 @@ export function TicketDetailModal() {
   const timeline = buildTimeline(statusHistory, deviceHistory, assignments);
   const totalWorked = formatDuration(timeSummaryQuery.data?.totalMinutes ?? 0);
 
-  async function update(patch: Partial<TicketRow> & { checklist?: ChecklistState }) {
+  async function update(patch: Partial<TicketDetailRow> & { checklist?: ChecklistState }) {
     const dbPatch: TablesUpdate<"tickets"> = {
       ...patch,
       checklist: patch.checklist as unknown as Json | undefined,
@@ -495,7 +427,10 @@ export function TicketDetailModal() {
           ticketId: ticket.id,
           checklistName: struct[currentChecklistTab]?.label || "Checklist completata",
         },
-      }).catch((err) => console.error("Failed to send checklist completed email:", err));
+      }).catch((err) => {
+        console.error("Failed to send checklist completed email:", err);
+        toast.error(t("detail.toasts.checklistEmailError", "Errore invio email checklist"));
+      });
       if (currentChecklistTab === "os" && ticket.status === "pending")
         await advance("in-progress", true);
       if (currentChecklistTab === "software" && ticket.status === "in-progress")
@@ -527,6 +462,7 @@ export function TicketDetailModal() {
       qc.invalidateQueries({ queryKey: [...QUERY_KEYS.ticket(ticket.id), "status-history"] });
     } catch (err) {
       console.error("Failed to write status history/activity log", err);
+      toast.error(t("detail.toasts.statusHistoryError", "Errore salvataggio storico"));
     }
     if (ticket.assignee_id && session?.access_token) {
       await notify({
@@ -673,10 +609,12 @@ export function TicketDetailModal() {
       }
       setChecklistTemplateToAttach("");
       toast.success(t("detail.toasts.checklistLinked", "Checklist collegata al ticket"));
-    } catch (err: any) {
-      toast.error(
-        err?.message || t("detail.toasts.checklistLinkError", "Errore collegamento checklist"),
-      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("detail.toasts.checklistLinkError", "Errore collegamento checklist");
+      toast.error(message);
     }
   }
 
@@ -708,10 +646,12 @@ export function TicketDetailModal() {
         value,
         compiledBy: user.id,
       });
-    } catch (err: any) {
-      toast.error(
-        err?.message || t("detail.toasts.responseSaveError", "Errore salvataggio risposta"),
-      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("detail.toasts.responseSaveError", "Errore salvataggio risposta");
+      toast.error(message);
     }
   }
 
@@ -772,13 +712,18 @@ export function TicketDetailModal() {
       }
       void sendChecklistEmail({
         data: { ticketId: ticket.id, checklistName: completed.title },
-      }).catch((err) => console.error("Failed to send checklist completed email:", err));
+      }).catch((err) => {
+        console.error("Failed to send checklist completed email:", err);
+        toast.error(t("detail.toasts.checklistEmailError", "Errore invio email checklist"));
+      });
       qc.invalidateQueries({ queryKey: [...QUERY_KEYS.ticket(ticket.id), "status-history"] });
       toast.success(t("detail.toasts.checklistCompleted", "Checklist completata"));
-    } catch (err: any) {
-      toast.error(
-        err?.message || t("detail.toasts.checklistCompleteError", "Errore completamento checklist"),
-      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("detail.toasts.checklistCompleteError", "Errore completamento checklist");
+      toast.error(message);
     }
   }
 
@@ -808,8 +753,12 @@ export function TicketDetailModal() {
       toast.success(t("detail.toasts.ticketDuplicated", "Ticket duplicato"));
       qc.invalidateQueries({ queryKey: QUERY_KEYS.tickets });
       if (data?.id) close();
-    } catch (err: any) {
-      toast.error(err?.message || t("detail.toasts.duplicateError", "Errore duplicazione ticket"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("detail.toasts.duplicateError", "Errore duplicazione ticket");
+      toast.error(message);
     }
   }
 
@@ -2180,18 +2129,10 @@ function TicketHistory({ timeline, loading }: { timeline: TimelineItem[]; loadin
   );
 }
 
-type TimelineItem = {
-  id: string;
-  at: string;
-  title: string;
-  description: string;
-  icon: typeof Clock;
-};
-
 function buildTimeline(
   statusRows: any[],
   deviceRows: any[],
-  assignments: AssignmentRow[],
+  assignments: TicketDeviceAssignmentRow[],
 ): TimelineItem[] {
   const statusItems = statusRows.map((row) => ({
     id: `status-${row.id}`,
@@ -2224,7 +2165,7 @@ function labelStatus(status?: string | null) {
   return STATUS_META[status as TicketStatus]?.label || status;
 }
 
-function assetInfo(ticket: TicketRow) {
+function assetInfo(ticket: TicketDetailRow) {
   return {
     model: ticket.device?.model || ticket.model || "Nessun asset associato",
     serial: ticket.device?.serial || "-",

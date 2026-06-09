@@ -42,6 +42,7 @@ export function VariablePicker({ variables, onSelect, children }: VariablePicker
         onClick={() => setIsOpen(!isOpen)}
         className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-text2 hover:text-text bg-muted hover:bg-muted/80 rounded-md transition-colors"
         title={t("actionsBuilder.variablePicker.title", "Inserisci variabile")}
+        aria-label={t("actionsBuilder.variablePicker.title", "Inserisci variabile")}
       >
         {children || (
           <>

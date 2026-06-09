@@ -286,7 +286,7 @@ function TicketsPage() {
     if (session?.access_token) {
       loadTechnicians({ data: { accessToken: session.access_token } })
         .then(setTechnicians)
-        .catch(() => {});
+        .catch((err) => console.error("Failed to load technicians", err));
     }
   }, [session?.access_token, loadTechnicians]);
 
@@ -298,7 +298,7 @@ function TicketsPage() {
           if (settings?.sla_config) setSlaLimits(slaConfigToLimits(settings.sla_config));
           else if (settings?.sla_limits) setSlaLimits(settings.sla_limits);
         })
-        .catch(() => {});
+        .catch((err) => console.error("Failed to load SLA limits", err));
     }
   }, [session?.access_token, loadSettings]);
 

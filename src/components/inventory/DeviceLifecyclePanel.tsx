@@ -99,9 +99,9 @@ export function DeviceLifecyclePanel({
       toast.success(
         t("device.lifecycle.transitionSuccess", "Fase del ciclo di vita aggiornata"),
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message ||
+        err instanceof Error ? err.message :
           t("device.lifecycle.transitionError", "Errore nel cambiamento di fase"),
       );
     } finally {
@@ -123,9 +123,9 @@ export function DeviceLifecyclePanel({
       toast.success(
         t("device.lifecycle.uploadSuccess", "Documento caricato"),
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.lifecycle.uploadError", "Errore caricamento documento"),
+        err instanceof Error ? err.message : t("device.lifecycle.uploadError", "Errore caricamento documento"),
       );
     }
   }
@@ -136,9 +136,9 @@ export function DeviceLifecyclePanel({
       toast.success(
         t("device.lifecycle.deleteSuccess", "Documento eliminato"),
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.lifecycle.deleteError", "Errore eliminazione documento"),
+        err instanceof Error ? err.message : t("device.lifecycle.deleteError", "Errore eliminazione documento"),
       );
     }
   }

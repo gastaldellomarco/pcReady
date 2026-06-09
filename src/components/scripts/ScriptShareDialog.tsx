@@ -54,8 +54,9 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
       if (mountedRef.current) {
         setLinks((data ?? []) as ShareLink[]);
       }
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error("Failed to load script share links", err);
+      toast.error(t("share.loadLinksError", "Errore caricamento link"));
     }
   }, [session?.access_token, scriptId]);
 
@@ -67,7 +68,7 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
 
   useEffect(() => {
     if (open && session?.access_token) {
-      loadLinks().catch(() => {});
+      loadLinks();
     }
   }, [open, loadLinks]);
 

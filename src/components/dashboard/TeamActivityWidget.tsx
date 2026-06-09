@@ -3,11 +3,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Info } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
-import { getTechnicianStats } from "@/lib/dashboard-analytics";
+import { getTechnicianStats, type TechnicianStatRow } from "@/lib/dashboard-analytics";
 
 type Period = "today" | "week" | "month";
 
@@ -26,7 +27,7 @@ export function TeamActivityWidget() {
   const navigate = useNavigate();
   const fetcher = useServerFn(getTechnicianStats);
   const { session } = useAuth();
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<TechnicianStatRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -37,6 +38,7 @@ export function TeamActivityWidget() {
       setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load team activity", err);
+      toast.error(t("widgets.teamActivityError", "Errore caricamento attività team"));
       setRows([]);
     } finally {
       setLoading(false);

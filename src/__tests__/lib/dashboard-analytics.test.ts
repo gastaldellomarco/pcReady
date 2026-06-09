@@ -41,8 +41,8 @@ describe("computeTechnicianStats", () => {
         [{ assignee_id: TECH_1 }, { assignee_id: TECH_1 }],
       );
 
-      const t1 = rows.find((r) => r.id === TECH_1);
-      const t2 = rows.find((r) => r.id === TECH_2);
+      const t1 = rows.find((r) => r.id === TECH_1)!;
+      const t2 = rows.find((r) => r.id === TECH_2)!;
       expect(t1.active).toBe(true);
       expect(t2.active).toBe(true);
     });
@@ -64,8 +64,8 @@ describe("computeTechnicianStats", () => {
         [{ assignee_id: TECH_2 }],
       );
 
-      const t1 = rows.find((r) => r.id === TECH_1);
-      const t2 = rows.find((r) => r.id === TECH_2);
+      const t1 = rows.find((r) => r.id === TECH_1)!;
+      const t2 = rows.find((r) => r.id === TECH_2)!;
       // Before the fix both would be false. After: TECH_2 active via open tickets.
       expect(t1.active).toBe(false);
       expect(t2.active).toBe(true);
@@ -108,8 +108,8 @@ describe("computeTechnicianStats", () => {
         [{ assignee_id: TECH_2 }, { assignee_id: TECH_2 }, { assignee_id: TECH_2 }],
       );
 
-      const t1 = rows.find((r) => r.id === TECH_1);
-      const t2 = rows.find((r) => r.id === TECH_2);
+      const t1 = rows.find((r) => r.id === TECH_1)!;
+      const t2 = rows.find((r) => r.id === TECH_2)!;
       expect(t1.active).toBe(true); // via assigned
       expect(t2.active).toBe(true); // via open tickets
     });
@@ -140,8 +140,8 @@ describe("computeTechnicianStats", () => {
         ],
       );
 
-      const t1 = rows.find((r) => r.id === TECH_1);
-      const t2 = rows.find((r) => r.id === TECH_2);
+      const t1 = rows.find((r) => r.id === TECH_1)!;
+      const t2 = rows.find((r) => r.id === TECH_2)!;
       expect(t1.pending).toBe(4); // not 10-8=2
       expect(t2.pending).toBe(1); // not MAX(0, 1-5)=0
     });

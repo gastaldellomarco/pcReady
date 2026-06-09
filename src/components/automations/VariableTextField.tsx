@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { VariablePicker } from "./VariablePicker";
 import type { AutomationVariable } from "@/domain/automation-variables";
 
@@ -25,11 +25,11 @@ export function VariableTextField({
   label,
 }: VariableTextFieldProps) {
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
+  const cursorPositionRef = useRef(0);
 
   const handleVariableSelect = (variableName: string) => {
-    const before = value.slice(0, cursorPosition);
-    const after = value.slice(cursorPosition);
+    const before = value.slice(0, cursorPositionRef.current);
+    const after = value.slice(cursorPositionRef.current);
     const placeholder = `{{${variableName}}}`;
     const newValue = `${before}${placeholder}${after}`;
     onChange(newValue);
@@ -39,7 +39,7 @@ export function VariableTextField({
       const input = inputRef.current;
       if (input) {
         input.focus();
-        const newPosition = cursorPosition + placeholder.length;
+        const newPosition = cursorPositionRef.current + placeholder.length;
         if (input.setSelectionRange) {
           input.setSelectionRange(newPosition, newPosition);
         }
@@ -49,17 +49,17 @@ export function VariableTextField({
 
   const handleSelect = (e: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    setCursorPosition(target.selectionStart || 0);
+    cursorPositionRef.current = target.selectionStart || 0;
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    setCursorPosition(target.selectionStart || 0);
+    cursorPositionRef.current = target.selectionStart || 0;
   };
 
   const handleClick = (e: React.MouseEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    setCursorPosition(target.selectionStart || 0);
+    cursorPositionRef.current = target.selectionStart || 0;
   };
 
   return (
@@ -75,6 +75,7 @@ export function VariableTextField({
             onKeyUp={handleKeyUp}
             onClick={handleClick}
             placeholder={placeholder}
+            aria-label={label || placeholder || "Value input"}
             rows={rows}
             className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-y min-h-[80px]"
           />
@@ -88,6 +89,7 @@ export function VariableTextField({
             onKeyUp={handleKeyUp}
             onClick={handleClick}
             placeholder={placeholder}
+            aria-label={label || placeholder || "Value input"}
             className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
           />
         )}

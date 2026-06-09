@@ -2,23 +2,30 @@ import { Outlet } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { PageErrorBoundary } from "@/components/page-states";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { validatePortalSession } from "@/lib/portal-auth";
+import { validatePortalSession, type PortalBranding } from "@/lib/portal-auth";
 
 /**
  *
  */
 export function PortalLayout() {
+  const { t } = useTranslation("common");
   const validate = useServerFn(validatePortalSession);
-  const [branding, setBranding] = useState<any>(null);
+  const [branding, setBranding] = useState<PortalBranding | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("pcready_portal_token") || "";
     if (!token) return;
     validate({ data: { token } })
       .then((session) => setBranding(session.branding))
-      .catch(() => setBranding(null));
+      .catch((err) => {
+        console.error("Failed to validate portal session", err);
+        toast.error(t("portal.sessionValidationError", "Errore validazione sessione portale"));
+        setBranding(null);
+      });
   }, [validate]);
 
   const primaryColor = branding?.primaryColor || "var(--primary)";

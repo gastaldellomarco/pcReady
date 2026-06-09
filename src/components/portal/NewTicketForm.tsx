@@ -1,9 +1,27 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createPortalTicket, listPortalDevices } from "@/lib/portal-tickets";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
+
+interface PortalDeviceRow {
+  id: string;
+  model: string;
+  serial: string | null;
+  os?: string;
+  status?: string;
+  assigned_to?: string | null;
+  updated_at?: string;
+  purchase_date?: string | null;
+  warranty_expiry_date?: string | null;
+  warranty_type?: string | null;
+  warranty_provider?: string | null;
+  warranty_notes?: string | null;
+  lastTicket?: unknown;
+  ticketHistory?: unknown[];
+}
 
 /**
  *
@@ -11,6 +29,7 @@ import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message"
 export function NewTicketForm({ token, categories }: { token: string; categories: string[] }) {
   const createTicket = useServerFn(createPortalTicket);
   const loadDevices = useServerFn(listPortalDevices);
+  const { t } = useTranslation("common");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(categories[0] || "Assistenza tecnica");
@@ -19,7 +38,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
     "technical_issue",
   );
   const [deviceId, setDeviceId] = useState("");
-  const [devices, setDevices] = useState<any[]>([]);
+  const [devices, setDevices] = useState<PortalDeviceRow[]>([]);
   const [attachments, setAttachments] = useState<
     Array<{ fileName: string; mimeType?: string; dataUrl: string }>
   >([]);
@@ -28,7 +47,7 @@ export function NewTicketForm({ token, categories }: { token: string; categories
   useEffect(() => {
     loadDevices({ data: { token } })
       .then((result) => {
-        const rows = (result.devices as any[]) || [];
+        const rows = ((result as { devices: PortalDeviceRow[] }).devices) || [];
         setDevices(rows);
         const params = new URLSearchParams(window.location.search);
         const prefill = params.get("device");
@@ -46,7 +65,11 @@ export function NewTicketForm({ token, categories }: { token: string; categories
           }
         }
       })
-      .catch(() => setDevices([]));
+      .catch((err) => {
+        console.error("Failed to load portal devices", err);
+        toast.error(t("portal.devicesLoadError", "Errore caricamento dispositivi"));
+        setDevices([]);
+      });
   }, [loadDevices, token]);
 
   async function handleFiles(files: FileList | null) {

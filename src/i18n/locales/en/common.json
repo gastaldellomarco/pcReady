@@ -103,7 +103,9 @@
     "searchPlaceholder": "Search articles…",
     "noResults": "No articles match your search.",
     "result": "result",
-    "results": "results"
+    "results": "results",
+    "clearSearch": "Clear search",
+    "moreArticles": "+{{count}} more articles"
   },
   "actions": {
     "delete": "Delete",
@@ -118,5 +120,9 @@
     "loadingInProgress": "Loading in progress",
     "loadingTable": "Loading table",
     "loadingCards": "Loading cards"
+  },
+  "portal": {
+    "devicesLoadError": "Error loading devices",
+    "sessionValidationError": "Error validating portal session"
   }
 }

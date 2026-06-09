@@ -16,7 +16,8 @@ export function SupportContact({ prefix = "Problemi? Contatta" }: { prefix?: str
       .then((result) => {
         if (active) setSupportEmail(result.support_email);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load support contact", err);
         if (active) setSupportEmail("");
       });
 

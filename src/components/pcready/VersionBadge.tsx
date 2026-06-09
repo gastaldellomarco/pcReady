@@ -18,7 +18,10 @@ export function VersionBadge({ entityType, entityId, className }: VersionBadgePr
     if (entityId) {
       getLatestVersionNumber(entityType, entityId)
         .then(setVersion)
-        .catch(() => setVersion(null));
+        .catch((err) => {
+          console.error("Failed to load version number", err);
+          setVersion(null);
+        });
     }
   }, [entityType, entityId]);
 

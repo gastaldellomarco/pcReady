@@ -55,8 +55,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
     try {
       await startMut.mutateAsync(user.id);
       toast.success(t("timeTracking.startSuccess", "Timer avviato"));
-    } catch (err: any) {
-      toast.error(err?.message || t("timeTracking.startError", "Errore avvio timer"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("timeTracking.startError", "Errore avvio timer"));
     }
   }
 
@@ -66,8 +66,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
       await stopMut.mutateAsync({ entry, description: description || null });
       setDescription("");
       toast.success(t("timeTracking.stopSuccess", "Timer fermato"));
-    } catch (err: any) {
-      toast.error(err?.message || t("timeTracking.stopError", "Errore stop timer"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("timeTracking.stopError", "Errore stop timer"));
     }
   }
 
@@ -90,8 +90,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
       setManualDescription("");
       setManualOpen(false);
       toast.success(t("timeTracking.manualSuccess", "Tempo inserito"));
-    } catch (err: any) {
-      toast.error(err?.message || t("timeTracking.manualError", "Errore inserimento tempo"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("timeTracking.manualError", "Errore inserimento tempo"));
     }
   }
 
@@ -100,8 +100,8 @@ export function TicketTimeTracking({ ticketId }: { ticketId: string }) {
     try {
       await deleteMut.mutateAsync(id);
       toast.success(t("timeTracking.deleteSuccess", "Intervallo eliminato"));
-    } catch (err: any) {
-      toast.error(err?.message || t("timeTracking.deleteError", "Errore eliminazione intervallo"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("timeTracking.deleteError", "Errore eliminazione intervallo"));
     }
   }
 

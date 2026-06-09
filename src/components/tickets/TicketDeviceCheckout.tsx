@@ -279,9 +279,9 @@ export function TicketDeviceCheckout({
       });
       setShowCheckoutDialog(false);
       toast.success(t("device.checkout.checkoutSuccess", "Dispositivo preso in carico"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.checkout.checkoutError", "Errore durante il check-out"),
+        err instanceof Error ? err.message : t("device.checkout.checkoutError", "Errore durante il check-out"),
       );
     } finally {
       setBusy(false);
@@ -303,9 +303,9 @@ export function TicketDeviceCheckout({
       setCheckinNotes("");
       setShowCheckinDialog(false);
       toast.success(t("device.checkout.checkinSuccess", "Dispositivo restituito"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || t("device.checkout.checkinError", "Errore durante il check-in"),
+        err instanceof Error ? err.message : t("device.checkout.checkinError", "Errore durante il check-in"),
       );
     } finally {
       setBusy(false);

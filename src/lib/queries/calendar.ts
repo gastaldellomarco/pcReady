@@ -37,6 +37,15 @@ export type AvailabilityStatus = "available" | "vacation" | "sick_leave" | "unav
 /**
  *
  */
+export interface CalendarClientOption {
+  id: string;
+  name: string;
+  company_name: string | null;
+}
+
+/**
+ *
+ */
 export interface CalendarTicketLink {
   id: string;
   ticket_code: string;
@@ -516,5 +525,5 @@ export async function fetchCalendarClientOptions(query: string) {
   if (term) request = request.or(`name.ilike.%${term}%,company_name.ilike.%${term}%`);
   const { data, error } = await request.range(0, 30);
   if (error) throw error;
-  return (data ?? []) as Array<{ id: string; name: string; company_name: string | null }>;
+  return (data ?? []) as CalendarClientOption[];
 }

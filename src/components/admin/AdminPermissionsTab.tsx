@@ -58,8 +58,8 @@ export function AdminPermissionsTab({ accessToken }: Props) {
       }
       setEdits(editsMap);
       setDirtyRoles(new Set());
-    } catch (err: any) {
-      setError(err?.message ?? "Errore nel caricamento");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Errore nel caricamento");
     } finally {
       setLoading(false);
     }
@@ -98,8 +98,8 @@ export function AdminPermissionsTab({ accessToken }: Props) {
         next.delete(role);
         return next;
       });
-    } catch (err: any) {
-      setError(err?.message ?? "Errore nel salvataggio");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Errore nel salvataggio");
     } finally {
       setSaving(null);
     }

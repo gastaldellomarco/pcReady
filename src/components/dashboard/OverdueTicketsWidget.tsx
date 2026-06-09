@@ -2,10 +2,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Clock, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { StatusBadge, AssigneeChip } from "@/components/pcready/StatusBadge";
 import OverflowTable from "@/components/ui/overflow-table";
 import { useAuth } from "@/lib/auth-context";
-import { getOverdueTickets } from "@/lib/dashboard-analytics";
+import { getOverdueTickets, type OverdueTicketRow } from "@/lib/dashboard-analytics";
 import { openTicketDetail } from "@/lib/detail-navigation";
 import { formatSlaCountdown, type TicketStatus } from "@/lib/pcready";
 
@@ -16,7 +17,7 @@ export function OverdueTicketsWidget() {
   const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const fetcher = useServerFn(getOverdueTickets);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<OverdueTicketRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -27,6 +28,7 @@ export function OverdueTicketsWidget() {
       setTickets(data ?? []);
     } catch (err) {
       console.error("Failed to load overdue tickets", err);
+      toast.error(t("widgets.loadError", "Errore caricamento ticket scaduti"));
       setTickets([]);
     } finally {
       setLoading(false);
