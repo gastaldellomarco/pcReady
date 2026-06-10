@@ -1,4 +1,4 @@
-import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, pbkdf2Sync, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
@@ -152,7 +152,7 @@ export async function requestPortalLoginServer(input: { email: string; sendMail?
 
   // ── 2FA check ──
   if ((contact as any).portal_2fa_enabled) {
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const pendingToken = randomBytes(32).toString("base64url");
 
@@ -216,7 +216,7 @@ export async function loginPortalWithPasswordServer(input: { email: string; pass
   if ((contact as any).portal_2fa_enabled) {
     const clientName =
       (contact as any).clients?.company_name || (contact as any).clients?.name || "cliente";
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const pendingToken = randomBytes(32).toString("base64url");
 

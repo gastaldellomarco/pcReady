@@ -7,6 +7,7 @@ import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import type { Database } from "@/integrations/supabase/types";
 import type { OAuthScope } from "@/lib/oauth-scopes";
+import { randomBytes } from "node:crypto";
 
 /**
  *
@@ -308,8 +309,8 @@ export const createOAuthClient = createServerFn({ method: "POST" })
 
     throwIfRateLimited(userId, RATE_LIMITER_KEYS.CREATE_OAUTH_CLIENT);
 
-    const clientId = `pcready_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const clientSecret = `secret_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+    const clientId = `pcready_${Date.now()}_${randomBytes(8).toString("base64url")}`;
+    const clientSecret = `secret_${Date.now()}_${randomBytes(16).toString("base64url")}`;
 
     const { data: client, error: clientError } = await supabaseAdmin
       .from("oauth_clients")
@@ -408,7 +409,7 @@ export const rotateOAuthClientSecret = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ clientId: string; clientSecret: string }> => {
     const { userId } = await requireAdminUserId(data.accessToken);
 
-    const newSecret = `secret_${Date.now()}_${Math.random().toString(36).slice(2, 18)}`;
+    const newSecret = `secret_${Date.now()}_${randomBytes(16).toString("base64url")}`;
     const nowIso = new Date().toISOString();
 
     const { data: updated, error } = await supabaseAdmin

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "@/lib/email-templates.server";
 import { getPortalSession } from "@/lib/portal-auth.server";
+import { randomInt } from "node:crypto";
 
 /**
  *
@@ -8,7 +9,7 @@ import { getPortalSession } from "@/lib/portal-auth.server";
 export async function setupPortal2FAServer(input: { token: string; enable: boolean }) {
   const session = await getPortalSession(input.token);
   if (input.enable) {
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const { error } = await supabaseAdmin
       .from("client_contacts" as any)
