@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { assertStaffLoginRateLimit } from "@/lib/auth-rate-limit";
 import { errorMessage } from "@/lib/errors";
 import { getMfaClientStatus, rememberChallengeStarted } from "@/lib/mfa-client";
+import { getSelfRegistrationStatus, registerSelf } from "@/lib/self-registration";
 import { formatServerFnErrorForToast } from "@/lib/server-fn-rate-limit-message";
 import staffLogin from "@/lib/staff-auth";
 import { initTheme } from "@/lib/theme";
@@ -47,12 +48,22 @@ function AuthPage() {
   const route = useRouterState({ select: (state) => state.location.pathname });
   const assertLoginLimit = useServerFn(assertStaffLoginRateLimit);
   const serverLogin = useServerFn(staffLogin);
+  const checkRegistration = useServerFn(getSelfRegistrationStatus);
+  const doRegister = useServerFn(registerSelf);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<"login" | "register">("login");
+  const [selfRegEnabled, setSelfRegEnabled] = useState(false);
+  // Registration fields
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
 
   useEffect(() => {
     initTheme();
+    // Check if self-registration is enabled
+    checkRegistration().then((r) => setSelfRegEnabled(!!r?.enabled)).catch(() => {});
   }, []);
 
   if (route !== "/auth") return <Outlet />;
@@ -64,6 +75,36 @@ function AuthPage() {
         replace
       />
     );
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    if (regPassword.length < 8) {
+      toast.error("La password deve essere di almeno 8 caratteri");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await doRegister({
+        data: { email: regEmail, fullName: regName, password: regPassword },
+      });
+      const respData = (result as any)?.data ?? (result as any);
+      if (respData?.duplicate) {
+        toast.success("Se l'email è già registrata, controlla la tua casella di posta.");
+      } else if (respData?.approvalRequired) {
+        toast.success("Registrazione inviata. Un amministratore approverà il tuo account.");
+      } else {
+        toast.success("Registrazione completata. Ora puoi accedere.");
+      }
+      setView("login");
+      setRegName("");
+      setRegEmail("");
+      setRegPassword("");
+    } catch (err: unknown) {
+      toast.error(formatServerFnErrorForToast(err, errorMessage(err, "Registrazione fallita")));
+    } finally {
+      setBusy(false);
+    }
   }
 
   const deploymentLabel = viteDeploymentLabel();
@@ -121,43 +162,115 @@ function AuthPage() {
 
         <div className="pc-card overflow-hidden">
           <div className="pc-card-hd">
-            <span className="pc-card-title">Accedi</span>
+            <span className="pc-card-title">
+              {view === "login" ? "Accedi" : "Registrati"}
+            </span>
           </div>
-          <form onSubmit={submit} className="pc-card-body flex flex-col gap-3">
-            <div>
-              <label className="pc-label">Email</label>
-              <input
-                className="pc-input"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@azienda.it"
-              />
-            </div>
-            <div>
-              <label className="pc-label">Password</label>
-              <input
-                className="pc-input"
-                type="password"
-                required
-                minLength={6}
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                placeholder="Password"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="pc-btn pc-btn-primary justify-center mt-1"
-            >
-              {busy ? "Attendere..." : "Accedi"}
-            </button>
-            <p className="text-[11px] text-text3 text-center mt-2">
-              Gli account vengono creati solo dagli amministratori.
-            </p>
-          </form>
+          {view === "login" ? (
+            <form onSubmit={submit} className="pc-card-body flex flex-col gap-3">
+              <div>
+                <label className="pc-label">Email</label>
+                <input
+                  className="pc-input"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@azienda.it"
+                />
+              </div>
+              <div>
+                <label className="pc-label">Password</label>
+                <input
+                  className="pc-input"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={pwd}
+                  onChange={(e) => setPwd(e.target.value)}
+                  placeholder="Password"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={busy}
+                className="pc-btn pc-btn-primary justify-center mt-1"
+              >
+                {busy ? "Attendere..." : "Accedi"}
+              </button>
+              {selfRegEnabled && (
+                <p className="text-[11px] text-text3 text-center mt-1">
+                  Non hai un account?{" "}
+                  <button
+                    type="button"
+                    className="underline hover:text-text transition-colors"
+                    onClick={() => setView("register")}
+                  >
+                    Registrati
+                  </button>
+                </p>
+              )}
+              {!selfRegEnabled && (
+                <p className="text-[11px] text-text3 text-center mt-2">
+                  Gli account vengono creati solo dagli amministratori.
+                </p>
+              )}
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="pc-card-body flex flex-col gap-3">
+              <div>
+                <label className="pc-label">Nome completo</label>
+                <input
+                  className="pc-input"
+                  type="text"
+                  required
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  placeholder="Mario Rossi"
+                />
+              </div>
+              <div>
+                <label className="pc-label">Email</label>
+                <input
+                  className="pc-input"
+                  type="email"
+                  required
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  placeholder="tu@azienda.it"
+                />
+              </div>
+              <div>
+                <label className="pc-label">Password</label>
+                <input
+                  className="pc-input"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  placeholder="Minimo 8 caratteri"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={busy}
+                className="pc-btn pc-btn-primary justify-center mt-1"
+              >
+                {busy ? "Attendere..." : "Registrati"}
+              </button>
+              <p className="text-[11px] text-text3 text-center mt-1">
+                Hai già un account?{" "}
+                <button
+                  type="button"
+                  className="underline hover:text-text transition-colors"
+                  onClick={() => setView("login")}
+                >
+                  Accedi
+                </button>
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </div>

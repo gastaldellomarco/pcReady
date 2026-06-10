@@ -5,6 +5,7 @@ export type EmailEventType =
   | "invite"
   | "reset_password"
   | "confirm_account"
+  | "registration_pending"
   | "ticket_assigned"
   | "checklist_completed"
   | "ticket_completed"
@@ -42,6 +43,7 @@ export const EMAIL_EVENT_LABELS: Record<EmailEventType, string> = {
   invite: "emailTemplate.events.invite",
   reset_password: "emailTemplate.events.reset_password",
   confirm_account: "emailTemplate.events.confirm_account",
+  registration_pending: "emailTemplate.events.registration_pending",
   ticket_assigned: "emailTemplate.events.ticket_assigned",
   checklist_completed: "emailTemplate.events.checklist_completed",
   ticket_completed: "emailTemplate.events.ticket_completed",
@@ -73,6 +75,10 @@ export const EMAIL_EVENT_META: Record<EmailEventType, EmailEventMeta> = {
   confirm_account: {
     when: "emailTemplate.meta.confirm_account.when",
     recipient: "emailTemplate.meta.confirm_account.recipient",
+  },
+  registration_pending: {
+    when: "emailTemplate.meta.registration_pending.when",
+    recipient: "emailTemplate.meta.registration_pending.recipient",
   },
   ticket_assigned: {
     when: "emailTemplate.meta.ticket_assigned.when",
@@ -128,6 +134,13 @@ export const DEFAULT_TEMPLATES: Record<
       '<h1>Conferma account</h1><p>Ciao {{user_name}},</p><p>conferma il tuo account da qui:</p><p><a href="{{confirm_link}}">Conferma account</a></p><p>Supporto: {{support_email}}</p>',
     body_text:
       "Ciao {{user_name}}, conferma il tuo account da qui: {{confirm_link}}. Supporto: {{support_email}}",
+  },
+  registration_pending: {
+    subject: "[{{organization_name}}] Nuova registrazione in attesa di approvazione",
+    body_html:
+      '<h1>Nuova registrazione da approvare</h1><p>Ciao {{admin_name}},</p><p><strong>{{registered_user_name}}</strong> ({{registered_user_email}}) ha richiesto la registrazione su {{organization_name}}.</p><p>L\'account è in attesa di approvazione. Accedi al pannello admin per approvarlo:</p><p><a href="{{admin_link}}">Vai alla sezione Admin → Utenti</a></p><p>L\'utente apparirà come <strong>&quot;In attesa&quot;</strong> nella lista utenti.</p><p>Supporto: {{support_email}}</p>',
+    body_text:
+      "Ciao {{admin_name}}, {{registered_user_name}} ({{registered_user_email}}) ha richiesto la registrazione su {{organization_name}}. L'account è in attesa di approvazione. Vai qui: {{admin_link}}. Supporto: {{support_email}}",
   },
   ticket_assigned: {
     subject: "[{{organization_name}}] Ticket assegnato {{ticket_code}}",
@@ -196,6 +209,13 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<EmailEventType, EmailTemplateVaria
   confirm_account: [
     ...COMMON_VARIABLES,
     { token: "{{confirm_link}}", description: "Link di conferma account" },
+  ],
+  registration_pending: [
+    ...COMMON_VARIABLES,
+    { token: "{{admin_name}}", description: "Nome dell\'admin che riceve la notifica" },
+    { token: "{{registered_user_name}}", description: "Nome del nuovo utente registrato" },
+    { token: "{{registered_user_email}}", description: "Email del nuovo utente registrato" },
+    { token: "{{admin_link}}", description: "Link al pannello admin" },
   ],
   ticket_assigned: [
     ...COMMON_VARIABLES,

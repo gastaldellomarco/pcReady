@@ -38,6 +38,8 @@ export interface MobileCardViewProps<T> {
   onRowClick?: (row: T) => void;
   className?: string;
   emptyMessage?: string;
+  rowClassName?: (row: T) => string | undefined;
+  rowAttrs?: (row: T) => Record<string, string | undefined>;
 }
 
 /**
@@ -50,6 +52,8 @@ export function MobileCardView<T extends Record<string, any>>({
   onRowClick,
   className,
   emptyMessage = "Nessun dato",
+  rowClassName,
+  rowAttrs,
 }: MobileCardViewProps<T>) {
   if (!data.length) {
     return <div className="py-8 text-center text-sm text-text3">{emptyMessage}</div>;
@@ -64,7 +68,8 @@ export function MobileCardView<T extends Record<string, any>>({
         return (
           <div
             key={String(row[keyField])}
-            className="rounded-[10px] border px-4 py-3 transition-colors"
+            className={`rounded-[10px] border px-4 py-3 transition-colors ${rowClassName?.(row) ?? ""}`}
+            {...(rowAttrs?.(row) ?? {})}
             style={{
               background: "var(--surface)",
               borderColor: "var(--border)",

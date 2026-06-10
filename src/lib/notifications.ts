@@ -13,6 +13,7 @@ export const NOTIFICATION_TYPES = [
   "checklist_completed",
   "checklist_section_assigned",
   "user_invited",
+  "user_registered",
   "mention",
 ] as const;
 

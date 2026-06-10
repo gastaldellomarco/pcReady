@@ -31,6 +31,7 @@ export function useAdminSettingsForm(args: {
       default_timezone: "",
       max_devices_per_technician: 1,
       self_registration_enabled: false,
+      send_registration_email: true,
       admin_approval_required: false,
       support_email: null,
       wip_limits: {
@@ -70,6 +71,7 @@ export function useAdminSettingsForm(args: {
       default_timezone: settings?.default_timezone || "Europe/Rome",
       max_devices_per_technician: settings?.max_devices_per_technician ?? 1,
       self_registration_enabled: settings?.self_registration_enabled ?? false,
+      send_registration_email: settings?.send_registration_email ?? true,
       admin_approval_required: settings?.admin_approval_required ?? false,
       support_email: settings?.support_email ?? null,
       wip_limits: settings?.wip_limits ?? {
@@ -117,6 +119,7 @@ export function useAdminSettingsForm(args: {
         default_timezone: values.default_timezone,
         max_devices_per_technician: Number(values.max_devices_per_technician),
         self_registration_enabled: !!values.self_registration_enabled,
+        send_registration_email: !!(values as any).send_registration_email,
         admin_approval_required: !!values.admin_approval_required,
         support_email: (values.support_email as string) || "",
         wip_limits: {

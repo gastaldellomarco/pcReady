@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { mergeAppSettingsRows } from "@/lib/app-settings";
 import { sendEmail, EMAIL_TEMPLATE_SELECT } from "@/lib/email-templates.server";
-import type { EmailEventType } from "@/types/email";
+import { DEFAULT_TEMPLATES, type EmailEventType } from "@/types/email";
 
 type EmailTemplateRow = {
   id: string;
@@ -138,13 +138,22 @@ export async function sendEmailEvent(params: {
   if (!params.to) return;
 
   const template = await getEmailTemplateByEvent(params.eventType);
-  if (!template) return;
+  const defaultTemplate = DEFAULT_TEMPLATES[params.eventType];
 
-  const subject = renderTemplate(template.subject, params.variables);
-  const html = renderTemplate(template.body_html, params.variables);
-  const text = template.body_text
-    ? renderTemplate(template.body_text, params.variables)
-    : undefined;
+  const subject = renderTemplate(
+    template?.subject ?? defaultTemplate?.subject ?? "",
+    params.variables,
+  );
+  const html = renderTemplate(
+    template?.body_html ?? defaultTemplate?.body_html ?? "",
+    params.variables,
+  );
+  const text = renderTemplate(
+    template?.body_text ?? defaultTemplate?.body_text ?? "",
+    params.variables,
+  );
+
+  if (!subject && !html) return;
 
   await sendEmail(params.to, subject, html, text);
 }

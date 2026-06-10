@@ -1,5 +1,6 @@
 ﻿import DOMPurify from "dompurify";
-import { Eye, MailPlus, Search, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
+import { Eye, MailPlus, Search, ShieldCheck, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ImpersonationReadOnlyBanner } from "@/components/admin/ImpersonationReadOnlyBanner";
@@ -65,7 +66,7 @@ function MfaStatusBadge({
 /**
  *
  */
-export function AdminUsersTab() {
+export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, unknown> }) {
   const { t } = useTranslation("admin");
   const { session, user, hasPermission, startImpersonation, isImpersonating } = useAuth();
   const canManageUsers = hasPermission("can_manage_users");
@@ -99,6 +100,7 @@ export function AdminUsersTab() {
     saveRole,
     toggleDisabled,
     resendInviteFor,
+    approvePending,
     remove,
     confirmRemove,
     updateUser,
@@ -124,6 +126,23 @@ export function AdminUsersTab() {
 
   const { settings } = useAdminAppSettings({ accessToken, canManageSettings: hasPermission("can_manage_settings") });
   const isMobile = useIsMobile();
+
+  const highlightId = typeof searchParams?.highlight === "string" ? searchParams.highlight : null;
+
+  // Scroll to and highlight the user specified via URL param
+  useEffect(() => {
+    if (!highlightId || !filtered?.length) return;
+    const idx = filtered.findIndex((r) => r.id === highlightId);
+    if (idx === -1) return;
+    // Use requestAnimationFrame to wait for the next paint after DOM renders
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-highlighted="${highlightId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [highlightId, filtered]);
 
   const userCardColumns: MobileCardColumn<any>[] = [
     {
@@ -193,6 +212,18 @@ export function AdminUsersTab() {
               <Eye className="size-3.5" />
             </button>
           )}
+          {canManageUsers && row.status === "pending" && (
+            <button
+              className="pc-btn-icon touch-target"
+              title={t("users.tooltip.approve", "Approva utente")}
+              disabled={busyId === row.id || (isImpersonating && !canManageUsers)}
+              onClick={() => approvePending(row)}
+              style={{ color: "var(--success, #16A34A)" }}
+            >
+              <ShieldCheck className="size-3.5" />
+            </button>
+          )}
+          {row.status !== "pending" && (
           <button
             className="pc-btn-icon touch-target"
             title={row.status === "disabled" ? "Riabilita utente" : "Disabilita utente"}
@@ -205,6 +236,7 @@ export function AdminUsersTab() {
               <UserX className="size-3.5" />
             )}
           </button>
+          )}
           <button
             className="pc-btn-icon touch-target"
             title="Rimuovi utente"
@@ -567,7 +599,12 @@ export function AdminUsersTab() {
                   (filtered ?? []).map((row) => (
                     <tr
                       key={row.id}
-                      className="border-b hover:bg-surface2 transition-colors"
+                      data-highlighted={row.id === highlightId ? highlightId : undefined}
+                      className={`border-b hover:bg-surface2 transition-colors ${
+                        row.id === highlightId
+                          ? "ring-2 ring-inset ring-[var(--accent)] bg-[var(--accent2)] animate-pulse-once"
+                          : ""
+                      }`}
                       style={{ borderColor: "var(--border)" }}
                     >
                       <td className="px-[14px] py-[10px]">
@@ -647,6 +684,18 @@ export function AdminUsersTab() {
                               <Eye className="size-3.5" />
                             </button>
                           )}
+                          {canManageUsers && row.status === "pending" && (
+                            <button
+                              className="pc-btn-icon touch-target"
+                              title={t("users.tooltip.approve", "Approva utente")}
+                              disabled={busyId === row.id || (isImpersonating && !canManageUsers)}
+                              onClick={() => approvePending(row)}
+                              style={{ color: "var(--success, #16A34A)" }}
+                            >
+                              <ShieldCheck className="size-3.5" />
+                            </button>
+                          )}
+                          {row.status !== "pending" && (
                           <button
                             className="pc-btn-icon touch-target"
                             title={
@@ -663,6 +712,7 @@ export function AdminUsersTab() {
                               <UserX className="size-3.5" />
                             )}
                           </button>
+                          )}
                           <button
                             className="pc-btn-icon touch-target"
                             title={t("users.tooltip.removeUser", "Rimuovi utente")}
@@ -692,6 +742,14 @@ export function AdminUsersTab() {
               columns={userCardColumns}
               keyField="id"
               emptyMessage={t("users.empty.noUsers", "Nessun utente trovato")}
+              rowClassName={(row: any) =>
+                row.id === highlightId
+                  ? "!ring-2 !ring-inset !ring-[var(--accent)] !bg-[var(--accent2)] animate-pulse-once"
+                  : undefined
+              }
+              rowAttrs={(row: any) =>
+                row.id === highlightId ? { "data-highlighted": highlightId! } : {}
+              }
             />
           )}
         </OverflowTable>

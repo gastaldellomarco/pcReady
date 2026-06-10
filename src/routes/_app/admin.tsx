@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_app/admin")({
     auditSearch: typeof search.auditSearch === "string" ? search.auditSearch : undefined,
     auditPage: typeof search.auditPage === "string" ? Number(search.auditPage) : undefined,
     auditPreset: typeof search.auditPreset === "string" ? search.auditPreset : undefined,
+    highlight: typeof search.highlight === "string" ? search.highlight : undefined,
   }),
   head: () => ({
     meta: [
@@ -139,7 +140,7 @@ function AdminUsersPage() {
         )}
         <TabsTrigger value="script-shares">{t("tabs.scriptShares", "Link script")}</TabsTrigger>
       </TabsList>
-      <AdminUsersTab />
+      <AdminUsersTab searchParams={search} />
       <AdminPermissionsTab accessToken={accessToken} />
       {canManageSettings && (
         <AdminSettingsTab

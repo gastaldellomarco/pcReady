@@ -11,6 +11,7 @@ export const AppSettingsSchema = z.object({
       message: "Deve essere un numero intero maggiore o uguale a 1",
     }),
   self_registration_enabled: z.boolean(),
+  send_registration_email: z.boolean(),
   admin_approval_required: z.boolean(),
   support_email: optionalTrimmed(),
   wip_limits: z.object({

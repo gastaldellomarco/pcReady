@@ -520,6 +520,36 @@ export function AdminSettingsTab({
 
                     <div className="flex items-center space-x-2">
                       <Checkbox
+                        id="send_registration_email"
+                        checked={
+                          !!settingsForm.watch("self_registration_enabled" as any) &&
+                          !!settingsForm.watch("send_registration_email" as any)
+                        }
+                        disabled={
+                          !settingsForm.watch("self_registration_enabled" as any)
+                        }
+                        onCheckedChange={(checked) =>
+                          settingsForm.setValue(
+                            "send_registration_email" as any,
+                            checked === true,
+                            { shouldDirty: true, shouldValidate: true },
+                          )
+                        }
+                      />
+                      <Label
+                        htmlFor="send_registration_email"
+                        className={
+                          !settingsForm.watch("self_registration_enabled" as any)
+                            ? "text-muted-foreground"
+                            : ""
+                        }
+                      >
+                        Invia email di conferma dopo la registrazione
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
                         id="admin_approval_required"
                         checked={!!settingsForm.watch("admin_approval_required" as any)}
                         onCheckedChange={(checked) =>

@@ -57,6 +57,20 @@ export function AdminUserStatusBadge({
     );
   }
 
+  if (status === "pending") {
+    return (
+      <span
+        className="pc-badge"
+        style={{
+          background: "var(--warning-bg, #FEF3C7)",
+          color: "var(--warning, #D97706)",
+        }}
+      >
+        {t("statusBadge.pending", "In attesa")}
+      </span>
+    );
+  }
+
   const active = status === "active";
   return (
     <span

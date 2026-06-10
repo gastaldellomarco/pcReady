@@ -42,6 +42,7 @@ export type AppSettings = {
   default_timezone: string;
   max_devices_per_technician: number;
   self_registration_enabled: boolean;
+  send_registration_email: boolean;
   admin_approval_required: boolean;
   support_email: string;
   wip_limits: WipLimits;
@@ -66,6 +67,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   default_timezone: "Europe/Rome",
   max_devices_per_technician: 10,
   self_registration_enabled: false,
+  send_registration_email: true,
   admin_approval_required: true,
   support_email: "",
   wip_limits: DEFAULT_WIP_LIMITS,
@@ -431,6 +433,7 @@ export function validateAppSettingsInput(settings: Partial<AppSettings>): AppSet
       default_timezone: z.string().min(1),
       max_devices_per_technician: z.number().min(1).max(100),
       self_registration_enabled: z.boolean(),
+      send_registration_email: z.boolean(),
       admin_approval_required: z.boolean(),
       support_email: z
         .string()

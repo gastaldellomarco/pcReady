@@ -18,7 +18,7 @@
 -- Encrypted password hash generated from 'password123'
 DO $$
 DECLARE
-    v_pwhash text := '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+    v_pwhash text := '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.';
     v_now   timestamptz := '2026-01-01 09:00:00+01'::timestamptz;
 BEGIN
 
@@ -99,7 +99,7 @@ INSERT INTO public.user_roles (user_id, role) VALUES
     (v_diego,   'tech'),
     (v_sara,    'tech'),
     (v_valerio, 'viewer')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role;
 
 END $$;
 
@@ -203,69 +203,69 @@ FOR v_rec IN SELECT id, name FROM public.clients WHERE name IN (
     CASE v_rec.name
         WHEN 'Tecnolab Srl' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Roberto', 'Mancini',    'Roberto Mancini',    'r.mancini@tecnolab.test',    '+39 02 89456124', 'Responsabile IT',     'IT Manager',                'IT',        true,  'Referente tecnico principale. Interlocutore diretto per tutti i ticket.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Roberto', 'Mancini',    'Roberto Mancini',    'r.mancini@tecnolab.test',    '+39 02 89456124', 'Responsabile IT',     'IT Manager',                'IT',        true,  'Referente tecnico principale. Interlocutore diretto per tutti i ticket.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Elena',   'Rossi',       'Elena Rossi',        'e.rossi@tecnolab.test',      '+39 02 89456125', 'Amministrazione',     'Responsabile Amministrativo','Amministrazione', false, 'Gestisce contratti e fatturazione.', NULL, NULL),
                 (v_rec.id, 'Marco',   'Ferrari',     'Marco Ferrari',      'm.ferrari@tecnolab.test',    '+39 02 89456126', 'Produzione',          'Capo Officina',             'Produzione',  false, 'Utilizza le postazioni del reparto produzione.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Clinica San Luca Srl' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Dott.ssa Maria', 'Bianchi', 'Dott.ssa Maria Bianchi', 'm.bianchi@clinicasanluca.test', '+39 055 2345679', 'Direttore Sanitario', 'Direttore Sanitario',        'Direzione',  true,  'Referente principale per le questioni IT. Medico con sensibilità digitale.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Dott.ssa Maria', 'Bianchi', 'Dott.ssa Maria Bianchi', 'm.bianchi@clinicasanluca.test', '+39 055 2345679', 'Direttore Sanitario', 'Direttore Sanitario',        'Direzione',  true,  'Referente principale per le questioni IT. Medico con sensibilità digitale.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Francesco',     'Neri',    'Francesco Neri',   'f.neri@clinicasanluca.test',   '+39 055 2345680', 'Sistemi Informativi', 'Tecnico Sistemi Informativi', 'IT',        false, 'Co-referente tecnico, gestisce la parte amministrativa dei sistemi.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Studio Legale Ferretti' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Avv. Carlo',  'Ferretti',  'Avv. Carlo Ferretti',  'c.ferretti@studioferretti.test',  '+39 011 3456790', 'Socio Fondatore',     'Avvocato Senior',           'Direzione',  true,  'Socio fondatore, approva personalmente interventi e investimenti IT.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Avv. Carlo',  'Ferretti',  'Avv. Carlo Ferretti',  'c.ferretti@studioferretti.test',  '+39 011 3456790', 'Socio Fondatore',     'Avvocato Senior',           'Direzione',  true,  'Socio fondatore, approva personalmente interventi e investimenti IT.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Simonetta',    'Gallo',    'Simonetta Gallo',      's.gallo@studioferretti.test',    '+39 011 3456791', 'Segreteria',          'Responsabile Segreteria',   'Segreteria', false, 'Primo punto di contatto per problemi informatici quotidiani.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Istituto Leonardo da Vinci' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Prof.ssa Anna', 'Verdi',   'Prof.ssa Anna Verdi','a.verdi@istitutodavinci.test', '+39 030 4567891', 'Dirigente Scolastico', 'Dirigente Scolastico',      'Direzione',  true,  'Dirigente che autorizza gli interventi.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Prof.ssa Anna', 'Verdi',   'Prof.ssa Anna Verdi','a.verdi@istitutodavinci.test', '+39 030 4567891', 'Dirigente Scolastico', 'Dirigente Scolastico',      'Direzione',  true,  'Dirigente che autorizza gli interventi.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Luca',          'Conti',   'Luca Conti',           'l.conti@istitutodavinci.test', '+39 030 4567892', 'Docente Referente',   'Docente Informatica',       'Didattica',  false, 'Referente per i laboratori informatici e la sala docenti.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Ristorante Da Gigi' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Gigi',          'Marchetti','Gigi Marchetti',      'g.marchetti@ristorantedagigi.test','+39 045 5678902', 'Titolare',            'Chef Patron',               'Direzione',  true,  'Titolare, contatto diretto per ogni evenienza.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Gigi',          'Marchetti','Gigi Marchetti',      'g.marchetti@ristorantedagigi.test','+39 045 5678902', 'Titolare',            'Chef Patron',               'Direzione',  true,  'Titolare, contatto diretto per ogni evenienza.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Sofia',         'Romano',  'Sofia Romano',         's.romano@ristorantedagigi.test', '+39 045 5678903', 'Sala',                'Maitre',                    'Sala',       false, 'Utilizza il gestionale prenotazioni e il POS.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Farmacia Dott. Galli' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Dott. Marco',  'Galli',   'Dott. Marco Galli',    'marco.galli@dottgalli.test',   '+39 051 6789013', 'Titolare',            'Farmacista Direttore',      'Direzione',  true,  'Titolare della farmacia, contatto per decisioni strategiche.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Dott. Marco',  'Galli',   'Dott. Marco Galli',    'marco.galli@dottgalli.test',   '+39 051 6789013', 'Titolare',            'Farmacista Direttore',      'Direzione',  true,  'Titolare della farmacia, contatto per decisioni strategiche.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Chiara',        'Rinaldi', 'Chiara Rinaldi',       'c.rinaldi@dottgalli.test',     '+39 051 6789014', 'Farmacista',          'Farmacista Collaboratore',  'Farmacia',   false, 'Utilizza il gestionale ricette e il terminale elettronico.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Autocarrozzeria Mercurio' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Stefano',    'Bianco',  'Stefano Bianco',       's.bianco@mercurio.test',       '+39 049 7890124', 'Titolare',            'Proprietario',              'Direzione',  true,  'Titolare dell''autocarrozzeria, gestisce personalmente l''IT.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Stefano',    'Bianco',  'Stefano Bianco',       's.bianco@mercurio.test',       '+39 049 7890124', 'Titolare',            'Proprietario',              'Direzione',  true,  'Titolare dell''autocarrozzeria, gestisce personalmente l''IT.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Alessandro', 'Fabbri',  'Alessandro Fabbri',    'a.fabbri@mercurio.test',       '+39 049 7890125', 'Officina',            'Capo Officina',             'Produzione', false, 'Utilizza tablet in officina per la gestione dei lavori.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Hotel Palazzo della Regina' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Dott.ssa Lucia', 'Contarini','Dott.ssa Lucia Contarini','l.contarini@palazzodellaregina.test','+39 0541 8901235', 'Direttrice',          'Direttrice Hotel',          'Direzione',  true,  'Direttrice della struttura, referente per tutti i contratti.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Dott.ssa Lucia', 'Contarini','Dott.ssa Lucia Contarini','l.contarini@palazzodellaregina.test','+39 0541 8901235', 'Direttrice',          'Direttrice Hotel',          'Direzione',  true,  'Direttrice della struttura, referente per tutti i contratti.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Matteo',        'Russo',   'Matteo Russo',        'm.russo@palazzodellaregina.test','+39 0541 8901236', 'Ricevimento',         'Capo Ricevimento',          'Reception',  false, 'Principale utilizzatore del gestionale di booking e check-in.', NULL, NULL),
                 (v_rec.id, 'Paolo',         'Ferri',   'Paolo Ferri',         'p.ferri@palazzodellaregina.test','+39 0541 8901237', 'Amministrazione',     'Responsabile Amministrativo','Ufficio',    false, 'Gestisce fatturazione e contratti.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Supermercato Alimentari & Co' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Giuseppe',   'Fontana',  'Giuseppe Fontana',     'g.fontana@alimentarieco.test', '+39 059 9012346', 'IT Manager',          'Responsabile IT',           'IT',         true,  'Referente IT per tutti i punti vendita.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Giuseppe',   'Fontana',  'Giuseppe Fontana',     'g.fontana@alimentarieco.test', '+39 059 9012346', 'IT Manager',          'Responsabile IT',           'IT',         true,  'Referente IT per tutti i punti vendita.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Maria',      'Costa',    'Maria Costa',          'm.costa@alimentarieco.test',   '+39 059 9012347', 'Amministrazione',     'Responsabile Amministrativo','Ufficio',    false, 'Gestisce gli aspetti amministrativi e contratti.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Centro Estetico Beauty Lab' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Elena',      'Grecchi',  'Elena Grecchi',        'e.grecchi@beautylab.test',    '+39 035 0123457', 'Titolare',            'Proprietaria',              'Direzione',  true,  'Titolare del centro, referente unico.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Elena',      'Grecchi',  'Elena Grecchi',        'e.grecchi@beautylab.test',    '+39 035 0123457', 'Titolare',            'Proprietaria',              'Direzione',  true,  'Titolare del centro, referente unico.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Camilla',    'Guerra',   'Camilla Guerra',       'c.guerra@beautylab.test',     '+39 035 0123458', 'Estetista',           'Estetista Senior',          'Operativo',  false, 'Utilizza il software prenotazioni e CRM clienti.', NULL, NULL)
             ON CONFLICT DO NOTHING;
 
         WHEN 'Banca Regionale Etruria' THEN
             INSERT INTO public.client_contacts (client_id, first_name, last_name, full_name, email, phone, role, job_title, department, is_primary, notes, portal_password_hash, portal_password_updated_at) VALUES
-                (v_rec.id, 'Ing. Paolo', 'Mattei',   'Ing. Paolo Mattei',    'p.mattei@etruria.test',        '+39 075 1234568', 'Chief Technology Officer', 'CTO',          'IT',      true,  'CTO, referente per tutte le infrastrutture IT.', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '2026-01-10'),
+                (v_rec.id, 'Ing. Paolo', 'Mattei',   'Ing. Paolo Mattei',    'p.mattei@etruria.test',        '+39 075 1234568', 'Chief Technology Officer', 'CTO',          'IT',      true,  'CTO, referente per tutte le infrastrutture IT.', '$2b$10$37nWWKsJaF3SveZ0/cuy5ezu7ty0RngRCj0xmnCwayAlHegZpcTY.', '2026-01-10'),
                 (v_rec.id, 'Dott. Luca', 'Barbieri', 'Dott. Luca Barbieri',  'l.barbieri@etruria.test',      '+39 075 1234569', 'IT Operations',       'IT Operations Manager',     'IT',        false, 'Referente operativo per la gestione quotidiana dei sistemi.', NULL, NULL)
             ON CONFLICT DO NOTHING;
         ELSE NULL;

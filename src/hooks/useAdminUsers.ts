@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useAdminUsersFilters } from "@/hooks/useAdminUsersFilters";
 import {
+  approvePendingUser,
   deleteAdminUser,
   inviteAdminUser,
   listAdminUsers,
@@ -32,6 +33,7 @@ export function useAdminUsers(args: {
   const deleteUser = useServerFn(deleteAdminUser);
   const inviteUser = useServerFn(inviteAdminUser);
   const resendInvite = useServerFn(resendAdminUserInvite);
+  const approveUser = useServerFn(approvePendingUser);
 
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [loadingRows, setLoadingRows] = useState(true);
@@ -127,6 +129,20 @@ export function useAdminUsers(args: {
     }
   }
 
+  async function approvePending(row: AdminUserRow) {
+    if (!accessToken || row.status !== "pending") return;
+    setBusyId(row.id);
+    try {
+      await approveUser({ data: { accessToken, userId: row.id } });
+      toast.success("Utente approvato");
+      await load();
+    } catch (error) {
+      toast.error(getAdminErrorMessage(error, "Approvazione non riuscita"));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function remove(row: AdminUserRow) {
     setDeleteTarget(row);
   }
@@ -197,6 +213,7 @@ export function useAdminUsers(args: {
     saveRole,
     toggleDisabled,
     resendInviteFor,
+    approvePending,
     remove,
     confirmRemove,
     accessToken,

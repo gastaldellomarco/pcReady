@@ -17,7 +17,7 @@ export interface AdminUserRow {
   full_name: string;
   initials: string;
   role: AppRole;
-  status: "active" | "disabled" | "invited";
+  status: "active" | "disabled" | "invited" | "pending";
   created_at: string;
   last_sign_in_at: string | null;
   invited_at: string | null;
@@ -66,6 +66,7 @@ const AdmInviteSchema = z.object({ accessToken: z.string(), email: z.string(), f
 const AdmResendSchema = z.object({ accessToken: z.string(), userId: z.string(), redirectTo: z.string().optional() });
 const AdmStateSchema = z.object({ accessToken: z.string(), userId: z.string(), disabled: z.boolean() });
 const AdmDeleteSchema = z.object({ accessToken: z.string(), userId: z.string() });
+const AdmApproveSchema = z.object({ accessToken: z.string(), userId: z.string() });
 
 export const listAdminUsers = createServerFn({ method: "POST" })
   .validator(AdmAuthedSchema)
@@ -98,16 +99,27 @@ export const listAdminUsers = createServerFn({ method: "POST" })
           user.email?.split("@")[0] ||
           "Utente";
         const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
+        const registeredSelf = user.user_metadata?.registered_self === true;
         const role = roleById.get(user.id) ?? "viewer";
         const factors = await (supabaseAdmin.auth.admin as any).mfa
           ?.listFactors({ userId: user.id })
           .catch(() => ({ data: null }));
-        const mfaEnabled = !!(factors?.data?.totp ?? []).some(
-          (factor: any) => factor.status === "verified",
+        const mfaEnabled = !!(factors?.data?.factors ?? []).some(
+          (factor: any) => factor.status === "verified" && factor.factor_type === "totp",
         );
         const policy = await getMfaPolicyForUser(user.id, user.created_at ?? null).catch(() => ({
           required: false,
         }));
+
+        // Determine status: pending = self-registered + banned (awaiting approval)
+        let status: AdminUserRow["status"];
+        if (!user.email_confirmed_at) {
+          status = "invited";
+        } else if (bannedUntil && bannedUntil > new Date()) {
+          status = registeredSelf ? "pending" : "disabled";
+        } else {
+          status = "active";
+        }
 
         return {
           id: user.id,
@@ -115,11 +127,7 @@ export const listAdminUsers = createServerFn({ method: "POST" })
           full_name: name,
           initials: profile?.initials || normalizeInitials(name),
           role,
-          status: !user.email_confirmed_at
-            ? "invited"
-            : bannedUntil && bannedUntil > new Date()
-              ? "disabled"
-              : "active",
+          status,
           created_at: user.created_at ?? profile?.created_at ?? new Date().toISOString(),
           last_sign_in_at: user.last_sign_in_at ?? null,
           invited_at: !user.email_confirmed_at
@@ -149,17 +157,13 @@ export const updateAdminUser = createServerFn({ method: "POST" })
       if (profileError) throw new Error(profileError.message);
     }
 
-    const { error: deleteError } = await supabaseAdmin
+    const { error: roleError } = await supabaseAdmin
       .from("user_roles")
-      .delete()
-      .eq("user_id", data.userId);
-    if (deleteError) throw new Error(deleteError.message);
-
-    const { error: insertError } = await supabaseAdmin.from("user_roles").insert({
-      user_id: data.userId,
-      role: data.role as AppRole,
-    });
-    if (insertError) throw new Error(insertError.message);
+      .upsert(
+        { user_id: data.userId, role: data.role as AppRole },
+        { onConflict: "user_id" },
+      );
+    if (roleError) throw new Error(roleError.message);
 
     return { ok: true };
   });
@@ -199,16 +203,12 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
       );
     if (userProfileError) throw new Error(userProfileError.message);
 
-    const { error: deleteError } = await supabaseAdmin
+    const { error: roleError } = await supabaseAdmin
       .from("user_roles")
-      .delete()
-      .eq("user_id", invitedUserId);
-    if (deleteError) throw new Error(deleteError.message);
-
-    const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-      user_id: invitedUserId,
-      role: data.role as AppRole,
-    });
+      .upsert(
+        { user_id: invitedUserId, role: data.role as AppRole },
+        { onConflict: "user_id" },
+      );
     if (roleError) throw new Error(roleError.message);
 
     await createNotificationForAdmins({
@@ -270,6 +270,34 @@ export const deleteAdminUser = createServerFn({ method: "POST" })
     await assertCanRemoveAdmin(data.userId, "viewer");
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
+  });
+
+/**
+ * Approves a pending self-registered user by removing the ban.
+ */
+export const approvePendingUser = createServerFn({ method: "POST" })
+  .validator(AdmApproveSchema)
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
+    );
+    if (userError) throw new Error(userError.message);
+    if (!userData.user) throw new Response("Utente non trovato", { status: 404 });
+
+    // Verify the user is actually a self-registered pending user
+    if (userData.user.user_metadata?.registered_self !== true) {
+      throw new Response("Questo utente non è in attesa di approvazione", { status: 400 });
+    }
+
+    // Unban the user
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: "none",
+    });
     if (error) throw new Error(error.message);
 
     return { ok: true };

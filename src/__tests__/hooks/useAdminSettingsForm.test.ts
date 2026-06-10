@@ -20,6 +20,7 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     default_timezone: "Europe/Rome",
     max_devices_per_technician: 10,
     self_registration_enabled: false,
+    send_registration_email: true,
     admin_approval_required: true,
     support_email: "support@test.it",
     wip_limits: { pending: 20, "in-progress": 5, testing: 5, ready: 20, completed: 0, archived: 0 },
