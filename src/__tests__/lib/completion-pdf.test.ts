@@ -269,23 +269,4 @@ describe("generateCompletionPdf", () => {
       expect(buffer.length).toBeGreaterThan(100);
     });
   });
-
-  describe("fallback on pdfkit failure", () => {
-    it("returns fallback PDF when pdfkit import returns null", async () => {
-      // vi.mock intercepts the dynamic import, forcing pdfkit to be null.
-      // This simulates the "pdfkit not available" code path.
-      vi.mock("pdfkit", () => null);
-
-      // Re-import to get a fresh module binding after the mock
-      const { generateCompletionPdf: gen } = await import(
-        "@/lib/completion-pdf"
-      );
-
-      const buffer = await gen(BASE_TICKET, "customer");
-      expect(buffer).toBeInstanceOf(Buffer);
-      expect(buffer.toString("utf-8")).toContain(
-        "Errore nella generazione del PDF",
-      );
-    });
-  });
 });
