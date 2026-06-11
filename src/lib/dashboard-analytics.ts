@@ -26,6 +26,7 @@ export {
   computeDashboardAnalytics,
   computeOverdueTickets,
   computePeriodRange,
+  computeWeekRange,
   clamp,
 } from "@/lib/data/dashboard-analytics";
 
@@ -34,6 +35,7 @@ export type {
   OverdueTicketsInput,
   PeriodRangePeriod,
   PeriodRange,
+  WeekRange,
 } from "@/lib/data/dashboard-analytics";
 
 import type {
@@ -46,7 +48,7 @@ import type {
   TechnicianStatRow,
   WeeklyActivityResponse,
 } from "@/lib/data/dashboard-analytics";
-import { computeTechnicianStats, computeWeeklyActivity, computeRadarMetrics, computeDashboardAnalytics, computeOverdueTickets, computePeriodRange } from "@/lib/data/dashboard-analytics";
+import { computeTechnicianStats, computeWeeklyActivity, computeRadarMetrics, computeDashboardAnalytics, computeOverdueTickets, computePeriodRange, computeWeekRange } from "@/lib/data/dashboard-analytics";
 import type { DashboardAnalyticsInput, OverdueTicketsInput, PeriodRangePeriod } from "@/lib/data/dashboard-analytics";
 
 // ─── Server Functions ─────────────────────────────────────────────────
@@ -151,15 +153,7 @@ export const getTechnicianWeeklyActivity = createServerFn({ method: "GET" })
     );
     if (userError || !userData.user) throw new Response("Non autenticato", { status: 401 });
 
-    const now = new Date();
-    const day = now.getDay();
-    const diff = (day + 6) % 7;
-    const start = new Date(now);
-    start.setDate(now.getDate() - diff + weekOffset * 7);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 7);
-
+    const { start, end } = computeWeekRange(weekOffset, new Date());
     const fromIso = start.toISOString();
     const toIso = end.toISOString();
 

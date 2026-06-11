@@ -403,6 +403,29 @@ export function computePeriodRange(period: PeriodRangePeriod, now: Date): Period
   return { from, to: new Date(now) };
 }
 
+export interface WeekRange {
+  start: Date;
+  end: Date;
+}
+
+/**
+ * Pure computation: given a weekOffset (±N weeks from current) and a `now` Date,
+ * returns the { start, end } of the target week (Mon 00:00 → Mon 00:00 +7 days).
+ * - weekOffset=0 → current week
+ * - weekOffset=-1 → previous week
+ * - weekOffset=1 → next week
+ */
+export function computeWeekRange(weekOffset: number, now: Date): WeekRange {
+  const day = now.getDay();
+  const diff = (day + 6) % 7;
+  const start = new Date(now);
+  start.setDate(now.getDate() - diff + weekOffset * 7);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  return { start, end };
+}
+
 /**
  * Pure computation: merge KPI data, profiles, roles, and open-ticket counts
  * into the technician stats rows consumed by TeamActivityWidget and TechnicianStatsWidget.
@@ -471,7 +494,16 @@ export interface WeeklyActivityInput {
   weekStart: Date;
 }
 
-/** Pure computation extracted from getTechnicianWeeklyActivity handler. */
+/**
+ * Pure computation: given closed-ticket activity rows, technician list,
+ * assignable technician IDs, and a week-start date, returns daily closed-ticket
+ * counts per technician for the 7-day window starting at `weekStart`.
+ *
+ * - Buckets each row into a `YYYY-MM-DD` key using the row's `closed_at` date.
+ * - Ignores rows whose `assignee` is not in the `assignableIds` set.
+ * - Returns a `WeeklyActivityResponse` with ISO week boundaries and a per-tech
+ *   array of 7 daily counts (Monday through Sunday).
+ */
 export function computeWeeklyActivity(input: WeeklyActivityInput): WeeklyActivityResponse {
   const { activityData, technicians, assignableIds, weekStart } = input;
   const start = new Date(weekStart);
@@ -527,7 +559,24 @@ export interface RadarMetricsInput {
   dateTo?: string | null;
 }
 
-/** Pure computation extracted from getTechnicianRadarMetrics handler. */
+/**
+ * Pure computation: computes per-technician radar metrics from raw ticket,
+ * note, and history rows, plus role and profile data.
+ *
+ * For each assignable technician, aggregates:
+ * - **assigned** / **completed** ticket counts
+ * - **completionPct** — percentage of assigned tickets that are completed
+ * - **avgResolutionDays** — mean resolution time for closed tickets with a `closed_at`
+ * - **avgFirstRespMs** — mean first-response latency (first note vs ticket creation)
+ * - **reopenCount** — transitions back to "pending" or "open" within the optional
+ *   `dateFrom`–`dateTo` window
+ * - **reliabilityPct** — completed tickets that were never reopened
+ * - **volumeScore** — relative volume (0–100) compared to the most-loaded technician
+ *
+ * Normalized metrics (0–100) are derived by min-max scaling across all technicians:
+ * `volume`, `velocita` (resolution speed), `completamento`,
+ * `reattivita` (first-response speed), `affidabilita` (reliability).
+ */
 export function computeRadarMetrics(input: RadarMetricsInput): TechnicianRadarRow[] {
   const { roles, profiles, tickets, notes, history, dateFrom, dateTo } = input;
 

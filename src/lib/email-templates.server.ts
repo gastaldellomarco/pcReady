@@ -4,9 +4,7 @@ import { requireAdmin } from "@/lib/admin-users.server";
 import { getAppSettings } from "@/lib/app-settings";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
-
-export const EMAIL_TEMPLATE_SELECT =
-  "id, event_type, subject, body_html, body_text, variables, is_active, last_modified_at, last_modified_by, created_at";
+import { getTemplates, renderTemplate } from "@/lib/email-templates-shared";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_EVENT_TYPES,
@@ -14,6 +12,9 @@ import {
   type EmailEventType,
   type EmailTemplate,
 } from "@/types/email";
+
+export const EMAIL_TEMPLATE_SELECT =
+  "id, event_type, subject, body_html, body_text, variables, is_active, last_modified_at, last_modified_by, created_at";
 
 const EmailEventSchema = z.enum(EMAIL_EVENT_TYPES as [EmailEventType, ...EmailEventType[]]);
 
@@ -51,27 +52,6 @@ type EmailTemplateRow = {
   last_modified_by: string | null;
   created_at: string;
 };
-
-type LegacyEmailTemplate = {
-  id: string;
-  subject: string;
-  body: string;
-};
-
-const LEGACY_TEMPLATES: LegacyEmailTemplate[] = [
-  {
-    id: "ticket-assigned",
-    subject: "Ticket {{ticket_code}} assegnato",
-    body: "Ciao {{assignee_name}}, il ticket {{ticket_code}} per {{client_name}} ti e' stato assegnato.",
-  },
-];
-
-/**
- *
- */
-export function getTemplates() {
-  return LEGACY_TEMPLATES;
-}
 
 /**
  *
@@ -355,35 +335,7 @@ function validateTemplateVariables(eventType: EmailEventType, parts: string[]) {
     throw new Response(`Variabili non valide: ${Array.from(unknown).join(", ")}`, { status: 400 });
   }
 }
-
-export function renderTemplate(template: string, values: Record<string, string>): string;
-export function renderTemplate(
-  template: LegacyEmailTemplate,
-  values: Record<string, string>,
-): { subject: string; body: string };
-/**
- *
- */
-export function renderTemplate(
-  template: string | LegacyEmailTemplate,
-  values: Record<string, string>,
-) {
-  if (typeof template === "string") {
-    return replaceVariables(template, values);
-  }
-
-  return {
-    subject: replaceVariables(template.subject, values),
-    body: replaceVariables(template.body, values),
-  };
-}
-
-function replaceVariables(template: string, values: Record<string, string>) {
-  return template.replace(/\{\{[a-z0-9_]+\}\}/gi, (token) => {
-    const bareToken = token.slice(2, -2);
-    return values[token] ?? values[bareToken] ?? token;
-  });
-}
+export { getTemplates, renderTemplate };
 
 function buildSampleVariables(organizationName: string, supportEmail: string) {
   return {

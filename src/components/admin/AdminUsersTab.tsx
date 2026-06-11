@@ -32,7 +32,113 @@ import { useAuth, type AppRole } from "@/lib/auth-context";
 import { buildDownloadFileName, downloadCsv } from "@/lib/downloads";
 import { fmtDateTime } from "@/lib/pcready";
 
-function MfaStatusBadge({
+/** Input row type for computeMfaBannerData. */
+export interface MfaBannerRow {
+  mfa_enabled: boolean;
+  role?: string;
+}
+
+/** Settings subset needed for MFA banner visibility. */
+export interface MfaBannerSettings {
+  mfa_require_all_users?: boolean;
+  mfa_require_admin_users?: boolean;
+}
+
+/** Return type for computeMfaBannerData. */
+export interface MfaBannerData {
+  showAllUsersBanner: boolean;
+  allUsersCount: number;
+  showAdminsBanner: boolean;
+  adminsCount: number;
+}
+
+/**
+ * Pure computation: given user rows and app settings, returns MFA policy
+ * banner data — counts of users/admins without MFA and which banner to show.
+ */
+/** CSV export headers for user list. */
+export const USER_EXPORT_HEADERS = [
+  "id",
+  "email",
+  "full_name",
+  "role",
+  "status",
+  "created_at",
+  "last_sign_in_at",
+];
+
+/** Row type used by mapUserToExportRow and buildUserCsv. */
+export interface UserExportRow {
+  id: string;
+  email?: string | null;
+  full_name: string;
+  role: string;
+  status: string;
+  created_at: string;
+  last_sign_in_at?: string | null;
+}
+
+/** Pure function: builds CSV data array (headers + rows) for user export. */
+export function buildUserCsv(rows: UserExportRow[]): string[][] {
+  return [USER_EXPORT_HEADERS, ...rows.map(mapUserToExportRow)];
+}
+
+/** Pure function: maps a user row to CSV export values. */
+export function mapUserToExportRow(r: UserExportRow): string[] {
+  return [
+    r.id,
+    r.email ?? "",
+    r.full_name,
+    r.role,
+    r.status,
+    r.created_at,
+    r.last_sign_in_at ?? "",
+  ];
+}
+
+/** Email validation regex — must be a well-formed email. */
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Pure function: validates an email string against EMAIL_RE. */
+export function isValidEmail(email: string): boolean {
+  return EMAIL_RE.test(email);
+}
+
+/** Pure function: determines if the invite form can be submitted. */
+export function isInviteFormValid(
+  fullName: string,
+  email: string,
+  notBusy: boolean,
+  formIsValid: boolean,
+): boolean {
+  return notBusy && !!fullName && !!email && isValidEmail(email) && formIsValid;
+}
+
+export function computeMfaBannerData(
+  rows: MfaBannerRow[],
+  settings: MfaBannerSettings | null,
+): MfaBannerData {
+  const totalWithout = (rows ?? []).filter((r) => !r.mfa_enabled).length;
+  const adminsWithout = (rows ?? []).filter(
+    (r) => r.role === "admin" && !r.mfa_enabled,
+  ).length;
+
+  const showAllUsersBanner =
+    (settings?.mfa_require_all_users && totalWithout > 0) ?? false;
+  const showAdminsBanner =
+    (!settings?.mfa_require_all_users &&
+      settings?.mfa_require_admin_users &&
+      adminsWithout > 0) ?? false;
+
+  return {
+    showAllUsersBanner,
+    allUsersCount: totalWithout,
+    showAdminsBanner,
+    adminsCount: adminsWithout,
+  };
+}
+
+export function MfaStatusBadge({
   enabled,
   required,
   role,
@@ -115,14 +221,9 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
   const emailRegister = inviteForm.register("email");
   const watchedEmail = inviteForm.watch("email");
   const watchedFullName = inviteForm.watch("fullName");
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const clientEmailInvalid = watchedEmail && !EMAIL_RE.test(watchedEmail);
+  const clientEmailInvalid = watchedEmail && !isValidEmail(watchedEmail);
   const isInviteButtonEnabled =
-    !inviteBusy &&
-    !!watchedFullName &&
-    !!watchedEmail &&
-    EMAIL_RE.test(watchedEmail) &&
-    inviteForm.formState.isValid;
+    isInviteFormValid(watchedFullName ?? "", watchedEmail ?? "", !inviteBusy, inviteForm.formState.isValid);
 
   const { settings } = useAdminAppSettings({ accessToken, canManageSettings: hasPermission("can_manage_settings") });
   const isMobile = useIsMobile();
@@ -368,17 +469,15 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
         {/* MFA policy banner: show when policy requires MFA and there are users missing it */}
         {settings &&
           (() => {
-            const totalWithout = (rows ?? []).filter((r) => !r.mfa_enabled).length;
-            const adminsWithout = (rows ?? []).filter(
-              (r) => r.role === "admin" && !r.mfa_enabled,
-            ).length;
-            if (settings.mfa_require_all_users && totalWithout > 0) {
+            const { showAllUsersBanner, allUsersCount, showAdminsBanner, adminsCount } =
+              computeMfaBannerData(rows ?? [], settings);
+            if (showAllUsersBanner) {
               return (
                 <div className="px-4 py-3 border-b bg-amber-50 border-amber-200 text-amber-900">
                   {t(
                     "users.mfaBanner.allUsers",
                     "La policy obbliga il 2FA per tutti gli utenti: {{count}} utenti non hanno ancora configurato 2FA",
-                    { count: totalWithout },
+                    { count: allUsersCount },
                   )}{" "}
                   <a href="/admin" className="underline">
                     {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
@@ -386,13 +485,13 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
                 </div>
               );
             }
-            if (settings.mfa_require_admin_users && adminsWithout > 0) {
+            if (showAdminsBanner) {
               return (
                 <div className="px-4 py-3 border-b bg-red-50 border-red-200 text-red-900">
                   {t(
                     "users.mfaBanner.admins",
                     "La policy obbliga il 2FA per gli amministratori: {{count}} amministratori non hanno ancora configurato 2FA",
-                    { count: adminsWithout },
+                    { count: adminsCount },
                   )}{" "}
                   <a href="/admin" className="underline">
                     {t("users.mfaBanner.goToSettings", "Vai alle impostazioni")}
@@ -521,28 +620,8 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
                     return toast.error(
                       t("users.bulk.noUsersSelected", "Nessun utente selezionato"),
                     );
-                  const headers = [
-                    "id",
-                    "email",
-                    "full_name",
-                    "role",
-                    "status",
-                    "created_at",
-                    "last_sign_in_at",
-                  ];
                   downloadCsv(
-                    [
-                      headers,
-                      ...selectedRows.map((r) => [
-                        r.id,
-                        r.email ?? "",
-                        r.full_name,
-                        r.role,
-                        r.status,
-                        r.created_at,
-                        r.last_sign_in_at ?? "",
-                      ]),
-                    ],
+                    buildUserCsv(selectedRows),
                     buildDownloadFileName("pcready-users", "csv", { dated: true }),
                   );
                   toast.success(t("users.bulk.csvExported", "CSV esportato"));

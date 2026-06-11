@@ -4,6 +4,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildDownloadFileName } from "@/lib/export-format";
 import { requireAdmin } from "./admin-users.server";
 
+// ─── Barrel: re-export pure computation from data module ────────────
+
+export type { AuditCsvRow } from "@/lib/data/audit-log";
+export { deduplicateAuditRows, auditRowsToCsv } from "@/lib/data/audit-log";
+
+import { deduplicateAuditRows, auditRowsToCsv } from "@/lib/data/audit-log";
+import type { AuditCsvRow } from "@/lib/data/audit-log";
+
 /**
  *
  */
@@ -132,16 +140,7 @@ export const getAuditLog = createServerFn({ method: "GET" })
     if (error) throw error;
 
     const rows = (data ?? []) as any[];
-
-    // Deduplicate by message + created_at (to the second)
-    const seen = new Set<string>();
-    const deduped: any[] = [];
-    for (const row of rows) {
-      const key = `${row.message}|${String(row.created_at).slice(0, 19)}`; // same second
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(row);
-    }
+    const deduped = deduplicateAuditRows(rows);
 
     const total = deduped.length;
     const totalPages = Math.ceil(total / pageSize) || 1;
@@ -339,38 +338,10 @@ export const exportAuditLog = createServerFn({ method: "GET" })
     if (error) throw error;
 
     const rows2 = (data ?? []) as any[];
+    const dedup = deduplicateAuditRows(rows2);
 
-    // Deduplicate rows (same message and same second)
-    const seen = new Set<string>();
-    const dedup: any[] = [];
-    for (const row of rows2) {
-      const key = `${row.message}|${String(row.created_at).slice(0, 19)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      dedup.push(row);
-    }
-
-    // Generate CSV with extended columns
-    const csvHeader = "Data,Ora,Utente,Tipo,Azione,Dettaglio,Entita,ID Entita,Ticket,Esito\n";
-    const csvRows = dedup
-      .map((row: any) => {
-        const date = new Date(row.created_at);
-        const dateStr = date.toLocaleDateString("it-IT");
-        const timeStr = date.toLocaleTimeString("it-IT");
-        const actor = row.actor_name || "Sistema";
-        const type = row.type === "sys" ? "Sistema" : row.type === "auto" ? "Automatico" : "Utente";
-        const message = `"${(row.message || "").replace(/"/g, '""')}"`;
-        const actionType = row.action_type || "";
-        const entityType = row.entity_type || "";
-        const entityId = row.entity_id || "";
-        const ticket = row.ticket_id || "";
-        const severity = row.severity || "info";
-
-        return `${dateStr},${timeStr},${actor},${type},${actionType},${message},${entityType},${entityId},${ticket},${severity}`;
-      })
-      .join("\n");
-
-    const csv = csvHeader + csvRows;
+    // Generate CSV
+    const csv = auditRowsToCsv(dedup as AuditCsvRow[]);
 
     return {
       csv,

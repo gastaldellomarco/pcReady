@@ -288,25 +288,25 @@ export async function importDevicesFromCsv(
   return results;
 }
 
-function isIsoDate(value: string) {
+export function isIsoDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-function normalizeHeader(value: string) {
+export function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, "_");
 }
 
-function normalizeKey(value: string | null | undefined) {
+export function normalizeKey(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? "";
 }
 
-function uniqueValues(values: (string | null | undefined)[]) {
+export function uniqueValues(values: (string | null | undefined)[]) {
   return Array.from(new Set(values.map((value) => value?.trim() ?? "").filter(Boolean)));
 }
 
-function orValue(value: string) {
+export function orValue(value: string) {
   return value.replace(/[,%]/g, "");
 }
 
@@ -356,7 +356,7 @@ async function loadDevicesBySerialOrAssetTag(serials: string[], assetTags: strin
   return devices;
 }
 
-function chunks<T>(values: T[], size: number) {
+export function chunks<T>(values: T[], size: number) {
   const result: T[][] = [];
   for (let index = 0; index < values.length; index += size) {
     result.push(values.slice(index, index + size));
@@ -364,7 +364,7 @@ function chunks<T>(values: T[], size: number) {
   return result;
 }
 
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

@@ -2,9 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAutomationRunnerUser } from "@/lib/automation-runs.server";
+import { DEVICE_STATUSES } from "@/lib/automation-actions.server";
 import { notifyDeviceStatusChangedForAdmins } from "@/lib/notifications.server";
-
-const DEVICE_STATUSES = ["available", "assigned", "maintenance", "retired"] as const;
 
 const DEVICE_STATUS_LABELS: Record<string, string> = {
   available: "Disponibile",

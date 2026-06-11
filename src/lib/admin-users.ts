@@ -6,6 +6,7 @@ import { createNotificationForAdmins } from "@/lib/notifications.server";
 import { throwIfRateLimited } from "@/lib/rate-limit";
 import { RATE_LIMITER_KEYS } from "@/lib/rate-limit-config";
 import { requireAdmin } from "./admin-users.server";
+import { ADMIN_ROLES } from "@/lib/admin/admin-constants";
 import type { AppRole } from "@/lib/auth-context";
 
 /**
@@ -24,8 +25,6 @@ export interface AdminUserRow {
   mfa_enabled: boolean;
   mfa_required: boolean;
 }
-
-const APP_ROLES: AppRole[] = ["admin", "tech", "viewer"];
 
 function normalizeInitials(name: string, initials?: string) {
   const clean = initials?.trim().slice(0, 4).toUpperCase();
@@ -144,7 +143,7 @@ export const updateAdminUser = createServerFn({ method: "POST" })
   .validator(AdmUpdateSchema)
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
-    if (!APP_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
+    if (!ADMIN_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
 
     await assertCanRemoveAdmin(data.userId, data.role as AppRole);
 
@@ -173,7 +172,7 @@ export const inviteAdminUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const actorId = await requireAdmin(data.accessToken);
     throwIfRateLimited(actorId, RATE_LIMITER_KEYS.INVITE_ADMIN_USER);
-    if (!APP_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
+    if (!ADMIN_ROLES.includes(data.role as AppRole)) throw new Response("Ruolo non valido", { status: 400 });
 
     const email = data.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))

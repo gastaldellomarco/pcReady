@@ -38,7 +38,7 @@ interface Tech {
   full_name: string;
   initials: string;
 }
-interface TplOpt {
+export interface TplOpt {
   id: string;
   name: string;
   structure: ChecklistStructure;
@@ -75,22 +75,34 @@ type ClientOption = AsyncAutocompleteOption & { client: ClientOpt };
 type ContactOption = AsyncAutocompleteOption & { contact: ContactOpt };
 type DeviceOption = AsyncAutocompleteOption & { device: DeviceOpt };
 
+export function mapClientRowToOption(r: any): ClientOption {
+  const client: ClientOpt = {
+    id: r.id,
+    name: r.name ?? "",
+    company_name: r.company_name ?? null,
+    email: r.email ?? null,
+  };
+  return clientOption(client);
+}
+
 async function loadClientAutocompleteOptions(query: string): Promise<ClientOption[]> {
   const rows = await loadClientOptions(query);
-  return (rows ?? []).map((r: any) => {
-    const client: ClientOpt = {
-      id: r.id,
-      name: r.name ?? "",
-      company_name: r.company_name ?? null,
-      email: r.email ?? null,
-    };
-    return {
-      value: client.id,
-      label: (client.company_name || client.name || "Cliente").trim() || "Cliente",
-      description: client.email ?? undefined,
-      client,
-    };
-  });
+  return (rows ?? []).map(mapClientRowToOption);
+}
+
+export function mapContactRowToOption(r: any): ContactOption {
+  const contact: ContactOpt = {
+    id: r.id,
+    client_id: r.client_id,
+    full_name: r.full_name,
+    first_name: r.first_name,
+    last_name: r.last_name,
+    email: r.email,
+    job_title: r.job_title,
+    role: r.role,
+    is_primary: Boolean(r.is_primary),
+  };
+  return contactOption(contact);
 }
 
 async function loadContactAutocompleteOptions(
@@ -98,25 +110,19 @@ async function loadContactAutocompleteOptions(
   clientId: string,
 ): Promise<ContactOption[]> {
   const rows = await loadContactOptions(query, clientId);
-  return (rows ?? []).map((r: any) => {
-    const contact: ContactOpt = {
-      id: r.id,
-      client_id: r.client_id,
-      full_name: r.full_name,
-      first_name: r.first_name,
-      last_name: r.last_name,
-      email: r.email,
-      job_title: r.job_title,
-      role: r.role,
-      is_primary: Boolean(r.is_primary),
-    };
-    return {
-      value: contact.id,
-      label: contactName(contact) || "Referente",
-      description: contact.email || contact.job_title || contact.role || undefined,
-      contact,
-    };
-  });
+  return (rows ?? []).map(mapContactRowToOption);
+}
+
+export function mapDeviceRowToOption(r: any): DeviceOption {
+  const device: DeviceOpt = {
+    id: r.id,
+    client_id: r.client_id,
+    model: r.model,
+    serial: r.serial,
+    os: r.os,
+    assigned_to: r.assigned_to,
+  };
+  return deviceOption(device);
 }
 
 async function loadDeviceAutocompleteOptions(
@@ -124,17 +130,7 @@ async function loadDeviceAutocompleteOptions(
   clientId: string,
 ): Promise<DeviceOption[]> {
   const rows = await loadDeviceOptions(query, clientId);
-  return (rows ?? []).map((r: any) => {
-    const device: DeviceOpt = {
-      id: r.id,
-      client_id: r.client_id,
-      model: r.model,
-      serial: r.serial,
-      os: r.os,
-      assigned_to: r.assigned_to,
-    };
-    return deviceOption(device);
-  });
+  return (rows ?? []).map(mapDeviceRowToOption);
 }
 
 /**
@@ -257,21 +253,7 @@ export function CreateTicketModal() {
         ticket_id: data.id,
         actor_id: user!.id,
       });
-      const sectionAssignees = new Map<string, string[]>();
-      selectedTemplates.forEach((template) => {
-        const struct = template.structure || {};
-        for (const group of Object.values(struct)) {
-          const sections = (group as any).sections;
-          if (!sections) continue;
-          for (const section of Object.values(sections) as any[]) {
-            if (section.assigned_to) {
-              const labels = sectionAssignees.get(section.assigned_to) ?? [];
-              labels.push(`${template.name}: ${section.label}`);
-              sectionAssignees.set(section.assigned_to, labels);
-            }
-          }
-        }
-      });
+      const sectionAssignees = extractChecklistSectionAssignees(selectedTemplates);
       await Promise.all(
         Array.from(sectionAssignees.entries()).map(([userId, labels]) =>
           notify({
@@ -630,29 +612,29 @@ export function CreateTicketModal() {
   );
 }
 
-function contactName(c: ContactOpt) {
+export function contactName(c: ContactOpt) {
   return c.full_name || [c.first_name, c.last_name].filter(Boolean).join(" ");
 }
 
-function clientOption(client: ClientOpt): ClientOption {
+export function clientOption(client: ClientOpt): ClientOption {
   return {
     value: client.id,
-    label: client.company_name || client.name,
-    description: client.email,
+    label: (client.company_name || client.name || "Cliente").trim() || "Cliente",
+    description: client.email ?? undefined,
     client,
   };
 }
 
-function contactOption(contact: ContactOpt): ContactOption {
+export function contactOption(contact: ContactOpt): ContactOption {
   return {
     value: contact.id,
-    label: contactName(contact),
+    label: contactName(contact) || "Referente",
     description: contact.email || contact.job_title || contact.role,
     contact,
   };
 }
 
-function deviceOption(device: DeviceOpt): DeviceOption {
+export function deviceOption(device: DeviceOpt): DeviceOption {
   return {
     value: device.id,
     label: `${device.model}${device.serial ? ` - ${device.serial}` : ""}`,
@@ -661,14 +643,39 @@ function deviceOption(device: DeviceOpt): DeviceOption {
   };
 }
 
-function optionToClient(option: AsyncAutocompleteOption): ClientOpt {
+export function optionToClient(option: AsyncAutocompleteOption): ClientOpt {
   return (option as ClientOption).client;
 }
 
-function optionToContact(option: AsyncAutocompleteOption): ContactOpt {
+export function optionToContact(option: AsyncAutocompleteOption): ContactOpt {
   return (option as ContactOption).contact;
 }
 
-function optionToDevice(option: AsyncAutocompleteOption): DeviceOpt {
+export function optionToDevice(option: AsyncAutocompleteOption): DeviceOpt {
   return (option as DeviceOption).device;
+}
+
+/**
+ * Pure computation: extracts checklist section assignments from templates.
+ * Returns a Map of user_id → ["template: section", ...] labels.
+ */
+export function extractChecklistSectionAssignees(
+  templates: TplOpt[],
+): Map<string, string[]> {
+  const sectionAssignees = new Map<string, string[]>();
+  templates.forEach((template) => {
+    const struct = template.structure || {};
+    for (const group of Object.values(struct)) {
+      const sections = (group as any).sections;
+      if (!sections) continue;
+      for (const section of Object.values(sections) as any[]) {
+        if (section.assigned_to) {
+          const labels = sectionAssignees.get(section.assigned_to) ?? [];
+          labels.push(`${template.name}: ${section.label}`);
+          sectionAssignees.set(section.assigned_to, labels);
+        }
+      }
+    }
+  });
+  return sectionAssignees;
 }

@@ -1,4 +1,5 @@
 import { STATUS_META, type TicketStatus } from "@/lib/pcready";
+import { getWorkflowStatuses } from "@/lib/ticket-constants";
 
 interface StatusHistoryItem {
   id: string;
@@ -44,7 +45,7 @@ export function StatusTimeline({ history, currentStatus }: StatusTimelineProps) 
     }
   }
 
-  const allStatuses: TicketStatus[] = ["pending", "in-progress", "testing", "ready"];
+  const allStatuses: TicketStatus[] = getWorkflowStatuses();
   const currentStatusFromHistory = sortedHistory[sortedHistory.length - 1]?.to_status;
   const effectiveCurrentStatus = currentStatus || currentStatusFromHistory;
 

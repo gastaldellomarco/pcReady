@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  chunks,
   csvTemplate,
   DEVICE_STATUSES,
   importDevicesFromCsv,
+  isIsoDate,
+  normalizeHeader,
+  normalizeKey,
+  orValue,
+  parseCsv,
   parseDevicesCsv,
+  uniqueValues,
   validateImportRows,
   type ClientLookup,
   type PreviewRow,
@@ -182,5 +189,97 @@ SN2,Model B,,,Beta Spa,
     expect(result.updated).toBe(1);
     expect(result.inserted).toBe(1);
     expect(createDeviceMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── Pure helper functions ────────────────────────────────────────────────
+
+describe("isIsoDate", () => {
+  it("accepts valid ISO date YYYY-MM-DD", () => {
+    expect(isIsoDate("2026-01-15")).toBe(true);
+    expect(isIsoDate("2024-12-31")).toBe(true);
+  });
+  it("rejects invalid format", () => {
+    expect(isIsoDate("15/01/2026")).toBe(false);
+    expect(isIsoDate("2026-1-5")).toBe(false);
+  });
+  it("rejects non-date strings", () => {
+    expect(isIsoDate("abc")).toBe(false);
+    expect(isIsoDate("")).toBe(false);
+  });
+  it("rejects out-of-range dates", () => {
+    expect(isIsoDate("2026-13-01")).toBe(false);
+    expect(isIsoDate("2026-02-30")).toBe(false);
+  });
+});
+
+describe("normalizeHeader", () => {
+  it("lowercases and replaces spaces with underscores", () => {
+    expect(normalizeHeader("Asset Tag")).toBe("asset_tag");
+    expect(normalizeHeader("  SERIAL  ")).toBe("serial");
+  });
+});
+
+describe("normalizeKey", () => {
+  it("trims and lowercases", () => {
+    expect(normalizeKey(" ACME Srl ")).toBe("acme srl");
+  });
+  it("returns empty for null/undefined", () => {
+    expect(normalizeKey(null)).toBe("");
+    expect(normalizeKey(undefined)).toBe("");
+  });
+});
+
+describe("uniqueValues", () => {
+  it("returns unique trimmed non-empty values", () => {
+    expect(uniqueValues(["A", "B", "A", "  C  "])).toEqual(["A", "B", "C"]);
+  });
+  it("filters out empty and null", () => {
+    expect(uniqueValues(["A", "", null, undefined])).toEqual(["A"]);
+  });
+  it("returns empty for all empty", () => {
+    expect(uniqueValues(["", ""])).toEqual([]);
+  });
+});
+
+describe("orValue", () => {
+  it("removes commas and percent signs", () => {
+    expect(orValue("Acme, Inc.")).toBe("Acme Inc.");
+    expect(orValue("50% off")).toBe("50 off");
+    expect(orValue("test,%both")).toBe("testboth");
+  });
+  it("returns unchanged if no special chars", () => {
+    expect(orValue("hello")).toBe("hello");
+  });
+});
+
+describe("chunks", () => {
+  it("splits array into chunks of specified size", () => {
+    expect(chunks([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+  it("returns single chunk for size >= array length", () => {
+    expect(chunks([1, 2, 3], 10)).toEqual([[1, 2, 3]]);
+  });
+  it("returns empty for empty array", () => {
+    expect(chunks([], 5)).toEqual([]);
+  });
+});
+
+describe("parseCsv", () => {
+  it("parses simple CSV", () => {
+    expect(parseCsv("a,b\n1,2")).toEqual([["a", "b"], ["1", "2"]]);
+  });
+  it("handles quoted fields with commas", () => {
+    expect(parseCsv('"Hello, World",value')).toEqual([["Hello, World", "value"]]);
+  });
+  it("handles escaped double quotes", () => {
+    expect(parseCsv('"He said ""hi""",value')).toEqual([['He said "hi"', "value"]]);
+  });
+  it("handles Windows CRLF line endings", () => {
+    expect(parseCsv("a,b\r\n1,2")).toEqual([["a", "b"], ["1", "2"]]);
+  });
+  it("handles trailing newline", () => {
+    const result = parseCsv("a,b\n");
+    expect(result).toEqual([["a", "b"], [""]]);
   });
 });

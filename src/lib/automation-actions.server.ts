@@ -7,6 +7,8 @@ import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications";
 import { notifyDeviceStatusChangedForAdmins } from "@/lib/notifications.server";
 import type { ActionResult } from "@/lib/automation-runs";
 
+import { TICKET_STATUSES } from "@/lib/ticket-constants";
+
 // ─── Types ────────────────────────────────────────────────────────────
 
 /** A single action record extracted from flow config or wizard. */
@@ -22,7 +24,6 @@ export interface FlowAction {
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-export const TICKET_STATUSES = ["pending", "in-progress", "testing", "ready"] as const;
 export const DEVICE_STATUSES = ["available", "assigned", "maintenance", "retired"] as const;
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────

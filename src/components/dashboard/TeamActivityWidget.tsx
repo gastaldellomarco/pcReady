@@ -9,8 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
 import { getTechnicianStats, type TechnicianStatRow } from "@/lib/dashboard-analytics";
-
-type Period = "today" | "week" | "month";
+import type { PeriodRangePeriod } from "@/lib/data/dashboard-analytics";
 
 function workloadColor(load: number) {
   if (load >= 10) return "bg-red-500 text-white";
@@ -23,7 +22,7 @@ function workloadColor(load: number) {
  */
 export function TeamActivityWidget() {
   const { t } = useTranslation("dashboard");
-  const [period, setPeriod] = useState<Period>("week");
+  const [period, setPeriod] = useState<PeriodRangePeriod>("week");
   const navigate = useNavigate();
   const fetcher = useServerFn(getTechnicianStats);
   const { session } = useAuth();
@@ -82,7 +81,7 @@ export function TeamActivityWidget() {
           </div>
         </div>
         <div className="flex items-center gap-1 rounded-md bg-muted p-0.5">
-          {(["today", "week", "month"] as Period[]).map((p) => (
+          {(["today", "week", "month"] as PeriodRangePeriod[]).map((p) => (
             <button
               key={p}
               className={`px-2.5 py-1 text-[11px] rounded ${

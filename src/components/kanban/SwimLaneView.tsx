@@ -15,6 +15,9 @@ const PRIORITY_COLORS: Record<TicketPriority, string> = {
   low: "#16A34A",
 };
 
+/** Canonical priority order for UI ordering (high → med → low). */
+export const PRIORITY_ORDER: TicketPriority[] = ["high", "med", "low"];
+
 /**
  *
  */
@@ -63,6 +66,56 @@ interface SwimLaneViewProps {
   cardViewers: ReadonlyMap<string, ViewerInfo[]>;
   setCurrentCard: (cardId: string | null) => void;
   statusChangedAtMap: ReadonlyMap<string, string>;
+}
+
+/**
+ * Pure computation: groups cards by assignee_id into a Map.
+ * Technicians are pre-seeded with empty arrays; unassigned cards
+ * go into the `null` key.
+ */
+export function groupCardsByTechnician(
+  cards: SwimLaneCard[],
+  technicians: TechnicianOption[],
+): Map<string | null, SwimLaneCard[]> {
+  const map = new Map<string | null, SwimLaneCard[]>();
+  for (const technician of technicians) map.set(technician.id, []);
+  map.set(null, []);
+  for (const card of cards) {
+    const key = card.assignee_id ?? null;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(card);
+  }
+  return map;
+}
+
+/**
+ * Pure computation: groups cards by client name.
+ */
+export function groupCardsByClient(cards: SwimLaneCard[]): Map<string, SwimLaneCard[]> {
+  const map = new Map<string, SwimLaneCard[]>();
+  for (const card of cards) {
+    const key = card.client || "Nessun cliente";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(card);
+  }
+  return map;
+}
+
+/**
+ * Pure computation: groups cards by priority (high/med/low), preserving
+ * the priority order and skipping empty groups.
+ */
+export function groupCardsByPriority(
+  cards: SwimLaneCard[],
+): Map<TicketPriority, SwimLaneCard[]> {
+  const map = new Map<TicketPriority, SwimLaneCard[]>();
+  for (const p of PRIORITY_ORDER) map.set(p, []);
+  for (const card of cards) {
+    if (map.has(card.priority)) {
+      map.get(card.priority)!.push(card);
+    }
+  }
+  return map;
 }
 
 /**
@@ -118,12 +171,7 @@ export function SwimLaneView({
 
   const lanes = useMemo(() => {
     if (groupMode === "client") {
-      const map = new Map<string, SwimLaneCard[]>();
-      for (const card of cards) {
-        const key = card.client || t("tickets:noClient", "Nessun cliente");
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(card);
-      }
+      const map = groupCardsByClient(cards);
       return Array.from(map.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([clientName, laneCards]) => ({
@@ -136,15 +184,8 @@ export function SwimLaneView({
     }
 
     if (groupMode === "priority") {
-      const priorityOrder: TicketPriority[] = ["high", "med", "low"];
-      const map = new Map<TicketPriority, SwimLaneCard[]>();
-      for (const p of priorityOrder) map.set(p, []);
-      for (const card of cards) {
-        if (map.has(card.priority)) {
-          map.get(card.priority)!.push(card);
-        }
-      }
-      return priorityOrder
+      const map = groupCardsByPriority(cards);
+      return PRIORITY_ORDER
         .filter((p) => map.get(p)!.length > 0)
         .map((p) => ({
           id: `priority:${p}`,
@@ -156,14 +197,7 @@ export function SwimLaneView({
     }
 
     // Technician mode (default)
-    const map = new Map<string | null, SwimLaneCard[]>();
-    for (const technician of technicians) map.set(technician.id, []);
-    map.set(null, []);
-    for (const card of cards) {
-      const key = card.assignee_id ?? null;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(card);
-    }
+    const map = groupCardsByTechnician(cards, technicians);
     return [
       ...technicians.map((technician) => ({
         id: technician.id,

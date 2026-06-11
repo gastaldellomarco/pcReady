@@ -60,7 +60,7 @@ export const exportAllData = createServerFn({ method: "GET" })
     };
   });
 
-function toCsv(rows: Record<string, unknown>[]) {
+export function toCsv(rows: Record<string, unknown>[]) {
   if (!rows.length) return "";
   const columns = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
   return [

@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { EMAIL_EVENT_TYPES, type EmailEventType } from "@/types/email";
+import {
+  getTemplates,
+  renderTemplate,
+  type LegacyEmailTemplate,
+} from "@/lib/email-templates-shared";
 
 const EmailEventSchema = z.enum(EMAIL_EVENT_TYPES as [EmailEventType, ...EmailEventType[]]);
 
@@ -27,26 +32,7 @@ const CreateTemplateSchema = z.object({
 const ListTemplatesSchema = z.object({ accessToken: z.string().min(1) });
 const GetTemplateSchema = z.object({ accessToken: z.string().min(1), eventType: EmailEventSchema })
 
-type LegacyEmailTemplate = {
-  id: string;
-  subject: string;
-  body: string;
-};
-
-const LEGACY_TEMPLATES: LegacyEmailTemplate[] = [
-  {
-    id: "ticket-assigned",
-    subject: "Ticket {{ticket_code}} assegnato",
-    body: "Ciao {{assignee_name}}, il ticket {{ticket_code}} per {{client_name}} ti e' stato assegnato.",
-  },
-];
-
-/**
- *
- */
-export function getTemplates() {
-  return LEGACY_TEMPLATES;
-}
+export { getTemplates, renderTemplate, type LegacyEmailTemplate };
 
 export const listEmailTemplates = createServerFn({ method: "POST" })
   .validator(ListTemplatesSchema)
@@ -90,31 +76,4 @@ export const resetEmailTemplate = createServerFn({ method: "POST" })
     return resetEmailTemplateServer(data);
   });
 
-export function renderTemplate(template: string, values: Record<string, string>): string;
-export function renderTemplate(
-  template: LegacyEmailTemplate,
-  values: Record<string, string>,
-): { subject: string; body: string };
-/**
- *
- */
-export function renderTemplate(
-  template: string | LegacyEmailTemplate,
-  values: Record<string, string>,
-) {
-  if (typeof template === "string") {
-    return replaceVariables(template, values);
-  }
 
-  return {
-    subject: replaceVariables(template.subject, values),
-    body: replaceVariables(template.body, values),
-  };
-}
-
-function replaceVariables(template: string, values: Record<string, string>) {
-  return template.replace(/\{\{[a-z0-9_]+\}\}/gi, (token) => {
-    const bareToken = token.slice(2, -2);
-    return values[token] ?? values[bareToken] ?? token;
-  });
-}

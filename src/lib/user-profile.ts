@@ -4,6 +4,25 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Theme } from "./theme";
 import type { DashboardLayout } from "@/components/dashboard/widget-registry";
 
+// ─── Barrel: re-export pure computation from data module ────────────
+
+export type {
+  TechnicianOverviewTicket,
+  TechnicianOverviewIntervention,
+  TechnicianOverviewInput,
+  TechnicianOverviewStats,
+  TechnicianOverviewMonth,
+  TechnicianOverviewBadge,
+  TechnicianOverviewComputed,
+} from "@/lib/data/technician-overview";
+export { computeTechnicianOverview } from "@/lib/data/technician-overview";
+
+import { computeTechnicianOverview } from "@/lib/data/technician-overview";
+import type {
+  TechnicianOverviewTicket,
+  TechnicianOverviewIntervention,
+} from "@/lib/data/technician-overview";
+
 const USER_PROFILE_SELECT =
   "id, display_name, avatar_url, phone, timezone, language, preferred_theme, notify_ticket_assigned, notify_ticket_status_changed, notify_automation_failed, notify_device_status_changed, notify_checklist_completed, notify_mentions, notify_ticket_completed, email_notify_ticket_assigned, email_notify_ticket_status_changed, email_notify_ticket_completed, email_notify_automation_failed, email_notify_device_status_changed, email_notify_checklist_completed, email_notify_mentions, notification_digest, webhook_url, last_notification_sent_at, password_set, dashboard_layout, created_at, updated_at";
 
@@ -138,7 +157,7 @@ async function getAuthedUser(accessToken: string) {
   return data.user;
 }
 
-function normalizeInitials(name: string) {
+export function normalizeInitials(name: string) {
   return (
     name
       .split(/\s+/)
@@ -299,75 +318,18 @@ export const getMyTechnicianOverview = createServerFn({ method: "GET" })
       };
     });
 
-    const averageResolutionHours = closed.length
-      ? closed.reduce((sum, ticket) => {
-          const start = new Date(ticket.created_at).getTime();
-          const end = new Date(ticket.closed_at || ticket.created_at).getTime();
-          return sum + Math.max(0, end - start) / 36e5;
-        }, 0) / closed.length
-      : null;
-    const workedHours = interventions.reduce(
-      (sum, intervention) => sum + intervention.duration_minutes / 60,
-      0,
-    );
-
-    const months = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(since);
-      date.setMonth(since.getMonth() + index);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      return {
-        key,
-        month: date.toLocaleDateString("it-IT", { month: "short" }),
-        closedTickets: 0,
-        workedHours: 0,
-      };
+    const overview = computeTechnicianOverview({
+      closedTickets: closed as TechnicianOverviewTicket[],
+      interventions: interventions as TechnicianOverviewIntervention[],
+      since,
     });
-    const monthByKey = new Map(months.map((month) => [month.key, month]));
-    for (const ticket of closed) {
-      const date = new Date(ticket.closed_at || ticket.created_at);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const bucket = monthByKey.get(key);
-      if (bucket) bucket.closedTickets += 1;
-    }
-    for (const intervention of interventions) {
-      const date = new Date(intervention.started_at);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const bucket = monthByKey.get(key);
-      if (bucket) bucket.workedHours += Math.round((intervention.duration_minutes / 60) * 10) / 10;
-    }
-
-    const stats = {
-      closedTickets: closed.length,
-      averageResolutionHours:
-        averageResolutionHours === null ? null : Math.round(averageResolutionHours * 10) / 10,
-      workedHours: Math.round(workedHours * 10) / 10,
-    };
 
     return {
-      stats,
+      stats: overview.stats,
       closedTickets: closed,
       recentInterventions: interventions.slice(0, 10),
-      monthlyActivity: months.map(({ key: _key, ...month }) => month),
-      badges: [
-        {
-          key: "closer",
-          label: "Closer affidabile",
-          description: "Almeno 10 ticket chiusi assegnati a te.",
-          achieved: stats.closedTickets >= 10,
-        },
-        {
-          key: "fast-resolver",
-          label: "Risoluzione rapida",
-          description: "Tempo medio di risoluzione sotto 48 ore.",
-          achieved: stats.averageResolutionHours !== null && stats.averageResolutionHours <= 48,
-        },
-        {
-          key: "time-tracker",
-          label: "Tracciamento accurato",
-          description: "Almeno 20 ore lavorate registrate sui ticket.",
-          achieved: stats.workedHours >= 20,
-        },
-      ],
+      monthlyActivity: overview.monthlyActivity,
+      badges: overview.badges,
     };
   });
 

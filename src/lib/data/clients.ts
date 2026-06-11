@@ -1,12 +1,13 @@
 /* eslint-disable jsdoc/require-jsdoc */
 import { supabase } from "@/integrations/supabase/client";
+import { TICKET_STATUSES } from "@/lib/ticket-constants";
 
 // ─── Constants ────────────────────────────────────────────────────────
 
 export const CLIENT_SELECT =
   "id, name, company_name, vat_number, fiscal_code, email, phone, address, notes, website_url, portal_enabled, updated_at";
 
-export const OPEN_TICKET_STATUSES = ["pending", "in-progress", "testing", "ready"] as const;
+export const OPEN_TICKET_STATUSES = TICKET_STATUSES;
 
 // ─── Types ────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeTechnicianStats, computeWeeklyActivity, computeRadarMetrics, computeDashboardAnalytics, computeOverdueTickets, computePeriodRange } from "@/lib/dashboard-analytics";
-import type { WeeklyActivityInput, RadarMetricsInput, DashboardAnalyticsInput, OverdueTicketsInput } from "@/lib/data/dashboard-analytics";
+import { computeTechnicianStats, computeWeeklyActivity, computeRadarMetrics, computeDashboardAnalytics, computeOverdueTickets, computePeriodRange, computeWeekRange } from "@/lib/dashboard-analytics";
+import type { WeeklyActivityInput, RadarMetricsInput, DashboardAnalyticsInput, OverdueTicketsInput, WeekRange, PeriodRange, PeriodRangePeriod } from "@/lib/data/dashboard-analytics";
 
 // ── helpers ─────────────────────────────────────────────────────────
 const TECH_1 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -2105,6 +2105,30 @@ describe("computeOverdueTickets", () => {
   });
 });
 
+// ─── PeriodRange (type shape) ──────────────────────────────────────
+
+describe("PeriodRange (type shape)", () => {
+  it("has { from: Date, to: Date }", () => {
+    const range: PeriodRange = {
+      from: new Date("2026-06-01T00:00:00.000Z"),
+      to: new Date("2026-06-10T12:00:00.000Z"),
+    };
+
+    expect(range.from).toBeInstanceOf(Date);
+    expect(range.to).toBeInstanceOf(Date);
+    expect(Object.keys(range).sort()).toEqual(["from", "to"]);
+    expect(range.from <= range.to).toBe(true);
+  });
+
+  it("PeriodRangePeriod is 'today' | 'week' | 'month'", () => {
+    const modes: PeriodRangePeriod[] = ["today", "week", "month"];
+    expect(modes).toHaveLength(3);
+    expect(modes).toContain("today");
+    expect(modes).toContain("week");
+    expect(modes).toContain("month");
+  });
+});
+
 // ─── computePeriodRange ───────────────────────────────────────────────
 
 describe("computePeriodRange", () => {
@@ -2180,6 +2204,125 @@ describe("computePeriodRange", () => {
 
       // to should equal the passed-in now
       expect(result.to.getTime()).toBe(WEDNESDAY.getTime());
+    });
+  });
+});
+
+// ─── WeekRange (type shape) ─────────────────────────────────────────
+
+describe("WeekRange (type shape)", () => {
+  it("has { start: Date, end: Date }", () => {
+    const range: WeekRange = {
+      start: new Date("2026-06-08T00:00:00.000Z"),
+      end: new Date("2026-06-15T00:00:00.000Z"),
+    };
+
+    expect(range.start).toBeInstanceOf(Date);
+    expect(range.end).toBeInstanceOf(Date);
+    expect(Object.keys(range).sort()).toEqual(["end", "start"]);
+    expect(range.start <= range.end).toBe(true);
+  });
+
+  it("end is exactly 7 days from start", () => {
+    const range: WeekRange = {
+      start: new Date("2026-06-08T00:00:00.000Z"),
+      end: new Date("2026-06-15T00:00:00.000Z"),
+    };
+    const diffMs = range.end.getTime() - range.start.getTime();
+    expect(diffMs).toBe(7 * 24 * 3600 * 1000);
+  });
+});
+
+// ─── computeWeekRange ──────────────────────────────────────────────────
+
+describe("computeWeekRange", () => {
+  const WEDNESDAY = new Date("2026-06-10T14:30:00.000Z"); // Wed Jun 10
+  const MONDAY = new Date("2026-06-08T12:00:00.000Z"); // Mon Jun 8
+  const SUNDAY = new Date("2026-06-14T12:00:00.000Z"); // Sun Jun 14
+
+  describe("current week (offset=0)", () => {
+    it("from = Monday midnight, end = Monday + 7 days (Wed)", () => {
+      const result = computeWeekRange(0, WEDNESDAY);
+
+      expect(result.start.getFullYear()).toBe(2026);
+      expect(result.start.getMonth()).toBe(5);
+      expect(result.start.getDate()).toBe(8); // Monday June 8
+      expect(result.start.getDay()).toBe(1); // Monday
+      expect(result.start.getHours()).toBe(0);
+
+      // end = start + 7 days = Monday June 15
+      expect(result.end.getDate()).toBe(15);
+      expect(result.end.getDay()).toBe(1);
+      expect(result.end.getHours()).toBe(0);
+    });
+
+    it("Monday stays Monday", () => {
+      const result = computeWeekRange(0, MONDAY);
+
+      expect(result.start.getDate()).toBe(8);
+      expect(result.start.getDay()).toBe(1);
+    });
+
+    it("Sunday goes back to Monday", () => {
+      const result = computeWeekRange(0, SUNDAY);
+
+      expect(result.start.getDate()).toBe(8);
+      expect(result.start.getDay()).toBe(1);
+    });
+  });
+
+  describe("offset weeks", () => {
+    it("weekOffset=-1 shifts to previous week", () => {
+      const result = computeWeekRange(-1, WEDNESDAY);
+
+      expect(result.start.getDate()).toBe(1); // Monday June 1
+      expect(result.end.getDate()).toBe(8); // Monday June 8
+    });
+
+    it("weekOffset=1 shifts to next week", () => {
+      const result = computeWeekRange(1, WEDNESDAY);
+
+      expect(result.start.getDate()).toBe(15); // Monday June 15
+      expect(result.end.getDate()).toBe(22); // Monday June 22
+    });
+
+    it("weekOffset=2 shifts two weeks forward", () => {
+      const result = computeWeekRange(2, WEDNESDAY);
+
+      expect(result.start.getDate()).toBe(22); // Monday June 22
+      expect(result.end.getDate()).toBe(29);
+    });
+
+    it("weekOffset=-2 shifts two weeks back", () => {
+      const result = computeWeekRange(-2, WEDNESDAY);
+
+      expect(result.start.getDate()).toBe(25); // Monday May 25
+      expect(result.start.getMonth()).toBe(4); // May
+    });
+  });
+
+  describe("output shape", () => {
+    it("returns { start: Date, end: Date }", () => {
+      const result = computeWeekRange(0, WEDNESDAY);
+
+      expect(result.start).toBeInstanceOf(Date);
+      expect(result.end).toBeInstanceOf(Date);
+      expect(result.start <= result.end).toBe(true);
+    });
+
+    it("end is exactly 7 days after start", () => {
+      const result = computeWeekRange(0, WEDNESDAY);
+      const diffMs = result.end.getTime() - result.start.getTime();
+      expect(diffMs).toBe(7 * 24 * 3600 * 1000);
+    });
+
+    it("start is always at midnight (00:00:00.000)", () => {
+      const result = computeWeekRange(0, WEDNESDAY);
+
+      expect(result.start.getHours()).toBe(0);
+      expect(result.start.getMinutes()).toBe(0);
+      expect(result.start.getSeconds()).toBe(0);
+      expect(result.start.getMilliseconds()).toBe(0);
     });
   });
 });
