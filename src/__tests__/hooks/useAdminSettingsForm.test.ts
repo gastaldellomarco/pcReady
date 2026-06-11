@@ -72,7 +72,7 @@ describe("useAdminSettingsForm", () => {
   // ── Default state ────────────────────────────────────────────────────
 
   describe("default state", () => {
-    it("initializes form with empty default values", () => {
+    it("initializes form with sensible fallback values when settings is null", () => {
       const { result } = renderHook(() =>
         useAdminSettingsForm({
           accessToken: "token-123",
@@ -83,8 +83,8 @@ describe("useAdminSettingsForm", () => {
       );
 
       expect(result.current.saveSettingsBusy).toBe(false);
-      expect(result.current.settingsForm.getValues("organization_name")).toBe("");
-      expect(result.current.settingsForm.getValues("default_timezone")).toBe("");
+      expect(result.current.settingsForm.getValues("organization_name")).toBe("PCReady");
+      expect(result.current.settingsForm.getValues("default_timezone")).toBe("Europe/Rome");
       expect(result.current.settingsForm.getValues("max_devices_per_technician")).toBe(1);
       expect(result.current.settingsForm.getValues("self_registration_enabled")).toBe(false);
       expect(result.current.settingsForm.getValues("os_options")).toEqual([]);
