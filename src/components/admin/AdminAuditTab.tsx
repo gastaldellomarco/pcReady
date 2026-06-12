@@ -63,7 +63,6 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { getEntityLabel } from "@/lib/entity-labels";
 import { cn } from "@/lib/utils";
-import { Route } from "@/routes/_app/admin";
 import type { ActivityLogEntry, AuditLogFilters } from "@/lib/audit-log";
 
 // Represents the shape of the search params validated by the admin route
@@ -463,7 +462,7 @@ export function AdminAuditTab({ searchParams }: { searchParams?: Record<string, 
   const canViewAuditLog = hasPermission("can_view_audit_log");
   const accessToken = session?.access_token;
   const navigate = useNavigate();
-  const routeSearch = Route.useSearch();
+  const routeSearch = (searchParams || {}) as Record<string, unknown>;
 
   // Convert URL search params to AuditLogFilters (memoized to avoid infinite loops)
   // Falls back to localStorage "last used view" when no URL params are present

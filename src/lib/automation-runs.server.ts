@@ -1,14 +1,15 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createNotificationForAdmins } from "@/lib/notifications.server";
 import type { AutomationFlow } from "@/types/automation";
-import type {
-  ActionResult,
-  AutomationRunLog,
-  DryRunResult,
-  DryRunStep,
-  HealthStatus,
-  RunLogStatus,
-} from "@/lib/automation-runs";
+import {
+  AUTOMATION_RUN_LOG_SELECT,
+  type ActionResult,
+  type AutomationRunLog,
+  type DryRunResult,
+  type DryRunStep,
+  type HealthStatus,
+  type RunLogStatus,
+} from "./automation-runs.types";
 import {
   executeAction,
   webhookAction,
@@ -20,9 +21,6 @@ import {
 export { supabaseAdmin, webhookAction };
 
 // ─── Constants ────────────────────────────────────────────────────────
-
-export const AUTOMATION_RUN_LOG_SELECT =
-  "id, automation_id, triggered_at, triggered_by, status, duration_ms, trigger_payload, actions_executed, error_message, is_dry_run";
 
 // ─── Types ────────────────────────────────────────────────────────────
 

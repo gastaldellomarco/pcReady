@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import globals from "globals";
+import importX from "eslint-plugin-import-x";
 import jsdoc from "eslint-plugin-jsdoc";
 import perfectionist from "eslint-plugin-perfectionist";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -30,6 +31,7 @@ export default tseslint.config(
       globals: globals.browser,
     },
     plugins: {
+      "import-x": importX,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       react: reactPlugin,
@@ -38,6 +40,9 @@ export default tseslint.config(
     },
     settings: {
       react: { version: "detect" },
+      "import-x/resolver": {
+        typescript: true,
+      },
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -54,6 +59,16 @@ export default tseslint.config(
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      // Previeni dipendenze circolari (static import cycles)
+      "import-x/no-cycle": [
+        "error",
+        {
+          maxDepth: 10,
+          ignoreExternal: true,
+          // Dynamic imports (await import()) are intentional in server/client split
+          allowUnsafeDynamicCyclicDependency: true,
         },
       ],
       // Forza l'uso dell'alias @/ per tutti gli import interni

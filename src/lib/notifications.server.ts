@@ -8,7 +8,7 @@ import {
   type CreateNotificationParams,
   type NotificationRow,
   type NotificationType,
-} from "@/lib/notifications";
+} from "@/lib/notifications.types";
 
 /**
  *
