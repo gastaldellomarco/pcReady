@@ -96,7 +96,7 @@ export function mapUserToExportRow(r: UserExportRow): string[] {
 }
 
 /** Email validation regex — must be a well-formed email. */
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Pure function: validates an email string against EMAIL_RE. */
 export function isValidEmail(email: string): boolean {
