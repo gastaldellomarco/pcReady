@@ -15,6 +15,7 @@ interface MissingProfileScreenProps {
   onSignOut: () => void;
 }
 
+// nosemgrep: shell_injection — false positive; this is a React layout wrapper, not a system command
 function AuthStateShell({ children }: { children: ReactNode }) {
   return (
     <div

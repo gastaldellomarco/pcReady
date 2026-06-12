@@ -1,0 +1,56 @@
+# ── Dependencies ─────────────────────────────────────────────────────
+node_modules/
+
+# ── Build outputs ────────────────────────────────────────────────────
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.nitro/
+storybook-static/
+
+# ── Generated files ──────────────────────────────────────────────────
+# TanStack Router auto-generated route tree
+src/routeTree.gen.ts
+
+# Supabase auto-generated database types
+src/integrations/supabase/types.ts
+
+# ── Test artifacts ───────────────────────────────────────────────────
+coverage/
+test-results/
+.nyc_output/
+e2e/screenshots/
+
+# ── Cache & temp ─────────────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.eslintcache/
+.tanstack/
+supabase/.temp/
+
+# ── Config & env ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Editor & tooling ─────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+.agents/
+.obsidian/
+.qodo/
+.junie/
+.sixth/
+.claude/
+.goose/
+.kiro/
+.qoder/
+.windsurf/
+.superpowers/
+
+# ── Misc tool outputs ────────────────────────────────────────────────
+react-doctor-output.txt
+reports/
+backups/

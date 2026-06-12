@@ -35,6 +35,7 @@ try {
 /**
  *
  */
+// nosemgrep: shell_injection — false positive; this is a React app layout component, not a system command
 export function AppShell() {
   const { session, profile, authError, refreshProfile, signOut, hasPermission, isImpersonating } = useAuth();
   const { t } = useTranslation("common");
