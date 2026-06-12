@@ -1551,12 +1551,17 @@ function QrCodeBox({ qrCode }: { qrCode: string }) {
       </div>
     );
   if (qrCode.trim().startsWith("<svg")) {
-     
+    const svgDataUri = `data:image/svg+xml;base64,${btoa(qrCode)}`;
     return (
-      <div
-        className="mx-auto flex w-fit justify-center rounded-lg border bg-white p-4"
-        dangerouslySetInnerHTML={{ __html: qrCode }}
-      />
+      <div className="mx-auto w-fit">
+        <OptimizedImage
+          src={svgDataUri}
+          alt={i18n.t("profile:security.qrAlt", "QR code 2FA")}
+          width={200}
+          height={200}
+          className="mx-auto rounded-lg border bg-white p-4"
+        />
+      </div>
     );
   }
   return (

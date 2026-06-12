@@ -1,7 +1,6 @@
-﻿import DOMPurify from "dompurify";
-import { Eye, MailPlus, Search, ShieldCheck, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
+﻿import { Eye, MailPlus, Search, ShieldCheck, Trash2, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ImpersonationReadOnlyBanner } from "@/components/admin/ImpersonationReadOnlyBanner";
 import { AdminUserRoleEditor } from "@/components/admin/AdminUserRoleEditor";
@@ -236,8 +235,9 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
     const idx = filtered.findIndex((r) => r.id === highlightId);
     if (idx === -1) return;
     // Use requestAnimationFrame to wait for the next paint after DOM renders
+    const escapedId = CSS.escape(highlightId);
     const raf = requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-highlighted="${highlightId}"]`);
+      const el = document.querySelector(`[data-highlighted="${escapedId}"]`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -843,17 +843,14 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
           <AlertDialogHeader>
             <AlertDialogTitle>{t("users.delete.title", "Rimuovi utente")}</AlertDialogTitle>
             <AlertDialogDescription>
-              { }
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
-                    t("users.delete.description", {
-                      email: deleteTarget?.email ?? "",
-                      interpolation: { escapeValue: false },
-                    }),
-                  ),
-                }}
-              />
+              <p>
+                <Trans
+                  ns="admin"
+                  i18nKey="users.delete.description"
+                  values={{ email: deleteTarget?.email ?? "" }}
+                  components={{ strong: <strong /> }}
+                />
+              </p>
               <div className="mt-2">
                 <div className="font-semibold">
                   {deleteTarget?.full_name || deleteTarget?.email}

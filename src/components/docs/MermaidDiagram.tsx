@@ -13,7 +13,9 @@ function ensureMermaidInitialized() {
   mermaid.initialize({
     startOnLoad: false,
     theme: "default",
-    securityLevel: "loose",
+    // "strict" prevents click handlers, script tags, and JS URLs in SVG output.
+    // Safe for dangerouslySetInnerHTML since diagrams are team-authored docs.
+    securityLevel: "strict",
   });
 }
 
