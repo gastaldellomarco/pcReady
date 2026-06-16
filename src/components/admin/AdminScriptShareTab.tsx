@@ -91,7 +91,7 @@ export function AdminScriptShareTab({ accessToken }: AdminScriptShareTabProps) {
     if (ok) {
       toast.success("Link copiato");
     } else {
-      toast.error("Seleziona e copia il link manualmente");
+      toast.error(t("share.copyError", "Select and copy the link manually"));
     }
   }
 

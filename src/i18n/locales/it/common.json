@@ -30,7 +30,8 @@
     "bundles": "Bundle",
     "inventory": "Inventario",
     "docs": "Knowledge Base",
-    "admin": "Admin / Utenti"
+    "admin": "Admin / Utenti",
+    "": "Navigazione"
   },
   "pageTitle": {
     "dashboard": "Dashboard",
@@ -48,7 +49,8 @@
     "admin": "Admin / Utenti",
     "profile": "Profilo",
     "notifications": "Notifiche",
-    "calendar": "Calendario"
+    "calendar": "Calendario",
+    "": "Titolo pagina"
   },
   "role": {
     "admin": "Amministratore",
@@ -56,7 +58,8 @@
     "viewer": "Visualizzatore"
   },
   "search": {
-    "placeholder": "Cerca ticket, modello, seriale..."
+    "placeholder": "Cerca ticket, modello, seriale...",
+    "label": "Cerca"
   },
   "language": {
     "italian": "Italiano",
@@ -125,5 +128,26 @@
   "portal": {
     "devicesLoadError": "Errore caricamento dispositivi",
     "sessionValidationError": "Errore validazione sessione portale"
+  },
+  "exportPdf": {
+    "exportPdfTitle": "Esporta PDF",
+    "activeFilters": "Filtri attivi",
+    "currentPage": "Pagina corrente",
+    "noResults": "Nessun risultato",
+    "allFilteredResults": "Tutti i risultati filtrati",
+    "cancel": "Annulla",
+    "exportPdf": "Esporta PDF",
+    "exporting": "Esportazione in corso...",
+    "confirmExport": "Conferma ed esporta",
+    "exportError": "Errore durante l'esportazione",
+    "largeExportWarning": "L'export supera {{threshold}} record ({{count}} {{entity}}). Il PDF potrebbe essere grande.",
+    "filterStatus": "Stato",
+    "filterPriority": "Priorità",
+    "filterType": "Tipo",
+    "filterClientFiltered": "Cliente: filtrato",
+    "filterAssigneeFiltered": "Assegnatario: filtrato",
+    "filterDate": "Data",
+    "filterSearch": "Ricerca",
+    "noActiveFilters": "Nessun filtro attivo per {{label}}"
   }
 }

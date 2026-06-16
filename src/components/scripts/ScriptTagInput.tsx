@@ -93,7 +93,7 @@ export function ScriptTagInput({ value, onChange, suggestions = [], disabled }: 
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setShowSuggestions(true)}
-          placeholder={(value ?? []).length === 0 ? "Aggiungi tag..." : ""}
+          placeholder={(value ?? []).length === 0 ? "Add tag..." : ""}
           disabled={disabled}
         />
       </div>

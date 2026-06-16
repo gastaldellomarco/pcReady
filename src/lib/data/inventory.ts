@@ -11,6 +11,8 @@ export type DevicesListParams = {
   q?: string;
   page?: number;
   pageSize?: number;
+  /** Base64-encoded cursor for the row after which to fetch (cursor-based pagination). */
+  cursor?: string;
   withoutTicket?: boolean;
   updatedBefore?: string;
   updatedAfter?: string;
@@ -23,15 +25,37 @@ export type DevicesListParams = {
 
 // ─── Fetch ────────────────────────────────────────────────────────────
 
+export type CursorPagedResult<T> = {
+  data: T[];
+  count: number;
+  /** Encoded cursor of the last row, for the next page request. undefined when no more pages. */
+  nextCursor: string | undefined;
+};
+
+export function encodeDeviceCursor(row: { updated_at: string; id: string }): string {
+  const hasNativeBase64 = typeof btoa !== "undefined" && typeof atob !== "undefined";
+  if (hasNativeBase64) return btoa(JSON.stringify([row.updated_at, row.id]));
+  return Buffer.from(JSON.stringify([row.updated_at, row.id])).toString("base64");
+}
+
+function decodeDeviceCursor(cursor: string): [string, string] {
+  const hasNativeBase64 = typeof btoa !== "undefined" && typeof atob !== "undefined";
+  if (hasNativeBase64) return JSON.parse(atob(cursor));
+  return JSON.parse(Buffer.from(cursor, "base64").toString("utf-8"));
+}
+
 const DEVICE_LIST_SELECT =
   "id, asset_tag, serial, model, os, status, category, device_type, client_id, updated_at, assigned_to, purchase_date, warranty_expiry_date, warranty_type, warranty_provider, warranty_notes, client:clients(name)";
 
-function buildDevicesQuery(params: DevicesListParams, opts?: { count?: boolean }) {
-  let query = supabase
-    .from("devices")
-    .select(DEVICE_LIST_SELECT, opts?.count ? { count: "exact" } : undefined)
-    .order("updated_at", { ascending: false });
-
+/**
+ * Applies all device-list filters to a Supabase query builder.  Used by both
+ * offset-based (fetchDevicesList) and cursor-based (fetchDevicesListCursor) queries.
+ */
+function applyDevicesFilters(
+  query: any,
+  params: DevicesListParams,
+  dueDeviceIds?: string[],
+): any {
   if (params.status) query = query.eq("status", params.status as any);
   if (params.os) query = query.eq("os", params.os as any);
   if (params.category) query = query.eq("category", params.category as any);
@@ -65,7 +89,20 @@ function buildDevicesQuery(params: DevicesListParams, opts?: { count?: boolean }
     if (warrantyStatus === "valid") query = query.gt("warranty_expiry_date", in90);
   }
 
+  if (params.maintenanceDueSoon && dueDeviceIds?.length) {
+    query = query.in("id", dueDeviceIds as any);
+  }
+
   return query;
+}
+
+function buildDevicesQuery(params: DevicesListParams, opts?: { count?: boolean }) {
+  let query = supabase
+    .from("devices")
+    .select(DEVICE_LIST_SELECT, opts?.count ? { count: "exact" } : undefined)
+    .order("updated_at", { ascending: false });
+
+  return applyDevicesFilters(query, params);
 }
 
 async function fetchMaintenanceDueDeviceIds(): Promise<string[]> {
@@ -122,6 +159,55 @@ export async function fetchAllAssignedDeviceIds() {
   return ((data ?? []) as Array<{ device_id: string }>)
     .map((r) => r.device_id)
     .filter(Boolean) as string[];
+}
+
+export async function fetchDevicesListCursor(
+  params: DevicesListParams,
+): Promise<CursorPagedResult<unknown>> {
+  let dueMaintenanceDeviceIds: string[] = [];
+  if (params.maintenanceDueSoon) {
+    dueMaintenanceDeviceIds = await fetchMaintenanceDueDeviceIds();
+    if (!dueMaintenanceDeviceIds.length) return { data: [], count: 0, nextCursor: undefined };
+  }
+
+  // Build base query with cursor-pagination sort (id as secondary key for determinism)
+  let query = supabase
+    .from("devices")
+    .select(DEVICE_LIST_SELECT, { count: "exact" })
+    .order("updated_at", { ascending: false })
+    .order("id", { ascending: false });
+
+  query = applyDevicesFilters(query, params, dueMaintenanceDeviceIds);
+
+  // Cursor-based pagination: fetch rows after the last seen (updated_at, id)
+  if (params.cursor) {
+    const [cursorUpdated, cursorId] = decodeDeviceCursor(params.cursor);
+    query = query.or(
+      `updated_at.lt.${cursorUpdated},and(updated_at.eq.${cursorUpdated},id.lt.${cursorId})`,
+    );
+  }
+
+  const PAGE_SIZE = params.pageSize ?? 25;
+  const { data, count, error } = await query.limit(PAGE_SIZE);
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const nextCursor =
+    rows.length === PAGE_SIZE && rows.length > 0
+      ? encodeDeviceCursor(rows[rows.length - 1] as { updated_at: string; id: string })
+      : undefined;
+
+  const pageIds = rows.map((row: Record<string, unknown>) => row.id as string);
+  const assignedSet = await fetchActiveAssignmentsForDeviceIds(pageIds);
+  const dueByDevice = pageIds.length ? await fetchMaintenanceDueByDevice(pageIds) : new Map<string, string>();
+
+  const enriched = rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    has_active_assignment: assignedSet.has(row.id as string),
+    has_maintenance_due_soon: dueByDevice.has(row.id as string),
+    next_maintenance_due_date: dueByDevice.get(row.id as string) ?? null,
+  }));
+  return { data: enriched as any[], count: count ?? 0, nextCursor };
 }
 
 export async function fetchDevicesList(params: DevicesListParams) {

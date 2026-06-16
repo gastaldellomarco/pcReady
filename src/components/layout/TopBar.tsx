@@ -83,6 +83,7 @@ export function TopBar({ pageTitle, isMobile, onMobileMenuOpen, onCreateTicket }
         <button
           onClick={onCreateTicket}
           className="pc-btn-icon touch-target sm:hidden"
+          title={t("sidebar.newTicket", "Nuovo ticket")}
           aria-label={t("sidebar.newTicket", "Nuovo ticket")}
         >
           <Plus className="size-4" />

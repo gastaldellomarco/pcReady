@@ -88,7 +88,7 @@ export function Modal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="pc-anim-in flex min-h-dvh w-full flex-col sm:my-auto sm:min-h-0"
+        className="pc-anim-in flex min-h-dvh w-full flex-col overflow-hidden sm:my-auto sm:min-h-0"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
@@ -112,7 +112,10 @@ export function Modal({
             <X className="w-3 h-3" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-[22px] sm:py-[20px]">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-[22px] sm:py-[20px]"
+          style={{ maxHeight: "calc(100dvh - 7rem)" }}
+        >
           {children}
         </div>
         {footer && (

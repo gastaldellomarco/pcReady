@@ -11,7 +11,8 @@
     "settings": "Impostazioni",
     "backupDr": "Backup & DR",
     "oauth": "OAuth / Applicazioni",
-    "audit": "Audit Log"
+    "audit": "Audit Log",
+    "scriptShares": "Script shares"
   },
   "loading": "Verifica permessi...",
   "unauthorized": "Accesso non autorizzato.",
@@ -33,7 +34,8 @@
       "namePlaceholder": "Mario Rossi",
       "roleLabel": "Ruolo",
       "submit": "Invita",
-      "submitting": "Invio..."
+      "submitting": "Invio...",
+      "invalidEmail": "Invalid email"
     },
     "search": {
       "placeholder": "Cerca nome o email...",
@@ -51,7 +53,8 @@
       "csvExported": "CSV esportato",
       "bulkFailed": "Operazione bulk fallita",
       "resendBulkFailed": "Re-invio bulk fallito",
-      "noUsersSelected": "Nessun utente selezionato"
+      "noUsersSelected": "Nessun utente selezionato",
+      "roleLabel": "Role label"
     },
     "table": {
       "colName": "Nome",
@@ -61,10 +64,11 @@
       "colAccess": "Accesso",
       "col2fa": "2FA",
       "colStatus": "Stato",
-      "colActions": "Azioni"
+      "colActions": "Azioni",
+      "selectAll": "Select all"
     },
     "row": {
-      "neverAccessed": "Mai acceduto"
+      "neverAccessed": "Nessun accesso"
     },
     "empty": {
       "noUsers": "Nessun utente trovato"
@@ -73,13 +77,15 @@
       "impersonate": "Impersona utente",
       "enableUser": "Riabilita utente",
       "disableUser": "Disabilita utente",
-      "removeUser": "Rimuovi utente"
+      "removeUser": "Rimuovi utente",
+      "approve": "Approve"
     },
     "delete": {
       "title": "Rimuovi utente",
       "description": "Sei sicuro di voler eliminare <strong>{{email}}</strong>?",
       "cancel": "Annulla",
-      "confirm": "Conferma"
+      "confirm": "Conferma",
+      "cannotSelf": "Cannot self"
     },
     "bulkDialog": {
       "disableTitle": "Disabilita utenti",
@@ -87,6 +93,11 @@
       "description": "Sei sicuro di voler {{action}} {{count}} utenti selezionati? Questa azione può essere annullata riabilitando gli utenti individualmente.",
       "cancel": "Annulla",
       "confirm": "Conferma"
+    },
+    "mfaBanner": {
+      "allUsers": "All users",
+      "goToSettings": "Go to settings",
+      "admins": "Admins"
     }
   },
   "settings": {
@@ -502,7 +513,9 @@
   "impersonation": {
     "banner": "Stai impersonando {{name}} ({{role}})",
     "warning": "Le azioni vengono registrate nell'audit log",
-    "end": "Termina impersonificazione"
+    "end": "Termina impersonificazione",
+    "readOnlyBanner": "Read only banner",
+    "readOnlyHint": "Read only hint"
   },
   "emailTemplate": {
     "meta": {
@@ -529,7 +542,7 @@
         "recipient": "Tecnico assegnatario"
       },
       "ticket_completed": {
-        "when": "Inviata quando un ticket viene completato e il verbale \u00e8 disponibile",
+        "when": "Inviata quando un ticket viene completato e il verbale è disponibile",
         "recipient": "Cliente"
       },
       "portal_ticket_created": {
@@ -621,5 +634,8 @@
     "outcomeWarning": "WARNING",
     "outcomeOk": "OK",
     "actorSystem": "Sistema"
+  },
+  "scriptShares": {
+    "info": "Info"
   }
 }

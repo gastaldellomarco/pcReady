@@ -140,7 +140,27 @@
     "maintenance-overview": {
       "label": "Manutenzioni",
       "desc": "Prossimi interventi e manutenzioni scadute"
-    }
+    },
+    "loadError": "Errore caricamento widget",
+    "kanbanWip": {
+      "title": "Kanban WIP",
+      "totalTickets": "Ticket totali",
+      "limitLabel": "Limite",
+      "overLimit": "Sopra il limite",
+      "noLimit": "Nessun limite",
+      "noTickets": "Nessun ticket",
+      "openKanban": "Apri kanban"
+    },
+    "refresh": "Aggiorna",
+    "refreshLabel": "Aggiorna",
+    "teamActivityError": "Errore caricamento attività team",
+    "activeTooltipAria": "Attivo",
+    "activeTooltip": "Attivo",
+    "kanban-wip-limits": {
+      "label": "Limiti WIP Kanban",
+      "desc": "Configura limiti work-in-progress per colonna"
+    },
+    "closePanel": "Chiudi"
   },
   "analytics": {
     "overviewTitle": "Panoramica dispositivi & ticket",
@@ -268,13 +288,17 @@
     "completionRate": "Tasso completamento",
     "overloaded": "Sovraccarico",
     "highLoad": "Carico elevato",
-    "normalLoad": "Carico normale"
+    "normalLoad": "Carico normale",
+    "statsError": "Errore caricamento statistiche",
+    "activeTooltipAria": "Attivo",
+    "activeTooltip": "Attivo"
   },
   "heatmap": {
     "title": "Attività settimanale tecnici",
     "technicians": "tecnici",
     "loading": "Caricamento...",
-    "ticketsClosed": "ticket chiusi"
+    "ticketsClosed": "ticket chiusi",
+    "error": "Errore caricamento mappa calore"
   },
   "radar": {
     "volume": "Volume",
@@ -285,7 +309,8 @@
     "title": "Radar tecnico",
     "showAll": "Mostra tutti",
     "loading": "Caricamento...",
-    "technician": "Tecnico"
+    "technician": "Tecnico",
+    "error": "Errore caricamento radar"
   },
   "portal": {
     "networkError": "Errore di rete",

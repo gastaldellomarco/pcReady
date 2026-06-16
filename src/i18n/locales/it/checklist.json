@@ -65,9 +65,9 @@
   },
   "deleteGroupDialog": {
     "title": "Eliminare questo gruppo?",
-    "description": "Il gruppo \"{{label}}\" e tutte le sue sezioni verranno rimossi.",
-    "descriptionGeneric": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello. L'azione non puo' essere annullata.",
-    "confirm": "Elimina gruppo"
+    "description": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello.",
+    "confirm": "Elimina gruppo",
+    "descriptionGeneric": "Description generic"
   },
   "deleteSectionDialog": {
     "title": "Eliminare questa sezione?",
@@ -155,11 +155,6 @@
   "addGroup": "Aggiungi gruppo",
   "addGroupTitle": "Aggiungi gruppo",
   "deleteGroup": "Elimina gruppo",
-  "deleteGroupDialog": {
-    "title": "Eliminare questo gruppo?",
-    "description": "Il gruppo e tutte le sue sezioni verranno rimossi dal modello.",
-    "confirm": "Elimina gruppo"
-  },
   "addSectionTitle": "Aggiungi sezione",
   "versionHistory": {
     "title": "Storico Versioni",
@@ -172,7 +167,8 @@
     "loadError": "Errore caricamento versioni",
     "adminOnly": "Solo gli amministratori possono ripristinare versioni",
     "restoreSuccess": "Versione ripristinata",
-    "restoreError": "Errore ripristino versione"
+    "restoreError": "Errore ripristino versione",
+    "selectVersion": "Select version"
   },
   "restoreDialog": {
     "title": "Ripristina Versione v{{number}}",
@@ -211,5 +207,8 @@
       "summary": "Riepilogo",
       "version": "Versione"
     }
-  }
+  },
+  "templateName": "Template name",
+  "descriptionLabel": "Description label",
+  "itemType": "Item type"
 }

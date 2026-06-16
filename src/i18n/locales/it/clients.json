@@ -11,7 +11,8 @@
     "withOpenTickets": "Con ticket aperti",
     "portalActive": "Portale attivo",
     "search": "Cerca cliente per nome, azienda o email...",
-    "searchExtended": "Cerca per nome, P.IVA, codice fiscale o email..."
+    "searchExtended": "Cerca per nome, P.IVA, codice fiscale o email...",
+    "searchLabel": "Cerca"
   },
   "columns": {
     "name": "Nome",
@@ -419,7 +420,10 @@
       "insert": "Insert",
       "update": "Update"
     },
-    "resultRow": "Riga {{rowNumber}} ({{name}}): {{error}}"
+    "resultRow": "Riga {{rowNumber}} ({{name}}): {{error}}",
+    "mappingTitle": "Mapping title",
+    "mappingNone": "Mapping none",
+    "applyMapping": "Apply mapping"
   },
   "general": {
     "ok": "OK"
@@ -433,5 +437,26 @@
     "labelPortalAccess": "Accesso portale",
     "labelBundle": "Contratto",
     "viewTicket": "Vedi ticket"
+  },
+  "sla": {
+    "saved": "Saved",
+    "saveError": "Save error",
+    "title": "Title",
+    "responseHours": "Response hours",
+    "resolutionHours": "Resolution hours",
+    "save": "Save",
+    "noBundle": "No bundle"
+  },
+  "alerts": {
+    "saved": "Saved",
+    "saveError": "Save error",
+    "title": "Title",
+    "daysBefore": "Days before",
+    "channel": "Channel",
+    "channelLabel": "Channel label",
+    "inApp": "In app",
+    "email": "Email",
+    "enabled": "Enabled",
+    "save": "Save"
   }
 }

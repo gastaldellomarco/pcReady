@@ -224,7 +224,10 @@
       "placeholderString": "Inserisci testo",
       "placeholderNumber": "Inserisci numero",
       "addItem": "+ Aggiungi",
-      "removeItem": "Rimuovi"
+      "removeItem": "Rimuovi",
+      "selectLabel": "Select label",
+      "numberLabel": "Number label",
+      "textLabel": "Text label"
     },
     "actions": {
       "addCondition": "+ Aggiungi condizione",
@@ -251,7 +254,8 @@
       "title": "Inserisci variabile",
       "search": "Cerca variabili...",
       "noResults": "Nessuna variabile trovata",
-      "insert": "Inserisci {{variable}}"
+      "insert": "Inserisci {{variable}}",
+      "close": "Close"
     },
     "blocks": {
       "send_email": {
@@ -314,7 +318,8 @@
         "location": "Sede (opzionale)",
         "locationPlaceholder": "ID sede"
       }
-    }
+    },
+    "closeMenu": "Close menu"
   },
   "conditions": {
     "title": "Condizioni",
@@ -454,5 +459,90 @@
     "conditionFieldEndsWith": "Campo \"{{field}}\" finisce con \"{{value}}\"",
     "conditionPriorityHigh": "Priorità alta",
     "conditionTagContains": "Tag contiene \"{{value}}\""
+  },
+  "runConfirm": {
+    "title": "Esecuzione: {{name}}",
+    "description": "Verifica l'impatto previsto prima di eseguire questa automazione.",
+    "riskLabel": "Rischio: {{level}}",
+    "riskDescriptions": {
+      "critical": "Automazione schedulata con azioni ad alto impatto. Prestare massima attenzione.",
+      "high": "Automazione con azioni che modificano dati sensibili.",
+      "medium": "Automazione con azioni che generano notifiche o comunicazioni.",
+      "low": "Automazione a basso impatto, prevalentemente informativa."
+    },
+    "incomplete": "Regola incompleta — esecuzione bloccata",
+    "expectedImpact": "Impatto previsto",
+    "sideEffects": "Side-effect esterni",
+    "cancel": "Annulla",
+    "running": "Esecuzione in corso...",
+    "execute": "Esegui ora"
+  },
+  "automationBuilder": {
+    "palette": "Palette blocchi",
+    "triggerCategory": "Trigger",
+    "conditionsCategory": "Condizioni",
+    "actionsCategory": "Azioni",
+    "canvas": "Canvas",
+    "properties": "Proprietà",
+    "name": "Nome automazione",
+    "nameRequired": "Il nome è obbligatorio.",
+    "nameRequiredError": "Il nome dell'automazione è obbligatorio",
+    "category": "Categoria",
+    "description": "Descrizione",
+    "active": "Attiva",
+    "selected": "Selezionato",
+    "type": "Tipo",
+    "labelField": "Label",
+    "condition": "Condizione",
+    "conditionLabel": "Condizione",
+    "payloadField": "Campo payload",
+    "operator": "Operatore",
+    "value": "Valore",
+    "conditionHelp": "Collega due edge in uscita e seleziona ogni edge per marcarlo True o False.",
+    "amount": "Quantità",
+    "unit": "Unità",
+    "webhookUrl": "URL webhook",
+    "payloadJson": "Payload JSON",
+    "branchLabel": "Ramo condizione",
+    "branchHelp": "Usa True/False sugli edge che partono da un blocco Condizione.",
+    "noSelection": "Nessun blocco selezionato",
+    "validationErrors": "Errori di validazione:",
+    "validationFailed": "Validazione fallita ({{summary}}):\n{{lines}}",
+    "cancel": "Annulla",
+    "saving": "Salvataggio...",
+    "save": "Salva automazione",
+    "updated": "Automazione aggiornata",
+    "created": "Automazione creata",
+    "saveError": "Errore salvataggio",
+    "triggers": {
+      "ticketCreated": "Quando viene creato un ticket",
+      "statusChanged": "Quando cambia stato ticket",
+      "scheduled": "Esecuzione pianificata"
+    },
+    "conditionButtons": {
+      "fieldOperatorValue": "Se campo / operatore / valore"
+    },
+    "actionButtons": {
+      "assignTechnician": "Assegna tecnico",
+      "sendNotification": "Invia notifica",
+      "createTicket": "Crea ticket",
+      "delay": "Aspetta / Delay",
+      "webhook": "Webhook HTTP POST"
+    },
+    "operators": {
+      "equals": "uguale a",
+      "notEquals": "diverso da",
+      "contains": "contiene",
+      "exists": "esiste",
+      "greaterThan": "maggiore di",
+      "lessThan": "minore di"
+    },
+    "delayUnits": {
+      "hours": "ore",
+      "days": "giorni"
+    },
+    "branchOptions": {
+      "sequential": "Sequenziale"
+    }
   }
 }

@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import DOMPurify from "dompurify";
 import {
@@ -234,6 +234,7 @@ function InventoryPage() {
     estimateSize: 40,
     overscan: 15,
     threshold: 50,
+    fixedRowHeight: 64,
   });
   const {
     containerRef: mobileContainerRef,
@@ -466,6 +467,8 @@ function InventoryPage() {
           status: t("status." + nextStatus, DEVICE_STATUS_META[nextStatus].label),
         }),
       );
+      // Cursor-based pagination: invalidateQueries is safe here because cursor
+      // boundaries are row-value-based, not offset-based. No stale-page overlap.
       void qc.invalidateQueries({ queryKey: ["inventory"] });
     } catch (error) {
       toast.error(errorMessage(error, t("toast.statusUpdateError")));
@@ -495,6 +498,7 @@ function InventoryPage() {
     setBulkBusy(false);
     setBulkStatusOpen(false);
     setSelectedIds(new Set());
+    // See comment in handleStatusChange — cursor pagination makes invalidateQueries safe.
     void qc.invalidateQueries({ queryKey: ["inventory"] });
     toast.success(
       t("toast.bulkStatusUpdated", {
@@ -547,11 +551,12 @@ function InventoryPage() {
     setBulkClientOpen(false);
     setBulkTargetClientName("");
     setSelectedIds(new Set());
+    // See comment in handleStatusChange — cursor pagination makes invalidateQueries safe.
     void qc.invalidateQueries({ queryKey: ["inventory"] });
     toast.success(
-      t("toast.bulkStatusUpdated", {
+      t("toast.bulkClientUpdated", {
         success,
-        failMsg: fail ? t("toast.bulkStatusUpdatedFail", { fail }) : "",
+        failMsg: fail ? t("toast.bulkClientUpdatedFail", { fail }) : "",
       }),
     );
   }
@@ -821,7 +826,7 @@ function InventoryPage() {
             className="md:hidden"
             style={{
               maxHeight: data.length > 20 ? "calc(100vh - 200px)" : undefined,
-              overflow: data.length > 20 ? "auto" : undefined,
+              overflowY: data.length > 20 ? "scroll" : undefined,
             }}
           >
             {listLoading ? (
@@ -894,10 +899,10 @@ function InventoryPage() {
               className="overflow-x-auto"
               style={{
                 maxHeight: "calc(100vh - 180px)",
-                overflow: "auto",
+                overflowY: "scroll",
               }}
             >
-              <table className="w-full min-w-[1180px]">
+              <table className="w-full min-w-[1050px] table-fixed">
                 <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                   <tr>
                     <th
@@ -921,7 +926,6 @@ function InventoryPage() {
                       t("columns.status", "Stato"),
                       t("columns.warranty", "Garanzia"),
                       t("columns.client", "Cliente"),
-                      t("columns.user", "Utente"),
                       t("columns.updated", "Aggiornato"),
                       t("columns.actions", "Azioni"),
                     ].map((h) => (
@@ -937,10 +941,10 @@ function InventoryPage() {
                 </thead>
                 <tbody>
                   {listLoading ? (
-                    <TableSkeletonRows rows={12} columns={13} cellClassName="px-[14px] py-[10px]" />
+                    <TableSkeletonRows rows={12} columns={12} cellClassName="px-[14px] py-[10px]" />
                   ) : !data.length ? (
                     <tr>
-                      <td colSpan={13} className="text-center py-12 text-text3 text-sm">
+                      <td colSpan={12} className="text-center py-12 text-text3 text-sm">
                         { }
                         <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t("empty.desktop")) }} />
                       </td>
@@ -949,7 +953,7 @@ function InventoryPage() {
                     <>
                       {virtualItems.length > 0 && virtualItems[0].start > 0 && (
                         <tr style={{ height: virtualItems[0].start, visibility: "hidden" }}>
-                          <td colSpan={13} />
+                          <td colSpan={12} />
                         </tr>
                       )}
                       {virtualItems.map((virtualItem) => {
@@ -978,11 +982,11 @@ function InventoryPage() {
                             <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
                               {r.asset_tag || r.id.slice(0, 8)}
                             </td>
-                            <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                            <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3 truncate" title={r.serial || undefined}>
                               {r.serial || "-"}
                             </td>
                             <td className="px-[14px] py-[10px] text-[12.5px]">
-                              <div>{r.model}</div>
+                              <div className="truncate" title={r.model}>{r.model}</div>
                               {r.has_maintenance_due_soon ? (
                                 <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                                   <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
@@ -998,11 +1002,11 @@ function InventoryPage() {
                             <td className="px-[14px] py-[10px] text-[12px] text-text2">
                               {r.device_type || "-"}
                             </td>
-                            <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                            <td className="px-[14px] py-[10px] text-[12px] text-text2 truncate" title={r.os || undefined}>
                               {r.os || "-"}
                             </td>
                             <td
-                              className="px-[14px] py-[10px]"
+                              className="pl-[14px] pr-[8px] py-[10px]"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <DeviceStatusBadge
@@ -1018,9 +1022,6 @@ function InventoryPage() {
                             </td>
                             <td className="px-[14px] py-[10px] text-[12px]">
                               {r.client?.name || "-"}
-                            </td>
-                            <td className="px-[14px] py-[10px] text-[12px]">
-                              {r.assigned_to || "-"}
                             </td>
                             <td
                               className="px-[14px] py-[10px] text-[11px] text-text3"
@@ -1065,7 +1066,7 @@ function InventoryPage() {
                           const bottomHeight = virtualTotalSize - lastItem.start - lastItem.size;
                           return bottomHeight > 0 ? (
                             <tr style={{ height: bottomHeight, visibility: "hidden" }}>
-                              <td colSpan={13} />
+                              <td colSpan={12} />
                             </tr>
                           ) : null;
                         })()}
@@ -1092,11 +1093,11 @@ function InventoryPage() {
                         <td className="px-[14px] py-[10px] font-mono text-[11px] text-text3">
                           {r.asset_tag || r.id.slice(0, 8)}
                         </td>
-                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3">
+                        <td className="px-[14px] py-[10px] font-mono text-[11.5px] text-text3 truncate" title={r.serial || undefined}>
                           {r.serial || "-"}
                         </td>
                         <td className="px-[14px] py-[10px] text-[12.5px]">
-                          <div>{r.model}</div>
+                          <div className="truncate" title={r.model}>{r.model}</div>
                           {r.has_maintenance_due_soon ? (
                             <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                               <Wrench className="size-3" /> {t("maintenance.dueSoon")}{" "}
@@ -1112,11 +1113,11 @@ function InventoryPage() {
                         <td className="px-[14px] py-[10px] text-[12px] text-text2">
                           {r.device_type || "-"}
                         </td>
-                        <td className="px-[14px] py-[10px] text-[12px] text-text2">
+                        <td className="px-[14px] py-[10px] text-[12px] text-text2 truncate" title={r.os || undefined}>
                           {r.os || "-"}
                         </td>
                         <td
-                          className="px-[14px] py-[10px]"
+                          className="pl-[14px] pr-[8px] py-[10px]"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <DeviceStatusBadge
@@ -1131,7 +1132,6 @@ function InventoryPage() {
                           <WarrantyBadge expiryDate={r.warranty_expiry_date} />
                         </td>
                         <td className="px-[14px] py-[10px] text-[12px]">{r.client?.name || "-"}</td>
-                        <td className="px-[14px] py-[10px] text-[12px]">{r.assigned_to || "-"}</td>
                         <td
                           className="px-[14px] py-[10px] text-[11px] text-text3"
                           title={r.updated_at}
@@ -1176,7 +1176,11 @@ function InventoryPage() {
         </>
       )}
       {view === "list" && (
-        <div ref={loadMoreRef} className="flex items-center justify-center py-3">
+        <div
+          ref={loadMoreRef}
+          className="flex items-center justify-center py-3"
+          style={{ minHeight: "44px" }}
+        >
           {isFetchingMore && (
             <span className="text-sm text-text3">{t("loading.more", "Caricamento altri...")}</span>
           )}
@@ -1197,7 +1201,8 @@ function InventoryPage() {
         onClose={() => setImportOpen(false)}
         onImported={() => {
           setSelectedIds(new Set());
-          qc.invalidateQueries({ queryKey: ["inventory"] });
+          // See comment in handleStatusChange — cursor pagination makes invalidateQueries safe.
+          void qc.invalidateQueries({ queryKey: ["inventory"] });
         }}
       />
       <BarcodeScanner
@@ -1772,7 +1777,7 @@ function DeviceStatusBadge({
   return (
     <select
       aria-label={t("columns.status", "Stato dispositivo")}
-      className="pc-badge cursor-pointer max-w-[155px] disabled:opacity-60 disabled:cursor-wait"
+      className="pc-badge cursor-pointer max-w-[140px] disabled:opacity-60 disabled:cursor-wait"
       style={{
         color: meta.color,
         background: `${meta.color}26`,

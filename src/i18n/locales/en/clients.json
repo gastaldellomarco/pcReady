@@ -11,7 +11,8 @@
     "withOpenTickets": "With open tickets",
     "portalActive": "Portal active",
     "search": "Search client by name, company, or email...",
-    "searchExtended": "Search by name, VAT no., fiscal code or email..."
+    "searchExtended": "Search by name, VAT no., fiscal code or email...",
+    "searchLabel": "Search"
   },
   "columns": {
     "name": "Name",
@@ -419,7 +420,10 @@
       "insert": "Insert",
       "update": "Update"
     },
-    "resultRow": "Row {{rowNumber}} ({{name}}): {{error}}"
+    "resultRow": "Row {{rowNumber}} ({{name}}): {{error}}",
+    "mappingTitle": "Mapping title",
+    "mappingNone": "Mapping none",
+    "applyMapping": "Apply mapping"
   },
   "general": {
     "ok": "OK"
@@ -433,5 +437,26 @@
     "labelPortalAccess": "Portal access",
     "labelBundle": "Contract",
     "viewTicket": "View ticket"
+  },
+  "sla": {
+    "saved": "Saved",
+    "saveError": "Save error",
+    "title": "Title",
+    "responseHours": "Response hours",
+    "resolutionHours": "Resolution hours",
+    "save": "Save",
+    "noBundle": "No bundle"
+  },
+  "alerts": {
+    "saved": "Saved",
+    "saveError": "Save error",
+    "title": "Title",
+    "daysBefore": "Days before",
+    "channel": "Channel",
+    "channelLabel": "Channel label",
+    "inApp": "In app",
+    "email": "Email",
+    "enabled": "Enabled",
+    "save": "Save"
   }
 }

@@ -279,7 +279,7 @@ export function AdminUsersTab({ searchParams }: { searchParams?: Record<string, 
     {
       label: "Ultimo accesso",
       accessor: (row: any) =>
-        row.last_sign_in_at ? fmtDateTime(row.last_sign_in_at) : "Mai acceduto",
+        row.last_sign_in_at ? fmtDateTime(row.last_sign_in_at) : t("users.row.neverAccessed", "Nessun accesso"),
     },
     {
       label: "2FA",

@@ -17,11 +17,15 @@
     "billableHours": "Billable Hours",
     "recurring": "Active Contracts",
     "estimatedMargin": "Estimated Margin",
-    "marginFormula": "Active contracts + Total ticket costs − Material costs"
+    "marginFormula": "Active contracts + Total ticket costs − Material costs",
+    "marginRecurringOnly": "Margin recurring only",
+    "noTicketMarginNote": "No ticket margin note"
   },
   "filters": {
     "allClients": "All Clients",
-    "allTechnicians": "All Technicians"
+    "allTechnicians": "All Technicians",
+    "clientLabel": "Client label",
+    "technicianLabel": "Technician label"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -71,7 +75,9 @@
     "includedHours": "Included Hours",
     "usedHours": "Used Hours",
     "estimatedExtra": "Estimated Extra",
-    "associatedTickets": "Associated Tickets"
+    "associatedTickets": "Associated Tickets",
+    "hoursUsed": "Hours used",
+    "noLinkedTickets": "No linked tickets"
   },
   "summaryTables": {
     "perClient": "Costs by Client",
@@ -111,7 +117,6 @@
     "invoiceContextRows": "Rows",
     "invoiceContextNextNumber": "Next number",
     "invoiceContextHint": "The invoice will use tickets from the selected client.",
-
     "quoteTitle": "Quotes / Estimates",
     "quoteSubtitle": "{{count}} quotes found",
     "createQuote": "Create quote",
@@ -172,7 +177,6 @@
     "quotePdfExported": "Quote PDF exported",
     "quotePdfError": "Error exporting quote PDF",
     "quoteLoadError": "Error loading quote",
-
     "budgetTitle": "Client budgets",
     "budgetAmountLabel": "Budget",
     "alertThresholdLabel": "Alert %",
@@ -195,7 +199,6 @@
     "profitabilityTitle": "Profitability Dashboard",
     "profitabilitySubtitle": "Contract revenue (blue), actual cost (yellow), and margin (green) in the period",
     "profitabilityNegativeNote": "Note: Negative values on the Y-axis indicate that the actual costs in the period (labor and materials) exceeded the monthly contract revenue for that client.",
-
     "materialTitle": "Materials / parts",
     "selectTicketLabel": "Select ticket",
     "selectTicket": "Select ticket",
@@ -208,12 +211,23 @@
     "materialRequired": "Select ticket and material",
     "materialAdded": "Material added to ticket",
     "materialAddError": "Error saving material",
-
     "noReportsToSchedule": "No active clients in the period",
     "reportsScheduled": "Monthly reports scheduled",
     "reportsScheduleError": "Error scheduling reports",
     "accountingCsvExported": "CSV exported",
-    "scheduleReports": "Monthly reports"
+    "scheduleReports": "Monthly reports",
+    "invoiceModalDescription": "Invoice modal description",
+    "invoiceStepDetails": "Invoice step details",
+    "invoiceStepPreview": "Invoice step preview",
+    "recipientAddressLabel": "Recipient address label",
+    "taxRateLabel": "Tax rate label",
+    "notesLabel": "Notes label",
+    "invoiceNumberAutoHint": "Invoice number auto hint",
+    "invoicePreviewTotal": "Invoice preview total",
+    "invoicePreviewSubtotal": "Invoice preview subtotal",
+    "backToDetails": "Back to details",
+    "previewInvoice": "Preview invoice",
+    "invoicePdfExported": "Invoice pdf exported"
   },
   "detailTable": {
     "title": "Billable Ticket Details",
@@ -233,7 +247,8 @@
     "empty": "No costs in the selected period",
     "groupByNone": "No grouping",
     "groupByClient": "Group by client",
-    "groupByTechnician": "Group by technician"
+    "groupByTechnician": "Group by technician",
+    "groupByLabel": "Group by label"
   },
   "feedback": {
     "loadError": "Error loading costs",
@@ -301,5 +316,8 @@
     "client": "Client",
     "notAssigned": "Not assigned",
     "clientNotIndicated": "Client not indicated"
+  },
+  "budget": {
+    "overBudget": "Over budget"
   }
 }

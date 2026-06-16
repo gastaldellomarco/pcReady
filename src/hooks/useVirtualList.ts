@@ -15,6 +15,9 @@ export interface UseVirtualListOptions {
   threshold?: number;
   /** Override the threshold-based enabled check */
   enabled?: boolean;
+  /** When set, uses a fixed row height for all items, skipping DOM measurement.
+   *  Prevents layout vibration when rows have varying content heights (e.g. badges). */
+  fixedRowHeight?: number;
 }
 
 /**
@@ -63,6 +66,7 @@ export function useVirtualList<T extends HTMLElement = HTMLDivElement>({
   overscan = 15,
   threshold = 50,
   enabled: enabledProp,
+  fixedRowHeight,
 }: UseVirtualListOptions): UseVirtualListReturn<T> {
   const containerRef = useRef<T>(null);
   const shouldEnable = enabledProp ?? count > threshold;
@@ -70,8 +74,15 @@ export function useVirtualList<T extends HTMLElement = HTMLDivElement>({
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => containerRef.current,
-    estimateSize: typeof estimateSize === "number" ? () => estimateSize : estimateSize,
-    measureElement: (el) => el.getBoundingClientRect().height,
+    estimateSize:
+      fixedRowHeight != null
+        ? () => fixedRowHeight
+        : typeof estimateSize === "number"
+          ? () => estimateSize
+          : estimateSize,
+    ...(fixedRowHeight != null
+      ? {}
+      : { measureElement: (el) => el.getBoundingClientRect().height }),
     overscan,
     enabled: shouldEnable,
   });

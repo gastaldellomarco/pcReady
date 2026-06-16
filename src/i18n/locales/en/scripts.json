@@ -23,7 +23,8 @@
   "favorites": {
     "section": "Favorites",
     "add": "Add to favorites",
-    "remove": "Remove from favorites"
+    "remove": "Remove from favorites",
+    "toggleError": "Toggle error"
   },
   "tags": {
     "placeholder": "Add tag...",
@@ -54,7 +55,8 @@
     "discardTitle": "Unsaved changes",
     "discardDescription": "You have unsaved changes. Do you really want to discard them?",
     "discardConfirm": "Discard changes",
-    "discarding": "Discarding..."
+    "discarding": "Discarding...",
+    "copyError": "Copy error"
   },
   "editor": {
     "editTitle": "Edit script",
@@ -130,7 +132,9 @@
     "revoke": "Revoke",
     "revoked": "Link revoked",
     "revokeError": "Error revoking link",
-    "pageTitle": "Shared script — PCReady"
+    "pageTitle": "Shared script — PCReady",
+    "loadLinksError": "Load links error",
+    "copyError": "Copy error"
   },
   "delete": {
     "title": "Delete this script?",
@@ -143,5 +147,8 @@
     "deleted": "Script deleted",
     "created": "Script created",
     "updated": "Script updated"
+  },
+  "filter": {
+    "categoryLabel": "Category label"
   }
 }

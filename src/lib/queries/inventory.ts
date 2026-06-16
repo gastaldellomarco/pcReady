@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 import { LIST_PAGE_SIZE, LIST_QUERY_GC_MS, LIST_QUERY_STALE_MS } from "./list-config";
 import {
   fetchAllAssignedDeviceIds,
   fetchDevicesList,
+  fetchDevicesListCursor,
   fetchAllDevicesList,
   fetchDeviceBySerial,
   createDevice,
@@ -17,6 +18,7 @@ export type { DevicesListParams };
 export {
   fetchAllAssignedDeviceIds,
   fetchDevicesList,
+  fetchDevicesListCursor,
   fetchAllDevicesList,
   fetchDeviceBySerial,
   createDevice,
@@ -65,7 +67,7 @@ export function useInventoryList(params: DevicesListParams) {
     enabled: !needsAssignedFilter || assignedQuery.isSuccess,
     staleTime: LIST_QUERY_STALE_MS,
     gcTime: LIST_QUERY_GC_MS,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -91,18 +93,17 @@ export function useInventoryInfiniteList(params: DevicesListParams) {
       needsAssignedFilter ? assignedQuery.dataUpdatedAt : 0,
     ],
     queryFn: ({ pageParam }) =>
-      fetchDevicesList({
+      fetchDevicesListCursor({
         ...params,
-        page: pageParam as number,
+        cursor: pageParam as string | undefined,
         assignedIdsForFilter: needsAssignedFilter ? assignedQuery.data : undefined,
       }),
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.data.length === (params.pageSize ?? LIST_PAGE_SIZE) ? allPages.length : undefined,
-    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
     enabled: !needsAssignedFilter || assignedQuery.isSuccess,
     staleTime: LIST_QUERY_STALE_MS,
     gcTime: LIST_QUERY_GC_MS,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 }
 

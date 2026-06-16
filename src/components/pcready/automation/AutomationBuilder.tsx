@@ -1,5 +1,6 @@
 import "reactflow/dist/style.css";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -38,6 +39,7 @@ type Props = {
  *
  */
 export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Props) {
+  const { t } = useTranslation("automations");
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
     setLoading(true);
     try {
       if (!name || name.trim() === "") {
-        toast.error("Il nome dell'automazione è obbligatorio");
+        toast.error(t("automationBuilder.nameRequiredError", "Automation name is required"));
         setLoading(false);
         return;
       }
@@ -151,10 +153,16 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           }
         }
         const summary = summarizeErrors(validation.errors);
-        toast.error(`Validazione fallita (${summary}):\n${lines.join("\n")}`, {
-          duration: 8000,
-          richColors: true,
-        });
+        toast.error(
+          t("automationBuilder.validationFailed", "Validation failed ({{summary}}):\n{{lines}}", {
+            summary,
+            lines: lines.join("\n"),
+          }),
+          {
+            duration: 8000,
+            richColors: true,
+          },
+        );
         setLoading(false);
         return;
       }
@@ -165,7 +173,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           id: initialFlow.id,
           payload: { name, description, category, active, flow_definition: flowDef },
         });
-        toast.success("Automazione aggiornata");
+        toast.success(t("automationBuilder.updated", "Automation updated"));
       } else {
         await createAutomationMut.mutateAsync({
           name,
@@ -175,11 +183,11 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
           version: 1,
           flow_definition: flowDef,
         });
-        toast.success("Automazione creata");
+        toast.success(t("automationBuilder.created", "Automation created"));
       }
       onSave?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore salvataggio");
+      toast.error(err instanceof Error ? err.message : t("automationBuilder.saveError", "Save error"));
     } finally {
       setLoading(false);
     }
@@ -225,87 +233,99 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
     <ReactFlowProvider>
       <div className="grid grid-cols-12 gap-4">
         <aside className="col-span-3 p-3 border rounded-md">
-          <div className="mb-3 font-semibold">Palette blocchi</div>
-          <div className="text-sm text-text3">Trigger</div>
-          <div className="mt-2 space-y-2">
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("trigger", "Quando viene creato un ticket")}
-              disabled={loading}
-            >
-              Quando viene creato un ticket
-            </button>
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("trigger", "Quando cambia stato ticket")}
-              disabled={loading}
-            >
-              Quando cambia stato ticket
-            </button>
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("trigger", "Esecuzione pianificata")}
-              disabled={loading}
-            >
-              Esecuzione pianificata
-            </button>
-          </div>
-          <div className="mt-4 text-sm text-text3">Condizioni</div>
+          <div className="mb-3 font-semibold">{t("automationBuilder.palette", "Block palette")}</div>
+          <div className="text-sm text-text3">{t("automationBuilder.triggerCategory", "Trigger")}</div>
           <div className="mt-2 space-y-2">
             <button
               type="button"
               className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
                 !loading &&
-                addNode("condition", "Condizione", {
-                  field: "priority",
-                  operator: "equals",
-                  value: "high",
-                })
+                addNode("trigger", t("automationBuilder.triggers.ticketCreated", "When a ticket is created"))
               }
               disabled={loading}
             >
-              Se campo / operatore / valore
-            </button>
-          </div>
-          <div className="mt-4 text-sm text-text3">Azioni</div>
-          <div className="mt-2 space-y-2">
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("action", "Assegna tecnico")}
-              disabled={loading}
-            >
-              Assegna tecnico
-            </button>
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("action", "Invia notifica")}
-              disabled={loading}
-            >
-              Invia notifica
-            </button>
-            <button
-              type="button"
-              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              onClick={() => !loading && addNode("action", "Crea ticket")}
-              disabled={loading}
-            >
-              Crea ticket
+              {t("automationBuilder.triggers.ticketCreated", "When a ticket is created")}
             </button>
             <button
               type="button"
               className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() =>
-                !loading && addNode("action", "Aspetta", { amount: 1, unit: "hours" }, "delay")
+                !loading &&
+                addNode("trigger", t("automationBuilder.triggers.statusChanged", "When ticket status changes"))
               }
               disabled={loading}
             >
-              Aspetta / Delay
+              {t("automationBuilder.triggers.statusChanged", "When ticket status changes")}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("trigger", t("automationBuilder.triggers.scheduled", "Scheduled execution"))
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.triggers.scheduled", "Scheduled execution")}
+            </button>
+          </div>
+          <div className="mt-4 text-sm text-text3">{t("automationBuilder.conditionsCategory", "Conditions")}</div>
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode(
+                  "condition",
+                  t("automationBuilder.conditionLabel", "Condition"),
+                  {
+                    field: "priority",
+                    operator: "equals",
+                    value: "high",
+                  },
+                )
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.conditionButtons.fieldOperatorValue", "If field / operator / value")}
+            </button>
+          </div>
+          <div className="mt-4 text-sm text-text3">{t("automationBuilder.actionsCategory", "Actions")}</div>
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("action", t("automationBuilder.actionButtons.assignTechnician", "Assign technician"))
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.actionButtons.assignTechnician", "Assign technician")}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("action", t("automationBuilder.actionButtons.sendNotification", "Send notification"))
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.actionButtons.sendNotification", "Send notification")}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode("action", t("automationBuilder.actionButtons.createTicket", "Create ticket"))
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.actionButtons.createTicket", "Create ticket")}
             </button>
             <button
               type="button"
@@ -314,20 +334,36 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                 !loading &&
                 addNode(
                   "action",
-                  "Webhook",
+                  t("automationBuilder.actionButtons.delay", "Wait / Delay"),
+                  { amount: 1, unit: "hours" },
+                  "delay",
+                )
+              }
+              disabled={loading}
+            >
+              {t("automationBuilder.actionButtons.delay", "Wait / Delay")}
+            </button>
+            <button
+              type="button"
+              className={`rounded border px-2 py-1 text-left w-full ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() =>
+                !loading &&
+                addNode(
+                  "action",
+                  t("automationBuilder.actionButtons.webhook", "Webhook HTTP POST"),
                   { url: "", payload: '{\n  "event": "{{trigger}}"\n}' },
                   "send_webhook",
                 )
               }
               disabled={loading}
             >
-              Webhook HTTP POST
+              {t("automationBuilder.actionButtons.webhook", "Webhook HTTP POST")}
             </button>
           </div>
         </aside>
 
         <main className="col-span-6 p-3 border rounded-md">
-          <div className="mb-3 font-semibold">Canvas</div>
+          <div className="mb-3 font-semibold">{t("automationBuilder.canvas", "Canvas")}</div>
           <div className="h-96 rounded bg-background/50 p-0 relative">
             {loading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70">
@@ -374,10 +410,10 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
         </main>
 
         <section className="col-span-3 p-3 border rounded-md">
-          <div className="mb-3 font-semibold">Proprietà</div>
+          <div className="mb-3 font-semibold">{t("automationBuilder.properties", "Properties")}</div>
           <div className="space-y-3">
             <div>
-              <Label>Nome automazione</Label>
+              <Label>{t("automationBuilder.name", "Automation name")}</Label>
               <Input
                 value={name}
                 onChange={(e: any) => setName(e.target.value)}
@@ -385,12 +421,12 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                 aria-invalid={attemptedSave && !name.trim()}
               />
               {attemptedSave && !name.trim() && (
-                <div className="text-sm text-destructive mt-1">Il nome è obbligatorio.</div>
+                <div className="text-sm text-destructive mt-1">{t("automationBuilder.nameRequired", "Name is required.")}</div>
               )}
             </div>
 
             <div>
-              <Label>Categoria</Label>
+              <Label>{t("automationBuilder.category", "Category")}</Label>
               <Input
                 value={category ?? ""}
                 onChange={(e: any) => setCategory(e.target.value)}
@@ -399,7 +435,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
             </div>
 
             <div>
-              <Label>Descrizione</Label>
+              <Label>{t("automationBuilder.description", "Description")}</Label>
               <Input
                 value={description ?? ""}
                 onChange={(e: any) => setDescription(e.target.value)}
@@ -415,18 +451,18 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                   onChange={(e) => setActive(e.target.checked)}
                   disabled={loading}
                 />
-                Attiva
+                {t("automationBuilder.active", "Active")}
               </label>
             </div>
 
             <div>
-              <div className="mb-2 font-medium">Selezionato</div>
+              <div className="mb-2 font-medium">{t("automationBuilder.selected", "Selected")}</div>
               {selectedNode ? (
                 <div className="space-y-2">
                   <div>ID: {selectedNode.id}</div>
-                  <div>Tipo: {selectedNode.data?.type}</div>
+                  <div>{t("automationBuilder.type", "Type")}: {selectedNode.data?.type}</div>
                   <div>
-                    <Label>Label</Label>
+                    <Label>{t("automationBuilder.labelField", "Label")}</Label>
                     <Input
                       value={selectedNode.data?.label ?? ""}
                       onChange={(e: any) => updateSelectedNodeData({ label: e.target.value })}
@@ -435,30 +471,30 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                   </div>
                   {selectedNode.data?.type === "condition" && (
                     <div className="space-y-2 rounded-md border p-2">
-                      <div className="text-xs font-semibold text-text3">Condizione</div>
-                      <Label>Campo payload</Label>
+                      <div className="text-xs font-semibold text-text3">{t("automationBuilder.condition", "Condition")}</div>
+                      <Label>{t("automationBuilder.payloadField", "Payload field")}</Label>
                       <Input
                         value={selectedNode.data?.config?.field ?? ""}
                         onChange={(e: any) => updateSelectedNodeConfig({ field: e.target.value })}
                         placeholder="priority"
                         disabled={loading}
                       />
-                      <Label>Operatore</Label>
+                      <Label>{t("automationBuilder.operator", "Operator")}</Label>
                       <select
                         className="pc-input"
                         value={selectedNode.data?.config?.operator ?? "equals"}
                         onChange={(e) => updateSelectedNodeConfig({ operator: e.target.value })}
                         disabled={loading}
-                        aria-label="Operatore condizione"
+                        aria-label={t("automationBuilder.operator", "Operator")}
                       >
-                        <option value="equals">uguale a</option>
-                        <option value="not_equals">diverso da</option>
-                        <option value="contains">contiene</option>
-                        <option value="exists">esiste</option>
-                        <option value="gt">maggiore di</option>
-                        <option value="lt">minore di</option>
+                        <option value="equals">{t("automationBuilder.operators.equals", "equals")}</option>
+                        <option value="not_equals">{t("automationBuilder.operators.notEquals", "not equals")}</option>
+                        <option value="contains">{t("automationBuilder.operators.contains", "contains")}</option>
+                        <option value="exists">{t("automationBuilder.operators.exists", "exists")}</option>
+                        <option value="gt">{t("automationBuilder.operators.greaterThan", "greater than")}</option>
+                        <option value="lt">{t("automationBuilder.operators.lessThan", "less than")}</option>
                       </select>
-                      <Label>Valore</Label>
+                      <Label>{t("automationBuilder.value", "Value")}</Label>
                       <Input
                         value={selectedNode.data?.config?.value ?? ""}
                         onChange={(e: any) => updateSelectedNodeConfig({ value: e.target.value })}
@@ -466,14 +502,14 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                         disabled={loading}
                       />
                       <div className="text-xs text-text3">
-                        Collega due edge in uscita e seleziona ogni edge per marcarlo True o False.
+                        {t("automationBuilder.conditionHelp", "Connect two outgoing edges and select each edge to mark it True or False.")}
                       </div>
                     </div>
                   )}
                   {selectedNode.data?.actionType === "delay" && (
                     <div className="grid grid-cols-2 gap-2 rounded-md border p-2">
                       <label className="text-xs">
-                        Quantita
+                        {t("automationBuilder.amount", "Amount")}
                         <Input
                           type="number"
                           min={1}
@@ -485,36 +521,36 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                         />
                       </label>
                       <label className="text-xs">
-                        Unita
+                        {t("automationBuilder.unit", "Unit")}
                         <select
                           className="pc-input mt-1"
                           value={selectedNode.data?.config?.unit ?? "hours"}
                           onChange={(e) => updateSelectedNodeConfig({ unit: e.target.value })}
                           disabled={loading}
-                          aria-label="Unità delay"
+                          aria-label={t("automationBuilder.unit", "Unit")}
                         >
-                          <option value="hours">ore</option>
-                          <option value="days">giorni</option>
+                          <option value="hours">{t("automationBuilder.delayUnits.hours", "hours")}</option>
+                          <option value="days">{t("automationBuilder.delayUnits.days", "days")}</option>
                         </select>
                       </label>
                     </div>
                   )}
                   {selectedNode.data?.actionType === "send_webhook" && (
                     <div className="space-y-2 rounded-md border p-2">
-                      <Label>URL webhook</Label>
+                      <Label>{t("automationBuilder.webhookUrl", "Webhook URL")}</Label>
                       <Input
                         value={selectedNode.data?.config?.url ?? ""}
                         onChange={(e: any) => updateSelectedNodeConfig({ url: e.target.value })}
                         placeholder="https://..."
                         disabled={loading}
                       />
-                      <Label>Payload JSON</Label>
+                      <Label>{t("automationBuilder.payloadJson", "Payload JSON")}</Label>
                       <textarea
                         className="pc-input min-h-24 font-mono text-xs"
                         value={selectedNode.data?.config?.payload ?? ""}
                         onChange={(e) => updateSelectedNodeConfig({ payload: e.target.value })}
                         disabled={loading}
-                        aria-label="Payload JSON"
+                        aria-label={t("automationBuilder.payloadJson", "Payload JSON")}
                       />
                     </div>
                   )}
@@ -522,31 +558,31 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
               ) : selectedEdge ? (
                 <div className="space-y-2">
                   <div>ID edge: {selectedEdge.id}</div>
-                  <Label>Ramo condizione</Label>
+                  <Label>{t("automationBuilder.branchLabel", "Condition branch")}</Label>
                   <select
                     className="pc-input"
                     value={(selectedEdge.data?.branch as string) ?? ""}
                     onChange={(e) => updateSelectedEdgeData({ branch: e.target.value || null })}
                     disabled={loading}
-                    aria-label="Ramo condizione"
+                    aria-label={t("automationBuilder.branchLabel", "Condition branch")}
                   >
-                    <option value="">Sequenziale</option>
+                    <option value="">{t("automationBuilder.branchOptions.sequential", "Sequential")}</option>
                     <option value="true">True</option>
                     <option value="false">False</option>
                   </select>
                   <div className="text-xs text-text3">
-                    Usa True/False sugli edge che partono da un blocco Condizione.
+                    {t("automationBuilder.branchHelp", "Use True/False on edges that start from a Condition block.")}
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-text3">Nessun blocco selezionato</div>
+                <div className="text-sm text-text3">{t("automationBuilder.noSelection", "No block selected")}</div>
               )}
             </div>
 
             <div className="pt-4 flex gap-2">
               {validationErrors.length > 0 && (
                 <div className="mb-3 w-full space-y-1">
-                  <p className="text-xs font-semibold text-red-600">Errori di validazione:</p>
+                  <p className="text-xs font-semibold text-red-600">{t("automationBuilder.validationErrors", "Validation errors:")}</p>
                   <ul className="list-disc list-inside space-y-0.5">
                     {validationErrors.map((err) => (
                       <li key={err.path || err.message} className="text-xs text-red-500">
@@ -557,7 +593,7 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                 </div>
               )}
               <Button variant="outline" onClick={onCancel} disabled={loading}>
-                Annulla
+                {t("automationBuilder.cancel", "Cancel")}
               </Button>
               <Button onClick={handleSave} disabled={loading || !name.trim()}>
                 {loading ? (
@@ -578,10 +614,10 @@ export default function AutomationBuilder({ initialFlow, onSave, onCancel }: Pro
                         className="opacity-75"
                       />
                     </svg>
-                    Salvataggio...
+                    {t("automationBuilder.saving", "Saving...")}
                   </>
                 ) : (
-                  "Salva automazione"
+                  t("automationBuilder.save", "Save automation")
                 )}
               </Button>
             </div>

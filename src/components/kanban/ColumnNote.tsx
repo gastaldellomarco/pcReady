@@ -76,7 +76,7 @@ export function ColumnNote({
         style={{ borderColor: "var(--border)" }}
       >
         <FileText className="size-3" />
-        <span>{saving ? "Salvataggio…" : "Aggiungi nota…"}</span>
+        <span>{saving ? "Saving…" : "Add note…"}</span>
       </button>
     );
   }
@@ -91,7 +91,7 @@ export function ColumnNote({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
-          placeholder="Scrivi una nota per questa colonna…"
+          placeholder="Write a note for this column…"
           aria-label="Nota colonna"
           rows={2}
           className="w-full resize-none rounded-[7px] border-0 bg-transparent px-2.5 py-2 text-[11px] leading-relaxed text-text outline-none placeholder:text-text4"
@@ -115,7 +115,7 @@ export function ColumnNote({
             ) : (
               <Check className="size-3" />
             )}
-            {saving ? "Salvataggio…" : "Salva"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

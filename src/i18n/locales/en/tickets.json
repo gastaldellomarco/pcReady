@@ -3,7 +3,13 @@
     "title": "PC Tickets - PCReady",
     "description": "List of PC preparation tickets with advanced filters.",
     "archiveTitle": "Ticket history — PCReady",
-    "archiveDescription": "Archived tickets list."
+    "archiveDescription": "Archived tickets list.",
+    "updateButton": "Update",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "of": "of",
+    "history": "History",
+    "selected": "selected"
   },
   "title": "PC Tickets",
   "newTicket": "New Ticket",
@@ -15,7 +21,9 @@
   "allTechs": "All technicians",
   "exportPdf": "Export PDF",
   "previewPdf": "Preview PDF",
-  "history": "History",
+  "history": {
+    "assignedTo": "Assigned to"
+  },
   "results": "results",
   "of": "of",
   "selected": "selected",
@@ -61,7 +69,12 @@
     "confirmDescription": "Confirm operation on selected tickets.",
     "archiveDescription": "This operation sets the archived status on {{count}} selected tickets.",
     "changeStatusDescription": "This operation sets the {{status}} status on {{count}} selected tickets.",
-    "ticketsInvolved": "Tickets involved"
+    "ticketsInvolved": "Tickets involved",
+    "others": "+{{count}} others",
+    "changeStatus": "Change status",
+    "reassign": "Reassign",
+    "changePriority": "Change priority",
+    "pendingDays": "Pending days"
   },
   "columns": {
     "id": "ID",
@@ -83,18 +96,22 @@
     "testing": "Testing",
     "ready": "Ready",
     "completed": "Completed",
-    "archived": "Archived"
+    "archived": "Archived",
+    "": "Status",
+    "expiring": "Expiring"
   },
   "priority": {
     "high": "High",
     "med": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "": "Priority"
   },
   "type": {
     "device": "PC Preparation",
     "support": "Technical Support",
     "maintenance": "Maintenance",
-    "other": "Other"
+    "other": "Other",
+    "": "Type"
   },
   "attachments": {
     "title": "Attachments",
@@ -131,7 +148,8 @@
     "addSuccess": "Ticket linked",
     "addError": "Error linking ticket",
     "removeSuccess": "Relation removed",
-    "removeError": "Error removing relation"
+    "removeError": "Error removing relation",
+    "typeLabel": "Type"
   },
   "timeTracking": {
     "title": "Time tracked",
@@ -159,7 +177,9 @@
     "manualSuccess": "Time logged",
     "manualError": "Error logging time",
     "deleteSuccess": "Interval deleted",
-    "deleteError": "Error deleting interval"
+    "deleteError": "Error deleting interval",
+    "descriptionLabel": "Description",
+    "activityLabel": "Activity"
   },
   "notes": {
     "title": "Notes",
@@ -175,7 +195,8 @@
     "addSuccess": "Note added",
     "addError": "Error adding note",
     "enterNote": "Enter a note",
-    "techniciansLoadError": "Error loading technicians"
+    "techniciansLoadError": "Error loading technicians",
+    "noteLabel": "Note"
   },
   "createTicket": {
     "title": "New PC ticket",
@@ -241,7 +262,9 @@
     "bulkOperation": "Bulk operation",
     "bulkReassignment": "bulk reassignment",
     "bulkArchive": "bulk archive",
-    "priorityChange": "priority change to {{label}}"
+    "priorityChange": "priority change to {{label}}",
+    "adminOnly": "Admin only",
+    "unauthorized": "Unauthorized"
   },
   "ticketList": {
     "slaViolated": "SLA violated",
@@ -390,7 +413,8 @@
       "minAgo": "{{count}} min ago",
       "hoursAgo": "{{count}} hours ago",
       "daysAgo": "{{count}} days ago",
-      "monthsAgo": "{{count}} months ago"
+      "monthsAgo": "{{count}} months ago",
+      "loading": "Loading..."
     },
     "initial": "initial",
     "statusChange": "Status change",
@@ -446,7 +470,10 @@
       "techniciansLoadError": "Error loading technicians",
       "checklistEmailError": "Error sending checklist email",
       "statusHistoryError": "Error saving history"
-    }
+    },
+    "checklistTemplateLabel": "Template",
+    "statusLabel": "Status",
+    "assigneeLabel": "Assignee"
   },
   "device": {
     "tabs": {
@@ -476,7 +503,8 @@
       "lastEvent": "Last recorded event",
       "codesSection": "Device codes",
       "codesDescription": "1D barcode separate from inventory QR: manufacturer serial and internal asset tag remain distinct fields.",
-      "editCodes": "Edit codes"
+      "editCodes": "Edit codes",
+      "unassignedClient": "Unassigned"
     },
     "identity": {
       "assetTag": "Internal asset tag",
@@ -501,7 +529,11 @@
       "coverageProgress": "Coverage progress",
       "renew": "Renew warranty",
       "save": "Save warranty",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "notSet": "Not set",
+      "expiredDays": "Expired {{count}} days ago",
+      "expiresToday": "Expires today",
+      "expiresInDays": "Expires in {{count}} days"
     },
     "tco": {
       "title": "Costs (TCO)",
@@ -649,7 +681,10 @@
       "linkCopied": "Device link copied",
       "loadError": "Error loading device",
       "barcodeRead": "Code read from barcode",
-      "invalidCost": "Invalid cost"
+      "invalidCost": "Invalid cost",
+      "identityUpdated": "Identity updated",
+      "identitySaveError": "Error saving identity",
+      "repairCostError": "Error saving repair cost"
     },
     "btn": {
       "edit": "Edit",
@@ -774,7 +809,28 @@
       "catalogDeleteError": "Error removing catalog entry",
       "catalogAddEntry": "Add to catalog",
       "category": "Category"
-    }
+    },
+    "os": "OS",
+    "codes": "Codes",
+    "codesHint": "Enter serial or asset tag",
+    "assetTag": "Asset tag",
+    "serial": "Serial",
+    "serialPlaceholder": "Enter serial",
+    "brand": "Brand",
+    "category": "Category",
+    "location": "Location",
+    "created": "Created",
+    "lastEvent": "Last event",
+    "renewWarranty": "Renew warranty",
+    "purchaseDate": "Purchase date",
+    "warrantyExpiry": "Warranty expiry",
+    "warrantyType": "Warranty type",
+    "warrantyProvider": "Warranty provider",
+    "warrantyProviderPlaceholder": "Provider name or URL",
+    "warrantyNotes": "Warranty notes",
+    "warrantyNotesPlaceholder": "Contract details...",
+    "warrantyLink": "Warranty link",
+    "coverageProgress": "Coverage progress"
   },
   "card": {
     "titleFallback": "Support ticket",
@@ -836,6 +892,15 @@
       "addedToInventory": "Device added to inventory",
       "createError": "Error creating device",
       "validationRequired": "Fill in required fields before proceeding"
-    }
-  }
+    },
+    "activityAdded": "Activity added"
+  },
+  "sla": {
+    "breached": "SLA Breached",
+    "ok": "SLA OK"
+  },
+  "loading": "Loading...",
+  "archiveTableLabel": "Archive",
+  "loadingMore": "Loading more...",
+  "allLoaded": "All loaded"
 }

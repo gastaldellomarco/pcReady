@@ -64,7 +64,13 @@
       "schedule": "Schedule",
       "scheduleDesc": "Scheduling",
       "review": "Review",
-      "reviewDesc": "Check and save"
+      "reviewDesc": "Check and save",
+      "template": "Template",
+      "templateDesc": "Template desc",
+      "event": "Event",
+      "eventDesc": "Event desc",
+      "filters": "Filters",
+      "filtersDesc": "Filters desc"
     },
     "validation": {
       "selectTrigger": "Select a trigger",
@@ -228,5 +234,283 @@
     "conditionFieldEndsWith": "Field \"{{field}}\" ends with \"{{value}}\"",
     "conditionPriorityHigh": "High priority",
     "conditionTagContains": "Tag contains \"{{value}}\""
+  },
+  "actionsBuilder": {
+    "noActions": "No actions",
+    "addAction": "Add action",
+    "closeMenu": "Close menu",
+    "blocks": {
+      "add_comment": {
+        "title": "Title",
+        "ticketId": "Ticket id",
+        "content": "Content",
+        "contentPlaceholder": "Content placeholder",
+        "isInternal": "Is internal"
+      },
+      "assign_ticket": {
+        "title": "Title",
+        "ticketId": "Ticket id",
+        "assignee": "Assignee",
+        "assigneePlaceholder": "Assignee placeholder"
+      },
+      "create_notification": {
+        "title": "Title",
+        "user": "User",
+        "userPlaceholder": "User placeholder",
+        "type": "Type",
+        "titleField": "Title field",
+        "titlePlaceholder": "Title placeholder",
+        "body": "Body",
+        "bodyPlaceholder": "Body placeholder",
+        "link": "Link"
+      },
+      "create_ticket": {
+        "title": "Title",
+        "titleField": "Title field",
+        "titlePlaceholder": "Title placeholder",
+        "description": "Description",
+        "descriptionPlaceholder": "Description placeholder",
+        "customer": "Customer",
+        "customerPlaceholder": "Customer placeholder",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "assigneePlaceholder": "Assignee placeholder"
+      },
+      "send_email": {
+        "title": "Title",
+        "to": "To",
+        "subject": "Subject",
+        "subjectPlaceholder": "Subject placeholder",
+        "body": "Body",
+        "bodyPlaceholder": "Body placeholder",
+        "isHtml": "Is html"
+      },
+      "update_device": {
+        "title": "Title",
+        "deviceId": "Device id",
+        "status": "Status",
+        "location": "Location",
+        "locationPlaceholder": "Location placeholder"
+      },
+      "update_ticket": {
+        "title": "Title",
+        "ticketId": "Ticket id",
+        "status": "Status",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "assigneePlaceholder": "Assignee placeholder"
+      }
+    },
+    "reorder": {
+      "up": "Up",
+      "down": "Down"
+    },
+    "remove": "Remove",
+    "optionalPlaceholder": "Optional placeholder",
+    "selectPriority": "Select priority",
+    "keepCurrent": "Keep current",
+    "title": "Title",
+    "description": "Description",
+    "variablePicker": {
+      "title": "Title",
+      "close": "Close",
+      "search": "Search",
+      "noResults": "No results"
+    }
+  },
+  "conditionsBuilder": {
+    "whenConditions": "When conditions",
+    "logic": {
+      "and": "And",
+      "or": "Or"
+    },
+    "emptyState": {
+      "title": "Title",
+      "description": "Description",
+      "defaultTrigger": "Default trigger",
+      "addFirst": "Add first"
+    },
+    "actions": {
+      "addCondition": "Add condition",
+      "and": "And",
+      "or": "Or",
+      "removeCondition": "Remove condition"
+    },
+    "field": {
+      "placeholder": "Placeholder",
+      "groups": {
+        "ticket": "Ticket",
+        "device": "Device"
+      }
+    },
+    "operator": {
+      "placeholder": "Placeholder"
+    },
+    "value": {
+      "placeholder": "Placeholder",
+      "selectLabel": "Select label",
+      "numberLabel": "Number label",
+      "placeholderNumber": "Placeholder number",
+      "textLabel": "Text label",
+      "placeholderString": "Placeholder string",
+      "removeItem": "Remove item",
+      "addItem": "Add item"
+    }
+  },
+  "eventStep": {
+    "options": {
+      "ticket_created": "Ticket created",
+      "ticket_updated": "Ticket updated",
+      "checklist_completed": "Checklist completed",
+      "sla_warning": "Sla warning",
+      "sla_breached": "Sla breached",
+      "warranty_expiring_soon": "Warranty expiring soon",
+      "warranty_expired": "Warranty expired",
+      "scheduled": "Scheduled",
+      "manual": "Manual"
+    },
+    "examples": {
+      "ticket_created": "Ticket created",
+      "ticket_updated": "Ticket updated",
+      "checklist_completed": "Checklist completed",
+      "sla_warning": "Sla warning",
+      "sla_breached": "Sla breached",
+      "warranty_expiring_soon": "Warranty expiring soon",
+      "warranty_expired": "Warranty expired",
+      "scheduled": "Scheduled",
+      "manual": "Manual"
+    },
+    "title": "Title",
+    "description": "Description",
+    "warrantyDaysLabel": "Warranty days label",
+    "warrantyDaysHelp": "Warranty days help",
+    "cronLabel": "Cron label",
+    "cronPlaceholder": "Cron placeholder",
+    "cronHelp": "Cron help"
+  },
+  "filtersStep": {
+    "title": "Title",
+    "description": "Description",
+    "human": {
+      "field_equals": "Field equals",
+      "field_not_equals": "Field not equals",
+      "field_greater_than": "Field greater than",
+      "field_less_than": "Field less than",
+      "field_contains": "Field contains",
+      "field_starts_with": "Field starts with",
+      "field_ends_with": "Field ends with",
+      "priority_high": "Priority high",
+      "tag_contains": "Tag contains"
+    },
+    "and": "And"
+  },
+  "reviewStep": {
+    "incompleteConfig": "Incomplete config",
+    "summaryPrefix": "Summary prefix",
+    "withConditions": "With conditions",
+    "summaryActionSeparator": "Summary action separator",
+    "title": "Title",
+    "description": "Description",
+    "summaryTitle": "Summary title",
+    "editTrigger": "Edit trigger",
+    "nameLabel": "Name label",
+    "namePlaceholder": "Name placeholder",
+    "descriptionLabel": "Description label",
+    "descriptionPlaceholder": "Description placeholder",
+    "categoryLabel": "Category label",
+    "noCategory": "No category",
+    "scheduleLabel": "Schedule label",
+    "technicalDetails": "Technical details"
+  },
+  "templateStep": {
+    "title": "Title",
+    "description": "Description",
+    "startFromScratch": "Start from scratch",
+    "startFromScratchDesc": "Start from scratch desc"
+  },
+  "runConfirm": {
+    "title": "Execution: {{name}}",
+    "description": "Verify the expected impact before running this automation.",
+    "riskLabel": "Risk: {{level}}",
+    "riskDescriptions": {
+      "critical": "Scheduled automation with high-impact actions. Proceed with extreme caution.",
+      "high": "Automation with actions that modify sensitive data.",
+      "medium": "Automation with actions that generate notifications or communications.",
+      "low": "Low-impact automation, primarily informational."
+    },
+    "incomplete": "Incomplete rule — execution blocked",
+    "expectedImpact": "Expected impact",
+    "sideEffects": "External side effects",
+    "cancel": "Cancel",
+    "running": "Running...",
+    "execute": "Run now"
+  },
+  "automationBuilder": {
+    "palette": "Block palette",
+    "triggerCategory": "Trigger",
+    "conditionsCategory": "Conditions",
+    "actionsCategory": "Actions",
+    "canvas": "Canvas",
+    "properties": "Properties",
+    "name": "Automation name",
+    "nameRequired": "Name is required.",
+    "nameRequiredError": "Automation name is required",
+    "category": "Category",
+    "description": "Description",
+    "active": "Active",
+    "selected": "Selected",
+    "type": "Type",
+    "labelField": "Label",
+    "condition": "Condition",
+    "conditionLabel": "Condition",
+    "payloadField": "Payload field",
+    "operator": "Operator",
+    "value": "Value",
+    "conditionHelp": "Connect two outgoing edges and select each edge to mark it True or False.",
+    "amount": "Amount",
+    "unit": "Unit",
+    "webhookUrl": "Webhook URL",
+    "payloadJson": "Payload JSON",
+    "branchLabel": "Condition branch",
+    "branchHelp": "Use True/False on edges that start from a Condition block.",
+    "noSelection": "No block selected",
+    "validationErrors": "Validation errors:",
+    "validationFailed": "Validation failed ({{summary}}):\n{{lines}}",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save automation",
+    "updated": "Automation updated",
+    "created": "Automation created",
+    "saveError": "Save error",
+    "triggers": {
+      "ticketCreated": "When a ticket is created",
+      "statusChanged": "When ticket status changes",
+      "scheduled": "Scheduled execution"
+    },
+    "conditionButtons": {
+      "fieldOperatorValue": "If field / operator / value"
+    },
+    "actionButtons": {
+      "assignTechnician": "Assign technician",
+      "sendNotification": "Send notification",
+      "createTicket": "Create ticket",
+      "delay": "Wait / Delay",
+      "webhook": "Webhook HTTP POST"
+    },
+    "operators": {
+      "equals": "equals",
+      "notEquals": "not equals",
+      "contains": "contains",
+      "exists": "exists",
+      "greaterThan": "greater than",
+      "lessThan": "less than"
+    },
+    "delayUnits": {
+      "hours": "hours",
+      "days": "days"
+    },
+    "branchOptions": {
+      "sequential": "Sequential"
+    }
   }
 }

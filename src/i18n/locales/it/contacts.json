@@ -11,7 +11,11 @@
     "primary": "Referente principale",
     "portalActive": "Portale attivo",
     "missingEmail": "Senza email",
-    "starred": "Preferiti"
+    "starred": "Preferiti",
+    "clientLabel": "Client label",
+    "roleLabel": "Role label",
+    "departmentLabel": "Department label",
+    "statusLabel": "Stato"
   },
   "roles": {
     "admin": "Amministratore",
@@ -29,7 +33,8 @@
     "contactCount": "{{filtered}}/{{total}} referenti"
   },
   "search": {
-    "placeholder": "Cerca nome, azienda, email, telefono, ruolo..."
+    "placeholder": "Cerca nome, azienda, email, telefono, ruolo...",
+    "label": "Cerca"
   },
   "contact": {
     "defaultName": "Referente",
@@ -109,7 +114,8 @@
     "vacation": "In ferie",
     "sickLeave": "In malattia",
     "unavailable": "Non disponibile",
-    "returnLabel": "Rientro: {{date}}"
+    "returnLabel": "Rientro: {{date}}",
+    "available": "Available"
   },
   "privateNote": {
     "hasNote": "Nota privata presente",
@@ -142,7 +148,8 @@
     "portalRevoked": "Accesso revocato",
     "emailSent": "Email inviata",
     "expiresOn": "Scade il {{date}}",
-    "revokedOn": "Revocato il {{date}}"
+    "revokedOn": "Revocato il {{date}}",
+    "viewTicket": "View ticket"
   },
   "merge": {
     "title": "Unisci contatti duplicati",
@@ -171,5 +178,7 @@
     "choosePair": "Seleziona una coppia dall'elenco sopra per iniziare l'unione.",
     "survivor": "Conservato",
     "fieldValueSurvivor": "Conservato"
-  }
+  },
+  "loading": "Caricamento...",
+  "loadingMore": "Caricamento..."
 }

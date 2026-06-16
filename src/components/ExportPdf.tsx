@@ -1,5 +1,6 @@
 import { AlertTriangle, FileDown, Loader2 } from "lucide-react";
 import { useState, useCallback, type ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EXPORT_WARNING_THRESHOLD } from "@/lib/queries/list-config";
 import type { DocumentProps } from "@react-pdf/renderer";
@@ -43,20 +44,26 @@ export interface ExportPdfProps<TData, TPdfRow> {
 }
 
 /** Build a human-readable summary of active filters. */
-function buildFilterSummary(filters: Record<string, any>, entityLabel: string): string[] {
+function buildFilterSummary(
+  filters: Record<string, any>,
+  entityLabel: string,
+  t: (key: string, fallback: string, options?: Record<string, any>) => string,
+): string[] {
   const lines: string[] = [];
-  if (filters.status) lines.push(`Stato: ${filters.status}`);
-  if (filters.priority) lines.push(`Priorità: ${filters.priority}`);
-  if (filters.ticket_type) lines.push(`Tipo: ${filters.ticket_type}`);
-  if (filters.client_id) lines.push(`Cliente: filtrato`);
-  if (filters.assignee_id) lines.push(`Assegnatario: filtrato`);
+  if (filters.status) lines.push(`${t("exportPdf.filterStatus", "Status")}: ${filters.status}`);
+  if (filters.priority) lines.push(`${t("exportPdf.filterPriority", "Priority")}: ${filters.priority}`);
+  if (filters.ticket_type) lines.push(`${t("exportPdf.filterType", "Type")}: ${filters.ticket_type}`);
+  if (filters.client_id) lines.push(t("exportPdf.filterClientFiltered", "Client: filtered"));
+  if (filters.assignee_id) lines.push(t("exportPdf.filterAssigneeFiltered", "Assignee: filtered"));
   if (filters.dateFrom || filters.dateTo) {
     const from = filters.dateFrom || "...";
     const to = filters.dateTo || "...";
-    lines.push(`Data: ${from} – ${to}`);
+    lines.push(`${t("exportPdf.filterDate", "Date")}: ${from} – ${to}`);
   }
-  if (filters.q) lines.push(`Ricerca: "${filters.q}"`);
-  return lines.length ? lines : [`Nessun filtro attivo per ${entityLabel}`];
+  if (filters.q) lines.push(`${t("exportPdf.filterSearch", "Search")}: "${filters.q}"`);
+  return lines.length
+    ? lines
+    : [t("exportPdf.noActiveFilters", "No active filters for {{label}}", { label: entityLabel })];
 }
 
 /**
@@ -77,6 +84,7 @@ export function ExportPdf<TData, TPdfRow>({
   onSuccess,
   onError,
 }: ExportPdfProps<TData, TPdfRow>) {
+  const { t } = useTranslation("common");
   const [exportMode, setExportMode] = useState<ExportMode>("page");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +94,7 @@ export function ExportPdf<TData, TPdfRow>({
   const showWarning = exportMode === "all" && allCount > EXPORT_WARNING_THRESHOLD;
   const isEmpty = allCount === 0;
 
-  const filterLines = filterSummary ?? buildFilterSummary(activeFilters, entityLabel);
+  const filterLines = filterSummary ?? buildFilterSummary(activeFilters, entityLabel, t as (key: string, fallback: string, options?: Record<string, any>) => string);
 
   const handleExport = useCallback(async () => {
     setError(null);
@@ -105,7 +113,7 @@ export function ExportPdf<TData, TPdfRow>({
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Errore durante l'esportazione";
+      const message = err instanceof Error ? err.message : t("exportPdf.exportError", "Export error");
       setError(message);
       onError?.(err instanceof Error ? err : new Error(message));
     } finally {
@@ -139,7 +147,7 @@ export function ExportPdf<TData, TPdfRow>({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileDown className="size-4" />
-            Esporta PDF — {entityLabel}
+            {t("exportPdf.exportPdfTitle", "Export PDF")} — {entityLabel}
           </DialogTitle>
         </DialogHeader>
 
@@ -149,7 +157,7 @@ export function ExportPdf<TData, TPdfRow>({
           style={{ borderColor: "var(--border)", background: "var(--surface2)" }}
         >
           <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-text3">
-            Filtri attivi
+            {t("exportPdf.activeFilters", "Active filters")}
           </div>
           {filterLines.map((line) => (
             <div key={line} className="text-text2 leading-relaxed">
@@ -174,7 +182,7 @@ export function ExportPdf<TData, TPdfRow>({
               onChange={() => setExportMode("page")}
             />
             <span className="text-sm text-text2">
-              Pagina corrente{" "}
+              {t("exportPdf.currentPage", "Current page")}{" "}
               <span className="font-mono text-xs text-text3">
                 ({pageCount} {entityLabel})
               </span>
@@ -200,10 +208,10 @@ export function ExportPdf<TData, TPdfRow>({
             />
             <span className="text-sm text-text2">
               {isEmpty ? (
-                "Nessun risultato"
+                t("exportPdf.noResults", "No results")
               ) : (
                 <>
-                  Tutti i risultati filtrati{" "}
+                  {t("exportPdf.allFilteredResults", "All filtered results")}{" "}
                   <span className="font-mono text-xs text-text3">
                     ({allCount} {entityLabel})
                   </span>
@@ -225,8 +233,15 @@ export function ExportPdf<TData, TPdfRow>({
           >
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             <span>
-              L'export supera {EXPORT_WARNING_THRESHOLD} record ({allCount} {entityLabel}). Il PDF
-              potrebbe essere grande.
+              {t(
+                "exportPdf.largeExportWarning",
+                "Export exceeds {{threshold}} records ({{count}} {{entity}}). The PDF may be large.",
+                {
+                  threshold: EXPORT_WARNING_THRESHOLD,
+                  count: allCount,
+                  entity: entityLabel,
+                },
+              )}
             </span>
           </div>
         )}
@@ -253,7 +268,7 @@ export function ExportPdf<TData, TPdfRow>({
             disabled={busy}
             onClick={() => handleOpenChange(false)}
           >
-            Annulla
+            {t("exportPdf.cancel", "Cancel")}
           </button>
           <button
             type="button"
@@ -264,17 +279,17 @@ export function ExportPdf<TData, TPdfRow>({
             {busy ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Esportazione in corso...
+                {t("exportPdf.exporting", "Exporting...")}
               </>
             ) : showWarning ? (
               <>
                 <FileDown className="size-3.5" />
-                Conferma ed esporta
+                {t("exportPdf.confirmExport", "Confirm and export")}
               </>
             ) : (
               <>
                 <FileDown className="size-3.5" />
-                Esporta PDF
+                {t("exportPdf.exportPdf", "Export PDF")}
               </>
             )}
           </button>

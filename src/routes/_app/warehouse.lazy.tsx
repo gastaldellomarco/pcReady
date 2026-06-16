@@ -3,6 +3,7 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronUp,
+  Copy,
   Eye,
   ExternalLink,
   Package,
@@ -98,7 +99,7 @@ function WarehousePage() {
   const [tickets, setTickets] = useState<TicketOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [formExpanded, setFormExpanded] = useState(false);
+  const [formExpanded, setFormExpanded] = useState(true);
   const [draft, setDraft] = useState<MaterialDraft>(emptyMaterialDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -106,6 +107,7 @@ function WarehousePage() {
   const [detailOpen, setDetailOpen] = useState<MaterialRow | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [chartMode, setChartMode] = useState<"month" | "supplier">("month");
+  const [monthRange, setMonthRange] = useState<6 | 12>(12);
 
   // ── Derived ──
 
@@ -155,15 +157,31 @@ function WarehousePage() {
         .sort((a, b) => b.cost - a.cost)
         .slice(0, 10);
     }
+    // If there are no materials at all, return empty so the "no data"
+    // empty-state message is shown instead of 12 zero-height bars.
+    if (materials.length === 0) return [];
+
     const byMonth = new Map<string, number>();
     materials.forEach((m) => {
       const month = m.created_at.slice(0, 7);
       byMonth.set(month, (byMonth.get(month) ?? 0) + parseCostNumber(m.total_cost));
     });
-    return Array.from(byMonth.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, cost]) => ({ label, cost: Math.round(cost) }));
-  }, [materials, chartMode]);
+
+    // Generate last N months (including current) to ensure the chart always
+    // shows a full time axis even when some months have no spending.
+    const now = new Date();
+    const months: string[] = [];
+    for (let i = monthRange - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      months.push(label);
+    }
+
+    return months.map((label) => ({
+      label,
+      cost: Math.round(byMonth.get(label) ?? 0),
+    }));
+  }, [materials, chartMode, monthRange]);
 
   // ── Data loading ──
 
@@ -363,74 +381,6 @@ function WarehousePage() {
               tone="neutral"
             />
           </div>
-        </div>
-      </div>
-
-      {/* ── Chart card ── */}
-      <div className="pc-card">
-        <div className="pc-card-hd">
-          <div>
-            <div className="pc-card-title">
-              {t("chart.title", "Andamento spesa materiali")}
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className={`pc-btn pc-btn-xs ${chartMode === "month" ? "pc-btn-primary" : "pc-btn-ghost"}`}
-              onClick={() => setChartMode("month")}
-            >
-              {t("chart.byMonth", "Per mese")}
-            </button>
-            <button
-              type="button"
-              className={`pc-btn pc-btn-xs ${chartMode === "supplier" ? "pc-btn-primary" : "pc-btn-ghost"}`}
-              onClick={() => setChartMode("supplier")}
-            >
-              {t("chart.bySupplier", "Per fornitore")}
-            </button>
-            <TrendingUp className="size-5 text-text3 ml-2" />
-          </div>
-        </div>
-        <div className="pc-card-body">
-          {loading ? (
-            <div className="flex h-[280px] items-center justify-center text-sm text-text3">
-              {t("table.loading", "Caricamento...")}
-            </div>
-          ) : chartData.length === 0 ? (
-            <div className="flex h-[280px] items-center justify-center text-sm text-text3">
-              {t("chart.empty", "Nessun dato disponibile")}
-            </div>
-          ) : (
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
-                  <CartesianGrid stroke="var(--border)" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fill: "var(--text3)", fontSize: 11 }}
-                    interval={0}
-                    angle={chartMode === "supplier" ? -18 : -12}
-                    textAnchor="end"
-                    height={54}
-                  />
-                  <YAxis
-                    tick={{ fill: "var(--text3)", fontSize: 11 }}
-                    tickFormatter={(value) => `${value}€`}
-                  />
-                  <Tooltip
-                    formatter={(value: any) => [formatCurrency(value), t("chart.cost", "Costo")]}
-                    contentStyle={{
-                      background: "var(--surface)",
-                      borderColor: "var(--border)",
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Bar dataKey="cost" fill="var(--accent)" name={t("chart.cost", "Costo")} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
       </div>
 
@@ -653,6 +603,94 @@ function WarehousePage() {
         )}
       </div>
 
+      {/* ── Chart card ── */}
+      <div className="pc-card">
+        <div className="pc-card-hd">
+          <div>
+            <div className="pc-card-title">
+              {t("chart.title", "Andamento spesa materiali")}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className={`pc-btn pc-btn-xs ${chartMode === "month" ? "pc-btn-primary" : "pc-btn-ghost"}`}
+              onClick={() => setChartMode("month")}
+            >
+              {t("chart.byMonth", "Per mese")}
+            </button>
+            <button
+              type="button"
+              className={`pc-btn pc-btn-xs ${chartMode === "supplier" ? "pc-btn-primary" : "pc-btn-ghost"}`}
+              onClick={() => setChartMode("supplier")}
+            >
+              {t("chart.bySupplier", "Per fornitore")}
+            </button>
+            {chartMode === "month" && (
+              <>
+                <span className="mx-1 h-5 w-px" style={{ background: "var(--border)" }} />
+                <button
+                  type="button"
+                  className={`pc-btn pc-btn-xs ${monthRange === 6 ? "pc-btn-primary" : "pc-btn-ghost"}`}
+                  onClick={() => setMonthRange(6)}
+                >
+                  {t("chart.months6", "6M")}
+                </button>
+                <button
+                  type="button"
+                  className={`pc-btn pc-btn-xs ${monthRange === 12 ? "pc-btn-primary" : "pc-btn-ghost"}`}
+                  onClick={() => setMonthRange(12)}
+                >
+                  {t("chart.months12", "12M")}
+                </button>
+              </>
+            )}
+            <TrendingUp className="size-5 text-text3 ml-2" />
+          </div>
+        </div>
+        <div className="pc-card-body">
+          {loading ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-text3">
+              {t("table.loading", "Caricamento...")}
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-text3">
+              {t("chart.empty", "Nessun dato disponibile")}
+            </div>
+          ) : (
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
+                  <CartesianGrid stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "var(--text3)", fontSize: 11 }}
+                    interval={0}
+                    angle={chartMode === "supplier" ? -18 : -12}
+                    textAnchor="end"
+                    height={54}
+                  />
+                  <YAxis
+                    tick={{ fill: "var(--text3)", fontSize: 11 }}
+                    tickFormatter={(value) => `${value}€`}
+                    domain={[0, (dataMax: number) => Math.max(Math.ceil(dataMax * 1.25), 10)]}
+                  />
+                  <Tooltip
+                    formatter={(value: any) => [formatCurrency(value), t("chart.cost", "Costo")]}
+                    contentStyle={{
+                      background: "var(--surface)",
+                      borderColor: "var(--border)",
+                      borderRadius: 8,
+                    }}
+                  />
+                  <Bar dataKey="cost" fill="var(--accent)" name={t("chart.cost", "Costo")} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* ── Materials table ── */}
       <div className="pc-card overflow-hidden">
         <div className="pc-card-hd">
@@ -735,7 +773,7 @@ function WarehousePage() {
                   <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
                     {t("table.headers.ticket", "Ticket")}
                   </th>
-                  <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
+                  <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3 whitespace-nowrap">
                     {t("table.headers.actions", "Azioni")}
                   </th>
                 </tr>
@@ -754,7 +792,26 @@ function WarehousePage() {
                       {material.supplier || "-"}
                     </td>
                     <td className="px-3 py-2 font-mono text-[11px] text-text3">
-                      {material.sku || "-"}
+                      {material.sku ? (
+                        <button
+                          type="button"
+                          className="group inline-flex items-center gap-1 hover:text-accent transition-colors cursor-pointer"
+                          title={t("table.copySku", "Copia SKU")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(material.sku!).then(() => {
+                              toast.success(t("table.skuCopied", "SKU copiato!"));
+                            }).catch(() => {
+                              toast.error(t("table.skuCopyError", "Copia non riuscita"));
+                            });
+                          }}
+                        >
+                          <span>{material.sku}</span>
+                          <Copy className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right font-mono">
                       {material.quantity}
@@ -765,7 +822,7 @@ function WarehousePage() {
                     <td className="px-3 py-2 text-right font-mono">
                       {material.resale_margin_percent}%
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-success">
+                    <td className="px-3 py-2 text-right font-mono">
                       {formatCurrency(material.unit_price)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-bold">
@@ -779,7 +836,7 @@ function WarehousePage() {
                         {material.tickets?.ticket_code ?? material.ticket_id.slice(0, 8)}
                       </button>
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           className="pc-btn pc-btn-ghost pc-btn-xs"

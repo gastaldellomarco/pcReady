@@ -140,7 +140,27 @@
     "maintenance-overview": {
       "label": "Maintenances",
       "desc": "Upcoming interventions and overdue maintenances"
-    }
+    },
+    "loadError": "Error loading widgets",
+    "kanbanWip": {
+      "title": "Kanban WIP",
+      "totalTickets": "Total tickets",
+      "limitLabel": "Limit",
+      "overLimit": "Over limit",
+      "noLimit": "No limit",
+      "noTickets": "No tickets",
+      "openKanban": "Open kanban"
+    },
+    "refresh": "Refresh",
+    "refreshLabel": "Refresh",
+    "teamActivityError": "Error loading team activity",
+    "activeTooltipAria": "Active",
+    "activeTooltip": "Active",
+    "kanban-wip-limits": {
+      "label": "Kanban WIP limits",
+      "desc": "Configure work-in-progress limits per column"
+    },
+    "closePanel": "Close"
   },
   "analytics": {
     "overviewTitle": "Devices & tickets overview",
@@ -268,13 +288,17 @@
     "completionRate": "Completion rate",
     "overloaded": "Overloaded",
     "highLoad": "High load",
-    "normalLoad": "Normal load"
+    "normalLoad": "Normal load",
+    "statsError": "Error loading stats",
+    "activeTooltipAria": "Active",
+    "activeTooltip": "Active"
   },
   "heatmap": {
     "title": "Weekly Technician Activity",
     "technicians": "technicians",
     "loading": "Loading...",
-    "ticketsClosed": "tickets closed"
+    "ticketsClosed": "tickets closed",
+    "error": "Error loading heatmap"
   },
   "radar": {
     "volume": "Volume",
@@ -285,7 +309,8 @@
     "title": "Technician Radar",
     "showAll": "Show All",
     "loading": "Loading...",
-    "technician": "Technician"
+    "technician": "Technician",
+    "error": "Error loading radar"
   },
   "portal": {
     "networkError": "Network error",

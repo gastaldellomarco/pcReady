@@ -1012,8 +1012,11 @@ function TicketsPage() {
           <div className="hidden md:block pc-card overflow-hidden">
             <div
               ref={tableContainerRef}
-              className="overflow-x-auto"
-              style={{ maxHeight: "calc(100vh - 180px)", overflow: "auto" }}
+              style={{
+                maxHeight: "calc(100vh - 180px)",
+                overflow: "auto",
+                overscrollBehaviorX: "contain",
+              }}
             >
               <table
                 className={

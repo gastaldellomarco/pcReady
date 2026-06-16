@@ -923,7 +923,7 @@ export function DeviceDetailModal() {
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
-                <div className="pc-label">{t("device.warranty", "Garanzia")}</div>
+                <div className="pc-label">{t("device.warranty.title", "Garanzia")}</div>
                 <div className="mt-1 flex items-center gap-2 text-[12px] text-text2">
                   <span
                     className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
@@ -1174,7 +1174,7 @@ export function DeviceDetailModal() {
               ))}
               {!checklistSummaries.length && (
                 <div className="py-3 text-center text-sm text-text3">
-                  Nessuna checklist associata ai ticket di questo dispositivo.
+                  {t("device.checklist.noAssociated", "No checklists associated with this device's tickets.")}
                 </div>
               )}
             </div>

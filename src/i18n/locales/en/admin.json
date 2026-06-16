@@ -11,7 +11,8 @@
     "settings": "Settings",
     "backupDr": "Backup & DR",
     "oauth": "OAuth / Apps",
-    "audit": "Audit Log"
+    "audit": "Audit Log",
+    "scriptShares": "Script shares"
   },
   "loading": "Verifying permissions...",
   "unauthorized": "Unauthorized access.",
@@ -28,7 +29,8 @@
       "namePlaceholder": "John Doe",
       "roleLabel": "Role",
       "submit": "Invite",
-      "submitting": "Sending..."
+      "submitting": "Sending...",
+      "invalidEmail": "Invalid email"
     },
     "search": {
       "placeholder": "Search name or email...",
@@ -46,7 +48,8 @@
       "csvExported": "CSV exported",
       "bulkFailed": "Bulk operation failed",
       "resendBulkFailed": "Bulk resend failed",
-      "noUsersSelected": "No users selected"
+      "noUsersSelected": "No users selected",
+      "roleLabel": "Role label"
     },
     "table": {
       "colName": "Name",
@@ -61,7 +64,8 @@
         "goToSettings": "Go to settings"
       },
       "colStatus": "Status",
-      "colActions": "Actions"
+      "colActions": "Actions",
+      "selectAll": "Select all"
     },
     "row": {
       "neverAccessed": "Never accessed"
@@ -73,13 +77,15 @@
       "impersonate": "Impersonate user",
       "enableUser": "Enable user",
       "disableUser": "Disable user",
-      "removeUser": "Remove user"
+      "removeUser": "Remove user",
+      "approve": "Approve"
     },
     "delete": {
       "title": "Remove user",
       "description": "Are you sure you want to delete <strong>{{email}}</strong>?",
       "cancel": "Cancel",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "cannotSelf": "Cannot self"
     },
     "bulkDialog": {
       "disableTitle": "Disable users",
@@ -87,6 +93,11 @@
       "description": "Are you sure you want to {{action}} {{count}} selected users? This action can be undone by re-enabling users individually.",
       "cancel": "Cancel",
       "confirm": "Confirm"
+    },
+    "mfaBanner": {
+      "allUsers": "All users",
+      "goToSettings": "Go to settings",
+      "admins": "Admins"
     }
   },
   "settings": {
@@ -502,7 +513,9 @@
   "impersonation": {
     "banner": "You are impersonating {{name}} ({{role}})",
     "warning": "Actions are logged in the audit log",
-    "end": "End impersonation"
+    "end": "End impersonation",
+    "readOnlyBanner": "Read only banner",
+    "readOnlyHint": "Read only hint"
   },
   "emailTemplate": {
     "meta": {
@@ -621,5 +634,8 @@
     "outcomeWarning": "WARNING",
     "outcomeOk": "OK",
     "actorSystem": "System"
+  },
+  "scriptShares": {
+    "info": "Info"
   }
 }

@@ -11,7 +11,11 @@
     "primary": "Primary contact",
     "portalActive": "Portal active",
     "missingEmail": "No email",
-    "starred": "Starred"
+    "starred": "Starred",
+    "clientLabel": "Client label",
+    "roleLabel": "Role label",
+    "departmentLabel": "Department label",
+    "statusLabel": "Status"
   },
   "roles": {
     "admin": "Administrator",
@@ -29,7 +33,8 @@
     "contactCount": "{{filtered}}/{{total}} contacts"
   },
   "search": {
-    "placeholder": "Search name, company, email, phone, role..."
+    "placeholder": "Search name, company, email, phone, role...",
+    "label": "Search"
   },
   "contact": {
     "defaultName": "Contact",
@@ -109,7 +114,8 @@
     "vacation": "On vacation",
     "sickLeave": "Sick leave",
     "unavailable": "Unavailable",
-    "returnLabel": "Return: {{date}}"
+    "returnLabel": "Return: {{date}}",
+    "available": "Available"
   },
   "privateNote": {
     "hasNote": "Private note exists",
@@ -142,7 +148,8 @@
     "portalRevoked": "Access revoked",
     "emailSent": "Email sent",
     "expiresOn": "Expires {{date}}",
-    "revokedOn": "Revoked {{date}}"
+    "revokedOn": "Revoked {{date}}",
+    "viewTicket": "View ticket"
   },
   "merge": {
     "title": "Merge duplicate contacts",
@@ -171,5 +178,7 @@
     "choosePair": "Select a pair from the list above to start merging.",
     "survivor": "Kept",
     "fieldValueSurvivor": "Kept"
-  }
+  },
+  "loading": "Loading...",
+  "loadingMore": "Loading more..."
 }

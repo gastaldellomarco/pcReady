@@ -30,7 +30,8 @@
     "bundles": "Bundles",
     "inventory": "Inventory",
     "docs": "Knowledge Base",
-    "admin": "Admin / Users"
+    "admin": "Admin / Users",
+    "": "Nav"
   },
   "pageTitle": {
     "dashboard": "Dashboard",
@@ -48,7 +49,8 @@
     "admin": "Admin / Users",
     "profile": "Profile",
     "notifications": "Notifications",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "": "Page Title"
   },
   "role": {
     "admin": "Administrator",
@@ -56,7 +58,8 @@
     "viewer": "Viewer"
   },
   "search": {
-    "placeholder": "Search tickets, model, serial..."
+    "placeholder": "Search tickets, model, serial...",
+    "label": "Search"
   },
   "language": {
     "italian": "Italiano",
@@ -88,7 +91,8 @@
     "deny": "Deny",
     "authorizing": "Authorizing...",
     "authorize": "Authorize",
-    "consentDescription": "By authorizing, you allow the application to access your data as described above."
+    "consentDescription": "By authorizing, you allow the application to access your data as described above.",
+    "appName": "App name"
   },
   "docs": {
     "pageTitle": "Knowledge Base - PCReady",
@@ -124,5 +128,26 @@
   "portal": {
     "devicesLoadError": "Error loading devices",
     "sessionValidationError": "Error validating portal session"
+  },
+  "exportPdf": {
+    "exportPdfTitle": "Export PDF",
+    "activeFilters": "Active filters",
+    "currentPage": "Current page",
+    "noResults": "No results",
+    "allFilteredResults": "All filtered results",
+    "cancel": "Cancel",
+    "exportPdf": "Export PDF",
+    "exporting": "Exporting...",
+    "confirmExport": "Confirm and export",
+    "exportError": "Export error",
+    "largeExportWarning": "Export exceeds {{threshold}} records ({{count}} {{entity}}). The PDF may be large.",
+    "filterStatus": "Status",
+    "filterPriority": "Priority",
+    "filterType": "Type",
+    "filterClientFiltered": "Client: filtered",
+    "filterAssigneeFiltered": "Assignee: filtered",
+    "filterDate": "Date",
+    "filterSearch": "Search",
+    "noActiveFilters": "No active filters for {{label}}"
   }
 }

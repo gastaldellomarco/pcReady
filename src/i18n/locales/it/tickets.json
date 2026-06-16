@@ -3,7 +3,13 @@
     "title": "Ticket PC - PCReady",
     "description": "Lista dei ticket di preparazione PC con filtri avanzati.",
     "archiveTitle": "Storico ticket — PCReady",
-    "archiveDescription": "Lista dei ticket archiviati."
+    "archiveDescription": "Lista dei ticket archiviati.",
+    "updateButton": "Aggiorna",
+    "dateFrom": "Da",
+    "dateTo": "A",
+    "of": "di",
+    "history": "Storico",
+    "selected": "selezionati"
   },
   "title": "Ticket PC",
   "newTicket": "Nuovo Ticket",
@@ -15,7 +21,9 @@
   "allTechs": "Tutti i tecnici",
   "exportPdf": "Esporta PDF",
   "previewPdf": "Anteprima PDF",
-  "history": "Storico",
+  "history": {
+    "assignedTo": "Assegnato a"
+  },
   "results": "risultati",
   "of": "di",
   "selected": "selezionati",
@@ -61,7 +69,12 @@
     "confirmDescription": "Conferma l'operazione sui ticket selezionati.",
     "archiveDescription": "Questa operazione imposta lo stato archiviato su {{count}} ticket selezionati.",
     "changeStatusDescription": "Questa operazione imposta lo stato {{status}} su {{count}} ticket selezionati.",
-    "ticketsInvolved": "Ticket coinvolti"
+    "ticketsInvolved": "Ticket coinvolti",
+    "others": "+{{count}} altri",
+    "changeStatus": "Cambia stato",
+    "reassign": "Riassegna",
+    "changePriority": "Cambia priorità",
+    "pendingDays": "Giorni in attesa"
   },
   "columns": {
     "id": "ID",
@@ -83,18 +96,22 @@
     "testing": "Testing",
     "ready": "Pronto",
     "completed": "Completato",
-    "archived": "Archiviato"
+    "archived": "Archiviato",
+    "": "Stato",
+    "expiring": "In scadenza"
   },
   "priority": {
     "high": "Alta",
     "med": "Media",
-    "low": "Bassa"
+    "low": "Bassa",
+    "": "Priorità"
   },
   "type": {
     "device": "Preparazione PC",
     "support": "Assistenza tecnica",
     "maintenance": "Manutenzione",
-    "other": "Altro"
+    "other": "Altro",
+    "": "Tipo"
   },
   "attachments": {
     "title": "Allegati",
@@ -131,7 +148,8 @@
     "addSuccess": "Ticket collegato",
     "addError": "Errore collegamento ticket",
     "removeSuccess": "Collegamento rimosso",
-    "removeError": "Errore rimozione collegamento"
+    "removeError": "Errore rimozione collegamento",
+    "typeLabel": "Tipo"
   },
   "timeTracking": {
     "title": "Tempo lavorato",
@@ -159,7 +177,9 @@
     "manualSuccess": "Tempo inserito",
     "manualError": "Errore inserimento tempo",
     "deleteSuccess": "Intervallo eliminato",
-    "deleteError": "Errore eliminazione intervallo"
+    "deleteError": "Errore eliminazione intervallo",
+    "descriptionLabel": "Descrizione",
+    "activityLabel": "Attività"
   },
   "notes": {
     "title": "Note",
@@ -175,7 +195,8 @@
     "addSuccess": "Nota aggiunta",
     "addError": "Errore inserimento nota",
     "enterNote": "Inserisci una nota",
-    "techniciansLoadError": "Errore caricamento tecnici"
+    "techniciansLoadError": "Errore caricamento tecnici",
+    "noteLabel": "Nota"
   },
   "createTicket": {
     "title": "Nuovo ticket PC",
@@ -241,7 +262,9 @@
     "bulkOperation": "Operazione bulk",
     "bulkReassignment": "riassegnazione bulk",
     "bulkArchive": "archiviazione bulk",
-    "priorityChange": "cambio priorità a {{label}}"
+    "priorityChange": "cambio priorità a {{label}}",
+    "adminOnly": "Solo admin",
+    "unauthorized": "Non autorizzato"
   },
   "detail": {
     "tabs": {
@@ -370,7 +393,8 @@
       "minAgo": "{{count}} min fa",
       "hoursAgo": "{{count}} ore fa",
       "daysAgo": "{{count}} giorni fa",
-      "monthsAgo": "{{count}} mesi fa"
+      "monthsAgo": "{{count}} mesi fa",
+      "loading": "Caricamento..."
     },
     "initial": "iniziale",
     "statusChange": "Cambio stato",
@@ -426,7 +450,10 @@
       "techniciansLoadError": "Errore caricamento tecnici",
       "checklistEmailError": "Errore invio email checklist",
       "statusHistoryError": "Errore salvataggio storico"
-    }
+    },
+    "checklistTemplateLabel": "Template",
+    "statusLabel": "Stato",
+    "assigneeLabel": "Assegnatario"
   },
   "device": {
     "tabs": {
@@ -434,7 +461,9 @@
       "hardware": "Hardware",
       "maintenance": "Manutenzione",
       "tickets": "Ticket ({{count}})",
-      "history": "Storico"
+      "history": "Storico",
+      "lifecycle": "Lifecycle",
+      "software": "Software"
     },
     "loading": {
       "title": "Scheda asset",
@@ -454,7 +483,8 @@
       "lastEvent": "Ultimo evento registrato",
       "codesSection": "Codici dispositivo",
       "codesDescription": "Barcode 1D separato dal QR inventario: seriale produttore e asset tag interno restano campi distinti.",
-      "editCodes": "Modifica codici"
+      "editCodes": "Modifica codici",
+      "unassignedClient": "Non assegnato"
     },
     "identity": {
       "assetTag": "Asset tag interno",
@@ -479,7 +509,11 @@
       "coverageProgress": "Avanzamento copertura",
       "renew": "Rinova garanzia",
       "save": "Salva garanzia",
-      "saving": "Salvataggio..."
+      "saving": "Salvataggio...",
+      "notSet": "Non impostata",
+      "expiredDays": "Scaduta {{count}} giorni fa",
+      "expiresToday": "Scade oggi",
+      "expiresInDays": "Scade tra {{count}} giorni"
     },
     "tco": {
       "title": "Costi (TCO)",
@@ -627,7 +661,10 @@
       "linkCopied": "Link dispositivo copiato",
       "loadError": "Errore caricamento dispositivo",
       "barcodeRead": "Codice letto da barcode",
-      "invalidCost": "Costo non valido"
+      "invalidCost": "Costo non valido",
+      "identityUpdated": "Identità aggiornata",
+      "identitySaveError": "Errore salvataggio identità",
+      "repairCostError": "Errore salvataggio costo riparazione"
     },
     "btn": {
       "edit": "Modifica",
@@ -662,7 +699,118 @@
     "cancel": "Annulla",
     "confirm": "Conferma",
     "repairCostPrompt": "Costo riparazione per {{code}}",
-    "title": "Scheda asset"
+    "title": "Scheda asset",
+    "lifecycle": {
+      "currentPhase": "Fase corrente",
+      "changePhase": "Cambia fase",
+      "transitionTitle": "Transizione di fase",
+      "newPhase": "Nuova fase",
+      "notes": "Note",
+      "notesPlaceholder": "Note sulla transizione di fase...",
+      "confirmTransition": "Conferma transizione",
+      "saving": "Salvataggio...",
+      "cancel": "Annulla",
+      "transitionSuccess": "Fase del ciclo di vita aggiornata",
+      "transitionError": "Errore cambio fase",
+      "uploadHint": "Carica documento per la fase",
+      "uploadFormats": "PDF, immagini, documenti Office — max 50 MB",
+      "uploadSuccess": "Documento caricato",
+      "uploadError": "Errore caricamento documento",
+      "deleteSuccess": "Documento eliminato",
+      "deleteError": "Errore eliminazione documento",
+      "preview": "Anteprima",
+      "previewError": "Anteprima non disponibile",
+      "documents": "Documenti allegati",
+      "history": "Storico fasi",
+      "noHistory": "Nessuna transizione di fase registrata."
+    },
+    "software": {
+      "title": "Software installato",
+      "totalCount": "{{count}} software rilevati",
+      "obsoleteCount": "{{count}} obsoleti",
+      "refresh": "Aggiorna",
+      "manageCatalog": "Catalogo",
+      "addSoftware": "Aggiungi",
+      "searchPlaceholder": "Cerca software...",
+      "addTitle": "Aggiungi software",
+      "name": "Nome",
+      "namePlaceholder": "es. Google Chrome",
+      "version": "Versione",
+      "publisher": "Produttore",
+      "publisherPlaceholder": "es. Google LLC",
+      "installDate": "Data installazione",
+      "save": "Salva software",
+      "saving": "Salvataggio...",
+      "cancel": "Annulla",
+      "addSuccess": "Software aggiunto",
+      "addError": "Errore aggiunta software",
+      "deleteSuccess": "Software rimosso",
+      "deleteError": "Errore rimozione software",
+      "obsolete": "Obsoleto",
+      "updated": "Aggiornato",
+      "status": "Stato",
+      "loading": "Caricamento software...",
+      "noSearchResults": "Nessun software corrisponde alla ricerca",
+      "empty": "Nessun software registrato per questo dispositivo",
+      "emptyName": "Inserisci un nome software",
+      "markAsLatest": "Segna questa versione come ultima disponibile",
+      "catalogAddSuccess": "Versione catalogo aggiornata",
+      "catalogAddError": "Errore aggiornamento catalogo",
+      "catalogTitle": "Catalogo versioni software",
+      "catalogFieldsRequired": "Nome e versione sono obbligatori",
+      "catalogSaved": "Catalogo aggiornato",
+      "catalogSaveError": "Errore salvataggio catalogo",
+      "catalogDeleteSuccess": "Voce catalogo rimossa",
+      "catalogDeleteError": "Errore rimozione voce catalogo",
+      "catalogAddEntry": "Aggiungi al catalogo",
+      "category": "Categoria"
+    },
+    "os": "OS",
+    "codes": "Codici",
+    "codesHint": "Inserisci seriale o asset tag",
+    "assetTag": "Asset tag",
+    "serial": "Seriale",
+    "serialPlaceholder": "Inserisci seriale",
+    "brand": "Marca",
+    "category": "Categoria",
+    "location": "Posizione",
+    "created": "Creato",
+    "lastEvent": "Ultimo evento",
+    "renewWarranty": "Rinnova garanzia",
+    "purchaseDate": "Data acquisto",
+    "warrantyExpiry": "Scadenza garanzia",
+    "warrantyType": "Tipo garanzia",
+    "warrantyProvider": "Fornitore garanzia",
+    "warrantyProviderPlaceholder": "Nome fornitore o URL",
+    "warrantyNotes": "Note garanzia",
+    "warrantyNotesPlaceholder": "Dettagli contratto...",
+    "warrantyLink": "Link garanzia",
+    "coverageProgress": "Avanzamento copertura",
+    "checkout": {
+      "title": "Check-in / Check-out",
+      "checkedOut": "In prestito",
+      "checkout": "Check-out",
+      "checkin": "Check-in",
+      "since": "dal",
+      "conditionNotes": "Note condizioni",
+      "notesPlaceholder": "Condizioni dispositivo, danni, note...",
+      "signatureHint": "Disegna la tua firma nel riquadro sottostante",
+      "clearSignature": "Cancella",
+      "sign": "Firma e conferma",
+      "signing": "Salvataggio...",
+      "cancel": "Annulla",
+      "checkoutDialogTitle": "Check-out dispositivo",
+      "checkoutDialogSubtitle": "Firma per confermare la presa in carico del dispositivo",
+      "checkinDialogTitle": "Check-in dispositivo",
+      "checkinDialogSubtitle": "Firma per confermare la restituzione del dispositivo",
+      "checkoutSuccess": "Dispositivo in prestito",
+      "checkoutError": "Errore durante il check-out",
+      "checkinSuccess": "Dispositivo restituito",
+      "checkinError": "Errore durante il check-in",
+      "history": "Storico check-in/out",
+      "returned": "Restituito",
+      "active": "Attivo"
+    }
   },
   "card": {
     "titleFallback": "Ticket assistenza",
@@ -724,6 +872,32 @@
       "addedToInventory": "Dispositivo aggiunto all'inventario",
       "createError": "Errore creazione dispositivo",
       "validationRequired": "Compila i campi obbligatori prima di procedere"
-    }
+    },
+    "activityAdded": "Attività aggiunta"
+  },
+  "sla": {
+    "breached": "SLA Violato",
+    "ok": "SLA OK"
+  },
+  "loading": "Caricamento...",
+  "archiveTableLabel": "Archivio",
+  "loadingMore": "Caricamento...",
+  "allLoaded": "Tutto caricato",
+  "ticketList": {
+    "moreOthers": "More others",
+    "bulkUpdated": "Bulk updated",
+    "zeroResults": "Zero results",
+    "loadError": "Load error",
+    "selectAllVisible": "Select all visible",
+    "selectTicket": "Select ticket",
+    "slaViolated": "Sla violated",
+    "slaExpiring": "Sla expiring",
+    "slaOk": "Sla ok",
+    "slaDeadline": "Sla deadline",
+    "slaExpired": "Sla expired",
+    "slaOver3d": "Sla over3d",
+    "slaBetween1and3d": "Sla between1and3d",
+    "slaUnder24h": "Sla under24h",
+    "createdTooltip": "Created tooltip"
   }
 }

@@ -17,11 +17,15 @@
     "billableHours": "Ore fatturabili",
     "recurring": "Canoni attivi",
     "estimatedMargin": "Margine stimato",
-    "marginFormula": "Canoni attivi + Totale ticket − Costi materiali"
+    "marginFormula": "Canoni attivi + Totale ticket − Costi materiali",
+    "marginRecurringOnly": "Margin recurring only",
+    "noTicketMarginNote": "No ticket margin note"
   },
   "filters": {
     "allClients": "Tutti i clienti",
-    "allTechnicians": "Tutti i tecnici"
+    "allTechnicians": "Tutti i tecnici",
+    "clientLabel": "Client label",
+    "technicianLabel": "Technician label"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -71,7 +75,9 @@
     "includedHours": "Ore incluse",
     "usedHours": "Ore usate",
     "estimatedExtra": "Extra stimato",
-    "associatedTickets": "Ticket associati"
+    "associatedTickets": "Ticket associati",
+    "hoursUsed": "Hours used",
+    "noLinkedTickets": "No linked tickets"
   },
   "summaryTables": {
     "perClient": "Costi per cliente",
@@ -111,7 +117,6 @@
     "invoiceContextRows": "Righe",
     "invoiceContextNextNumber": "Prossimo numero",
     "invoiceContextHint": "La fattura userà i ticket del cliente selezionato nei filtri correnti.",
-
     "quoteTitle": "Preventivi",
     "quoteSubtitle": "{{count}} preventivi trovati",
     "createQuote": "Crea preventivo",
@@ -172,7 +177,6 @@
     "quotePdfExported": "PDF preventivo esportato",
     "quotePdfError": "Errore export PDF preventivo",
     "quoteLoadError": "Errore caricamento preventivo",
-
     "budgetTitle": "Budget clienti",
     "budgetAmountLabel": "Budget",
     "alertThresholdLabel": "Alert %",
@@ -195,7 +199,6 @@
     "profitabilityTitle": "Dashboard profittabilità",
     "profitabilitySubtitle": "Ricavo contratto (azzurro), costo effettivo (giallo) e margine (verde) nel periodo",
     "profitabilityNegativeNote": "Nota: I valori negativi sull'asse Y indicano che i costi effettivi nel periodo (manodopera e materiali) hanno superato i ricavi del contratto mensilizzato per quel cliente.",
-
     "materialTitle": "Materiali / ricambi",
     "selectTicketLabel": "Seleziona ticket",
     "selectTicket": "Seleziona ticket",
@@ -208,12 +211,23 @@
     "materialRequired": "Seleziona ticket e materiale",
     "materialAdded": "Materiale aggiunto al ticket",
     "materialAddError": "Errore salvataggio materiale",
-
     "noReportsToSchedule": "Nessun cliente attivo nel periodo",
     "reportsScheduled": "Report mensili pianificati",
     "reportsScheduleError": "Errore pianificazione report",
     "accountingCsvExported": "CSV contabile esportato",
-    "scheduleReports": "Report mensili"
+    "scheduleReports": "Report mensili",
+    "invoiceModalDescription": "Invoice modal description",
+    "invoiceStepDetails": "Invoice step details",
+    "invoiceStepPreview": "Invoice step preview",
+    "recipientAddressLabel": "Recipient address label",
+    "taxRateLabel": "Tax rate label",
+    "notesLabel": "Notes label",
+    "invoiceNumberAutoHint": "Invoice number auto hint",
+    "invoicePreviewTotal": "Invoice preview total",
+    "invoicePreviewSubtotal": "Invoice preview subtotal",
+    "backToDetails": "Back to details",
+    "previewInvoice": "Preview invoice",
+    "invoicePdfExported": "Invoice pdf exported"
   },
   "detailTable": {
     "title": "Dettaglio ticket fatturabili",
@@ -233,7 +247,8 @@
     "empty": "Nessun costo nel periodo selezionato",
     "groupByNone": "Nessun raggruppamento",
     "groupByClient": "Raggruppa per cliente",
-    "groupByTechnician": "Raggruppa per tecnico"
+    "groupByTechnician": "Raggruppa per tecnico",
+    "groupByLabel": "Group by label"
   },
   "feedback": {
     "loadError": "Errore caricamento costi",
@@ -301,5 +316,8 @@
     "client": "Cliente",
     "notAssigned": "Non assegnato",
     "clientNotIndicated": "Cliente non indicato"
+  },
+  "budget": {
+    "overBudget": "Over budget"
   }
 }

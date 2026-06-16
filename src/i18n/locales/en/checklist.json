@@ -169,7 +169,8 @@
     "loadError": "Error loading versions",
     "adminOnly": "Only admins can restore versions",
     "restoreSuccess": "Version restored",
-    "restoreError": "Error restoring version"
+    "restoreError": "Error restoring version",
+    "selectVersion": "Select version"
   },
   "restoreDialog": {
     "title": "Restore Version v{{number}}",
@@ -208,5 +209,8 @@
       "summary": "Summary",
       "version": "Version"
     }
-  }
+  },
+  "templateName": "Template name",
+  "descriptionLabel": "Description label",
+  "itemType": "Item type"
 }

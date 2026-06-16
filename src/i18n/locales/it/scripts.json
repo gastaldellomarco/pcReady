@@ -23,7 +23,8 @@
   "favorites": {
     "section": "Preferiti",
     "add": "Aggiungi ai preferiti",
-    "remove": "Rimuovi dai preferiti"
+    "remove": "Rimuovi dai preferiti",
+    "toggleError": "Toggle error"
   },
   "tags": {
     "placeholder": "Aggiungi tag...",
@@ -54,7 +55,8 @@
     "discardTitle": "Modifiche non salvate",
     "discardDescription": "Hai modifiche non salvate. Vuoi davvero annullare?",
     "discardConfirm": "Annulla modifiche",
-    "discarding": "Annullamento..."
+    "discarding": "Annullamento...",
+    "copyError": "Copy error"
   },
   "editor": {
     "editTitle": "Modifica script",
@@ -130,7 +132,9 @@
     "revoke": "Revoca",
     "revoked": "Link revocato",
     "revokeError": "Errore revoca link",
-    "pageTitle": "Script condiviso — PCReady"
+    "pageTitle": "Script condiviso — PCReady",
+    "loadLinksError": "Load links error",
+    "copyError": "Copy error"
   },
   "delete": {
     "title": "Eliminare questo script?",
@@ -143,5 +147,8 @@
     "deleted": "Script eliminato",
     "created": "Script creato",
     "updated": "Script aggiornato"
+  },
+  "filter": {
+    "categoryLabel": "Category label"
   }
 }

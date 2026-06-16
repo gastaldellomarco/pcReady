@@ -29,7 +29,7 @@ export function ScriptFavoriteButton({
       type="button"
       onClick={handleClick}
       className={`${btnSize} rounded-full flex items-center justify-center transition-colors hover:bg-surface2`}
-      title={favored ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
+      title={favored ? "Remove from favorites" : "Add to favorites"}
     >
       <Star
         className={`${iconSize} transition-colors ${

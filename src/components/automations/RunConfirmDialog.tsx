@@ -1,4 +1,5 @@
 import { AlertTriangle, Info, Play, ShieldAlert, ListChecks } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -38,6 +39,8 @@ export function RunConfirmDialog({
   onConfirm,
   loading,
 }: RunConfirmDialogProps) {
+  const { t } = useTranslation("automations");
+
   if (!rule) return null;
 
   const riskLevel = computeRiskLevel(rule);
@@ -48,16 +51,23 @@ export function RunConfirmDialog({
 
   const canRun = completeness.complete;
 
+  const riskDescriptions: Record<string, string> = {
+    critical: t("runConfirm.riskDescriptions.critical", "Scheduled automation with high-impact actions. Proceed with extreme caution."),
+    high: t("runConfirm.riskDescriptions.high", "Automation with actions that modify sensitive data."),
+    medium: t("runConfirm.riskDescriptions.medium", "Automation with actions that generate notifications or communications."),
+    low: t("runConfirm.riskDescriptions.low", "Low-impact automation, primarily informational."),
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Play className="size-5 text-accent" />
-            Esecuzione: {rule.name}
+            {t("runConfirm.title", "Execution: {{name}}", { name: rule.name })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Verifica l'impatto previsto prima di eseguire questa automazione.
+            {t("runConfirm.description", "Verify the expected impact before running this automation.")}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -73,16 +83,10 @@ export function RunConfirmDialog({
             <ShieldAlert className={cn("size-5", riskCfg.color)} />
             <div className="flex-1">
               <span className={cn("text-sm font-semibold", riskCfg.color)}>
-                Rischio: {riskCfg.label}
+                {t("runConfirm.riskLabel", "Risk: {{level}}", { level: riskCfg.label })}
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {riskLevel === "critical"
-                  ? "Automazione schedulata con azioni ad alto impatto. Prestare massima attenzione."
-                  : riskLevel === "high"
-                    ? "Automazione con azioni che modificano dati sensibili."
-                    : riskLevel === "medium"
-                      ? "Automazione con azioni che generano notifiche o comunicazioni."
-                      : "Automazione a basso impatto, prevalentemente informativa."}
+                {riskDescriptions[riskLevel]}
               </p>
             </div>
           </div>
@@ -93,7 +97,7 @@ export function RunConfirmDialog({
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600" />
               <div>
                 <p className="text-sm font-medium text-red-700">
-                  Regola incompleta — esecuzione bloccata
+                  {t("runConfirm.incomplete", "Incomplete rule — execution blocked")}
                 </p>
                 <ul className="mt-1 list-inside list-disc text-xs text-red-600">
                   {completeness.missing.map((item) => (
@@ -110,7 +114,7 @@ export function RunConfirmDialog({
               <div className="flex items-center gap-1.5 mb-2">
                 <ListChecks className="size-4 text-text3" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-text3">
-                  Impatto previsto
+                  {t("runConfirm.expectedImpact", "Expected impact")}
                 </span>
               </div>
               <ul className="space-y-1">
@@ -134,7 +138,7 @@ export function RunConfirmDialog({
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <div>
-                <p className="text-sm font-medium text-amber-700">Side-effect esterni</p>
+                <p className="text-sm font-medium text-amber-700">{t("runConfirm.sideEffects", "External side effects")}</p>
                 <ul className="mt-1 list-inside list-disc text-xs text-amber-600">
                   {sideEffects.map((effect) => (
                     <li key={effect}>{effect}</li>
@@ -148,7 +152,7 @@ export function RunConfirmDialog({
         <Separator />
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Annulla</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t("runConfirm.cancel", "Cancel")}</AlertDialogCancel>
           <Button
             variant={riskLevel === "high" || riskLevel === "critical" ? "destructive" : "default"}
             onClick={onConfirm}
@@ -156,11 +160,11 @@ export function RunConfirmDialog({
             className="gap-1.5"
           >
             {loading ? (
-              "Esecuzione in corso..."
+              t("runConfirm.running", "Running...")
             ) : (
               <>
                 <Play className="size-4" />
-                Esegui ora
+                {t("runConfirm.execute", "Run now")}
               </>
             )}
           </Button>

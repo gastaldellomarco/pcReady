@@ -689,6 +689,7 @@
   }
 
   .overflow-x-auto {
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
