@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/lib/auth-context";
 import { getRuleTriggerType, TRIGGER_TYPE_LABELS } from "@/hooks/useAutomationRules";
 import {
   computeRiskLevel,
@@ -75,11 +76,37 @@ function ErrorIndicator({ health }: { health: HealthStatus }) {
 }
 
 /**
+ * Per-rule automation card used inside the `/automations` list.
  *
+ * Permission model — keep `canManageAutomations` and `canDelete` INDEPENDENT:
+ * - `canManageAutomations` (driven by `useAuth().hasPermission(
+ *   "can_manage_automations")`) gates the toggle switch, edit button,
+ *   run-now button, AND the non-destructive dropdown items (dry-run,
+ *   duplicate, archive, versions). The dropdown **trigger** is also
+ *   disabled when this is false, so the menu cannot even be opened.
+ * - `canDelete?: boolean` (optional, falls back to `useAuth().isAdmin`
+ *   when omitted — see prop JSDoc) gates the destructive Trash2
+ *   dropdown item that calls `onDelete`. **Deleting an automation
+ *   rule requires admin privileges.** The dropdown separator
+ *   immediately preceding this item is hidden along with the item so
+ *   the menu doesn't end with a dangling divider.
+ * - `isAdmin?: boolean` is a coarse admin override exposed for tests,
+ *   read-only previews, and mock contexts; the fine-grained gate is
+ *   `canDelete`. When `isAdmin` is omitted the panel falls back to
+ *   `useAuth().isAdmin`.
+ *
+ * The two flags are independent: a non-admin with `canManageAutomations`
+ * may toggle / edit / run / archive / version rules but cannot delete
+ * them; an admin without `canManageAutomations` cannot toggle or edit.
+ * The destructive dropdown item is hidden when `!canDelete` and the
+ * underlying server mutation is guarded by RLS — the UI gate is a UX
+ * safeguard, never the source of truth.
  */
 export function AutomationRuleCard({
   rule,
   canManageAutomations,
+  isAdmin: isAdminProp,
+  canDelete: canDeleteProp,
   expanded,
   stats,
   logsOpen,
@@ -99,6 +126,18 @@ export function AutomationRuleCard({
 }: {
   rule: AutomationRule;
   canManageAutomations: boolean;
+  /**
+   * Coarse admin override. When omitted, falls back to
+   * `useAuth().isAdmin`. Used by tests / previews / mock contexts to
+   * pin the gate without touching the global auth context.
+   */
+  isAdmin?: boolean;
+  /**
+   * Fine-grained gate for the destructive Trash2 dropdown item.
+   * Defaults to `isAdmin` when omitted. **Deleting an automation
+   * rule requires admin privileges.**
+   */
+  canDelete?: boolean;
   expanded: boolean;
   stats?: AutomationRunStats;
   logsOpen: boolean;
@@ -116,6 +155,10 @@ export function AutomationRuleCard({
   onDelete: () => void;
   onArchive: () => void;
 }) {
+  const { isAdmin: authIsAdmin } = useAuth();
+  const isAdmin = isAdminProp ?? authIsAdmin;
+  const canDelete = canDeleteProp ?? isAdmin;
+
   const triggerType = getRuleTriggerType(rule);
   const triggerLabel = TRIGGER_TYPE_LABELS[triggerType] ?? triggerType;
   const health = stats?.health ?? "never_run";
@@ -275,11 +318,15 @@ export function AutomationRuleCard({
                   <Clock className="mr-2 size-4" />
                   Versioni
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                  <Trash2 className="mr-2 size-4" />
-                  Elimina
-                </DropdownMenuItem>
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                      <Trash2 className="mr-2 size-4" />
+                      Elimina
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

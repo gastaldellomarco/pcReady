@@ -101,3 +101,61 @@ export function computeDailyCounts<T extends { created_at: string }>(
   }
   return res;
 }
+
+interface DailyLabelOptions {
+  /** BCP-47 locale tag. Defaults to the active i18n language. */
+  locale?: string;
+  /** Overrides for the localised "today" / "yesterday" strings. */
+  todayText?: string;
+  yesterdayText?: string;
+}
+
+/**
+ * Map a BCP-47 language code (e.g. "it", "en", "en-US") to a locale suitable
+ * for `Date.toLocaleDateString`. Falls back to the original language so the
+ * output remains predictable.
+ */
+function languageToLocale(lang: string | undefined = i18n.language) {
+  if (!lang) return "it-IT";
+  const map: Record<string, string> = {
+    it: "it-IT",
+    en: "en-US",
+    es: "es-ES",
+    de: "de-DE",
+    fr: "fr-FR",
+  };
+  return map[lang.toLowerCase().split(/[-_]/)[0]] ?? lang;
+}
+
+/**
+ * Returns the matching per-day labels (oldest -> newest) for a spark chart
+ * fed by `computeDailyCounts`. The last two entries are the localised
+ * "yesterday" / "today" strings (default Italian) so hovered tooltips show a
+ * meaningful date even when the host language is not Italian. Pass `locale`
+ * to override the active i18n language.
+ */
+export function computeDailyLabels(
+  days = 14,
+  options: DailyLabelOptions = {},
+) {
+  const activeLocale = languageToLocale(i18n.language);
+  const {
+    locale = activeLocale,
+    todayText = "Oggi",
+    yesterdayText = "Ieri",
+  } = options;
+  const res: string[] = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    if (i === 0) {
+      res.push(todayText);
+    } else if (i === 1) {
+      res.push(yesterdayText);
+    } else {
+      res.push(d.toLocaleDateString(locale, { day: "2-digit", month: "short" }));
+    }
+  }
+  return res;
+}

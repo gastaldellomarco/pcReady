@@ -95,10 +95,10 @@ function useInvalidateBundles() {
 
 // ── Hooks ────────────────────────────────────────────────────────────
 
-export function useBundles(includeInactive = true) {
+export function useBundles(includeInactive = true, includeCustom = false) {
   return useQuery({
-    queryKey: BUNDLE_QUERY_KEYS.list(includeInactive),
-    queryFn: () => listBundles(includeInactive),
+    queryKey: BUNDLE_QUERY_KEYS.list(includeInactive, includeCustom),
+    queryFn: () => listBundles(includeInactive, includeCustom),
   });
 }
 

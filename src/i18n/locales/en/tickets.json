@@ -481,7 +481,7 @@
       "hardware": "Hardware",
       "lifecycle": "Lifecycle",
       "software": "Software",
-      "maintenance": "Maintenance",
+      "maintenance": "Scheduled maintenance",
       "tickets": "Tickets ({{count}})",
       "history": "History"
     },

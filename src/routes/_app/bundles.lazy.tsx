@@ -5,6 +5,7 @@ import {
   CreditCard,
   Download,
   Filter,
+  GitCompareArrows,
   History,
   Package,
   Pencil,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { toast } from "sonner";
 import {
   BundlePriorityBadge,
@@ -76,7 +78,8 @@ function BundlesPage() {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
   const [showAllAssignments, setShowAllAssignments] = useState(false);
-  const bundlesQuery = useBundles(true);
+  const [includeAdHoc, setIncludeAdHoc] = useState(false);
+  const bundlesQuery = useBundles(true, includeAdHoc);
   const assignmentsQuery = useBundleAssignments();
   const usageQuery = useBundleUsageSummaries();
 
@@ -260,6 +263,27 @@ function BundlesPage() {
             <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={exportCsv}>
               <Download className="size-3" /> {t("exportCsv", "Export CSV")}
             </button>
+            {canManageBundles ? (
+              <button
+                type="button"
+                className={
+                  includeAdHoc
+                    ? "pc-btn pc-btn-primary pc-btn-sm"
+                    : "pc-btn pc-btn-ghost pc-btn-sm"
+                }
+                onClick={() => setIncludeAdHoc((v) => !v)}
+                title={
+                  includeAdHoc
+                    ? t("catalog.hideAdHoc", "Nascondi ad-hoc")
+                    : t("catalog.showAdHoc", "Mostra anche bundle ad-hoc")
+                }
+              >
+                <Filter className="size-3" />
+                {includeAdHoc
+                  ? t("catalog.hideAdHoc", "Nascondi ad-hoc")
+                  : t("catalog.showAdHoc", "Mostra ad-hoc")}
+              </button>
+            ) : null}
           </div>
         </div>
         <div className="pc-card-body grid gap-3 md:grid-cols-4">
@@ -314,6 +338,7 @@ function BundlesPage() {
               onSubmit={bundleManager.save}
               onCancel={resetAllForms}
               busy={bundleManager.busy}
+              clients={clients}
             />
           </div>
         </div>
@@ -384,6 +409,7 @@ function BundlesPage() {
                 summaries={usageSummaries}
                 assignmentById={assignmentById}
                 monthlyUsage={monthlyUsage}
+                bundles={bundles}
               />
             )
           )}
@@ -430,6 +456,26 @@ function CatalogTab({
   onToggle: (bundle: AssistanceBundle) => void;
 }) {
   const { t } = useTranslation("bundles");
+  const COMPARE_LIMIT = 3;
+  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
+
+  const atCompareLimit = !selectedForCompare.length
+    ? false
+    : selectedForCompare.length >= COMPARE_LIMIT;
+
+  function toggleCompare(bundleId: string) {
+    setSelectedForCompare((prev) => {
+      if (prev.includes(bundleId)) return prev.filter((id) => id !== bundleId);
+      if (prev.length >= COMPARE_LIMIT) return prev;
+      return [...prev, bundleId];
+    });
+  }
+
+  const comparedBundles = bundles.filter((bundle) =>
+    selectedForCompare.includes(bundle.id),
+  );
+
   return (
     <div className="grid gap-3 xl:grid-cols-2">
       {bundles.map((bundle) => (
@@ -448,11 +494,62 @@ function CatalogTab({
                     : t("catalog.inactive", "Disattivato")}
                 </span>
                 <BundlePriorityBadge priority={bundle.ticket_priority} />
+                {bundle.is_custom ? (
+                  <span
+                    className="pc-badge"
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--accent) 14%, transparent)",
+                      color: "var(--accent)",
+                      borderColor: "var(--accent)",
+                    }}
+                    title={t(
+                      "catalog.customBadgeTitle",
+                      "Bundle personalizzato: non compare nel catalogo generale.",
+                    )}
+                  >
+                    {t(
+                      "catalog.customBadge",
+                      "Ad-hoc · {{customer}}",
+                      {
+                        customer:
+                          bundle.custom_client?.company_name ||
+                          bundle.custom_client?.name ||
+                          bundle.custom_client?.email ||
+                          "—",
+                      },
+                    )}
+                  </span>
+                ) : null}
               </div>
               {bundle.description && (
                 <div className="mt-1 text-sm text-text3">{bundle.description}</div>
               )}
             </div>
+            {!bundle.is_custom ? (
+              <label
+                className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-text2"
+                title={
+                  selectedForCompare.includes(bundle.id)
+                    ? t("catalog.compare.removeFromCompare", "Togli dal confronto")
+                    : atCompareLimit
+                      ? t("catalog.compare.maxReached", "Massimo 3 bundle a confronto")
+                      : t("catalog.compare.addToCompare", "Aggiungi al confronto")
+                }
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+                  checked={selectedForCompare.includes(bundle.id)}
+                  disabled={
+                    !selectedForCompare.includes(bundle.id) && atCompareLimit
+                  }
+                  onChange={() => toggleCompare(bundle.id)}
+                />
+                <GitCompareArrows className="size-3" />
+                {t("catalog.compare.label", "Compara")}
+              </label>
+            ) : null}
             {canManageBundles && (
               <div className="flex gap-2">
                 <button className="pc-btn pc-btn-ghost pc-btn-sm" onClick={() => onEdit(bundle)}>
@@ -510,8 +607,179 @@ function CatalogTab({
           {t("catalog.empty", "Nessun bundle configurato.")}
         </div>
       )}
+
+      {selectedForCompare.length > 0 ? (
+        <div
+          className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-2xl border bg-background p-3 shadow-2xl"
+          style={{ borderColor: "var(--accent)" }}
+          role="region"
+          aria-label={t("catalog.compare.bannerAria", "Barra di confronto bundle")}
+        >
+          <div className="flex items-center gap-2 text-sm">
+            <GitCompareArrows className="size-4 text-accent" />
+            <span>
+              {t("catalog.compare.bannerCount", {
+                count: selectedForCompare.length,
+                max: COMPARE_LIMIT,
+                defaultValue:
+                  "{{count}}/{{max}} bundle selezionati per il confronto",
+              })}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="pc-btn pc-btn-ghost pc-btn-sm"
+              onClick={() => setSelectedForCompare([])}
+            >
+              {t("catalog.compare.clear", "Annulla selezione")}
+            </button>
+            <button
+              type="button"
+              className="pc-btn pc-btn-primary pc-btn-sm"
+              onClick={() => setShowCompareDialog(true)}
+            >
+              {t("catalog.compare.open", "Confronta")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showCompareDialog && comparedBundles.length > 0 ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowCompareDialog(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("catalog.compare.title", "Confronto bundle")}
+        >
+          <div
+            className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
+            style={{ borderColor: "var(--border)" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 border-b p-4"
+                 style={{ borderColor: "var(--border)" }}>
+              <div className="pc-card-title">
+                {t("catalog.compare.title", "Confronto bundle")}
+              </div>
+              <button
+                type="button"
+                className="pc-btn pc-btn-ghost pc-btn-sm"
+                onClick={() => setShowCompareDialog(false)}
+              >
+                {t("catalog.compare.close", "Chiudi")}
+              </button>
+            </div>
+            <div className="overflow-auto p-4">
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr>
+                    <th className="sticky left-0 z-10 min-w-[160px] bg-background px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
+                      {t("catalog.compare.attribute", "Attributo")}
+                    </th>
+                    {comparedBundles.map((bundle) => (
+                      <th
+                        key={bundle.id}
+                        className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
+                      >
+                        {bundle.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {compareAttributeRows(t).map((row) => (
+                    <tr
+                      key={row.label}
+                      className="border-t"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      <td className="sticky left-0 z-10 bg-background px-3 py-2 font-semibold">
+                        {row.label}
+                      </td>
+                      {comparedBundles.map((bundle) => (
+                        <td key={bundle.id} className="px-3 py-2 font-mono">
+                          {row.value(bundle)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+type CompareAttribute = {
+  label: string;
+  value: (bundle: AssistanceBundle) => string;
+};
+function compareAttributeRows(t: TFunction): CompareAttribute[] {
+  return [
+    {
+      label: t("catalog.compare.row.type", "Tipo fatturazione"),
+      value: (b) => BILLING_TYPE_LABEL[b.billing_type],
+    },
+    {
+      label: t("catalog.compare.row.fee", "Canone"),
+      value: (b) => formatBundleMoney(b.fee, b.currency),
+    },
+    {
+      label: t("catalog.compare.row.includedHours", "Ore incluse"),
+      value: (b) => formatBundleHours(b.included_hours),
+    },
+    {
+      label: t("catalog.compare.row.extraRate", "Tariffa extra"),
+      value: (b) => formatBundleMoney(b.extra_hourly_rate, b.currency),
+    },
+    {
+      label: t("catalog.compare.row.slaResponse", "SLA risposta"),
+      value: (b) => `${b.sla_response_hours} h`,
+    },
+    {
+      label: t("catalog.compare.row.slaResolution", "SLA risoluzione"),
+      value: (b) => `${b.sla_resolution_hours} h`,
+    },
+    {
+      label: t("catalog.compare.row.onsiteVisits", "Visite on-site incluse"),
+      value: (b) => formatBundleVisits(b.included_onsite_visits),
+    },
+    {
+      label: t("catalog.compare.row.remoteSupport", "Supporto remoto"),
+      value: (b) => (b.remote_support ? "✓" : "—"),
+    },
+    {
+      label: t("catalog.compare.row.ticketPriority", "Priorità ticket"),
+      value: (b) => b.ticket_priority,
+    },
+    {
+      label: t("catalog.compare.row.threshold", "Soglia notifica consumo"),
+      value: (b) =>
+        b.low_hours_threshold_pct == null
+          ? "—"
+          : `${b.low_hours_threshold_pct}%`,
+    },
+    {
+      label: t("catalog.compare.row.autoRenew", "Rinnovo automatico"),
+      value: (b) => (b.auto_renew ? "✓" : "—"),
+    },
+    {
+      label: t("catalog.compare.row.scope", "Visibilità catalogo"),
+      value: (b) =>
+        b.is_custom
+          ? t("catalog.compare.row.scopeCustom", "Ad-hoc (solo cliente dedicato)")
+          : t("catalog.compare.row.scopePublic", "Generale"),
+    },
+    {
+      label: t("catalog.compare.row.description", "Descrizione"),
+      value: (b) => b.description ?? "—",
+    },
+  ];
 }
 
 function AssignmentsTab({
@@ -771,12 +1039,18 @@ function UsageTab({
   summaries,
   assignmentById,
   monthlyUsage,
+  bundles,
 }: {
   summaries: BundleUsageSummary[];
   assignmentById: Map<string, ClientBundleAssignment>;
   monthlyUsage: any[];
+  bundles: AssistanceBundle[];
 }) {
   const { t } = useTranslation("bundles");
+  const bundleById = useMemo(
+    () => new Map(bundles.map((bundle) => [bundle.id, bundle])),
+    [bundles],
+  );
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
       {/* Desktop table */}
@@ -815,7 +1089,10 @@ function UsageTab({
                   const included = effectiveIncludedHours(summary, assignment);
                   const days = daysUntil(assignment?.end_date ?? summary.end_date ?? null);
                   const usagePercent = Number(summary.usage_percent ?? 0);
-                  const hasAlert = usagePercent >= 80 || (days != null && days <= 30);
+                  const thresholdPct = Number(
+                    bundleById.get(summary.bundle_id)?.low_hours_threshold_pct ?? 80,
+                  );
+                  const hasAlert = usagePercent >= thresholdPct || (days != null && days <= 30);
                   return (
                     <tr
                       key={summary.client_bundle_assignment_id as string}
@@ -850,8 +1127,23 @@ function UsageTab({
                       <td className="px-3 py-2 font-mono">{assignment?.end_date ?? "-"}</td>
                       <td className="px-3 py-2">
                         {hasAlert ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-700">
-                            <AlertTriangle className="size-3" /> {t("usage.warning", "Attenzione")}
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-700"
+                            title={t("usage.thresholdLabel", {
+                              percent: thresholdPct,
+                              usage: usagePercent,
+                              defaultValue:
+                                "Soglia consumo {{percent}}% • consumo attuale {{usage}}%",
+                            })}
+                          >
+                            <AlertTriangle className="size-3" />{" "}
+                            {t("usage.warning", "Attenzione")}{" "}
+                            <span className="font-mono">
+                              ({t("usage.thresholdBrief", {
+                                percent: thresholdPct,
+                                defaultValue: "{{percent}}%",
+                              })})
+                            </span>
                           </span>
                         ) : (
                           <span className="text-text3">{t("usage.ok", "OK")}</span>

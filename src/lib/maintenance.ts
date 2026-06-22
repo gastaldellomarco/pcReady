@@ -244,6 +244,23 @@ export async function completeMaintenanceSchedule(
 }
 
 /**
+ * Hard-delete a maintenance schedule. RBAC: RLS policy
+ * "Admin delete maintenance schedules" requires `public.has_role(auth.uid(), 'admin')`,
+ * so non-admin callers get a 401/row-not-found from PostgREST.
+ *
+ * Related `maintenance_history` rows have `schedule_id ... on delete set null`,
+ * so they are preserved (with NULL schedule_id) and the device FK cascades clean.
+ */
+export async function deleteMaintenanceSchedule(id: string) {
+  const { error } = await (supabase as any)
+    .from("maintenance_schedules")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+  return true;
+}
+
+/**
  *
  */
 export async function fetchMaintenanceCalendar(params: {

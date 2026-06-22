@@ -11,11 +11,14 @@ import {
   Settings2,
   StickyNote,
   ListChecks as ListChecksIcon,
+  Trash2,
 } from "lucide-react";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { CriticalEventsWidget } from "@/components/dashboard/CriticalEventsWidget";
 import { dashboardDeviceLabel } from "@/components/dashboard/dashboard-stat-utils";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import {
   DashboardStatCard,
   DashboardDonut,
@@ -41,7 +44,12 @@ import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicAppSettings } from "@/lib/app-settings";
 import { useAuth } from "@/lib/auth-context";
-import { downloadAnalyticsCsv, computeDailyCounts } from "@/lib/dashboard-helpers";
+import { errorMessage } from "@/lib/errors";
+import {
+  downloadAnalyticsCsv,
+  computeDailyCounts,
+  computeDailyLabels,
+} from "@/lib/dashboard-helpers";
 import { openDeviceDetail, openTicketDetail } from "@/lib/detail-navigation";
 import { buildDownloadFileName } from "@/lib/downloads";
 import {
@@ -50,6 +58,7 @@ import {
   MAINTENANCE_STATUS_META,
   type MaintenanceSchedule,
 } from "@/lib/maintenance";
+import { useDeleteMaintenanceSchedule } from "@/lib/queries/maintenance";
 import { STATUS_META, type TicketStatus, fmtDateTime, fmtDate } from "@/lib/pcready";
 import {
   daysUntil,
@@ -779,6 +788,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                       ctx.range.days,
                       (d) => d.status === "available",
                     )}
+                    labels={computeDailyLabels(ctx.range.days)}
                     color="#3b82f6"
                   />
                 </div>
@@ -820,6 +830,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
                       "created_at",
                       ctx.range.days,
                     )}
+                    labels={computeDailyLabels(ctx.range.days)}
                     color="#f97316"
                   />
                 </div>
@@ -845,6 +856,7 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <DashboardAreaSparkMulti
+                    labels={computeDailyLabels(ctx.range.days)}
                     series={[
                       {
                         data: computeDailyCounts(
@@ -1197,12 +1209,45 @@ function renderWidget(id: WidgetId, ctx: WidgetContext) {
 
 function MaintenanceOverviewWidget() {
   const { t } = useTranslation("dashboard");
+  const { isAdmin } = useAuth();
+  const deleteMut = useDeleteMaintenanceSchedule();
   const { data: maintenanceData, isLoading: maintenanceLoading } = useQuery({
     queryKey: ["dashboard", "maintenance-overview"],
     queryFn: fetchMaintenanceDashboard,
   });
   const upcoming = maintenanceData?.upcoming ?? [];
   const overdueCount = maintenanceData?.overdueCount ?? 0;
+  const [deleteTarget, setDeleteTarget] = useState<MaintenanceSchedule | null>(null);
+
+  function triggerDelete(item: MaintenanceSchedule) {
+    // The wrapping <td> already has onClick={(event) => event.stopPropagation()},
+    // which prevents the inner button click from bubbling up to the row's
+    // onClick={() => openDeviceDetail(item.device_id)}. No extra guard needed.
+    setDeleteTarget(item);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteMut.mutateAsync(deleteTarget.id);
+      toast.success(t("maintenance.deletedSuccess", "Manutenzione eliminata"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("maintenance.deletedError", "Errore eliminazione manutenzione")));
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
+
+  const baseHeaders = [
+    t("maintenance.tableIntervention", "Intervento"),
+    t("maintenance.tableDevice", "Dispositivo"),
+    t("maintenance.tableExpiry", "Scadenza"),
+    t("maintenance.tableStatus", "Stato"),
+  ];
+  const tableHeaders = isAdmin
+    ? [...baseHeaders, t("maintenance.tableActions", "Azioni")]
+    : baseHeaders;
+  const tableColSpan = tableHeaders.length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
@@ -1219,12 +1264,7 @@ function MaintenanceOverviewWidget() {
           <table className="w-full">
             <thead>
               <tr>
-                {[
-                  t("maintenance.tableIntervention", "Intervento"),
-                  t("maintenance.tableDevice", "Dispositivo"),
-                  t("maintenance.tableExpiry", "Scadenza"),
-                  t("maintenance.tableStatus", "Stato"),
-                ].map((h) => (
+                {tableHeaders.map((h) => (
                   <th
                     key={h}
                     className="text-left px-[14px] py-[9px] text-[10.5px] font-bold uppercase tracking-wider text-text3 border-b"
@@ -1242,7 +1282,7 @@ function MaintenanceOverviewWidget() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b cursor-pointer hover:bg-surface2"
+                    className="group border-b cursor-pointer hover:bg-surface2"
                     style={{ borderColor: "var(--border)" }}
                     onClick={() => openDeviceDetail(item.device_id)}
                   >
@@ -1270,12 +1310,29 @@ function MaintenanceOverviewWidget() {
                         {t(`maintenance.status.${status}`, meta.label)}
                       </span>
                     </td>
+                    {isAdmin ? (
+                      <td
+                        className="px-[10px] py-[10px] text-right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          aria-label={t("maintenance.deleteAriaLabel", { title: item.title })}
+                          title={t("maintenance.deleteAriaLabel", { title: item.title })}
+                          className="inline-flex items-center justify-center size-7 rounded-[7px] border opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:text-destructive"
+                          style={{ borderColor: "var(--border2)" }}
+                          onClick={() => triggerDelete(item)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
               {!upcoming.length && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-sm text-text3">
+                  <td colSpan={tableColSpan} className="py-8 text-center text-sm text-text3">
                     {maintenanceLoading
                       ? t("maintenance.loading", "Caricamento manutenzioni...")
                       : t("maintenance.noEvents", "Nessuna manutenzione pianificata.")}
@@ -1310,6 +1367,25 @@ function MaintenanceOverviewWidget() {
           </Link>
         </div>
       </div>
+      <DestructiveConfirmDialog
+        open={!!deleteTarget}
+        title={t("maintenance.deleteTitle", "Elimina manutenzione")}
+        description={
+          deleteTarget
+            ? t(
+                "maintenance.deleteDescription",
+                'Sei sicuro di voler eliminare definitivamente "{{title}}"? Questa azione non può essere annullata.',
+                { title: deleteTarget.title },
+              )
+            : ""
+        }
+        confirmLabel={t("maintenance.deleteConfirm", "Elimina")}
+        loadingLabel={t("maintenance.deleteLoading", "Eliminazione...")}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setDeleteTarget(null);
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

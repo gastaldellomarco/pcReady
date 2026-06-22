@@ -249,7 +249,17 @@
     "completedSuccess": "Maintenance completed and next due date updated",
     "completedError": "Error completing maintenance",
     "fetchError": "Error loading maintenance",
-    "insertTitle": "Enter a title for the maintenance"
+    "insertTitle": "Enter a title for the maintenance",
+    "deleteTitle": "Delete maintenance",
+    "deleteDescription": "Are you sure you want to permanently delete \"{{title}}\"? This action cannot be undone.",
+    "deleteConfirm": "Delete",
+    "deleteLoading": "Deleting...",
+    "deleteAriaLabel": "Delete maintenance {{title}}",
+    "deletedSuccess": "Maintenance deleted",
+    "deletedError": "Error deleting maintenance",
+    "actions": {
+      "delete": "Delete"
+    }
   },
   "toast": {
     "noDevicesToExport": "No devices to export",

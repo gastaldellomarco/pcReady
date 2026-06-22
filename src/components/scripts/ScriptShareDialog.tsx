@@ -25,14 +25,55 @@ interface ScriptShareDialogProps {
   scriptId: string;
   open: boolean;
   onClose: () => void;
+  /**
+   * Coarse admin override. When omitted, falls back to
+   * `useAuth().isAdmin`. Used by tests / previews / mock contexts to
+   * pin the gate without touching the global auth context.
+   */
+  isAdmin?: boolean;
+  /**
+   * Fine-grained gate for the destructive per-link Trash2 revoke
+   * button. Defaults to `isAdmin` when omitted. **Revoking a public
+   * share link requires admin privileges.**
+   */
+  canRevoke?: boolean;
 }
 
 /**
+ * Modal dialog for creating password-protected public share links for
+ * a script and listing / revoking already-issued links.
  *
+ * Permission model — keep `canEdit` (caller-side) and `canRevoke`
+ * INDEPENDENT:
+ * - The "Genera link" create-row button is gated on caller-side
+ *   `canEdit` (see `routes/_app/scripts.tsx`). The dialog itself
+ *   does NOT import `canEdit`; callers (e.g. the viewer modal) pass
+ *   nothing here for create-time gating.
+ * - `canRevoke?: boolean` (optional, falls back to `useAuth().isAdmin`
+ *   when omitted — see prop JSDoc) gates the destructive per-link
+ *   Trash2 button that calls `revokeScriptShareLink`. **Revoking a
+ *   live share link requires admin privileges.** The Trash2 button
+ *   is hidden entirely when `!canRevoke`.
+ * - `isAdmin?: boolean` is a coarse admin override exposed for
+ *   tests, read-only previews, and mock contexts; the fine-grained
+ *   gate is `canRevoke`.
+ *
+ * The dialog does not gate the create / load calls: those flow
+ * through `session.access_token` and the server-side RLS policies.
+ * The UI gate is a UX safeguard against accidental revoke on an
+ * in-flight share.
  */
-export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialogProps) {
+export function ScriptShareDialog({
+  scriptId,
+  open,
+  onClose,
+  isAdmin: isAdminProp,
+  canRevoke: canRevokeProp,
+}: ScriptShareDialogProps) {
   const { t } = useTranslation("scripts");
-  const { session } = useAuth();
+  const { session, isAdmin: authIsAdmin } = useAuth();
+  const isAdmin = isAdminProp ?? authIsAdmin;
+  const canRevoke = canRevokeProp ?? isAdmin;
   const [password, setPassword] = useState("");
   const [expiry, setExpiry] = useState<string>("never");
   const [busy, setBusy] = useState(false);
@@ -228,7 +269,7 @@ export function ScriptShareDialog({ scriptId, open, onClose }: ScriptShareDialog
                           })}
                   </div>
                 </div>
-                {!link.is_revoked && !isExpired(link.expires_at) && (
+                {!link.is_revoked && !isExpired(link.expires_at) && canRevoke && (
                   <button
                     className="pc-btn-icon"
                     onClick={() => revokeLink(link.id)}

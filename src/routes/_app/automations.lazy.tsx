@@ -13,6 +13,7 @@ import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-di
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { TRIGGER_TYPE_OPTIONS } from "@/hooks/useAutomationRules";
+import { useAuth } from "@/lib/auth-context";
 import { AUTOMATION_CATEGORY_OPTIONS } from "@/lib/automations/automation-ui-constants";
 import type { WizardFlowPayload } from "@/types/automation";
 
@@ -22,6 +23,7 @@ export const Route = createLazyFileRoute("/_app/automations")({
 
 function AutomationsPage() {
   const { t } = useTranslation("automations");
+  const { isAdmin: authIsAdmin } = useAuth();
   const {
     rules,
     filteredRules,
@@ -236,6 +238,7 @@ function AutomationsPage() {
               key={rule.id}
               rule={rule}
               canManageAutomations={canManageAutomations}
+              isAdmin={authIsAdmin}
               expanded={expandedRuleId === rule.id}
               stats={(runStats ?? {})[rule.id]}
               logsOpen={logsOpenRuleId === rule.id}

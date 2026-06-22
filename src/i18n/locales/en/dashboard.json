@@ -232,12 +232,20 @@
     "tableDevice": "Device",
     "tableExpiry": "Due Date",
     "tableStatus": "Status",
+    "tableActions": "Actions",
     "status": {
       "scheduled": "Scheduled",
       "due_soon": "Due Soon",
       "overdue": "Overdue",
       "completed": "Completed"
-    }
+    },
+    "deleteTitle": "Delete maintenance",
+    "deleteDescription": "Are you sure you want to permanently delete \"{{title}}\"? This action cannot be undone.",
+    "deleteConfirm": "Delete",
+    "deleteLoading": "Deleting...",
+    "deleteAriaLabel": "Delete maintenance {{title}}",
+    "deletedSuccess": "Maintenance deleted",
+    "deletedError": "Error deleting maintenance"
   },
   "devicesWithoutTicket": {
     "title": "Devices Without Active Ticket",

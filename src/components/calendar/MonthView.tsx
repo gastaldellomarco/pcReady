@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 
 import { pcReadyColors } from "@/lib/design-system";
 import { cn } from "@/lib/utils";
+import { AgendaView } from "./AgendaView";
 import { EventChip } from "./EventChip";
 import type { CalendarEvent } from "@/lib/queries/calendar";
 
@@ -224,69 +225,85 @@ export function MonthView({
     setActiveEvent(null);
   }
 
+  // sm:hidden fallback stacks events vertically via AgendaView (touch-friendly,
+  // narrow-viewport-ready). The day/week grid remains visible at >=sm and still
+  // supports drag-to-reschedule. The view-switcher in CalendarToolbar can
+  // additionally hide the "month" option on phones if not already.
   return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="flex flex-col h-full select-none">
-        {/* Day-of-week headers */}
-        <div
-          className="grid grid-cols-7 border-l border-t"
-          style={{ borderColor: pcReadyColors.border }}
+    <>
+      <div className="hidden sm:block h-full">
+        <DndContext
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
-          {DAY_HEADER_KEYS.map((key) => (
+          <div className="flex flex-col h-full select-none">
+            {/* Day-of-week headers */}
             <div
-              key={key}
-              className="text-center text-xs font-semibold py-2 border-r border-b"
-              style={{
-                color: pcReadyColors.textSecondary,
-                background: pcReadyColors.surface,
-                borderColor: pcReadyColors.border,
-              }}
+              className="grid grid-cols-7 border-l border-t"
+              style={{ borderColor: pcReadyColors.border }}
             >
-              {t(`monthView.${key}`)}
+              {DAY_HEADER_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="text-center text-xs font-semibold py-2 border-r border-b"
+                  style={{
+                    color: pcReadyColors.textSecondary,
+                    background: pcReadyColors.surface,
+                    borderColor: pcReadyColors.border,
+                  }}
+                >
+                  {t(`monthView.${key}`)}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Calendar grid */}
-        <div
-          className="grid grid-cols-7 border-l flex-1"
-          style={{ borderColor: pcReadyColors.border }}
-        >
-          {days.map((day) => {
-            const key = format(day, "yyyy-MM-dd");
-            return (
-              <DroppableDay
-                key={key}
-                date={day}
-                dayEvents={eventsByDay[key] ?? []}
-                isCurrentMonth={isSameMonth(day, currentDate)}
-                techColorMap={techColorMap}
-                colorMode={colorMode}
-                onDayClick={onDayClick}
-                onEventClick={onEventClick}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Drag overlay — shows a chip preview while dragging */}
-      <DragOverlay dropAnimation={null}>
-        {activeEvent ? (
-          <div className="shadow-lg rounded-sm opacity-95 pointer-events-none w-32">
-            <EventChip
-              event={activeEvent}
-              techColorMap={techColorMap}
-              colorMode={colorMode}
-              onClick={() => {}}
-            />
+            {/* Calendar grid */}
+            <div
+              className="grid grid-cols-7 border-l flex-1"
+              style={{ borderColor: pcReadyColors.border }}
+            >
+              {days.map((day) => {
+                const key = format(day, "yyyy-MM-dd");
+                return (
+                  <DroppableDay
+                    key={key}
+                    date={day}
+                    dayEvents={eventsByDay[key] ?? []}
+                    isCurrentMonth={isSameMonth(day, currentDate)}
+                    techColorMap={techColorMap}
+                    colorMode={colorMode}
+                    onDayClick={onDayClick}
+                    onEventClick={onEventClick}
+                  />
+                );
+              })}
+            </div>
           </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+
+          {/* Drag overlay — shows a chip preview while dragging */}
+          <DragOverlay dropAnimation={null}>
+            {activeEvent ? (
+              <div className="shadow-lg rounded-sm opacity-95 pointer-events-none w-32">
+                <EventChip
+                  event={activeEvent}
+                  techColorMap={techColorMap}
+                  colorMode={colorMode}
+                  onClick={() => {}}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+      <div className="sm:hidden h-full">
+        <AgendaView
+          events={events}
+          techColorMap={techColorMap}
+          colorMode={colorMode}
+          onEventClick={onEventClick}
+        />
+      </div>
+    </>
   );
 }

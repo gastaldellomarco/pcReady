@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { SlaMiniLabel } from "@/components/kanban/SlaMiniLabel";
@@ -86,6 +87,18 @@ export function TicketCard({
         ? t("tickets:status.expiring", indicator.label)
         : t("tickets:sla.ok", indicator.label);
 
+  // Touch-friendly alternative to HTML5 drag: explicit prev/next arrows wired
+  // to the existing onMove handler. Disabled at column boundaries.
+  const statusIndex = statuses.indexOf(status);
+  const prevStatus = statusIndex > 0 ? statuses[statusIndex - 1] : null;
+  const nextStatus =
+    statusIndex >= 0 && statusIndex < statuses.length - 1 ? statuses[statusIndex + 1] : null;
+  function handleStep(event: MouseEvent<HTMLButtonElement>, target: TicketStatus | null) {
+    event.stopPropagation();
+    if (!target) return;
+    onMove(card.id, target, assigneeId);
+  }
+
   return (
     <button
       type="button"
@@ -117,6 +130,41 @@ export function TicketCard({
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="font-mono text-[10.5px] text-text3">{card.ticket_code}</span>
         <div className="flex items-center gap-1.5">
+          {canEdit && (prevStatus || nextStatus) ? (
+            <div
+              className="flex items-center gap-0.5"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(event) => handleStep(event, prevStatus)}
+                disabled={!prevStatus}
+                className="touch-target min-h-11 min-w-11 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-text2 transition-colors hover:bg-surface2 disabled:cursor-not-allowed disabled:opacity-30"
+                title={
+                  prevStatus
+                    ? t("movePrev", "Sposta allo stage precedente")
+                    : t("movePrevDisabled", "Sei al primo stage")
+                }
+                aria-label={t("movePrevAria", "Sposta allo stage precedente")}
+              >
+                <ChevronLeft className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(event) => handleStep(event, nextStatus)}
+                disabled={!nextStatus}
+                className="touch-target min-h-11 min-w-11 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-text2 transition-colors hover:bg-surface2 disabled:cursor-not-allowed disabled:opacity-30"
+                title={
+                  nextStatus
+                    ? t("moveNext", "Sposta allo stage successivo")
+                    : t("moveNextDisabled", "Sei all'ultimo stage")
+                }
+                aria-label={t("moveNextAria", "Sposta allo stage successivo")}
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          ) : null}
           <span
             className="h-2 w-2 rounded-full"
             style={{ background: indicator.color }}

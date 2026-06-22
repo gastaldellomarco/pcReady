@@ -1588,33 +1588,36 @@ function CostsPage() {
                         <ChartTooltip
                           content={
                             <ChartTooltipContent
-                              formatter={(value: any, name: any) => (
-                                <>
-                                  <div
-                                    className="size-2 shrink-0 rounded-[2px]"
-                                    style={{
-                                      backgroundColor:
-                                        name === "margin" || name === "Margine"
-                                          ? "var(--success)"
-                                          : name === "revenue" || name === "Ricavo"
-                                            ? "var(--accent)"
-                                            : "var(--warning)",
-                                    }}
-                                  />
-                                  <div className="flex flex-1 justify-between items-center gap-4 text-xs">
-                                    <span className="text-muted-foreground">
-                                      {name === "margin" || name === "Margine"
-                                        ? t("finance.margin", "Margine")
-                                        : name === "revenue" || name === "Ricavo"
-                                          ? t("finance.revenue", "Ricavo")
-                                          : t("finance.cost", "Costo")}
-                                    </span>
-                                    <span className="font-mono font-medium text-foreground">
-                                      {formatCurrency(Number(value))}
-                                    </span>
-                                  </div>
-                                </>
-                              )}
+                              labelClassName="text-foreground font-semibold"
+                              formatter={(value: any, name: any) => {
+                                const displayName =
+                                  name === "margin"
+                                    ? t("finance.margin", "Margine")
+                                    : name === "revenue"
+                                      ? t("finance.revenue", "Ricavo")
+                                      : name === "actualCost"
+                                        ? t("finance.cost", "Costo")
+                                        : String(name);
+                                const color =
+                                  name === "margin"
+                                    ? "var(--success)"
+                                    : name === "revenue"
+                                      ? "var(--accent)"
+                                      : "var(--warning)";
+                                return [
+                                  <span
+                                    key="dot"
+                                    className="size-2.5 shrink-0 rounded-[2px]"
+                                    style={{ background: color }}
+                                  />,
+                                  <span key="name" className="text-muted-foreground flex-1">
+                                    {displayName}
+                                  </span>,
+                                  <span key="value" className="font-mono font-medium tabular-nums">
+                                    {formatCurrency(Number(value))}
+                                  </span>,
+                                ];
+                              }}
                             />
                           }
                         />

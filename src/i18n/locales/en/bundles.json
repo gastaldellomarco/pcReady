@@ -75,6 +75,12 @@
     "remoteSupport": "Remote support",
     "autoRenew": "Auto-renew",
     "bundleActive": "Active bundle",
+    "isCustom": "Custom bundle (single client only)",
+    "isCustomHint": "Hidden from the general catalog. Only assignable to the selected client.",
+    "customClient": "Custom client",
+    "selectCustomClient": "Select client",
+    "thresholdPct": "Consumption alert threshold (%)",
+    "thresholdHint": "Automatic notification to the technician when this percentage of included hours is exceeded.",
     "cancel": "Cancel",
     "saving": "Saving...",
     "save": "Save"
@@ -119,7 +125,41 @@
     "remoteSupport": "Remote Support",
     "included": "Included",
     "no": "No",
-    "empty": "No bundles configured."
+    "empty": "No bundles configured.",
+    "customBadge": "Ad-hoc \u00b7 {{customer}}",
+    "customBadgeTitle": "Custom bundle: hidden from the general catalog.",
+    "showAdHoc": "Show ad-hoc",
+    "hideAdHoc": "Hide ad-hoc",
+    "compare": {
+      "label": "Compare",
+      "addToCompare": "Add to comparison",
+      "removeFromCompare": "Remove from comparison",
+      "maxReached": "Maximum 3 bundles compared",
+      "bannerAria": "Bundle comparison bar",
+      "bannerCount": "{{count}}/{{max}} bundles selected for comparison",
+      "clear": "Clear selection",
+      "open": "Compare",
+      "title": "Bundle comparison",
+      "close": "Close",
+      "attribute": "Attribute",
+      "row": {
+        "type": "Billing type",
+        "fee": "Fee",
+        "includedHours": "Included hours",
+        "extraRate": "Extra hourly rate",
+        "slaResponse": "SLA response",
+        "slaResolution": "SLA resolution",
+        "onsiteVisits": "Included on-site visits",
+        "remoteSupport": "Remote support",
+        "ticketPriority": "Ticket priority",
+        "threshold": "Consumption alert threshold",
+        "autoRenew": "Auto-renewal",
+        "scope": "Catalog visibility",
+        "scopeCustom": "Ad-hoc (single client only)",
+        "scopePublic": "Public",
+        "description": "Description"
+      }
+    }
   },
   "assignments": {
     "title": "Assigned Bundle History",
@@ -164,6 +204,8 @@
       "expiry": "Expiry",
       "alert": "Alert"
     },
+    "thresholdBrief": "{{percent}}%",
+    "thresholdLabel": "Threshold {{percent}}% \u2022 current usage {{usage}}%",
     "monthly": {
       "month": "Month",
       "hours": "Hours",

@@ -35,6 +35,10 @@ type BundleFormState = {
   ticket_priority: BundleTicketPriority;
   auto_renew: boolean;
   active: boolean;
+  is_custom: boolean;
+  custom_client_id: string;
+  // Stored as text on the form so the user can clear it back to "" -> NULL.
+  low_hours_threshold_pct: string;
 };
 
 type AssignmentFormState = {
@@ -102,6 +106,12 @@ function bundleInitialState(initial?: Partial<AssistanceBundle> | null): BundleF
     ticket_priority: initial?.ticket_priority ?? "med",
     auto_renew: initial?.auto_renew ?? true,
     active: initial?.active ?? true,
+    is_custom: initial?.is_custom ?? false,
+    custom_client_id: initial?.custom_client_id ?? "",
+    low_hours_threshold_pct:
+      initial?.low_hours_threshold_pct == null
+        ? String(80)
+        : String(initial.low_hours_threshold_pct),
   };
 }
 
@@ -142,11 +152,17 @@ export function BundleForm({
   onSubmit,
   onCancel,
   busy = false,
+  clients = [],
 }: {
   initial?: Partial<AssistanceBundle> | null;
   onSubmit: (data: Partial<AssistanceBundle>) => void | Promise<void>;
   onCancel: () => void;
   busy?: boolean;
+  /**
+   * Required when `is_custom=true` to populate the customer picker.
+   * Optional otherwise.
+   */
+  clients?: ClientOption[];
 }) {
   const { t } = useTranslation("bundles");
   const [form, setForm] = useState<BundleFormState>(() => bundleInitialState(initial));
@@ -178,6 +194,9 @@ export function BundleForm({
       ticket_priority: form.ticket_priority,
       auto_renew: form.auto_renew,
       active: form.active,
+      is_custom: form.is_custom,
+      custom_client_id: form.is_custom && form.custom_client_id ? form.custom_client_id : null,
+      low_hours_threshold_pct: numberOrNull(form.low_hours_threshold_pct),
     });
   }
 
@@ -376,6 +395,73 @@ export function BundleForm({
         </label>
       </div>
 
+      <div className="grid gap-3 rounded-xl border border-border bg-surface2/40 p-4 md:grid-cols-3">
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-sm text-text2">
+            <input
+              className={checkboxClass}
+              type="checkbox"
+              checked={form.is_custom}
+              onChange={(event) =>
+                patch({
+                  is_custom: event.target.checked,
+                  // Clearing the FK when toggling off keeps the row consistent.
+                  custom_client_id: event.target.checked ? form.custom_client_id : "",
+                })
+              }
+              disabled={busy}
+            />
+            {t("form.isCustom", "Bundle personalizzato (solo per un cliente)")}
+          </label>
+          <p className="text-xs font-normal text-text3">
+            {t(
+              "form.isCustomHint",
+              "Non verrà mostrato nel catalogo generale. Assegnabile solo al cliente selezionato.",
+            )}
+          </p>
+        </div>
+        {form.is_custom ? (
+          <label className={labelClass}>
+            {t("form.customClient", "Cliente personalizzato")}
+            <select
+              className={fieldClass}
+              value={form.custom_client_id}
+              onChange={(event) => patch({ custom_client_id: event.target.value })}
+              required
+              disabled={busy}
+            >
+              <option value="">{t("form.selectCustomClient", "Seleziona cliente")}</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {clientLabel(client)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div />
+        )}
+        <label className={labelClass}>
+          {t("form.thresholdPct", "Soglia notifica consumo (%)")}
+          <input
+            className={fieldClass}
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={form.low_hours_threshold_pct}
+            onChange={(event) => patch({ low_hours_threshold_pct: event.target.value })}
+            disabled={busy}
+          />
+          <span className="text-xs font-normal text-text3">
+            {t(
+              "form.thresholdHint",
+              "Notifica automatica al tecnico quando si supera questa percentuale delle ore incluse.",
+            )}
+          </span>
+        </label>
+      </div>
+
       <div className="flex justify-end gap-2">
         <button
           type="button"
@@ -420,6 +506,18 @@ export function AssignmentForm({
   const selectedBundle = useMemo(
     () => bundles.find((bundle) => bundle.id === form.bundle_id) ?? null,
     [bundles, form.bundle_id],
+  );
+  // Ad-hoc bundles are scoped to a single client: hide them from the picker
+  // unless the currently selected client matches their `custom_client_id`.
+  // Without this filter a tech could pick another client's lock-in quote.
+  const selectableBundles = useMemo(
+    () =>
+      bundles.filter((bundle) => {
+        if (!bundle.active && bundle.id !== initial?.bundle_id) return false;
+        if (!bundle.is_custom) return true;
+        return Boolean(form.client_id) && bundle.custom_client_id === form.client_id;
+      }),
+    [bundles, form.client_id, initial?.bundle_id],
   );
 
   useEffect(() => {
@@ -485,7 +583,7 @@ export function AssignmentForm({
             disabled={busy}
           >
             <option value="">{t("assignment.selectBundle", "Seleziona bundle")}</option>
-            {bundles.map((bundle) => (
+            {selectableBundles.map((bundle) => (
               <option key={bundle.id} value={bundle.id}>
                 {bundle.name}
               </option>

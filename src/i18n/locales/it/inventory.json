@@ -249,7 +249,17 @@
     "completedSuccess": "Manutenzione completata e prossima scadenza aggiornata",
     "completedError": "Errore completamento manutenzione",
     "fetchError": "Errore manutenzioni",
-    "insertTitle": "Inserisci un titolo per la manutenzione"
+    "insertTitle": "Inserisci un titolo per la manutenzione",
+    "deleteTitle": "Elimina manutenzione",
+    "deleteDescription": "Sei sicuro di voler eliminare definitivamente \"{{title}}\"? Questa azione non può essere annullata.",
+    "deleteConfirm": "Elimina",
+    "deleteLoading": "Eliminazione...",
+    "deleteAriaLabel": "Elimina manutenzione {{title}}",
+    "deletedSuccess": "Manutenzione eliminata",
+    "deletedError": "Errore eliminazione manutenzione",
+    "actions": {
+      "delete": "Elimina"
+    }
   },
   "qrCode": {
     "title": "QR dispositivo",

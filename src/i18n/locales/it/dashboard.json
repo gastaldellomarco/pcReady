@@ -179,8 +179,7 @@
     "technicianPerformance": "Performance tecnici",
     "technicianSubtitle": "Assegnati, completati e tempi medi",
     "technicianCount": "{{count}} tecnici"
-  },
-  "dateRange": {
+  },    "dateRange": {
     "today": "Oggi",
     "last7": "7 giorni",
     "last30": "30 giorni",
@@ -232,12 +231,20 @@
     "tableDevice": "Dispositivo",
     "tableExpiry": "Scadenza",
     "tableStatus": "Stato",
+    "tableActions": "Azioni",
     "status": {
       "scheduled": "Pianificata",
       "due_soon": "In scadenza",
       "overdue": "Scaduta",
       "completed": "Completata"
-    }
+    },
+    "deleteTitle": "Elimina manutenzione",
+    "deleteDescription": "Sei sicuro di voler eliminare definitivamente \"{{title}}\"? Questa azione non può essere annullata.",
+    "deleteConfirm": "Elimina",
+    "deleteLoading": "Eliminazione...",
+    "deleteAriaLabel": "Elimina manutenzione {{title}}",
+    "deletedSuccess": "Manutenzione eliminata",
+    "deletedError": "Errore eliminazione manutenzione"
   },
   "devicesWithoutTicket": {
     "title": "Dispositivi senza ticket attivo",

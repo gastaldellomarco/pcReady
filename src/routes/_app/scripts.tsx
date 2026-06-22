@@ -29,7 +29,7 @@ import {
   Play,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Modal } from "@/components/pcready/Modal";
@@ -144,7 +144,7 @@ function getLangExtension(language: string): Extension {
 
 function ScriptsPage() {
   const { t } = useTranslation("scripts");
-  const { canEdit, hasPermission, user } = useAuth();
+  const { canEdit, user, isAdmin: authIsAdmin } = useAuth();
   const [rows, setRows] = useState<ScriptRow[]>([]);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
@@ -330,7 +330,11 @@ function ScriptsPage() {
                         }
                       : undefined
                   }
-                  onDelete={hasPermission("can_manage_automations") ? () => setDeleteTarget(s) : undefined}
+                  onDelete={
+                    authIsAdmin
+                      ? () => setDeleteTarget(s)
+                      : undefined
+                  }
                 />
               ))}
           </div>
@@ -371,7 +375,11 @@ function ScriptsPage() {
                       }
                     : undefined
                 }
-                onDelete={hasPermission("can_manage_automations") ? () => setDeleteTarget(s) : undefined}
+                onDelete={
+                  authIsAdmin
+                    ? () => setDeleteTarget(s)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -422,6 +430,8 @@ function ScriptsPage() {
           scriptId={shareDialogScript.id}
           open={!!shareDialogScript}
           onClose={() => setShareDialogScript(null)}
+          isAdmin={authIsAdmin}
+          canRevoke={authIsAdmin}
         />
       )}
       <DestructiveConfirmDialog
@@ -952,6 +962,12 @@ function ScriptEditor({
   const [editorParams, setEditorParams] = useState<ScriptParameter[]>(initial?.parameters ?? []);
   const [editorTags, setEditorTags] = useState<string[]>(initial?.tags ?? []);
 
+  // Subscribe explicitly to icon/color so the picker buttons update
+  // visually on click (form.getValues() is non-reactive; without these
+  // watchers setValue() would mutate the form but the UI wouldn't re-render).
+  const currentIcon = useWatch({ control: form.control, name: "icon" });
+  const currentColor = useWatch({ control: form.control, name: "color" });
+
   const save = form.handleSubmit(async (values) => {
     if (!values.name.trim())
       return toast.error(t("editor.errors.nameRequired", "Inserisci un nome"));
@@ -1091,7 +1107,8 @@ function ScriptEditor({
             <div className="flex flex-wrap gap-1.5">
               {ICON_KEYS.map((k) => {
                 const I = ICONS[k];
-                const active = form.getValues().icon === k;
+                const active = (currentIcon ?? "terminal") === k;
+                const colorForGlyph = currentColor ?? COLORS[0];
                 return (
                   <button
                     key={k}
@@ -1100,10 +1117,10 @@ function ScriptEditor({
                     className="w-8 h-8 rounded-[8px] flex items-center justify-center transition-all"
                     style={{
                       background: active
-                        ? (form.getValues().color || COLORS[0]) + "22"
+                        ? colorForGlyph + "22"
                         : "var(--surface2)",
-                      border: `1px solid ${active ? form.getValues().color || COLORS[0] : "var(--border2)"}`,
-                      color: active ? form.getValues().color || COLORS[0] : "var(--text2)",
+                      border: `1px solid ${active ? colorForGlyph : "var(--border2)"}`,
+                      color: active ? colorForGlyph : "var(--text2)",
                     }}
                   >
                     <I className="size-4" />
@@ -1115,22 +1132,22 @@ function ScriptEditor({
         </div>
         <Field label={t("editor.fieldColor", "Colore")}>
           <div className="flex flex-wrap gap-1.5">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => form.setValue("color", c)}
-                className="w-7 h-7 rounded-full transition-transform"
-                style={{
-                  background: c,
-                  border:
-                    (form.getValues().color || COLORS[0]) === c
-                      ? "2px solid var(--text)"
-                      : "2px solid transparent",
-                  transform: (form.getValues().color || COLORS[0]) === c ? "scale(1.1)" : "none",
-                }}
-              />
-            ))}
+            {COLORS.map((c) => {
+              const selected = (currentColor ?? COLORS[0]) === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => form.setValue("color", c)}
+                  className="w-7 h-7 rounded-full transition-transform"
+                  style={{
+                    background: c,
+                    border: selected ? "2px solid var(--text)" : "2px solid transparent",
+                    transform: selected ? "scale(1.1)" : "none",
+                  }}
+                />
+              );
+            })}
           </div>
         </Field>
         <Field label={t("editor.fieldDescription", "Descrizione")}>

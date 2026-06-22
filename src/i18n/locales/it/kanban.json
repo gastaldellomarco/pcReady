@@ -20,6 +20,12 @@
   "inColumnSince": "In questa colonna da {{time}}",
   "assignTitle": "Assegna",
   "moveTo": "Sposta a",
+  "movePrev": "Sposta allo stage precedente",
+  "movePrevAria": "Sposta allo stage precedente",
+  "movePrevDisabled": "Sei al primo stage",
+  "moveNext": "Sposta allo stage successivo",
+  "moveNextAria": "Sposta allo stage successivo",
+  "moveNextDisabled": "Sei all'ultimo stage",
   "filters": {
     "allTechs": "Tutti i tecnici",
     "myTickets": "Solo i miei",

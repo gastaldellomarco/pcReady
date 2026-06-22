@@ -24,6 +24,56 @@ function clamp(v: number, a: number, b: number) {
   return Math.max(a, Math.min(b, v));
 }
 
+interface RadarTooltipEntry {
+  metric: string;
+  [seriesKey: string]: string | number;
+}
+
+interface RadarTooltipPayloadEntry {
+  dataKey: string;
+  name: string;
+  value: number;
+  color: string;
+  fill?: string;
+}
+
+interface RadarTooltipContentProps {
+  active?: boolean;
+  payload?: RadarTooltipPayloadEntry[];
+  label?: string;
+}
+
+/**
+ *
+ */
+function RadarTooltipContent({ active, payload, label }: RadarTooltipContentProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      role="tooltip"
+      className="grid min-w-[10rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl"
+    >
+      {label && (
+        <div className="font-medium text-foreground">{label}</div>
+      )}
+      {payload.map((entry: any, idx: number) => (
+        <div key={`${entry.dataKey}-${idx}`} className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="size-2.5 shrink-0 rounded-[2px]"
+              style={{ background: entry.color || entry.fill }}
+            />
+            <span className="text-muted-foreground">{entry.name}</span>
+          </span>
+          <span className="font-mono font-medium tabular-nums text-foreground">
+            {Number(entry.value).toFixed(0)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  *
  */
@@ -79,7 +129,7 @@ export default function TechnicianRadarWidget({
   );
 
   const data = useMemo(() => {
-    if (!selected) return [];
+    if (!selected) return [] as RadarTooltipEntry[];
     const n = selected.normalized ?? {};
     const metricKeys: Array<{ key: string; label: string }> = [
       { key: "volume", label: t("radar.volume", "Volume") },
@@ -96,7 +146,7 @@ export default function TechnicianRadarWidget({
   }, [selected, t]);
 
   const dataAll = useMemo(() => {
-    if (!rows || rows.length === 0) return [];
+    if (!rows || rows.length === 0) return [] as RadarTooltipEntry[];
     const metricKeys: Array<{ key: string; label: string }> = [
       { key: "volume", label: t("radar.volume", "Volume") },
       { key: "velocita", label: t("radar.speed", "Velocità") },
@@ -169,7 +219,7 @@ export default function TechnicianRadarWidget({
                     fillOpacity={0.45}
                   />
                 ))}
-                <Tooltip />
+                <Tooltip content={<RadarTooltipContent />} />
                 <Legend />
               </RadarChart>
             ) : (
@@ -184,7 +234,7 @@ export default function TechnicianRadarWidget({
                   fill={pcReadyChartColors[0]}
                   fillOpacity={0.6}
                 />
-                <Tooltip />
+                <Tooltip content={<RadarTooltipContent />} />
                 <Legend />
               </RadarChart>
             )}

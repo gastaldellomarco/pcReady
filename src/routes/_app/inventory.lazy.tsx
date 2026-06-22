@@ -16,8 +16,9 @@ import {
   X,
   CalendarDays,
   Wrench,
+  Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ExportPdf } from "@/components/ExportPdf";
@@ -37,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import { useTickets } from "@/hooks/use-tickets";
 import { useVirtualList } from "@/hooks/useVirtualList";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +67,7 @@ import {
   type MaintenanceStatus,
   type TechnicianOption,
 } from "@/lib/maintenance";
+import { useDeleteMaintenanceSchedule } from "@/lib/queries/maintenance";
 import { OS_OPTIONS, fmtDate } from "@/lib/pcready";
 import queries, {
   useInventoryInfiniteList,
@@ -1316,6 +1319,8 @@ function InventoryPage() {
 
 function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: string) => void }) {
   const { t, i18n } = useTranslation("inventory");
+  const { isAdmin } = useAuth();
+  const deleteMut = useDeleteMaintenanceSchedule();
   const [monthStart, setMonthStart] = useState(() => {
     const date = new Date();
     date.setDate(1);
@@ -1327,6 +1332,25 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
   const [assignedTo, setAssignedTo] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatus | "all">("all");
+  const [deleteTarget, setDeleteTarget] = useState<MaintenanceSchedule | null>(null);
+
+  function triggerDelete(item: MaintenanceSchedule, event: MouseEvent) {
+    event.stopPropagation();
+    setDeleteTarget(item);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteMut.mutateAsync(deleteTarget.id);
+      setItems((current) => current.filter((row) => row.id !== deleteTarget.id));
+      toast.success(t("maintenance.deletedSuccess"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("maintenance.deletedError")));
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
 
   const from = useMemo(() => monthStart.toISOString().slice(0, 10), [monthStart]);
   const to = useMemo(() => {
@@ -1470,26 +1494,43 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
                   const status = getMaintenanceStatus(item);
                   const meta = MAINTENANCE_STATUS_META[status];
                   return (
-                    <button
+                    <div
                       key={item.id}
-                      type="button"
-                      className="rounded-md border p-2 text-left text-[11px] hover:bg-surface2"
+                      className="group rounded-md border p-2 text-[11px]"
                       style={{ borderColor: meta.color, background: meta.background }}
-                      onClick={() => onOpenDevice(item.device_id)}
                     >
-                      <div className="font-semibold" style={{ color: meta.color }}>
-                        {item.title}
-                      </div>
-                      <div className="text-text2">
-                        {item.device?.model || t("maintenance.device")}
-                      </div>
-                      <div className="font-mono text-text3">
-                        {item.device?.serial || item.device_id.slice(0, 8)}
-                      </div>
-                      <div className="mt-1 text-[10px] text-text3">
-                        {MAINTENANCE_RECURRENCE_LABEL[item.recurrence]}
-                      </div>
-                    </button>
+                      <button
+                        type="button"
+                        className="block w-full text-left hover:opacity-90"
+                        onClick={() => onOpenDevice(item.device_id)}
+                      >
+                        <div className="font-semibold" style={{ color: meta.color }}>
+                          {item.title}
+                        </div>
+                        <div className="text-text2">
+                          {item.device?.model || t("maintenance.device")}
+                        </div>
+                        <div className="font-mono text-text3">
+                          {item.device?.serial || item.device_id.slice(0, 8)}
+                        </div>
+                        <div className="mt-1 text-[10px] text-text3">
+                          {MAINTENANCE_RECURRENCE_LABEL[item.recurrence]}
+                        </div>
+                      </button>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          aria-label={t("maintenance.deleteAriaLabel", { title: item.title })}
+                          title={t("maintenance.deleteAriaLabel", { title: item.title })}
+                          className="mt-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+                          style={{ borderColor: meta.color, color: meta.color }}
+                          onClick={(event) => triggerDelete(item, event)}
+                        >
+                          <Trash2 className="size-3" />
+                          {t("maintenance.actions.delete")}
+                        </button>
+                      ) : null}
+                    </div>
                   );
                 })}
               </div>
@@ -1500,6 +1541,25 @@ function MaintenanceCalendarView({ onOpenDevice }: { onOpenDevice: (deviceId: st
       {loading ? (
         <div className="p-3 text-center text-sm text-text3">{t("loading.calendar")}</div>
       ) : null}
+      <DestructiveConfirmDialog
+        open={!!deleteTarget}
+        title={t("maintenance.deleteTitle", "Elimina manutenzione")}
+        description={
+          deleteTarget
+            ? t(
+                "maintenance.deleteDescription",
+                'Sei sicuro di voler eliminare definitivamente "{{title}}"? Questa azione non può essere annullata.',
+                { title: deleteTarget.title },
+              )
+            : ""
+        }
+        confirmLabel={t("maintenance.deleteConfirm", "Elimina")}
+        loadingLabel={t("maintenance.deleteLoading", "Eliminazione...")}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setDeleteTarget(null);
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

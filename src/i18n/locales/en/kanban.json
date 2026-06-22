@@ -20,6 +20,12 @@
   "inColumnSince": "In this column for {{time}}",
   "assignTitle": "Assign",
   "moveTo": "Move to",
+  "movePrev": "Move to previous stage",
+  "movePrevAria": "Move to previous stage",
+  "movePrevDisabled": "Already at first stage",
+  "moveNext": "Move to next stage",
+  "moveNextAria": "Move to next stage",
+  "moveNextDisabled": "Already at last stage",
   "filters": {
     "allTechs": "All technicians",
     "myTickets": "Only mine",

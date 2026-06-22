@@ -123,7 +123,12 @@ function AdminUsersPage() {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-7">
+      {/* 7 tabs last cell-squashed on phones. The base <TabsList /> primitive
+          (src/components/ui/tabs.tsx) already provides `inline-flex overflow-x-auto
+          p-1 sm:h-9 sm:justify-center`; this override only adds the mobile-first
+          flex-wrap on >=sm + a thin scrollbar at <sm so the strip is usable from
+          ~320px upward. */}
+      <TabsList className="w-full h-auto flex-nowrap scrollbar-thin sm:flex-wrap">
         <TabsTrigger value="users">{t("tabs.users", "Utenti")}</TabsTrigger>
         <TabsTrigger value="permissions">{t("tabs.permissions", "Permessi")}</TabsTrigger>
         {canManageSettings && (

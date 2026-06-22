@@ -22,9 +22,21 @@ export type AssistanceBundle = {
   ticket_priority: BundleTicketPriority;
   auto_renew: boolean;
   active: boolean;
+  /**
+   * Ad-hoc bundles are tied to a single client and excluded from the
+   * general catalog view by default. Set via `is_custom=true` + `custom_client_id`.
+   */
+  is_custom?: boolean | null;
+  custom_client_id?: string | null;
+  /**
+   * Percentage of included hours that triggers a `bundle_low_hours` notification.
+   * Stored on the catalog bundle (nullable for backward compatibility).
+   */
+  low_hours_threshold_pct?: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  custom_client?: BundleClient | null;
 };
 
 export type BundleClient = {
@@ -154,7 +166,7 @@ export const BUNDLE_STATUS_LABEL: Record<BundleStatus, string> = {
 // ─── Selects ──────────────────────────────────────────────────────────
 
 const BUNDLE_SELECT =
-  "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, created_at, updated_at, created_by";
+  "id, name, description, billing_type, fee, currency, included_hours, extra_hourly_rate, sla_response_hours, sla_resolution_hours, included_onsite_visits, remote_support, ticket_priority, auto_renew, active, is_custom, custom_client_id, low_hours_threshold_pct, created_at, updated_at, created_by, custom_client:clients(name,company_name,email)";
 
 const BUNDLE_JOIN = `bundle:assistance_bundles(${BUNDLE_SELECT})`;
 const CLIENT_JOIN = "client:clients(id,name,company_name,email)";
@@ -176,7 +188,8 @@ const PAYMENT_SELECT =
 export const BUNDLE_QUERY_KEYS = {
   all: ["bundles"] as const,
   lists: () => [...BUNDLE_QUERY_KEYS.all, "list"] as const,
-  list: (includeInactive = true) => [...BUNDLE_QUERY_KEYS.lists(), { includeInactive }] as const,
+  list: (includeInactive = true, includeCustom = false) =>
+    [...BUNDLE_QUERY_KEYS.lists(), { includeInactive, includeCustom }] as const,
   assignments: (clientId?: string | null) =>
     [...BUNDLE_QUERY_KEYS.all, "assignments", clientId ?? "all"] as const,
   usageSummaries: (clientId?: string | null) =>
@@ -231,13 +244,18 @@ export function computeEndDate(startDate: string, billingType: BundleBillingType
 
 // ─── Fetch ────────────────────────────────────────────────────────────
 
-export async function listBundles(includeInactive = true) {
+export async function listBundles(includeInactive = true, includeCustom = false) {
   let query = (supabase as any)
     .from("assistance_bundles")
     .select(BUNDLE_SELECT)
+    .order("is_custom", { ascending: true })
     .order("active", { ascending: false })
     .order("name", { ascending: true });
   if (!includeInactive) query = query.eq("active", true);
+  // Default to excluding ad-hoc bundles from the general catalog so techs can't
+  // accidentally assign another client's locked-in quote. Callers that need to
+  // see ad-hoc bundles (admin tools, comparison toggle) pass `includeCustom=true`.
+  if (!includeCustom) query = query.eq("is_custom", false);
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as AssistanceBundle[];

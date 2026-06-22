@@ -1,9 +1,13 @@
-import { CalendarDays, CheckCircle2, Plus, Wrench } from "lucide-react";
+import { CalendarDays, Plus, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm-dialog";
 import OverflowTable from "@/components/ui/overflow-table";
+import { MaintenanceScheduleRowActions } from "./MaintenanceScheduleRowActions";
+import { useAuth } from "@/lib/auth-context";
+import { errorMessage } from "@/lib/errors";
 import {
   MAINTENANCE_RECURRENCE_LABEL,
   MAINTENANCE_STATUS_META,
@@ -21,6 +25,7 @@ import {
   type TechnicianOption,
 } from "@/lib/maintenance";
 import { fmtDate, fmtDateTime } from "@/lib/pcready";
+import { useDeleteMaintenanceSchedule } from "@/lib/queries/maintenance";
 
 /**
  *
@@ -39,20 +44,45 @@ export function MaintenanceStatusBadge({ schedule }: { schedule: MaintenanceSche
 }
 
 /**
+ * Per-device maintenance schedule panel with inline CRUD.
  *
+ * Permission model — do NOT conflate the two gates:
+ * - `canEdit` enables the "+ Nuova manutenzione" toggle / create form AND
+ *   the per-row "Segna completata" mark-done action. **Adding a new
+ *   schedule requires `canEdit=true`.**
+ * - `isAdmin` enables the destructive per-row Trash button and the
+ *   `DestructiveConfirmDialog` confirmation. See the prop's JSDoc for the
+ *   `useAuth().isAdmin` fallback and override semantics.
+ *
+ * The two flags are independent: a non-admin user with `canEdit=true` may
+ * create and complete schedules but cannot delete them; an admin without
+ * `canEdit=true` may delete schedules but cannot create or complete them.
+ * The per-row action cell renders `<span>—</span>` when neither gate is
+ * granted so columns stay aligned with neighbouring tables.
  */
 export function MaintenanceSchedulePanel({
   deviceId,
   currentUserId,
   canEdit,
   compact = false,
+  isAdmin: isAdminProp,
 }: {
   deviceId: string;
   currentUserId?: string | null;
   canEdit: boolean;
   compact?: boolean;
+  /**
+   * Override the admin gate. When omitted, the panel falls back to
+   * `useAuth().isAdmin`. Callers (read-only previews, tests, mock contexts)
+   * can pass a fixed value to disable the delete button without touching
+   * the global auth context.
+   */
+  isAdmin?: boolean;
 }) {
   const { t } = useTranslation("inventory");
+  const { isAdmin: authIsAdmin } = useAuth();
+  const isAdmin = isAdminProp ?? authIsAdmin;
+  const deleteMut = useDeleteMaintenanceSchedule();
   const [schedules, setSchedules] = useState<MaintenanceSchedule[]>([]);
   const [history, setHistory] = useState<MaintenanceHistoryEntry[]>([]);
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
@@ -60,6 +90,7 @@ export function MaintenanceSchedulePanel({
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MaintenanceSchedule | null>(null);
   const [draft, setDraft] = useState({
     title: t("maintenance.titlePlaceholder", "Pulizia hardware"),
     description: "",
@@ -133,11 +164,7 @@ export function MaintenanceSchedulePanel({
       setShowForm(false);
       toast.success(t("maintenance.createdSuccess", "Manutenzione programmata creata"));
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("maintenance.createdError", "Errore creazione manutenzione"),
-      );
+      toast.error(errorMessage(error, t("maintenance.createdError", "Errore creazione manutenzione")));
     } finally {
       setSaving(false);
     }
@@ -157,13 +184,23 @@ export function MaintenanceSchedulePanel({
         t("maintenance.completedSuccess", "Manutenzione completata e prossima scadenza aggiornata"),
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("maintenance.completedError", "Errore completamento manutenzione"),
-      );
+      toast.error(errorMessage(error, t("maintenance.completedError", "Errore completamento manutenzione")));
     } finally {
       setCompletingId(null);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    try {
+      await deleteMut.mutateAsync(targetId);
+      setSchedules((rows) => rows.filter((row) => row.id !== targetId));
+      toast.success(t("maintenance.deletedSuccess", "Manutenzione eliminata"));
+    } catch (error) {
+      toast.error(errorMessage(error, t("maintenance.deletedError", "Errore eliminazione manutenzione")));
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -366,20 +403,15 @@ export function MaintenanceSchedulePanel({
                     {schedule.assignee?.display_name || schedule.assigned_to?.slice(0, 8) || "—"}
                   </td>
                   <td className="px-3 py-2">
-                    {canEdit ? (
-                      <button
-                        className="pc-btn pc-btn-ghost pc-btn-sm"
-                        disabled={completingId === schedule.id}
-                        onClick={() => void markCompleted(schedule)}
-                      >
-                        <CheckCircle2 className="size-3" />
-                        {completingId === schedule.id
-                          ? t("maintenance.updating", "Aggiornamento...")
-                          : t("maintenance.markCompleted", "Segna completata")}
-                      </button>
-                    ) : (
-                      "—"
-                    )}
+                    <MaintenanceScheduleRowActions
+                      canEdit={canEdit}
+                      isAdmin={isAdmin}
+                      completingId={completingId}
+                      schedule={schedule}
+                      t={t}
+                      onMarkCompleted={(item) => void markCompleted(item)}
+                      onRequestDelete={setDeleteTarget}
+                    />
                   </td>
                 </tr>
               );
@@ -399,6 +431,22 @@ export function MaintenanceSchedulePanel({
           </tbody>
         </table>
       </OverflowTable>
+
+      <DestructiveConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title={t("maintenance.deleteTitle", "Elimina manutenzione")}
+        description={t(
+          "maintenance.deleteDescription",
+          "Sei sicuro di voler eliminare definitivamente '{{title}}'? Questa azione non può essere annullata.",
+          { title: deleteTarget?.title ?? "" },
+        )}
+        confirmLabel={t("maintenance.deleteConfirm", "Elimina")}
+        loadingLabel={t("maintenance.deleteLoading", "Eliminazione in corso...")}
+        onConfirm={confirmDelete}
+      />
 
       {!compact ? (
         <div
@@ -433,3 +481,4 @@ export function MaintenanceSchedulePanel({
     </div>
   );
 }
+

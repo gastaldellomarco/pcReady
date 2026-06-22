@@ -1,7 +1,7 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
-
+import { ResponsiveContainer, Tooltip, Legend } from "recharts";
 import type * as RechartsPrimitive from "recharts";
+import { cn } from "@/lib/utils";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -35,29 +35,13 @@ function useChart() {
   return context;
 }
 
-// dynamic load recharts to avoid bundling it into the initial client bundle
-let rechartsPromise: Promise<any> | null = null;
-function loadRecharts() {
-  if (!rechartsPromise) rechartsPromise = import("recharts");
-  return rechartsPromise;
-}
-
 const ChartContainer = React.forwardRef<any, any>(
   ({ id, className, children, config, ...props }, ref) => {
     const uniqueId = React.useId();
     const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
-    const [ResponsiveContainer, setResponsiveContainer] = React.useState<any>(null);
-
-    React.useEffect(() => {
-      let mounted = true;
-      loadRecharts().then((m) => {
-        if (mounted) setResponsiveContainer(() => m.ResponsiveContainer);
-      });
-      return () => {
-        mounted = false;
-      };
-    }, []);
-
+    // Recharts (ResponsiveContainer/Tooltip/Legend) is statically imported at
+    // the top of this file so they share the same vendor-charts chunk and are
+    // ready as soon as the lazy chart route hydrates.
     return (
       <ChartContext.Provider value={{ config }}>
         <div
@@ -70,11 +54,7 @@ const ChartContainer = React.forwardRef<any, any>(
           {...props}
         >
           <ChartStyle id={chartId} config={config} />
-          {ResponsiveContainer ? (
-            <ResponsiveContainer>{children}</ResponsiveContainer>
-          ) : (
-            <div className="flex w-full h-full items-center justify-center">Loading chart…</div>
-          )}
+          <ResponsiveContainer>{children}</ResponsiveContainer>
         </div>
       </ChartContext.Provider>
     );
@@ -93,7 +73,6 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   }
 
   return (
-     
     <style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
@@ -108,30 +87,22 @@ ${colorConfig
   .join("\n")}
 }
 `,
-          )            .join("\n"),
+          )
+          .join("\n"),
       }}
     />
   );
 };
 
 /**
- *
+ * Recharts' tooltip wrapper. Imported statically so Recharts can recognise the
+ * component by type during the initial render of the chart – this is what
+ * activates the hover detection and the default Tooltip portal.
  */
 const ChartTooltip: React.ComponentType<any> = (props) => {
-  const [Comp, setComp] = React.useState<any>(null);
-  React.useEffect(() => {
-    let mounted = true;
-    loadRecharts().then((m) => {
-      if (mounted) setComp(() => m.Tooltip);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!Comp) return null;
-  return <Comp {...props} />;
+  return <Tooltip {...props} />;
 };
+ChartTooltip.displayName = "RechartsTooltip";
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -199,6 +170,7 @@ const ChartTooltipContent = React.forwardRef<
     return (
       <div
         ref={ref}
+        role="tooltip"
         className={cn(
           "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
           className,
@@ -222,7 +194,9 @@ const ChartTooltipContent = React.forwardRef<
                   )}
                 >
                   {formatter && item?.value !== undefined && item.name ? (
-                    formatter(item.value, item.name, item, index, item.payload)
+                    <div className="flex flex-1 items-center justify-between gap-2">
+                      {formatter(item.value, item.name, item, index, item.payload)}
+                    </div>
                   ) : (
                     <>
                       {itemConfig?.icon ? (
@@ -283,20 +257,9 @@ ChartTooltipContent.displayName = "ChartTooltip";
  *
  */
 const ChartLegend: React.ComponentType<any> = (props) => {
-  const [Comp, setComp] = React.useState<any>(null);
-  React.useEffect(() => {
-    let mounted = true;
-    loadRecharts().then((m) => {
-      if (mounted) setComp(() => m.Legend);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!Comp) return null;
-  return <Comp {...props} />;
+  return <Legend {...props} />;
 };
+ChartLegend.displayName = "RechartsLegend";
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,

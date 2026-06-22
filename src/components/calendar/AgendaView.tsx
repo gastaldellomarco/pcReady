@@ -79,7 +79,7 @@ export function AgendaView({ events, techColorMap, colorMode, onEventClick }: Ag
                       key={event.id}
                       type="button"
                       onClick={() => onEventClick(event)}
-                      className="grid w-full cursor-pointer grid-cols-[92px_1fr] gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50 border-0 bg-transparent"
+                      className="touch-target min-h-11 grid w-full cursor-pointer grid-cols-[92px_1fr] gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50 border-0 bg-transparent"
                       style={{ borderColor: pcReadyColors.border }}
                     >
                       <div className="text-xs font-semibold" style={{ color: colors.fg }}>
