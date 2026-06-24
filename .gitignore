@@ -10,6 +10,10 @@ dist-ssr
 .tanstack
 storybook-static
 
+# ── Compressed build artifacts ───────────────────────────────────────
+*.br
+*.gz
+
 # ── Generated files ──────────────────────────────────────────────────
 # TanStack Router auto-generated route tree
 src/routeTree.gen.ts
