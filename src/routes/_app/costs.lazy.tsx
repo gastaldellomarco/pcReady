@@ -17,7 +17,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bar,
@@ -63,183 +63,36 @@ import {
 import { openTicketDetail } from "@/lib/detail-navigation";
 import { buildDownloadFileName, downloadCsv, downloadText } from "@/lib/downloads";
 import { errorMessage } from "@/lib/errors";
+import { CostStat, ContractMetric, FinanceTable, SummaryTable } from "@/components/costs/CostComponents";
+import { formatCurrency, formatHours, money, roundMoney, numberFromDraft, buildNextInvoiceNumber, groupCosts, getPeriodPresets } from "@/components/costs/helpers";
+import type {
+  TicketCostRow,
+  ClientOption,
+  ContractRow,
+  ContractDraft,
+  InvoiceRow,
+  InvoiceItemRow,
+  QuoteRow,
+  QuoteItemRow,
+  QuoteLineDraft,
+  BudgetUsageRow,
+  PeriodicReportRow,
+  CostsTab,
+} from "@/components/costs/types";
 
 export const Route = createLazyFileRoute("/_app/costs")({
   component: CostsPage,
 });
 
-type TicketCostRow = {
-  id: string;
-  ticket_code: string;
-  client_id: string | null;
-  client_name: string | null;
-  assignee_id: string | null;
-  technician_name: string | null;
-  status: string;
-  priority: string;
-  ticket_type: string;
-  created_at: string;
-  completed_at: string | null;
-  billable_hours: number | null;
-  hourly_rate: number | null;
-  material_cost: number | null;
-  labor_cost: number | null;
-  total_cost: number | null;
-  tracked_minutes: number | null;
-};
-
 // ── Explicit field select for ticket_cost_summary view ──
 const COST_SUMMARY_SELECT =
   "id, ticket_code, client_id, client_name, assignee_id, technician_name, status, priority, ticket_type, created_at, completed_at, billable_hours, hourly_rate, material_cost, labor_cost, total_cost, tracked_minutes";
-
-type ClientOption = { id: string; name: string; company_name: string | null };
-type ContractRow = {
-  id: string;
-  client_id: string;
-  name: string;
-  status: "active" | "paused" | "expired" | "draft";
-  billing_period: "monthly" | "annual";
-  recurring_fee: number;
-  included_hours: number;
-  extra_hourly_rate: number;
-  start_date: string;
-  end_date: string | null;
-  notes: string | null;
-  client?: ClientOption | null;
-};
-
-type ContractDraft = {
-  client_id: string;
-  name: string;
-  billing_period: "monthly" | "annual";
-  recurring_fee: string;
-  included_hours: string;
-  extra_hourly_rate: string;
-  start_date: string;
-  end_date: string;
-};
-
-type InvoiceRow = {
-  id: string;
-  client_id: string;
-  invoice_number: string;
-  status: "draft" | "sent" | "paid" | "partial" | "overdue" | "void";
-  issue_date: string;
-  due_date: string | null;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total_amount: number;
-  paid_amount: number;
-  sender_name: string | null;
-  sender_address: string | null;
-  recipient_name: string | null;
-  recipient_address: string | null;
-  notes: string | null;
-  client?: ClientOption | null;
-};
-
-type InvoiceItemRow = {
-  id?: string;
-  invoice_id?: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  line_total?: number;
-  item_type?: string;
-};
-
-type QuoteRow = {
-  id: string;
-  client_id: string;
-  quote_number: string;
-  status: "draft" | "sent" | "approved" | "rejected" | "converted" | "expired";
-  title: string;
-  issue_date: string;
-  valid_until: string | null;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total_amount: number;
-  notes: string | null;
-  converted_ticket_id: string | null;
-  converted_invoice_id?: string | null;
-  client?: ClientOption | null;
-};
-
-type QuoteItemRow = {
-  id?: string;
-  quote_id?: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  line_total?: number;
-  item_type?: "service" | "labor" | "material" | "extra";
-};
-
-type QuoteLineDraft = {
-  id: string;
-  description: string;
-  quantity: string;
-  unitPrice: string;
-  itemType: "service" | "labor" | "material" | "extra";
-};
-
-type BudgetUsageRow = {
-  budget_id: string;
-  client_id: string;
-  client_name: string;
-  period: "monthly" | "annual";
-  budget_amount: number;
-  alert_threshold_percent: number;
-  used_amount: number;
-  used_percent: number;
-  alert_active: boolean;
-  active: boolean;
-  starts_on: string;
-  ends_on: string | null;
-};
-
-type PeriodicReportRow = {
-  id: string;
-  client_id: string;
-  report_month: string;
-  status: "scheduled" | "generated" | "sent" | "failed";
-  email_to: string | null;
-  sent_at: string | null;
-  client?: ClientOption | null;
-};
-
-type CostsTab = "dashboard" | "contracts" | "billing" | "report";
 
 const today = new Date();
 const defaultDateTo = today.toISOString().slice(0, 10);
 const thirtyDaysAgo = new Date(today);
 thirtyDaysAgo.setDate(today.getDate() - 30);
 const defaultDateFrom = thirtyDaysAgo.toISOString().slice(0, 10);
-
-function getPeriodPresets(
-  t: (key: string, def: string) => string,
-): Array<{ label: string; from: string; to: string }> {
-  const now = new Date();
-  const to = now.toISOString().slice(0, 10);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const daysAgo = (n: number) => {
-    const d = new Date(now);
-    d.setDate(now.getDate() - n);
-    return d;
-  };
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  return [
-    { label: t("presets.today", "Oggi"), from: fmt(now), to },
-    { label: t("presets.last7", "Ultimi 7 giorni"), from: fmt(daysAgo(7)), to },
-    { label: t("presets.lastMonth", "Ultimo mese"), from: fmt(daysAgo(30)), to },
-    { label: t("presets.last3Months", "Ultimi 3 mesi"), from: fmt(daysAgo(90)), to },
-    { label: t("presets.currentMonth", "Mese corrente"), from: fmt(startOfMonth), to },
-    { label: t("presets.currentYear", "Anno corrente"), from: fmt(startOfYear), to },
-  ];
-}
 
 const emptyContractDraft: ContractDraft = {
   client_id: "",
@@ -3509,238 +3362,3 @@ function CostsPage() {
   );
 }
 
-function FinanceTable({
-  title,
-  empty,
-  emptyIcon,
-  emptyAction,
-  actions,
-  children,
-}: {
-  title: string;
-  empty: string;
-  emptyIcon?: ReactNode;
-  emptyAction?: ReactNode;
-  actions?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="pc-card overflow-hidden">
-      <div className="pc-card-hd">
-        <div className="pc-card-title">{title}</div>
-        {actions}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-[12.5px]">
-          <thead style={{ background: "var(--surface2)" }}>
-            <tr>
-              {["Numero", "Cliente", "Totale", "Stato", "Azioni"].map((header) => (
-                <th
-                  key={header}
-                  className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {children}
-            {Array.isArray(children) && children.length === 0 && (
-              <tr>
-                <td className="px-3 py-10 text-center" colSpan={5}>
-                  <div className="flex flex-col items-center gap-2 text-text3">
-                    {emptyIcon && <div className="text-text4">{emptyIcon}</div>}
-                    <div className="text-sm">{empty}</div>
-                    {emptyAction && <div className="mt-1">{emptyAction}</div>}
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function CostStat({
-  label,
-  value,
-  tone = "default",
-  helpText,
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "success";
-  helpText?: string;
-}) {
-  return (
-    <div
-      className="rounded-xl border p-4"
-      style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-    >
-      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-text3">
-        {label}
-        {helpText && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex cursor-help">
-                  <Info className="h-3.5 w-3.5 text-text3 hover:text-text2 transition-colors" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed">
-                {helpText}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-      <div
-        className="mt-2 text-xl font-bold"
-        style={{ color: tone === "success" ? "var(--success)" : "var(--text)" }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SummaryTable({
-  title,
-  rows,
-  onRowClick,
-}: {
-  title: string;
-  rows: CostGroup[];
-  onRowClick?: (name: string) => void;
-}) {
-  const { t } = useTranslation("costs");
-  return (
-    <div className="pc-card overflow-hidden">
-      <div className="pc-card-hd">
-        <div className="pc-card-title">{title}</div>
-        {onRowClick && rows.length > 0 && (
-          <div className="text-[10.5px] text-text3">
-            {t("summaryTables.clickHint", "Clicca per dettaglio")}
-          </div>
-        )}
-      </div>
-      <table className="w-full text-[12.5px]">
-        <thead style={{ background: "var(--surface2)" }}>
-          <tr>
-            <th className="px-3 py-2 text-left text-[10.5px] font-bold uppercase text-text3">
-              {t("summaryTables.nameHeader", "Nome")}
-            </th>
-            <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-              {t("summaryTables.hoursHeader", "Ore")}
-            </th>
-            <th className="px-3 py-2 text-right text-[10.5px] font-bold uppercase text-text3">
-              {t("summaryTables.totalHeader", "Totale")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.slice(0, 8).map((row) => (
-            <tr
-              key={row.name}
-              className={`border-t ${onRowClick ? "cursor-pointer transition-colors hover:bg-surface2" : ""}`}
-              style={{ borderColor: "var(--border)" }}
-              tabIndex={onRowClick ? 0 : undefined}
-              role={onRowClick ? "button" : undefined}
-              onClick={() => onRowClick?.(row.name)}
-              onKeyDown={(e) => {
-                if (onRowClick && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  onRowClick(row.name);
-                }
-              }}
-            >
-              <td className="px-3 py-2 font-semibold">{row.name}</td>
-              <td className="px-3 py-2 text-right font-mono">{formatHours(row.hours)}</td>
-              <td className="px-3 py-2 text-right font-mono font-bold">
-                {formatCurrency(row.total)}
-              </td>
-            </tr>
-          ))}
-          {!rows.length && (
-            <tr>
-              <td className="px-3 py-6 text-center text-text3" colSpan={3}>
-                {t("summaryTables.noData", "Nessun dato")}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ContractMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-surface2 p-3">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-text3">{label}</div>
-      <div className="mt-1 font-mono text-sm font-bold">{value}</div>
-    </div>
-  );
-}
-
-type CostGroup = { name: string; hours: number; total: number; materials: number; labor: number };
-
-function groupCosts(
-  rows: TicketCostRow[],
-  key: "client_name" | "technician_name",
-  fallbacks?: { technician?: string; client?: string },
-): CostGroup[] {
-  const map = new Map<string, CostGroup>();
-  rows.forEach((row) => {
-    const name =
-      row[key] ||
-      (key === "technician_name"
-        ? (fallbacks?.technician ?? "Non assegnato")
-        : (fallbacks?.client ?? "Cliente non indicato"));
-    const current = map.get(name) ?? { name, hours: 0, total: 0, materials: 0, labor: 0 };
-    current.hours += money(row.billable_hours);
-    current.total += money(row.total_cost);
-    current.materials += money(row.material_cost);
-    current.labor += money(row.labor_cost);
-    map.set(name, current);
-  });
-  return Array.from(map.values()).sort((a, b) => b.total - a.total);
-}
-
-function money(value: unknown) {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function numberFromDraft(value: string) {
-  return Math.max(0, money(value));
-}
-
-function roundMoney(value: number) {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-function buildNextInvoiceNumber(invoices: Array<{ invoice_number?: string | null }>) {
-  const year = new Date().getFullYear();
-  const prefix = `${year}-`;
-  const max = invoices.reduce((highest, invoice) => {
-    const number = invoice.invoice_number ?? "";
-    if (!number.startsWith(prefix)) return highest;
-    const suffix = Number(number.slice(prefix.length));
-    return Number.isFinite(suffix) ? Math.max(highest, suffix) : highest;
-  }, 0);
-  return `${prefix}${String(max + 1).padStart(3, "0")}`;
-}
-
-function formatCurrency(value: unknown) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(
-    money(value),
-  );
-}
-
-function formatHours(value: unknown) {
-  return `${money(value).toLocaleString("it-IT", { maximumFractionDigits: 2 })} h`;
-}

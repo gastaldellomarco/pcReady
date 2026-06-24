@@ -8,6 +8,7 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
+import viteCompression from "vite-plugin-compression";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -40,6 +41,17 @@ export default defineConfig(({ command, mode }) => {
           multipass: true,
           plugins: [{ name: "preset-default", params: { overrides: { removeViewBox: false } } }],
         } as any,
+      }),
+      viteCompression({
+        algorithm: "brotliCompress",
+        ext: ".br",
+        threshold: 1024,
+        compressionOptions: { level: 6 },
+      }),
+      viteCompression({
+        algorithm: "gzip",
+        ext: ".gz",
+        threshold: 1024,
       }),
       // optional bundle visualizer when ANALYZE=true or VITE_ANALYZE=true
       ...(process.env.ANALYZE === "true" || env.VITE_ANALYZE === "true"
@@ -110,6 +122,11 @@ export default defineConfig(({ command, mode }) => {
             if (id.includes("reactflow") || id.includes("@xyflow")) return "vendor-flow";
             if (id.includes("swagger-ui")) return "vendor-swagger";
             if (id.includes("@radix-ui")) return "vendor-radix";
+            if (id.includes("mermaid")) return "vendor-mermaid";
+            if (id.includes("shiki")) return "vendor-shiki";
+            if (id.includes("codemirror") || id.includes("@uiw/react-codemirror")) return "vendor-editor";
+            if (id.includes("@zxing")) return "vendor-zxing";
+            if (id.includes("date-fns")) return "vendor-dates";
           },
         },
       },
